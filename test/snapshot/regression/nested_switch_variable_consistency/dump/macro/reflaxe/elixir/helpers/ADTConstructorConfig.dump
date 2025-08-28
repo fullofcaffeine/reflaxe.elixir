@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.ADTConstructorConfig = { isAtom : Bool, elixirPattern : String, arity : Int }

@@ -1,0 +1,1 @@
+typedef haxe.display.DiagnosticsResult = haxe.display.Response<haxe.ds.ReadOnlyArray<{ file : haxe.display.FsPath, diagnostics : haxe.ds.ReadOnlyArray<haxe.display.Diagnostic<Any>> }>>

@@ -1,5 +1,0 @@
--cp ../src
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src
--D reflaxe_runtime
---no-output
-reflaxe.elixir.ElixirCompiler

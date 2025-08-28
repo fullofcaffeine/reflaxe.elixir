@@ -1,0 +1,2115 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.ArrayMethodCompiler {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(29549):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.ArrayMethodCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(29549):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	public function isArrayMethod[Function:(methodName : String) -> Bool]
+		[Arg:String] [Local methodName(22325):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (methodName) {
+	case "join", "push", "pop", "length", "map", "filter", "concat", "contains", "indexOf", "reduce", "forEach", "find", "findIndex", "slice", "splice", "reverse", "sort", "shift", "unshift", "every", "some", "fold", "exists", "any", "foreach", "all", "take", "drop", "flatMap":
+		true;	
+	case _:
+		false;	
+})
+					[Switch:Bool]
+						[Local methodName(22325):String:String]
+						[Case:Bool]
+							[Const:String] "all"
+							[Const:String] "any"
+							[Const:String] "concat"
+							[Const:String] "contains"
+							[Const:String] "drop"
+							[Const:String] "every"
+							[Const:String] "exists"
+							[Const:String] "filter"
+							[Const:String] "find"
+							[Const:String] "findIndex"
+							[Const:String] "flatMap"
+							[Const:String] "fold"
+							[Const:String] "forEach"
+							[Const:String] "foreach"
+							[Const:String] "indexOf"
+							[Const:String] "join"
+							[Const:String] "length"
+							[Const:String] "map"
+							[Const:String] "pop"
+							[Const:String] "push"
+							[Const:String] "reduce"
+							[Const:String] "reverse"
+							[Const:String] "shift"
+							[Const:String] "slice"
+							[Const:String] "some"
+							[Const:String] "sort"
+							[Const:String] "splice"
+							[Const:String] "take"
+							[Const:String] "unshift"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	public function compileArrayMethod[Function:(objStr : String, methodName : String, args : Array<haxe.macro.TypedExpr>) -> String]
+		[Arg:String] [Local objStr(22333):String]
+		[Arg:String] [Local methodName(22334):String]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local args(22335):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Var `this(22338):reflaxe.elixir.helpers.ArrayMethodCompiler] [Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+			[Var previousContext(22336):Bool]
+				[Field:Bool]
+					[Field:reflaxe.elixir.ElixirCompiler]
+						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+						[FInstance:reflaxe.elixir.ElixirCompiler]
+							reflaxe.elixir.helpers.ArrayMethodCompiler
+							compiler:reflaxe.elixir.ElixirCompiler
+					[FInstance:Bool]
+						reflaxe.elixir.ElixirCompiler
+						isInLoopContext:Bool
+			[Binop:Bool]
+				[Field:Bool]
+					[Field:reflaxe.elixir.ElixirCompiler]
+						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+						[FInstance:reflaxe.elixir.ElixirCompiler]
+							reflaxe.elixir.helpers.ArrayMethodCompiler
+							compiler:reflaxe.elixir.ElixirCompiler
+					[FInstance:Bool]
+						reflaxe.elixir.ElixirCompiler
+						isInLoopContext:Bool
+				=
+				[Const:Bool] false
+			[Var compiledArgs(22347):Array<Null<String>>]
+				[Block:Array<Null<String>>]
+					[Var `(22342):Array<Null<String>>] [ArrayDecl:Array<Null<String>>]
+					[Block:Void]
+						[Var `(22343):Int] [Const:Int] 0
+						[Var `(22344):Array<haxe.macro.TypedExpr>] [Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(22343):Int:Int]
+								<
+								[Field:Int]
+									[Local `(22344):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[FInstance:Int]
+										Array<haxe.macro.TypedExpr>
+										length:Int
+							[Block:Void]
+								[Var v(22345):haxe.macro.TypedExpr]
+									[Array:haxe.macro.TypedExpr]
+										[Local `(22344):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[Local `(22343):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(22343):Int:Int]
+								[Call:Int]
+									[Field:(x : Null<String>) -> Int]
+										[Local `(22342):Array<Null<String>>:Array<Null<String>>]
+										[FInstance:(x : Null<String>) -> Int]
+											Array<Null<String>>
+											push:(x : Array.T) -> Int
+									[Call:Null<String>]
+										[Function:(arg : haxe.macro.TypedExpr) -> Null<String>]
+											[Arg:haxe.macro.TypedExpr] [Local arg(22346):haxe.macro.TypedExpr]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Call:Null<String>]
+														[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+															[Field:reflaxe.elixir.ElixirCompiler]
+																[Local `this(22338):reflaxe.elixir.helpers.ArrayMethodCompiler:reflaxe.elixir.helpers.ArrayMethodCompiler]
+																[FInstance:reflaxe.elixir.ElixirCompiler]
+																	reflaxe.elixir.helpers.ArrayMethodCompiler
+																	compiler:reflaxe.elixir.ElixirCompiler
+															[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																reflaxe.elixir.ElixirCompiler
+																compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+														[Local arg(22346):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Const:Null<Bool>] null
+										[Local v(22345):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Local `(22342):Array<Null<String>>:Array<Null<String>>]
+			[Binop:Bool]
+				[Field:Bool]
+					[Field:reflaxe.elixir.ElixirCompiler]
+						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+						[FInstance:reflaxe.elixir.ElixirCompiler]
+							reflaxe.elixir.helpers.ArrayMethodCompiler
+							compiler:reflaxe.elixir.ElixirCompiler
+					[FInstance:Bool]
+						reflaxe.elixir.ElixirCompiler
+						isInLoopContext:Bool
+				=
+				[Local previousContext(22336):Bool:Bool]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (methodName) {
+	case "join":
+		if (compiledArgs.length > 0) {
+			"Enum.join(${objStr}, ${compiledArgs[0]})";
+		} else {
+			"Enum.join(${objStr}, \"\")";
+		};	
+	case "push":
+		if (compiledArgs.length > 0) {
+			var isSimpleVariable = ~/^[a-z_][a-z0-9_]*$/.match(objStr);
+			if (isSimpleVariable) {
+				"${objStr} = ${objStr} ++ [${compiledArgs[0]}]";
+			} else {
+				"${objStr} ++ [${compiledArgs[0]}]";
+			};
+		} else {
+			objStr;
+		};	
+	case "pop":
+		"List.last(${objStr})";	
+	case "shift":
+		"hd(${objStr})";	
+	case "unshift":
+		if (compiledArgs.length > 0) {
+			"[${compiledArgs[0]} | ${objStr}]";
+		} else {
+			objStr;
+		};	
+	case "length":
+		"length(${objStr})";	
+	case "copy":
+		objStr;	
+	case "reverse":
+		"Enum.reverse(${objStr})";	
+	case "sort":
+		if (compiledArgs.length > 0) {
+			"Enum.sort(${objStr}, ${compiledArgs[0]})";
+		} else {
+			"Enum.sort(${objStr})";
+		};	
+	case "map":
+		if (compiledArgs.length > 0) {
+			if (args.length > 0) {
+				switch (args[0].expr) {
+					case TFunction(func):
+						var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+						return "Enum.map(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";					
+					case _:
+						return "Enum.map(${objStr}, ${compiledArgs[0]})";					
+				};
+			} else {
+				return "Enum.map(${objStr}, ${compiledArgs[0]})";
+			};
+		} else {
+			objStr;
+		};	
+	case "filter":
+		if (compiledArgs.length > 0) {
+			if (args.length > 0) {
+				switch (args[0].expr) {
+					case TFunction(func):
+						var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+						return "Enum.filter(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";					
+					case _:
+						return "Enum.filter(${objStr}, ${compiledArgs[0]})";					
+				};
+			} else {
+				return "Enum.filter(${objStr}, ${compiledArgs[0]})";
+			};
+		} else {
+			objStr;
+		};	
+	case "concat":
+		if (compiledArgs.length > 0) {
+			"${objStr} ++ ${compiledArgs[0]}";
+		} else {
+			objStr;
+		};	
+	case "contains":
+		if (compiledArgs.length > 0) {
+			"Enum.member?(${objStr}, ${compiledArgs[0]})";
+		} else {
+			"false";
+		};	
+	case "indexOf":
+		if (compiledArgs.length > 0) {
+			"Enum.find_index(${objStr}, &(&1 == ${compiledArgs[0]}))";
+		} else {
+			"nil";
+		};	
+	case "reduce", "fold":
+		if (compiledArgs.length >= 2) {
+			if (args.length >= 1) {
+				switch (args[0].expr) {
+					case TFunction(func):
+						var previousContext = compiler.isInLoopContext;
+						compiler.isInLoopContext = true;
+						var accParamTVar = func.args.length > 0 ? func.args[0].v : null;
+						var itemParamTVar = func.args.length > 1 ? func.args[1].v : null;
+						var elixirItemName = "item";
+						var elixirAccName = "acc";
+						var bodyAfterAccSubst = accParamTVar != null ? compiler.compileExpressionWithTVarSubstitution(func.expr, accParamTVar, elixirAccName) : compiler.compileExpression(func.expr);
+						var compiledBody = bodyAfterAccSubst;
+						if (itemParamTVar != null) {
+							var originalItemName = compiler.getOriginalVarName(itemParamTVar);
+							if (compiledBody != null && originalItemName != null && elixirItemName != null) {
+								var safeCompiledBody:String = compiledBody;
+								var safeOriginalName:String = originalItemName;
+								var safeElixirName:String = elixirItemName;
+								compiledBody = StringTools.replace(safeCompiledBody, safeOriginalName, safeElixirName);
+							};
+						};
+						compiler.isInLoopContext = previousContext;
+						return "Enum.reduce(${objStr}, ${compiledArgs[1]}, fn ${elixirItemName}, ${elixirAccName} -> ${compiledBody} end)";					
+					case _:
+						return "Enum.reduce(${objStr}, ${compiledArgs[1]}, ${compiledArgs[0]})";					
+				};
+			} else {
+				return "Enum.reduce(${objStr}, ${compiledArgs[1]}, ${compiledArgs[0]})";
+			};
+		} else {
+			objStr;
+		};	
+	case "find":
+		if (compiledArgs.length > 0) {
+			if (args.length > 0) {
+				switch (args[0].expr) {
+					case TFunction(func):
+						var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+						return "Enum.find(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";					
+					case _:
+						return "Enum.find(${objStr}, ${compiledArgs[0]})";					
+				};
+			} else {
+				return "Enum.find(${objStr}, ${compiledArgs[0]})";
+			};
+		} else {
+			"nil";
+		};	
+	case "findIndex":
+		if (compiledArgs.length > 0) {
+			if (args.length > 0) {
+				switch (args[0].expr) {
+					case TFunction(func):
+						var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+						return "Enum.find_index(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";					
+					case _:
+						return "Enum.find_index(${objStr}, ${compiledArgs[0]})";					
+				};
+			} else {
+				return "Enum.find_index(${objStr}, ${compiledArgs[0]})";
+			};
+		} else {
+			"nil";
+		};	
+	case "exists", "any":
+		if (compiledArgs.length > 0) {
+			if (args.length > 0) {
+				switch (args[0].expr) {
+					case TFunction(func):
+						var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+						return "Enum.any?(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";					
+					case _:
+						return "Enum.any?(${objStr}, ${compiledArgs[0]})";					
+				};
+			} else {
+				return "Enum.any?(${objStr}, ${compiledArgs[0]})";
+			};
+		} else {
+			"false";
+		};	
+	case "foreach", "all":
+		if (compiledArgs.length > 0) {
+			if (args.length > 0) {
+				switch (args[0].expr) {
+					case TFunction(func):
+						var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+						return "Enum.all?(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";					
+					case _:
+						return "Enum.all?(${objStr}, ${compiledArgs[0]})";					
+				};
+			} else {
+				return "Enum.all?(${objStr}, ${compiledArgs[0]})";
+			};
+		} else {
+			"true";
+		};	
+	case "forEach":
+		if (compiledArgs.length > 0) {
+			if (args.length > 0) {
+				switch (args[0].expr) {
+					case TFunction(func):
+						var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+						return "Enum.each(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";					
+					case _:
+						return "Enum.each(${objStr}, ${compiledArgs[0]})";					
+				};
+			} else {
+				return "Enum.each(${objStr}, ${compiledArgs[0]})";
+			};
+		} else {
+			":ok";
+		};	
+	case "take":
+		if (compiledArgs.length > 0) {
+			"Enum.take(${objStr}, ${compiledArgs[0]})";
+		} else {
+			objStr;
+		};	
+	case "drop":
+		if (compiledArgs.length > 0) {
+			"Enum.drop(${objStr}, ${compiledArgs[0]})";
+		} else {
+			objStr;
+		};	
+	case "flatMap":
+		if (compiledArgs.length > 0) {
+			if (args.length > 0) {
+				switch (args[0].expr) {
+					case TFunction(func):
+						var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+						return "Enum.flat_map(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";					
+					case _:
+						return "Enum.flat_map(${objStr}, ${compiledArgs[0]})";					
+				};
+			} else {
+				return "Enum.flat_map(${objStr}, ${compiledArgs[0]})";
+			};
+		} else {
+			objStr;
+		};	
+	case _:
+		"${objStr}.${methodName}(${compiledArgs.join(\", \")})";	
+})
+					[Switch:String]
+						[Local methodName(22334):String:String]
+						[Case:String]
+							[Const:String] "all"
+							[Const:String] "foreach"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 0
+												[Then:String] [Block:String]
+													[Meta:String]
+														:ast(switch (args[0].expr) {
+	case TFunction(func):
+		var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+		return "Enum.all?(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";	
+	case _:
+		return "Enum.all?(${objStr}, ${compiledArgs[0]})";	
+})
+														[Block:String]
+															[Var `(22650):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:String]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(22650):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 12
+																[Then:String] [Block:String]
+																	[Var `(22651):haxe.macro.TFunc]
+																		[EnumParameter:haxe.macro.TFunc]
+																			[Local `(22650):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TFunction
+																			0
+																	[Block:String]
+																		[Var func(22652):haxe.macro.TFunc] [Local `(22651):haxe.macro.TFunc:haxe.macro.TFunc]
+																		[Block:String]
+																			[Var lambda(22653):reflaxe.elixir.helpers.LambdaResult]
+																				[Call:reflaxe.elixir.helpers.LambdaResult]
+																					[Field:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+																						[FStatic:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																							reflaxe.elixir.helpers.ExpressionCompiler
+																							compileLambdaWithContext:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[Local func(22652):haxe.macro.TFunc:haxe.macro.TFunc]
+																					[Const:String] "item"
+																			[Return:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Const:String] "Enum.all?("
+																										+
+																										[Local objStr(22333):String:String]
+																									+
+																									[Const:String] ", fn "
+																								+
+																								[Field:String]
+																									[Local lambda(22653):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																									[FAnon:String] paramName:String
+																							+
+																							[Const:String] " -> "
+																						+
+																						[Field:String]
+																							[Local lambda(22653):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																							[FAnon:String] body:String
+																					+
+																					[Const:String] " end)"
+																[Else:String] [Block:String]
+																	[Return:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "Enum.all?("
+																						+
+																						[Local objStr(22333):String:String]
+																					+
+																					[Const:String] ", "
+																				+
+																				[Array:Null<String>]
+																					[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																					[Const:Int] 0
+																			+
+																			[Const:String] ")"
+												[Else:String] [Block:String]
+													[Return:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "Enum.all?("
+																		+
+																		[Local objStr(22333):String:String]
+																	+
+																	[Const:String] ", "
+																+
+																[Array:Null<String>]
+																	[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																	[Const:Int] 0
+															+
+															[Const:String] ")"
+										[Else:String] [Block:String] [Const:String] "true"
+						[Case:String]
+							[Const:String] "any"
+							[Const:String] "exists"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 0
+												[Then:String] [Block:String]
+													[Meta:String]
+														:ast(switch (args[0].expr) {
+	case TFunction(func):
+		var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+		return "Enum.any?(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";	
+	case _:
+		return "Enum.any?(${objStr}, ${compiledArgs[0]})";	
+})
+														[Block:String]
+															[Var `(22654):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:String]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(22654):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 12
+																[Then:String] [Block:String]
+																	[Var `(22655):haxe.macro.TFunc]
+																		[EnumParameter:haxe.macro.TFunc]
+																			[Local `(22654):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TFunction
+																			0
+																	[Block:String]
+																		[Var func(22656):haxe.macro.TFunc] [Local `(22655):haxe.macro.TFunc:haxe.macro.TFunc]
+																		[Block:String]
+																			[Var lambda(22657):reflaxe.elixir.helpers.LambdaResult]
+																				[Call:reflaxe.elixir.helpers.LambdaResult]
+																					[Field:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+																						[FStatic:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																							reflaxe.elixir.helpers.ExpressionCompiler
+																							compileLambdaWithContext:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[Local func(22656):haxe.macro.TFunc:haxe.macro.TFunc]
+																					[Const:String] "item"
+																			[Return:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Const:String] "Enum.any?("
+																										+
+																										[Local objStr(22333):String:String]
+																									+
+																									[Const:String] ", fn "
+																								+
+																								[Field:String]
+																									[Local lambda(22657):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																									[FAnon:String] paramName:String
+																							+
+																							[Const:String] " -> "
+																						+
+																						[Field:String]
+																							[Local lambda(22657):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																							[FAnon:String] body:String
+																					+
+																					[Const:String] " end)"
+																[Else:String] [Block:String]
+																	[Return:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "Enum.any?("
+																						+
+																						[Local objStr(22333):String:String]
+																					+
+																					[Const:String] ", "
+																				+
+																				[Array:Null<String>]
+																					[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																					[Const:Int] 0
+																			+
+																			[Const:String] ")"
+												[Else:String] [Block:String]
+													[Return:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "Enum.any?("
+																		+
+																		[Local objStr(22333):String:String]
+																	+
+																	[Const:String] ", "
+																+
+																[Array:Null<String>]
+																	[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																	[Const:Int] 0
+															+
+															[Const:String] ")"
+										[Else:String] [Block:String] [Const:String] "false"
+						[Case:String]
+							[Const:String] "concat"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] ""
+														+
+														[Local objStr(22333):String:String]
+													+
+													[Const:String] " ++ "
+												+
+												[Array:Null<String>]
+													[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+													[Const:Int] 0
+										[Else:String] [Block:String] [Local objStr(22333):String:String]
+						[Case:String]
+							[Const:String] "contains"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Enum.member?("
+															+
+															[Local objStr(22333):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String] [Const:String] "false"
+						[Case:String]
+							[Const:String] "copy"
+							[Block:String] [Block:String] [Local objStr(22333):String:String]
+						[Case:String]
+							[Const:String] "drop"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Enum.drop("
+															+
+															[Local objStr(22333):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String] [Local objStr(22333):String:String]
+						[Case:String]
+							[Const:String] "filter"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 0
+												[Then:String] [Block:String]
+													[Meta:String]
+														:ast(switch (args[0].expr) {
+	case TFunction(func):
+		var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+		return "Enum.filter(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";	
+	case _:
+		return "Enum.filter(${objStr}, ${compiledArgs[0]})";	
+})
+														[Block:String]
+															[Var `(22658):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:String]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(22658):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 12
+																[Then:String] [Block:String]
+																	[Var `(22659):haxe.macro.TFunc]
+																		[EnumParameter:haxe.macro.TFunc]
+																			[Local `(22658):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TFunction
+																			0
+																	[Block:String]
+																		[Var func(22660):haxe.macro.TFunc] [Local `(22659):haxe.macro.TFunc:haxe.macro.TFunc]
+																		[Block:String]
+																			[Var lambda(22661):reflaxe.elixir.helpers.LambdaResult]
+																				[Call:reflaxe.elixir.helpers.LambdaResult]
+																					[Field:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+																						[FStatic:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																							reflaxe.elixir.helpers.ExpressionCompiler
+																							compileLambdaWithContext:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[Local func(22660):haxe.macro.TFunc:haxe.macro.TFunc]
+																					[Const:String] "item"
+																			[Return:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Const:String] "Enum.filter("
+																										+
+																										[Local objStr(22333):String:String]
+																									+
+																									[Const:String] ", fn "
+																								+
+																								[Field:String]
+																									[Local lambda(22661):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																									[FAnon:String] paramName:String
+																							+
+																							[Const:String] " -> "
+																						+
+																						[Field:String]
+																							[Local lambda(22661):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																							[FAnon:String] body:String
+																					+
+																					[Const:String] " end)"
+																[Else:String] [Block:String]
+																	[Return:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "Enum.filter("
+																						+
+																						[Local objStr(22333):String:String]
+																					+
+																					[Const:String] ", "
+																				+
+																				[Array:Null<String>]
+																					[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																					[Const:Int] 0
+																			+
+																			[Const:String] ")"
+												[Else:String] [Block:String]
+													[Return:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "Enum.filter("
+																		+
+																		[Local objStr(22333):String:String]
+																	+
+																	[Const:String] ", "
+																+
+																[Array:Null<String>]
+																	[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																	[Const:Int] 0
+															+
+															[Const:String] ")"
+										[Else:String] [Block:String] [Local objStr(22333):String:String]
+						[Case:String]
+							[Const:String] "find"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 0
+												[Then:String] [Block:String]
+													[Meta:String]
+														:ast(switch (args[0].expr) {
+	case TFunction(func):
+		var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+		return "Enum.find(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";	
+	case _:
+		return "Enum.find(${objStr}, ${compiledArgs[0]})";	
+})
+														[Block:String]
+															[Var `(22662):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:String]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(22662):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 12
+																[Then:String] [Block:String]
+																	[Var `(22663):haxe.macro.TFunc]
+																		[EnumParameter:haxe.macro.TFunc]
+																			[Local `(22662):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TFunction
+																			0
+																	[Block:String]
+																		[Var func(22664):haxe.macro.TFunc] [Local `(22663):haxe.macro.TFunc:haxe.macro.TFunc]
+																		[Block:String]
+																			[Var lambda(22665):reflaxe.elixir.helpers.LambdaResult]
+																				[Call:reflaxe.elixir.helpers.LambdaResult]
+																					[Field:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+																						[FStatic:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																							reflaxe.elixir.helpers.ExpressionCompiler
+																							compileLambdaWithContext:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[Local func(22664):haxe.macro.TFunc:haxe.macro.TFunc]
+																					[Const:String] "item"
+																			[Return:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Const:String] "Enum.find("
+																										+
+																										[Local objStr(22333):String:String]
+																									+
+																									[Const:String] ", fn "
+																								+
+																								[Field:String]
+																									[Local lambda(22665):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																									[FAnon:String] paramName:String
+																							+
+																							[Const:String] " -> "
+																						+
+																						[Field:String]
+																							[Local lambda(22665):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																							[FAnon:String] body:String
+																					+
+																					[Const:String] " end)"
+																[Else:String] [Block:String]
+																	[Return:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "Enum.find("
+																						+
+																						[Local objStr(22333):String:String]
+																					+
+																					[Const:String] ", "
+																				+
+																				[Array:Null<String>]
+																					[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																					[Const:Int] 0
+																			+
+																			[Const:String] ")"
+												[Else:String] [Block:String]
+													[Return:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "Enum.find("
+																		+
+																		[Local objStr(22333):String:String]
+																	+
+																	[Const:String] ", "
+																+
+																[Array:Null<String>]
+																	[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																	[Const:Int] 0
+															+
+															[Const:String] ")"
+										[Else:String] [Block:String] [Const:String] "nil"
+						[Case:String]
+							[Const:String] "findIndex"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 0
+												[Then:String] [Block:String]
+													[Meta:String]
+														:ast(switch (args[0].expr) {
+	case TFunction(func):
+		var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+		return "Enum.find_index(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";	
+	case _:
+		return "Enum.find_index(${objStr}, ${compiledArgs[0]})";	
+})
+														[Block:String]
+															[Var `(22666):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:String]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(22666):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 12
+																[Then:String] [Block:String]
+																	[Var `(22667):haxe.macro.TFunc]
+																		[EnumParameter:haxe.macro.TFunc]
+																			[Local `(22666):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TFunction
+																			0
+																	[Block:String]
+																		[Var func(22668):haxe.macro.TFunc] [Local `(22667):haxe.macro.TFunc:haxe.macro.TFunc]
+																		[Block:String]
+																			[Var lambda(22669):reflaxe.elixir.helpers.LambdaResult]
+																				[Call:reflaxe.elixir.helpers.LambdaResult]
+																					[Field:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+																						[FStatic:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																							reflaxe.elixir.helpers.ExpressionCompiler
+																							compileLambdaWithContext:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[Local func(22668):haxe.macro.TFunc:haxe.macro.TFunc]
+																					[Const:String] "item"
+																			[Return:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Const:String] "Enum.find_index("
+																										+
+																										[Local objStr(22333):String:String]
+																									+
+																									[Const:String] ", fn "
+																								+
+																								[Field:String]
+																									[Local lambda(22669):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																									[FAnon:String] paramName:String
+																							+
+																							[Const:String] " -> "
+																						+
+																						[Field:String]
+																							[Local lambda(22669):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																							[FAnon:String] body:String
+																					+
+																					[Const:String] " end)"
+																[Else:String] [Block:String]
+																	[Return:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "Enum.find_index("
+																						+
+																						[Local objStr(22333):String:String]
+																					+
+																					[Const:String] ", "
+																				+
+																				[Array:Null<String>]
+																					[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																					[Const:Int] 0
+																			+
+																			[Const:String] ")"
+												[Else:String] [Block:String]
+													[Return:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "Enum.find_index("
+																		+
+																		[Local objStr(22333):String:String]
+																	+
+																	[Const:String] ", "
+																+
+																[Array:Null<String>]
+																	[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																	[Const:Int] 0
+															+
+															[Const:String] ")"
+										[Else:String] [Block:String] [Const:String] "nil"
+						[Case:String]
+							[Const:String] "flatMap"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 0
+												[Then:String] [Block:String]
+													[Meta:String]
+														:ast(switch (args[0].expr) {
+	case TFunction(func):
+		var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+		return "Enum.flat_map(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";	
+	case _:
+		return "Enum.flat_map(${objStr}, ${compiledArgs[0]})";	
+})
+														[Block:String]
+															[Var `(22670):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:String]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(22670):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 12
+																[Then:String] [Block:String]
+																	[Var `(22671):haxe.macro.TFunc]
+																		[EnumParameter:haxe.macro.TFunc]
+																			[Local `(22670):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TFunction
+																			0
+																	[Block:String]
+																		[Var func(22672):haxe.macro.TFunc] [Local `(22671):haxe.macro.TFunc:haxe.macro.TFunc]
+																		[Block:String]
+																			[Var lambda(22673):reflaxe.elixir.helpers.LambdaResult]
+																				[Call:reflaxe.elixir.helpers.LambdaResult]
+																					[Field:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+																						[FStatic:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																							reflaxe.elixir.helpers.ExpressionCompiler
+																							compileLambdaWithContext:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[Local func(22672):haxe.macro.TFunc:haxe.macro.TFunc]
+																					[Const:String] "item"
+																			[Return:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Const:String] "Enum.flat_map("
+																										+
+																										[Local objStr(22333):String:String]
+																									+
+																									[Const:String] ", fn "
+																								+
+																								[Field:String]
+																									[Local lambda(22673):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																									[FAnon:String] paramName:String
+																							+
+																							[Const:String] " -> "
+																						+
+																						[Field:String]
+																							[Local lambda(22673):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																							[FAnon:String] body:String
+																					+
+																					[Const:String] " end)"
+																[Else:String] [Block:String]
+																	[Return:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "Enum.flat_map("
+																						+
+																						[Local objStr(22333):String:String]
+																					+
+																					[Const:String] ", "
+																				+
+																				[Array:Null<String>]
+																					[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																					[Const:Int] 0
+																			+
+																			[Const:String] ")"
+												[Else:String] [Block:String]
+													[Return:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "Enum.flat_map("
+																		+
+																		[Local objStr(22333):String:String]
+																	+
+																	[Const:String] ", "
+																+
+																[Array:Null<String>]
+																	[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																	[Const:Int] 0
+															+
+															[Const:String] ")"
+										[Else:String] [Block:String] [Local objStr(22333):String:String]
+						[Case:String]
+							[Const:String] "fold"
+							[Const:String] "reduce"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>=
+											[Const:Int] 2
+										[Then:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>=
+													[Const:Int] 1
+												[Then:String] [Block:String]
+													[Meta:String]
+														:ast(switch (args[0].expr) {
+	case TFunction(func):
+		var previousContext = compiler.isInLoopContext;
+		compiler.isInLoopContext = true;
+		var accParamTVar = func.args.length > 0 ? func.args[0].v : null;
+		var itemParamTVar = func.args.length > 1 ? func.args[1].v : null;
+		var elixirItemName = "item";
+		var elixirAccName = "acc";
+		var bodyAfterAccSubst = accParamTVar != null ? compiler.compileExpressionWithTVarSubstitution(func.expr, accParamTVar, elixirAccName) : compiler.compileExpression(func.expr);
+		var compiledBody = bodyAfterAccSubst;
+		if (itemParamTVar != null) {
+			var originalItemName = compiler.getOriginalVarName(itemParamTVar);
+			if (compiledBody != null && originalItemName != null && elixirItemName != null) {
+				var safeCompiledBody:String = compiledBody;
+				var safeOriginalName:String = originalItemName;
+				var safeElixirName:String = elixirItemName;
+				compiledBody = StringTools.replace(safeCompiledBody, safeOriginalName, safeElixirName);
+			};
+		};
+		compiler.isInLoopContext = previousContext;
+		return "Enum.reduce(${objStr}, ${compiledArgs[1]}, fn ${elixirItemName}, ${elixirAccName} -> ${compiledBody} end)";	
+	case _:
+		return "Enum.reduce(${objStr}, ${compiledArgs[1]}, ${compiledArgs[0]})";	
+})
+														[Block:String]
+															[Var `(22674):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:String]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(22674):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 12
+																[Then:String] [Block:String]
+																	[Var `(22675):haxe.macro.TFunc]
+																		[EnumParameter:haxe.macro.TFunc]
+																			[Local `(22674):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TFunction
+																			0
+																	[Block:String]
+																		[Var func(22676):haxe.macro.TFunc] [Local `(22675):haxe.macro.TFunc:haxe.macro.TFunc]
+																		[Block:String]
+																			[Var previousContext(22677):Bool]
+																				[Field:Bool]
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[FInstance:Bool]
+																						reflaxe.elixir.ElixirCompiler
+																						isInLoopContext:Bool
+																			[Binop:Bool]
+																				[Field:Bool]
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[FInstance:Bool]
+																						reflaxe.elixir.ElixirCompiler
+																						isInLoopContext:Bool
+																				=
+																				[Const:Bool] true
+																			[Var accParamTVar(22678):Null<Null<haxe.macro.TVar>>]
+																				[If:Null<haxe.macro.TVar>]
+																					[Binop:Bool]
+																						[Field:Int]
+																							[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+																								[Local func(22676):haxe.macro.TFunc:haxe.macro.TFunc]
+																								[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+																							[FInstance:Int]
+																								Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+																								length:Int
+																						>
+																						[Const:Int] 0
+																					[Then:haxe.macro.TVar] [Block:haxe.macro.TVar]
+																						[Field:haxe.macro.TVar]
+																							[Array:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																								[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+																									[Local func(22676):haxe.macro.TFunc:haxe.macro.TFunc]
+																									[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+																								[Const:Int] 0
+																							[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+																					[Else:Null<Null<haxe.macro.TVar>>] [Block:Null<Null<haxe.macro.TVar>>] [Const:Null<Null<haxe.macro.TVar>>] null
+																			[Var itemParamTVar(22679):Null<Null<haxe.macro.TVar>>]
+																				[If:Null<haxe.macro.TVar>]
+																					[Binop:Bool]
+																						[Field:Int]
+																							[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+																								[Local func(22676):haxe.macro.TFunc:haxe.macro.TFunc]
+																								[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+																							[FInstance:Int]
+																								Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+																								length:Int
+																						>
+																						[Const:Int] 1
+																					[Then:haxe.macro.TVar] [Block:haxe.macro.TVar]
+																						[Field:haxe.macro.TVar]
+																							[Array:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }]
+																								[Field:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>]
+																									[Local func(22676):haxe.macro.TFunc:haxe.macro.TFunc]
+																									[FAnon:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>] args:Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }>
+																								[Const:Int] 1
+																							[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+																					[Else:Null<Null<haxe.macro.TVar>>] [Block:Null<Null<haxe.macro.TVar>>] [Const:Null<Null<haxe.macro.TVar>>] null
+																			[Var elixirItemName(22680):String] [Const:String] "item"
+																			[Var elixirAccName(22681):String] [Const:String] "acc"
+																			[Var bodyAfterAccSubst(22682):Null<String>]
+																				[If:Null<String>]
+																					[Binop:Bool]
+																						[Local accParamTVar(22678):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+																						!=
+																						[Const:Null<Null<haxe.macro.TVar>>] null
+																					[Then:String] [Block:String]
+																						[Call:String]
+																							[Field:(expr : haxe.macro.TypedExpr, sourceTVar : haxe.macro.TVar, targetVarName : String) -> String]
+																								[Field:reflaxe.elixir.ElixirCompiler]
+																									[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																									[FInstance:reflaxe.elixir.ElixirCompiler]
+																										reflaxe.elixir.helpers.ArrayMethodCompiler
+																										compiler:reflaxe.elixir.ElixirCompiler
+																								[FInstance:(expr : haxe.macro.TypedExpr, sourceTVar : haxe.macro.TVar, targetVarName : String) -> String]
+																									reflaxe.elixir.ElixirCompiler
+																									compileExpressionWithTVarSubstitution:(expr : haxe.macro.TypedExpr, sourceTVar : haxe.macro.TVar, targetVarName : String) -> String
+																							[Field:haxe.macro.TypedExpr]
+																								[Local func(22676):haxe.macro.TFunc:haxe.macro.TFunc]
+																								[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+																							[Local accParamTVar(22678):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+																							[Local elixirAccName(22681):String:String]
+																					[Else:Null<String>] [Block:Null<String>]
+																						[Call:Null<String>]
+																							[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																								[Field:reflaxe.elixir.ElixirCompiler]
+																									[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																									[FInstance:reflaxe.elixir.ElixirCompiler]
+																										reflaxe.elixir.helpers.ArrayMethodCompiler
+																										compiler:reflaxe.elixir.ElixirCompiler
+																								[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																									reflaxe.elixir.ElixirCompiler
+																									compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+																							[Field:haxe.macro.TypedExpr]
+																								[Local func(22676):haxe.macro.TFunc:haxe.macro.TFunc]
+																								[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+																							[Const:Null<Bool>] null
+																			[Var compiledBody(22683):Null<String>] [Local bodyAfterAccSubst(22682):Null<String>:Null<String>]
+																			[If:Void]
+																				[Binop:Bool]
+																					[Local itemParamTVar(22679):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+																					!=
+																					[Const:Null<Null<haxe.macro.TVar>>] null
+																				[Then:Void] [Block:Void]
+																					[Var originalItemName(22684):String]
+																						[Call:String]
+																							[Field:(v : haxe.macro.TVar) -> String]
+																								[Field:reflaxe.elixir.ElixirCompiler]
+																									[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																									[FInstance:reflaxe.elixir.ElixirCompiler]
+																										reflaxe.elixir.helpers.ArrayMethodCompiler
+																										compiler:reflaxe.elixir.ElixirCompiler
+																								[FInstance:(v : haxe.macro.TVar) -> String]
+																									reflaxe.elixir.ElixirCompiler
+																									getOriginalVarName:(v : haxe.macro.TVar) -> String
+																							[Local itemParamTVar(22679):Null<Null<haxe.macro.TVar>>:Null<Null<haxe.macro.TVar>>]
+																					[If:Void]
+																						[Binop:Bool]
+																							[Binop:Bool]
+																								[Binop:Bool]
+																									[Local compiledBody(22683):Null<String>:Null<String>]
+																									!=
+																									[Const:Null<String>] null
+																								&&
+																								[Binop:Bool]
+																									[Local originalItemName(22684):String:String]
+																									!=
+																									[Const:String] null
+																							&&
+																							[Binop:Bool]
+																								[Local elixirItemName(22680):String:String]
+																								!=
+																								[Const:String] null
+																						[Then:Null<String>] [Block:Null<String>]
+																							[Var safeCompiledBody(22685):String] [Local compiledBody(22683):Null<String>:Null<String>]
+																							[Var safeOriginalName(22686):String] [Local originalItemName(22684):String:String]
+																							[Var safeElixirName(22687):String] [Local elixirItemName(22680):String:String]
+																							[Binop:Null<String>]
+																								[Local compiledBody(22683):Null<String>:Null<String>]
+																								=
+																								[Call:String]
+																									[Field:(s : String, sub : String, by : String) -> String]
+																										[TypeExpr StringTools:Class<StringTools>]
+																										[FStatic:(s : String, sub : String, by : String) -> String]
+																											StringTools
+																											replace:(s : String, sub : String, by : String) -> String
+																									[Local safeCompiledBody(22685):String:String]
+																									[Local safeOriginalName(22686):String:String]
+																									[Local safeElixirName(22687):String:String]
+																			[Binop:Bool]
+																				[Field:Bool]
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[FInstance:Bool]
+																						reflaxe.elixir.ElixirCompiler
+																						isInLoopContext:Bool
+																				=
+																				[Local previousContext(22677):Bool:Bool]
+																			[Return:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Binop:String]
+																											[Binop:String]
+																												[Binop:String]
+																													[Binop:String]
+																														[Const:String] "Enum.reduce("
+																														+
+																														[Local objStr(22333):String:String]
+																													+
+																													[Const:String] ", "
+																												+
+																												[Array:Null<String>]
+																													[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																													[Const:Int] 1
+																											+
+																											[Const:String] ", fn "
+																										+
+																										[Local elixirItemName(22680):String:String]
+																									+
+																									[Const:String] ", "
+																								+
+																								[Local elixirAccName(22681):String:String]
+																							+
+																							[Const:String] " -> "
+																						+
+																						[Local compiledBody(22683):Null<String>:Null<String>]
+																					+
+																					[Const:String] " end)"
+																[Else:String] [Block:String]
+																	[Return:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Const:String] "Enum.reduce("
+																								+
+																								[Local objStr(22333):String:String]
+																							+
+																							[Const:String] ", "
+																						+
+																						[Array:Null<String>]
+																							[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																							[Const:Int] 1
+																					+
+																					[Const:String] ", "
+																				+
+																				[Array:Null<String>]
+																					[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																					[Const:Int] 0
+																			+
+																			[Const:String] ")"
+												[Else:String] [Block:String]
+													[Return:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Const:String] "Enum.reduce("
+																				+
+																				[Local objStr(22333):String:String]
+																			+
+																			[Const:String] ", "
+																		+
+																		[Array:Null<String>]
+																			[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																			[Const:Int] 1
+																	+
+																	[Const:String] ", "
+																+
+																[Array:Null<String>]
+																	[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																	[Const:Int] 0
+															+
+															[Const:String] ")"
+										[Else:String] [Block:String] [Local objStr(22333):String:String]
+						[Case:String]
+							[Const:String] "forEach"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 0
+												[Then:String] [Block:String]
+													[Meta:String]
+														:ast(switch (args[0].expr) {
+	case TFunction(func):
+		var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+		return "Enum.each(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";	
+	case _:
+		return "Enum.each(${objStr}, ${compiledArgs[0]})";	
+})
+														[Block:String]
+															[Var `(22688):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:String]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(22688):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 12
+																[Then:String] [Block:String]
+																	[Var `(22689):haxe.macro.TFunc]
+																		[EnumParameter:haxe.macro.TFunc]
+																			[Local `(22688):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TFunction
+																			0
+																	[Block:String]
+																		[Var func(22690):haxe.macro.TFunc] [Local `(22689):haxe.macro.TFunc:haxe.macro.TFunc]
+																		[Block:String]
+																			[Var lambda(22691):reflaxe.elixir.helpers.LambdaResult]
+																				[Call:reflaxe.elixir.helpers.LambdaResult]
+																					[Field:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+																						[FStatic:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																							reflaxe.elixir.helpers.ExpressionCompiler
+																							compileLambdaWithContext:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[Local func(22690):haxe.macro.TFunc:haxe.macro.TFunc]
+																					[Const:String] "item"
+																			[Return:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Const:String] "Enum.each("
+																										+
+																										[Local objStr(22333):String:String]
+																									+
+																									[Const:String] ", fn "
+																								+
+																								[Field:String]
+																									[Local lambda(22691):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																									[FAnon:String] paramName:String
+																							+
+																							[Const:String] " -> "
+																						+
+																						[Field:String]
+																							[Local lambda(22691):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																							[FAnon:String] body:String
+																					+
+																					[Const:String] " end)"
+																[Else:String] [Block:String]
+																	[Return:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "Enum.each("
+																						+
+																						[Local objStr(22333):String:String]
+																					+
+																					[Const:String] ", "
+																				+
+																				[Array:Null<String>]
+																					[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																					[Const:Int] 0
+																			+
+																			[Const:String] ")"
+												[Else:String] [Block:String]
+													[Return:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "Enum.each("
+																		+
+																		[Local objStr(22333):String:String]
+																	+
+																	[Const:String] ", "
+																+
+																[Array:Null<String>]
+																	[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																	[Const:Int] 0
+															+
+															[Const:String] ")"
+										[Else:String] [Block:String] [Const:String] ":ok"
+						[Case:String]
+							[Const:String] "indexOf"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Enum.find_index("
+															+
+															[Local objStr(22333):String:String]
+														+
+														[Const:String] ", &(&1 == "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] "))"
+										[Else:String] [Block:String] [Const:String] "nil"
+						[Case:String]
+							[Const:String] "join"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Enum.join("
+															+
+															[Local objStr(22333):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Enum.join("
+													+
+													[Local objStr(22333):String:String]
+												+
+												[Const:String] ", \"\")"
+						[Case:String]
+							[Const:String] "length"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "length("
+											+
+											[Local objStr(22333):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "map"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+													>
+													[Const:Int] 0
+												[Then:String] [Block:String]
+													[Meta:String]
+														:ast(switch (args[0].expr) {
+	case TFunction(func):
+		var lambda = ExpressionCompiler.compileLambdaWithContext(compiler, func, "item");
+		return "Enum.map(${objStr}, fn ${lambda.paramName} -> ${lambda.body} end)";	
+	case _:
+		return "Enum.map(${objStr}, ${compiledArgs[0]})";	
+})
+														[Block:String]
+															[Var `(22692):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local args(22335):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:String]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(22692):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 12
+																[Then:String] [Block:String]
+																	[Var `(22693):haxe.macro.TFunc]
+																		[EnumParameter:haxe.macro.TFunc]
+																			[Local `(22692):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TFunction
+																			0
+																	[Block:String]
+																		[Var func(22694):haxe.macro.TFunc] [Local `(22693):haxe.macro.TFunc:haxe.macro.TFunc]
+																		[Block:String]
+																			[Var lambda(22695):reflaxe.elixir.helpers.LambdaResult]
+																				[Call:reflaxe.elixir.helpers.LambdaResult]
+																					[Field:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																						[TypeExpr reflaxe.elixir.helpers.ExpressionCompiler:Class<reflaxe.elixir.helpers.ExpressionCompiler>]
+																						[FStatic:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult]
+																							reflaxe.elixir.helpers.ExpressionCompiler
+																							compileLambdaWithContext:(compiler : Dynamic, func : haxe.macro.TFunc, ?defaultParamName : String) -> reflaxe.elixir.helpers.LambdaResult
+																					[Field:reflaxe.elixir.ElixirCompiler]
+																						[Const:reflaxe.elixir.helpers.ArrayMethodCompiler] this
+																						[FInstance:reflaxe.elixir.ElixirCompiler]
+																							reflaxe.elixir.helpers.ArrayMethodCompiler
+																							compiler:reflaxe.elixir.ElixirCompiler
+																					[Local func(22694):haxe.macro.TFunc:haxe.macro.TFunc]
+																					[Const:String] "item"
+																			[Return:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Binop:String]
+																									[Binop:String]
+																										[Const:String] "Enum.map("
+																										+
+																										[Local objStr(22333):String:String]
+																									+
+																									[Const:String] ", fn "
+																								+
+																								[Field:String]
+																									[Local lambda(22695):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																									[FAnon:String] paramName:String
+																							+
+																							[Const:String] " -> "
+																						+
+																						[Field:String]
+																							[Local lambda(22695):reflaxe.elixir.helpers.LambdaResult:reflaxe.elixir.helpers.LambdaResult]
+																							[FAnon:String] body:String
+																					+
+																					[Const:String] " end)"
+																[Else:String] [Block:String]
+																	[Return:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "Enum.map("
+																						+
+																						[Local objStr(22333):String:String]
+																					+
+																					[Const:String] ", "
+																				+
+																				[Array:Null<String>]
+																					[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																					[Const:Int] 0
+																			+
+																			[Const:String] ")"
+												[Else:String] [Block:String]
+													[Return:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "Enum.map("
+																		+
+																		[Local objStr(22333):String:String]
+																	+
+																	[Const:String] ", "
+																+
+																[Array:Null<String>]
+																	[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																	[Const:Int] 0
+															+
+															[Const:String] ")"
+										[Else:String] [Block:String] [Local objStr(22333):String:String]
+						[Case:String]
+							[Const:String] "pop"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "List.last("
+											+
+											[Local objStr(22333):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "push"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Var isSimpleVariable(22696):Bool]
+												[Call:Bool]
+													[Field:(s : String) -> Bool]
+														[New:EReg]
+															EReg
+															[Const:String] "^[a-z_][a-z0-9_]*$"
+															[Const:String] "i"
+														[FInstance:(s : String) -> Bool]
+															EReg
+															match:(s : String) -> Bool
+													[Local objStr(22333):String:String]
+											[If:String]
+												[Local isSimpleVariable(22696):Bool:Bool]
+												[Then:String] [Block:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Binop:String]
+																			[Const:String] ""
+																			+
+																			[Local objStr(22333):String:String]
+																		+
+																		[Const:String] " = "
+																	+
+																	[Local objStr(22333):String:String]
+																+
+																[Const:String] " ++ ["
+															+
+															[Array:Null<String>]
+																[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																[Const:Int] 0
+														+
+														[Const:String] "]"
+												[Else:String] [Block:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] ""
+																	+
+																	[Local objStr(22333):String:String]
+																+
+																[Const:String] " ++ ["
+															+
+															[Array:Null<String>]
+																[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																[Const:Int] 0
+														+
+														[Const:String] "]"
+										[Else:String] [Block:String] [Local objStr(22333):String:String]
+						[Case:String]
+							[Const:String] "reverse"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "Enum.reverse("
+											+
+											[Local objStr(22333):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "shift"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "hd("
+											+
+											[Local objStr(22333):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "sort"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Enum.sort("
+															+
+															[Local objStr(22333):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Enum.sort("
+													+
+													[Local objStr(22333):String:String]
+												+
+												[Const:String] ")"
+						[Case:String]
+							[Const:String] "take"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Enum.take("
+															+
+															[Local objStr(22333):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String] [Local objStr(22333):String:String]
+						[Case:String]
+							[Const:String] "unshift"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "["
+															+
+															[Array:Null<String>]
+																[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+																[Const:Int] 0
+														+
+														[Const:String] " | "
+													+
+													[Local objStr(22333):String:String]
+												+
+												[Const:String] "]"
+										[Else:String] [Block:String] [Local objStr(22333):String:String]
+						[Default:String]
+							[Block:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] ""
+														+
+														[Local objStr(22333):String:String]
+													+
+													[Const:String] "."
+												+
+												[Local methodName(22334):String:String]
+											+
+											[Const:String] "("
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local compiledArgs(22347):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:(sep : String) -> String]
+													Array<Null<String>>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] ")"
+}

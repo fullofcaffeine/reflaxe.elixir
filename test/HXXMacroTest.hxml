@@ -1,6 +1,0 @@
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir/src
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir/std
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir/test
--D reflaxe_runtime
--main test.HXXMacroTest
---interp

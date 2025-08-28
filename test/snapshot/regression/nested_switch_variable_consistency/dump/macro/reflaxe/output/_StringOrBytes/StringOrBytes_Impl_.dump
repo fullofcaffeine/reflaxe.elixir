@@ -1,0 +1,240 @@
+private class reflaxe.output._StringOrBytes.StringOrBytes_Impl_ {
+
+	@:noCompletion
+	static inline function _new[Function:(impl : reflaxe.output.StringOrBytesImpl) -> reflaxe.output.StringOrBytes]
+		[Arg:reflaxe.output.StringOrBytesImpl] [Local impl(13286):reflaxe.output.StringOrBytesImpl]
+		[Block:Dynamic]
+			[Var this(13287):reflaxe.output.StringOrBytesImpl]
+			[Binop:reflaxe.output.StringOrBytesImpl]
+				[Local this(13287):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+				=
+				[Local impl(13286):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+			[Return:Dynamic] [Cast:reflaxe.output.StringOrBytes] [Local this(13287):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+
+	public static inline function data[Function:(this : reflaxe.output.StringOrBytesImpl) -> reflaxe.output.StringOrBytesImpl]
+		[Arg:reflaxe.output.StringOrBytesImpl] [Local this(13301):reflaxe.output.StringOrBytesImpl]
+		[Block:Dynamic] [Return:Dynamic] [Local this(13301):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+
+	@:from
+	public static function fromString[Function:(s : String) -> reflaxe.output.StringOrBytes]
+		[Arg:String] [Local s(13285):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:reflaxe.output.StringOrBytes]
+					[Var impl(13290):reflaxe.output.StringOrBytesImpl]
+						[Call:reflaxe.output.StringOrBytesImpl]
+							[Field:(s : String) -> reflaxe.output.StringOrBytesImpl]
+								[TypeExpr reflaxe.output.StringOrBytesImpl:Enum<reflaxe.output.StringOrBytesImpl>]
+								[FEnum:(s : String) -> reflaxe.output.StringOrBytesImpl]
+									reflaxe.output.StringOrBytesImpl
+									String
+							[Local s(13285):String:String]
+					[Var this(13291):reflaxe.output.StringOrBytesImpl]
+					[Binop:reflaxe.output.StringOrBytesImpl]
+						[Local this(13291):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+						=
+						[Local impl(13290):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+					[Cast:reflaxe.output.StringOrBytes] [Cast:reflaxe.output.StringOrBytesImpl] [Local this(13291):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+
+	@:from
+	public static function fromBytes[Function:(b : haxe.io.Bytes) -> reflaxe.output.StringOrBytes]
+		[Arg:haxe.io.Bytes] [Local b(13292):haxe.io.Bytes]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:reflaxe.output.StringOrBytes]
+					[Var impl(13295):reflaxe.output.StringOrBytesImpl]
+						[Call:reflaxe.output.StringOrBytesImpl]
+							[Field:(b : haxe.io.Bytes) -> reflaxe.output.StringOrBytesImpl]
+								[TypeExpr reflaxe.output.StringOrBytesImpl:Enum<reflaxe.output.StringOrBytesImpl>]
+								[FEnum:(b : haxe.io.Bytes) -> reflaxe.output.StringOrBytesImpl]
+									reflaxe.output.StringOrBytesImpl
+									Bytes
+							[Local b(13292):haxe.io.Bytes:haxe.io.Bytes]
+					[Var this(13296):reflaxe.output.StringOrBytesImpl]
+					[Binop:reflaxe.output.StringOrBytesImpl]
+						[Local this(13296):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+						=
+						[Local impl(13295):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+					[Cast:reflaxe.output.StringOrBytes] [Cast:reflaxe.output.StringOrBytesImpl] [Local this(13296):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+
+	public static function isString[Function:(this : reflaxe.output.StringOrBytesImpl) -> Bool]
+		[Arg:reflaxe.output.StringOrBytesImpl] [Local this(13406):reflaxe.output.StringOrBytesImpl]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (this) {
+	case String(_):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local this(13406):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+							==
+							[Const:Int] 0
+						[Then:Bool] [Block:Bool]
+							[Var `(13408):String]
+								[EnumParameter:String]
+									[Local this(13406):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+									String
+									0
+							[Block:Bool] [Const:Bool] true
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function isBytes[Function:(this : reflaxe.output.StringOrBytesImpl) -> Bool]
+		[Arg:reflaxe.output.StringOrBytesImpl] [Local this(13409):reflaxe.output.StringOrBytesImpl]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (this) {
+	case Bytes(_):
+		true;	
+	case _:
+		false;	
+})
+					[If:Bool]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local this(13409):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+							==
+							[Const:Int] 1
+						[Then:Bool] [Block:Bool]
+							[Var `(13411):haxe.io.Bytes]
+								[EnumParameter:haxe.io.Bytes]
+									[Local this(13409):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+									Bytes
+									0
+							[Block:Bool] [Const:Bool] true
+						[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public static function save[Function:(this : reflaxe.output.StringOrBytesImpl, path : String) -> Void]
+		[Arg:reflaxe.output.StringOrBytesImpl] [Local this(13272):reflaxe.output.StringOrBytesImpl]
+		[Arg:String] [Local path(13273):String]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (this) {
+	case String(s):
+		{
+			File.saveContent(path, s);
+		};	
+	case Bytes(b):
+		{
+			File.saveBytes(path, b);
+		};	
+})
+				[Switch:Void]
+					[Meta:Int]
+						:exhaustive
+						[EnumIndex:Int] [Local this(13272):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+					[Case:Void]
+						[Const:Int] 0
+						[Block:Void]
+							[Var `(13278):String]
+								[EnumParameter:String]
+									[Local this(13272):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+									String
+									0
+							[Block:Void]
+								[Var s(13279):String] [Local `(13278):String:String]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(path : String, content : String) -> Void]
+												[TypeExpr sys.io.File:Class<sys.io.File>]
+												[FStatic:(path : String, content : String) -> Void]
+													sys.io.File
+													saveContent:(path : String, content : String) -> Void
+											[Local path(13273):String:String]
+											[Local s(13279):String:String]
+					[Case:Void]
+						[Const:Int] 1
+						[Block:Void]
+							[Var `(13280):haxe.io.Bytes]
+								[EnumParameter:haxe.io.Bytes]
+									[Local this(13272):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+									Bytes
+									0
+							[Block:Void]
+								[Var b(13281):haxe.io.Bytes] [Local `(13280):haxe.io.Bytes:haxe.io.Bytes]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(path : String, bytes : haxe.io.Bytes) -> Void]
+												[TypeExpr sys.io.File:Class<sys.io.File>]
+												[FStatic:(path : String, bytes : haxe.io.Bytes) -> Void]
+													sys.io.File
+													saveBytes:(path : String, bytes : haxe.io.Bytes) -> Void
+											[Local path(13273):String:String]
+											[Local b(13281):haxe.io.Bytes:haxe.io.Bytes]
+
+	public static function matchesFile[Function:(this : reflaxe.output.StringOrBytesImpl, path : String) -> Bool]
+		[Arg:reflaxe.output.StringOrBytesImpl] [Local this(13262):reflaxe.output.StringOrBytesImpl]
+		[Arg:String] [Local path(13263):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (this) {
+	case String(s):
+		{
+			File.getContent(path) == s;
+		};	
+	case Bytes(b):
+		{
+			File.getBytes(path).compare(b) == 0;
+		};	
+})
+					[Switch:Bool]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local this(13262):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+						[Case:Bool]
+							[Const:Int] 0
+							[Block:Bool]
+								[Var `(13268):String]
+									[EnumParameter:String]
+										[Local this(13262):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+										String
+										0
+								[Block:Bool]
+									[Var s(13269):String] [Local `(13268):String:String]
+									[Block:Bool]
+										[Block:Bool]
+											[Binop:Bool]
+												[Call:String]
+													[Field:(path : String) -> String]
+														[TypeExpr sys.io.File:Class<sys.io.File>]
+														[FStatic:(path : String) -> String]
+															sys.io.File
+															getContent:(path : String) -> String
+													[Local path(13263):String:String]
+												==
+												[Local s(13269):String:String]
+						[Case:Bool]
+							[Const:Int] 1
+							[Block:Bool]
+								[Var `(13270):haxe.io.Bytes]
+									[EnumParameter:haxe.io.Bytes]
+										[Local this(13262):reflaxe.output.StringOrBytesImpl:reflaxe.output.StringOrBytesImpl]
+										Bytes
+										0
+								[Block:Bool]
+									[Var b(13271):haxe.io.Bytes] [Local `(13270):haxe.io.Bytes:haxe.io.Bytes]
+									[Block:Bool]
+										[Block:Bool]
+											[Binop:Bool]
+												[Call:Int]
+													[Field:(other : haxe.io.Bytes) -> Int]
+														[Call:haxe.io.Bytes]
+															[Field:(path : String) -> haxe.io.Bytes]
+																[TypeExpr sys.io.File:Class<sys.io.File>]
+																[FStatic:(path : String) -> haxe.io.Bytes]
+																	sys.io.File
+																	getBytes:(path : String) -> haxe.io.Bytes
+															[Local path(13263):String:String]
+														[FInstance:(other : haxe.io.Bytes) -> Int]
+															haxe.io.Bytes
+															compare:(other : haxe.io.Bytes) -> Int
+													[Local b(13271):haxe.io.Bytes:haxe.io.Bytes]
+												==
+												[Const:Int] 0
+}

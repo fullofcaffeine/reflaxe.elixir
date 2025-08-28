@@ -1,0 +1,594 @@
+class reflaxe.elixir.helpers.EndpointCompiler {
+
+	public static function isEndpointClass[Function:(classType : haxe.macro.ClassType) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local classType(16931):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[Field:haxe.macro.MetaAccess]
+							[Local classType(16931):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+						[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+					[Const:String] ":endpoint"
+
+	public static function compileEndpointModule[Function:(classType : haxe.macro.ClassType, className : String) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(16932):haxe.macro.ClassType]
+		[Arg:String] [Local className(16933):String]
+		[Block:Dynamic]
+			[Var result(16934):StringBuf] [New:StringBuf] StringBuf
+			[Var appName(16935):String]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.AnnotationSystem
+							getEffectiveAppName:(classType : haxe.macro.ClassType) -> String
+					[Local classType(16932):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Var otpApp(16936):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Local appName(16935):String:String]
+			[Var webModule(16937):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Local appName(16935):String:String]
+					+
+					[Const:String] "Web"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local className(16933):String:String]
+					+
+					[Const:String] " do\n"
+			[Var docString(16938):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "HTTP endpoint for "
+						+
+						[Local appName(16935):String:String]
+					+
+					[Const:String] "\n\n"
+			[Binop:String]
+				[Local docString(16938):String:String]
+				+=
+				[Const:String] "Handles incoming HTTP requests and WebSocket connections.\n"
+			[Binop:String]
+				[Local docString(16938):String:String]
+				+=
+				[Const:String] "Configured with LiveView support, session handling, and standard Phoenix plugs."
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<String>]
+						[Local classType(16932):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Null<String>] doc:Null<String>
+					!=
+					[Const:Null<String>] null
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local docString(16938):String:String]
+						=
+						[Field:Null<String>]
+							[Local classType(16932):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:Null<String>] doc:Null<String>
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Call:String]
+						[Field:(docString : String, ?isModuleDoc : Bool, ?indentLevel : Int) -> String]
+							[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+							[FStatic:(docString : String, ?isModuleDoc : Bool, ?indentLevel : Int) -> String]
+								reflaxe.elixir.helpers.FormatHelper
+								formatDoc:(docString : String, ?isModuleDoc : Bool, ?indentLevel : Int) -> String
+						[Local docString(16938):String:String]
+						[Const:Bool] true
+						[Const:Int] 1
+					+
+					[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  use Phoenix.Endpoint, otp_app: :"
+						+
+						[Local otpApp(16936):String:String]
+					+
+					[Const:String] "\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # The session will be stored in the cookie and signed,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # this means its contents can be read but not tampered with.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # Set :encryption_salt if you would also like to encrypt it.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  @session_options [\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    store: :cookie,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    key: \"_"
+						+
+						[Local otpApp(16936):String:String]
+					+
+					[Const:String] "_key\",\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    signing_salt: \""
+						+
+						[Call:String]
+							[Field:() -> String]
+								[TypeExpr reflaxe.elixir.helpers.EndpointCompiler:Class<reflaxe.elixir.helpers.EndpointCompiler>]
+								[FStatic:() -> String]
+									reflaxe.elixir.helpers.EndpointCompiler
+									generateSigningSalt:() -> String
+					+
+					[Const:String] "\"\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  ]\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  socket \"/live\", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # Serve at \"/\" the static files from \"priv/static\" directory.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  #\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # You should set gzip to true if you are running phx.digest\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # when deploying your static files in production.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  plug Plug.Static,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    at: \"/\",\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    from: :"
+						+
+						[Local otpApp(16936):String:String]
+					+
+					[Const:String] ",\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    gzip: false,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    only: ~w(assets fonts images favicon.ico robots.txt)\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # Code reloading can be explicitly enabled under the\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  # :code_reloader configuration of your endpoint.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  if code_reloading? do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    socket \"/phoenix/live_reload/socket\", Phoenix.LiveReloader.Socket\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    plug Phoenix.LiveReloader\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    plug Phoenix.CodeReloader\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :"
+						+
+						[Local otpApp(16936):String:String]
+					+
+					[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  end\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  plug Plug.RequestId\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  plug Plug.Parsers,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    parsers: [:urlencoded, :multipart, :json],\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    pass: [\"*/*\"],\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    json_decoder: Phoenix.json_library()\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  plug Plug.MethodOverride\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  plug Plug.Head\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "  plug Plug.Session, @session_options\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  plug "
+						+
+						[Local webModule(16937):String:String]
+					+
+					[Const:String] ".Router\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(16934):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(16934):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function generateSigningSalt[Function:() -> String]
+		[Block:Dynamic]
+			[Var chars(16939):String] [Const:String] "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+			[Var salt(16940):String] [Const:String] ""
+			[Block:Void]
+				[Block:String]
+					[Binop:String]
+						[Local salt(16940):String:String]
+						+=
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local chars(16939):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Call:Int]
+								[Field:(x : Int) -> Int]
+									[TypeExpr Std:Class<Std>]
+									[FStatic:(x : Int) -> Int]
+										Std
+										random:(x : Int) -> Int
+								[Field:Int]
+									[Local chars(16939):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+				[Block:String]
+					[Binop:String]
+						[Local salt(16940):String:String]
+						+=
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local chars(16939):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Call:Int]
+								[Field:(x : Int) -> Int]
+									[TypeExpr Std:Class<Std>]
+									[FStatic:(x : Int) -> Int]
+										Std
+										random:(x : Int) -> Int
+								[Field:Int]
+									[Local chars(16939):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+				[Block:String]
+					[Binop:String]
+						[Local salt(16940):String:String]
+						+=
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local chars(16939):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Call:Int]
+								[Field:(x : Int) -> Int]
+									[TypeExpr Std:Class<Std>]
+									[FStatic:(x : Int) -> Int]
+										Std
+										random:(x : Int) -> Int
+								[Field:Int]
+									[Local chars(16939):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+				[Block:String]
+					[Binop:String]
+						[Local salt(16940):String:String]
+						+=
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local chars(16939):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Call:Int]
+								[Field:(x : Int) -> Int]
+									[TypeExpr Std:Class<Std>]
+									[FStatic:(x : Int) -> Int]
+										Std
+										random:(x : Int) -> Int
+								[Field:Int]
+									[Local chars(16939):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+				[Block:String]
+					[Binop:String]
+						[Local salt(16940):String:String]
+						+=
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local chars(16939):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Call:Int]
+								[Field:(x : Int) -> Int]
+									[TypeExpr Std:Class<Std>]
+									[FStatic:(x : Int) -> Int]
+										Std
+										random:(x : Int) -> Int
+								[Field:Int]
+									[Local chars(16939):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+				[Block:String]
+					[Binop:String]
+						[Local salt(16940):String:String]
+						+=
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local chars(16939):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Call:Int]
+								[Field:(x : Int) -> Int]
+									[TypeExpr Std:Class<Std>]
+									[FStatic:(x : Int) -> Int]
+										Std
+										random:(x : Int) -> Int
+								[Field:Int]
+									[Local chars(16939):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+				[Block:String]
+					[Binop:String]
+						[Local salt(16940):String:String]
+						+=
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local chars(16939):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Call:Int]
+								[Field:(x : Int) -> Int]
+									[TypeExpr Std:Class<Std>]
+									[FStatic:(x : Int) -> Int]
+										Std
+										random:(x : Int) -> Int
+								[Field:Int]
+									[Local chars(16939):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+				[Block:String]
+					[Binop:String]
+						[Local salt(16940):String:String]
+						+=
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local chars(16939):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Call:Int]
+								[Field:(x : Int) -> Int]
+									[TypeExpr Std:Class<Std>]
+									[FStatic:(x : Int) -> Int]
+										Std
+										random:(x : Int) -> Int
+								[Field:Int]
+									[Local chars(16939):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+			[Return:Dynamic] [Local salt(16940):String:String]
+}

@@ -1,0 +1,1 @@
+typedef haxe.macro.FunctionArg = { ?value : Null<haxe.macro.Expr>, ?type : Null<haxe.macro.ComplexType>, ?opt : Null<Bool>, name : String, ?meta : Null<haxe.macro.Metadata> }

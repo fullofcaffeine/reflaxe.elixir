@@ -1,0 +1,143 @@
+@:structInit
+class reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions {
+
+	@:compilerGenerated @:inheritDoc
+	public function new[Function:(?convertIncrementAndDecrementOperators : Null<Bool>, ?convertNullCoalescing : Null<Bool>, ?setUninitializedVariablesToNull : Null<Bool>, ?wrapFunctionReferencesWithLambda : Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>, ?wrapFunctionMetadata : Null<Array<String>>) -> Void]
+		[Arg:Null<Bool>] [Local convertIncrementAndDecrementOperators(5562):Null<Bool>]
+		[Arg:Null<Bool>] [Local convertNullCoalescing(5561):Null<Bool>]
+		[Arg:Null<Bool>] [Local setUninitializedVariablesToNull(5560):Null<Bool>]
+		[Arg:Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>] [Local wrapFunctionReferencesWithLambda(5559):Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>]
+		[Arg:Null<Array<String>>] [Local wrapFunctionMetadata(5558):Null<Array<String>>]
+		[Block:Void]
+			[Binop:Array<String>]
+				[Field:Array<String>]
+					[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+					[FInstance:Array<String>]
+						reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+						wrapFunctionMetadata:Array<String>
+				=
+				[ArrayDecl:Array<String>]
+					[Const:String] ":native"
+					[Const:String] ":nativeFunctionCode"
+			[Binop:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType]
+				[Field:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType]
+					[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+					[FInstance:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType]
+						reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+						wrapFunctionReferencesWithLambda:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType
+				=
+				[Field:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType]
+					[TypeExpr reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType:Enum<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>]
+					[FEnum:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType]
+						reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType
+						ExternOnly
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+					[FInstance:Bool]
+						reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+						setUninitializedVariablesToNull:Bool
+				=
+				[Const:Bool] false
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+					[FInstance:Bool]
+						reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+						convertNullCoalescing:Bool
+				=
+				[Const:Bool] false
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+					[FInstance:Bool]
+						reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+						convertIncrementAndDecrementOperators:Bool
+				=
+				[Const:Bool] false
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local convertIncrementAndDecrementOperators(5562):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+						[FInstance:Bool]
+							reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+							convertIncrementAndDecrementOperators:Bool
+					=
+					[Local convertIncrementAndDecrementOperators(5562):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local convertNullCoalescing(5561):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+						[FInstance:Bool]
+							reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+							convertNullCoalescing:Bool
+					=
+					[Local convertNullCoalescing(5561):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local setUninitializedVariablesToNull(5560):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+						[FInstance:Bool]
+							reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+							setUninitializedVariablesToNull:Bool
+					=
+					[Local setUninitializedVariablesToNull(5560):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local wrapFunctionReferencesWithLambda(5559):Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>:Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>]
+						!=
+						[Const:Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>] null
+				[Then:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType] [Binop:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType]
+					[Field:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType]
+						[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+						[FInstance:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType]
+							reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+							wrapFunctionReferencesWithLambda:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType
+					=
+					[Local wrapFunctionReferencesWithLambda(5559):Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>:Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local wrapFunctionMetadata(5558):Null<Array<String>>:Null<Array<String>>]
+						!=
+						[Const:Null<Array<String>>] null
+				[Then:Array<String>] [Binop:Array<String>]
+					[Field:Array<String>]
+						[Const:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions] this
+						[FInstance:Array<String>]
+							reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+							wrapFunctionMetadata:Array<String>
+					=
+					[Local wrapFunctionMetadata(5558):Null<Array<String>>:Null<Array<String>>]
+
+	@:value(false)
+	public var convertIncrementAndDecrementOperators:Bool;
+
+	@:value(false)
+	public var convertNullCoalescing:Bool;
+
+	@:value(false)
+	public var setUninitializedVariablesToNull:Bool;
+
+	@:value(ExternOnly)
+	public var wrapFunctionReferencesWithLambda:reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType;
+
+	@:value([":native", ":nativeFunctionCode"])
+	public var wrapFunctionMetadata:Array<String>;
+}

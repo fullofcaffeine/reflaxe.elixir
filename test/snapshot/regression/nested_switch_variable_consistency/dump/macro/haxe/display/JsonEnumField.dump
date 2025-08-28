@@ -1,0 +1,1 @@
+typedef haxe.display.JsonEnumField = { type : haxe.display.JsonType<Dynamic>, pos : haxe.display.JsonPos, params : haxe.display.JsonTypeParameters, name : String, meta : haxe.display.JsonMetadata, index : Int, doc : haxe.display.JsonDoc }

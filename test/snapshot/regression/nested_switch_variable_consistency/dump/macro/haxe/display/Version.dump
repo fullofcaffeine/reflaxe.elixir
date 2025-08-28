@@ -1,0 +1,1 @@
+typedef haxe.display.Version = { ?pre : Null<String>, patch : Int, minor : Int, major : Int, ?build : Null<String> }

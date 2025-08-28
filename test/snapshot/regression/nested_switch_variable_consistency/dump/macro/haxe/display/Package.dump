@@ -1,0 +1,1 @@
+typedef haxe.display.Package = { path : haxe.display.JsonPackagePath }

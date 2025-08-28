@@ -1,0 +1,11 @@
+enum haxe.macro.Type {
+	TMono(t:haxe.macro.Ref<Null<haxe.macro.Type>>);
+	TEnum(t:haxe.macro.Ref<haxe.macro.EnumType>, params:Array<haxe.macro.Type>);
+	TInst(t:haxe.macro.Ref<haxe.macro.ClassType>, params:Array<haxe.macro.Type>);
+	TType(t:haxe.macro.Ref<haxe.macro.DefType>, params:Array<haxe.macro.Type>);
+	TFun(args:Array<{ t : haxe.macro.Type, opt : Bool, name : String }>, ret:haxe.macro.Type);
+	TAnonymous(a:haxe.macro.Ref<haxe.macro.AnonType>);
+	TDynamic(t:Null<haxe.macro.Type>);
+	TLazy(f:() -> haxe.macro.Type);
+	TAbstract(t:haxe.macro.Ref<haxe.macro.AbstractType>, params:Array<haxe.macro.Type>);
+}

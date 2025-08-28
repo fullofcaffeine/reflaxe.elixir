@@ -1,0 +1,1838 @@
+class reflaxe.elixir.ElixirTyper {
+
+	public function new[Function:() -> Void]
+		[Block:Map<String, String>]
+			[Binop:Map<String, String>]
+				[Field:Map<String, String>]
+					[Const:reflaxe.elixir.ElixirTyper] this
+					[FInstance:Map<String, String>]
+						reflaxe.elixir.ElixirTyper
+						typeCache:Map<String, String>
+				=
+				[New:haxe.ds.StringMap<String>] haxe.ds.StringMap<String>
+
+	@:value(new Map())
+	var typeCache:Map<String, String>;
+
+	public function compileType[Function:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+		[Arg:String] [Local haxeType(14708):String]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14709):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local haxeType(14708):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Field:Int]
+							[Local haxeType(14708):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						==
+						[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "term()"
+			[If:Void]
+				[Block:Bool]
+					[Var this(14712):haxe.IMap<String, String>]
+						[Field:Map<String, String>]
+							[Const:reflaxe.elixir.ElixirTyper] this
+							[FInstance:Map<String, String>]
+								reflaxe.elixir.ElixirTyper
+								typeCache:Map<String, String>
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Cast:haxe.ds.StringMap<String>] [Local this(14712):haxe.IMap<String, String>:haxe.IMap<String, String>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<String>
+								exists:(key : String) -> Bool
+						[Local haxeType(14708):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Var cached(14718):Null<String>]
+						[Block:Null<String>]
+							[Var this(14716):haxe.IMap<String, String>]
+								[Field:Map<String, String>]
+									[Const:reflaxe.elixir.ElixirTyper] this
+									[FInstance:Map<String, String>]
+										reflaxe.elixir.ElixirTyper
+										typeCache:Map<String, String>
+							[Call:Null<String>]
+								[Field:(key : String) -> Null<String>]
+									[Cast:haxe.ds.StringMap<String>] [Local this(14716):haxe.IMap<String, String>:haxe.IMap<String, String>]
+									[FInstance:(key : String) -> Null<String>]
+										haxe.ds.StringMap<String>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local haxeType(14708):String:String]
+					[Return:Dynamic]
+						[If:String]
+							[Binop:Bool]
+								[Local cached(14718):Null<String>:Null<String>]
+								!=
+								[Const:Null<String>] null
+							[Then:Null<String>] [Block:Null<String>] [Local cached(14718):Null<String>:Null<String>]
+							[Else:String] [Block:String] [Const:String] "any()"
+			[Var result(14811):String]
+				[Call:String]
+					[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+						[Const:reflaxe.elixir.ElixirTyper] this
+						[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+							reflaxe.elixir.ElixirTyper
+							compileTypeInternal:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+					[Local haxeType(14708):String:String]
+					[Local context(14709):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+			[Block:Void]
+				[Var this(14814):haxe.IMap<String, String>]
+					[Field:Map<String, String>]
+						[Const:reflaxe.elixir.ElixirTyper] this
+						[FInstance:Map<String, String>]
+							reflaxe.elixir.ElixirTyper
+							typeCache:Map<String, String>
+				[Call:Void]
+					[Field:(key : String, value : String) -> Void]
+						[Cast:haxe.ds.StringMap<String>] [Local this(14814):haxe.IMap<String, String>:haxe.IMap<String, String>]
+						[FInstance:(key : String, value : String) -> Void]
+							haxe.ds.StringMap<String>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Local haxeType(14708):String:String]
+					[Local result(14811):String:String]
+			[Return:Dynamic] [Local result(14811):String:String]
+
+	function compileTypeInternal[Function:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+		[Arg:String] [Local haxeType(14719):String]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14720):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local haxeType(14719):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "Null<"
+						[Const:Null<Int>] null
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var innerType(14724):String]
+						[Call:String]
+							[Field:(genericType : String) -> String]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(genericType : String) -> String]
+									reflaxe.elixir.ElixirTyper
+									extractGenericType:(genericType : String) -> String
+							[Local haxeType(14719):String:String]
+					[Var innerElixirType(14725):String]
+						[Call:String]
+							[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+									reflaxe.elixir.ElixirTyper
+									compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+							[Local innerType(14724):String:String]
+							[Local context(14720):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Local innerElixirType(14725):String:String]
+							+
+							[Const:String] " | nil"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local haxeType(14719):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "Array<"
+						[Const:Null<Int>] null
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var elementType(14726):String]
+						[Call:String]
+							[Field:(genericType : String) -> String]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(genericType : String) -> String]
+									reflaxe.elixir.ElixirTyper
+									extractGenericType:(genericType : String) -> String
+							[Local haxeType(14719):String:String]
+					[Var elementElixirType(14727):String]
+						[Call:String]
+							[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+									reflaxe.elixir.ElixirTyper
+									compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+							[Local elementType(14726):String:String]
+							[Local context(14720):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "list("
+								+
+								[Local elementElixirType(14727):String:String]
+							+
+							[Const:String] ")"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local haxeType(14719):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "Map<"
+						[Const:Null<Int>] null
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var typeParams(14735):{ value : String, key : String }]
+						[Call:{ value : String, key : String }]
+							[Field:(mapType : String) -> { value : String, key : String }]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(mapType : String) -> { value : String, key : String }]
+									reflaxe.elixir.ElixirTyper
+									extractMapTypes:(mapType : String) -> { value : String, key : String }
+							[Local haxeType(14719):String:String]
+					[Var keyType(14736):String]
+						[Call:String]
+							[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+									reflaxe.elixir.ElixirTyper
+									compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+							[Field:String]
+								[Local typeParams(14735):{ value : String, key : String }:{ value : String, key : String }]
+								[FAnon:String] key:String
+							[Local context(14720):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+					[Var valueType(14737):String]
+						[Call:String]
+							[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+									reflaxe.elixir.ElixirTyper
+									compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+							[Field:String]
+								[Local typeParams(14735):{ value : String, key : String }:{ value : String, key : String }]
+								[FAnon:String] value:String
+							[Local context(14720):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "%{"
+										+
+										[Local keyType(14736):String:String]
+									+
+									[Const:String] " => "
+								+
+								[Local valueType(14737):String:String]
+							+
+							[Const:String] "}"
+			[If:Void]
+				[Block:Bool]
+					[Var this(14740):haxe.IMap<String, String>]
+						[Field:Map<String, String>]
+							[TypeExpr reflaxe.elixir.ElixirTyper:Class<reflaxe.elixir.ElixirTyper>]
+							[FStatic:Map<String, String>]
+								reflaxe.elixir.ElixirTyper
+								phoenixTypes:Map<String, String>
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Cast:haxe.ds.StringMap<String>] [Local this(14740):haxe.IMap<String, String>:haxe.IMap<String, String>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<String>
+								exists:(key : String) -> Bool
+						[Local haxeType(14719):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Var phoenixType(14746):Null<String>]
+						[Block:Null<String>]
+							[Var this(14744):haxe.IMap<String, String>]
+								[Field:Map<String, String>]
+									[TypeExpr reflaxe.elixir.ElixirTyper:Class<reflaxe.elixir.ElixirTyper>]
+									[FStatic:Map<String, String>]
+										reflaxe.elixir.ElixirTyper
+										phoenixTypes:Map<String, String>
+							[Call:Null<String>]
+								[Field:(key : String) -> Null<String>]
+									[Cast:haxe.ds.StringMap<String>] [Local this(14744):haxe.IMap<String, String>:haxe.IMap<String, String>]
+									[FInstance:(key : String) -> Null<String>]
+										haxe.ds.StringMap<String>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local haxeType(14719):String:String]
+					[Return:Dynamic]
+						[If:String]
+							[Binop:Bool]
+								[Local phoenixType(14746):Null<String>:Null<String>]
+								!=
+								[Const:Null<String>] null
+							[Then:Null<String>] [Block:Null<String>] [Local phoenixType(14746):Null<String>:Null<String>]
+							[Else:String] [Block:String] [Const:String] "any()"
+			[If:Void]
+				[Block:Bool]
+					[Var this(14749):haxe.IMap<String, String>]
+						[Field:Map<String, String>]
+							[TypeExpr reflaxe.elixir.ElixirTyper:Class<reflaxe.elixir.ElixirTyper>]
+							[FStatic:Map<String, String>]
+								reflaxe.elixir.ElixirTyper
+								ectoTypes:Map<String, String>
+					[Call:Bool]
+						[Field:(key : String) -> Bool]
+							[Cast:haxe.ds.StringMap<String>] [Local this(14749):haxe.IMap<String, String>:haxe.IMap<String, String>]
+							[FInstance:(key : String) -> Bool]
+								haxe.ds.StringMap<String>
+								exists:(key : String) -> Bool
+						[Local haxeType(14719):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Var ectoType(14755):Null<String>]
+						[Block:Null<String>]
+							[Var this(14753):haxe.IMap<String, String>]
+								[Field:Map<String, String>]
+									[TypeExpr reflaxe.elixir.ElixirTyper:Class<reflaxe.elixir.ElixirTyper>]
+									[FStatic:Map<String, String>]
+										reflaxe.elixir.ElixirTyper
+										ectoTypes:Map<String, String>
+							[Call:Null<String>]
+								[Field:(key : String) -> Null<String>]
+									[Cast:haxe.ds.StringMap<String>] [Local this(14753):haxe.IMap<String, String>:haxe.IMap<String, String>]
+									[FInstance:(key : String) -> Null<String>]
+										haxe.ds.StringMap<String>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local haxeType(14719):String:String]
+					[Return:Dynamic]
+						[If:String]
+							[Binop:Bool]
+								[Local ectoType(14755):Null<String>:Null<String>]
+								!=
+								[Const:Null<String>] null
+							[Then:Null<String>] [Block:Null<String>] [Local ectoType(14755):Null<String>:Null<String>]
+							[Else:String] [Block:String] [Const:String] "any()"
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (haxeType) {
+	case "Int":
+		"integer()";	
+	case "Float":
+		"float()";	
+	case "Bool":
+		"boolean()";	
+	case "String":
+		"String.t()";	
+	case "Void":
+		"nil";	
+	case "Dynamic":
+		"term()";	
+	case _:
+		handleComplexType(haxeType, context);	
+})
+					[Switch:String]
+						[Local haxeType(14719):String:String]
+						[Case:String]
+							[Const:String] "Bool"
+							[Block:String] [Block:String] [Const:String] "boolean()"
+						[Case:String]
+							[Const:String] "Dynamic"
+							[Block:String] [Block:String] [Const:String] "term()"
+						[Case:String]
+							[Const:String] "Float"
+							[Block:String] [Block:String] [Const:String] "float()"
+						[Case:String]
+							[Const:String] "Int"
+							[Block:String] [Block:String] [Const:String] "integer()"
+						[Case:String]
+							[Const:String] "String"
+							[Block:String] [Block:String] [Const:String] "String.t()"
+						[Case:String]
+							[Const:String] "Void"
+							[Block:String] [Block:String] [Const:String] "nil"
+						[Default:String]
+							[Block:String]
+								[Call:String]
+									[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+										[Const:reflaxe.elixir.ElixirTyper] this
+										[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+											reflaxe.elixir.ElixirTyper
+											handleComplexType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+									[Local haxeType(14719):String:String]
+									[Local context(14720):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+
+	@:value({ indentLevel : 1 })
+	public function generateFunctionSpec[Function:(funcName : String, paramTypes : Array<String>, returnType : String, ?context : Null<reflaxe.elixir.TypeContext>, ?indentLevel : Int) -> String]
+		[Arg:String] [Local funcName(14817):String]
+		[Arg:Array<String>] [Local paramTypes(14818):Array<String>]
+		[Arg:String] [Local returnType(14819):String]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14820):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Arg:Int]
+			[Local indentLevel(14821):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var `this(14824):reflaxe.elixir.ElixirTyper] [Const:reflaxe.elixir.ElixirTyper] this
+			[Var elixirFuncName(14822):String]
+				[Call:String]
+					[Field:(haxeName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(haxeName : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							getElixirFunctionName:(haxeName : String) -> String
+					[Local funcName(14817):String:String]
+			[Var elixirParamTypes(14833):Array<String>]
+				[Block:Array<String>]
+					[Var `(14828):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(14829):Int] [Const:Int] 0
+						[Var `(14830):Array<String>] [Local paramTypes(14818):Array<String>:Array<String>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(14829):Int:Int]
+								<
+								[Field:Int]
+									[Local `(14830):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var v(14831):String]
+									[Array:String]
+										[Local `(14830):Array<String>:Array<String>]
+										[Local `(14829):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(14829):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local `(14828):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Function:(type : String) -> String]
+											[Arg:String] [Local type(14832):String]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Call:String]
+														[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+															[Local `this(14824):reflaxe.elixir.ElixirTyper:reflaxe.elixir.ElixirTyper]
+															[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																reflaxe.elixir.ElixirTyper
+																compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+														[Local type(14832):String:String]
+														[Local context(14820):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+										[Local v(14831):String:String]
+					[Local `(14828):Array<String>:Array<String>]
+			[Var elixirReturnType(14834):String]
+				[Call:String]
+					[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+						[Const:reflaxe.elixir.ElixirTyper] this
+						[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+							reflaxe.elixir.ElixirTyper
+							compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+					[Local returnType(14819):String:String]
+					[Local context(14820):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(funcName : String, paramTypes : Array<String>, returnType : String, ?indentLevel : Int) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(funcName : String, paramTypes : Array<String>, returnType : String, ?indentLevel : Int) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							formatSpec:(funcName : String, paramTypes : Array<String>, returnType : String, ?indentLevel : Int) -> String
+					[Local elixirFuncName(14822):String:String]
+					[Local elixirParamTypes(14833):Array<String>:Array<String>]
+					[Local elixirReturnType(14834):String:String]
+					[Local indentLevel(14821):Int:Int]
+
+	@:value({ indentLevel : 1 })
+	public function generateFunctionOverloadSpecs[Function:(funcName : String, overloads : Array<{ returns : String, params : Array<String> }>, ?context : Null<reflaxe.elixir.TypeContext>, ?indentLevel : Int) -> String]
+		[Arg:String] [Local funcName(14835):String]
+		[Arg:Array<{ returns : String, params : Array<String> }>] [Local overloads(14836):Array<{ returns : String, params : Array<String> }>]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14837):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Arg:Int]
+			[Local indentLevel(14838):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var specs(14839):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(14841):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14841):Int:Int]
+						<
+						[Field:Int]
+							[Local overloads(14836):Array<{ returns : String, params : Array<String> }>:Array<{ returns : String, params : Array<String> }>]
+							[FInstance:Int]
+								Array<{ returns : String, params : Array<String> }>
+								length:Int
+					[Block:Void]
+						[Var signature(14840):{ returns : String, params : Array<String> }]
+							[Array:{ returns : String, params : Array<String> }]
+								[Local overloads(14836):Array<{ returns : String, params : Array<String> }>:Array<{ returns : String, params : Array<String> }>]
+								[Local `(14841):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14841):Int:Int]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local specs(14839):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Call:String]
+								[Field:(funcName : String, paramTypes : Array<String>, returnType : String, ?context : Null<reflaxe.elixir.TypeContext>, ?indentLevel : Int) -> String]
+									[Const:reflaxe.elixir.ElixirTyper] this
+									[FInstance:(funcName : String, paramTypes : Array<String>, returnType : String, ?context : Null<reflaxe.elixir.TypeContext>, ?indentLevel : Int) -> String]
+										reflaxe.elixir.ElixirTyper
+										generateFunctionSpec:(funcName : String, paramTypes : Array<String>, returnType : String, ?context : Null<reflaxe.elixir.TypeContext>, ?indentLevel : Int) -> String
+								[Local funcName(14835):String:String]
+								[Field:Array<String>]
+									[Local signature(14840):{ returns : String, params : Array<String> }:{ returns : String, params : Array<String> }]
+									[FAnon:Array<String>] params:Array<String>
+								[Field:String]
+									[Local signature(14840):{ returns : String, params : Array<String> }:{ returns : String, params : Array<String> }]
+									[FAnon:String] returns:String
+								[Local context(14837):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+								[Local indentLevel(14838):Int:Int]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local specs(14839):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+
+	@:value({ indentLevel : 1 })
+	public function generateTypeDefinition[Function:(typeName : String, fields : Array<{ type : String, name : String }>, ?context : Null<reflaxe.elixir.TypeContext>, ?indentLevel : Int) -> String]
+		[Arg:String] [Local typeName(14842):String]
+		[Arg:Array<{ type : String, name : String }>] [Local fields(14843):Array<{ type : String, name : String }>]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14844):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Arg:Int]
+			[Local indentLevel(14845):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var baseIndent(14846):String]
+				[Call:String]
+					[Field:(line : String, ?levels : Int) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(line : String, ?levels : Int) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							indent:(line : String, ?levels : Int) -> String
+					[Const:String] ""
+					[Local indentLevel(14845):Int:Int]
+			[Var fieldIndent(14847):String]
+				[Call:String]
+					[Field:(line : String, ?levels : Int) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(line : String, ?levels : Int) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							indent:(line : String, ?levels : Int) -> String
+					[Const:String] ""
+					[Binop:Int]
+						[Local indentLevel(14845):Int:Int]
+						+
+						[Const:Int] 1
+			[Var result(14848):String]
+				[Binop:String]
+					[Local baseIndent(14846):String:String]
+					+
+					[Const:String] "@type t() :: %__MODULE__{\n"
+			[Block:Void]
+				[Var `(14854):Int] [Const:Int] 0
+				[Var `(14855):Int]
+					[Field:Int]
+						[Local fields(14843):Array<{ type : String, name : String }>:Array<{ type : String, name : String }>]
+						[FInstance:Int]
+							Array<{ type : String, name : String }>
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14854):Int:Int]
+						<
+						[Local `(14855):Int:Int]
+					[Block:String]
+						[Var i(14849):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(14854):Int:Int]
+						[Var field(14850):{ type : String, name : String }]
+							[Array:{ type : String, name : String }]
+								[Local fields(14843):Array<{ type : String, name : String }>:Array<{ type : String, name : String }>]
+								[Local i(14849):Int:Int]
+						[Var fieldName(14851):String]
+							[Call:String]
+								[Field:(camelCase : String) -> String]
+									[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+									[FStatic:(camelCase : String) -> String]
+										reflaxe.elixir.helpers.NamingHelper
+										toSnakeCase:(camelCase : String) -> String
+								[Field:String]
+									[Local field(14850):{ type : String, name : String }:{ type : String, name : String }]
+									[FAnon:String] name:String
+						[Var fieldType(14852):String]
+							[Call:String]
+								[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+									[Const:reflaxe.elixir.ElixirTyper] this
+									[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+										reflaxe.elixir.ElixirTyper
+										compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+								[Field:String]
+									[Local field(14850):{ type : String, name : String }:{ type : String, name : String }]
+									[FAnon:String] type:String
+								[Local context(14844):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+						[Var comma(14853):String]
+							[If:String]
+								[Parenthesis:Bool]
+									[Binop:Bool]
+										[Local i(14849):Int:Int]
+										<
+										[Binop:Int]
+											[Field:Int]
+												[Local fields(14843):Array<{ type : String, name : String }>:Array<{ type : String, name : String }>]
+												[FInstance:Int]
+													Array<{ type : String, name : String }>
+													length:Int
+											-
+											[Const:Int] 1
+								[Then:String] [Block:String] [Const:String] ","
+								[Else:String] [Block:String] [Const:String] ""
+						[Binop:String]
+							[Local result(14848):String:String]
+							+=
+							[Binop:String]
+								[Local fieldIndent(14847):String:String]
+								+
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Local fieldName(14851):String:String]
+												+
+												[Const:String] ": "
+											+
+											[Local fieldType(14852):String:String]
+										+
+										[Local comma(14853):String:String]
+									+
+									[Const:String] "\n"
+			[Binop:String]
+				[Local result(14848):String:String]
+				+=
+				[Binop:String]
+					[Local baseIndent(14846):String:String]
+					+
+					[Const:String] "}"
+			[Return:Dynamic] [Local result(14848):String:String]
+
+	@:value({ indentLevel : 1 })
+	public function generateUnionTypeDefinition[Function:(typeName : String, variants : Array<String>, ?context : Null<reflaxe.elixir.TypeContext>, ?indentLevel : Int) -> String]
+		[Arg:String] [Local typeName(14856):String]
+		[Arg:Array<String>] [Local variants(14857):Array<String>]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14858):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Arg:Int]
+			[Local indentLevel(14859):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var baseIndent(14860):String]
+				[Call:String]
+					[Field:(line : String, ?levels : Int) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(line : String, ?levels : Int) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							indent:(line : String, ?levels : Int) -> String
+					[Const:String] ""
+					[Local indentLevel(14859):Int:Int]
+			[Var variantIndent(14861):String]
+				[Call:String]
+					[Field:(line : String, ?levels : Int) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(line : String, ?levels : Int) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							indent:(line : String, ?levels : Int) -> String
+					[Const:String] ""
+					[Binop:Int]
+						[Local indentLevel(14859):Int:Int]
+						+
+						[Const:Int] 1
+			[Var result(14862):String]
+				[Binop:String]
+					[Local baseIndent(14860):String:String]
+					+
+					[Const:String] "@type t() ::\n"
+			[Block:Void]
+				[Var `(14867):Int] [Const:Int] 0
+				[Var `(14868):Int]
+					[Field:Int]
+						[Local variants(14857):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14867):Int:Int]
+						<
+						[Local `(14868):Int:Int]
+					[Block:String]
+						[Var i(14863):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(14867):Int:Int]
+						[Var variant(14864):String]
+							[Array:String]
+								[Local variants(14857):Array<String>:Array<String>]
+								[Local i(14863):Int:Int]
+						[Var elixirType(14865):String]
+							[Call:String]
+								[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+									[Const:reflaxe.elixir.ElixirTyper] this
+									[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+										reflaxe.elixir.ElixirTyper
+										compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+								[Local variant(14864):String:String]
+								[Local context(14858):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+						[Var separator(14866):String]
+							[If:String]
+								[Parenthesis:Bool]
+									[Binop:Bool]
+										[Local i(14863):Int:Int]
+										<
+										[Binop:Int]
+											[Field:Int]
+												[Local variants(14857):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+											-
+											[Const:Int] 1
+								[Then:String] [Block:String] [Const:String] " |"
+								[Else:String] [Block:String] [Const:String] ""
+						[Binop:String]
+							[Local result(14862):String:String]
+							+=
+							[Binop:String]
+								[Local variantIndent(14861):String:String]
+								+
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Local elixirType(14865):String:String]
+										+
+										[Local separator(14866):String:String]
+									+
+									[Const:String] "\n"
+			[Return:Dynamic] [Local result(14862):String:String]
+
+	@:value({ indentLevel : 1 })
+	public function generateOpaqueTypeDefinition[Function:(typeName : String, baseType : String, ?context : Null<reflaxe.elixir.TypeContext>, ?indentLevel : Int) -> String]
+		[Arg:String] [Local typeName(14869):String]
+		[Arg:String] [Local baseType(14870):String]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14871):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Arg:Int]
+			[Local indentLevel(14872):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var baseIndent(14873):String]
+				[Call:String]
+					[Field:(line : String, ?levels : Int) -> String]
+						[TypeExpr reflaxe.elixir.helpers.FormatHelper:Class<reflaxe.elixir.helpers.FormatHelper>]
+						[FStatic:(line : String, ?levels : Int) -> String]
+							reflaxe.elixir.helpers.FormatHelper
+							indent:(line : String, ?levels : Int) -> String
+					[Const:String] ""
+					[Local indentLevel(14872):Int:Int]
+			[Var elixirBaseType(14874):String]
+				[Call:String]
+					[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+						[Const:reflaxe.elixir.ElixirTyper] this
+						[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+							reflaxe.elixir.ElixirTyper
+							compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+					[Local baseType(14870):String:String]
+					[Local context(14871):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+			[Return:Dynamic]
+				[Binop:String]
+					[Local baseIndent(14873):String:String]
+					+
+					[Binop:String]
+						[Const:String] "@opaque t() :: "
+						+
+						[Local elixirBaseType(14874):String:String]
+
+	public function isValidElixirType[Function:(typeStr : String) -> Bool]
+		[Arg:String] [Local typeStr(14875):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local typeStr(14875):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Field:Int]
+							[Local typeStr(14875):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						==
+						[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Var validPatterns(14876):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "integer()"
+					[Const:String] "float()"
+					[Const:String] "boolean()"
+					[Const:String] "String.t()"
+					[Const:String] "nil"
+					[Const:String] "list("
+					[Const:String] "%{"
+					[Const:String] " | "
+					[Const:String] "term()"
+					[Const:String] "any()"
+					[Const:String] "atom()"
+			[Block:Void]
+				[Var `(14878):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14878):Int:Int]
+						<
+						[Field:Int]
+							[Local validPatterns(14876):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var pattern(14877):String]
+							[Array:String]
+								[Local validPatterns(14876):Array<String>:Array<String>]
+								[Local `(14878):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14878):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local typeStr(14875):String:String]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Local pattern(14877):String:String]
+									[Const:Null<Int>] null
+								>=
+								[Const:Int] 0
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	public function isHaxeType[Function:(typeStr : String) -> Bool]
+		[Arg:String] [Local typeStr(14879):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local typeStr(14879):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Field:Int]
+							[Local typeStr(14879):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						==
+						[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Var haxePatterns(14880):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "Array<"
+					[Const:String] "Map<"
+					[Const:String] "Null<"
+					[Const:String] "Int"
+					[Const:String] "Float"
+					[Const:String] "Bool"
+					[Const:String] "String"
+					[Const:String] "Void"
+					[Const:String] "Dynamic"
+			[Block:Void]
+				[Var `(14882):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14882):Int:Int]
+						<
+						[Field:Int]
+							[Local haxePatterns(14880):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var pattern(14881):String]
+							[Array:String]
+								[Local haxePatterns(14880):Array<String>:Array<String>]
+								[Local `(14882):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14882):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local typeStr(14879):String:String]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Local pattern(14881):String:String]
+									[Const:Null<Int>] null
+								>=
+								[Const:Int] 0
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local typeStr(14879):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "String.t()"
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local typeStr(14879):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "integer()"
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic] [Const:Bool] true
+
+	function extractGenericType[Function:(genericType : String) -> String]
+		[Arg:String] [Local genericType(14721):String]
+		[Block:Dynamic]
+			[Var startIndex(14722):Int]
+				[Binop:Int]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local genericType(14721):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "<"
+						[Const:Null<Int>] null
+					+
+					[Const:Int] 1
+			[Var endIndex(14723):Int]
+				[Call:Int]
+					[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+						[Local genericType(14721):String:String]
+						[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+							String
+							lastIndexOf:(str : String, ?startIndex : Null<Int>) -> Int
+					[Const:String] ">"
+					[Const:Null<Int>] null
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local startIndex(14722):Int:Int]
+						>
+						[Const:Int] 0
+					&&
+					[Binop:Bool]
+						[Local endIndex(14723):Int:Int]
+						>
+						[Local startIndex(14722):Int:Int]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local genericType(14721):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Local startIndex(14722):Int:Int]
+							[Local endIndex(14723):Int:Int]
+			[Return:Dynamic] [Const:String] "any()"
+
+	function extractMapTypes[Function:(mapType : String) -> { value : String, key : String }]
+		[Arg:String] [Local mapType(14728):String]
+		[Block:Dynamic]
+			[Var startIndex(14729):Int]
+				[Binop:Int]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local mapType(14728):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "<"
+						[Const:Null<Int>] null
+					+
+					[Const:Int] 1
+			[Var endIndex(14730):Int]
+				[Call:Int]
+					[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+						[Local mapType(14728):String:String]
+						[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+							String
+							lastIndexOf:(str : String, ?startIndex : Null<Int>) -> Int
+					[Const:String] ">"
+					[Const:Null<Int>] null
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local startIndex(14729):Int:Int]
+						>
+						[Const:Int] 0
+					&&
+					[Binop:Bool]
+						[Local endIndex(14730):Int:Int]
+						>
+						[Local startIndex(14729):Int:Int]
+				[Then:Void] [Block:Void]
+					[Var typeParams(14731):String]
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local mapType(14728):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Local startIndex(14729):Int:Int]
+							[Local endIndex(14730):Int:Int]
+					[Var commaIndex(14732):Int]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local typeParams(14731):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] ","
+							[Const:Null<Int>] null
+					[If:Void]
+						[Binop:Bool]
+							[Local commaIndex(14732):Int:Int]
+							>
+							[Const:Int] 0
+						[Then:Dynamic] [Block:Dynamic]
+							[Var keyType(14733):String]
+								[Call:String]
+									[Field:(s : String) -> String]
+										[TypeExpr StringTools:{ Statics StringTools }]
+										[FStatic:(s : String) -> String]
+											StringTools
+											trim:(s : String) -> String
+									[Call:String]
+										[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+											[Local typeParams(14731):String:String]
+											[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+												String
+												substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+										[Const:Int] 0
+										[Local commaIndex(14732):Int:Int]
+							[Var valueType(14734):String]
+								[Call:String]
+									[Field:(s : String) -> String]
+										[TypeExpr StringTools:{ Statics StringTools }]
+										[FStatic:(s : String) -> String]
+											StringTools
+											trim:(s : String) -> String
+									[Call:String]
+										[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+											[Local typeParams(14731):String:String]
+											[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+												String
+												substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+										[Binop:Int]
+											[Local commaIndex(14732):Int:Int]
+											+
+											[Const:Int] 1
+										[Const:Null<Int>] null
+							[Return:Dynamic]
+								[ObjectDecl:{ value : String, key : String }]
+									key: [Local keyType(14733):String:String]
+									value: [Local valueType(14734):String:String]
+			[Return:Dynamic]
+				[ObjectDecl:{ value : String, key : String }]
+					key: [Const:String] "any()"
+					value: [Const:String] "any()"
+
+	function handleComplexType[Function:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+		[Arg:String] [Local haxeType(14756):String]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14757):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local haxeType(14756):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "->"
+						[Const:Null<Int>] null
+					>
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(funcType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(funcType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+									reflaxe.elixir.ElixirTyper
+									compileFunctionType:(funcType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+							[Local haxeType(14756):String:String]
+							[Local context(14757):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local haxeType(14756):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "{"
+							[Const:Null<Int>] null
+						==
+						[Const:Int] 0
+					&&
+					[Binop:Bool]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local haxeType(14756):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "}"
+							[Const:Null<Int>] null
+						>
+						[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(tupleType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(tupleType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+									reflaxe.elixir.ElixirTyper
+									compileTupleType:(tupleType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+							[Local haxeType(14756):String:String]
+							[Local context(14757):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local haxeType(14756):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Const:String] "<"
+							[Const:Null<Int>] null
+						>
+						[Const:Int] 0
+					&&
+					[Unop:Bool]
+						!
+						Prefix
+						[Call:Bool]
+							[Field:(genericType : String) -> Bool]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(genericType : String) -> Bool]
+									reflaxe.elixir.ElixirTyper
+									isBuiltinGeneric:(genericType : String) -> Bool
+							[Local haxeType(14756):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(genericType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+								[Const:reflaxe.elixir.ElixirTyper] this
+								[FInstance:(genericType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+									reflaxe.elixir.ElixirTyper
+									compileGenericType:(genericType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+							[Local haxeType(14756):String:String]
+							[Local context(14757):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String) -> Bool]
+						[New:EReg]
+							EReg
+							[Const:String] "^[A-Z]"
+							[Const:String] ""
+						[FInstance:(s : String) -> Bool]
+							EReg
+							match:(s : String) -> Bool
+					[Local haxeType(14756):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Var moduleName(14810):String]
+						[Call:String]
+							[Field:(haxeName : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(haxeName : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									getElixirModuleName:(haxeName : String) -> String
+							[Local haxeType(14756):String:String]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Local moduleName(14810):String:String]
+							+
+							[Const:String] ".t()"
+			[If:Void]
+				[Call:Bool]
+					[Field:(s : String) -> Bool]
+						[New:EReg]
+							EReg
+							[Const:String] "^[a-z]"
+							[Const:String] ""
+						[FInstance:(s : String) -> Bool]
+							EReg
+							match:(s : String) -> Bool
+					[Local haxeType(14756):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[If:Void]
+						[Binop:Bool]
+							[Call:Int]
+								[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+									[Local haxeType(14756):String:String]
+									[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+										String
+										indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+								[Const:String] "("
+								[Const:Null<Int>] null
+							>
+							[Const:Int] -1
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local haxeType(14756):String:String]
+					[Return:Dynamic]
+						[Binop:String]
+							[Const:String] ":"
+							+
+							[Local haxeType(14756):String:String]
+			[Return:Dynamic] [Const:String] "term()"
+
+	function compileFunctionType[Function:(funcType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+		[Arg:String] [Local funcType(14758):String]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14759):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Block:Dynamic]
+			[Var `this(14764):reflaxe.elixir.ElixirTyper] [Const:reflaxe.elixir.ElixirTyper] this
+			[Var arrowIndex(14760):Int]
+				[Call:Int]
+					[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+						[Local funcType(14758):String:String]
+						[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+							String
+							indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+					[Const:String] "->"
+					[Const:Null<Int>] null
+			[If:Void]
+				[Binop:Bool]
+					[Local arrowIndex(14760):Int:Int]
+					<
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "function()"
+			[Var paramsPart(14761):String]
+				[Call:String]
+					[Field:(s : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String) -> String]
+							StringTools
+							trim:(s : String) -> String
+					[Call:String]
+						[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+							[Local funcType(14758):String:String]
+							[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								String
+								substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+						[Const:Int] 0
+						[Local arrowIndex(14760):Int:Int]
+			[Var returnPart(14762):String]
+				[Call:String]
+					[Field:(s : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String) -> String]
+							StringTools
+							trim:(s : String) -> String
+					[Call:String]
+						[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+							[Local funcType(14758):String:String]
+							[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								String
+								substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+						[Binop:Int]
+							[Local arrowIndex(14760):Int:Int]
+							+
+							[Const:Int] 2
+						[Const:Null<Int>] null
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local paramsPart(14761):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "("
+						[Const:Null<Int>] null
+					==
+					[Const:Int] 0
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local paramsPart(14761):String:String]
+						=
+						[Call:String]
+							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+								[Local paramsPart(14761):String:String]
+								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									String
+									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+							[Const:Int] 1
+							[Binop:Int]
+								[Field:Int]
+									[Local paramsPart(14761):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+								-
+								[Const:Int] 1
+			[Var paramTypes(14773):Array<String>]
+				[Block:Array<String>]
+					[Var _this(14766):Array<String>]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local paramsPart(14761):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] ","
+					[Block:Array<String>]
+						[Var `(14768):Array<String>] [ArrayDecl:Array<String>]
+						[Block:Void]
+							[Var `(14769):Int] [Const:Int] 0
+							[Var `(14770):Array<String>] [Local _this(14766):Array<String>:Array<String>]
+							[While:Void]
+								[Binop:Bool]
+									[Local `(14769):Int:Int]
+									<
+									[Field:Int]
+										[Local `(14770):Array<String>:Array<String>]
+										[FInstance:Int]
+											Array<String>
+											length:Int
+								[Block:Void]
+									[Var v(14771):String]
+										[Array:String]
+											[Local `(14770):Array<String>:Array<String>]
+											[Local `(14769):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(14769):Int:Int]
+									[Call:Int]
+										[Field:(x : String) -> Int]
+											[Local `(14768):Array<String>:Array<String>]
+											[FInstance:(x : String) -> Int]
+												Array<String>
+												push:(x : Array.T) -> Int
+										[Call:String]
+											[Function:(p : String) -> String]
+												[Arg:String] [Local p(14772):String]
+												[Block:Dynamic]
+													[Return:Dynamic]
+														[Call:String]
+															[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																[Local `this(14764):reflaxe.elixir.ElixirTyper:reflaxe.elixir.ElixirTyper]
+																[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																	reflaxe.elixir.ElixirTyper
+																	compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+															[Call:String]
+																[Field:(s : String) -> String]
+																	[TypeExpr StringTools:{ Statics StringTools }]
+																	[FStatic:(s : String) -> String]
+																		StringTools
+																		trim:(s : String) -> String
+																[Local p(14772):String:String]
+															[Local context(14759):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+											[Local v(14771):String:String]
+						[Local `(14768):Array<String>:Array<String>]
+			[Var returnType(14774):String]
+				[Call:String]
+					[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+						[Const:reflaxe.elixir.ElixirTyper] this
+						[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+							reflaxe.elixir.ElixirTyper
+							compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+					[Local returnPart(14762):String:String]
+					[Local context(14759):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+			[Var paramStr(14775):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local paramTypes(14773):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ", "
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "("
+								+
+								[Local paramStr(14775):String:String]
+							+
+							[Const:String] " -> "
+						+
+						[Local returnType(14774):String:String]
+					+
+					[Const:String] ")"
+
+	function compileTupleType[Function:(tupleType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+		[Arg:String] [Local tupleType(14776):String]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14777):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Block:Dynamic]
+			[Var `this(14780):reflaxe.elixir.ElixirTyper] [Const:reflaxe.elixir.ElixirTyper] this
+			[Var inner(14778):String]
+				[Call:String]
+					[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+						[Local tupleType(14776):String:String]
+						[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+							String
+							substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+					[Const:Int] 1
+					[Binop:Int]
+						[Field:Int]
+							[Local tupleType(14776):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						-
+						[Const:Int] 1
+			[Var elementTypes(14789):Array<String>]
+				[Block:Array<String>]
+					[Var _this(14782):Array<String>]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local inner(14778):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] ","
+					[Block:Array<String>]
+						[Var `(14784):Array<String>] [ArrayDecl:Array<String>]
+						[Block:Void]
+							[Var `(14785):Int] [Const:Int] 0
+							[Var `(14786):Array<String>] [Local _this(14782):Array<String>:Array<String>]
+							[While:Void]
+								[Binop:Bool]
+									[Local `(14785):Int:Int]
+									<
+									[Field:Int]
+										[Local `(14786):Array<String>:Array<String>]
+										[FInstance:Int]
+											Array<String>
+											length:Int
+								[Block:Void]
+									[Var v(14787):String]
+										[Array:String]
+											[Local `(14786):Array<String>:Array<String>]
+											[Local `(14785):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(14785):Int:Int]
+									[Call:Int]
+										[Field:(x : String) -> Int]
+											[Local `(14784):Array<String>:Array<String>]
+											[FInstance:(x : String) -> Int]
+												Array<String>
+												push:(x : Array.T) -> Int
+										[Call:String]
+											[Function:(t : String) -> String]
+												[Arg:String] [Local t(14788):String]
+												[Block:Dynamic]
+													[Return:Dynamic]
+														[Call:String]
+															[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																[Local `this(14780):reflaxe.elixir.ElixirTyper:reflaxe.elixir.ElixirTyper]
+																[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																	reflaxe.elixir.ElixirTyper
+																	compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+															[Call:String]
+																[Field:(s : String) -> String]
+																	[TypeExpr StringTools:{ Statics StringTools }]
+																	[FStatic:(s : String) -> String]
+																		StringTools
+																		trim:(s : String) -> String
+																[Local t(14788):String:String]
+															[Local context(14777):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+											[Local v(14787):String:String]
+						[Local `(14784):Array<String>:Array<String>]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "{"
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local elementTypes(14789):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] "}"
+
+	function compileGenericType[Function:(genericType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+		[Arg:String] [Local genericType(14794):String]
+		[Arg:Null<reflaxe.elixir.TypeContext>]
+			[Local context(14795):Null<reflaxe.elixir.TypeContext>]
+			[Const:Null<reflaxe.elixir.TypeContext>] null
+		[Block:Dynamic]
+			[Var `this(14800):reflaxe.elixir.ElixirTyper] [Const:reflaxe.elixir.ElixirTyper] this
+			[Var baseType(14796):String]
+				[Call:String]
+					[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+						[Local genericType(14794):String:String]
+						[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+							String
+							substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+					[Const:Int] 0
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local genericType(14794):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "<"
+						[Const:Null<Int>] null
+			[Var typeParams(14797):String]
+				[Call:String]
+					[Field:(genericType : String) -> String]
+						[Const:reflaxe.elixir.ElixirTyper] this
+						[FInstance:(genericType : String) -> String]
+							reflaxe.elixir.ElixirTyper
+							extractGenericType:(genericType : String) -> String
+					[Local genericType(14794):String:String]
+			[Var moduleName(14798):String]
+				[Call:String]
+					[Field:(haxeName : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(haxeName : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							getElixirModuleName:(haxeName : String) -> String
+					[Local baseType(14796):String:String]
+			[Var paramTypes(14809):Array<String>]
+				[Block:Array<String>]
+					[Var _this(14802):Array<String>]
+						[Call:Array<String>]
+							[Field:(delimiter : String) -> Array<String>]
+								[Local typeParams(14797):String:String]
+								[FInstance:(delimiter : String) -> Array<String>]
+									String
+									split:(delimiter : String) -> Array<String>
+							[Const:String] ","
+					[Block:Array<String>]
+						[Var `(14804):Array<String>] [ArrayDecl:Array<String>]
+						[Block:Void]
+							[Var `(14805):Int] [Const:Int] 0
+							[Var `(14806):Array<String>] [Local _this(14802):Array<String>:Array<String>]
+							[While:Void]
+								[Binop:Bool]
+									[Local `(14805):Int:Int]
+									<
+									[Field:Int]
+										[Local `(14806):Array<String>:Array<String>]
+										[FInstance:Int]
+											Array<String>
+											length:Int
+								[Block:Void]
+									[Var v(14807):String]
+										[Array:String]
+											[Local `(14806):Array<String>:Array<String>]
+											[Local `(14805):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(14805):Int:Int]
+									[Call:Int]
+										[Field:(x : String) -> Int]
+											[Local `(14804):Array<String>:Array<String>]
+											[FInstance:(x : String) -> Int]
+												Array<String>
+												push:(x : Array.T) -> Int
+										[Call:String]
+											[Function:(t : String) -> String]
+												[Arg:String] [Local t(14808):String]
+												[Block:Dynamic]
+													[Return:Dynamic]
+														[Call:String]
+															[Field:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																[Local `this(14800):reflaxe.elixir.ElixirTyper:reflaxe.elixir.ElixirTyper]
+																[FInstance:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String]
+																	reflaxe.elixir.ElixirTyper
+																	compileType:(haxeType : String, ?context : Null<reflaxe.elixir.TypeContext>) -> String
+															[Call:String]
+																[Field:(s : String) -> String]
+																	[TypeExpr StringTools:{ Statics StringTools }]
+																	[FStatic:(s : String) -> String]
+																		StringTools
+																		trim:(s : String) -> String
+																[Local t(14808):String:String]
+															[Local context(14795):Null<reflaxe.elixir.TypeContext>:Null<reflaxe.elixir.TypeContext>]
+											[Local v(14807):String:String]
+						[Local `(14804):Array<String>:Array<String>]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Local moduleName(14798):String:String]
+							+
+							[Const:String] ".t("
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local paramTypes(14809):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] ")"
+
+	function isBuiltinGeneric[Function:(genericType : String) -> Bool]
+		[Arg:String] [Local genericType(14790):String]
+		[Block:Dynamic]
+			[Var builtins(14791):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "Array<"
+					[Const:String] "Map<"
+					[Const:String] "Null<"
+			[Block:Void]
+				[Var `(14793):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14793):Int:Int]
+						<
+						[Field:Int]
+							[Local builtins(14791):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var builtin(14792):String]
+							[Array:String]
+								[Local builtins(14791):Array<String>:Array<String>]
+								[Local `(14793):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14793):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Call:Int]
+									[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+										[Local genericType(14790):String:String]
+										[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+											String
+											indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+									[Local builtin(14792):String:String]
+									[Const:Null<Int>] null
+								==
+								[Const:Int] 0
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	public function clearCache[Function:() -> Void]
+		[Block:Void]
+			[Block:Void]
+				[Var this(14885):haxe.IMap<String, String>]
+					[Field:Map<String, String>]
+						[Const:reflaxe.elixir.ElixirTyper] this
+						[FInstance:Map<String, String>]
+							reflaxe.elixir.ElixirTyper
+							typeCache:Map<String, String>
+				[Call:Void]
+					[Field:() -> Void]
+						[Cast:haxe.ds.StringMap<String>] [Local this(14885):haxe.IMap<String, String>:haxe.IMap<String, String>]
+						[FInstance:() -> Void]
+							haxe.ds.StringMap<String>
+							clear:() -> Void
+
+	public function getCacheStats[Function:() -> { size : Int, keys : Array<String> }]
+		[Block:Dynamic]
+			[Var keys(14886):Array<String>] [ArrayDecl:Array<String>]
+			[For:Void]
+				[Local key(14890):String]
+				[Block:Iterator<String>]
+					[Var this(14889):haxe.IMap<String, String>]
+						[Field:Map<String, String>]
+							[Const:reflaxe.elixir.ElixirTyper] this
+							[FInstance:Map<String, String>]
+								reflaxe.elixir.ElixirTyper
+								typeCache:Map<String, String>
+					[Call:Iterator<String>]
+						[Field:() -> Iterator<String>]
+							[Cast:haxe.ds.StringMap<String>] [Local this(14889):haxe.IMap<String, String>:haxe.IMap<String, String>]
+							[FInstance:() -> Iterator<String>]
+								haxe.ds.StringMap<String>
+								keys:() -> Iterator<String>
+				[Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local keys(14886):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Local key(14890):String:String]
+			[Return:Dynamic]
+				[ObjectDecl:{ size : Int, keys : Array<String> }]
+					size: [Field:Int]
+						[Local keys(14886):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					keys: [Local keys(14886):Array<String>:Array<String>]
+
+	@:value(["Conn" => "Plug.Conn.t()", "Socket" => "Phoenix.Socket.t()", "LiveView" => "Phoenix.LiveView.t()", "Channel" => "Phoenix.Channel.t()", "Endpoint" => "Phoenix.Endpoint.t()"])
+	static var phoenixTypes:Map<String, String> = [Block:haxe.ds.Map<String, String>]
+		[Var `(14661):haxe.ds.Map<String, String>]
+			[Block:haxe.ds.StringMap<String>]
+				[Block:Void]
+				[New:haxe.ds.StringMap<String>] haxe.ds.StringMap<String>
+		[Block:Void]
+			[Call:Void]
+				[Field:(key : String, value : String) -> Void]
+					[Local `(14661):haxe.ds.Map<String, String>:haxe.ds.StringMap<String>]
+					[FInstance:(key : String, value : String) -> Void]
+						haxe.ds.StringMap<String>
+						set:(key : String, value : haxe.ds.StringMap.T) -> Void
+				[Const:String] "Conn"
+				[Const:String] "Plug.Conn.t()"
+		[Block:Void]
+			[Call:Void]
+				[Field:(key : String, value : String) -> Void]
+					[Local `(14661):haxe.ds.Map<String, String>:haxe.ds.StringMap<String>]
+					[FInstance:(key : String, value : String) -> Void]
+						haxe.ds.StringMap<String>
+						set:(key : String, value : haxe.ds.StringMap.T) -> Void
+				[Const:String] "Socket"
+				[Const:String] "Phoenix.Socket.t()"
+		[Block:Void]
+			[Call:Void]
+				[Field:(key : String, value : String) -> Void]
+					[Local `(14661):haxe.ds.Map<String, String>:haxe.ds.StringMap<String>]
+					[FInstance:(key : String, value : String) -> Void]
+						haxe.ds.StringMap<String>
+						set:(key : String, value : haxe.ds.StringMap.T) -> Void
+				[Const:String] "LiveView"
+				[Const:String] "Phoenix.LiveView.t()"
+		[Block:Void]
+			[Call:Void]
+				[Field:(key : String, value : String) -> Void]
+					[Local `(14661):haxe.ds.Map<String, String>:haxe.ds.StringMap<String>]
+					[FInstance:(key : String, value : String) -> Void]
+						haxe.ds.StringMap<String>
+						set:(key : String, value : haxe.ds.StringMap.T) -> Void
+				[Const:String] "Channel"
+				[Const:String] "Phoenix.Channel.t()"
+		[Block:Void]
+			[Call:Void]
+				[Field:(key : String, value : String) -> Void]
+					[Local `(14661):haxe.ds.Map<String, String>:haxe.ds.StringMap<String>]
+					[FInstance:(key : String, value : String) -> Void]
+						haxe.ds.StringMap<String>
+						set:(key : String, value : haxe.ds.StringMap.T) -> Void
+				[Const:String] "Endpoint"
+				[Const:String] "Phoenix.Endpoint.t()"
+		[Local `(14661):haxe.ds.Map<String, String>:haxe.ds.Map<String, String>];
+
+	@:value(["Schema" => "Ecto.Schema.t()", "Changeset" => "Ecto.Changeset.t()", "Query" => "Ecto.Query.t()", "Repo" => "Ecto.Repo.t()"])
+	static var ectoTypes:Map<String, String> = [Block:haxe.ds.Map<String, String>]
+		[Var `(14687):haxe.ds.Map<String, String>]
+			[Block:haxe.ds.StringMap<String>]
+				[Block:Void]
+				[New:haxe.ds.StringMap<String>] haxe.ds.StringMap<String>
+		[Block:Void]
+			[Call:Void]
+				[Field:(key : String, value : String) -> Void]
+					[Local `(14687):haxe.ds.Map<String, String>:haxe.ds.StringMap<String>]
+					[FInstance:(key : String, value : String) -> Void]
+						haxe.ds.StringMap<String>
+						set:(key : String, value : haxe.ds.StringMap.T) -> Void
+				[Const:String] "Schema"
+				[Const:String] "Ecto.Schema.t()"
+		[Block:Void]
+			[Call:Void]
+				[Field:(key : String, value : String) -> Void]
+					[Local `(14687):haxe.ds.Map<String, String>:haxe.ds.StringMap<String>]
+					[FInstance:(key : String, value : String) -> Void]
+						haxe.ds.StringMap<String>
+						set:(key : String, value : haxe.ds.StringMap.T) -> Void
+				[Const:String] "Changeset"
+				[Const:String] "Ecto.Changeset.t()"
+		[Block:Void]
+			[Call:Void]
+				[Field:(key : String, value : String) -> Void]
+					[Local `(14687):haxe.ds.Map<String, String>:haxe.ds.StringMap<String>]
+					[FInstance:(key : String, value : String) -> Void]
+						haxe.ds.StringMap<String>
+						set:(key : String, value : haxe.ds.StringMap.T) -> Void
+				[Const:String] "Query"
+				[Const:String] "Ecto.Query.t()"
+		[Block:Void]
+			[Call:Void]
+				[Field:(key : String, value : String) -> Void]
+					[Local `(14687):haxe.ds.Map<String, String>:haxe.ds.StringMap<String>]
+					[FInstance:(key : String, value : String) -> Void]
+						haxe.ds.StringMap<String>
+						set:(key : String, value : haxe.ds.StringMap.T) -> Void
+				[Const:String] "Repo"
+				[Const:String] "Ecto.Repo.t()"
+		[Local `(14687):haxe.ds.Map<String, String>:haxe.ds.Map<String, String>];
+}

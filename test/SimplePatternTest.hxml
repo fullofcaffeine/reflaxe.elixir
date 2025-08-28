@@ -1,6 +1,0 @@
--cp ../src
--cp .
--cp /Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src
--D reflaxe_runtime
--main test.SimplePatternTest
---interp

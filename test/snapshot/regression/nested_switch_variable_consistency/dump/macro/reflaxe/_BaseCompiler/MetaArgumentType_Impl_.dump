@@ -1,0 +1,24 @@
+@:enum
+private class reflaxe._BaseCompiler.MetaArgumentType_Impl_ {
+
+	@:value(cast "bool") @:impl @:enum
+	public static inline var Bool:reflaxe.MetaArgumentType = [Cast:reflaxe.MetaArgumentType] [Const:String] "bool";
+
+	@:value(cast "number") @:impl @:enum
+	public static inline var Number:reflaxe.MetaArgumentType = [Cast:reflaxe.MetaArgumentType] [Const:String] "number";
+
+	@:value(cast "string") @:impl @:enum
+	public static inline var String:reflaxe.MetaArgumentType = [Cast:reflaxe.MetaArgumentType] [Const:String] "string";
+
+	@:value(cast "ident") @:impl @:enum
+	public static inline var Identifier:reflaxe.MetaArgumentType = [Cast:reflaxe.MetaArgumentType] [Const:String] "ident";
+
+	@:value(cast "array") @:impl @:enum
+	public static inline var Array:reflaxe.MetaArgumentType = [Cast:reflaxe.MetaArgumentType] [Const:String] "array";
+
+	@:value(cast "any") @:impl @:enum
+	public static inline var Anything:reflaxe.MetaArgumentType = [Cast:reflaxe.MetaArgumentType] [Const:String] "any";
+
+	@:value(cast "any?") @:impl @:enum
+	public static inline var Optional:reflaxe.MetaArgumentType = [Cast:reflaxe.MetaArgumentType] [Const:String] "any?";
+}

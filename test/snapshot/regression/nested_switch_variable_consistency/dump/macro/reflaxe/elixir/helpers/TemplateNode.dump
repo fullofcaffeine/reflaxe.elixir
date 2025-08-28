@@ -1,0 +1,11 @@
+enum reflaxe.elixir.helpers.TemplateNode {
+	TextNode(text:String);
+	VariableNode(name:String);
+	InterpolationNode(object:reflaxe.elixir.helpers.TemplateNode, field:String);
+	ConcatNode(nodes:Array<reflaxe.elixir.helpers.TemplateNode>);
+	ConditionalNode(condition:reflaxe.elixir.helpers.TemplateNode, thenNode:reflaxe.elixir.helpers.TemplateNode, elseNode:Null<reflaxe.elixir.helpers.TemplateNode>);
+	FunctionCallNode(object:reflaxe.elixir.helpers.TemplateNode, method:String, args:Array<reflaxe.elixir.helpers.TemplateNode>);
+	BinaryOpNode(op:haxe.macro.Binop, left:reflaxe.elixir.helpers.TemplateNode, right:reflaxe.elixir.helpers.TemplateNode);
+	ObjectNode(fields:Array<{ value : reflaxe.elixir.helpers.TemplateNode, key : String }>);
+	RawExpressionNode(expr:haxe.macro.TypedExpr);
+}

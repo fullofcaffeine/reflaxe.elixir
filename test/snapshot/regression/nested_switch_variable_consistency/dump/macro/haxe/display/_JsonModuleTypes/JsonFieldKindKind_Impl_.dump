@@ -1,0 +1,9 @@
+@:enum
+private class haxe.display._JsonModuleTypes.JsonFieldKindKind_Impl_ {
+
+	@:value(cast "FVar") @:impl @:enum
+	public static inline var FVar:haxe.display.JsonFieldKindKind<{ write : haxe.display.JsonVarAccess<Dynamic>, read : haxe.display.JsonVarAccess<Dynamic> }> = [Cast:haxe.display.JsonFieldKindKind<{ write : haxe.display.JsonVarAccess<Dynamic>, read : haxe.display.JsonVarAccess<Dynamic> }>] [Const:String] "FVar";
+
+	@:value(cast "FMethod") @:impl @:enum
+	public static inline var FMethod:haxe.display.JsonFieldKindKind<haxe.display.JsonMethodKind> = [Cast:haxe.display.JsonFieldKindKind<haxe.display.JsonMethodKind>] [Const:String] "FMethod";
+}

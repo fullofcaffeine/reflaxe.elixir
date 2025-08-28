@@ -16,7 +16,13 @@ defmodule TodoAppWeb.UserLive do
 
     temp_result = nil
 
-    case (event) do
+    case event do
+      "cancel" -> __MODULE__.handle_cancel(socket)
+      "delete_user" -> __MODULE__.handle_delete_user(params, socket)
+      "edit_user" -> __MODULE__.handle_edit_user(params, socket)
+      "new_user" -> __MODULE__.handle_new_user(params, socket)
+      "save_user" -> __MODULE__.handle_save_user(params, socket)
+      "search" -> __MODULE__.handle_search(params, socket)
       _ -> %{status: "noreply", socket: socket}
     end
 
@@ -38,7 +44,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe handleEditUser"
   def handle_edit_user(params, socket) do
-    user_id = params.id
+    user_id = _params.id
 
     selected_user = Users.get_user(user_id)
 
@@ -55,7 +61,7 @@ defmodule TodoAppWeb.UserLive do
     temp_struct = nil
     temp_result = nil
 
-    user_params = params.user
+    user_params = _params.user
 
     temp_struct = nil
 
@@ -64,7 +70,11 @@ defmodule TodoAppWeb.UserLive do
     temp_result = nil
 
     g_array = temp_struct.status
-    case (g_array) do
+    case g_array do
+      "error" -> temp_result = %{status: "noreply", socket: TodoAppWeb.UserLive.assign(socket, "changeset", temp_struct.changeset)}
+      "ok" -> users = Users.list_users(nil)
+    show_form = false
+    temp_result = %{status: "noreply", socket: TodoAppWeb.UserLive.assign_multiple(socket, %{users: users, showForm: show_form, selectedUser: nil, changeset: Users.change_user(nil)})}
       _ -> temp_result = %{status: "noreply", socket: socket}
     end
 
@@ -74,7 +84,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe handleDeleteUser"
   def handle_delete_user(params, socket) do
-    user_id = params.id
+    user_id = _params.id
 
     _user = Users.get_user(user_id)
 
@@ -95,7 +105,7 @@ defmodule TodoAppWeb.UserLive do
   def handle_search(params, socket) do
     temp_array = nil
 
-    search_term = params.search
+    search_term = _params.search
 
     if ((search_term.length > 0)), do: temp_array = Users.search_users(search_term), else: temp_array = Users.list_users(nil)
 

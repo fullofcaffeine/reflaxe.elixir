@@ -1,0 +1,1 @@
+private typedef reflaxe.elixir.helpers._UnifiedLoopCompiler.FilterPattern = { resultVar : String, itemVar : String, condition : haxe.macro.TypedExpr, array : haxe.macro.TypedExpr }

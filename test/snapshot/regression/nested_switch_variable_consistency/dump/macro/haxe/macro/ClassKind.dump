@@ -1,0 +1,11 @@
+enum haxe.macro.ClassKind {
+	KNormal;
+	KTypeParameter(constraints:Array<haxe.macro.Type>);
+	KModuleFields(module:String);
+	KExpr(expr:haxe.macro.Expr);
+	KGeneric;
+	KGenericInstance(cl:haxe.macro.Ref<haxe.macro.ClassType>, params:Array<haxe.macro.Type>);
+	KMacroType;
+	KAbstractImpl(a:haxe.macro.Ref<haxe.macro.AbstractType>);
+	KGenericBuild;
+}

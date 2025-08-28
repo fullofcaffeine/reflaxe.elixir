@@ -1,0 +1,1016 @@
+class reflaxe.elixir.helpers.AlgebraicDataTypeCompiler {
+
+	@:value(null)
+	static var adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig> = [Const:Map<String, reflaxe.elixir.helpers.ADTConfig>] null;
+
+	static function initConfigs[Function:() -> Void]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+					!=
+					[Const:Map<String, reflaxe.elixir.helpers.ADTConfig>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[Binop:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+				[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+					[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+					[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+						reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+						adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+				=
+				[Block:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+			[Var resultConstructors(14891):haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.helpers.ADTConstructorConfig) -> Void]
+						[Local resultConstructors(14891):haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[FInstance:(key : String, value : reflaxe.elixir.helpers.ADTConstructorConfig) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "ok"
+					[ObjectDecl:{ isAtom : Bool, elixirPattern : String, arity : Int }]
+						elixirPattern: [Const:String] "{:ok, %s}"
+						arity: [Const:Int] 1
+						isAtom: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.helpers.ADTConstructorConfig) -> Void]
+						[Local resultConstructors(14891):haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[FInstance:(key : String, value : reflaxe.elixir.helpers.ADTConstructorConfig) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "error"
+					[ObjectDecl:{ isAtom : Bool, elixirPattern : String, arity : Int }]
+						elixirPattern: [Const:String] "{:error, %s}"
+						arity: [Const:Int] 1
+						isAtom: [Const:Bool] false
+			[Block:Void]
+				[Var this(14904):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+					[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.helpers.ADTConfig) -> Void]
+						[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(14904):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+						[FInstance:(key : String, value : reflaxe.elixir.helpers.ADTConfig) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "haxe.functional.Result"
+					[ObjectDecl:{ typeName : String, moduleName : String, constructors : haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }]
+						moduleName: [Const:String] "haxe.functional.Result"
+						typeName: [Const:String] "Result"
+						constructors: [Local resultConstructors(14891):haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+			[Var optionConstructors(14907):haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+				[Block:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.helpers.ADTConstructorConfig) -> Void]
+						[Local optionConstructors(14907):haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[FInstance:(key : String, value : reflaxe.elixir.helpers.ADTConstructorConfig) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "some"
+					[ObjectDecl:{ isAtom : Bool, elixirPattern : String, arity : Int }]
+						elixirPattern: [Const:String] "{:ok, %s}"
+						arity: [Const:Int] 1
+						isAtom: [Const:Bool] false
+			[Block:Void]
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.helpers.ADTConstructorConfig) -> Void]
+						[Local optionConstructors(14907):haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[FInstance:(key : String, value : reflaxe.elixir.helpers.ADTConstructorConfig) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "none"
+					[ObjectDecl:{ isAtom : Bool, elixirPattern : String, arity : Int }]
+						elixirPattern: [Const:String] ":error"
+						arity: [Const:Int] 0
+						isAtom: [Const:Bool] true
+			[Block:Void]
+				[Var this(14920):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+					[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+				[Call:Void]
+					[Field:(key : String, value : reflaxe.elixir.helpers.ADTConfig) -> Void]
+						[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(14920):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+						[FInstance:(key : String, value : reflaxe.elixir.helpers.ADTConfig) -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Const:String] "haxe.ds.Option"
+					[ObjectDecl:{ typeName : String, moduleName : String, constructors : haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }]
+						moduleName: [Const:String] "haxe.ds.Option"
+						typeName: [Const:String] "Option"
+						constructors: [Local optionConstructors(14907):haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.ds.Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+
+	public static function isADTType[Function:(enumType : haxe.macro.EnumType) -> Bool]
+		[Arg:haxe.macro.EnumType] [Local enumType(14923):haxe.macro.EnumType]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+					[FStatic:() -> Void]
+						reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+						initConfigs:() -> Void
+			[If:Void]
+				[Binop:Bool]
+					[Block:Bool]
+						[Var this(14926):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+							[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+								[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+								[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+									reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+									adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+						[Var key(14927):String]
+							[Field:String]
+								[Local enumType(14923):haxe.macro.EnumType:haxe.macro.EnumType]
+								[FAnon:String] module:String
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(14926):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+									exists:(key : String) -> Bool
+							[Local key(14927):String:String]
+					&&
+					[Binop:Bool]
+						[Field:String]
+							[Block:Null<reflaxe.elixir.helpers.ADTConfig>]
+								[Var this(14930):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+									[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+										[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+										[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+											reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+											adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+								[Var key(14931):String]
+									[Field:String]
+										[Local enumType(14923):haxe.macro.EnumType:haxe.macro.EnumType]
+										[FAnon:String] module:String
+								[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+									[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+										[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(14930):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+										[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+											haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+											get:(key : String) -> Null<haxe.ds.StringMap.T>
+									[Local key(14931):String:String]
+							[FAnon:String] typeName:String
+						==
+						[Field:String]
+							[Local enumType(14923):haxe.macro.EnumType:haxe.macro.EnumType]
+							[FAnon:String] name:String
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(enumType : haxe.macro.EnumType) -> Bool]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:(enumType : haxe.macro.EnumType) -> Bool]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							hasIdiomaticAnnotation:(enumType : haxe.macro.EnumType) -> Bool
+					[Local enumType(14923):haxe.macro.EnumType:haxe.macro.EnumType]
+
+	static function detectADTConfigByStructure[Function:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+		[Arg:haxe.macro.EnumType] [Local enumType(14946):haxe.macro.EnumType]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+					[FStatic:() -> Void]
+						reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+						initConfigs:() -> Void
+			[Var constructorNames(14947):Array<String>] [ArrayDecl:Array<String>]
+			[For:Void]
+				[Local field(14952):haxe.macro.EnumField]
+				[Block:Iterator<haxe.macro.EnumField>]
+					[Var this(14951):haxe.IMap<String, haxe.macro.EnumField>]
+						[Field:Map<String, haxe.macro.EnumField>]
+							[Local enumType(14946):haxe.macro.EnumType:haxe.macro.EnumType]
+							[FAnon:Map<String, haxe.macro.EnumField>] constructs:Map<String, haxe.macro.EnumField>
+					[Call:Iterator<haxe.macro.EnumField>]
+						[Field:() -> Iterator<haxe.macro.EnumField>]
+							[Cast:haxe.ds.StringMap<haxe.macro.EnumField>] [Local this(14951):haxe.IMap<String, haxe.macro.EnumField>:haxe.IMap<String, haxe.macro.EnumField>]
+							[FInstance:() -> Iterator<haxe.macro.EnumField>]
+								haxe.ds.StringMap<haxe.macro.EnumField>
+								iterator:() -> Iterator<haxe.ds.StringMap.T>
+				[Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local constructorNames(14947):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Call:String]
+							[Field:() -> String]
+								[Field:String]
+									[Local field(14952):haxe.macro.EnumField:haxe.macro.EnumField]
+									[FAnon:String] name:String
+								[FInstance:() -> String]
+									String
+									toLowerCase:() -> String
+			[Var hasOkError(14953):Bool]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(x : String) -> Bool]
+							[Local constructorNames(14947):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Bool]
+								Array<String>
+								contains:(x : Array.T) -> Bool
+						[Const:String] "ok"
+					&&
+					[Call:Bool]
+						[Field:(x : String) -> Bool]
+							[Local constructorNames(14947):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Bool]
+								Array<String>
+								contains:(x : Array.T) -> Bool
+						[Const:String] "error"
+			[Var hasSuccessFailure(14954):Bool]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(x : String) -> Bool]
+							[Local constructorNames(14947):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Bool]
+								Array<String>
+								contains:(x : Array.T) -> Bool
+						[Const:String] "success"
+					&&
+					[Call:Bool]
+						[Field:(x : String) -> Bool]
+							[Local constructorNames(14947):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Bool]
+								Array<String>
+								contains:(x : Array.T) -> Bool
+						[Const:String] "failure"
+			[If:Void]
+				[Binop:Bool]
+					[Local hasOkError(14953):Bool:Bool]
+					||
+					[Local hasSuccessFailure(14954):Bool:Bool]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Block:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[Var this(14957):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+								[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+									[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+									[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+										reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+										adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+							[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+								[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+									[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(14957):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+									[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+										haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Const:String] "haxe.functional.Result"
+			[Var hasSomeNone(14959):Bool]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(x : String) -> Bool]
+							[Local constructorNames(14947):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Bool]
+								Array<String>
+								contains:(x : Array.T) -> Bool
+						[Const:String] "some"
+					&&
+					[Call:Bool]
+						[Field:(x : String) -> Bool]
+							[Local constructorNames(14947):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Bool]
+								Array<String>
+								contains:(x : Array.T) -> Bool
+						[Const:String] "none"
+			[Var hasJustNothing(14960):Bool]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(x : String) -> Bool]
+							[Local constructorNames(14947):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Bool]
+								Array<String>
+								contains:(x : Array.T) -> Bool
+						[Const:String] "just"
+					&&
+					[Call:Bool]
+						[Field:(x : String) -> Bool]
+							[Local constructorNames(14947):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Bool]
+								Array<String>
+								contains:(x : Array.T) -> Bool
+						[Const:String] "nothing"
+			[If:Void]
+				[Binop:Bool]
+					[Local hasSomeNone(14959):Bool:Bool]
+					||
+					[Local hasJustNothing(14960):Bool:Bool]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Block:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[Var this(14963):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+								[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+									[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+									[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+										reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+										adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+							[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+								[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+									[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(14963):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+									[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+										haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Const:String] "haxe.ds.Option"
+			[Return:Dynamic]
+				[Block:Null<reflaxe.elixir.helpers.ADTConfig>]
+					[Var this(14967):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+						[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+							[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+							[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+								reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+								adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+					[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+						[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(14967):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+							[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+								haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Const:String] "haxe.ds.Option"
+
+	static function hasIdiomaticAnnotation[Function:(enumType : haxe.macro.EnumType) -> Bool]
+		[Arg:haxe.macro.EnumType] [Local enumType(14932):haxe.macro.EnumType]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(14944):Int] [Const:Int] 0
+				[Var `(14945):haxe.macro.Metadata]
+					[Call:haxe.macro.Metadata]
+						[Field:() -> haxe.macro.Metadata]
+							[Field:haxe.macro.MetaAccess]
+								[Local enumType(14932):haxe.macro.EnumType:haxe.macro.EnumType]
+								[FAnon:haxe.macro.MetaAccess] meta:haxe.macro.MetaAccess
+							[FAnon:() -> haxe.macro.Metadata] get:() -> haxe.macro.Metadata
+				[While:Void]
+					[Binop:Bool]
+						[Local `(14944):Int:Int]
+						<
+						[Field:Int]
+							[Local `(14945):haxe.macro.Metadata:haxe.macro.Metadata]
+							[FInstance:Int]
+								Array<haxe.macro.MetadataEntry>
+								length:Int
+					[Block:Void]
+						[Var meta(14933):haxe.macro.MetadataEntry]
+							[Array:haxe.macro.MetadataEntry]
+								[Local `(14945):haxe.macro.Metadata:haxe.macro.Metadata]
+								[Local `(14944):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(14944):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:String]
+									[Local meta(14933):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+									[FAnon:String] name:String
+								==
+								[Const:String] ":elixirIdiomatic"
+							[Then:Dynamic] [Block:Dynamic]
+								[Call:Void]
+									[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+										[TypeExpr haxe.Log:Class<haxe.Log>]
+										[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+											haxe.Log
+											trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "DETECTED @:elixirIdiomatic annotation on "
+												+
+												[Field:String]
+													[Local enumType(14932):haxe.macro.EnumType:haxe.macro.EnumType]
+													[FAnon:String] name:String
+											+
+											[Const:String] " in "
+										+
+										[Field:String]
+											[Local enumType(14932):haxe.macro.EnumType:haxe.macro.EnumType]
+											[FAnon:String] module:String
+									[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+										fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/AlgebraicDataTypeCompiler.hx"
+										lineNumber: [Const:Int] 156
+										className: [Const:String] "reflaxe.elixir.helpers.AlgebraicDataTypeCompiler"
+										methodName: [Const:String] "hasIdiomaticAnnotation"
+								[Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	public static function getADTConfig[Function:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+		[Arg:haxe.macro.EnumType] [Local enumType(14969):haxe.macro.EnumType]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+					[FStatic:() -> Void]
+						reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+						initConfigs:() -> Void
+			[Var config(14974):Null<reflaxe.elixir.helpers.ADTConfig>]
+				[Block:Null<reflaxe.elixir.helpers.ADTConfig>]
+					[Var this(14972):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+						[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+							[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+							[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+								reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+								adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+					[Var key(14973):String]
+						[Field:String]
+							[Local enumType(14969):haxe.macro.EnumType:haxe.macro.EnumType]
+							[FAnon:String] module:String
+					[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+						[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(14972):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+							[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+								haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local key(14973):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local config(14974):Null<reflaxe.elixir.helpers.ADTConfig>:Null<reflaxe.elixir.helpers.ADTConfig>]
+						!=
+						[Const:Null<reflaxe.elixir.helpers.ADTConfig>] null
+					&&
+					[Binop:Bool]
+						[Field:String]
+							[Local config(14974):Null<reflaxe.elixir.helpers.ADTConfig>:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[FAnon:String] typeName:String
+						==
+						[Field:String]
+							[Local enumType(14969):haxe.macro.EnumType:haxe.macro.EnumType]
+							[FAnon:String] name:String
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local config(14974):Null<reflaxe.elixir.helpers.ADTConfig>:Null<reflaxe.elixir.helpers.ADTConfig>]
+			[If:Void]
+				[Call:Bool]
+					[Field:(enumType : haxe.macro.EnumType) -> Bool]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:(enumType : haxe.macro.EnumType) -> Bool]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							hasIdiomaticAnnotation:(enumType : haxe.macro.EnumType) -> Bool
+					[Local enumType(14969):haxe.macro.EnumType:haxe.macro.EnumType]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[Field:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+								[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+								[FStatic:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+									reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+									detectADTConfigByStructure:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>
+							[Local enumType(14969):haxe.macro.EnumType:haxe.macro.EnumType]
+			[Return:Dynamic] [Const:Null<reflaxe.elixir.helpers.ADTConfig>] null
+
+	public static function compileADTPattern[Function:(enumType : haxe.macro.EnumType, enumField : haxe.macro.EnumField, args : Array<haxe.macro.TypedExpr>, compileExpr : (haxe.macro.TypedExpr -> Null<String>)) -> Null<String>]
+		[Arg:haxe.macro.EnumType] [Local enumType(14975):haxe.macro.EnumType]
+		[Arg:haxe.macro.EnumField] [Local enumField(14976):haxe.macro.EnumField]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local args(14977):Array<haxe.macro.TypedExpr>]
+		[Arg:haxe.macro.TypedExpr -> Null<String>] [Local compileExpr(14978):haxe.macro.TypedExpr -> Null<String>]
+		[Block:Void]
+			[Var config(14979):Null<reflaxe.elixir.helpers.ADTConfig>]
+				[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+					[Field:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							getADTConfig:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>
+					[Local enumType(14975):haxe.macro.EnumType:haxe.macro.EnumType]
+			[If:Void]
+				[Binop:Bool]
+					[Local config(14979):Null<reflaxe.elixir.helpers.ADTConfig>:Null<reflaxe.elixir.helpers.ADTConfig>]
+					==
+					[Const:Null<reflaxe.elixir.helpers.ADTConfig>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[Var fieldName(14980):String]
+				[Call:String]
+					[Field:() -> String]
+						[Field:String]
+							[Local enumField(14976):haxe.macro.EnumField:haxe.macro.EnumField]
+							[FAnon:String] name:String
+						[FInstance:() -> String]
+							String
+							toLowerCase:() -> String
+			[Var constructorConfig(14985):Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+				[Block:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					[Var this(14983):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[Field:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[Local config(14979):Null<reflaxe.elixir.helpers.ADTConfig>:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[FAnon:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>] constructors:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>
+					[Call:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] [Local this(14983):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+								haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local fieldName(14980):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local constructorConfig(14985):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					==
+					[Const:Null<reflaxe.elixir.helpers.ADTConstructorConfig>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[If:Void]
+				[Field:Bool]
+					[Local constructorConfig(14985):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					[FAnon:Bool] isAtom:Bool
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Field:String]
+							[Local constructorConfig(14985):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[FAnon:String] elixirPattern:String
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(14977):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[FInstance:Int]
+							Array<haxe.macro.TypedExpr>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var atomName(14986):String] [Local fieldName(14980):String:String]
+					[Return:Dynamic]
+						[Binop:String]
+							[Const:String] ":"
+							+
+							[Local atomName(14986):String:String]
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local args(14977):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[FInstance:Int]
+									Array<haxe.macro.TypedExpr>
+									length:Int
+							==
+							[Const:Int] 1
+						[Then:Dynamic] [Block:Dynamic]
+							[Var compiledArg(14987):Null<String>]
+								[Call:Null<String>]
+									[Local compileExpr(14978):haxe.macro.TypedExpr -> Null<String>:haxe.macro.TypedExpr -> Null<String>]
+									[Array:haxe.macro.TypedExpr]
+										[Local args(14977):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[Const:Int] 0
+							[If:Void]
+								[Binop:Bool]
+									[Local compiledArg(14987):Null<String>:Null<String>]
+									==
+									[Const:Null<String>] null
+								[Then:Null<String>] [Block:Null<String>]
+									[Binop:Null<String>]
+										[Local compiledArg(14987):Null<String>:Null<String>]
+										=
+										[Const:String] "nil"
+							[Return:Dynamic]
+								[Call:String]
+									[Field:(s : String, sub : String, by : String) -> String]
+										[TypeExpr StringTools:{ Statics StringTools }]
+										[FStatic:(s : String, sub : String, by : String) -> String]
+											StringTools
+											replace:(s : String, sub : String, by : String) -> String
+									[Field:String]
+										[Local constructorConfig(14985):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[FAnon:String] elixirPattern:String
+									[Const:String] "%s"
+									[Local compiledArg(14987):Null<String>:Null<String>]
+						[Else:Dynamic] [Block:Dynamic]
+							[Var compiledArgs(14999):Array<Null<String>>]
+								[Block:Array<Null<String>>]
+									[Var `(14993):Array<Null<String>>] [ArrayDecl:Array<Null<String>>]
+									[Block:Void]
+										[Var `(14994):Int] [Const:Int] 0
+										[Var `(14995):Array<haxe.macro.TypedExpr>] [Local args(14977):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[While:Void]
+											[Binop:Bool]
+												[Local `(14994):Int:Int]
+												<
+												[Field:Int]
+													[Local `(14995):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+													[FInstance:Int]
+														Array<haxe.macro.TypedExpr>
+														length:Int
+											[Block:Void]
+												[Var v(14996):haxe.macro.TypedExpr]
+													[Array:haxe.macro.TypedExpr]
+														[Local `(14995):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[Local `(14994):Int:Int]
+												[Unop:Int]
+													++
+													Prefix
+													[Local `(14994):Int:Int]
+												[Call:Int]
+													[Field:(x : Null<String>) -> Int]
+														[Local `(14993):Array<Null<String>>:Array<Null<String>>]
+														[FInstance:(x : Null<String>) -> Int]
+															Array<Null<String>>
+															push:(x : Array.T) -> Int
+													[Call:Null<String>]
+														[Function:(arg : haxe.macro.TypedExpr) -> Null<String>]
+															[Arg:haxe.macro.TypedExpr] [Local arg(14997):haxe.macro.TypedExpr]
+															[Block:Dynamic]
+																[Return:Dynamic]
+																	[Block:Null<String>]
+																		[Var compiled(14998):Null<String>]
+																			[Call:Null<String>]
+																				[Local compileExpr(14978):haxe.macro.TypedExpr -> Null<String>:haxe.macro.TypedExpr -> Null<String>]
+																				[Local arg(14997):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																		[Return:Null<String>]
+																			[If:Null<String>]
+																				[Parenthesis:Bool]
+																					[Binop:Bool]
+																						[Local compiled(14998):Null<String>:Null<String>]
+																						!=
+																						[Const:Null<String>] null
+																				[Then:Null<String>] [Local compiled(14998):Null<String>:Null<String>]
+																				[Else:String] [Const:String] "nil"
+														[Local v(14996):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Local `(14993):Array<Null<String>>:Array<Null<String>>]
+							[Var argTuple(15000):String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "{"
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local compiledArgs(14999):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:(sep : String) -> String]
+													Array<Null<String>>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] "}"
+							[Return:Dynamic]
+								[Call:String]
+									[Field:(s : String, sub : String, by : String) -> String]
+										[TypeExpr StringTools:{ Statics StringTools }]
+										[FStatic:(s : String, sub : String, by : String) -> String]
+											StringTools
+											replace:(s : String, sub : String, by : String) -> String
+									[Field:String]
+										[Local constructorConfig(14985):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[FAnon:String] elixirPattern:String
+									[Const:String] "%s"
+									[Local argTuple(15000):String:String]
+
+	public static function compileADTFieldAccess[Function:(enumType : haxe.macro.EnumType, enumField : haxe.macro.EnumField) -> Null<String>]
+		[Arg:haxe.macro.EnumType] [Local enumType(15001):haxe.macro.EnumType]
+		[Arg:haxe.macro.EnumField] [Local enumField(15002):haxe.macro.EnumField]
+		[Block:Void]
+			[Var config(15003):Null<reflaxe.elixir.helpers.ADTConfig>]
+				[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+					[Field:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							getADTConfig:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>
+					[Local enumType(15001):haxe.macro.EnumType:haxe.macro.EnumType]
+			[If:Void]
+				[Binop:Bool]
+					[Local config(15003):Null<reflaxe.elixir.helpers.ADTConfig>:Null<reflaxe.elixir.helpers.ADTConfig>]
+					==
+					[Const:Null<reflaxe.elixir.helpers.ADTConfig>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[Var fieldName(15004):String]
+				[Call:String]
+					[Field:() -> String]
+						[Field:String]
+							[Local enumField(15002):haxe.macro.EnumField:haxe.macro.EnumField]
+							[FAnon:String] name:String
+						[FInstance:() -> String]
+							String
+							toLowerCase:() -> String
+			[Var constructorConfig(15009):Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+				[Block:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					[Var this(15007):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[Field:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[Local config(15003):Null<reflaxe.elixir.helpers.ADTConfig>:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[FAnon:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>] constructors:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>
+					[Call:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] [Local this(15007):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+								haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local fieldName(15004):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local constructorConfig(15009):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					==
+					[Const:Null<reflaxe.elixir.helpers.ADTConstructorConfig>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[If:Void]
+				[Field:Bool]
+					[Local constructorConfig(15009):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					[FAnon:Bool] isAtom:Bool
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Field:String]
+							[Local constructorConfig(15009):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[FAnon:String] elixirPattern:String
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local constructorConfig(15009):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+								[FAnon:Int] arity:Int
+							==
+							[Const:Int] 1
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "fn value -> "
+										+
+										[Call:String]
+											[Field:(s : String, sub : String, by : String) -> String]
+												[TypeExpr StringTools:{ Statics StringTools }]
+												[FStatic:(s : String, sub : String, by : String) -> String]
+													StringTools
+													replace:(s : String, sub : String, by : String) -> String
+											[Field:String]
+												[Local constructorConfig(15009):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+												[FAnon:String] elixirPattern:String
+											[Const:String] "%s"
+											[Const:String] "value"
+									+
+									[Const:String] " end"
+						[Else:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Const:String] ":"
+									+
+									[Local fieldName(15004):String:String]
+
+	public static function compileADTMethodCall[Function:(enumType : haxe.macro.EnumType, methodName : String, args : Array<haxe.macro.TypedExpr>, compileExpr : (haxe.macro.TypedExpr -> Null<String>)) -> Null<String>]
+		[Arg:haxe.macro.EnumType] [Local enumType(15010):haxe.macro.EnumType]
+		[Arg:String] [Local methodName(15011):String]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local args(15012):Array<haxe.macro.TypedExpr>]
+		[Arg:haxe.macro.TypedExpr -> Null<String>] [Local compileExpr(15013):haxe.macro.TypedExpr -> Null<String>]
+		[Block:Void]
+			[Var config(15014):Null<reflaxe.elixir.helpers.ADTConfig>]
+				[Call:Null<reflaxe.elixir.helpers.ADTConfig>]
+					[Field:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+						[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+						[FStatic:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+							reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+							getADTConfig:(enumType : haxe.macro.EnumType) -> Null<reflaxe.elixir.helpers.ADTConfig>
+					[Local enumType(15010):haxe.macro.EnumType:haxe.macro.EnumType]
+			[If:Void]
+				[Binop:Bool]
+					[Local config(15014):Null<reflaxe.elixir.helpers.ADTConfig>:Null<reflaxe.elixir.helpers.ADTConfig>]
+					==
+					[Const:Null<reflaxe.elixir.helpers.ADTConfig>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[Var fieldName(15015):String]
+				[Call:String]
+					[Field:() -> String]
+						[Local methodName(15011):String:String]
+						[FInstance:() -> String]
+							String
+							toLowerCase:() -> String
+			[Var constructorConfig(15020):Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+				[Block:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					[Var this(15018):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[Field:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[Local config(15014):Null<reflaxe.elixir.helpers.ADTConfig>:Null<reflaxe.elixir.helpers.ADTConfig>]
+							[FAnon:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>] constructors:Map<String, reflaxe.elixir.helpers.ADTConstructorConfig>
+					[Call:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+						[Field:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>] [Local this(15018):haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[FInstance:(key : String) -> Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+								haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConstructorConfig>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local fieldName(15015):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local constructorConfig(15020):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					==
+					[Const:Null<reflaxe.elixir.helpers.ADTConstructorConfig>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<String>] null
+			[If:Void]
+				[Field:Bool]
+					[Local constructorConfig(15020):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+					[FAnon:Bool] isAtom:Bool
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Field:String]
+							[Local constructorConfig(15020):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+							[FAnon:String] elixirPattern:String
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local args(15012):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[FInstance:Int]
+							Array<haxe.macro.TypedExpr>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Const:String] ":"
+							+
+							[Local fieldName(15015):String:String]
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local args(15012):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[FInstance:Int]
+									Array<haxe.macro.TypedExpr>
+									length:Int
+							==
+							[Const:Int] 1
+						[Then:Dynamic] [Block:Dynamic]
+							[Var compiledArg(15021):Null<String>]
+								[Call:Null<String>]
+									[Local compileExpr(15013):haxe.macro.TypedExpr -> Null<String>:haxe.macro.TypedExpr -> Null<String>]
+									[Array:haxe.macro.TypedExpr]
+										[Local args(15012):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[Const:Int] 0
+							[If:Void]
+								[Binop:Bool]
+									[Local compiledArg(15021):Null<String>:Null<String>]
+									==
+									[Const:Null<String>] null
+								[Then:Null<String>] [Block:Null<String>]
+									[Binop:Null<String>]
+										[Local compiledArg(15021):Null<String>:Null<String>]
+										=
+										[Const:String] "nil"
+							[Return:Dynamic]
+								[Call:String]
+									[Field:(s : String, sub : String, by : String) -> String]
+										[TypeExpr StringTools:{ Statics StringTools }]
+										[FStatic:(s : String, sub : String, by : String) -> String]
+											StringTools
+											replace:(s : String, sub : String, by : String) -> String
+									[Field:String]
+										[Local constructorConfig(15020):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[FAnon:String] elixirPattern:String
+									[Const:String] "%s"
+									[Local compiledArg(15021):Null<String>:Null<String>]
+						[Else:Dynamic] [Block:Dynamic]
+							[Var compiledArgs(15033):Array<Null<String>>]
+								[Block:Array<Null<String>>]
+									[Var `(15027):Array<Null<String>>] [ArrayDecl:Array<Null<String>>]
+									[Block:Void]
+										[Var `(15028):Int] [Const:Int] 0
+										[Var `(15029):Array<haxe.macro.TypedExpr>] [Local args(15012):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[While:Void]
+											[Binop:Bool]
+												[Local `(15028):Int:Int]
+												<
+												[Field:Int]
+													[Local `(15029):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+													[FInstance:Int]
+														Array<haxe.macro.TypedExpr>
+														length:Int
+											[Block:Void]
+												[Var v(15030):haxe.macro.TypedExpr]
+													[Array:haxe.macro.TypedExpr]
+														[Local `(15029):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[Local `(15028):Int:Int]
+												[Unop:Int]
+													++
+													Prefix
+													[Local `(15028):Int:Int]
+												[Call:Int]
+													[Field:(x : Null<String>) -> Int]
+														[Local `(15027):Array<Null<String>>:Array<Null<String>>]
+														[FInstance:(x : Null<String>) -> Int]
+															Array<Null<String>>
+															push:(x : Array.T) -> Int
+													[Call:Null<String>]
+														[Function:(arg : haxe.macro.TypedExpr) -> Null<String>]
+															[Arg:haxe.macro.TypedExpr] [Local arg(15031):haxe.macro.TypedExpr]
+															[Block:Dynamic]
+																[Return:Dynamic]
+																	[Block:Null<String>]
+																		[Var compiled(15032):Null<String>]
+																			[Call:Null<String>]
+																				[Local compileExpr(15013):haxe.macro.TypedExpr -> Null<String>:haxe.macro.TypedExpr -> Null<String>]
+																				[Local arg(15031):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																		[Return:Null<String>]
+																			[If:Null<String>]
+																				[Parenthesis:Bool]
+																					[Binop:Bool]
+																						[Local compiled(15032):Null<String>:Null<String>]
+																						!=
+																						[Const:Null<String>] null
+																				[Then:Null<String>] [Local compiled(15032):Null<String>:Null<String>]
+																				[Else:String] [Const:String] "nil"
+														[Local v(15030):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Local `(15027):Array<Null<String>>:Array<Null<String>>]
+							[Var argTuple(15034):String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "{"
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local compiledArgs(15033):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:(sep : String) -> String]
+													Array<Null<String>>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] "}"
+							[Return:Dynamic]
+								[Call:String]
+									[Field:(s : String, sub : String, by : String) -> String]
+										[TypeExpr StringTools:{ Statics StringTools }]
+										[FStatic:(s : String, sub : String, by : String) -> String]
+											StringTools
+											replace:(s : String, sub : String, by : String) -> String
+									[Field:String]
+										[Local constructorConfig(15020):Null<reflaxe.elixir.helpers.ADTConstructorConfig>:Null<reflaxe.elixir.helpers.ADTConstructorConfig>]
+										[FAnon:String] elixirPattern:String
+									[Const:String] "%s"
+									[Local argTuple(15034):String:String]
+
+	public static function isADTTypeName[Function:(typeName : String) -> Bool]
+		[Arg:String] [Local typeName(15035):String]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+					[FStatic:() -> Void]
+						reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+						initConfigs:() -> Void
+			[For:Void]
+				[Local config(15040):reflaxe.elixir.helpers.ADTConfig]
+				[Block:Iterator<reflaxe.elixir.helpers.ADTConfig>]
+					[Var this(15039):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+						[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+							[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+							[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+								reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+								adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+					[Call:Iterator<reflaxe.elixir.helpers.ADTConfig>]
+						[Field:() -> Iterator<reflaxe.elixir.helpers.ADTConfig>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(15039):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+							[FInstance:() -> Iterator<reflaxe.elixir.helpers.ADTConfig>]
+								haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+								iterator:() -> Iterator<haxe.ds.StringMap.T>
+				[Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:String]
+								[Local config(15040):reflaxe.elixir.helpers.ADTConfig:reflaxe.elixir.helpers.ADTConfig]
+								[FAnon:String] typeName:String
+							==
+							[Local typeName(15035):String:String]
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	public static function getADTConfigByTypeName[Function:(typeName : String) -> Null<reflaxe.elixir.helpers.ADTConfig>]
+		[Arg:String] [Local typeName(15041):String]
+		[Block:Dynamic]
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+					[FStatic:() -> Void]
+						reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+						initConfigs:() -> Void
+			[For:Void]
+				[Local config(15046):reflaxe.elixir.helpers.ADTConfig]
+				[Block:Iterator<reflaxe.elixir.helpers.ADTConfig>]
+					[Var this(15045):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+						[Field:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+							[TypeExpr reflaxe.elixir.helpers.AlgebraicDataTypeCompiler:Class<reflaxe.elixir.helpers.AlgebraicDataTypeCompiler>]
+							[FStatic:Map<String, reflaxe.elixir.helpers.ADTConfig>]
+								reflaxe.elixir.helpers.AlgebraicDataTypeCompiler
+								adtConfigs:Map<String, reflaxe.elixir.helpers.ADTConfig>
+					[Call:Iterator<reflaxe.elixir.helpers.ADTConfig>]
+						[Field:() -> Iterator<reflaxe.elixir.helpers.ADTConfig>]
+							[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>] [Local this(15045):haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>:haxe.IMap<String, reflaxe.elixir.helpers.ADTConfig>]
+							[FInstance:() -> Iterator<reflaxe.elixir.helpers.ADTConfig>]
+								haxe.ds.StringMap<reflaxe.elixir.helpers.ADTConfig>
+								iterator:() -> Iterator<haxe.ds.StringMap.T>
+				[Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:String]
+								[Local config(15046):reflaxe.elixir.helpers.ADTConfig:reflaxe.elixir.helpers.ADTConfig]
+								[FAnon:String] typeName:String
+							==
+							[Local typeName(15041):String:String]
+						[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local config(15046):reflaxe.elixir.helpers.ADTConfig:reflaxe.elixir.helpers.ADTConfig]
+			[Return:Dynamic] [Const:Null<reflaxe.elixir.helpers.ADTConfig>] null
+}

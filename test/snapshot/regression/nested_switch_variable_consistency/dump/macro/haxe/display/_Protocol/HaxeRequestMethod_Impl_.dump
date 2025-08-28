@@ -1,0 +1,13 @@
+private class haxe.display._Protocol.HaxeRequestMethod_Impl_ {
+
+	@:noCompletion
+	public static inline function _new[Function:(method : String) -> haxe.display.HaxeRequestMethod<haxe.display.HaxeRequestMethod.TParams, haxe.display.HaxeRequestMethod.TResponse>]
+		[Arg:String] [Local method(348):String]
+		[Block:Dynamic]
+			[Var this(349):String]
+			[Binop:String]
+				[Local this(349):String:String]
+				=
+				[Local method(348):String:String]
+			[Return:Dynamic] [Cast:haxe.display.HaxeRequestMethod<haxe.display.HaxeRequestMethod.TParams, haxe.display.HaxeRequestMethod.TResponse>] [Local this(349):String:String]
+}

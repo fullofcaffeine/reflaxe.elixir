@@ -1,0 +1,140 @@
+@:structInit
+class reflaxe.elixir.helpers.VariableDeclarationInfo {
+
+	@:compilerGenerated @:inheritDoc
+	public function new[Function:(declaredAtScopeDepth : Int, declaredInConditional : Bool, declaredInLoop : Bool, ?usedOutsideDeclarationScope : Null<Bool>, transformedName : String, originalName : String, ?declarationPoint : Null<Null<haxe.macro.Position>>, ?usagePoints : Null<Array<haxe.macro.Position>>) -> Void]
+		[Arg:Int] [Local declaredAtScopeDepth(14355):Int]
+		[Arg:Bool] [Local declaredInConditional(14354):Bool]
+		[Arg:Bool] [Local declaredInLoop(14353):Bool]
+		[Arg:Null<Bool>] [Local usedOutsideDeclarationScope(14352):Null<Bool>]
+		[Arg:String] [Local transformedName(14351):String]
+		[Arg:String] [Local originalName(14350):String]
+		[Arg:Null<Null<haxe.macro.Position>>] [Local declarationPoint(14349):Null<Null<haxe.macro.Position>>]
+		[Arg:Null<Array<haxe.macro.Position>>] [Local usagePoints(14348):Null<Array<haxe.macro.Position>>]
+		[Block:Void]
+			[Binop:Array<haxe.macro.Position>]
+				[Field:Array<haxe.macro.Position>]
+					[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+					[FInstance:Array<haxe.macro.Position>]
+						reflaxe.elixir.helpers.VariableDeclarationInfo
+						usagePoints:Array<haxe.macro.Position>
+				=
+				[ArrayDecl:Array<haxe.macro.Position>]
+			[Binop:Null<haxe.macro.Position>]
+				[Field:Null<haxe.macro.Position>]
+					[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+					[FInstance:Null<haxe.macro.Position>]
+						reflaxe.elixir.helpers.VariableDeclarationInfo
+						declarationPoint:Null<haxe.macro.Position>
+				=
+				[Const:Null<haxe.macro.Position>] null
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.VariableDeclarationInfo
+						usedOutsideDeclarationScope:Bool
+				=
+				[Const:Bool] false
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+					[FInstance:Int]
+						reflaxe.elixir.helpers.VariableDeclarationInfo
+						declaredAtScopeDepth:Int
+				=
+				[Local declaredAtScopeDepth(14355):Int:Int]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.VariableDeclarationInfo
+						declaredInConditional:Bool
+				=
+				[Local declaredInConditional(14354):Bool:Bool]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.VariableDeclarationInfo
+						declaredInLoop:Bool
+				=
+				[Local declaredInLoop(14353):Bool:Bool]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local usedOutsideDeclarationScope(14352):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+						[FInstance:Bool]
+							reflaxe.elixir.helpers.VariableDeclarationInfo
+							usedOutsideDeclarationScope:Bool
+					=
+					[Local usedOutsideDeclarationScope(14352):Null<Bool>:Null<Bool>]
+			[Binop:String]
+				[Field:String]
+					[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+					[FInstance:String]
+						reflaxe.elixir.helpers.VariableDeclarationInfo
+						transformedName:String
+				=
+				[Local transformedName(14351):String:String]
+			[Binop:String]
+				[Field:String]
+					[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+					[FInstance:String]
+						reflaxe.elixir.helpers.VariableDeclarationInfo
+						originalName:String
+				=
+				[Local originalName(14350):String:String]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local declarationPoint(14349):Null<Null<haxe.macro.Position>>:Null<Null<haxe.macro.Position>>]
+						!=
+						[Const:Null<Null<haxe.macro.Position>>] null
+				[Then:Null<haxe.macro.Position>] [Binop:Null<haxe.macro.Position>]
+					[Field:Null<haxe.macro.Position>]
+						[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+						[FInstance:Null<haxe.macro.Position>]
+							reflaxe.elixir.helpers.VariableDeclarationInfo
+							declarationPoint:Null<haxe.macro.Position>
+					=
+					[Local declarationPoint(14349):Null<Null<haxe.macro.Position>>:Null<Null<haxe.macro.Position>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local usagePoints(14348):Null<Array<haxe.macro.Position>>:Null<Array<haxe.macro.Position>>]
+						!=
+						[Const:Null<Array<haxe.macro.Position>>] null
+				[Then:Array<haxe.macro.Position>] [Binop:Array<haxe.macro.Position>]
+					[Field:Array<haxe.macro.Position>]
+						[Const:reflaxe.elixir.helpers.VariableDeclarationInfo] this
+						[FInstance:Array<haxe.macro.Position>]
+							reflaxe.elixir.helpers.VariableDeclarationInfo
+							usagePoints:Array<haxe.macro.Position>
+					=
+					[Local usagePoints(14348):Null<Array<haxe.macro.Position>>:Null<Array<haxe.macro.Position>>]
+
+	public var declaredAtScopeDepth:Int;
+
+	public var declaredInConditional:Bool;
+
+	public var declaredInLoop:Bool;
+
+	@:value(false)
+	public var usedOutsideDeclarationScope:Bool;
+
+	public var transformedName:String;
+
+	public var originalName:String;
+
+	@:value(null)
+	public var declarationPoint:Null<haxe.macro.Position>;
+
+	@:value([])
+	public var usagePoints:Array<haxe.macro.Position>;
+}

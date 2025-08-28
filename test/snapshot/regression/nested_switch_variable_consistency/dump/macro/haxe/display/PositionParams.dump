@@ -1,0 +1,1 @@
+typedef haxe.display.PositionParams = { offset : Int, file : haxe.display.FsPath, ?contents : Null<String> }

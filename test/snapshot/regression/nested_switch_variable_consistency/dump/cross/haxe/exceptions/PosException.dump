@@ -1,0 +1,106 @@
+@:keep @:used
+class haxe.exceptions.PosException extends haxe.Exception {
+
+	public function new[Function:(message : String, ?previous : Null<haxe.Exception>, ?pos : Null<haxe.PosInfos>) -> Void]
+		[Arg:String] [Local message(34429):String]
+		[Arg:Null<haxe.Exception>]
+			[Local previous(34430):Null<haxe.Exception>]
+			[Const:Null<haxe.Exception>] null
+		[Arg:Null<haxe.PosInfos>]
+			[Local pos(34431):Null<haxe.PosInfos>]
+			[Const:Null<haxe.PosInfos>] null
+		[Block:Void]
+			[Call:Void]
+				[Const:haxe.Exception] super
+				[Local message(34429):String:String]
+				[Local previous(34430):Null<haxe.Exception>:Null<haxe.Exception>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local pos(34431):Null<haxe.PosInfos>:Null<haxe.PosInfos>]
+						==
+						[Const:Null<haxe.PosInfos>] null
+				[Then:haxe.PosInfos] [Binop:haxe.PosInfos]
+					[Field:haxe.PosInfos]
+						[Const:haxe.exceptions.PosException] this
+						[FInstance:haxe.PosInfos]
+							haxe.exceptions.PosException
+							posInfos:haxe.PosInfos
+					=
+					[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+						fileName: [Const:String] "(unknown)"
+						lineNumber: [Const:Int] 0
+						className: [Const:String] "(unknown)"
+						methodName: [Const:String] "(unknown)"
+				[Else:haxe.PosInfos] [Binop:haxe.PosInfos]
+					[Field:haxe.PosInfos]
+						[Const:haxe.exceptions.PosException] this
+						[FInstance:haxe.PosInfos]
+							haxe.exceptions.PosException
+							posInfos:haxe.PosInfos
+					=
+					[Local pos(34431):Null<haxe.PosInfos>:Null<haxe.PosInfos>]
+
+	public var posInfos(default,ctor):haxe.PosInfos;
+
+	public function toString[Function:() -> String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Call:String]
+														[Field:() -> String]
+															[Const:haxe.Exception] super
+															[FInstance:() -> String]
+																haxe.Exception
+																toString:() -> String
+												+
+												[Const:String] " in "
+											+
+											[Field:String]
+												[Field:haxe.PosInfos]
+													[Const:haxe.exceptions.PosException] this
+													[FInstance:haxe.PosInfos]
+														haxe.exceptions.PosException
+														posInfos:haxe.PosInfos
+												[FAnon:String] className:String
+										+
+										[Const:String] "."
+									+
+									[Field:String]
+										[Field:haxe.PosInfos]
+											[Const:haxe.exceptions.PosException] this
+											[FInstance:haxe.PosInfos]
+												haxe.exceptions.PosException
+												posInfos:haxe.PosInfos
+										[FAnon:String] methodName:String
+								+
+								[Const:String] " at "
+							+
+							[Field:String]
+								[Field:haxe.PosInfos]
+									[Const:haxe.exceptions.PosException] this
+									[FInstance:haxe.PosInfos]
+										haxe.exceptions.PosException
+										posInfos:haxe.PosInfos
+								[FAnon:String] fileName:String
+						+
+						[Const:String] ":"
+					+
+					[Field:Int]
+						[Field:haxe.PosInfos]
+							[Const:haxe.exceptions.PosException] this
+							[FInstance:haxe.PosInfos]
+								haxe.exceptions.PosException
+								posInfos:haxe.PosInfos
+						[FAnon:Int] lineNumber:Int
+}

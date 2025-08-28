@@ -1,0 +1,58 @@
+private class haxe.ds._List.ListIterator<T> {
+
+	public inline function new[Function:(head : haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>) -> Void]
+		[Arg:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>] [Local head(2371):haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+		[Block:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+			[Binop:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+				[Field:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+					[Const:haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>] this
+					[FInstance:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+						haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>
+						head:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>
+				=
+				[Local head(2371):haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+
+	var head:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>;
+
+	public inline function hasNext[Function:() -> Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Field:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+						[Const:haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>] this
+						[FInstance:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+							haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>
+							head:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>
+					!=
+					[Const:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>] null
+
+	public inline function next[Function:() -> haxe.ds._List.ListIterator.T]
+		[Block:Dynamic]
+			[Var val(2388):haxe.ds._List.ListIterator.T]
+				[Field:haxe.ds._List.ListIterator.T]
+					[Field:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+						[Const:haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>] this
+						[FInstance:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+							haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>
+							head:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>
+					[FInstance:haxe.ds._List.ListIterator.T]
+						haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>
+						item:haxe.ds._List.ListNode.T
+			[Binop:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+				[Field:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+					[Const:haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>] this
+					[FInstance:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+						haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>
+						head:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>
+				=
+				[Field:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+					[Field:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+						[Const:haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>] this
+						[FInstance:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+							haxe.ds._List.ListIterator<haxe.ds._List.ListIterator.T>
+							head:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>
+					[FInstance:haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>]
+						haxe.ds._List.ListNode<haxe.ds._List.ListIterator.T>
+						next:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>
+			[Return:Dynamic] [Local val(2388):haxe.ds._List.ListIterator.T:haxe.ds._List.ListIterator.T]
+}

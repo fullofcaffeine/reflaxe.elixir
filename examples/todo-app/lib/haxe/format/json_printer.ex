@@ -48,7 +48,7 @@ defmodule JsonPrinter do
   def write_value(%__MODULE__{} = struct, v, key) do
     temp_result = nil
 
-    if ((struct.replacer != nil)), do: v = struct.replacer(key, v), else: nil
+    if ((struct.replacer != nil)), do: v = struct.replacer(_key, v), else: nil
 
     if ((v == nil)) do
       "null"
@@ -57,7 +57,7 @@ defmodule JsonPrinter do
     end
 
     g_array = Type.typeof(v)
-    case (case g_array do :t_null -> 0; :t_int -> 1; :t_float -> 2; :t_bool -> 3; :t_object -> 4; :t_function -> 5; :t_class -> 6; :t_enum -> 7; :t_unknown -> 8; _ -> -1 end) do
+    case g_array do
       0 -> "null"
       1 -> Std.string(v)
       2 -> s = Std.string(v)
@@ -72,7 +72,7 @@ defmodule JsonPrinter do
     temp_result
       4 -> struct.write_object(v)
       5 -> "null"
-      {6, c} -> g_array = elem(g_array, 1)
+      6 -> c = elem(g_array, 1)
     class_name = Type.get_class_name(c)
     if ((class_name == "String")) do
       struct.quote_string(v)
@@ -83,7 +83,8 @@ defmodule JsonPrinter do
         struct.write_object(v)
       end
     end
-      7 -> "null"
+      7 -> g_param_0 = elem(g_array, 1)
+    "null"
       8 -> "null"
     end
   end
@@ -158,21 +159,14 @@ defmodule JsonPrinter do
             result = result <> s.char_at(i)
           end
         else
-          case (c) do
-            _ ->
-              result = result <> "\\b"
-            _ ->
-              result = result <> "\\t"
-            _ ->
-              result = result <> "\\n"
-            _ ->
-              result = result <> "\\f"
-            _ ->
-              result = result <> "\\r"
-            _ ->
-              result = result <> "\\\""
-            _ ->
-              result = result <> "\\\\"
+          case c do
+            8 -> result = result <> "\\b"
+            9 -> result = result <> "\\t"
+            10 -> result = result <> "\\n"
+            12 -> result = result <> "\\f"
+            13 -> result = result <> "\\r"
+            34 -> result = result <> "\\\""
+            92 -> result = result <> "\\\\"
             _ -> if ((c < 32)) do
             hex = StringTools.hex(c, 4)
             result = result <> "\\u" <> hex

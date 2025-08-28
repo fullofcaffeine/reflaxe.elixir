@@ -1,0 +1,2073 @@
+class haxe.format.JsonParser {
+
+	function new[Function:(str : String) -> Void]
+		[Arg:String] [Local str(2553):String]
+		[Block:Int]
+			[Binop:String]
+				[Field:String]
+					[Const:haxe.format.JsonParser] this
+					[FInstance:String]
+						haxe.format.JsonParser
+						str:String
+				=
+				[Local str(2553):String:String]
+			[Binop:Int]
+				[Field:Int]
+					[Const:haxe.format.JsonParser] this
+					[FInstance:Int]
+						haxe.format.JsonParser
+						pos:Int
+				=
+				[Const:Int] 0
+
+	var str:String;
+
+	var pos:Int;
+
+	function doParse[Function:() -> Dynamic]
+		[Block:Dynamic]
+			[Var result(2653):Unknown<3>]
+				[Call:Dynamic]
+					[Field:() -> Dynamic]
+						[Const:haxe.format.JsonParser] this
+						[FInstance:() -> Dynamic]
+							haxe.format.JsonParser
+							parseRec:() -> Dynamic
+			[Var c(2654):Int]
+			[While:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var c(2659):Int]
+							[Binop:Int]
+								[Local c(2654):Int:Int]
+								=
+								[Call:Int]
+									[Field:(s : String, index : Int) -> Int]
+										[TypeExpr StringTools:Class<StringTools>]
+										[FStatic:(s : String, index : Int) -> Int]
+											StringTools
+											fastCodeAt:(s : String, index : Int) -> Int
+									[Field:String]
+										[Const:haxe.format.JsonParser] this
+										[FInstance:String]
+											haxe.format.JsonParser
+											str:String
+									[Unop:Int]
+										++
+										Postfix
+										[Field:Int]
+											[Const:haxe.format.JsonParser] this
+											[FInstance:Int]
+												haxe.format.JsonParser
+												pos:Int
+						[Binop:Bool]
+							[Local c(2659):Int:Int]
+							==
+							[Const:Int] null
+				[Block:Void]
+					[Meta:Void]
+						:ast(switch (c) {
+	case " ".code, "\r".code, "\n".code, "\t".code:
+	default:
+		invalidChar();	
+})
+						[Switch:Void]
+							[Local c(2654):Int:Int]
+							[Case:Void]
+								[Const:Int] 9
+								[Const:Int] 10
+								[Const:Int] 13
+								[Const:Int] 32
+								[Block:Void] [Block:Void]
+							[Default:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:() -> Void]
+											[Const:haxe.format.JsonParser] this
+											[FInstance:() -> Void]
+												haxe.format.JsonParser
+												invalidChar:() -> Void
+			[Return:Dynamic] [Local result(2653):Unknown<3>:Unknown<3>]
+
+	function parseRec[Function:() -> Dynamic]
+		[Block:Void]
+			[While:Void]
+				[Const:Bool] true
+				[Block:Void]
+					[Var c(2556):Int]
+						[Call:Int]
+							[Field:(s : String, index : Int) -> Int]
+								[TypeExpr StringTools:Class<StringTools>]
+								[FStatic:(s : String, index : Int) -> Int]
+									StringTools
+									fastCodeAt:(s : String, index : Int) -> Int
+							[Field:String]
+								[Const:haxe.format.JsonParser] this
+								[FInstance:String]
+									haxe.format.JsonParser
+									str:String
+							[Unop:Int]
+								++
+								Postfix
+								[Field:Int]
+									[Const:haxe.format.JsonParser] this
+									[FInstance:Int]
+										haxe.format.JsonParser
+										pos:Int
+					[Meta:Void]
+						:ast(switch (c) {
+	case " ".code, "\r".code, "\n".code, "\t".code:
+	case "{".code:
+		var obj = { }, field = null, comma:Null<Bool> = null;
+		while (true) {
+			var c = nextChar();
+			switch (c) {
+				case " ".code, "\r".code, "\n".code, "\t".code:
+				case "}".code:
+					if (field != null || comma == false) invalidChar();
+					return obj;				
+				case ":".code:
+					if (field == null) invalidChar();
+					Reflect.setField(obj, field, parseRec());
+					field = null;
+					comma = true;				
+				case ",".code:
+					if (comma) comma = false else invalidChar();				
+				case "\"".code:
+					if (field != null || comma) invalidChar();
+					field = parseString();				
+				default:
+					invalidChar();				
+			};
+		};	
+	case "[".code:
+		var arr = [], comma:Null<Bool> = null;
+		while (true) {
+			var c = nextChar();
+			switch (c) {
+				case " ".code, "\r".code, "\n".code, "\t".code:
+				case "]".code:
+					if (comma == false) invalidChar();
+					return arr;				
+				case ",".code:
+					if (comma) comma = false else invalidChar();				
+				default:
+					if (comma) invalidChar();
+					pos--;
+					arr.push(parseRec());
+					comma = true;				
+			};
+		};	
+	case "t".code:
+		var save = pos;
+		if (nextChar() != "r".code || nextChar() != "u".code || nextChar() != "e".code) {
+			pos = save;
+			invalidChar();
+		};
+		return true;	
+	case "f".code:
+		var save = pos;
+		if (nextChar() != "a".code || nextChar() != "l".code || nextChar() != "s".code || nextChar() != "e".code) {
+			pos = save;
+			invalidChar();
+		};
+		return false;	
+	case "n".code:
+		var save = pos;
+		if (nextChar() != "u".code || nextChar() != "l".code || nextChar() != "l".code) {
+			pos = save;
+			invalidChar();
+		};
+		return null;	
+	case "\"".code:
+		return parseString();	
+	case "0".code, "1".code, "2".code, "3".code, "4".code, "5".code, "6".code, "7".code, "8".code, "9".code, "-".code:
+		return parseNumber(c);	
+	default:
+		invalidChar();	
+})
+						[Switch:Void]
+							[Local c(2556):Int:Int]
+							[Case:Void]
+								[Const:Int] 9
+								[Const:Int] 10
+								[Const:Int] 13
+								[Const:Int] 32
+								[Block:Void] [Block:Void]
+							[Case:Dynamic]
+								[Const:Int] 34
+								[Block:Dynamic]
+									[Block:Dynamic]
+										[Return:Dynamic]
+											[Call:String]
+												[Field:() -> String]
+													[Const:haxe.format.JsonParser] this
+													[FInstance:() -> String]
+														haxe.format.JsonParser
+														parseString:() -> String
+							[Case:Dynamic]
+								[Const:Int] 45
+								[Const:Int] 48
+								[Const:Int] 49
+								[Const:Int] 50
+								[Const:Int] 51
+								[Const:Int] 52
+								[Const:Int] 53
+								[Const:Int] 54
+								[Const:Int] 55
+								[Const:Int] 56
+								[Const:Int] 57
+								[Block:Dynamic]
+									[Block:Dynamic]
+										[Return:Dynamic]
+											[Block:Dynamic]
+												[Var c(2632):Int] [Local c(2556):Int:Int]
+												[Var start(2633):Int]
+													[Binop:Int]
+														[Field:Int]
+															[Const:haxe.format.JsonParser] this
+															[FInstance:Int]
+																haxe.format.JsonParser
+																pos:Int
+														-
+														[Const:Int] 1
+												[Var minus(2634):Bool]
+													[Binop:Bool]
+														[Local c(2632):Int:Int]
+														==
+														[Const:Int] 45
+												[Var digit(2635):Bool]
+													[Unop:Bool]
+														!
+														Prefix
+														[Local minus(2634):Bool:Bool]
+												[Var zero(2636):Bool]
+													[Binop:Bool]
+														[Local c(2632):Int:Int]
+														==
+														[Const:Int] 48
+												[Var point(2637):Bool] [Const:Bool] false
+												[Var e(2638):Bool] [Const:Bool] false
+												[Var pm(2639):Bool] [Const:Bool] false
+												[Var end(2640):Bool] [Const:Bool] false
+												[While:Void]
+													[Const:Bool] true
+													[Block:Void]
+														[Binop:Int]
+															[Local c(2632):Int:Int]
+															=
+															[Call:Int]
+																[Field:(s : String, index : Int) -> Int]
+																	[TypeExpr StringTools:Class<StringTools>]
+																	[FStatic:(s : String, index : Int) -> Int]
+																		StringTools
+																		fastCodeAt:(s : String, index : Int) -> Int
+																[Field:String]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:String]
+																		haxe.format.JsonParser
+																		str:String
+																[Unop:Int]
+																	++
+																	Postfix
+																	[Field:Int]
+																		[Const:haxe.format.JsonParser] this
+																		[FInstance:Int]
+																			haxe.format.JsonParser
+																			pos:Int
+														[Meta:Void]
+															:ast(switch (c) {
+	case "0".code:
+		if (zero && !point) invalidNumber(start);
+		if (minus) {
+			minus = false;
+			zero = true;
+		};
+		digit = true;	
+	case "1".code, "2".code, "3".code, "4".code, "5".code, "6".code, "7".code, "8".code, "9".code:
+		if (zero && !point) invalidNumber(start);
+		if (minus) minus = false;
+		digit = true;
+		zero = false;	
+	case ".".code:
+		if (minus || point || e) invalidNumber(start);
+		digit = false;
+		point = true;	
+	case "e".code, "E".code:
+		if (minus || zero || e) invalidNumber(start);
+		digit = false;
+		e = true;	
+	case "+".code, "-".code:
+		if (!e || pm) invalidNumber(start);
+		digit = false;
+		pm = true;	
+	default:
+		if (!digit) invalidNumber(start);
+		pos--;
+		end = true;	
+})
+															[Switch:Void]
+																[Local c(2632):Int:Int]
+																[Case:Bool]
+																	[Const:Int] 43
+																	[Const:Int] 45
+																	[Block:Bool]
+																		[Block:Bool]
+																			[If:Void]
+																				[Binop:Bool]
+																					[Unop:Bool]
+																						!
+																						Prefix
+																						[Local e(2638):Bool:Bool]
+																					||
+																					[Local pm(2639):Bool:Bool]
+																				[Then:Void] [Block:Void]
+																					[Call:Void]
+																						[Field:(start : Int) -> Void]
+																							[Const:haxe.format.JsonParser] this
+																							[FInstance:(start : Int) -> Void]
+																								haxe.format.JsonParser
+																								invalidNumber:(start : Int) -> Void
+																						[Local start(2633):Int:Int]
+																			[Binop:Bool]
+																				[Local digit(2635):Bool:Bool]
+																				=
+																				[Const:Bool] false
+																			[Binop:Bool]
+																				[Local pm(2639):Bool:Bool]
+																				=
+																				[Const:Bool] true
+																[Case:Bool]
+																	[Const:Int] 46
+																	[Block:Bool]
+																		[Block:Bool]
+																			[If:Void]
+																				[Binop:Bool]
+																					[Binop:Bool]
+																						[Local minus(2634):Bool:Bool]
+																						||
+																						[Local point(2637):Bool:Bool]
+																					||
+																					[Local e(2638):Bool:Bool]
+																				[Then:Void] [Block:Void]
+																					[Call:Void]
+																						[Field:(start : Int) -> Void]
+																							[Const:haxe.format.JsonParser] this
+																							[FInstance:(start : Int) -> Void]
+																								haxe.format.JsonParser
+																								invalidNumber:(start : Int) -> Void
+																						[Local start(2633):Int:Int]
+																			[Binop:Bool]
+																				[Local digit(2635):Bool:Bool]
+																				=
+																				[Const:Bool] false
+																			[Binop:Bool]
+																				[Local point(2637):Bool:Bool]
+																				=
+																				[Const:Bool] true
+																[Case:Bool]
+																	[Const:Int] 48
+																	[Block:Bool]
+																		[Block:Bool]
+																			[If:Void]
+																				[Binop:Bool]
+																					[Local zero(2636):Bool:Bool]
+																					&&
+																					[Unop:Bool]
+																						!
+																						Prefix
+																						[Local point(2637):Bool:Bool]
+																				[Then:Void] [Block:Void]
+																					[Call:Void]
+																						[Field:(start : Int) -> Void]
+																							[Const:haxe.format.JsonParser] this
+																							[FInstance:(start : Int) -> Void]
+																								haxe.format.JsonParser
+																								invalidNumber:(start : Int) -> Void
+																						[Local start(2633):Int:Int]
+																			[If:Void]
+																				[Local minus(2634):Bool:Bool]
+																				[Then:Bool] [Block:Bool]
+																					[Binop:Bool]
+																						[Local minus(2634):Bool:Bool]
+																						=
+																						[Const:Bool] false
+																					[Binop:Bool]
+																						[Local zero(2636):Bool:Bool]
+																						=
+																						[Const:Bool] true
+																			[Binop:Bool]
+																				[Local digit(2635):Bool:Bool]
+																				=
+																				[Const:Bool] true
+																[Case:Bool]
+																	[Const:Int] 49
+																	[Const:Int] 50
+																	[Const:Int] 51
+																	[Const:Int] 52
+																	[Const:Int] 53
+																	[Const:Int] 54
+																	[Const:Int] 55
+																	[Const:Int] 56
+																	[Const:Int] 57
+																	[Block:Bool]
+																		[Block:Bool]
+																			[If:Void]
+																				[Binop:Bool]
+																					[Local zero(2636):Bool:Bool]
+																					&&
+																					[Unop:Bool]
+																						!
+																						Prefix
+																						[Local point(2637):Bool:Bool]
+																				[Then:Void] [Block:Void]
+																					[Call:Void]
+																						[Field:(start : Int) -> Void]
+																							[Const:haxe.format.JsonParser] this
+																							[FInstance:(start : Int) -> Void]
+																								haxe.format.JsonParser
+																								invalidNumber:(start : Int) -> Void
+																						[Local start(2633):Int:Int]
+																			[If:Void]
+																				[Local minus(2634):Bool:Bool]
+																				[Then:Bool] [Block:Bool]
+																					[Binop:Bool]
+																						[Local minus(2634):Bool:Bool]
+																						=
+																						[Const:Bool] false
+																			[Binop:Bool]
+																				[Local digit(2635):Bool:Bool]
+																				=
+																				[Const:Bool] true
+																			[Binop:Bool]
+																				[Local zero(2636):Bool:Bool]
+																				=
+																				[Const:Bool] false
+																[Case:Bool]
+																	[Const:Int] 69
+																	[Const:Int] 101
+																	[Block:Bool]
+																		[Block:Bool]
+																			[If:Void]
+																				[Binop:Bool]
+																					[Binop:Bool]
+																						[Local minus(2634):Bool:Bool]
+																						||
+																						[Local zero(2636):Bool:Bool]
+																					||
+																					[Local e(2638):Bool:Bool]
+																				[Then:Void] [Block:Void]
+																					[Call:Void]
+																						[Field:(start : Int) -> Void]
+																							[Const:haxe.format.JsonParser] this
+																							[FInstance:(start : Int) -> Void]
+																								haxe.format.JsonParser
+																								invalidNumber:(start : Int) -> Void
+																						[Local start(2633):Int:Int]
+																			[Binop:Bool]
+																				[Local digit(2635):Bool:Bool]
+																				=
+																				[Const:Bool] false
+																			[Binop:Bool]
+																				[Local e(2638):Bool:Bool]
+																				=
+																				[Const:Bool] true
+																[Default:Bool]
+																	[Block:Bool]
+																		[If:Void]
+																			[Unop:Bool]
+																				!
+																				Prefix
+																				[Local digit(2635):Bool:Bool]
+																			[Then:Void] [Block:Void]
+																				[Call:Void]
+																					[Field:(start : Int) -> Void]
+																						[Const:haxe.format.JsonParser] this
+																						[FInstance:(start : Int) -> Void]
+																							haxe.format.JsonParser
+																							invalidNumber:(start : Int) -> Void
+																					[Local start(2633):Int:Int]
+																		[Unop:Int]
+																			--
+																			Postfix
+																			[Field:Int]
+																				[Const:haxe.format.JsonParser] this
+																				[FInstance:Int]
+																					haxe.format.JsonParser
+																					pos:Int
+																		[Binop:Bool]
+																			[Local end(2640):Bool:Bool]
+																			=
+																			[Const:Bool] true
+														[If:Void]
+															[Local end(2640):Bool:Bool]
+															[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+												[Var f(2641):Float]
+													[Call:Float]
+														[Field:(x : String) -> Float]
+															[TypeExpr Std:Class<Std>]
+															[FStatic:(x : String) -> Float]
+																Std
+																parseFloat:(x : String) -> Float
+														[Call:String]
+															[Field:(pos : Int, ?len : Null<Int>) -> String]
+																[Field:String]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:String]
+																		haxe.format.JsonParser
+																		str:String
+																[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+																	String
+																	substr:(pos : Int, ?len : Null<Int>) -> String
+															[Local start(2633):Int:Int]
+															[Binop:Int]
+																[Field:Int]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:Int]
+																		haxe.format.JsonParser
+																		pos:Int
+																-
+																[Local start(2633):Int:Int]
+												[If:Dynamic]
+													[Local point(2637):Bool:Bool]
+													[Then:Float] [Block:Float] [Local f(2641):Float:Float]
+													[Else:Dynamic] [Block:Dynamic]
+														[Var i(2642):Int]
+															[Call:Int]
+																[Field:(x : Float) -> Int]
+																	[TypeExpr Std:Class<Std>]
+																	[FStatic:(x : Float) -> Int]
+																		Std
+																		int:(x : Float) -> Int
+																[Local f(2641):Float:Float]
+														[If:Dynamic]
+															[Binop:Bool]
+																[Local i(2642):Int:Int]
+																==
+																[Local f(2641):Float:Float]
+															[Then:Int] [Block:Int] [Local i(2642):Int:Int]
+															[Else:Float] [Block:Float] [Local f(2641):Float:Float]
+							[Case:Void]
+								[Const:Int] 91
+								[Block:Void]
+									[Block:Void]
+										[Var arr(2643):Array<Unknown<4>>] [ArrayDecl:Array<Unknown<4>>]
+										[Var comma(2644):Null<Bool>] [Const:Null<Bool>] null
+										[While:Void]
+											[Const:Bool] true
+											[Block:Void]
+												[Var c(2645):Int]
+													[Call:Int]
+														[Field:(s : String, index : Int) -> Int]
+															[TypeExpr StringTools:Class<StringTools>]
+															[FStatic:(s : String, index : Int) -> Int]
+																StringTools
+																fastCodeAt:(s : String, index : Int) -> Int
+														[Field:String]
+															[Const:haxe.format.JsonParser] this
+															[FInstance:String]
+																haxe.format.JsonParser
+																str:String
+														[Unop:Int]
+															++
+															Postfix
+															[Field:Int]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:Int]
+																	haxe.format.JsonParser
+																	pos:Int
+												[Meta:Void]
+													:ast(switch (c) {
+	case " ".code, "\r".code, "\n".code, "\t".code:
+	case "]".code:
+		if (comma == false) invalidChar();
+		return arr;	
+	case ",".code:
+		if (comma) comma = false else invalidChar();	
+	default:
+		if (comma) invalidChar();
+		pos--;
+		arr.push(parseRec());
+		comma = true;	
+})
+													[Switch:Void]
+														[Local c(2645):Int:Int]
+														[Case:Void]
+															[Const:Int] 9
+															[Const:Int] 10
+															[Const:Int] 13
+															[Const:Int] 32
+															[Block:Void] [Block:Void]
+														[Case:Void]
+															[Const:Int] 44
+															[Block:Void]
+																[Block:Void]
+																	[If:Void]
+																		[Local comma(2644):Null<Bool>:Null<Bool>]
+																		[Then:Null<Bool>] [Block:Null<Bool>]
+																			[Binop:Null<Bool>]
+																				[Local comma(2644):Null<Bool>:Null<Bool>]
+																				=
+																				[Const:Bool] false
+																		[Else:Void] [Block:Void]
+																			[Call:Void]
+																				[Field:() -> Void]
+																					[Const:haxe.format.JsonParser] this
+																					[FInstance:() -> Void]
+																						haxe.format.JsonParser
+																						invalidChar:() -> Void
+														[Case:Dynamic]
+															[Const:Int] 93
+															[Block:Dynamic]
+																[Block:Dynamic]
+																	[If:Void]
+																		[Binop:Bool]
+																			[Local comma(2644):Null<Bool>:Null<Bool>]
+																			==
+																			[Const:Bool] false
+																		[Then:Void] [Block:Void]
+																			[Call:Void]
+																				[Field:() -> Void]
+																					[Const:haxe.format.JsonParser] this
+																					[FInstance:() -> Void]
+																						haxe.format.JsonParser
+																						invalidChar:() -> Void
+																	[Return:Dynamic] [Local arr(2643):Array<Unknown<4>>:Array<Unknown<4>>]
+														[Default:Null<Bool>]
+															[Block:Null<Bool>]
+																[If:Void]
+																	[Local comma(2644):Null<Bool>:Null<Bool>]
+																	[Then:Void] [Block:Void]
+																		[Call:Void]
+																			[Field:() -> Void]
+																				[Const:haxe.format.JsonParser] this
+																				[FInstance:() -> Void]
+																					haxe.format.JsonParser
+																					invalidChar:() -> Void
+																[Unop:Int]
+																	--
+																	Postfix
+																	[Field:Int]
+																		[Const:haxe.format.JsonParser] this
+																		[FInstance:Int]
+																			haxe.format.JsonParser
+																			pos:Int
+																[Call:Int]
+																	[Field:(x : Unknown<4>) -> Int]
+																		[Local arr(2643):Array<Unknown<4>>:Array<Unknown<4>>]
+																		[FInstance:(x : Unknown<4>) -> Int]
+																			Array<Unknown<4>>
+																			push:(x : Array.T) -> Int
+																	[Call:Dynamic]
+																		[Field:() -> Dynamic]
+																			[Const:haxe.format.JsonParser] this
+																			[FInstance:() -> Dynamic]
+																				haxe.format.JsonParser
+																				parseRec:() -> Dynamic
+																[Binop:Null<Bool>]
+																	[Local comma(2644):Null<Bool>:Null<Bool>]
+																	=
+																	[Const:Bool] true
+							[Case:Dynamic]
+								[Const:Int] 102
+								[Block:Dynamic]
+									[Block:Dynamic]
+										[Var save(2646):Int]
+											[Field:Int]
+												[Const:haxe.format.JsonParser] this
+												[FInstance:Int]
+													haxe.format.JsonParser
+													pos:Int
+										[If:Void]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Binop:Bool]
+															[Call:Int]
+																[Field:(s : String, index : Int) -> Int]
+																	[TypeExpr StringTools:Class<StringTools>]
+																	[FStatic:(s : String, index : Int) -> Int]
+																		StringTools
+																		fastCodeAt:(s : String, index : Int) -> Int
+																[Field:String]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:String]
+																		haxe.format.JsonParser
+																		str:String
+																[Unop:Int]
+																	++
+																	Postfix
+																	[Field:Int]
+																		[Const:haxe.format.JsonParser] this
+																		[FInstance:Int]
+																			haxe.format.JsonParser
+																			pos:Int
+															!=
+															[Const:Int] 97
+														||
+														[Binop:Bool]
+															[Call:Int]
+																[Field:(s : String, index : Int) -> Int]
+																	[TypeExpr StringTools:Class<StringTools>]
+																	[FStatic:(s : String, index : Int) -> Int]
+																		StringTools
+																		fastCodeAt:(s : String, index : Int) -> Int
+																[Field:String]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:String]
+																		haxe.format.JsonParser
+																		str:String
+																[Unop:Int]
+																	++
+																	Postfix
+																	[Field:Int]
+																		[Const:haxe.format.JsonParser] this
+																		[FInstance:Int]
+																			haxe.format.JsonParser
+																			pos:Int
+															!=
+															[Const:Int] 108
+													||
+													[Binop:Bool]
+														[Call:Int]
+															[Field:(s : String, index : Int) -> Int]
+																[TypeExpr StringTools:Class<StringTools>]
+																[FStatic:(s : String, index : Int) -> Int]
+																	StringTools
+																	fastCodeAt:(s : String, index : Int) -> Int
+															[Field:String]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:String]
+																	haxe.format.JsonParser
+																	str:String
+															[Unop:Int]
+																++
+																Postfix
+																[Field:Int]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:Int]
+																		haxe.format.JsonParser
+																		pos:Int
+														!=
+														[Const:Int] 115
+												||
+												[Binop:Bool]
+													[Call:Int]
+														[Field:(s : String, index : Int) -> Int]
+															[TypeExpr StringTools:Class<StringTools>]
+															[FStatic:(s : String, index : Int) -> Int]
+																StringTools
+																fastCodeAt:(s : String, index : Int) -> Int
+														[Field:String]
+															[Const:haxe.format.JsonParser] this
+															[FInstance:String]
+																haxe.format.JsonParser
+																str:String
+														[Unop:Int]
+															++
+															Postfix
+															[Field:Int]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:Int]
+																	haxe.format.JsonParser
+																	pos:Int
+													!=
+													[Const:Int] 101
+											[Then:Void] [Block:Void]
+												[Binop:Int]
+													[Field:Int]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:Int]
+															haxe.format.JsonParser
+															pos:Int
+													=
+													[Local save(2646):Int:Int]
+												[Call:Void]
+													[Field:() -> Void]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:() -> Void]
+															haxe.format.JsonParser
+															invalidChar:() -> Void
+										[Return:Dynamic] [Const:Bool] false
+							[Case:Dynamic]
+								[Const:Int] 110
+								[Block:Dynamic]
+									[Block:Dynamic]
+										[Var save(2647):Int]
+											[Field:Int]
+												[Const:haxe.format.JsonParser] this
+												[FInstance:Int]
+													haxe.format.JsonParser
+													pos:Int
+										[If:Void]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Call:Int]
+															[Field:(s : String, index : Int) -> Int]
+																[TypeExpr StringTools:Class<StringTools>]
+																[FStatic:(s : String, index : Int) -> Int]
+																	StringTools
+																	fastCodeAt:(s : String, index : Int) -> Int
+															[Field:String]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:String]
+																	haxe.format.JsonParser
+																	str:String
+															[Unop:Int]
+																++
+																Postfix
+																[Field:Int]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:Int]
+																		haxe.format.JsonParser
+																		pos:Int
+														!=
+														[Const:Int] 117
+													||
+													[Binop:Bool]
+														[Call:Int]
+															[Field:(s : String, index : Int) -> Int]
+																[TypeExpr StringTools:Class<StringTools>]
+																[FStatic:(s : String, index : Int) -> Int]
+																	StringTools
+																	fastCodeAt:(s : String, index : Int) -> Int
+															[Field:String]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:String]
+																	haxe.format.JsonParser
+																	str:String
+															[Unop:Int]
+																++
+																Postfix
+																[Field:Int]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:Int]
+																		haxe.format.JsonParser
+																		pos:Int
+														!=
+														[Const:Int] 108
+												||
+												[Binop:Bool]
+													[Call:Int]
+														[Field:(s : String, index : Int) -> Int]
+															[TypeExpr StringTools:Class<StringTools>]
+															[FStatic:(s : String, index : Int) -> Int]
+																StringTools
+																fastCodeAt:(s : String, index : Int) -> Int
+														[Field:String]
+															[Const:haxe.format.JsonParser] this
+															[FInstance:String]
+																haxe.format.JsonParser
+																str:String
+														[Unop:Int]
+															++
+															Postfix
+															[Field:Int]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:Int]
+																	haxe.format.JsonParser
+																	pos:Int
+													!=
+													[Const:Int] 108
+											[Then:Void] [Block:Void]
+												[Binop:Int]
+													[Field:Int]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:Int]
+															haxe.format.JsonParser
+															pos:Int
+													=
+													[Local save(2647):Int:Int]
+												[Call:Void]
+													[Field:() -> Void]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:() -> Void]
+															haxe.format.JsonParser
+															invalidChar:() -> Void
+										[Return:Dynamic] [Const:Dynamic] null
+							[Case:Dynamic]
+								[Const:Int] 116
+								[Block:Dynamic]
+									[Block:Dynamic]
+										[Var save(2648):Int]
+											[Field:Int]
+												[Const:haxe.format.JsonParser] this
+												[FInstance:Int]
+													haxe.format.JsonParser
+													pos:Int
+										[If:Void]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Binop:Bool]
+														[Call:Int]
+															[Field:(s : String, index : Int) -> Int]
+																[TypeExpr StringTools:Class<StringTools>]
+																[FStatic:(s : String, index : Int) -> Int]
+																	StringTools
+																	fastCodeAt:(s : String, index : Int) -> Int
+															[Field:String]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:String]
+																	haxe.format.JsonParser
+																	str:String
+															[Unop:Int]
+																++
+																Postfix
+																[Field:Int]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:Int]
+																		haxe.format.JsonParser
+																		pos:Int
+														!=
+														[Const:Int] 114
+													||
+													[Binop:Bool]
+														[Call:Int]
+															[Field:(s : String, index : Int) -> Int]
+																[TypeExpr StringTools:Class<StringTools>]
+																[FStatic:(s : String, index : Int) -> Int]
+																	StringTools
+																	fastCodeAt:(s : String, index : Int) -> Int
+															[Field:String]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:String]
+																	haxe.format.JsonParser
+																	str:String
+															[Unop:Int]
+																++
+																Postfix
+																[Field:Int]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:Int]
+																		haxe.format.JsonParser
+																		pos:Int
+														!=
+														[Const:Int] 117
+												||
+												[Binop:Bool]
+													[Call:Int]
+														[Field:(s : String, index : Int) -> Int]
+															[TypeExpr StringTools:Class<StringTools>]
+															[FStatic:(s : String, index : Int) -> Int]
+																StringTools
+																fastCodeAt:(s : String, index : Int) -> Int
+														[Field:String]
+															[Const:haxe.format.JsonParser] this
+															[FInstance:String]
+																haxe.format.JsonParser
+																str:String
+														[Unop:Int]
+															++
+															Postfix
+															[Field:Int]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:Int]
+																	haxe.format.JsonParser
+																	pos:Int
+													!=
+													[Const:Int] 101
+											[Then:Void] [Block:Void]
+												[Binop:Int]
+													[Field:Int]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:Int]
+															haxe.format.JsonParser
+															pos:Int
+													=
+													[Local save(2648):Int:Int]
+												[Call:Void]
+													[Field:() -> Void]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:() -> Void]
+															haxe.format.JsonParser
+															invalidChar:() -> Void
+										[Return:Dynamic] [Const:Bool] true
+							[Case:Void]
+								[Const:Int] 123
+								[Block:Void]
+									[Block:Void]
+										[Var obj(2649):{ }] [ObjectDecl:{ }]
+										[Var field(2650):Null<String>] [Const:Null<String>] null
+										[Var comma(2651):Null<Bool>] [Const:Null<Bool>] null
+										[While:Void]
+											[Const:Bool] true
+											[Block:Void]
+												[Var c(2652):Int]
+													[Call:Int]
+														[Field:(s : String, index : Int) -> Int]
+															[TypeExpr StringTools:Class<StringTools>]
+															[FStatic:(s : String, index : Int) -> Int]
+																StringTools
+																fastCodeAt:(s : String, index : Int) -> Int
+														[Field:String]
+															[Const:haxe.format.JsonParser] this
+															[FInstance:String]
+																haxe.format.JsonParser
+																str:String
+														[Unop:Int]
+															++
+															Postfix
+															[Field:Int]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:Int]
+																	haxe.format.JsonParser
+																	pos:Int
+												[Meta:Void]
+													:ast(switch (c) {
+	case " ".code, "\r".code, "\n".code, "\t".code:
+	case "}".code:
+		if (field != null || comma == false) invalidChar();
+		return obj;	
+	case ":".code:
+		if (field == null) invalidChar();
+		Reflect.setField(obj, field, parseRec());
+		field = null;
+		comma = true;	
+	case ",".code:
+		if (comma) comma = false else invalidChar();	
+	case "\"".code:
+		if (field != null || comma) invalidChar();
+		field = parseString();	
+	default:
+		invalidChar();	
+})
+													[Switch:Void]
+														[Local c(2652):Int:Int]
+														[Case:Void]
+															[Const:Int] 9
+															[Const:Int] 10
+															[Const:Int] 13
+															[Const:Int] 32
+															[Block:Void] [Block:Void]
+														[Case:Null<String>]
+															[Const:Int] 34
+															[Block:Null<String>]
+																[Block:Null<String>]
+																	[If:Void]
+																		[Binop:Bool]
+																			[Binop:Bool]
+																				[Local field(2650):Null<String>:Null<String>]
+																				!=
+																				[Const:Null<String>] null
+																			||
+																			[Local comma(2651):Null<Bool>:Null<Bool>]
+																		[Then:Void] [Block:Void]
+																			[Call:Void]
+																				[Field:() -> Void]
+																					[Const:haxe.format.JsonParser] this
+																					[FInstance:() -> Void]
+																						haxe.format.JsonParser
+																						invalidChar:() -> Void
+																	[Binop:Null<String>]
+																		[Local field(2650):Null<String>:Null<String>]
+																		=
+																		[Call:String]
+																			[Field:() -> String]
+																				[Const:haxe.format.JsonParser] this
+																				[FInstance:() -> String]
+																					haxe.format.JsonParser
+																					parseString:() -> String
+														[Case:Void]
+															[Const:Int] 44
+															[Block:Void]
+																[Block:Void]
+																	[If:Void]
+																		[Local comma(2651):Null<Bool>:Null<Bool>]
+																		[Then:Null<Bool>] [Block:Null<Bool>]
+																			[Binop:Null<Bool>]
+																				[Local comma(2651):Null<Bool>:Null<Bool>]
+																				=
+																				[Const:Bool] false
+																		[Else:Void] [Block:Void]
+																			[Call:Void]
+																				[Field:() -> Void]
+																					[Const:haxe.format.JsonParser] this
+																					[FInstance:() -> Void]
+																						haxe.format.JsonParser
+																						invalidChar:() -> Void
+														[Case:Null<Bool>]
+															[Const:Int] 58
+															[Block:Null<Bool>]
+																[Block:Null<Bool>]
+																	[If:Void]
+																		[Binop:Bool]
+																			[Local field(2650):Null<String>:Null<String>]
+																			==
+																			[Const:Null<String>] null
+																		[Then:Void] [Block:Void]
+																			[Call:Void]
+																				[Field:() -> Void]
+																					[Const:haxe.format.JsonParser] this
+																					[FInstance:() -> Void]
+																						haxe.format.JsonParser
+																						invalidChar:() -> Void
+																	[Call:Void]
+																		[Field:(o : Dynamic, field : String, value : Dynamic) -> Void]
+																			[TypeExpr Reflect:Class<Reflect>]
+																			[FStatic:(o : Dynamic, field : String, value : Dynamic) -> Void]
+																				Reflect
+																				setField:(o : Dynamic, field : String, value : Dynamic) -> Void
+																		[Local obj(2649):{ }:{ }]
+																		[Local field(2650):Null<String>:Null<String>]
+																		[Call:Dynamic]
+																			[Field:() -> Dynamic]
+																				[Const:haxe.format.JsonParser] this
+																				[FInstance:() -> Dynamic]
+																					haxe.format.JsonParser
+																					parseRec:() -> Dynamic
+																	[Binop:Null<String>]
+																		[Local field(2650):Null<String>:Null<String>]
+																		=
+																		[Const:Null<String>] null
+																	[Binop:Null<Bool>]
+																		[Local comma(2651):Null<Bool>:Null<Bool>]
+																		=
+																		[Const:Bool] true
+														[Case:Dynamic]
+															[Const:Int] 125
+															[Block:Dynamic]
+																[Block:Dynamic]
+																	[If:Void]
+																		[Binop:Bool]
+																			[Binop:Bool]
+																				[Local field(2650):Null<String>:Null<String>]
+																				!=
+																				[Const:Null<String>] null
+																			||
+																			[Binop:Bool]
+																				[Local comma(2651):Null<Bool>:Null<Bool>]
+																				==
+																				[Const:Bool] false
+																		[Then:Void] [Block:Void]
+																			[Call:Void]
+																				[Field:() -> Void]
+																					[Const:haxe.format.JsonParser] this
+																					[FInstance:() -> Void]
+																						haxe.format.JsonParser
+																						invalidChar:() -> Void
+																	[Return:Dynamic] [Local obj(2649):{ }:{ }]
+														[Default:Void]
+															[Block:Void]
+																[Call:Void]
+																	[Field:() -> Void]
+																		[Const:haxe.format.JsonParser] this
+																		[FInstance:() -> Void]
+																			haxe.format.JsonParser
+																			invalidChar:() -> Void
+							[Default:Void]
+								[Block:Void]
+									[Call:Void]
+										[Field:() -> Void]
+											[Const:haxe.format.JsonParser] this
+											[FInstance:() -> Void]
+												haxe.format.JsonParser
+												invalidChar:() -> Void
+
+	function parseString[Function:() -> String]
+		[Block:Void]
+			[Var start(2563):Int]
+				[Field:Int]
+					[Const:haxe.format.JsonParser] this
+					[FInstance:Int]
+						haxe.format.JsonParser
+						pos:Int
+			[Var buf(2564):StringBuf] [Const:StringBuf] null
+			[Var prev(2565):Int] [Const:Int] -1
+			[Block:Void]
+			[While:Void]
+				[Const:Bool] true
+				[Block:Void]
+					[Var c(2569):Int]
+						[Call:Int]
+							[Field:(s : String, index : Int) -> Int]
+								[TypeExpr StringTools:Class<StringTools>]
+								[FStatic:(s : String, index : Int) -> Int]
+									StringTools
+									fastCodeAt:(s : String, index : Int) -> Int
+							[Field:String]
+								[Const:haxe.format.JsonParser] this
+								[FInstance:String]
+									haxe.format.JsonParser
+									str:String
+							[Unop:Int]
+								++
+								Postfix
+								[Field:Int]
+									[Const:haxe.format.JsonParser] this
+									[FInstance:Int]
+										haxe.format.JsonParser
+										pos:Int
+					[If:Void]
+						[Binop:Bool]
+							[Local c(2569):Int:Int]
+							==
+							[Const:Int] 34
+						[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+					[If:Void]
+						[Binop:Bool]
+							[Local c(2569):Int:Int]
+							==
+							[Const:Int] 92
+						[Then:Int] [Block:Int]
+							[If:Void]
+								[Binop:Bool]
+									[Local buf(2564):StringBuf:StringBuf]
+									==
+									[Const:StringBuf] null
+								[Then:StringBuf] [Block:StringBuf]
+									[Binop:StringBuf]
+										[Local buf(2564):StringBuf:StringBuf]
+										=
+										[New:StringBuf] StringBuf
+							[Call:Void]
+								[Field:(s : String, pos : Int, ?len : Null<Int>) -> Void]
+									[Local buf(2564):StringBuf:StringBuf]
+									[FInstance:(s : String, pos : Int, ?len : Null<Int>) -> Void]
+										StringBuf
+										addSub:(s : String, pos : Int, ?len : Null<Int>) -> Void
+								[Field:String]
+									[Const:haxe.format.JsonParser] this
+									[FInstance:String]
+										haxe.format.JsonParser
+										str:String
+								[Local start(2563):Int:Int]
+								[Binop:Int]
+									[Binop:Int]
+										[Field:Int]
+											[Const:haxe.format.JsonParser] this
+											[FInstance:Int]
+												haxe.format.JsonParser
+												pos:Int
+										-
+										[Local start(2563):Int:Int]
+									-
+									[Const:Int] 1
+							[Binop:Int]
+								[Local c(2569):Int:Int]
+								=
+								[Call:Int]
+									[Field:(s : String, index : Int) -> Int]
+										[TypeExpr StringTools:Class<StringTools>]
+										[FStatic:(s : String, index : Int) -> Int]
+											StringTools
+											fastCodeAt:(s : String, index : Int) -> Int
+									[Field:String]
+										[Const:haxe.format.JsonParser] this
+										[FInstance:String]
+											haxe.format.JsonParser
+											str:String
+									[Unop:Int]
+										++
+										Postfix
+										[Field:Int]
+											[Const:haxe.format.JsonParser] this
+											[FInstance:Int]
+												haxe.format.JsonParser
+												pos:Int
+							[If:Void]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local c(2569):Int:Int]
+										!=
+										[Const:Int] 117
+									&&
+									[Binop:Bool]
+										[Local prev(2565):Int:Int]
+										!=
+										[Const:Int] -1
+								[Then:Void] [Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(c : Int) -> Void]
+												[Local buf(2564):StringBuf:StringBuf]
+												[FInstance:(c : Int) -> Void]
+													StringBuf
+													addChar:(c : Int) -> Void
+											[Const:Int] 65533
+										[Binop:Int]
+											[Local prev(2565):Int:Int]
+											=
+											[Const:Int] -1
+							[Meta:Void]
+								:ast(switch (c) {
+	case "r".code:
+		buf.addChar("\r".code);	
+	case "n".code:
+		buf.addChar("\n".code);	
+	case "t".code:
+		buf.addChar("\t".code);	
+	case "b".code:
+		buf.addChar(8);	
+	case "f".code:
+		buf.addChar(12);	
+	case "/".code, "\\".code, "\"".code:
+		buf.addChar(c);	
+	case "u".code:
+		var uc:Int = Std.parseInt("0x" + str.substr(pos, 4));
+		pos += 4;
+		if (prev != -1) {
+			if (uc < 0xDC00 || uc > 0xDFFF) cancelSurrogate() else {
+				buf.addChar(((prev - 0xD800) << 10) + (uc - 0xDC00) + 0x10000);
+				prev = -1;
+			};
+		} else if (uc >= 0xD800 && uc <= 0xDBFF) prev = uc else buf.addChar(uc);	
+	default:
+		throw "Invalid escape sequence \\" + String.fromCharCode(c) + " at position " + (pos - 1);	
+})
+								[Switch:Void]
+									[Local c(2569):Int:Int]
+									[Case:Void]
+										[Const:Int] 34
+										[Const:Int] 47
+										[Const:Int] 92
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(c : Int) -> Void]
+														[Local buf(2564):StringBuf:StringBuf]
+														[FInstance:(c : Int) -> Void]
+															StringBuf
+															addChar:(c : Int) -> Void
+													[Local c(2569):Int:Int]
+									[Case:Void]
+										[Const:Int] 98
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(c : Int) -> Void]
+														[Local buf(2564):StringBuf:StringBuf]
+														[FInstance:(c : Int) -> Void]
+															StringBuf
+															addChar:(c : Int) -> Void
+													[Const:Int] 8
+									[Case:Void]
+										[Const:Int] 102
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(c : Int) -> Void]
+														[Local buf(2564):StringBuf:StringBuf]
+														[FInstance:(c : Int) -> Void]
+															StringBuf
+															addChar:(c : Int) -> Void
+													[Const:Int] 12
+									[Case:Void]
+										[Const:Int] 110
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(c : Int) -> Void]
+														[Local buf(2564):StringBuf:StringBuf]
+														[FInstance:(c : Int) -> Void]
+															StringBuf
+															addChar:(c : Int) -> Void
+													[Const:Int] 10
+									[Case:Void]
+										[Const:Int] 114
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(c : Int) -> Void]
+														[Local buf(2564):StringBuf:StringBuf]
+														[FInstance:(c : Int) -> Void]
+															StringBuf
+															addChar:(c : Int) -> Void
+													[Const:Int] 13
+									[Case:Void]
+										[Const:Int] 116
+										[Block:Void]
+											[Block:Void]
+												[Call:Void]
+													[Field:(c : Int) -> Void]
+														[Local buf(2564):StringBuf:StringBuf]
+														[FInstance:(c : Int) -> Void]
+															StringBuf
+															addChar:(c : Int) -> Void
+													[Const:Int] 9
+									[Case:Void]
+										[Const:Int] 117
+										[Block:Void]
+											[Block:Void]
+												[Var uc(2573):Int]
+													[Call:Null<Int>]
+														[Field:(x : String) -> Null<Int>]
+															[TypeExpr Std:Class<Std>]
+															[FStatic:(x : String) -> Null<Int>]
+																Std
+																parseInt:(x : String) -> Null<Int>
+														[Binop:String]
+															[Const:String] "0x"
+															+
+															[Call:String]
+																[Field:(pos : Int, ?len : Null<Int>) -> String]
+																	[Field:String]
+																		[Const:haxe.format.JsonParser] this
+																		[FInstance:String]
+																			haxe.format.JsonParser
+																			str:String
+																	[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+																		String
+																		substr:(pos : Int, ?len : Null<Int>) -> String
+																[Field:Int]
+																	[Const:haxe.format.JsonParser] this
+																	[FInstance:Int]
+																		haxe.format.JsonParser
+																		pos:Int
+																[Const:Int] 4
+												[Binop:Int]
+													[Field:Int]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:Int]
+															haxe.format.JsonParser
+															pos:Int
+													+=
+													[Const:Int] 4
+												[If:Void]
+													[Binop:Bool]
+														[Local prev(2565):Int:Int]
+														!=
+														[Const:Int] -1
+													[Then:Void] [Block:Void]
+														[If:Void]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Local uc(2573):Int:Int]
+																	<
+																	[Const:Int] 56320
+																||
+																[Binop:Bool]
+																	[Local uc(2573):Int:Int]
+																	>
+																	[Const:Int] 57343
+															[Then:Void] [Block:Void]
+																[Block:Void]
+																	[Call:Void]
+																		[Field:(c : Int) -> Void]
+																			[Local buf(2564):StringBuf:StringBuf]
+																			[FInstance:(c : Int) -> Void]
+																				StringBuf
+																				addChar:(c : Int) -> Void
+																		[Const:Int] 65533
+																	[Binop:Int]
+																		[Local prev(2565):Int:Int]
+																		=
+																		[Const:Int] -1
+															[Else:Int] [Block:Int]
+																[Call:Void]
+																	[Field:(c : Int) -> Void]
+																		[Local buf(2564):StringBuf:StringBuf]
+																		[FInstance:(c : Int) -> Void]
+																			StringBuf
+																			addChar:(c : Int) -> Void
+																	[Binop:Int]
+																		[Binop:Int]
+																			[Parenthesis:Int]
+																				[Binop:Int]
+																					[Parenthesis:Int]
+																						[Binop:Int]
+																							[Local prev(2565):Int:Int]
+																							-
+																							[Const:Int] 55296
+																					<<
+																					[Const:Int] 10
+																			+
+																			[Parenthesis:Int]
+																				[Binop:Int]
+																					[Local uc(2573):Int:Int]
+																					-
+																					[Const:Int] 56320
+																		+
+																		[Const:Int] 65536
+																[Binop:Int]
+																	[Local prev(2565):Int:Int]
+																	=
+																	[Const:Int] -1
+													[Else:Void] [Block:Void]
+														[If:Void]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Local uc(2573):Int:Int]
+																	>=
+																	[Const:Int] 55296
+																&&
+																[Binop:Bool]
+																	[Local uc(2573):Int:Int]
+																	<=
+																	[Const:Int] 56319
+															[Then:Int] [Block:Int]
+																[Binop:Int]
+																	[Local prev(2565):Int:Int]
+																	=
+																	[Local uc(2573):Int:Int]
+															[Else:Void] [Block:Void]
+																[Call:Void]
+																	[Field:(c : Int) -> Void]
+																		[Local buf(2564):StringBuf:StringBuf]
+																		[FInstance:(c : Int) -> Void]
+																			StringBuf
+																			addChar:(c : Int) -> Void
+																	[Local uc(2573):Int:Int]
+									[Default:Dynamic]
+										[Block:Dynamic]
+											[Throw:Dynamic]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "Invalid escape sequence \\"
+															+
+															[Call:String]
+																[Field:(code : Int) -> String]
+																	[TypeExpr String:Class<String>]
+																	[FStatic:(code : Int) -> String]
+																		String
+																		fromCharCode:(code : Int) -> String
+																[Local c(2569):Int:Int]
+														+
+														[Const:String] " at position "
+													+
+													[Parenthesis:Int]
+														[Binop:Int]
+															[Field:Int]
+																[Const:haxe.format.JsonParser] this
+																[FInstance:Int]
+																	haxe.format.JsonParser
+																	pos:Int
+															-
+															[Const:Int] 1
+							[Binop:Int]
+								[Local start(2563):Int:Int]
+								=
+								[Field:Int]
+									[Const:haxe.format.JsonParser] this
+									[FInstance:Int]
+										haxe.format.JsonParser
+										pos:Int
+						[Else:Void] [Block:Void]
+							[If:Void]
+								[Binop:Bool]
+									[Local c(2569):Int:Int]
+									==
+									[Const:Int] null
+								[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Unclosed string"
+			[If:Void]
+				[Binop:Bool]
+					[Local prev(2565):Int:Int]
+					!=
+					[Const:Int] -1
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Call:Void]
+							[Field:(c : Int) -> Void]
+								[Local buf(2564):StringBuf:StringBuf]
+								[FInstance:(c : Int) -> Void]
+									StringBuf
+									addChar:(c : Int) -> Void
+							[Const:Int] 65533
+						[Binop:Int]
+							[Local prev(2565):Int:Int]
+							=
+							[Const:Int] -1
+			[If:Void]
+				[Binop:Bool]
+					[Local buf(2564):StringBuf:StringBuf]
+					==
+					[Const:StringBuf] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(pos : Int, ?len : Null<Int>) -> String]
+								[Field:String]
+									[Const:haxe.format.JsonParser] this
+									[FInstance:String]
+										haxe.format.JsonParser
+										str:String
+								[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+									String
+									substr:(pos : Int, ?len : Null<Int>) -> String
+							[Local start(2563):Int:Int]
+							[Binop:Int]
+								[Binop:Int]
+									[Field:Int]
+										[Const:haxe.format.JsonParser] this
+										[FInstance:Int]
+											haxe.format.JsonParser
+											pos:Int
+									-
+									[Local start(2563):Int:Int]
+								-
+								[Const:Int] 1
+				[Else:Dynamic] [Block:Dynamic]
+					[Call:Void]
+						[Field:(s : String, pos : Int, ?len : Null<Int>) -> Void]
+							[Local buf(2564):StringBuf:StringBuf]
+							[FInstance:(s : String, pos : Int, ?len : Null<Int>) -> Void]
+								StringBuf
+								addSub:(s : String, pos : Int, ?len : Null<Int>) -> Void
+						[Field:String]
+							[Const:haxe.format.JsonParser] this
+							[FInstance:String]
+								haxe.format.JsonParser
+								str:String
+						[Local start(2563):Int:Int]
+						[Binop:Int]
+							[Binop:Int]
+								[Field:Int]
+									[Const:haxe.format.JsonParser] this
+									[FInstance:Int]
+										haxe.format.JsonParser
+										pos:Int
+								-
+								[Local start(2563):Int:Int]
+							-
+							[Const:Int] 1
+					[Return:Dynamic]
+						[Call:String]
+							[Field:() -> String]
+								[Local buf(2564):StringBuf:StringBuf]
+								[FInstance:() -> String]
+									StringBuf
+									toString:() -> String
+
+	inline function parseNumber[Function:(c : Int) -> Dynamic]
+		[Arg:Int] [Local c(2605):Int]
+		[Block:Void]
+			[Var start(2606):Int]
+				[Binop:Int]
+					[Field:Int]
+						[Const:haxe.format.JsonParser] this
+						[FInstance:Int]
+							haxe.format.JsonParser
+							pos:Int
+					-
+					[Const:Int] 1
+			[Var minus(2607):Bool]
+				[Binop:Bool]
+					[Local c(2605):Int:Int]
+					==
+					[Const:Int] 45
+			[Var digit(2608):Bool]
+				[Unop:Bool]
+					!
+					Prefix
+					[Local minus(2607):Bool:Bool]
+			[Var zero(2609):Bool]
+				[Binop:Bool]
+					[Local c(2605):Int:Int]
+					==
+					[Const:Int] 48
+			[Var point(2610):Bool] [Const:Bool] false
+			[Var e(2611):Bool] [Const:Bool] false
+			[Var pm(2612):Bool] [Const:Bool] false
+			[Var end(2613):Bool] [Const:Bool] false
+			[While:Void]
+				[Const:Bool] true
+				[Block:Void]
+					[Binop:Int]
+						[Local c(2605):Int:Int]
+						=
+						[Call:Int]
+							[Field:(s : String, index : Int) -> Int]
+								[TypeExpr StringTools:Class<StringTools>]
+								[FStatic:(s : String, index : Int) -> Int]
+									StringTools
+									fastCodeAt:(s : String, index : Int) -> Int
+							[Field:String]
+								[Const:haxe.format.JsonParser] this
+								[FInstance:String]
+									haxe.format.JsonParser
+									str:String
+							[Unop:Int]
+								++
+								Postfix
+								[Field:Int]
+									[Const:haxe.format.JsonParser] this
+									[FInstance:Int]
+										haxe.format.JsonParser
+										pos:Int
+					[Meta:Void]
+						:ast(switch (c) {
+	case "0".code:
+		if (zero && !point) invalidNumber(start);
+		if (minus) {
+			minus = false;
+			zero = true;
+		};
+		digit = true;	
+	case "1".code, "2".code, "3".code, "4".code, "5".code, "6".code, "7".code, "8".code, "9".code:
+		if (zero && !point) invalidNumber(start);
+		if (minus) minus = false;
+		digit = true;
+		zero = false;	
+	case ".".code:
+		if (minus || point || e) invalidNumber(start);
+		digit = false;
+		point = true;	
+	case "e".code, "E".code:
+		if (minus || zero || e) invalidNumber(start);
+		digit = false;
+		e = true;	
+	case "+".code, "-".code:
+		if (!e || pm) invalidNumber(start);
+		digit = false;
+		pm = true;	
+	default:
+		if (!digit) invalidNumber(start);
+		pos--;
+		end = true;	
+})
+						[Switch:Void]
+							[Local c(2605):Int:Int]
+							[Case:Bool]
+								[Const:Int] 43
+								[Const:Int] 45
+								[Block:Bool]
+									[Block:Bool]
+										[If:Void]
+											[Binop:Bool]
+												[Unop:Bool]
+													!
+													Prefix
+													[Local e(2611):Bool:Bool]
+												||
+												[Local pm(2612):Bool:Bool]
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(start : Int) -> Void]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:(start : Int) -> Void]
+															haxe.format.JsonParser
+															invalidNumber:(start : Int) -> Void
+													[Local start(2606):Int:Int]
+										[Binop:Bool]
+											[Local digit(2608):Bool:Bool]
+											=
+											[Const:Bool] false
+										[Binop:Bool]
+											[Local pm(2612):Bool:Bool]
+											=
+											[Const:Bool] true
+							[Case:Bool]
+								[Const:Int] 46
+								[Block:Bool]
+									[Block:Bool]
+										[If:Void]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Local minus(2607):Bool:Bool]
+													||
+													[Local point(2610):Bool:Bool]
+												||
+												[Local e(2611):Bool:Bool]
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(start : Int) -> Void]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:(start : Int) -> Void]
+															haxe.format.JsonParser
+															invalidNumber:(start : Int) -> Void
+													[Local start(2606):Int:Int]
+										[Binop:Bool]
+											[Local digit(2608):Bool:Bool]
+											=
+											[Const:Bool] false
+										[Binop:Bool]
+											[Local point(2610):Bool:Bool]
+											=
+											[Const:Bool] true
+							[Case:Bool]
+								[Const:Int] 48
+								[Block:Bool]
+									[Block:Bool]
+										[If:Void]
+											[Binop:Bool]
+												[Local zero(2609):Bool:Bool]
+												&&
+												[Unop:Bool]
+													!
+													Prefix
+													[Local point(2610):Bool:Bool]
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(start : Int) -> Void]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:(start : Int) -> Void]
+															haxe.format.JsonParser
+															invalidNumber:(start : Int) -> Void
+													[Local start(2606):Int:Int]
+										[If:Void]
+											[Local minus(2607):Bool:Bool]
+											[Then:Bool] [Block:Bool]
+												[Binop:Bool]
+													[Local minus(2607):Bool:Bool]
+													=
+													[Const:Bool] false
+												[Binop:Bool]
+													[Local zero(2609):Bool:Bool]
+													=
+													[Const:Bool] true
+										[Binop:Bool]
+											[Local digit(2608):Bool:Bool]
+											=
+											[Const:Bool] true
+							[Case:Bool]
+								[Const:Int] 49
+								[Const:Int] 50
+								[Const:Int] 51
+								[Const:Int] 52
+								[Const:Int] 53
+								[Const:Int] 54
+								[Const:Int] 55
+								[Const:Int] 56
+								[Const:Int] 57
+								[Block:Bool]
+									[Block:Bool]
+										[If:Void]
+											[Binop:Bool]
+												[Local zero(2609):Bool:Bool]
+												&&
+												[Unop:Bool]
+													!
+													Prefix
+													[Local point(2610):Bool:Bool]
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(start : Int) -> Void]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:(start : Int) -> Void]
+															haxe.format.JsonParser
+															invalidNumber:(start : Int) -> Void
+													[Local start(2606):Int:Int]
+										[If:Void]
+											[Local minus(2607):Bool:Bool]
+											[Then:Bool] [Block:Bool]
+												[Binop:Bool]
+													[Local minus(2607):Bool:Bool]
+													=
+													[Const:Bool] false
+										[Binop:Bool]
+											[Local digit(2608):Bool:Bool]
+											=
+											[Const:Bool] true
+										[Binop:Bool]
+											[Local zero(2609):Bool:Bool]
+											=
+											[Const:Bool] false
+							[Case:Bool]
+								[Const:Int] 69
+								[Const:Int] 101
+								[Block:Bool]
+									[Block:Bool]
+										[If:Void]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Local minus(2607):Bool:Bool]
+													||
+													[Local zero(2609):Bool:Bool]
+												||
+												[Local e(2611):Bool:Bool]
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(start : Int) -> Void]
+														[Const:haxe.format.JsonParser] this
+														[FInstance:(start : Int) -> Void]
+															haxe.format.JsonParser
+															invalidNumber:(start : Int) -> Void
+													[Local start(2606):Int:Int]
+										[Binop:Bool]
+											[Local digit(2608):Bool:Bool]
+											=
+											[Const:Bool] false
+										[Binop:Bool]
+											[Local e(2611):Bool:Bool]
+											=
+											[Const:Bool] true
+							[Default:Bool]
+								[Block:Bool]
+									[If:Void]
+										[Unop:Bool]
+											!
+											Prefix
+											[Local digit(2608):Bool:Bool]
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(start : Int) -> Void]
+													[Const:haxe.format.JsonParser] this
+													[FInstance:(start : Int) -> Void]
+														haxe.format.JsonParser
+														invalidNumber:(start : Int) -> Void
+												[Local start(2606):Int:Int]
+									[Unop:Int]
+										--
+										Postfix
+										[Field:Int]
+											[Const:haxe.format.JsonParser] this
+											[FInstance:Int]
+												haxe.format.JsonParser
+												pos:Int
+									[Binop:Bool]
+										[Local end(2613):Bool:Bool]
+										=
+										[Const:Bool] true
+					[If:Void]
+						[Local end(2613):Bool:Bool]
+						[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+			[Var f(2617):Float]
+				[Call:Float]
+					[Field:(x : String) -> Float]
+						[TypeExpr Std:Class<Std>]
+						[FStatic:(x : String) -> Float]
+							Std
+							parseFloat:(x : String) -> Float
+					[Call:String]
+						[Field:(pos : Int, ?len : Null<Int>) -> String]
+							[Field:String]
+								[Const:haxe.format.JsonParser] this
+								[FInstance:String]
+									haxe.format.JsonParser
+									str:String
+							[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+								String
+								substr:(pos : Int, ?len : Null<Int>) -> String
+						[Local start(2606):Int:Int]
+						[Binop:Int]
+							[Field:Int]
+								[Const:haxe.format.JsonParser] this
+								[FInstance:Int]
+									haxe.format.JsonParser
+									pos:Int
+							-
+							[Local start(2606):Int:Int]
+			[If:Void]
+				[Local point(2610):Bool:Bool]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local f(2617):Float:Float]
+				[Else:Dynamic] [Block:Dynamic]
+					[Var i(2618):Int]
+						[Call:Int]
+							[Field:(x : Float) -> Int]
+								[TypeExpr Std:Class<Std>]
+								[FStatic:(x : Float) -> Int]
+									Std
+									int:(x : Float) -> Int
+							[Local f(2617):Float:Float]
+					[Return:Dynamic]
+						[If:Dynamic]
+							[Binop:Bool]
+								[Local i(2618):Int:Int]
+								==
+								[Local f(2617):Float:Float]
+							[Then:Int] [Block:Int] [Local i(2618):Int:Int]
+							[Else:Float] [Block:Float] [Local f(2617):Float:Float]
+
+	inline function nextChar[Function:() -> Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Int]
+					[Field:(s : String, index : Int) -> Int]
+						[TypeExpr StringTools:Class<StringTools>]
+						[FStatic:(s : String, index : Int) -> Int]
+							StringTools
+							fastCodeAt:(s : String, index : Int) -> Int
+					[Field:String]
+						[Const:haxe.format.JsonParser] this
+						[FInstance:String]
+							haxe.format.JsonParser
+							str:String
+					[Unop:Int]
+						++
+						Postfix
+						[Field:Int]
+							[Const:haxe.format.JsonParser] this
+							[FInstance:Int]
+								haxe.format.JsonParser
+								pos:Int
+
+	function invalidChar[Function:() -> Void]
+		[Block:Dynamic]
+			[Unop:Int]
+				--
+				Postfix
+				[Field:Int]
+					[Const:haxe.format.JsonParser] this
+					[FInstance:Int]
+						haxe.format.JsonParser
+						pos:Int
+			[Throw:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "Invalid char "
+							+
+							[Call:Int]
+								[Field:(s : String, index : Int) -> Int]
+									[TypeExpr StringTools:Class<StringTools>]
+									[FStatic:(s : String, index : Int) -> Int]
+										StringTools
+										fastCodeAt:(s : String, index : Int) -> Int
+								[Field:String]
+									[Const:haxe.format.JsonParser] this
+									[FInstance:String]
+										haxe.format.JsonParser
+										str:String
+								[Field:Int]
+									[Const:haxe.format.JsonParser] this
+									[FInstance:Int]
+										haxe.format.JsonParser
+										pos:Int
+						+
+						[Const:String] " at position "
+					+
+					[Field:Int]
+						[Const:haxe.format.JsonParser] this
+						[FInstance:Int]
+							haxe.format.JsonParser
+							pos:Int
+
+	function invalidNumber[Function:(start : Int) -> Void]
+		[Arg:Int] [Local start(2616):Int]
+		[Block:Dynamic]
+			[Throw:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "Invalid number at position "
+							+
+							[Local start(2616):Int:Int]
+						+
+						[Const:String] ": "
+					+
+					[Call:String]
+						[Field:(pos : Int, ?len : Null<Int>) -> String]
+							[Field:String]
+								[Const:haxe.format.JsonParser] this
+								[FInstance:String]
+									haxe.format.JsonParser
+									str:String
+							[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+								String
+								substr:(pos : Int, ?len : Null<Int>) -> String
+						[Local start(2616):Int:Int]
+						[Binop:Int]
+							[Field:Int]
+								[Const:haxe.format.JsonParser] this
+								[FInstance:Int]
+									haxe.format.JsonParser
+									pos:Int
+							-
+							[Local start(2616):Int:Int]
+
+	public static inline function parse[Function:(str : String) -> Dynamic]
+		[Arg:String] [Local str(2552):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Dynamic]
+					[Field:() -> Dynamic]
+						[New:haxe.format.JsonParser]
+							haxe.format.JsonParser
+							[Local str(2552):String:String]
+						[FInstance:() -> Dynamic]
+							haxe.format.JsonParser
+							doParse:() -> Dynamic
+}

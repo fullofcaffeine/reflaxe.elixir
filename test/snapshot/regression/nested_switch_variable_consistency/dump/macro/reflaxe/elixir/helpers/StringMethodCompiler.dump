@@ -1,0 +1,411 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.StringMethodCompiler {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(28895):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.StringMethodCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.StringMethodCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(28895):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	public function isStringMethod[Function:(methodName : String) -> Bool]
+		[Arg:String] [Local methodName(28896):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (methodName) {
+	case "charAt", "charCodeAt", "toLowerCase", "toUpperCase", "substr", "substring", "indexOf", "split", "trim", "length":
+		true;	
+	default:
+		false;	
+})
+					[Switch:Bool]
+						[Local methodName(28896):String:String]
+						[Case:Bool]
+							[Const:String] "charAt"
+							[Const:String] "charCodeAt"
+							[Const:String] "indexOf"
+							[Const:String] "length"
+							[Const:String] "split"
+							[Const:String] "substr"
+							[Const:String] "substring"
+							[Const:String] "toLowerCase"
+							[Const:String] "toUpperCase"
+							[Const:String] "trim"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	public function compileStringMethod[Function:(objStr : String, methodName : String, args : Array<haxe.macro.TypedExpr>) -> String]
+		[Arg:String] [Local objStr(28897):String]
+		[Arg:String] [Local methodName(28898):String]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local args(28899):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Var `this(28901):reflaxe.elixir.helpers.StringMethodCompiler] [Const:reflaxe.elixir.helpers.StringMethodCompiler] this
+			[Var compiledArgs(28910):Array<Null<String>>]
+				[Block:Array<Null<String>>]
+					[Var `(28905):Array<Null<String>>] [ArrayDecl:Array<Null<String>>]
+					[Block:Void]
+						[Var `(28906):Int] [Const:Int] 0
+						[Var `(28907):Array<haxe.macro.TypedExpr>] [Local args(28899):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(28906):Int:Int]
+								<
+								[Field:Int]
+									[Local `(28907):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[FInstance:Int]
+										Array<haxe.macro.TypedExpr>
+										length:Int
+							[Block:Void]
+								[Var v(28908):haxe.macro.TypedExpr]
+									[Array:haxe.macro.TypedExpr]
+										[Local `(28907):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+										[Local `(28906):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(28906):Int:Int]
+								[Call:Int]
+									[Field:(x : Null<String>) -> Int]
+										[Local `(28905):Array<Null<String>>:Array<Null<String>>]
+										[FInstance:(x : Null<String>) -> Int]
+											Array<Null<String>>
+											push:(x : Array.T) -> Int
+									[Call:Null<String>]
+										[Function:(arg : haxe.macro.TypedExpr) -> Null<String>]
+											[Arg:haxe.macro.TypedExpr] [Local arg(28909):haxe.macro.TypedExpr]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Call:Null<String>]
+														[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+															[Field:reflaxe.elixir.ElixirCompiler]
+																[Local `this(28901):reflaxe.elixir.helpers.StringMethodCompiler:reflaxe.elixir.helpers.StringMethodCompiler]
+																[FInstance:reflaxe.elixir.ElixirCompiler]
+																	reflaxe.elixir.helpers.StringMethodCompiler
+																	compiler:reflaxe.elixir.ElixirCompiler
+															[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																reflaxe.elixir.ElixirCompiler
+																compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+														[Local arg(28909):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Const:Null<Bool>] null
+										[Local v(28908):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Local `(28905):Array<Null<String>>:Array<Null<String>>]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (methodName) {
+	case "charCodeAt":
+		if (compiledArgs.length > 0) {
+			"case String.at(${objStr}, ${compiledArgs[0]}) do nil -> nil; c -> :binary.first(c) end";
+		} else {
+			"nil";
+		};	
+	case "charAt":
+		if (compiledArgs.length > 0) {
+			"String.at(${objStr}, ${compiledArgs[0]})";
+		} else {
+			"\"\"";
+		};	
+	case "toLowerCase":
+		"String.downcase(${objStr})";	
+	case "toUpperCase":
+		"String.upcase(${objStr})";	
+	case "substr", "substring":
+		if (compiledArgs.length >= 2) {
+			"String.slice(${objStr}, ${compiledArgs[0]}, ${compiledArgs[1]})";
+		} else if (compiledArgs.length == 1) {
+			"String.slice(${objStr}, ${compiledArgs[0]}..-1)";
+		} else {
+			objStr;
+		};	
+	case "indexOf":
+		if (compiledArgs.length > 0) {
+			"case :binary.match(${objStr}, ${compiledArgs[0]}) do {pos, _} -> pos; :nomatch -> -1 end";
+		} else {
+			"-1";
+		};	
+	case "split":
+		if (compiledArgs.length > 0) {
+			"String.split(${objStr}, ${compiledArgs[0]})";
+		} else {
+			"[${objStr}]";
+		};	
+	case "trim":
+		"String.trim(${objStr})";	
+	case "length":
+		"String.length(${objStr})";	
+	default:
+		"${objStr}.${methodName}(${compiledArgs.join(\", \")})";	
+})
+					[Switch:String]
+						[Local methodName(28898):String:String]
+						[Case:String]
+							[Const:String] "charAt"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "String.at("
+															+
+															[Local objStr(28897):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String] [Const:String] "\"\""
+						[Case:String]
+							[Const:String] "charCodeAt"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "case String.at("
+															+
+															[Local objStr(28897):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] ") do nil -> nil; c -> :binary.first(c) end"
+										[Else:String] [Block:String] [Const:String] "nil"
+						[Case:String]
+							[Const:String] "indexOf"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "case :binary.match("
+															+
+															[Local objStr(28897):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] ") do {pos, _} -> pos; :nomatch -> -1 end"
+										[Else:String] [Block:String] [Const:String] "-1"
+						[Case:String]
+							[Const:String] "length"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "String.length("
+											+
+											[Local objStr(28897):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "split"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "String.split("
+															+
+															[Local objStr(28897):String:String]
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 0
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "["
+													+
+													[Local objStr(28897):String:String]
+												+
+												[Const:String] "]"
+						[Case:String]
+							[Const:String] "substr"
+							[Const:String] "substring"
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Binop:Bool]
+											[Field:Int]
+												[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:Int]
+													Array<Null<String>>
+													length:Int
+											>=
+											[Const:Int] 2
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "String.slice("
+																	+
+																	[Local objStr(28897):String:String]
+																+
+																[Const:String] ", "
+															+
+															[Array:Null<String>]
+																[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+																[Const:Int] 0
+														+
+														[Const:String] ", "
+													+
+													[Array:Null<String>]
+														[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+														[Const:Int] 1
+												+
+												[Const:String] ")"
+										[Else:String] [Block:String]
+											[If:String]
+												[Binop:Bool]
+													[Field:Int]
+														[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+														[FInstance:Int]
+															Array<Null<String>>
+															length:Int
+													==
+													[Const:Int] 1
+												[Then:String] [Block:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Const:String] "String.slice("
+																	+
+																	[Local objStr(28897):String:String]
+																+
+																[Const:String] ", "
+															+
+															[Array:Null<String>]
+																[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+																[Const:Int] 0
+														+
+														[Const:String] "..-1)"
+												[Else:String] [Block:String] [Local objStr(28897):String:String]
+						[Case:String]
+							[Const:String] "toLowerCase"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "String.downcase("
+											+
+											[Local objStr(28897):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "toUpperCase"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "String.upcase("
+											+
+											[Local objStr(28897):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:String] "trim"
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "String.trim("
+											+
+											[Local objStr(28897):String:String]
+										+
+										[Const:String] ")"
+						[Default:String]
+							[Block:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] ""
+														+
+														[Local objStr(28897):String:String]
+													+
+													[Const:String] "."
+												+
+												[Local methodName(28898):String:String]
+											+
+											[Const:String] "("
+										+
+										[Call:String]
+											[Field:(sep : String) -> String]
+												[Local compiledArgs(28910):Array<Null<String>>:Array<Null<String>>]
+												[FInstance:(sep : String) -> String]
+													Array<Null<String>>
+													join:(sep : String) -> String
+											[Const:String] ", "
+									+
+									[Const:String] ")"
+}

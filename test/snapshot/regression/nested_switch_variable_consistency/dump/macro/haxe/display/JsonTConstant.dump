@@ -1,0 +1,1 @@
+typedef haxe.display.JsonTConstant<T> = { kind : haxe.display.JsonTConstantKind<haxe.display.JsonTConstant.T>, args : haxe.display.JsonTConstant.T }

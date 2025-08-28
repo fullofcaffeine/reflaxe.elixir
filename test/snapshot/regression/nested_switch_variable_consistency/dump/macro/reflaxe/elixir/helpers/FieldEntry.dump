@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.FieldEntry = { type : String, ?params : Null<Dynamic>, name : String, isMethod : Bool, ?doc : Null<String> }

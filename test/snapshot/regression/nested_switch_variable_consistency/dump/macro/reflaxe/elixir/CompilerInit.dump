@@ -1,0 +1,124 @@
+class reflaxe.elixir.CompilerInit {
+
+	public static function Start[Function:() -> Void]
+		[Block:Void]
+			[Call:Void]
+				[Field:(callback : (() -> Void)) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(callback : (() -> Void)) -> Void]
+						haxe.macro.Context
+						onAfterInitMacros:(callback : (() -> Void)) -> Void
+				[Field:() -> Void]
+					[TypeExpr reflaxe.elixir.CompilerInit:Class<reflaxe.elixir.CompilerInit>]
+					[FStatic:() -> Void]
+						reflaxe.elixir.CompilerInit
+						Begin:() -> Void
+
+	public static function Begin[Function:() -> Void]
+		[Block:Void]
+			[Call:Void]
+				[Field:(compiler : reflaxe.BaseCompiler, ?options : Null<reflaxe.BaseCompilerOptions>) -> Void]
+					[TypeExpr reflaxe.ReflectCompiler:Class<reflaxe.ReflectCompiler>]
+					[FStatic:(compiler : reflaxe.BaseCompiler, ?options : Null<reflaxe.BaseCompilerOptions>) -> Void]
+						reflaxe.ReflectCompiler
+						AddCompiler:(compiler : reflaxe.BaseCompiler, ?options : Null<reflaxe.BaseCompilerOptions>) -> Void
+				[New:reflaxe.elixir.ElixirCompiler] reflaxe.elixir.ElixirCompiler
+				[Block:reflaxe.BaseCompilerOptions]
+					[Var `(33681):reflaxe.BaseCompilerFileOutputType]
+						[Field:reflaxe.BaseCompilerFileOutputType]
+							[TypeExpr reflaxe.BaseCompilerFileOutputType:Enum<reflaxe.BaseCompilerFileOutputType>]
+							[FEnum:reflaxe.BaseCompilerFileOutputType]
+								reflaxe.BaseCompilerFileOutputType
+								FilePerModule
+					[Var `(33680):Array<String>] [ArrayDecl:Array<String>]
+					[Var `(33679):Null<Bool>] [Cast:Null<Bool>] [Const:Bool] false
+					[New:reflaxe.BaseCompilerOptions]
+						reflaxe.BaseCompilerOptions
+						[ArrayDecl:Array<reflaxe.preprocessors.ExpressionPreprocessor>]
+							[Call:reflaxe.preprocessors.ExpressionPreprocessor]
+								[Field:(options : reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions) -> reflaxe.preprocessors.ExpressionPreprocessor]
+									[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+									[FEnum:(options : reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions) -> reflaxe.preprocessors.ExpressionPreprocessor]
+										reflaxe.preprocessors.ExpressionPreprocessor
+										SanitizeEverythingIsExpression
+								[Block:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions]
+									[New:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions]
+										reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions
+										[Const:Null<Bool>] null
+										[Const:Null<Bool>] null
+										[Const:Null<Bool>] null
+										[Const:Null<reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType>] null
+										[Const:Null<Array<String>>] null
+							[Call:reflaxe.preprocessors.ExpressionPreprocessor]
+								[Field:(mode : reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode) -> reflaxe.preprocessors.ExpressionPreprocessor]
+									[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+									[FEnum:(mode : reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode) -> reflaxe.preprocessors.ExpressionPreprocessor]
+										reflaxe.preprocessors.ExpressionPreprocessor
+										RemoveTemporaryVariables
+								[Field:reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode]
+									[TypeExpr reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode:Enum<reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode>]
+									[FEnum:reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode]
+										reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode
+										AllTempVariables
+							[Call:reflaxe.preprocessors.ExpressionPreprocessor]
+								[Field:(options : reflaxe.preprocessors.PreventRepeatVariablesOptions) -> reflaxe.preprocessors.ExpressionPreprocessor]
+									[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+									[FEnum:(options : reflaxe.preprocessors.PreventRepeatVariablesOptions) -> reflaxe.preprocessors.ExpressionPreprocessor]
+										reflaxe.preprocessors.ExpressionPreprocessor
+										PreventRepeatVariables
+								[Block:reflaxe.preprocessors.PreventRepeatVariablesOptions]
+									[New:reflaxe.preprocessors.PreventRepeatVariablesOptions]
+										reflaxe.preprocessors.PreventRepeatVariablesOptions
+										[Const:Null<Bool>] null
+										[Const:Null<Null<Array<String>>>] null
+							[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+								[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+								[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+									reflaxe.preprocessors.ExpressionPreprocessor
+									RemoveSingleExpressionBlocks
+							[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+								[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+								[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+									reflaxe.preprocessors.ExpressionPreprocessor
+									RemoveConstantBoolIfs
+							[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+								[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+								[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+									reflaxe.preprocessors.ExpressionPreprocessor
+									RemoveUnnecessaryBlocks
+							[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+								[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+								[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+									reflaxe.preprocessors.ExpressionPreprocessor
+									RemoveReassignedVariableDeclarations
+							[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+								[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+								[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+									reflaxe.preprocessors.ExpressionPreprocessor
+									RemoveLocalVariableAliases
+							[Field:reflaxe.preprocessors.ExpressionPreprocessor]
+								[TypeExpr reflaxe.preprocessors.ExpressionPreprocessor:Enum<reflaxe.preprocessors.ExpressionPreprocessor>]
+								[FEnum:reflaxe.preprocessors.ExpressionPreprocessor]
+									reflaxe.preprocessors.ExpressionPreprocessor
+									MarkUnusedVariables
+						[Local `(33681):reflaxe.BaseCompilerFileOutputType:reflaxe.BaseCompilerFileOutputType]
+						[Const:String] ".ex"
+						[Const:String] "elixir_output"
+						[Const:Null<String>] null
+						[Local `(33680):Array<String>:Array<String>]
+						[Const:Null<Array<String>>] null
+						[Const:String] "__elixir__"
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Array<String>>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Local `(33679):Null<Bool>:Null<Bool>]
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Bool>] null
+						[Const:Null<Null<String>>] null
+						[Const:Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>] null
+}

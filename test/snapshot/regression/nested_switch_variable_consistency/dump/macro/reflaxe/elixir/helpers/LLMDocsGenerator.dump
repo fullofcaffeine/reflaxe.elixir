@@ -1,0 +1,2009 @@
+class reflaxe.elixir.helpers.LLMDocsGenerator {
+
+	@:value({ outputDir : ".taskmaster/docs", updateClaude : true, generateAPI : true, generatePatterns : true, generateTroubleshooting : true, projectRoot : null })
+	static var config:reflaxe.elixir.helpers.GeneratorConfig = [ObjectDecl:{ updateClaude : Null<Bool>, projectRoot : Null<String>, outputDir : String, generateTroubleshooting : Null<Bool>, generatePatterns : Null<Bool>, generateAPI : Null<Bool> }]
+		outputDir: [Const:String] ".taskmaster/docs"
+		updateClaude: [Cast:Null<Bool>] [Const:Bool] true
+		generateAPI: [Cast:Null<Bool>] [Const:Bool] true
+		generatePatterns: [Cast:Null<Bool>] [Const:Bool] true
+		generateTroubleshooting: [Cast:Null<Bool>] [Const:Bool] true
+		projectRoot: [Const:Null<String>] null;
+
+	public static function initialize[Function:(?customConfig : Null<reflaxe.elixir.helpers.GeneratorConfig>) -> Void]
+		[Arg:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+			[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>]
+			[Const:Null<reflaxe.elixir.helpers.GeneratorConfig>] null
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+					!=
+					[Const:Null<reflaxe.elixir.helpers.GeneratorConfig>] null
+				[Then:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<String>]
+								[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+								[FAnon:Null<String>] outputDir:Null<String>
+							!=
+							[Const:Null<String>] null
+						[Then:Null<String>] [Block:Null<String>]
+							[Binop:Null<String>]
+								[Field:Null<String>]
+									[Field:reflaxe.elixir.helpers.GeneratorConfig]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											config:reflaxe.elixir.helpers.GeneratorConfig
+									[FAnon:Null<String>] outputDir:Null<String>
+								=
+								[Field:Null<String>]
+									[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+									[FAnon:Null<String>] outputDir:Null<String>
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<Bool>]
+								[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+								[FAnon:Null<Bool>] updateClaude:Null<Bool>
+							!=
+							[Const:Null<Bool>] null
+						[Then:Null<Bool>] [Block:Null<Bool>]
+							[Binop:Null<Bool>]
+								[Field:Null<Bool>]
+									[Field:reflaxe.elixir.helpers.GeneratorConfig]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											config:reflaxe.elixir.helpers.GeneratorConfig
+									[FAnon:Null<Bool>] updateClaude:Null<Bool>
+								=
+								[Field:Null<Bool>]
+									[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+									[FAnon:Null<Bool>] updateClaude:Null<Bool>
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<Bool>]
+								[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+								[FAnon:Null<Bool>] generateAPI:Null<Bool>
+							!=
+							[Const:Null<Bool>] null
+						[Then:Null<Bool>] [Block:Null<Bool>]
+							[Binop:Null<Bool>]
+								[Field:Null<Bool>]
+									[Field:reflaxe.elixir.helpers.GeneratorConfig]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											config:reflaxe.elixir.helpers.GeneratorConfig
+									[FAnon:Null<Bool>] generateAPI:Null<Bool>
+								=
+								[Field:Null<Bool>]
+									[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+									[FAnon:Null<Bool>] generateAPI:Null<Bool>
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<Bool>]
+								[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+								[FAnon:Null<Bool>] generatePatterns:Null<Bool>
+							!=
+							[Const:Null<Bool>] null
+						[Then:Null<Bool>] [Block:Null<Bool>]
+							[Binop:Null<Bool>]
+								[Field:Null<Bool>]
+									[Field:reflaxe.elixir.helpers.GeneratorConfig]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											config:reflaxe.elixir.helpers.GeneratorConfig
+									[FAnon:Null<Bool>] generatePatterns:Null<Bool>
+								=
+								[Field:Null<Bool>]
+									[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+									[FAnon:Null<Bool>] generatePatterns:Null<Bool>
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<Bool>]
+								[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+								[FAnon:Null<Bool>] generateTroubleshooting:Null<Bool>
+							!=
+							[Const:Null<Bool>] null
+						[Then:Null<Bool>] [Block:Null<Bool>]
+							[Binop:Null<Bool>]
+								[Field:Null<Bool>]
+									[Field:reflaxe.elixir.helpers.GeneratorConfig]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											config:reflaxe.elixir.helpers.GeneratorConfig
+									[FAnon:Null<Bool>] generateTroubleshooting:Null<Bool>
+								=
+								[Field:Null<Bool>]
+									[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+									[FAnon:Null<Bool>] generateTroubleshooting:Null<Bool>
+					[If:Void]
+						[Binop:Bool]
+							[Field:Null<String>]
+								[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+								[FAnon:Null<String>] projectRoot:Null<String>
+							!=
+							[Const:Null<String>] null
+						[Then:Null<String>] [Block:Null<String>]
+							[Binop:Null<String>]
+								[Field:Null<String>]
+									[Field:reflaxe.elixir.helpers.GeneratorConfig]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											config:reflaxe.elixir.helpers.GeneratorConfig
+									[FAnon:Null<String>] projectRoot:Null<String>
+								=
+								[Field:Null<String>]
+									[Local customConfig(27798):Null<reflaxe.elixir.helpers.GeneratorConfig>:Null<reflaxe.elixir.helpers.GeneratorConfig>]
+									[FAnon:Null<String>] projectRoot:Null<String>
+			[Call:Void]
+				[Field:(path : String) -> Void]
+					[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+					[FStatic:(path : String) -> Void]
+						reflaxe.elixir.helpers.LLMDocsGenerator
+						ensureDirectory:(path : String) -> Void
+				[Field:Null<String>]
+					[Field:reflaxe.elixir.helpers.GeneratorConfig]
+						[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+						[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+							reflaxe.elixir.helpers.LLMDocsGenerator
+							config:reflaxe.elixir.helpers.GeneratorConfig
+					[FAnon:Null<String>] outputDir:Null<String>
+			[Call:Void]
+				[Field:(callback : (Array<haxe.macro.ModuleType> -> Void)) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(callback : (Array<haxe.macro.ModuleType> -> Void)) -> Void]
+						haxe.macro.Context
+						onAfterTyping:(callback : (Array<haxe.macro.ModuleType> -> Void)) -> Void
+				[Field:(types : Array<haxe.macro.ModuleType>) -> Void]
+					[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+					[FStatic:(types : Array<haxe.macro.ModuleType>) -> Void]
+						reflaxe.elixir.helpers.LLMDocsGenerator
+						onTypingComplete:(types : Array<haxe.macro.ModuleType>) -> Void
+			[Call:Void]
+				[Field:(callback : (Array<haxe.macro.Type> -> Void), ?persistent : Bool) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(callback : (Array<haxe.macro.Type> -> Void), ?persistent : Bool) -> Void]
+						haxe.macro.Context
+						onGenerate:(callback : (Array<haxe.macro.Type> -> Void), ?persistent : Bool) -> Void
+				[Field:(types : Array<haxe.macro.Type>) -> Void]
+					[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+					[FStatic:(types : Array<haxe.macro.Type>) -> Void]
+						reflaxe.elixir.helpers.LLMDocsGenerator
+						onGenerateComplete:(types : Array<haxe.macro.Type>) -> Void
+				[Const:Null<Bool>] null
+
+	static function onTypingComplete[Function:(types : Array<haxe.macro.ModuleType>) -> Void]
+		[Arg:Array<haxe.macro.ModuleType>] [Local types(27800):Array<haxe.macro.ModuleType>]
+		[Block:Void]
+			[Call:Void]
+				[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+					[TypeExpr haxe.Log:Class<haxe.Log>]
+					[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+						haxe.Log
+						trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+				[Const:String] "LLMDocsGenerator: Analyzing ${types.length} modules..."
+				[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+					fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/LLMDocsGenerator.hx"
+					lineNumber: [Const:Int] 63
+					className: [Const:String] "reflaxe.elixir.helpers.LLMDocsGenerator"
+					methodName: [Const:String] "onTypingComplete"
+			[Block:Void]
+				[Var `(27817):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27817):Int:Int]
+						<
+						[Field:Int]
+							[Local types(27800):Array<haxe.macro.ModuleType>:Array<haxe.macro.ModuleType>]
+							[FInstance:Int]
+								Array<haxe.macro.ModuleType>
+								length:Int
+					[Block:Void]
+						[Var type(27801):haxe.macro.ModuleType]
+							[Array:haxe.macro.ModuleType]
+								[Local types(27800):Array<haxe.macro.ModuleType>:Array<haxe.macro.ModuleType>]
+								[Local `(27817):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(27817):Int:Int]
+						[If:Void]
+							[Field:Null<Bool>]
+								[Field:reflaxe.elixir.helpers.GeneratorConfig]
+									[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+									[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+										reflaxe.elixir.helpers.LLMDocsGenerator
+										config:reflaxe.elixir.helpers.GeneratorConfig
+								[FAnon:Null<Bool>] generateAPI:Null<Bool>
+							[Then:Void] [Block:Void]
+								[Call:Void]
+									[Field:(module : haxe.macro.ModuleType) -> Void]
+										[TypeExpr reflaxe.elixir.helpers.APIDocExtractor:Class<reflaxe.elixir.helpers.APIDocExtractor>]
+										[FStatic:(module : haxe.macro.ModuleType) -> Void]
+											reflaxe.elixir.helpers.APIDocExtractor
+											extractAPI:(module : haxe.macro.ModuleType) -> Void
+									[Local type(27801):haxe.macro.ModuleType:haxe.macro.ModuleType]
+						[If:Void]
+							[Field:Null<Bool>]
+								[Field:reflaxe.elixir.helpers.GeneratorConfig]
+									[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+									[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+										reflaxe.elixir.helpers.LLMDocsGenerator
+										config:reflaxe.elixir.helpers.GeneratorConfig
+								[FAnon:Null<Bool>] generatePatterns:Null<Bool>
+							[Then:Void] [Block:Void]
+								[Call:Void]
+									[Field:(type : haxe.macro.ModuleType) -> Void]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:(type : haxe.macro.ModuleType) -> Void]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											analyzeTypeForPatterns:(type : haxe.macro.ModuleType) -> Void
+									[Local type(27801):haxe.macro.ModuleType:haxe.macro.ModuleType]
+
+	static function onGenerateComplete[Function:(types : Array<haxe.macro.Type>) -> Void]
+		[Arg:Array<haxe.macro.Type>] [Local types(27818):Array<haxe.macro.Type>]
+		[Block:Void]
+			[Call:Void]
+				[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+					[TypeExpr haxe.Log:Class<haxe.Log>]
+					[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+						haxe.Log
+						trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+				[Const:String] "LLMDocsGenerator: Generating documentation..."
+				[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+					fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/LLMDocsGenerator.hx"
+					lineNumber: [Const:Int] 82
+					className: [Const:String] "reflaxe.elixir.helpers.LLMDocsGenerator"
+					methodName: [Const:String] "onGenerateComplete"
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+					[FStatic:() -> Void]
+						reflaxe.elixir.helpers.LLMDocsGenerator
+						generateAllDocs:() -> Void
+			[Call:Void]
+				[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+					[TypeExpr haxe.Log:Class<haxe.Log>]
+					[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+						haxe.Log
+						trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+				[Const:String] "LLMDocsGenerator: Documentation generation complete!"
+				[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+					fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/LLMDocsGenerator.hx"
+					lineNumber: [Const:Int] 87
+					className: [Const:String] "reflaxe.elixir.helpers.LLMDocsGenerator"
+					methodName: [Const:String] "onGenerateComplete"
+
+	static function analyzeTypeForPatterns[Function:(type : haxe.macro.ModuleType) -> Void]
+		[Arg:haxe.macro.ModuleType] [Local type(27802):haxe.macro.ModuleType]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (type) {
+	case TClassDecl(c):
+		var classRef = c.get();
+		if (classRef.constructor != null) {
+			var ctor = classRef.constructor.get();
+			if (ctor.expr() != null) {
+				PatternExtractor.analyzeCode(ctor.expr(), classRef.module + "." + classRef.name);
+			};
+		};
+		for (field  in  classRef.fields.get()) {
+			if (field.expr() != null) {
+				PatternExtractor.analyzeCode(field.expr(), classRef.module + "." + classRef.name + "." + field.name);
+			};
+		};	
+	case _:
+})
+				[If:Void]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local type(27802):haxe.macro.ModuleType:haxe.macro.ModuleType]
+						==
+						[Const:Int] 0
+					[Then:Void] [Block:Void]
+						[Var `(27810):haxe.macro.Ref<haxe.macro.ClassType>]
+							[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Local type(27802):haxe.macro.ModuleType:haxe.macro.ModuleType]
+								TClassDecl
+								0
+						[Block:Void]
+							[Var c(27811):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(27810):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+							[Block:Void]
+								[Var classRef(27812):haxe.macro.ClassType]
+									[Call:haxe.macro.ClassType]
+										[Field:() -> haxe.macro.ClassType]
+											[Local c(27811):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+											[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+								[If:Void]
+									[Binop:Bool]
+										[Field:Null<haxe.macro.Ref<haxe.macro.ClassField>>]
+											[Local classRef(27812):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Null<haxe.macro.Ref<haxe.macro.ClassField>>] constructor:Null<haxe.macro.Ref<haxe.macro.ClassField>>
+										!=
+										[Const:Null<haxe.macro.Ref<haxe.macro.ClassField>>] null
+									[Then:Void] [Block:Void]
+										[Var ctor(27813):haxe.macro.ClassField]
+											[Call:haxe.macro.ClassField]
+												[Field:() -> haxe.macro.ClassField]
+													[Field:Null<haxe.macro.Ref<haxe.macro.ClassField>>]
+														[Local classRef(27812):haxe.macro.ClassType:haxe.macro.ClassType]
+														[FAnon:Null<haxe.macro.Ref<haxe.macro.ClassField>>] constructor:Null<haxe.macro.Ref<haxe.macro.ClassField>>
+													[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+										[If:Void]
+											[Binop:Bool]
+												[Call:Null<haxe.macro.TypedExpr>]
+													[Field:() -> Null<haxe.macro.TypedExpr>]
+														[Local ctor(27813):haxe.macro.ClassField:haxe.macro.ClassField]
+														[FAnon:() -> Null<haxe.macro.TypedExpr>] expr:() -> Null<haxe.macro.TypedExpr>
+												!=
+												[Const:Null<haxe.macro.TypedExpr>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr, context : String) -> Void]
+														[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+														[FStatic:(expr : haxe.macro.TypedExpr, context : String) -> Void]
+															reflaxe.elixir.helpers.PatternExtractor
+															analyzeCode:(expr : haxe.macro.TypedExpr, context : String) -> Void
+													[Call:Null<haxe.macro.TypedExpr>]
+														[Field:() -> Null<haxe.macro.TypedExpr>]
+															[Local ctor(27813):haxe.macro.ClassField:haxe.macro.ClassField]
+															[FAnon:() -> Null<haxe.macro.TypedExpr>] expr:() -> Null<haxe.macro.TypedExpr>
+													[Binop:String]
+														[Binop:String]
+															[Field:String]
+																[Local classRef(27812):haxe.macro.ClassType:haxe.macro.ClassType]
+																[FAnon:String] module:String
+															+
+															[Const:String] "."
+														+
+														[Field:String]
+															[Local classRef(27812):haxe.macro.ClassType:haxe.macro.ClassType]
+															[FAnon:String] name:String
+								[Block:Void]
+									[Var `(27814):Int] [Const:Int] 0
+									[Var `(27815):Array<haxe.macro.ClassField>]
+										[Call:Array<haxe.macro.ClassField>]
+											[Field:() -> Array<haxe.macro.ClassField>]
+												[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+													[Local classRef(27812):haxe.macro.ClassType:haxe.macro.ClassType]
+													[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+												[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+									[While:Void]
+										[Binop:Bool]
+											[Local `(27814):Int:Int]
+											<
+											[Field:Int]
+												[Local `(27815):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+												[FInstance:Int]
+													Array<haxe.macro.ClassField>
+													length:Int
+										[Block:Void]
+											[Var field(27816):haxe.macro.ClassField]
+												[Array:haxe.macro.ClassField]
+													[Local `(27815):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+													[Local `(27814):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(27814):Int:Int]
+											[If:Void]
+												[Binop:Bool]
+													[Call:Null<haxe.macro.TypedExpr>]
+														[Field:() -> Null<haxe.macro.TypedExpr>]
+															[Local field(27816):haxe.macro.ClassField:haxe.macro.ClassField]
+															[FAnon:() -> Null<haxe.macro.TypedExpr>] expr:() -> Null<haxe.macro.TypedExpr>
+													!=
+													[Const:Null<haxe.macro.TypedExpr>] null
+												[Then:Void] [Block:Void]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, context : String) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+															[FStatic:(expr : haxe.macro.TypedExpr, context : String) -> Void]
+																reflaxe.elixir.helpers.PatternExtractor
+																analyzeCode:(expr : haxe.macro.TypedExpr, context : String) -> Void
+														[Call:Null<haxe.macro.TypedExpr>]
+															[Field:() -> Null<haxe.macro.TypedExpr>]
+																[Local field(27816):haxe.macro.ClassField:haxe.macro.ClassField]
+																[FAnon:() -> Null<haxe.macro.TypedExpr>] expr:() -> Null<haxe.macro.TypedExpr>
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Field:String]
+																			[Local classRef(27812):haxe.macro.ClassType:haxe.macro.ClassType]
+																			[FAnon:String] module:String
+																		+
+																		[Const:String] "."
+																	+
+																	[Field:String]
+																		[Local classRef(27812):haxe.macro.ClassType:haxe.macro.ClassType]
+																		[FAnon:String] name:String
+																+
+																[Const:String] "."
+															+
+															[Field:String]
+																[Local field(27816):haxe.macro.ClassField:haxe.macro.ClassField]
+																[FAnon:String] name:String
+					[Else:Void] [Block:Void]
+
+	static function generateAllDocs[Function:() -> Void]
+		[Block:Void]
+			[Call:Void]
+				[Field:(path : String) -> Void]
+					[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+					[FStatic:(path : String) -> Void]
+						reflaxe.elixir.helpers.LLMDocsGenerator
+						ensureDirectory:(path : String) -> Void
+				[Field:Null<String>]
+					[Field:reflaxe.elixir.helpers.GeneratorConfig]
+						[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+						[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+							reflaxe.elixir.helpers.LLMDocsGenerator
+							config:reflaxe.elixir.helpers.GeneratorConfig
+					[FAnon:Null<String>] outputDir:Null<String>
+			[Call:Void]
+				[Field:(path : String) -> Void]
+					[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+					[FStatic:(path : String) -> Void]
+						reflaxe.elixir.helpers.LLMDocsGenerator
+						ensureDirectory:(path : String) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Field:Null<String>]
+							[Field:reflaxe.elixir.helpers.GeneratorConfig]
+								[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+								[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+									reflaxe.elixir.helpers.LLMDocsGenerator
+									config:reflaxe.elixir.helpers.GeneratorConfig
+							[FAnon:Null<String>] outputDir:Null<String>
+					+
+					[Const:String] "/api"
+			[Call:Void]
+				[Field:(path : String) -> Void]
+					[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+					[FStatic:(path : String) -> Void]
+						reflaxe.elixir.helpers.LLMDocsGenerator
+						ensureDirectory:(path : String) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Field:Null<String>]
+							[Field:reflaxe.elixir.helpers.GeneratorConfig]
+								[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+								[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+									reflaxe.elixir.helpers.LLMDocsGenerator
+									config:reflaxe.elixir.helpers.GeneratorConfig
+							[FAnon:Null<String>] outputDir:Null<String>
+					+
+					[Const:String] "/patterns"
+			[If:Void]
+				[Field:Null<Bool>]
+					[Field:reflaxe.elixir.helpers.GeneratorConfig]
+						[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+						[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+							reflaxe.elixir.helpers.LLMDocsGenerator
+							config:reflaxe.elixir.helpers.GeneratorConfig
+					[FAnon:Null<Bool>] generateAPI:Null<Bool>
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(outputDir : String) -> Void]
+							[TypeExpr reflaxe.elixir.helpers.APIDocExtractor:Class<reflaxe.elixir.helpers.APIDocExtractor>]
+							[FStatic:(outputDir : String) -> Void]
+								reflaxe.elixir.helpers.APIDocExtractor
+								generateDocs:(outputDir : String) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Field:Null<String>]
+									[Field:reflaxe.elixir.helpers.GeneratorConfig]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											config:reflaxe.elixir.helpers.GeneratorConfig
+									[FAnon:Null<String>] outputDir:Null<String>
+							+
+							[Const:String] "/api"
+					[Call:Void]
+						[Field:() -> Void]
+							[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+							[FStatic:() -> Void]
+								reflaxe.elixir.helpers.LLMDocsGenerator
+								generateQuickReference:() -> Void
+			[If:Void]
+				[Field:Null<Bool>]
+					[Field:reflaxe.elixir.helpers.GeneratorConfig]
+						[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+						[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+							reflaxe.elixir.helpers.LLMDocsGenerator
+							config:reflaxe.elixir.helpers.GeneratorConfig
+					[FAnon:Null<Bool>] generatePatterns:Null<Bool>
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(outputDir : String) -> Void]
+							[TypeExpr reflaxe.elixir.helpers.PatternExtractor:Class<reflaxe.elixir.helpers.PatternExtractor>]
+							[FStatic:(outputDir : String) -> Void]
+								reflaxe.elixir.helpers.PatternExtractor
+								generatePatternDocs:(outputDir : String) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Field:Null<String>]
+									[Field:reflaxe.elixir.helpers.GeneratorConfig]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											config:reflaxe.elixir.helpers.GeneratorConfig
+									[FAnon:Null<String>] outputDir:Null<String>
+							+
+							[Const:String] "/patterns"
+					[Call:Void]
+						[Field:() -> Void]
+							[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+							[FStatic:() -> Void]
+								reflaxe.elixir.helpers.LLMDocsGenerator
+								generateBestPractices:() -> Void
+			[If:Void]
+				[Field:Null<Bool>]
+					[Field:reflaxe.elixir.helpers.GeneratorConfig]
+						[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+						[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+							reflaxe.elixir.helpers.LLMDocsGenerator
+							config:reflaxe.elixir.helpers.GeneratorConfig
+					[FAnon:Null<Bool>] updateClaude:Null<Bool>
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:() -> Void]
+							[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+							[FStatic:() -> Void]
+								reflaxe.elixir.helpers.LLMDocsGenerator
+								updateClaudeDoc:() -> Void
+			[If:Void]
+				[Field:Null<Bool>]
+					[Field:reflaxe.elixir.helpers.GeneratorConfig]
+						[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+						[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+							reflaxe.elixir.helpers.LLMDocsGenerator
+							config:reflaxe.elixir.helpers.GeneratorConfig
+					[FAnon:Null<Bool>] generateTroubleshooting:Null<Bool>
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:() -> Void]
+							[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+							[FStatic:() -> Void]
+								reflaxe.elixir.helpers.LLMDocsGenerator
+								generateTroubleshootingAdditions:() -> Void
+			[Call:Void]
+				[Field:() -> Void]
+					[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+					[FStatic:() -> Void]
+						reflaxe.elixir.helpers.LLMDocsGenerator
+						generateIndexFile:() -> Void
+
+	static function generateQuickReference[Function:() -> Void]
+		[Block:Void]
+			[Var content(27819):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "# Reflaxe.Elixir API Quick Reference\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "*Auto-generated from compiler - Always up-to-date*\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "Last Updated: "
+						+
+						[Call:String]
+							[Field:() -> String]
+								[Call:Date]
+									[Field:() -> Date]
+										[TypeExpr Date:Class<Date>]
+										[FStatic:() -> Date]
+											Date
+											now:() -> Date
+								[FInstance:() -> String]
+									Date
+									toString:() -> String
+					+
+					[Const:String] "\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Table of Contents\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [Annotations](#annotations)\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [Core Classes](#core-classes)\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [Phoenix Integration](#phoenix-integration)\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [Ecto Integration](#ecto-integration)\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [OTP Patterns](#otp-patterns)\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [Type Mappings](#type-mappings)\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Annotations\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| Annotation | Purpose | Example |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "|------------|---------|---------||\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:module` | Define Elixir module | `@:module class MyModule` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:liveview` | Phoenix LiveView | `@:liveview class MyLive` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:schema` | Ecto schema | `@:schema class User` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:changeset` | Ecto changeset | `@:changeset function` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:genserver` | GenServer | `@:genserver class Worker` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:supervisor` | Supervisor | `@:supervisor class MySup` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:migration` | Ecto migration | `@:migration class AddUsers` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:template` | Phoenix template | `@:template class MyView` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:query` | Ecto query | `@:query function` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:router` | Phoenix router | `@:router class Router` |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `@:controller` | Phoenix controller | `@:controller class UserController` |\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Core Classes\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "### Phoenix.Socket\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```haxe\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "class Socket {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    function assign(assigns:Dynamic):Socket;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    function push_event(event:String, payload:Dynamic):Socket;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    function put_flash(kind:String, msg:String):Socket;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "### Ecto.Repo\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```haxe\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "class Repo {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    static function get(schema:Class<Dynamic>, id:Int):Dynamic;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    static function insert(changeset:Dynamic):Dynamic;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    static function update(changeset:Dynamic):Dynamic;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    static function delete(struct:Dynamic):Dynamic;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    static function all(query:Dynamic):Array<Dynamic>;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Type Mappings\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| Haxe Type | Elixir Type | Notes |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "|-----------|-------------|-------|\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `Int` | `integer()` | |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `Float` | `float()` | |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `String` | `String.t()` | Binary string |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `Bool` | `boolean()` | |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `Array<T>` | `list(T)` | |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `Map<K,V>` | `%{K => V}` | |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `Dynamic` | `any()` | |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| `Null<T>` | `T \\| nil` | Nullable |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| Class | Module | With @:module |\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27819):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "| Enum | Module with atoms | |\n\n"
+			[Call:Void]
+				[Field:(path : String, content : String) -> Void]
+					[TypeExpr sys.io.File:Class<sys.io.File>]
+					[FStatic:(path : String, content : String) -> Void]
+						sys.io.File
+						saveContent:(path : String, content : String) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Field:Null<String>]
+							[Field:reflaxe.elixir.helpers.GeneratorConfig]
+								[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+								[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+									reflaxe.elixir.helpers.LLMDocsGenerator
+									config:reflaxe.elixir.helpers.GeneratorConfig
+							[FAnon:Null<String>] outputDir:Null<String>
+					+
+					[Const:String] "/API_QUICK_REFERENCE.md"
+				[Call:String]
+					[Field:() -> String]
+						[Local content(27819):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function generateBestPractices[Function:() -> Void]
+		[Block:Void]
+			[Var content(27820):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "# Reflaxe.Elixir Best Practices\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "*Extracted from successful example projects*\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Project Structure\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "project/\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "├── src_haxe/          # Haxe source files\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "│   ├── schemas/       # Ecto schemas\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "│   ├── live/          # LiveView components\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "│   ├── controllers/   # Phoenix controllers\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "│   └── services/      # Business logic\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "├── lib/               # Generated Elixir\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "├── build.hxml         # Haxe build config\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "└── mix.exs            # Mix project file\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Common Patterns\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "### 1. LiveView Component\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```haxe\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "@:liveview\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "class ProductLive {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    public static function mount(params, session, socket) {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        var products = ProductService.list();\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        return socket.assign({\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "            products: products,\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "            loading: false\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        });\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    }\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    public static function handle_event(\"search\", params, socket) {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        var results = ProductService.search(params.query);\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        return socket.assign(products: results);\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    }\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "### 2. Ecto Schema with Changeset\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```haxe\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "@:schema\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "class User {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    public var id:Int;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    public var email:String;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    public var name:String;\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    @:changeset\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    public static function changeset(user, attrs) {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        return user\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "            .cast(attrs, [\"email\", \"name\"])\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "            .validate_required([\"email\"])\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "            .validate_format(\"email\", ~/^[^@]+@[^@]+$/);\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    }\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "### 3. GenServer Worker\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```haxe\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "@:genserver\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "class EmailWorker {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    public static function init(args) {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        return {ok: {queue: []}};\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    }\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    \n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    public static function handle_cast({send: email}, state) {\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        EmailService.deliver(email);\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "        return {noreply: state};\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "    }\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "}\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27820):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "```\n\n"
+			[Call:Void]
+				[Field:(path : String, content : String) -> Void]
+					[TypeExpr sys.io.File:Class<sys.io.File>]
+					[FStatic:(path : String, content : String) -> Void]
+						sys.io.File
+						saveContent:(path : String, content : String) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Field:Null<String>]
+							[Field:reflaxe.elixir.helpers.GeneratorConfig]
+								[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+								[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+									reflaxe.elixir.helpers.LLMDocsGenerator
+									config:reflaxe.elixir.helpers.GeneratorConfig
+							[FAnon:Null<String>] outputDir:Null<String>
+					+
+					[Const:String] "/BEST_PRACTICES.md"
+				[Call:String]
+					[Field:() -> String]
+						[Local content(27820):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function updateClaudeDoc[Function:() -> Void]
+		[Block:Void]
+			[Var claudePath(27824):String]
+				[Call:String]
+					[Field:() -> String]
+						[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+						[FStatic:() -> String]
+							reflaxe.elixir.helpers.LLMDocsGenerator
+							findClaudeFile:() -> String
+			[If:Void]
+				[Binop:Bool]
+					[Local claudePath(27824):String:String]
+					==
+					[Const:String] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Call:Void]
+						[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+							[TypeExpr haxe.Log:Class<haxe.Log>]
+							[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+								haxe.Log
+								trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+						[Const:String] "Warning: CLAUDE.md not found, skipping update"
+						[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+							fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/LLMDocsGenerator.hx"
+							lineNumber: [Const:Int] 307
+							className: [Const:String] "reflaxe.elixir.helpers.LLMDocsGenerator"
+							methodName: [Const:String] "updateClaudeDoc"
+					[Return:Dynamic]
+			[Var content(27825):String]
+				[Call:String]
+					[Field:(path : String) -> String]
+						[TypeExpr sys.io.File:Class<sys.io.File>]
+						[FStatic:(path : String) -> String]
+							sys.io.File
+							getContent:(path : String) -> String
+					[Local claudePath(27824):String:String]
+			[Var apiSection(27826):String]
+				[Call:String]
+					[Field:(path : String) -> String]
+						[TypeExpr sys.io.File:Class<sys.io.File>]
+						[FStatic:(path : String) -> String]
+							sys.io.File
+							getContent:(path : String) -> String
+					[Binop:String]
+						[Binop:String]
+							[Const:String] ""
+							+
+							[Field:Null<String>]
+								[Field:reflaxe.elixir.helpers.GeneratorConfig]
+									[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+									[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+										reflaxe.elixir.helpers.LLMDocsGenerator
+										config:reflaxe.elixir.helpers.GeneratorConfig
+								[FAnon:Null<String>] outputDir:Null<String>
+						+
+						[Const:String] "/api/API_SECTION.md"
+			[Var marker(27827):String] [Const:String] "## API Quick Reference (Auto-Generated)"
+			[Var endMarker(27828):String] [Const:String] "## "
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local content(27825):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Local marker(27827):String:String]
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:String] [Block:String]
+					[Var start(27829):Int]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local content(27825):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Local marker(27827):String:String]
+							[Const:Null<Int>] null
+					[Var end(27830):Int]
+						[Call:Int]
+							[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+								[Local content(27825):String:String]
+								[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+									String
+									indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+							[Local endMarker(27828):String:String]
+							[Binop:Int]
+								[Local start(27829):Int:Int]
+								+
+								[Field:Int]
+									[Local marker(27827):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+					[If:Void]
+						[Binop:Bool]
+							[Local end(27830):Int:Int]
+							==
+							[Const:Int] -1
+						[Then:Int] [Block:Int]
+							[Binop:Int]
+								[Local end(27830):Int:Int]
+								=
+								[Field:Int]
+									[Local content(27825):String:String]
+									[FInstance:Int]
+										String
+										length:Int
+					[Binop:String]
+						[Local content(27825):String:String]
+						=
+						[Binop:String]
+							[Binop:String]
+								[Call:String]
+									[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+										[Local content(27825):String:String]
+										[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+											String
+											substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+									[Const:Int] 0
+									[Local start(27829):Int:Int]
+								+
+								[Local apiSection(27826):String:String]
+							+
+							[Call:String]
+								[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+									[Local content(27825):String:String]
+									[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+										String
+										substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+								[Local end(27830):Int:Int]
+								[Const:Null<Int>] null
+				[Else:String] [Block:String]
+					[Binop:String]
+						[Local content(27825):String:String]
+						+=
+						[Binop:String]
+							[Const:String] "\n\n"
+							+
+							[Local apiSection(27826):String:String]
+			[Call:Void]
+				[Field:(path : String, content : String) -> Void]
+					[TypeExpr sys.io.File:Class<sys.io.File>]
+					[FStatic:(path : String, content : String) -> Void]
+						sys.io.File
+						saveContent:(path : String, content : String) -> Void
+				[Local claudePath(27824):String:String]
+				[Local content(27825):String:String]
+			[Call:Void]
+				[Field:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+					[TypeExpr haxe.Log:Class<haxe.Log>]
+					[FStatic:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void]
+						haxe.Log
+						trace:(v : Dynamic, ?infos : Null<haxe.PosInfos>) -> Void
+				[Const:String] "Updated CLAUDE.md with API documentation"
+				[ObjectDecl:{ methodName : String, lineNumber : Int, fileName : String, ?customParams : Null<Array<Dynamic>>, className : String }]
+					fileName: [Const:String] "../../../src/reflaxe/elixir/helpers/LLMDocsGenerator.hx"
+					lineNumber: [Const:Int] 331
+					className: [Const:String] "reflaxe.elixir.helpers.LLMDocsGenerator"
+					methodName: [Const:String] "updateClaudeDoc"
+
+	static function generateTroubleshootingAdditions[Function:() -> Void]
+		[Block:Void]
+			[Var content(27831):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27831):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "# Additional Troubleshooting (Auto-Generated)\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27831):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "*Based on patterns found in code*\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27831):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Common Compilation Issues\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27831):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "### Regex Escaping\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27831):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "**Issue:** Double backslash in regex patterns\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27831):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "**Solution:** Use single backslash in Haxe regex literals: `~/\\$\\{/` not `~/\\\\$\\\\{/`\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27831):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "### Type Inference\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27831):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "**Issue:** Type not found errors\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27831):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "**Solution:** Add explicit type annotations or imports\n\n"
+			[Call:Void]
+				[Field:(path : String, content : String) -> Void]
+					[TypeExpr sys.io.File:Class<sys.io.File>]
+					[FStatic:(path : String, content : String) -> Void]
+						sys.io.File
+						saveContent:(path : String, content : String) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Field:Null<String>]
+							[Field:reflaxe.elixir.helpers.GeneratorConfig]
+								[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+								[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+									reflaxe.elixir.helpers.LLMDocsGenerator
+									config:reflaxe.elixir.helpers.GeneratorConfig
+							[FAnon:Null<String>] outputDir:Null<String>
+					+
+					[Const:String] "/TROUBLESHOOTING_ADDITIONS.md"
+				[Call:String]
+					[Field:() -> String]
+						[Local content(27831):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function generateIndexFile[Function:() -> Void]
+		[Block:Void]
+			[Var content(27832):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "# LLM Documentation Index\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "Auto-generated documentation for LLM agents\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "Generated: "
+						+
+						[Call:String]
+							[Field:() -> String]
+								[Call:Date]
+									[Field:() -> Date]
+										[TypeExpr Date:Class<Date>]
+										[FStatic:() -> Date]
+											Date
+											now:() -> Date
+								[FInstance:() -> String]
+									Date
+									toString:() -> String
+					+
+					[Const:String] "\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Available Documentation\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [API Quick Reference](./API_QUICK_REFERENCE.md) - Complete API documentation\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [Best Practices](./BEST_PRACTICES.md) - Recommended patterns and approaches\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [Patterns](./patterns/PATTERNS.md) - Common usage patterns\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "- [Troubleshooting](./TROUBLESHOOTING_ADDITIONS.md) - Additional troubleshooting\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Quick Start for LLM Agents\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "1. Read API_QUICK_REFERENCE.md for available APIs\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "2. Check BEST_PRACTICES.md for project structure\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "3. Use PATTERNS.md for common implementations\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "4. Refer to TROUBLESHOOTING_ADDITIONS.md for issues\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "## Integration with Claude Code CLI\n\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "This documentation is optimized for Claude Code CLI.\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local content(27832):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "The CLAUDE.md file in project root is automatically updated.\n\n"
+			[Call:Void]
+				[Field:(path : String, content : String) -> Void]
+					[TypeExpr sys.io.File:Class<sys.io.File>]
+					[FStatic:(path : String, content : String) -> Void]
+						sys.io.File
+						saveContent:(path : String, content : String) -> Void
+				[Binop:String]
+					[Binop:String]
+						[Const:String] ""
+						+
+						[Field:Null<String>]
+							[Field:reflaxe.elixir.helpers.GeneratorConfig]
+								[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+								[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+									reflaxe.elixir.helpers.LLMDocsGenerator
+									config:reflaxe.elixir.helpers.GeneratorConfig
+							[FAnon:Null<String>] outputDir:Null<String>
+					+
+					[Const:String] "/INDEX.md"
+				[Call:String]
+					[Field:() -> String]
+						[Local content(27832):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	static function ensureDirectory[Function:(path : String) -> Void]
+		[Arg:String] [Local path(27799):String]
+		[Block:Void]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(path : String) -> Bool]
+							[TypeExpr sys.FileSystem:Class<sys.FileSystem>]
+							[FStatic:(path : String) -> Bool]
+								sys.FileSystem
+								exists:(path : String) -> Bool
+						[Local path(27799):String:String]
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(path : String) -> Void]
+							[TypeExpr sys.FileSystem:Class<sys.FileSystem>]
+							[FStatic:(path : String) -> Void]
+								sys.FileSystem
+								createDirectory:(path : String) -> Void
+						[Local path(27799):String:String]
+
+	static function findClaudeFile[Function:() -> String]
+		[Block:Dynamic]
+			[Var locations(27821):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "CLAUDE.md"
+					[Const:String] "../CLAUDE.md"
+					[Const:String] "../../CLAUDE.md"
+					[Const:String] ".claude/CLAUDE.md"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<String>]
+						[Field:reflaxe.elixir.helpers.GeneratorConfig]
+							[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+							[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+								reflaxe.elixir.helpers.LLMDocsGenerator
+								config:reflaxe.elixir.helpers.GeneratorConfig
+						[FAnon:Null<String>] projectRoot:Null<String>
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local locations(27821):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Void]
+								Array<String>
+								unshift:(x : Array.T) -> Void
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Field:Null<String>]
+									[Field:reflaxe.elixir.helpers.GeneratorConfig]
+										[TypeExpr reflaxe.elixir.helpers.LLMDocsGenerator:Class<reflaxe.elixir.helpers.LLMDocsGenerator>]
+										[FStatic:reflaxe.elixir.helpers.GeneratorConfig]
+											reflaxe.elixir.helpers.LLMDocsGenerator
+											config:reflaxe.elixir.helpers.GeneratorConfig
+									[FAnon:Null<String>] projectRoot:Null<String>
+							+
+							[Const:String] "/CLAUDE.md"
+			[Block:Void]
+				[Var `(27823):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27823):Int:Int]
+						<
+						[Field:Int]
+							[Local locations(27821):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var loc(27822):String]
+							[Array:String]
+								[Local locations(27821):Array<String>:Array<String>]
+								[Local `(27823):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(27823):Int:Int]
+						[If:Void]
+							[Call:Bool]
+								[Field:(path : String) -> Bool]
+									[TypeExpr sys.FileSystem:Class<sys.FileSystem>]
+									[FStatic:(path : String) -> Bool]
+										sys.FileSystem
+										exists:(path : String) -> Bool
+								[Local loc(27822):String:String]
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local loc(27822):String:String]
+			[Return:Dynamic] [Const:String] null
+}

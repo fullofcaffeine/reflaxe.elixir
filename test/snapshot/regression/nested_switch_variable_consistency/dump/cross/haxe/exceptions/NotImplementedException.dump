@@ -1,0 +1,21 @@
+@:keep @:used
+class haxe.exceptions.NotImplementedException extends haxe.exceptions.PosException {
+
+	@:value({ message : "Not implemented" })
+	public function new[Function:(?message : String, ?previous : Null<haxe.Exception>, ?pos : Null<haxe.PosInfos>) -> Void]
+		[Arg:String]
+			[Local message(34426):String]
+			[Const:String] "Not implemented"
+		[Arg:Null<haxe.Exception>]
+			[Local previous(34427):Null<haxe.Exception>]
+			[Const:Null<haxe.Exception>] null
+		[Arg:Null<haxe.PosInfos>]
+			[Local pos(34428):Null<haxe.PosInfos>]
+			[Const:Null<haxe.PosInfos>] null
+		[Block:Void]
+			[Call:Void]
+				[Const:haxe.exceptions.PosException] super
+				[Local message(34426):String:String]
+				[Local previous(34427):Null<haxe.Exception>:Null<haxe.Exception>]
+				[Local pos(34428):Null<haxe.PosInfos>:Null<haxe.PosInfos>]
+}

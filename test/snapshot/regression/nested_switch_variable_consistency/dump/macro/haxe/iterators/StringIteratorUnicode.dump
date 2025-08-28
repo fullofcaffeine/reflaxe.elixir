@@ -1,0 +1,143 @@
+class haxe.iterators.StringIteratorUnicode {
+
+	public inline function new[Function:(s : String) -> Void]
+		[Arg:String] [Local s(1264):String]
+		[Block:Void]
+			[Binop:Int]
+				[Field:Int]
+					[Const:haxe.iterators.StringIteratorUnicode] this
+					[FInstance:Int]
+						haxe.iterators.StringIteratorUnicode
+						offset:Int
+				=
+				[Const:Int] 0
+			[Binop:String]
+				[Field:String]
+					[Const:haxe.iterators.StringIteratorUnicode] this
+					[FInstance:String]
+						haxe.iterators.StringIteratorUnicode
+						s:String
+				=
+				[Local s(1264):String:String]
+
+	@:value(0)
+	var offset:Int;
+
+	var s:String;
+
+	@:maybeUsed
+	public inline function hasNext[Function:() -> Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Field:Int]
+						[Const:haxe.iterators.StringIteratorUnicode] this
+						[FInstance:Int]
+							haxe.iterators.StringIteratorUnicode
+							offset:Int
+					<
+					[Field:Int]
+						[Field:String]
+							[Const:haxe.iterators.StringIteratorUnicode] this
+							[FInstance:String]
+								haxe.iterators.StringIteratorUnicode
+								s:String
+						[FInstance:Int]
+							String
+							length:Int
+
+	@:maybeUsed @:access(StringTools)
+	public inline function next[Function:() -> Int]
+		[Block:Dynamic]
+			[Var c(1273):Int]
+				[Block:Int]
+					[Var s(1270):String]
+						[Field:String]
+							[Const:haxe.iterators.StringIteratorUnicode] this
+							[FInstance:String]
+								haxe.iterators.StringIteratorUnicode
+								s:String
+					[Var index(1271):Int]
+						[Unop:Int]
+							++
+							Postfix
+							[Field:Int]
+								[Const:haxe.iterators.StringIteratorUnicode] this
+								[FInstance:Int]
+									haxe.iterators.StringIteratorUnicode
+									offset:Int
+					[Var c(1272):Int]
+						[Call:Int]
+							[Field:(s : String, index : Int) -> Int]
+								[TypeExpr StringTools:Class<StringTools>]
+								[FStatic:(s : String, index : Int) -> Int]
+									StringTools
+									fastCodeAt:(s : String, index : Int) -> Int
+							[Local s(1270):String:String]
+							[Local index(1271):Int:Int]
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Local c(1272):Int:Int]
+								>=
+								[Const:Int] 55296
+							&&
+							[Binop:Bool]
+								[Local c(1272):Int:Int]
+								<=
+								[Const:Int] 56319
+						[Then:Int] [Block:Int]
+							[Binop:Int]
+								[Local c(1272):Int:Int]
+								=
+								[Binop:Int]
+									[Parenthesis:Int]
+										[Binop:Int]
+											[Parenthesis:Int]
+												[Binop:Int]
+													[Local c(1272):Int:Int]
+													-
+													[Const:Int] 55232
+											<<
+											[Const:Int] 10
+									|
+									[Parenthesis:Int]
+										[Binop:Int]
+											[Call:Int]
+												[Field:(s : String, index : Int) -> Int]
+													[TypeExpr StringTools:Class<StringTools>]
+													[FStatic:(s : String, index : Int) -> Int]
+														StringTools
+														fastCodeAt:(s : String, index : Int) -> Int
+												[Local s(1270):String:String]
+												[Binop:Int]
+													[Local index(1271):Int:Int]
+													+
+													[Const:Int] 1
+											&
+											[Const:Int] 1023
+					[Local c(1272):Int:Int]
+			[If:Void]
+				[Binop:Bool]
+					[Local c(1273):Int:Int]
+					>=
+					[Const:Int] 65536
+				[Then:Int] [Block:Int]
+					[Unop:Int]
+						++
+						Postfix
+						[Field:Int]
+							[Const:haxe.iterators.StringIteratorUnicode] this
+							[FInstance:Int]
+								haxe.iterators.StringIteratorUnicode
+								offset:Int
+			[Return:Dynamic] [Local c(1273):Int:Int]
+
+	public static inline function unicodeIterator[Function:(s : String) -> haxe.iterators.StringIteratorUnicode]
+		[Arg:String] [Local s(1284):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[New:haxe.iterators.StringIteratorUnicode]
+					haxe.iterators.StringIteratorUnicode
+					[Local s(1284):String:String]
+}

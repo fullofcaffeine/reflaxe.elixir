@@ -1,0 +1,1 @@
+typedef haxe.macro.DefineDescription = { ?platforms : Null<Array<haxe.display.Platform>>, ?params : Null<Array<String>>, ?links : Null<Array<String>>, doc : String, define : String }

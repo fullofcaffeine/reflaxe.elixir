@@ -1,0 +1,811 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.GenServerCompiler {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(28832):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.GenServerCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(28832):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	public function compileGenServerClass[Function:(classType : haxe.macro.ClassType, varFields : Array<Dynamic>, funcFields : Array<Dynamic>) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(28833):haxe.macro.ClassType]
+		[Arg:Array<Dynamic>] [Local varFields(28834):Array<Dynamic>]
+		[Arg:Array<Dynamic>] [Local funcFields(28835):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var moduleName(28836):String]
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[Field:reflaxe.elixir.ElixirCompiler]
+							[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+							[FInstance:reflaxe.elixir.ElixirCompiler]
+								reflaxe.elixir.helpers.GenServerCompiler
+								compiler:reflaxe.elixir.ElixirCompiler
+						[FInstance:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.ElixirCompiler
+							getModuleName:(classType : haxe.macro.ClassType) -> String
+					[Local classType(28833):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Var result(28837):String]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defmodule "
+						+
+						[Local moduleName(28836):String:String]
+					+
+					[Const:String] " do\n"
+			[Binop:String]
+				[Local result(28837):String:String]
+				+=
+				[Const:String] "  use GenServer\n\n"
+			[Binop:String]
+				[Local result(28837):String:String]
+				+=
+				[Const:String] "  # Client API\n\n"
+			[Binop:String]
+				[Local result(28837):String:String]
+				+=
+				[Call:String]
+					[Field:(classType : haxe.macro.ClassType) -> String]
+						[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+						[FInstance:(classType : haxe.macro.ClassType) -> String]
+							reflaxe.elixir.helpers.GenServerCompiler
+							generateStartLink:(classType : haxe.macro.ClassType) -> String
+					[Local classType(28833):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Binop:String]
+				[Local result(28837):String:String]
+				+=
+				[Call:String]
+					[Field:(funcFields : Array<Dynamic>) -> String]
+						[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+						[FInstance:(funcFields : Array<Dynamic>) -> String]
+							reflaxe.elixir.helpers.GenServerCompiler
+							generateClientAPI:(funcFields : Array<Dynamic>) -> String
+					[Local funcFields(28835):Array<Dynamic>:Array<Dynamic>]
+			[Binop:String]
+				[Local result(28837):String:String]
+				+=
+				[Const:String] "\n  # Server Callbacks\n\n"
+			[Binop:String]
+				[Local result(28837):String:String]
+				+=
+				[Call:String]
+					[Field:(varFields : Array<Dynamic>) -> String]
+						[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+						[FInstance:(varFields : Array<Dynamic>) -> String]
+							reflaxe.elixir.helpers.GenServerCompiler
+							generateInitCallback:(varFields : Array<Dynamic>) -> String
+					[Local varFields(28834):Array<Dynamic>:Array<Dynamic>]
+			[Binop:String]
+				[Local result(28837):String:String]
+				+=
+				[Call:String]
+					[Field:(funcFields : Array<Dynamic>) -> String]
+						[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+						[FInstance:(funcFields : Array<Dynamic>) -> String]
+							reflaxe.elixir.helpers.GenServerCompiler
+							generateCallbacks:(funcFields : Array<Dynamic>) -> String
+					[Local funcFields(28835):Array<Dynamic>:Array<Dynamic>]
+			[Binop:String]
+				[Local result(28837):String:String]
+				+=
+				[Call:String]
+					[Field:(funcFields : Array<Dynamic>) -> String]
+						[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+						[FInstance:(funcFields : Array<Dynamic>) -> String]
+							reflaxe.elixir.helpers.GenServerCompiler
+							generateHelperFunctions:(funcFields : Array<Dynamic>) -> String
+					[Local funcFields(28835):Array<Dynamic>:Array<Dynamic>]
+			[Binop:String]
+				[Local result(28837):String:String]
+				+=
+				[Const:String] "end\n"
+			[Return:Dynamic] [Local result(28837):String:String]
+
+	function generateStartLink[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(28838):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var serverName(28839):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Field:String]
+						[Local classType(28838):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:String] name:String
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "  def start_link(opts \\\\ []) do\n"
+						+
+						[Const:String] "    GenServer.start_link(__MODULE__, opts, name: __MODULE__)\n"
+					+
+					[Const:String] "  end\n\n"
+
+	function generateClientAPI[Function:(funcFields : Array<Dynamic>) -> String]
+		[Arg:Array<Dynamic>] [Local funcFields(28840):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var result(28841):String] [Const:String] ""
+			[Block:Void]
+				[Var `(28852):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(28852):Int:Int]
+						<
+						[Field:Int]
+							[Local funcFields(28840):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var funcField(28842):Dynamic]
+							[Array:Dynamic]
+								[Local funcFields(28840):Array<Dynamic>:Array<Dynamic>]
+								[Local `(28852):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(28852):Int:Int]
+						[If:Void]
+							[Call:Bool]
+								[Field:(funcField : Dynamic) -> Bool]
+									[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+									[FInstance:(funcField : Dynamic) -> Bool]
+										reflaxe.elixir.helpers.GenServerCompiler
+										isClientFunction:(funcField : Dynamic) -> Bool
+								[Local funcField(28842):Dynamic:Dynamic]
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Local result(28841):String:String]
+									+=
+									[Binop:String]
+										[Call:String]
+											[Field:(funcField : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+												[FInstance:(funcField : Dynamic) -> String]
+													reflaxe.elixir.helpers.GenServerCompiler
+													generateClientFunction:(funcField : Dynamic) -> String
+											[Local funcField(28842):Dynamic:Dynamic]
+										+
+										[Const:String] "\n"
+			[Return:Dynamic] [Local result(28841):String:String]
+
+	function generateInitCallback[Function:(varFields : Array<Dynamic>) -> String]
+		[Arg:Array<Dynamic>] [Local varFields(28853):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var stateFields(28854):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(28880):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(28880):Int:Int]
+						<
+						[Field:Int]
+							[Local varFields(28853):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var varField(28855):Dynamic]
+							[Array:Dynamic]
+								[Local varFields(28853):Array<Dynamic>:Array<Dynamic>]
+								[Local `(28880):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(28880):Int:Int]
+						[Var fieldName(28856):String]
+							[Call:String]
+								[Field:(camelCase : String) -> String]
+									[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+									[FStatic:(camelCase : String) -> String]
+										reflaxe.elixir.helpers.NamingHelper
+										toSnakeCase:(camelCase : String) -> String
+								[Field:Dynamic]
+									[Local varField(28855):Dynamic:Dynamic]
+									[FDynamic:Dynamic] name
+						[Var defaultValue(28879):String]
+							[Call:String]
+								[Field:(varField : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+									[FInstance:(varField : Dynamic) -> String]
+										reflaxe.elixir.helpers.GenServerCompiler
+										getDefaultValue:(varField : Dynamic) -> String
+								[Local varField(28855):Dynamic:Dynamic]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local stateFields(28854):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local fieldName(28856):String:String]
+									+
+									[Const:String] ": "
+								+
+								[Local defaultValue(28879):String:String]
+			[Var initialState(28881):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Local stateFields(28854):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "%{"
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local stateFields(28854):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] "}"
+					[Else:String] [Block:String] [Const:String] "%{}"
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "  @impl true\n"
+							+
+							[Const:String] "  def init(_opts) do\n"
+						+
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "    {:ok, "
+								+
+								[Local initialState(28881):String:String]
+							+
+							[Const:String] "}\n"
+					+
+					[Const:String] "  end\n\n"
+
+	function generateCallbacks[Function:(funcFields : Array<Dynamic>) -> String]
+		[Arg:Array<Dynamic>] [Local funcFields(28882):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var result(28883):String] [Const:String] ""
+			[Var callbacks(28884):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "handle_call"
+					[Const:String] "handle_cast"
+					[Const:String] "handle_info"
+					[Const:String] "terminate"
+			[Block:Void]
+				[Var `(28888):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(28888):Int:Int]
+						<
+						[Field:Int]
+							[Local callbacks(28884):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var callbackName(28885):String]
+							[Array:String]
+								[Local callbacks(28884):Array<String>:Array<String>]
+								[Local `(28888):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(28888):Int:Int]
+						[Block:Void]
+							[Var `(28887):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(28887):Int:Int]
+									<
+									[Field:Int]
+										[Local funcFields(28882):Array<Dynamic>:Array<Dynamic>]
+										[FInstance:Int]
+											Array<Dynamic>
+											length:Int
+								[Block:Void]
+									[Var funcField(28886):Dynamic]
+										[Array:Dynamic]
+											[Local funcFields(28882):Array<Dynamic>:Array<Dynamic>]
+											[Local `(28887):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(28887):Int:Int]
+									[If:Void]
+										[Binop:Bool]
+											[Field:Dynamic]
+												[Local funcField(28886):Dynamic:Dynamic]
+												[FDynamic:Dynamic] name
+											==
+											[Local callbackName(28885):String:String]
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Local result(28883):String:String]
+												+=
+												[Const:String] "  @impl true\n"
+											[Binop:String]
+												[Local result(28883):String:String]
+												+=
+												[Binop:String]
+													[Call:String]
+														[Field:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+															[Field:reflaxe.elixir.ElixirCompiler]
+																[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+																[FInstance:reflaxe.elixir.ElixirCompiler]
+																	reflaxe.elixir.helpers.GenServerCompiler
+																	compiler:reflaxe.elixir.ElixirCompiler
+															[FInstance:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+																reflaxe.elixir.ElixirCompiler
+																compileFunction:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String
+														[Local funcField(28886):Dynamic:Dynamic]
+														[Const:Bool] true
+													+
+													[Const:String] "\n"
+			[Return:Dynamic] [Local result(28883):String:String]
+
+	function generateHelperFunctions[Function:(funcFields : Array<Dynamic>) -> String]
+		[Arg:Array<Dynamic>] [Local funcFields(28889):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var result(28890):String] [Const:String] ""
+			[Var hasPrivate(28891):Bool] [Const:Bool] false
+			[Block:Void]
+				[Var `(28894):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(28894):Int:Int]
+						<
+						[Field:Int]
+							[Local funcFields(28889):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var funcField(28892):Dynamic]
+							[Array:Dynamic]
+								[Local funcFields(28889):Array<Dynamic>:Array<Dynamic>]
+								[Local `(28894):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(28894):Int:Int]
+						[If:Void]
+							[Call:Bool]
+								[Field:(funcField : Dynamic) -> Bool]
+									[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+									[FInstance:(funcField : Dynamic) -> Bool]
+										reflaxe.elixir.helpers.GenServerCompiler
+										isPrivateHelper:(funcField : Dynamic) -> Bool
+								[Local funcField(28892):Dynamic:Dynamic]
+							[Then:String] [Block:String]
+								[If:Void]
+									[Unop:Bool]
+										!
+										Prefix
+										[Local hasPrivate(28891):Bool:Bool]
+									[Then:Bool] [Block:Bool]
+										[Binop:String]
+											[Local result(28890):String:String]
+											+=
+											[Const:String] "\n  # Private Functions\n\n"
+										[Binop:Bool]
+											[Local hasPrivate(28891):Bool:Bool]
+											=
+											[Const:Bool] true
+								[Binop:String]
+									[Local result(28890):String:String]
+									+=
+									[Binop:String]
+										[Call:String]
+											[Field:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.GenServerCompiler
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String]
+													reflaxe.elixir.ElixirCompiler
+													compileFunction:(funcField : reflaxe.data.ClassFuncData, ?isStatic : Bool) -> String
+											[Local funcField(28892):Dynamic:Dynamic]
+											[Const:Bool] false
+										+
+										[Const:String] "\n"
+			[Return:Dynamic] [Local result(28890):String:String]
+
+	function isClientFunction[Function:(funcField : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local funcField(28843):Dynamic]
+		[Block:Dynamic]
+			[Var name(28844):String]
+				[Field:Dynamic]
+					[Local funcField(28843):Dynamic:Dynamic]
+					[FDynamic:Dynamic] name
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Field:Dynamic]
+								[Local funcField(28843):Dynamic:Dynamic]
+								[FDynamic:Dynamic] isPublic
+							&&
+							[Unop:Bool]
+								!
+								Prefix
+								[Call:Bool]
+									[Field:(name : String) -> Bool]
+										[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+										[FInstance:(name : String) -> Bool]
+											reflaxe.elixir.helpers.GenServerCompiler
+											isGenServerCallback:(name : String) -> Bool
+									[Local name(28844):String:String]
+						&&
+						[Binop:Bool]
+							[Local name(28844):String:String]
+							!=
+							[Const:String] "new"
+					&&
+					[Binop:Bool]
+						[Local name(28844):String:String]
+						!=
+						[Const:String] "start_link"
+
+	function generateClientFunction[Function:(funcField : Dynamic) -> String]
+		[Arg:Dynamic] [Local funcField(28846):Dynamic]
+		[Block:Void]
+			[Var name(28847):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Field:Dynamic]
+						[Local funcField(28846):Dynamic:Dynamic]
+						[FDynamic:Dynamic] name
+			[Var params(28849):String]
+				[Call:String]
+					[Field:(funcField : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+						[FInstance:(funcField : Dynamic) -> String]
+							reflaxe.elixir.helpers.GenServerCompiler
+							generateParameterList:(funcField : Dynamic) -> String
+					[Local funcField(28846):Dynamic:Dynamic]
+			[Var isCall(28851):Bool]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(funcField : Dynamic) -> Bool]
+							[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+							[FInstance:(funcField : Dynamic) -> Bool]
+								reflaxe.elixir.helpers.GenServerCompiler
+								isVoidReturn:(funcField : Dynamic) -> Bool
+						[Local funcField(28846):Dynamic:Dynamic]
+			[If:Void]
+				[Local isCall(28851):Bool:Bool]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  def "
+												+
+												[Local name(28847):String:String]
+											+
+											[Const:String] "("
+										+
+										[Local params(28849):String:String]
+									+
+									[Const:String] ") do\n"
+								+
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "    GenServer.call(__MODULE__, {:"
+												+
+												[Local name(28847):String:String]
+											+
+											[Const:String] ", "
+										+
+										[Local params(28849):String:String]
+									+
+									[Const:String] "})\n"
+							+
+							[Const:String] "  end\n"
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "  def "
+												+
+												[Local name(28847):String:String]
+											+
+											[Const:String] "("
+										+
+										[Local params(28849):String:String]
+									+
+									[Const:String] ") do\n"
+								+
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "    GenServer.cast(__MODULE__, {:"
+												+
+												[Local name(28847):String:String]
+											+
+											[Const:String] ", "
+										+
+										[Local params(28849):String:String]
+									+
+									[Const:String] "})\n"
+							+
+							[Const:String] "  end\n"
+
+	function isGenServerCallback[Function:(name : String) -> Bool]
+		[Arg:String] [Local name(28845):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (name) {
+	case "init", "handle_call", "handle_cast", "handle_info", "terminate":
+		true;	
+	default:
+		false;	
+})
+					[Switch:Bool]
+						[Local name(28845):String:String]
+						[Case:Bool]
+							[Const:String] "handle_call"
+							[Const:String] "handle_cast"
+							[Const:String] "handle_info"
+							[Const:String] "init"
+							[Const:String] "terminate"
+							[Block:Bool] [Block:Bool] [Const:Bool] true
+						[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	function isPrivateHelper[Function:(funcField : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local funcField(28893):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Unop:Bool]
+						!
+						Prefix
+						[Field:Dynamic]
+							[Local funcField(28893):Dynamic:Dynamic]
+							[FDynamic:Dynamic] isPublic
+					&&
+					[Unop:Bool]
+						!
+						Prefix
+						[Call:Bool]
+							[Field:(name : String) -> Bool]
+								[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+								[FInstance:(name : String) -> Bool]
+									reflaxe.elixir.helpers.GenServerCompiler
+									isGenServerCallback:(name : String) -> Bool
+							[Field:Dynamic]
+								[Local funcField(28893):Dynamic:Dynamic]
+								[FDynamic:Dynamic] name
+
+	function getDefaultValue[Function:(varField : Dynamic) -> String]
+		[Arg:Dynamic] [Local varField(28857):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local varField(28857):Dynamic:Dynamic]
+						[FDynamic:Dynamic] meta
+					!=
+					[Const:Dynamic] null
+				[Then:Void] [Block:Void]
+					[Var defaultMeta(28858):Null<Array<{ params : Array<haxe.macro.TypedExpr> }>>]
+						[Call:Dynamic]
+							[Field:Dynamic]
+								[Field:Dynamic]
+									[Local varField(28857):Dynamic:Dynamic]
+									[FDynamic:Dynamic] meta
+								[FDynamic:Dynamic] extract
+							[Const:String] ":default"
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Local defaultMeta(28858):Null<Array<{ params : Array<haxe.macro.TypedExpr> }>>:Null<Array<{ params : Array<haxe.macro.TypedExpr> }>>]
+								!=
+								[Const:Null<Array<{ params : Array<haxe.macro.TypedExpr> }>>] null
+							&&
+							[Binop:Bool]
+								[Field:Int]
+									[Local defaultMeta(28858):Null<Array<{ params : Array<haxe.macro.TypedExpr> }>>:Null<Array<{ params : Array<haxe.macro.TypedExpr> }>>]
+									[FAnon:Int] length:Int
+								>
+								[Const:Int] 0
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Call:Null<String>]
+									[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+										[Field:reflaxe.elixir.ElixirCompiler]
+											[Const:reflaxe.elixir.helpers.GenServerCompiler] this
+											[FInstance:reflaxe.elixir.ElixirCompiler]
+												reflaxe.elixir.helpers.GenServerCompiler
+												compiler:reflaxe.elixir.ElixirCompiler
+										[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+											reflaxe.elixir.ElixirCompiler
+											compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+									[Array:haxe.macro.TypedExpr]
+										[Field:Array<haxe.macro.TypedExpr>]
+											[Array:{ params : Array<haxe.macro.TypedExpr> }]
+												[Local defaultMeta(28858):Null<Array<{ params : Array<haxe.macro.TypedExpr> }>>:Null<Array<{ params : Array<haxe.macro.TypedExpr> }>>]
+												[Const:Int] 0
+											[FAnon:Array<haxe.macro.TypedExpr>] params:Array<haxe.macro.TypedExpr>
+										[Const:Int] 0
+									[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (varField.type) {
+	case TInst(t, _):
+		switch (t.get().name) {
+			case "Array":
+				"[]";			
+			case "String":
+				"\"\"";			
+			default:
+				"nil";			
+		};	
+	case TAbstract(t, _):
+		switch (t.get().name) {
+			case "Int", "Float":
+				"0";			
+			case "Bool":
+				"false";			
+			default:
+				"nil";			
+		};	
+	default:
+		"nil";	
+})
+					[Block:String]
+						[Var `(28870):Dynamic]
+							[Field:Dynamic]
+								[Local varField(28857):Dynamic:Dynamic]
+								[FDynamic:Dynamic] type
+						[Switch:String]
+							[EnumIndex:Int] [Local `(28870):Dynamic:Dynamic]
+							[Case:String]
+								[Const:Int] 2
+								[Block:String]
+									[Var `(28871):haxe.macro.Ref<haxe.macro.ClassType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Cast:haxe.macro.Type] [Local `(28870):Dynamic:Dynamic]
+											TInst
+											0
+									[Var `(28872):Array<haxe.macro.Type>]
+										[EnumParameter:Array<haxe.macro.Type>]
+											[Cast:haxe.macro.Type] [Local `(28870):Dynamic:Dynamic]
+											TInst
+											1
+									[Block:String]
+										[Var t(28873):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(28871):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Block:String]
+											[Meta:String]
+												:ast(switch (t.get().name) {
+	case "Array":
+		"[]";	
+	case "String":
+		"\"\"";	
+	default:
+		"nil";	
+})
+												[Block:String]
+													[Var `(28874):String]
+														[Field:String]
+															[Call:haxe.macro.ClassType]
+																[Field:() -> haxe.macro.ClassType]
+																	[Local t(28873):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																	[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+															[FAnon:String] name:String
+													[Switch:String]
+														[Local `(28874):String:String]
+														[Case:String]
+															[Const:String] "Array"
+															[Block:String] [Block:String] [Const:String] "[]"
+														[Case:String]
+															[Const:String] "String"
+															[Block:String] [Block:String] [Const:String] "\"\""
+														[Default:String] [Block:String] [Const:String] "nil"
+							[Case:String]
+								[Const:Int] 8
+								[Block:String]
+									[Var `(28875):haxe.macro.Ref<haxe.macro.AbstractType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+											[Cast:haxe.macro.Type] [Local `(28870):Dynamic:Dynamic]
+											TAbstract
+											0
+									[Var `(28876):Array<haxe.macro.Type>]
+										[EnumParameter:Array<haxe.macro.Type>]
+											[Cast:haxe.macro.Type] [Local `(28870):Dynamic:Dynamic]
+											TAbstract
+											1
+									[Block:String]
+										[Var t(28877):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(28875):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[Block:String]
+											[Meta:String]
+												:ast(switch (t.get().name) {
+	case "Int", "Float":
+		"0";	
+	case "Bool":
+		"false";	
+	default:
+		"nil";	
+})
+												[Block:String]
+													[Var `(28878):String]
+														[Field:String]
+															[Call:haxe.macro.AbstractType]
+																[Field:() -> haxe.macro.AbstractType]
+																	[Local t(28877):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+																	[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+															[FAnon:String] name:String
+													[Switch:String]
+														[Local `(28878):String:String]
+														[Case:String]
+															[Const:String] "Bool"
+															[Block:String] [Block:String] [Const:String] "false"
+														[Case:String]
+															[Const:String] "Float"
+															[Const:String] "Int"
+															[Block:String] [Block:String] [Const:String] "0"
+														[Default:String] [Block:String] [Const:String] "nil"
+							[Default:String] [Block:String] [Const:String] "nil"
+
+	function generateParameterList[Function:(funcField : Dynamic) -> String]
+		[Arg:Dynamic] [Local funcField(28848):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [Const:String] "args"
+
+	function isVoidReturn[Function:(funcField : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local funcField(28850):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local funcField(28850):Dynamic:Dynamic]
+							[FDynamic:Dynamic] type
+						==
+						[Const:Dynamic] null
+					||
+					[Binop:Bool]
+						[Call:Dynamic]
+							[Field:Dynamic]
+								[Field:Dynamic]
+									[Local funcField(28850):Dynamic:Dynamic]
+									[FDynamic:Dynamic] type
+								[FDynamic:Dynamic] toString
+						==
+						[Const:String] "Void"
+}

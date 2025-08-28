@@ -37,7 +37,7 @@ defmodule Todo do
   # Static functions
   @doc "Generated from Haxe changeset"
   def changeset(todo, params) do
-    _changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
+    _changeset = Ecto.Changeset.cast_changeset(todo, _params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
 
     _changeset = Ecto.Changeset.validate_required(_changeset, ["title", "user_id"])
 

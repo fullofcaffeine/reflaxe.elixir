@@ -1,0 +1,1 @@
+typedef haxe.display.JsonFunctionArgument = { ?value : Null<{ string : String }>, t : haxe.display.JsonType<Dynamic>, opt : Bool, name : String }

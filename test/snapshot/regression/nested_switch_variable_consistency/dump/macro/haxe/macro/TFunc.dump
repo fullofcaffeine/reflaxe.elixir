@@ -1,0 +1,1 @@
+typedef haxe.macro.TFunc = { t : haxe.macro.Type, expr : haxe.macro.TypedExpr, args : Array<{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }> }

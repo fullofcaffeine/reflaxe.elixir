@@ -1,0 +1,2 @@
+@:dox(hide) @:deprecated
+typedef IMap<K, V> = haxe.IMap<IMap.K, IMap.V>

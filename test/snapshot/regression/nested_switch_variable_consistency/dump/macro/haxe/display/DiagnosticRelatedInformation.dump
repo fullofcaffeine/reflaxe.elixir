@@ -1,0 +1,1 @@
+typedef haxe.display.DiagnosticRelatedInformation = { message : String, location : haxe.display.Location, depth : Int }
