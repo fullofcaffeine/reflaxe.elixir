@@ -2,8 +2,8 @@
 # Tests advanced pattern matching features including exhaustive checking,
 # nested patterns, complex guards, with statements, and binary patterns
 
--cp ../../../std
--cp ../../../src
+-cp ../../../../std
+-cp ../../../../src
 -cp .
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()

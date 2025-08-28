@@ -1,5 +1,5 @@
 # JavaScript async/await test configuration
--cp ../../../std
+-cp ../../../../std
 -main Main
 -js out/main.js
 

@@ -2,7 +2,7 @@
 # Tests Repo.all/insert/update/delete compilation with type safety
 
 # Include source directly instead of using broken lib reference
--cp ../../../src/
+-cp ../../../../src/
 -lib reflaxe
 -main Main
 

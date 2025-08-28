@@ -1,8 +1,8 @@
 # HXX Template Compilation Test
 # Tests HTML-like template syntax compilation to Elixir/Phoenix templates
 
--cp ../../../std
--cp ../../../src
+-cp ../../../../std
+-cp ../../../../src
 -cp .
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()

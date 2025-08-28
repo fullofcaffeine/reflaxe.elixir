@@ -1,6 +1,6 @@
 # Compilation configuration for example 06 user management
--cp ../../../std
--cp ../../../src
+-cp ../../../../std
+-cp ../../../../src
 -cp .
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()

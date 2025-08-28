@@ -5,7 +5,7 @@
 #   make -f Makefile            # Run all tests (default: parallel with 4 jobs)
 #   make -f Makefile -j1         # Run tests sequentially
 #   make -f Makefile -j8         # Run with 8 parallel jobs
-#   make -f Makefile test-arrays # Run specific test
+#   make -f Makefile test-core__arrays # Run specific test (use __ for path separator)
 #   make -f Makefile update-intended TEST=arrays # Update intended output for specific test
 #   make -f Makefile -k          # Continue on errors
 
@@ -23,8 +23,9 @@ RED := \033[0;31m
 RESET := \033[0m
 
 # Find all test directories with compile.hxml recursively
+# Replace forward slashes with double underscores for Make target compatibility
 TESTS := $(shell find $(TEST_DIR) -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort)
-TEST_TARGETS := $(addprefix test-,$(TESTS))
+TEST_TARGETS := $(shell echo "$(TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
 
 # Default target runs all tests with default parallelism
 .PHONY: all
@@ -49,9 +50,10 @@ summary: $(TEST_TARGETS)
 	rm -f test-results.tmp
 
 # Pattern rule for running individual tests
+# Converts double underscores back to slashes for nested directories
 .PHONY: test-%
 test-%:
-	@testname=$*; \
+	@testname=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ ! -f $$testdir/compile.hxml ]; then \
 		echo "❌ $$testname - Test directory not found" | tee -a test-results.tmp; \
@@ -94,7 +96,8 @@ test-%:
 	fi
 
 # Update targets for parallel execution
-UPDATE_TARGETS := $(addprefix update-,$(TESTS))
+# Replace forward slashes with double underscores for Make target compatibility
+UPDATE_TARGETS := $(shell echo "$(TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|update-|' | tr '\n' ' ')
 
 # Update intended output for a specific test or all tests
 .PHONY: update-intended
@@ -127,19 +130,21 @@ update-all-parallel: $(UPDATE_TARGETS)
 	@echo "✅ Finished updating all intended outputs"
 
 # Individual update targets for parallel execution
+# Converts double underscores back to slashes for nested directories
 $(UPDATE_TARGETS): update-%:
-	@testdir=$(TEST_DIR)/$*; \
+	@testname=$$(echo $* | sed 's|__|/|g'); \
+	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
 		cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml 2>/dev/null 1>/dev/null && \
 		if [ -d $(OUTPUT_DIR) ]; then \
 			rm -rf intended && \
 			cp -r $(OUTPUT_DIR) intended && \
-			echo "✅ $*"; \
+			echo "✅ $$testname"; \
 		else \
-			echo "❌ $* (no output)"; \
+			echo "❌ $$testname (no output)"; \
 		fi; \
 	else \
-		echo "❌ $* (not found)"; \
+		echo "❌ $$testname (not found)"; \
 	fi
 
 # Run a single test by name (convenience target)
