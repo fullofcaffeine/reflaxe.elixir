@@ -32,9 +32,14 @@ defmodule TypeSafeChildSpecTools do
       if ((config != nil)) do
         g_counter = 0
         g_array = Reflect.fields(config)
-        Enum.each(g_array, fn field -> 
-          Reflect.set_field(endpoint_config, field, Reflect.field(config, field))
-        end)
+        (fn loop ->
+          if ((g_counter < g_array.length)) do
+                field = Enum.at(g_array, g_counter)
+            g_counter + 1
+            Reflect.set_field(endpoint_config, field, Reflect.field(config, field))
+            loop.()
+          end
+        end).()
       else
         nil
       end

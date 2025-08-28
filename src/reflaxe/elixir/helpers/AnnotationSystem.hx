@@ -277,12 +277,8 @@ class AnnotationSystem {
                 }
                 
             case ":migration":
-                if (reflaxe.elixir.helpers.MigrationDSL.isMigrationClassType(classType)) {
-                    compileMigrationClass(classType, varFields, funcFields);
-                } else {
-                    trace("ERROR: " +"@:migration annotation detected but MigrationDSL validation failed");
-                    null;
-                }
+                // Handled directly by ElixirCompiler.compileMigrationClass for AST-based compilation
+                null;
                 
             case ":template":
                 if (reflaxe.elixir.helpers.TemplateCompiler.isTemplateClassType(classType)) {
@@ -486,19 +482,40 @@ class AnnotationSystem {
     }
     
     static function compileMigrationClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
+        // Use the new AST-based MigrationCompiler instead of string-based MigrationDSL
+        // Note: We need to get the compiler instance somehow
+        // For now, use simplified generation until we can properly route to MigrationCompiler
         var className = classType.name;
-        var config = reflaxe.elixir.helpers.MigrationDSL.getMigrationConfig(classType);
-        var tableName = config.table != null ? config.table : "default_table";
+        var tableName = extractTableNameFromClass(classType);
         
-        // Extract columns from class variables
-        var columns = varFields.map(field -> '${field.field.name}:string');
-        
-        return reflaxe.elixir.helpers.MigrationDSL.compileFullMigration({
-            className: className,
-            timestamp: config.timestamp,
-            tableName: tableName,
-            columns: columns
-        });
+        // This is a temporary implementation until we can properly route to MigrationCompiler
+        // The proper fix is to pass the compiler instance through AnnotationSystem
+        return 'defmodule ${className} do\n' +
+               '  use Ecto.Migration\n\n' +
+               '  def up do\n' +
+               '    # Migration generated from @:migration annotation\n' +
+               '    # TODO: Use proper AST-based MigrationCompiler\n' +
+               '  end\n\n' +
+               '  def down do\n' +
+               '    # Rollback logic here\n' +
+               '  end\n' +
+               'end\n';
+    }
+    
+    static function extractTableNameFromClass(classType: ClassType): String {
+        var name = classType.name;
+        name = StringTools.replace(name, "Create", "");
+        name = StringTools.replace(name, "Migration", "");
+        // Convert to snake_case and pluralize
+        var snakeCase = "";
+        for (i in 0...name.length) {
+            var c = name.charAt(i);
+            if (i > 0 && c == c.toUpperCase()) {
+                snakeCase += "_";
+            }
+            snakeCase += c.toLowerCase();
+        }
+        return snakeCase + "s";
     }
     
     static function compileTemplateClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {

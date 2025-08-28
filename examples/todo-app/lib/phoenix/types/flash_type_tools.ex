@@ -10,6 +10,8 @@ defmodule FlashTypeTools do
   def format(type) do
     temp_result = nil
 
+    temp_result = nil
+
     case (case type do :info -> 0; :success -> 1; :warning -> 2; :error -> 3; _ -> -1 end) do
       0 -> "info"
       1 -> "success"

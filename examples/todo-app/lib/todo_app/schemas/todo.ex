@@ -90,7 +90,14 @@ defmodule Todo do
 
     g_counter = 0
 
-    Enum.map(temp_array, fn item -> ChangesetValue.string_value(item) end)
+    (fn loop ->
+      if ((g_counter < temp_array.length)) do
+            v = Enum.at(temp_array, g_counter)
+        g_counter + 1
+        g_array ++ [ChangesetValue.string_value(v)]
+        loop.()
+      end
+    end).()
 
     _value = ChangesetValue.array_value(g_array)
 

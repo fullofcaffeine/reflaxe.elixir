@@ -205,7 +205,14 @@ defmodule TypeSafeConversions do
 
     g_counter = 0
 
-    Enum.filter(todos, fn item -> item.completed end)
+    (fn loop ->
+      if ((g_counter < todos.length)) do
+            todo = Enum.at(todos, g_counter)
+        g_counter + 1
+        if todo.completed, do: count + 1, else: nil
+        loop.()
+      end
+    end).()
 
     count
   end

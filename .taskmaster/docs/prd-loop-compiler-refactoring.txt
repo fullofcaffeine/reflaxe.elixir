@@ -1,0 +1,196 @@
+# Product Requirements Document: Compiler Architecture Refactoring
+
+## Executive Summary
+Refactor two critical compiler subsystems that violate architectural principles:
+1. **Loop Compilation System** - Reduce from 10,000+ lines across 10+ files to under 500 lines
+2. **MigrationDSL Compiler** - Replace string-based band-aid fix with proper AST-based compilation
+
+Both refactorings will use Test-Driven Development with snapshot testing to ensure correctness.
+
+## Problem Statement
+
+### Loop Compilation Issues
+- **10,000+ lines of code** spread across 10+ files with massive duplication
+- **Multiple classes generating identical Enum operations** (DRY violations)
+- **Critical g_array variable mismatch bug** causing undefined variable references
+- **String-based pattern detection** instead of AST analysis
+- **Maintenance nightmare** with circular dependencies and overlapping responsibilities
+
+### MigrationDSL Issues
+- **Band-aid string generation** violates "no band-aid fixes" principle
+- **Direct string concatenation** instead of proper AST transformation
+- **No type safety** in migration generation
+- **Duplicated logic** across multiple migration helper files
+- **Improper architecture** - should use compiler's existing class compilation infrastructure
+
+## Goals and Objectives
+
+### Loop Compiler Goals
+1. **Reduce code from 10,000+ lines to under 500 lines** (95% reduction)
+2. **Single source of truth** - UnifiedLoopCompiler handles ALL loop compilation
+3. **Fix g_array bug permanently** through proper TLocal variable handling
+4. **Eliminate all duplication** - One place for each Enum operation
+5. **Maintain functionality** - Todo-app and all tests must pass
+
+### MigrationDSL Goals
+1. **Replace string generation with AST transformation** - Use TypedExpr properly
+2. **Leverage existing compiler infrastructure** - Reuse class compilation logic
+3. **Type-safe migration generation** - Proper typing for all migration constructs
+4. **Single migration compiler** - Consolidate MigrationDSLCore, MigrationDSLFixed, MigrationDSLTable
+5. **Proper module generation** - Generate actual Elixir modules, not concatenated strings
+
+## Technical Requirements
+
+### Architecture Constraints
+- UnifiedLoopCompiler must stay **under 500 lines total** (currently 286)
+- ElixirCompiler must not exceed **3,500 lines** (currently 3,085)
+- **No duplicate Enum generation code** - single source of truth
+- **AST-based pattern detection only** - no string regex matching
+
+### Functional Requirements
+1. **For loops** - Compile to Enum.each by default
+2. **While loops** - Generate recursive functions
+3. **Do-while loops** - Generate recursive functions with initial execution
+4. **Special TLocal handling** - Direct snake_case conversion to prevent g_array bugs
+5. **For-in pattern detection** - Recognize Haxe-desugared loops
+
+### Testing Requirements
+- Use **snapshot testing framework** (test/tests/*)
+- **Todo-app as primary integration test** - Must compile and run
+- **TDD approach** - Implement only what tests require
+- All existing loop tests must pass:
+  - simple_for_loop
+  - loop_patterns
+  - while_loops
+  - arrays
+  - ReflectFieldsLoop
+
+## Implementation Plan
+
+### Phase 1: Fix Compilation Errors
+1. **Fix UnifiedLoopCompiler.hx line 165** - Pattern matching syntax error
+   - Change: `FInstance(_, _, {get: () -> {name: "length"}})`
+   - To: `FInstance(_, _, cf)) if (cf.get().name == "length")`
+
+2. **Stub 14 arrayOptimizationCompiler methods** in ElixirCompiler
+   - Return empty strings or null
+   - Add TODO comments for TDD implementation
+   - Methods at lines: 1878, 1885, 1892, 1899, 1906, 1914, 1921, 1928, 1935, 1942, 1949, 2039, 2138, 2157
+
+3. **Remove coreLoopCompiler reference** at line 2098
+
+### Phase 2: Test-Driven Implementation
+1. **Run simple_for_loop test**
+   - Command: `make -C test test-simple_for_loop`
+   - Verify: Enum.each generation for basic loops
+   - Fix: TLocal handling should already work
+
+2. **Run while_loops test**
+   - Command: `make -C test test-while_loops`
+   - Implement: Recursive function generation
+   - Handle: Desugared for-in patterns
+
+3. **Run loop_patterns test**
+   - Command: `make -C test test-loop_patterns`
+   - Identify: Which Enum patterns actually needed
+   - Implement: ONLY required patterns (map/filter/reduce)
+
+4. **Run arrays test**
+   - Command: `make -C test test-arrays`
+   - Ensure: Loop compilation doesn't interfere with ArrayMethodCompiler
+
+5. **Run ReflectFieldsLoop test**
+   - Command: `make -C test test-ReflectFieldsLoop`
+   - Implement: Only if special handling needed
+
+### Phase 3: MigrationDSL Refactoring
+
+1. **Analyze current string generation approach**
+   - Review MigrationDSLCore, MigrationDSLFixed, MigrationDSLTable
+   - Identify what module structure is being generated
+   - Document the AST that should be created instead
+
+2. **Create proper AST-based MigrationCompiler**
+   - Use existing ClassCompiler as reference
+   - Generate proper TypedExpr for migration module
+   - Leverage compiler.compileClass() for module generation
+   - Handle table operations as method calls, not strings
+
+3. **Implement table DSL using AST**
+   - create_table → Generate function with proper AST
+   - add/remove columns → Generate method calls
+   - timestamps → Generate macro expansion
+   - Use proper typing for all operations
+
+4. **Test migration generation**
+   - Create snapshot tests for migrations
+   - Ensure generated code matches Ecto.Migration format
+   - Validate with mix ecto.migrate
+
+### Phase 4: Integration Testing
+1. **Todo-app compilation**
+   ```bash
+   cd examples/todo-app
+   npx haxe build-server.hxml
+   mix compile --force
+   mix phx.server
+   ```
+
+2. **Full test suite**
+   ```bash
+   npm test  # Runs all 76 tests
+   ```
+
+## Success Criteria
+- ✅ All compilation errors resolved
+- ✅ UnifiedLoopCompiler under 500 lines
+- ✅ All loop tests pass with correct output
+- ✅ Todo-app compiles and runs without errors
+- ✅ No new test failures in full suite
+- ✅ g_array bug permanently fixed
+- ✅ No duplicate Enum generation code
+
+## Architecture Benefits
+- **Maintainability**: 95% code reduction makes debugging trivial
+- **Single Responsibility**: One file, one purpose
+- **Testability**: Easy to test 300 lines vs 10,000
+- **Performance**: Direct AST transformation, no string operations
+- **Bug Prevention**: Clear TLocal handling prevents variable mapping issues
+
+## Files Already Deleted
+- LoopCompiler.hx (4,340 lines)
+- CoreLoopCompiler.hx (518 lines)
+- ArrayLoopOptimizer.hx (591 lines)
+- ArrayOptimizationCompiler.hx (1,028 lines)
+- ArrayPatternCompiler.hx (412 lines)
+- LoopAnalyzer.hx (463 lines)
+- LoopPatternDetector.hx (679 lines)
+- LoopTransformations.hx (485 lines)
+
+## Current State
+
+### Loop Compiler Status
+- Created minimal UnifiedLoopCompiler.hx (286 lines)
+- Fixed g_array issue in deleted LoopCompiler (committed)
+- Fixed pattern matching error in UnifiedLoopCompiler
+- Ready to stub methods and run TDD cycle
+
+### MigrationDSL Status
+- Current implementation uses string concatenation (band-aid fix)
+- Multiple helper files: MigrationDSLCore, MigrationDSLFixed, MigrationDSLTable
+- Working but violates architectural principles
+- Needs complete rewrite using AST transformation
+
+## Key Design Decisions
+1. **No speculative features** - TDD reveals what's needed
+2. **Direct TLocal handling** - Fixes g_array at the source
+3. **Simple recursive functions** - Idiomatic Elixir for while loops
+4. **Enum.each as default** - Most common pattern
+5. **AST analysis only** - No string pattern matching
+
+## Risk Mitigation
+- **Snapshot tests** ensure output correctness
+- **Todo-app** provides real-world validation
+- **Incremental approach** prevents breaking changes
+- **Git history** allows rollback if needed
+- **Clear documentation** for future maintenance

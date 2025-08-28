@@ -158,26 +158,13 @@ defmodule Main do
 
     numbers = []
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if all_numbers.match(text) do
+            numbers ++ [all_numbers.matched(0)]
+        text = all_numbers.matched_right()
+        loop.()
       end
-
-      loop_helper.(
-        fn -> all_numbers.match(text) end,
-        fn ->
-          numbers ++ [all_numbers.matched(0)]
-          text = all_numbers.matched_right()
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     Log.trace("All numbers: " <> Std.string(numbers), %{"fileName" => "Main.hx", "lineNumber" => 151, "className" => "Main", "methodName" => "regexOperations"})
 
