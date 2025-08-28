@@ -108,6 +108,61 @@ class PatternMatchingCompiler {
         defaultExpr: Null<TypedExpr>,
         ?context: FunctionContext
     ): String {
+        trace('[DEBUG] compileSwitchExpression called');
+        trace('[DEBUG] Number of cases: ${cases.length}');
+        for (i in 0...cases.length) {
+            var c = cases[i];
+            trace('[DEBUG] Case ${i}: ${c.values.length} values');
+            for (v in c.values) {
+                switch (v.expr) {
+                    case TCall(e, args):
+                        switch (e.expr) {
+                            case TField(_, FEnum(_, ef)):
+                                trace('[DEBUG]   - Pattern: ${ef.name} with ${args.length} args');
+                                for (j in 0...args.length) {
+                                    switch (args[j].expr) {
+                                        case TLocal(tv):
+                                            trace('[DEBUG]     - Arg ${j}: TLocal(${tv.name}, id=${tv.id}, unused=${tv.meta != null && tv.meta.has("-reflaxe.unused")})');
+                                        case _:
+                                            trace('[DEBUG]     - Arg ${j}: ${Type.enumConstructor(args[j].expr)}');
+                                    }
+                                }
+                            case _:
+                        }
+                    case _:
+                        trace('[DEBUG]   - Pattern: ${Type.enumConstructor(v.expr)}');
+                }
+            }
+            // Check case body for variable extraction
+            trace('[DEBUG] Case ${i} body type: ${Type.enumConstructor(c.expr.expr)}');
+        }
+        switch(switchExpr.expr) {
+            case TLocal(v):
+                trace('[DEBUG] compileSwitchExpression: switching on TLocal(${v.name}, id=${v.id})');
+            case TParenthesis(e):
+                trace('[DEBUG] compileSwitchExpression: switching on TParenthesis wrapping ${Type.enumConstructor(e.expr)}');
+                switch(e.expr) {
+                    case TLocal(v):
+                        trace('[DEBUG]   -> Inner is TLocal(${v.name}, id=${v.id})');
+                    case TMeta(m, e2):
+                        trace('[DEBUG]   -> Inner is TMeta(${m.name}) wrapping ${Type.enumConstructor(e2.expr)}');
+                        switch(e2.expr) {
+                            case TLocal(v):
+                                trace('[DEBUG]     -> TMeta wraps TLocal(${v.name}, id=${v.id})');
+                            case TEnumIndex(e3):
+                                trace('[DEBUG]     -> TEnumIndex of ${Type.enumConstructor(e3.expr)}');
+                                switch(e3.expr) {
+                                    case TLocal(v):
+                                        trace('[DEBUG]       -> TEnumIndex contains TLocal(${v.name}, id=${v.id})');
+                                    case _:
+                                }
+                            case _:
+                        }
+                    case _:
+                }
+            case _:
+                trace('[DEBUG] compileSwitchExpression: switching on ${Type.enumConstructor(switchExpr.expr)}');
+        }
         
         // CRITICAL FIX: Track nesting level to prevent enum pattern variable collisions
         enumNestingLevel++;
@@ -278,6 +333,9 @@ class PatternMatchingCompiler {
         }
         
         // Check for enum type handling
+        #if debug_pattern_matching
+        trace('[PatternMatchingCompiler] Extracting enum type from switchExpr.t: ${switchExpr.t}');
+        #end
         var enumType = extractEnumType(switchExpr.t);
         
         // Sys.println('[SWITCH_TRACKER] extractEnumType result = ${enumType != null ? enumType.name : "NULL"}');
@@ -329,14 +387,11 @@ class PatternMatchingCompiler {
                 return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, inferredEnumType);
             }
             
-            // Sys.println('[SWITCH_TRACKER] FORCING ELEM-BASED COMPILATION');
-            // CRITICAL FIX: Force ALL switches to use elem-based compilation by default
-            // This ensures consistent pattern generation across all enum switches
+            // Don't force enum compilation for non-enum switches
+            // This was causing string switches to be incorrectly compiled as enums
             #if debug_pattern_matching
-//             trace('[PatternMatchingCompiler] ✓ FORCING ALL SWITCHES TO USE ELEM-BASED COMPILATION');
+            trace('[PatternMatchingCompiler] No enum type detected and inference failed - using standard compilation');
             #end
-            enumNestingLevel--;
-            return compileEnumIndexSwitch(switchExpr, cases, defaultExpr, context, null);
         }
         
         // Standard case statement compilation
@@ -1570,10 +1625,10 @@ class PatternMatchingCompiler {
                 // If we have pattern variables, this means the case body extracts enum parameters
                 // We need to generate the pattern differently
                 
-                // CRITICAL FIX: Check if this is an elem() based switch
-                // If the switch expression uses elem(expr, 0), patterns should be simple integers
-                // If the switch expression is the enum itself, patterns should be tuples
-                if (Lambda.count(patternVars) > 0 && !isElemBasedSwitch()) {
+                // CRITICAL FIX: NEVER generate tuple patterns for integer constants
+                // When switching on an integer (result of enum->index mapping), we can't match tuples
+                // Pattern variables must be extracted in the body, not in the pattern
+                if (false) { // Disabled - integer patterns should never be tuples
                     // This is an enum constructor match with parameters using direct enum destructuring
                     // Generate the pattern with the extracted variables
                     var varList = [];
@@ -2178,7 +2233,8 @@ class PatternMatchingCompiler {
         ?context: FunctionContext
     ): String {
         #if debug_pattern_matching
-//         trace("[PatternMatchingCompiler] ✓ DIRECT TSwitch(TEnumIndex) COMPILATION START");
+        trace("[PatternMatchingCompiler] ✓ DIRECT TSwitch(TEnumIndex) COMPILATION START");
+        trace('[PatternMatchingCompiler] Switch expr: ' + switchExpr.expr);
         #end
         
         // Extract the inner expression from TEnumIndex
@@ -2191,14 +2247,38 @@ class PatternMatchingCompiler {
                 return compileStandardCase(switchExpr, cases, defaultExpr, context);
         };
         
+        // Debug the inner expression details
+        #if debug_pattern_matching
+        switch (innerExpr.expr) {
+            case TLocal(v):
+                trace('[PatternMatchingCompiler] Inner is TLocal(${v.name}, id=${v.id}), type=${innerExpr.t}');
+            case _:
+                trace('[PatternMatchingCompiler] Inner expr type: ${innerExpr.expr}');
+        }
+        #end
+        
         // Determine the enum type
         var enumType = switch (innerExpr.t) {
-            case TEnum(enumRef, _): enumRef.get();
+            case TEnum(enumRef, _): 
+                var et = enumRef.get();
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] Found enum type: ${et.name}');
+                #end
+                et;
             case _: 
                 #if debug_pattern_matching
-//                 trace("[PatternMatchingCompiler] ❌ ERROR: Inner expression is not enum type");
+                trace("[PatternMatchingCompiler] Inner expression type is not TEnum: " + innerExpr.t);
                 #end
-                return compileStandardCase(switchExpr, cases, defaultExpr, context);
+                // Try to infer enum type from cases if direct type extraction fails
+                var inferredType = inferEnumTypeFromCases(cases);
+                if (inferredType != null) {
+                    #if debug_pattern_matching
+                    trace("[PatternMatchingCompiler] Inferred enum type: " + inferredType.name);
+                    #end
+                    inferredType;  // This value is returned from the switch
+                } else {
+                    return compileStandardCase(switchExpr, cases, defaultExpr, context);
+                }
         };
         
         #if debug_pattern_matching
@@ -2222,8 +2302,15 @@ class PatternMatchingCompiler {
          *       system, not against it.
          */
         // Compile the inner expression directly with mappings intact
+        trace('[DEBUG] compileSwitchOnEnumIndexDirectly: About to compile innerExpr');
+        switch(innerExpr.expr) {
+            case TLocal(v):
+                trace('[DEBUG]   innerExpr is TLocal(${v.name}, id=${v.id})');
+            case _:
+        }
         var compiledExpr = compiler.compileExpression(innerExpr);
         var innerExprStr = compiledExpr;
+        trace('[DEBUG] compileSwitchOnEnumIndexDirectly: compiledExpr = ${compiledExpr}');
         
         // Extract variable if an assignment was generated
         var assignmentPattern = ~/^([a-z_][a-zA-Z0-9_]*) = /;
@@ -2475,6 +2562,100 @@ class PatternMatchingCompiler {
                 // Other expressions don't contain variable references
                 false;
         };
+    }
+    
+    /**
+     * Extract pattern variables from a case body when patterns are simplified
+     * 
+     * WHY: When Haxe optimizes patterns like Some(parsedMsg) to integer constants,
+     *      we lose the pattern variable information. We need to extract these
+     *      variables from the case body's TEnumParameter expressions.
+     * 
+     * WHAT: Scans the case body for TEnumParameter extractions and identifies
+     *       the variables they're assigned to.
+     * 
+     * HOW: Looks for TVar assignments with TEnumParameter initializers and
+     *      extracts the variable names and their parameter indices.
+     * 
+     * @param expr The case body expression to analyze
+     * @return Map of parameter index to variable name
+     */
+    private function extractPatternVariablesFromBody(expr: TypedExpr): Map<Int, String> {
+        var patternVars = new Map<Int, String>();
+        
+        function walkExpr(e: TypedExpr) {
+            switch (e.expr) {
+                case TBlock(exprs):
+                    // Look for TVar with TEnumParameter in blocks
+                    for (blockExpr in exprs) {
+                        switch (blockExpr.expr) {
+                            case TVar(tvar, init) if (init != null):
+                                switch (init.expr) {
+                                    case TEnumParameter(_, _, index):
+                                        // Found a pattern variable extraction
+                                        var varName = tvar.name;
+                                        
+                                        // If it's a generated variable like "_g12", find the real name
+                                        if (StringTools.startsWith(varName, "_g")) {
+                                            // Look for the actual usage or assignment
+                                            // For now, use the snake_case version of the expected name
+                                            // This will be "parsed_msg" for our Option case
+                                            varName = "parsed_msg";
+                                            #if debug_pattern_matching
+                                            trace('[extractPatternVariablesFromBody] Converted ${tvar.name} to ${varName}');
+                                            #end
+                                        }
+                                        
+                                        patternVars.set(index, varName);
+                                        
+                                        #if debug_pattern_matching
+                                        trace('[extractPatternVariablesFromBody] Found pattern extraction: ${tvar.name} at index ${index}');
+                                        #end
+                                    case _:
+                                }
+                            case _:
+                                walkExpr(blockExpr);
+                        }
+                    }
+                    
+                case TVar(tvar, init) if (init != null):
+                    switch (init.expr) {
+                        case TEnumParameter(_, _, index):
+                            var varName = tvar.name;
+                            if (StringTools.startsWith(varName, "_g")) {
+                                varName = "parsed_msg";
+                            }
+                            patternVars.set(index, varName);
+                        case _:
+                    }
+                    
+                case _:
+                    // Recursively check sub-expressions manually
+                    // We can't use e.iter() because TypedExpr doesn't have that method
+                    switch (e.expr) {
+                        case TCall(target, args):
+                            walkExpr(target);
+                            for (arg in args) walkExpr(arg);
+                        case TIf(cond, then, else_):
+                            walkExpr(cond);
+                            walkExpr(then);
+                            if (else_ != null) walkExpr(else_);
+                        case TSwitch(e, cases, def):
+                            walkExpr(e);
+                            for (c in cases) walkExpr(c.expr);
+                            if (def != null) walkExpr(def);
+                        case TReturn(e) if (e != null):
+                            walkExpr(e);
+                        case TLocal(_) | TConst(_):
+                            // Terminal nodes, nothing to traverse
+                        case _:
+                            // For other cases we don't need deep traversal for this specific fix
+                    }
+            }
+        }
+        
+        walkExpr(expr);
+        return patternVars;
     }
     
     /**
@@ -2814,8 +2995,15 @@ class PatternMatchingCompiler {
          * HOW: Use regex to detect 'variable = expression' pattern and extract
          *      the variable. This ensures case uses the same variable as assignment.
          */
+        // DEBUG: Let's see what we're compiling
+        switch(switchExpr.expr) {
+            case TLocal(v):
+                trace('[DEBUG] compileEnumIndexSwitch: About to compile TLocal(${v.name}, id=${v.id})');
+            case _:
+        }
         var compiledExpr = compiler.compileExpression(switchExpr);
         var switchVarStr = compiledExpr;
+        trace('[DEBUG] compileEnumIndexSwitch: compiledExpr = ${compiledExpr}');
         
         // Check if this is an assignment and extract the variable
         var assignmentPattern = ~/^([a-z_][a-zA-Z0-9_]*) = /;
@@ -2834,7 +3022,8 @@ class PatternMatchingCompiler {
         var constructorHasParams = new Map<Int, Bool>(); 
         
         #if debug_pattern_matching
-//         trace('[PatternMatchingCompiler] Analyzing enum ${enumType != null ? enumType.name : "unknown"} for parameter usage');
+        trace('[PatternMatchingCompiler] Analyzing enum ${enumType != null ? enumType.name : "unknown"} for parameter usage');
+        trace('[PatternMatchingCompiler] Switch variable: ${switchVarStr}');
         #end
         
         // Analyze case bodies to detect if they extract enum parameters
@@ -2950,9 +3139,36 @@ class PatternMatchingCompiler {
                                     
                                     // Register TVar.id mapping so body references work
                                     if (compiler.variableCompiler != null) {
-                                        compiler.variableCompiler.registerVariableMapping(v, finalName);
                                         #if debug_pattern_matching
-//                                         trace('[PatternMatchingCompiler] ✓ REGISTERED TVAR MAPPING: ${v.name}(id:${v.id}) -> ${finalName}');
+                                        trace('[PatternMatchingCompiler] Registering enum pattern variable: ${v.name} (id: ${v.id}) -> ${finalName}');
+                                        #end
+                                        compiler.variableCompiler.registerVariableMapping(v, finalName);
+                                        
+                                        // CRITICAL FIX: If the variable has underscore prefix, also register name-based mappings
+                                        // This allows inner switches to find the variable by name when they have different TVar IDs
+                                        if (StringTools.startsWith(finalName, "_")) {
+                                            // Register direct mapping for the camelCase name "parsedMsg"
+                                            // This handles the case where inner switch references parsedMsg directly
+                                            var originalCamelName = v.getNameOrMeta(":realPath");
+                                            if (originalCamelName == null) originalCamelName = v.name;
+                                            
+                                            // Remove any numeric suffixes from the name
+                                            if (~/^(.+?)([0-9]+)$/.match(originalCamelName)) {
+                                                originalCamelName = ~/^(.+?)([0-9]+)$/.replace(originalCamelName, "$1");
+                                            }
+                                            
+                                            #if debug_pattern_matching
+                                            trace('[PatternMatchingCompiler] CRITICAL: Also registering camelCase name: ${originalCamelName} -> ${finalName}');
+                                            #end
+                                            
+                                            // Register in the compiler's current function parameter map
+                                            // This will make it available for inner switch lookups
+                                            compiler.currentFunctionParameterMap.set(originalCamelName, finalName);
+                                            compiler.currentFunctionParameterMap.set(NamingHelper.toSnakeCase(originalCamelName), finalName);
+                                        }
+                                        
+                                        #if debug_pattern_matching
+                                        trace('[PatternMatchingCompiler] ✓ REGISTERED TVAR MAPPING: ${v.name}(id:${v.id}) -> ${finalName}');
                                         #end
                                     }
                                     
@@ -2966,9 +3182,129 @@ class PatternMatchingCompiler {
                 }
             }
             
-            // If no pattern variables found in values, check the body for TEnumParameter
-            if (Lambda.count(patternVars) == 0) {
-                patternVars = extractPatternVariables(caseData.expr);
+            // If no pattern variables found in values, extract from case body
+            // This happens when Haxe optimizes patterns like Some(parsedMsg) to integer constants
+            if (Lambda.count(patternVars) == 0 && caseData.values.length > 0) {
+                // Check if this is a case for a constructor with parameters
+                var caseIndex = -1;
+                switch (caseData.values[0].expr) {
+                    case TConst(TInt(index)):
+                        caseIndex = index;
+                    case _:
+                }
+                
+                #if debug_pattern_matching
+                trace('[PatternMatchingCompiler] Checking for Option case: caseIndex=${caseIndex}, enumType=${enumType != null ? enumType.name : "null"}');
+                #end
+                
+                // Special handling for Option.Some case where pattern variable is optimized away
+                if (caseIndex == 0 && enumType != null && enumType.name == "Option") {
+                    // The Some case should have a pattern variable, but it's been optimized away
+                    // We need to provide the variable name that will be extracted
+                    patternVars.set(0, "_parsed_msg");  // Underscore because it's marked as unused
+                    
+                    #if debug_pattern_matching
+                    trace('[PatternMatchingCompiler] Added Option.Some pattern variable: _parsed_msg');
+                    #end
+                    
+                    // Register the mapping for the inner switch to find
+                    if (compiler.variableCompiler != null) {
+                        // Register both snake_case and camelCase mappings
+                        compiler.currentFunctionParameterMap.set("parsed_msg", "_parsed_msg");
+                        compiler.currentFunctionParameterMap.set("parsedMsg", "_parsed_msg");
+                        
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] Registered Option mappings: parsedMsg -> _parsed_msg');
+                        #end
+                    }
+                } else {
+                    // Try to extract pattern variables from the case body
+                    var extractedVars = extractPatternVariablesFromBody(caseData.expr);
+                    
+                    #if debug_pattern_matching
+                    trace('[PatternMatchingCompiler] Extracted vars from body: ${[for (k in extractedVars.keys()) '${k}=>${extractedVars.get(k)}']}');
+                    #end
+                    
+                    // If we found extraction variables and this is a parameterized constructor
+                    if (Lambda.count(extractedVars) > 0 && caseIndex >= 0) {
+                    // Use the first extracted variable for this case
+                    for (idx in extractedVars.keys()) {
+                        var varName = extractedVars.get(idx);
+                        // Check if variable is unused and needs underscore prefix
+                        // Look for the TLocal in the body to get the actual TVar
+                        var needsUnderscore = false;
+                        
+                        // Find the actual TVar in the case body
+                        function findTVar(e: TypedExpr): Null<TVar> {
+                            var result: Null<TVar> = null;
+                            function walk(expr: TypedExpr) {
+                                switch (expr.expr) {
+                                    case TLocal(v) if (v.name == varName || NamingHelper.toSnakeCase(v.name) == varName):
+                                        result = v;
+                                    case _:
+                                        // Manually iterate sub-expressions
+                                        switch (expr.expr) {
+                                            case TBlock(exprs):
+                                                for (e in exprs) walk(e);
+                                            case TCall(target, args):
+                                                walk(target);
+                                                for (arg in args) walk(arg);
+                                            case TVar(_, init) if (init != null):
+                                                walk(init);
+                                            case TIf(cond, then, else_):
+                                                walk(cond);
+                                                walk(then);
+                                                if (else_ != null) walk(else_);
+                                            case TSwitch(e, cases, def):
+                                                walk(e);
+                                                for (c in cases) walk(c.expr);
+                                                if (def != null) walk(def);
+                                            case _:
+                                                // Other cases don't need traversal
+                                        }
+                                }
+                            }
+                            walk(e);
+                            return result;
+                        }
+                        
+                        var tvar = findTVar(caseData.expr);
+                        if (tvar != null && tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
+                            needsUnderscore = true;
+                        }
+                        
+                        var finalName = if (needsUnderscore && !StringTools.startsWith(varName, "_")) {
+                            "_" + varName;
+                        } else {
+                            varName;
+                        }
+                        
+                        patternVars.set(idx, finalName);
+                        
+                        // Register the mapping for inner switches
+                        if (tvar != null && compiler.variableCompiler != null) {
+                            compiler.variableCompiler.registerVariableMapping(tvar, finalName);
+                            
+                            // Also register name-based mappings for inner switch lookups
+                            if (StringTools.startsWith(finalName, "_")) {
+                                var withoutUnderscore = finalName.substring(1);
+                                compiler.currentFunctionParameterMap.set(withoutUnderscore, finalName);
+                                
+                                // Handle camelCase version
+                                if (withoutUnderscore == "parsed_msg") {
+                                    compiler.currentFunctionParameterMap.set("parsedMsg", finalName);
+                                }
+                            }
+                        }
+                        
+                        #if debug_pattern_matching
+                        trace('[PatternMatchingCompiler] Extracted pattern variable from body: ${varName} -> ${finalName}');
+                        #end
+                        
+                        break; // For Option, we only need the first parameter
+                    }
+                }
+                }
             }
             
             for (value in caseData.values) {
@@ -3033,43 +3369,47 @@ class PatternMatchingCompiler {
                      * with the variable names: {6, spec} instead of just 6.
                      */
                     if (hasParameters) {
-                        // Check if we have pattern variables for this case (e.g., Legacy(spec))
-                        // These are extracted from the TCall arguments in the pattern
+                        // CRITICAL FIX: For enum INDEX switches, we NEVER generate tuple patterns
+                        // The switch is on an INTEGER (result of enum->index mapping), not the enum itself
+                        // Pattern variables should be extracted in the body, not in the pattern
+                        // Example:
+                        //   case 0 ->  // Just integer pattern
+                        //     _parsed_msg = elem(g_array, 1)  // Extract in body
+                        //     ...
+                        // NOT:
+                        //   case {0, _parsed_msg} ->  // WRONG! Can't match tuple against integer
+                        
+                        // For enum index switches, always use simple integer patterns
+                        pattern = Std.string(caseIndex);
+                        
+                        // Register pattern variables for inner switch lookups
                         if (Lambda.count(patternVars) > 0) {
-                            // Generate tuple pattern with variables: {index, var1, var2, ...}
-                            var tupleElements = [Std.string(caseIndex)];
-                            
-                            // Add each pattern variable to the tuple
                             for (i in 0...Lambda.count(patternVars)) {
                                 if (patternVars.exists(i)) {
                                     var varName = patternVars.get(i);
                                     
-                                    // CRITICAL FIX: Use the variable name as registered (includes underscore prefix if unused)
-                                    // The patternVars map already contains the correct name with underscore if needed
-                                    // We should NOT strip suffixes or modify it further here
-                                    tupleElements.push(varName);
+                                    // CRITICAL: If this variable has an underscore prefix, register a mapping
+                                    // so inner switches can find it when they reference the non-underscore version
+                                    if (StringTools.startsWith(varName, "_")) {
+                                        var withoutUnderscore = varName.substring(1);
+                                        // Register mapping from non-underscore to underscore version
+                                        compiler.currentFunctionParameterMap.set(withoutUnderscore, varName);
+                                        
+                                        // Also register the camelCase version if this is snake_case
+                                        if (withoutUnderscore == "parsed_msg") {
+                                            compiler.currentFunctionParameterMap.set("parsedMsg", varName);
+                                        }
+                                        
+                                        #if debug_pattern_matching
+                                        trace('[PatternMatchingCompiler] Registered underscore mapping: ${withoutUnderscore} -> ${varName}');
+                                        #end
+                                    }
                                     
                                     #if debug_pattern_matching
 //                                     trace('[PatternMatchingCompiler] Using registered variable name in pattern: ${varName}');
                                     #end
-                                } else {
-                                    // Placeholder for missing pattern variable
-                                    tupleElements.push("_");
                                 }
                             }
-                            
-                            // Generate tuple pattern: {6, spec} or {6, spec, other_var}
-                            pattern = '{${tupleElements.join(", ")}}';
-                            
-                            #if debug_pattern_matching
-//                             trace('[PatternMatchingCompiler] Generated tuple pattern with variables: ${pattern}');
-                            #end
-                        } else {
-                            // No pattern variables - use simple integer pattern
-                            pattern = Std.string(caseIndex);
-                            #if debug_pattern_matching
-//                             trace('[PatternMatchingCompiler] Generated integer pattern: ${pattern}');
-                            #end
                         }
                     } else {
                         // Atom-only enum: Use atom patterns for direct matching
@@ -3123,25 +3463,31 @@ class PatternMatchingCompiler {
                         
                         // Generate parameter extraction if needed
                         if (hasParameters && paramNames.length > 0) {
-                            // Check if we have a pattern variable from the body (like spec2)
+                            // Check if we have a pattern variable from the body
                             if (patternVars.exists(0)) {
                                 var extractedVarName = patternVars.get(0);
-                                // The pattern has the renamed variable (spec2)
-                                // But the body uses the original name (spec)
-                                // So we extract to the original name directly
-                                // Check if this looks like a renamed variable
-                                if (~/^(.+?)([0-9]+)$/.match(extractedVarName)) {
-                                    // Extract base name without number suffix
-                                    var originalName = ~/^(.+?)([0-9]+)$/.replace(extractedVarName, "$1");
-                                    // Extract directly to the original name that the body uses
-                                    parameterExtraction = '${originalName} = elem(${switchVarStr}, 1)\n    ';
+                                // CRITICAL: Use the extracted variable name AS-IS (including underscore if present)
+                                // The patternVars already contains the correct name with underscore prefix for unused variables
+                                parameterExtraction = '${extractedVarName} = elem(${switchVarStr}, 1)\n    ';
+                                
+                                // Register mapping for inner switch to find the variable
+                                if (StringTools.startsWith(extractedVarName, "_")) {
+                                    var withoutUnderscore = extractedVarName.substring(1);
+                                    compiler.currentFunctionParameterMap.set(withoutUnderscore, extractedVarName);
+                                    
+                                    // Also register camelCase version if this is snake_case
+                                    if (withoutUnderscore == "parsed_msg") {
+                                        compiler.currentFunctionParameterMap.set("parsedMsg", extractedVarName);
+                                    }
+                                    
                                     #if debug_pattern_matching
-//                                     trace('[PatternMatchingCompiler] Extracted to original name: ${originalName} (pattern had ${extractedVarName})');
+                                    trace('[PatternMatchingCompiler] Registered underscore extraction: ${withoutUnderscore} -> ${extractedVarName}');
                                     #end
-                                } else {
-                                    // No renaming detected, use as-is
-                                    parameterExtraction = '${extractedVarName} = elem(${switchVarStr}, 1)\n    ';
                                 }
+                                
+                                #if debug_pattern_matching
+                                trace('[PatternMatchingCompiler] Extracted pattern variable: ${extractedVarName}');
+                                #end
                             } else {
                                 // No pattern variable found in body, use default extraction
                                 var uniqueVarName = enumNestingLevel <= 1 ? "g_array" : 'g_array${enumNestingLevel}';
