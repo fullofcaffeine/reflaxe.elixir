@@ -1,6 +1,6 @@
 # Compilation configuration for example 04 ecto migrations
--cp ../../../std
--cp ../../../src
+-cp ../../../../std
+-cp ../../../../src
 -cp .
 -lib reflaxe
 -D reflaxe_runtime
