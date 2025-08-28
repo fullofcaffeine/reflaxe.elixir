@@ -227,6 +227,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     public var patternUsageContext: Null<Map<String, Bool>> = null;
     
     // Map for tracking variable renames to ensure consistency between declaration and usage
+    
+    // Track whether we're compiling in a statement context (for mutable operations)
+    // When true, array.push(item) generates reassignment: array = array ++ [item]
+    public var isStatementContext: Bool = false;
     // Critical for resolving _g variable collisions in desugared loops
     public var variableRenameMap: Null<Map<String, String>> = null;
     

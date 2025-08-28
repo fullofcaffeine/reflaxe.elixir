@@ -130,11 +130,24 @@ class ArrayMethodCompiler {
                     'Enum.join(${objStr}, "")';
                 }
             case "push":
-                // array.push(item) → array ++ [item]
-                // NOTE: In Elixir, lists are immutable. The calling code needs to handle reassignment.
-                // TODO: Track mutation context to generate proper reassignment patterns
+                // array.push(item) → array = array ++ [item]
+                // CRITICAL FIX: In Elixir, lists are immutable. ALL push operations need reassignment.
+                // We detect simple variables and generate reassignment automatically.
                 if (compiledArgs.length > 0) {
-                    '${objStr} ++ [${compiledArgs[0]}]';
+                    // Check if objStr is a simple variable that can be reassigned
+                    // This handles the common case of: variable.push(item)
+                    var isSimpleVariable = ~/^[a-z_][a-z0-9_]*$/i.match(objStr);
+                    
+                    if (isSimpleVariable) {
+                        // Generate reassignment for ALL push operations on simple variables
+                        // This fixes the immutability issue where push doesn't actually modify the list
+                        '${objStr} = ${objStr} ++ [${compiledArgs[0]}]';
+                    } else {
+                        // Complex object or expression - can't auto-reassign
+                        // Examples: getArray().push(item) or obj.field.push(item)
+                        // The calling code must handle reassignment manually
+                        '${objStr} ++ [${compiledArgs[0]}]';
+                    }
                 } else {
                     objStr;
                 }

@@ -131,15 +131,15 @@ defmodule Main do
 
     parts = []
 
-    parts ++ ["Item " <> to_string(1)]
+    parts = parts ++ ["Item " <> to_string(1)]
 
-    parts ++ ["Item " <> to_string(2)]
+    parts = parts ++ ["Item " <> to_string(2)]
 
-    parts ++ ["Item " <> to_string(3)]
+    parts = parts ++ ["Item " <> to_string(3)]
 
-    parts ++ ["Item " <> to_string(4)]
+    parts = parts ++ ["Item " <> to_string(4)]
 
-    parts ++ ["Item " <> to_string(5)]
+    parts = parts ++ ["Item " <> to_string(5)]
 
     list = Enum.join(parts, ", ")
 
@@ -160,7 +160,7 @@ defmodule Main do
 
     (fn loop ->
       if all_numbers.match(text) do
-            numbers ++ [all_numbers.matched(0)]
+            numbers = numbers ++ [all_numbers.matched(0)]
         text = all_numbers.matched_right()
         loop.()
       end
