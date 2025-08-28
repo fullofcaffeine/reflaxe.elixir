@@ -765,6 +765,7 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
 
 ## Recently Resolved Issues ✅
+- **Major Loop Compilation Refactoring (August 2025)**: Reduced loop compilation from 10,668 lines across 10+ files to a single 334-line UnifiedLoopCompiler using TDD approach. Eliminated complex Y-combinator patterns in favor of simple recursive functions. Fixed g_array variable mismatch bugs. (see commit c85745e)
 - **Array Desugaring & Y Combinator Patterns**: Discovered how Haxe desugars array.filter/map into TBlock/TWhile patterns and implemented detection framework (see [`docs/03-compiler-development/ARRAY_DESUGARING_PATTERNS.md`](docs/03-compiler-development/ARRAY_DESUGARING_PATTERNS.md))
 - **Untyped Usage Violations**: Eliminated all unnecessary `untyped` usage in compiler code (VariableCompiler, OperatorCompiler, ControlFlowCompiler) for better type safety and IDE support
 - **Orphaned Enum Parameter Variables**: Fixed compilation errors from unused TEnumParameter expressions in switch cases by implementing comprehensive AST-level detection and mitigation. First Reflaxe compiler to solve this fundamental issue caused by bypassing Haxe's optimizer (see [`docs/03-compiler-development/AST_CLEANUP_PATTERNS.md`](docs/03-compiler-development/AST_CLEANUP_PATTERNS.md))
