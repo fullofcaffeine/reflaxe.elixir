@@ -264,7 +264,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        if ((v.id != id)), do: g_array = g_array ++ [v], else: nil
+        g_array = if ((v.id != id)), do: g_array ++ [v], else: g_array
         loop.()
       end
     end).()
@@ -405,7 +405,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        if (not v.completed), do: g_array = g_array ++ [v], else: nil
+        g_array = if (not v.completed), do: g_array ++ [v], else: g_array
         loop.()
       end
     end).()
@@ -463,7 +463,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        if v.completed, do: g_array = g_array ++ [v], else: nil
+        g_array = if v.completed, do: g_array ++ [v], else: g_array
         loop.()
       end
     end).()
@@ -488,7 +488,7 @@ defmodule TodoAppWeb.TodoLive do
       if ((g_counter < this.length)) do
             v = Enum.at(this, g_counter)
         g_counter + 1
-        if (not v.completed), do: g_array = g_array ++ [v], else: nil
+        g_array = if (not v.completed), do: g_array ++ [v], else: g_array
         loop.()
       end
     end).()
@@ -588,7 +588,7 @@ defmodule TodoAppWeb.TodoLive do
         if ((g_counter < g_array.length)) do
               v = Enum.at(g_array, g_counter)
           g_counter + 1
-          if ((v != tag)), do: g_array = g_array ++ [v], else: nil
+          g_array = if ((v != tag)), do: g_array ++ [v], else: g_array
           loop.()
         end
       end).()

@@ -2,621 +2,399 @@ package reflaxe.elixir.helpers;
 
 #if (macro || reflaxe_runtime)
 
+import haxe.macro.Type;
+import haxe.macro.Expr;
+import reflaxe.BaseCompiler;
+import reflaxe.elixir.ElixirCompiler;
+import reflaxe.elixir.helpers.AnnotationSystem;
+
+using reflaxe.helpers.NullHelper;
+using reflaxe.helpers.NameMetaHelper;
+using reflaxe.helpers.SyntaxHelper;
+using reflaxe.helpers.TypedExprHelper;
 using StringTools;
 
 /**
- * OTP GenServer compilation support following LiveViewCompiler pattern
- * Handles @:genserver annotation, callback compilation, and state management
- * Integrates with ElixirCompiler architecture for type-safe concurrent programming
+ * OTPCompiler: Specialized compiler for OTP (Open Telecom Platform) patterns
+ * 
+ * WHY: OTP compilation (supervisors, GenServers, child specs) was embedded in ElixirCompiler,
+ *      making the main compiler too large (~3100 lines) and mixing unrelated concerns.
+ *      OTP patterns have specific Elixir conventions that benefit from centralized handling.
+ * 
+ * WHAT: Handles all OTP-related compilation for Haxe-to-Elixir transpilation:
+ * - Child spec generation for supervisor children
+ * - Supervisor options compilation  
+ * - TypeSafeChildSpec enum handling
+ * - Atom vs string key decisions for OTP structures
+ * - Supervisor strategy and restart configuration
+ * 
+ * HOW: Maps Haxe OTP patterns to idiomatic Elixir OTP structures:
+ * 1. Analyzes OTP-specific patterns and metadata
+ * 2. Generates proper Elixir OTP configuration maps
+ * 3. Handles atom key conversion for OTP contexts
+ * 4. Ensures compliance with OTP conventions
+ * 
+ * ARCHITECTURE BENEFITS:
+ * - Single Responsibility: Only handles OTP patterns
+ * - Clear Interface: Simple public API for OTP compilation  
+ * - Reduces ElixirCompiler size: Extracts ~300 lines
+ * - Testability: OTP patterns isolated from general compilation
+ * - Maintainability: OTP conventions centralized in one place
+ * 
+ * EDGE CASES:
+ * - Mix of atom and string keys in maps
+ * - Optional fields in child specs
+ * - Supervisor name generation
+ * - Type inference for worker vs supervisor
+ * - Restart strategies and their constraints
  */
+@:nullSafety(Off)
 class OTPCompiler {
     
+    /** Reference to main compiler for expression compilation */
+    var compiler: ElixirCompiler;
+    
     /**
-     * Check if a class is annotated with @:genserver (string version for testing)
+     * Constructor
+     * @param compiler Main ElixirCompiler instance for delegation
      */
-    public static function isGenServerClass(className: String): Bool {
-        // Mock implementation for testing - in real scenario would check class metadata
-        if (className == null || className == "") return false;
-        return className.indexOf("Server") != -1 || 
-               className.indexOf("GenServer") != -1 ||
-               className.indexOf("Worker") != -1;
+    public function new(compiler: ElixirCompiler) {
+        this.compiler = compiler;
+        
+        #if debug_otp_compilation
+        trace("[OTPCompiler] Initialized");
+        #end
     }
     
     /**
-     * Check if ClassType has @:genserver annotation (real implementation)
-     * Note: Temporarily simplified due to Haxe 4.3.6 API compatibility
+     * Compile child spec configuration for OTP supervisors
+     * 
+     * WHY: Supervisors need properly formatted child specs to start processes
+     * WHAT: Transforms Haxe objects to Elixir child spec maps
+     * HOW: Extracts fields and generates proper OTP child spec format
+     * 
+     * @param fields Object fields containing child spec configuration
+     * @param classType Optional class type for metadata extraction
+     * @return Generated Elixir child spec map
      */
-    public static function isGenServerClassType(classType: Dynamic): Bool {
-        // Simplified implementation - would use classType.hasMeta(":genserver") in proper setup
-        return true;
-    }
-    
-    /**
-     * Get GenServer configuration from @:genserver annotation
-     * Note: Temporarily simplified due to Haxe 4.3.6 API compatibility
-     */
-    public static function getGenServerConfig(classType: Dynamic): Dynamic {
-        // Simplified implementation - would extract from metadata in proper setup
-        return {name: "default_server", timeout: 5000};
-    }
-    
-    /**
-     * Compile init/1 callback with proper GenServer signature
-     */
-    public static function compileInitCallback(className: String, initialState: String): String {
-        return 'def init(_init_arg) do\n' +
-               '    {:ok, ${initialState}}\n' +
-               '  end';
-    }
-    
-    /**
-     * Compile handle_call/3 callback for synchronous operations
-     */
-    public static function compileHandleCall(methodName: String, returnType: String): String {
-        var atomicName = camelCaseToAtomCase(methodName);
+    public function compileChildSpec(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
+        #if debug_otp_compilation
+        trace('[OTPCompiler] Compiling child spec with ${fields.length} fields');
+        #end
         
-        // Handle specific method patterns
-        var stateAccess = switch(methodName) {
-            case "getCount": "state.count";
-            case "getState": "state";
-            default: 'state.${atomicName.split("_").join("").toLowerCase()}';
-        };
+        var compiledFields = new Map<String, String>();
         
-        return 'def handle_call({:${atomicName}}, _from, state) do\n' +
-               '    {:reply, ${stateAccess}, state}\n' +
-               '  end';
-    }
-    
-    /**
-     * Compile handle_cast/2 callback for asynchronous operations  
-     */
-    public static function compileHandleCast(methodName: String, stateModification: String): String {
-        var atomicName = camelCaseToAtomCase(methodName);
+        // Get app name from annotation at compile time
+        var appName = AnnotationSystem.getEffectiveAppName(classType);
         
-        return 'def handle_cast({:${atomicName}}, state) do\n' +
-               '    new_state = ${stateModification}\n' +
-               '    {:noreply, new_state}\n' +
-               '  end';
-    }
-    
-    /**
-     * Generate GenServer module boilerplate following LiveViewCompiler pattern
-     */
-    public static function generateGenServerModule(className: String): String {
-        var moduleName = className;
-        
-        return 'defmodule ${moduleName} do\n' +
-               '  @moduledoc """\n' +
-               '  Generated GenServer from Haxe @:genserver class: ${className}\n' +
-               '  \n' +
-               '  Provides type-safe concurrent programming with the BEAM actor model.\n' +
-               '  This module was automatically generated from a Haxe source file\n' +
-               '  as part of the Reflaxe.Elixir compilation pipeline.\n' +
-               '  """\n' +
-               '  \n' +
-               '  use GenServer\n' +
-               '  \n' +
-               '  @doc """\n' +
-               '  Start the GenServer and link it to the current process\n' +
-               '  """\n' +
-               '  def start_link(init_arg) do\n' +
-               '    GenServer.start_link(__MODULE__, init_arg)\n' +
-               '  end\n' +
-               '  \n' +
-               '  @doc """\n' +
-               '  Initialize GenServer state\n' +
-               '  """\n' +
-               '  def init(_init_arg) do\n' +
-               '    {:ok, %{}}\n' +
-               '  end\n' +
-               '  \n' +
-               '  @doc """\n' +
-               '  Handle synchronous calls\n' +
-               '  """\n' +
-               '  def handle_call(request, _from, state) do\n' +
-               '    {:reply, :ok, state}\n' +
-               '  end\n' +
-               '  \n' +
-               '  @doc """\n' +
-               '  Handle asynchronous casts\n' +
-               '  """\n' +
-               '  def handle_cast(msg, state) do\n' +
-               '    {:noreply, state}\n' +
-               '  end\n' +
-               'end';
-    }
-    
-    /**
-     * Compile state initialization with type safety
-     */
-    public static function compileStateInitialization(stateType: String, initialValue: String): String {
-        // Sanitize the initial value to prevent code injection
-        var safeValue = initialValue;
-        if (safeValue != null) {
-            // Remove dangerous patterns
-            safeValue = safeValue.split("System.").join("");
-            safeValue = safeValue.split("File.").join("");
-            safeValue = safeValue.split("Process.").join("");
-            safeValue = safeValue.split("Code.").join("");
-            safeValue = safeValue.split("eval(").join("");
-        }
-        return '{:ok, ${safeValue}}';
-    }
-    
-    /**
-     * Compile message pattern for GenServer calls/casts
-     */
-    public static function compileMessagePattern(messageName: String, messageArgs: Array<String>): String {
-        var atomicName = camelCaseToAtomCase(messageName);
-        
-        if (messageArgs.length == 0) {
-            return ':${atomicName}';
-        } else if (messageArgs.length == 1) {
-            return '{:${atomicName}, ${messageArgs[0]}}';
-        } else {
-            return '{:${atomicName}, ${messageArgs.join(", ")}}';
-        }
-    }
-    
-    /**
-     * Compile full GenServer with all callbacks and boilerplate
-     */
-    public static function compileFullGenServer(genServerData: Dynamic): String {
-        // Add null safety for edge case testing
-        if (genServerData == null) {
-            return "defmodule NullGenServer do\n  use GenServer\nend";
-        }
-        
-        var className = genServerData.className != null ? genServerData.className : "DefaultGenServer";
-        var initialState = genServerData.initialState != null ? genServerData.initialState : "%{}";
-        var callMethods = genServerData.callMethods;
-        var castMethods = genServerData.castMethods;
-        
-        var moduleName = className;
-        var result = new StringBuf();
-        
-        // Module definition and boilerplate
-        result.add('defmodule ${moduleName} do\n');
-        result.add('  @moduledoc """\n');
-        result.add('  Generated GenServer for ${moduleName}\n');
-        result.add('  \n');
-        result.add('  Provides type-safe concurrent programming with the BEAM actor model\n');
-        result.add('  following OTP GenServer patterns with compile-time validation.\n');
-        result.add('  """\n');
-        result.add('  \n');
-        result.add('  use GenServer\n');
-        result.add('  \n');
-        
-        // Start link function
-        result.add('  @doc """\n');
-        result.add('  Start the GenServer - integrates with supervision trees\n');
-        result.add('  """\n');
-        result.add('  def start_link(init_arg) do\n');
-        result.add('    GenServer.start_link(__MODULE__, init_arg)\n');
-        result.add('  end\n');
-        result.add('  \n');
-        
-        // Init callback
-        result.add('  @doc """\n');
-        result.add('  Initialize GenServer state\n');
-        result.add('  """\n');
-        result.add('  def init(_init_arg) do\n');
-        result.add('    {:ok, ${initialState}}\n');
-        result.add('  end\n');
-        result.add('  \n');
-        
-        // Handle call methods
-        if (callMethods != null) {
-            for (method in (callMethods: Array<Dynamic>)) {
-                var methodName = method != null && method.name != null ? method.name : "default_method";
-                var atomicName = camelCaseToAtomCase(methodName);
-                
-                // Handle specific method patterns for state access
-                var stateAccess = switch(methodName) {
-                    case "get_count": "state.count";
-                    case "get_state": "state";
-                    default: 'state.value';
-                };
-                
-                result.add('  @doc """\n');
-                result.add('  Handle synchronous call: ${methodName}\n');
-                result.add('  """\n');
-                result.add('  def handle_call({:${atomicName}}, _from, state) do\n');
-                result.add('    {:reply, ${stateAccess}, state}\n');
-                result.add('  end\n');
-                result.add('  \n');
-            }
-        }
-        
-        // Handle cast methods
-        if (castMethods != null) {
-            for (method in (castMethods: Array<Dynamic>)) {
-                var methodName = method != null && method.name != null ? method.name : "default_cast";
-                var atomicName = camelCaseToAtomCase(methodName);
-                
-                result.add('  @doc """\n');
-                result.add('  Handle asynchronous cast: ${methodName}\n');
-                result.add('  """\n');
-                result.add('  def handle_cast({:${atomicName}}, state) do\n');
-                result.add('    new_state = %{state | value: ${method != null && method.modifies != null ? method.modifies : "nil"}}\n');
-                result.add('    {:noreply, new_state}\n');
-                result.add('  end\n');
-                result.add('  \n');
-            }
-        }
-        
-        result.add('end');
-        
-        return result.toString();
-    }
-    
-    /**
-     * Generate child spec for supervision trees
-     */
-    public static function generateChildSpec(genServerName: String): String {
-        return '{${genServerName}, []}';
-    }
-    
-    /**
-     * Generate GenServer client API functions
-     */
-    public static function generateClientAPI(genServerName: String, methods: Array<Dynamic>): String {
-        var result = new StringBuf();
-        
-        result.add('  # Client API\n');
-        result.add('  \n');
-        
-        for (method in methods) {
-            var methodName = method.name;
-            var isAsync = method.async == true;
+        // Process each field from the child spec configuration
+        for (field in fields) {
+            var compiledValue = compiler.compileExpression(field.expr);
             
-            result.add('  @doc """\n');
-            result.add('  Client API for ${methodName}\n');
-            result.add('  """\n');
-            result.add('  def ${methodName}(pid) do\n');
-            
-            if (isAsync) {
-                result.add('    GenServer.cast(pid, {:${camelCaseToAtomCase(methodName)}})\n');
-            } else {
-                result.add('    GenServer.call(pid, {:${camelCaseToAtomCase(methodName)}})\n');
-            }
-            
-            result.add('  end\n');
-            result.add('  \n');
-        }
-        
-        return result.toString();
-    }
-    
-    /**
-     * Convert CamelCase to atom_case for Elixir conventions
-     */
-    public static function camelCaseToAtomCase(input: String): String {
-        // Add null safety for edge case testing
-        if (input == null || input == "") {
-            return "default_atom";
-        }
-        
-        var result = "";
-        
-        for (i in 0...input.length) {
-            var char = input.charAt(i);
-            
-            if (i > 0 && char >= 'A' && char <= 'Z') {
-                result += "_";
-            }
-            
-            result += char.toLowerCase();
-        }
-        
-        return result;
-    }
-    
-    /**
-     * Generate timeout handling for GenServer operations
-     */
-    public static function generateTimeoutHandling(timeout: Int): String {
-        return 'def handle_info(:timeout, state) do\n' +
-               '    # Handle timeout after ${timeout}ms\n' +
-               '    {:noreply, state}\n' +
-               '  end';
-    }
-    
-    /**
-     * Generate handle_info/2 callback for generic message handling
-     */
-    public static function generateHandleInfo(): String {
-        return 'def handle_info(msg, state) do\n' +
-               '    # Handle unexpected messages\n' +
-               '    {:noreply, state}\n' +
-               '  end';
-    }
-    
-    /**
-     * Generate typed message protocol for compile-time validation
-     */
-    public static function generateTypedMessageProtocol(serverName: String, messageTypes: Array<Dynamic>): String {
-        var result = new StringBuf();
-        
-        result.add('defmodule ${serverName}.Protocol do\n');
-        result.add('  @moduledoc """\n');
-        result.add('  Type specifications for ${serverName} messages\n');
-        result.add('  Provides compile-time message validation\n');
-        result.add('  """\n');
-        result.add('  \n');
-        
-        for (msgType in messageTypes) {
-            var messageName = msgType.name;
-            var params = msgType.params;
-            var returns = msgType.returns;
-            
-            if (params.length == 0) {
-                result.add('  @type ${messageName}_message() :: {:${camelCaseToAtomCase(messageName)}}\n');
-            } else {
-                var paramTypes = [];
-                for (param in (params: Array<String>)) {
-                    switch(param) {
-                        case "Int": paramTypes.push("integer()");
-                        case "String": paramTypes.push("String.t()");
-                        case "Bool": paramTypes.push("boolean()");
-                        default: paramTypes.push("any()");
+            switch (field.name) {
+                case "id":
+                    // Resolve app name interpolation first
+                    compiledValue = resolveAppNameInString(compiledValue, appName);
+                    // Ensure ID is always an atom for OTP compatibility
+                    if (!compiledValue.startsWith(":")) {
+                        compiledValue = ':${stripQuotes(compiledValue)}';
                     }
-                }
-                result.add('  @type ${messageName}_message(${paramTypes.join(", ")}) :: {:${camelCaseToAtomCase(messageName)}, ${paramTypes.join(", ")}}\n');
+                    compiledFields.set("id", compiledValue);
+                    
+                case "start":
+                    // Resolve app name interpolation first
+                    compiledValue = resolveAppNameInString(compiledValue, appName);
+                    // Start can be a tuple {Module, :function, [args]} or a function reference
+                    if (compiledValue.startsWith("{") || compiledValue.startsWith("&")) {
+                        compiledFields.set("start", compiledValue);
+                    } else {
+                        // Assume it's a module reference, convert to proper start tuple
+                        var moduleName = stripQuotes(compiledValue);
+                        compiledFields.set("start", '{${moduleName}, :start_link, []}');
+                    }
+                    
+                case "restart":
+                    // Restart strategies: :permanent, :temporary, :transient
+                    if (compiledValue == '"permanent"' || compiledValue == "'permanent'") {
+                        compiledFields.set("restart", ":permanent");
+                    } else if (compiledValue == '"temporary"' || compiledValue == "'temporary'") {
+                        compiledFields.set("restart", ":temporary");
+                    } else if (compiledValue == '"transient"' || compiledValue == "'transient'") {
+                        compiledFields.set("restart", ":transient");
+                    } else {
+                        compiledFields.set("restart", compiledValue);
+                    }
+                    
+                case "shutdown":
+                    // Shutdown can be an integer (milliseconds), :infinity, or :brutal_kill
+                    if (compiledValue == '"infinity"' || compiledValue == "'infinity'") {
+                        compiledFields.set("shutdown", ":infinity");
+                    } else if (compiledValue == '"brutal_kill"' || compiledValue == "'brutal_kill'") {
+                        compiledFields.set("shutdown", ":brutal_kill");
+                    } else {
+                        compiledFields.set("shutdown", compiledValue);
+                    }
+                    
+                case "type":
+                    // Type is either :worker or :supervisor
+                    var typeValue = stripQuotes(compiledValue);
+                    if (typeValue.indexOf("GenServer") != -1 || typeValue.indexOf("Agent") != -1) {
+                        compiledFields.set("type", ":worker");
+                    } else if (typeValue.indexOf("Supervisor") != -1) {
+                        compiledFields.set("type", ":supervisor");
+                    } else {
+                        compiledFields.set("type", typeValue);
+                    }
+                    
+                case "modules":
+                    // Resolve app name interpolation in module references
+                    compiledValue = resolveAppNameInString(compiledValue, appName);
+                    // Modules is typically [Module] for dynamic modules
+                    compiledFields.set("modules", compiledValue);
+                    
+                default:
+                    // Pass through any other fields as-is
+                    compiledFields.set(field.name, compiledValue);
             }
         }
         
-        result.add('end');
+        // Generate default values for required fields if missing
+        if (!compiledFields.exists("id")) {
+            // Generate ID from start module if possible
+            if (compiledFields.exists("start")) {
+                var startValue = compiledFields.get("start");
+                if (startValue != null && startValue.startsWith("{")) {
+                    // Extract module name from tuple
+                    var parts = startValue.split(",");
+                    if (parts.length > 0) {
+                        var moduleName = parts[0].substring(1).trim();
+                        compiledFields.set("id", ':${moduleName}');
+                    }
+                } else {
+                    compiledFields.set("id", ":worker");
+                }
+            } else {
+                compiledFields.set("id", ":worker");
+            }
+        }
+        
+        // Default restart strategy
+        if (!compiledFields.exists("restart")) {
+            compiledFields.set("restart", ":permanent");
+        }
+        
+        // Default type
+        if (!compiledFields.exists("type")) {
+            compiledFields.set("type", ":worker");
+        }
+        
+        // Build the child spec map
+        var result = new StringBuf();
+        result.add("%{");
+        
+        var fieldList = [];
+        for (key in compiledFields.keys()) {
+            var value = compiledFields.get(key);
+            fieldList.push('${key}: ${value}');
+        }
+        
+        result.add(fieldList.join(", "));
+        result.add("}");
+        
+        #if debug_otp_compilation
+        trace('[OTPCompiler] Generated child spec: ${result.toString()}');
+        #end
+        
         return result.toString();
     }
     
     /**
-     * Generate advanced child specification with options
+     * Compile supervisor options to Elixir keyword list format
+     * 
+     * WHY: Supervisors require specific keyword list format for configuration
+     * WHAT: Transforms Haxe supervisor options to Elixir keyword list
+     * HOW: Extracts strategy, restart limits, and name configuration
+     * 
+     * @param fields Object fields containing supervisor options
+     * @param classType Optional class type for metadata extraction
+     * @return Generated Elixir supervisor options keyword list
      */
-    public static function generateAdvancedChildSpec(genServerName: String, options: Dynamic): String {
-        var restart = options.restart != null ? options.restart : "permanent";
-        var shutdown = options.shutdown != null ? options.shutdown : 5000;
-        var type = options.type != null ? options.type : "worker";
+    public function compileSupervisorOptions(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
+        #if debug_otp_compilation
+        trace('[OTPCompiler] Compiling supervisor options with ${fields.length} fields');
+        #end
         
-        return '{${genServerName}, [], restart: :${restart}, shutdown: ${shutdown}, type: :${type}}';
-    }
-    
-    /**
-     * Compile GenServer with timeout and hibernation support
-     */
-    public static function compileGenServerWithTimeout(genServerData: Dynamic): String {
-        var baseModule = compileFullGenServer(genServerData);
-        var timeout = genServerData.timeout != null ? genServerData.timeout : 5000;
-        var hibernation = genServerData.hibernation == true;
+        var strategy = "one_for_one";
+        var name = "";
+        var maxRestarts = "3";
+        var maxSeconds = "5";
         
-        var timeoutHandler = '\n  @doc """\n' +
-                           '  Handle timeout messages\n' +
-                           '  """\n' +
-                           '  def handle_info(:timeout, state) do\n' +
-                           '    # Handle timeout after ${timeout}ms\n' +
-                           '    {:noreply, state}\n' +
-                           '  end\n';
+        var appName = AnnotationSystem.getEffectiveAppName(classType);
         
-        var result = baseModule.substring(0, baseModule.length - 3); // Remove "end"
-        result += timeoutHandler;
-        
-        if (hibernation) {
-            result += '\n  # Hibernation support\n';
-            result += '  def handle_cast({:hibernate}, state) do\n';
-            result += '    {:noreply, state, :hibernate}\n';
-            result += '  end\n';
+        // Extract fields from the supervisor options object
+        for (field in fields) {
+            switch (field.name) {
+                case "strategy":
+                    strategy = stripQuotes(compiler.compileExpression(field.expr));
+                case "max_restarts":
+                    maxRestarts = compiler.compileExpression(field.expr);
+                case "max_seconds":  
+                    maxSeconds = compiler.compileExpression(field.expr);
+                case "name":
+                    var compiledName = compiler.compileExpression(field.expr);
+                    name = compiledName;
+                default:
+                    // Ignore unknown fields for supervisor options
+            }
         }
         
-        result += 'end';
+        // If no name was specified, generate default supervisor name
+        if (name == "") {
+            name = '${appName}.Supervisor';
+        }
+        
+        // Build the keyword list with supervisor options
+        var options = [];
+        
+        // Add restart strategy - ensure proper atom formatting
+        options.push('strategy: :${stripColon(strategy)}');
+        
+        // Add supervisor name
+        options.push('name: ${name}');
+        
+        // Add restart limits
+        options.push('max_restarts: ${maxRestarts}');
+        options.push('max_seconds: ${maxSeconds}');
+        
+        var result = '[${options.join(", ")}]';
+        
+        #if debug_otp_compilation
+        trace('[OTPCompiler] Generated supervisor options: ${result}');
+        #end
+        
         return result;
     }
     
     /**
-     * Generate named GenServer with registration
+     * Determine if an object should use atom keys based on OTP patterns
+     * 
+     * WHY: OTP structures require atom keys, regular maps use string keys
+     * WHAT: Analyzes field patterns to determine key type
+     * HOW: Checks for specific OTP field combinations
+     * 
+     * @param fields Object fields to analyze
+     * @return True if atom keys should be used
      */
-    public static function generateNamedGenServer(genServerData: Dynamic): String {
-        var className = genServerData.className;
-        var name = genServerData.name;
-        var global = genServerData.globalRegistry == true;
+    public function shouldUseAtomKeys(fields: Array<{name: String, expr: TypedExpr}>): Bool {
+        #if debug_otp_compilation
+        trace('[OTPCompiler] Checking if should use atom keys for ${fields.length} fields');
+        #end
         
-        var registration = global ? '{:global, :${name}}' : ':${name}';
+        var fieldNames = fields.map(f -> f.name);
         
-        return 'defmodule ${className} do\n' +
-               '  use GenServer\n' +
-               '  \n' +
-               '  def start_link(init_arg) do\n' +
-               '    GenServer.start_link(__MODULE__, init_arg, name: ${registration})\n' +
-               '  end\n' +
-               '  \n' +
-               '  def init(_init_arg) do\n' +
-               '    {:ok, %{}}\n' +
-               '  end\n' +
-               'end';
-    }
-    
-    /**
-     * Generate typed state specification
-     */
-    public static function generateTypedStateSpec(stateName: String, typedState: Dynamic): String {
-        var fields = typedState.fields;
-        var result = new StringBuf();
-        
-        result.add('defmodule ${stateName} do\n');
-        result.add('  @moduledoc """\n');
-        result.add('  Typed state specification for GenServer\n');
-        result.add('  """\n');
-        result.add('  \n');
-        result.add('  defstruct [');
-        
-        var fieldNames = [];
-        for (field in (fields: Array<Dynamic>)) {
-            fieldNames.push('${field.name}: nil');
-        }
-        result.add(fieldNames.join(', '));
-        result.add(']\n');
-        result.add('  \n');
-        result.add('  @type t() :: %__MODULE__{\n');
-        
-        var typeSpecs = [];
-        for (field in (fields: Array<Dynamic>)) {
-            typeSpecs.push('    ${field.name}: ${field.type}');
-        }
-        result.add(typeSpecs.join(',\n'));
-        result.add('\n  }\n');
-        result.add('end');
-        
-        return result.toString();
-    }
-    
-    /**
-     * Generate error handling with guards and recovery
-     */
-    public static function generateErrorHandling(serverName: String, errorSpecs: Array<Dynamic>): String {
-        var result = new StringBuf();
-        
-        result.add('  # Error handling with pattern guards\n');
-        result.add('  def handle_call(request, _from, state) when is_integer(request) == false do\n');
-        result.add('    {:reply, {:error, :invalid_request}, state}\n');
-        result.add('  end\n');
-        result.add('  \n');
-        
-        for (errorSpec in errorSpecs) {
-            var error = errorSpec.error;
-            var recovery = errorSpec.recovery;
-            
-            result.add('  def handle_info({:error, :${error}}, state) do\n');
-            result.add('    # Recovery strategy: ${recovery}\n');
-            result.add('    new_state = recover_from_${error}(state)\n');
-            result.add('    {:noreply, new_state}\n');
-            result.add('  end\n');
-            result.add('  \n');
-        }
-        
-        return result.toString();
-    }
-    
-    /**
-     * Batch compilation for performance optimization
-     */
-    public static function compileBatchGenServers(genServers: Array<Dynamic>): String {
-        var compiledServers = new Array<String>();
-        
-        for (genServer in genServers) {
-            compiledServers.push(compileFullGenServer(genServer));
-        }
-        
-        return compiledServers.join("\n\n");
-    }
-    
-    /**
-     * Integrate with PatternMatcher for complex message patterns
-     */
-    public static function integratePatternMatching(serverName: String, messagePatterns: Array<Dynamic>): String {
-        var result = new StringBuf();
-        
-        result.add('  # Pattern-matched message handling\n');
-        
-        for (pattern in messagePatterns) {
-            var patternMatch = pattern.pattern;
-            var handler = pattern.handler;
-            
-            result.add('  def handle_call(${patternMatch}, _from, state) do\n');
-            result.add('    result = ${handler}\n');
-            result.add('    {:reply, result, state}\n');
-            result.add('  end\n');
-            result.add('  \n');
-        }
-        
-        return result.toString();
-    }
-    
-    /**
-     * Generate supervisor module for GenServer supervision trees
-     */
-    public static function generateSupervisorModule(supervisionTree: Dynamic): String {
-        var name = supervisionTree.name;
-        var strategy = supervisionTree.strategy;
-        var children = supervisionTree.children;
-        
-        var result = new StringBuf();
-        
-        result.add('defmodule ${name} do\n');
-        result.add('  use Supervisor\n');
-        result.add('  \n');
-        result.add('  def start_link(init_arg) do\n');
-        result.add('    Supervisor.start_link(__MODULE__, init_arg, name: __MODULE__)\n');
-        result.add('  end\n');
-        result.add('  \n');
-        result.add('  def init(_init_arg) do\n');
-        result.add('    children = [\n');
-        
-        var childSpecs = [];
-        for (child in (children: Array<Dynamic>)) {
-            var module = child.module;
-            var id = child.id;
-            var args = child.args != null ? child.args : [];
-            
-            childSpecs.push('      {${module}, ${args.length > 0 ? args.join(", ") : "[]"}, id: :${id}}');
-        }
-        result.add(childSpecs.join(',\n'));
-        result.add('\n    ]\n');
-        result.add('    \n');
-        result.add('    Supervisor.init(children, strategy: :${strategy})\n');
-        result.add('  end\n');
-        result.add('end');
-        
-        return result.toString();
-    }
-    
-    /**
-     * Compile GenServer with full lifecycle callbacks
-     */
-    public static function compileGenServerWithLifecycle(genServerData: Dynamic): String {
-        var className = genServerData.className;
-        var callbacks = genServerData.callbacks;
-        
-        var result = new StringBuf();
-        
-        result.add('defmodule ${className} do\n');
-        result.add('  use GenServer\n');
-        result.add('  \n');
-        result.add('  def start_link(init_arg) do\n');
-        result.add('    GenServer.start_link(__MODULE__, init_arg)\n');
-        result.add('  end\n');
-        result.add('  \n');
-        result.add('  def init(_init_arg) do\n');
-        result.add('    {:ok, %{}}\n');
-        result.add('  end\n');
-        result.add('  \n');
-        
-        for (callback in (callbacks: Array<String>)) {
-            switch(callback) {
-                case "terminate":
-                    result.add('  def terminate(reason, state) do\n');
-                    result.add('    # Cleanup before termination\n');
-                    result.add('    :ok\n');
-                    result.add('  end\n');
-                    result.add('  \n');
-                    
-                case "code_change":
-                    result.add('  def code_change(old_vsn, state, extra) do\n');
-                    result.add('    # Handle hot code upgrades\n');
-                    result.add('    {:ok, state}\n');
-                    result.add('  end\n');
-                    result.add('  \n');
-                    
-                case "format_status":
-                    result.add('  def format_status(opt, [pdict, state]) do\n');
-                    result.add('    # Format state for debugging\n');
-                    result.add('    state\n');
-                    result.add('  end\n');
-                    result.add('  \n');
+        // Check for supervisor configuration pattern
+        var supervisorFields = ["strategy", "max_restarts", "max_seconds"];
+        var hasAllSupervisorFields = true;
+        for (field in supervisorFields) {
+            if (fieldNames.indexOf(field) == -1) {
+                hasAllSupervisorFields = false;
+                break;
             }
         }
         
-        result.add('end');
+        if (hasAllSupervisorFields) {
+            #if debug_otp_compilation
+            trace("[OTPCompiler] Detected supervisor options pattern - using atom keys");
+            #end
+            return true;
+        }
         
-        return result.toString();
+        // Check for child spec pattern
+        var childSpecFields = ["id", "start"];
+        var hasChildSpecFields = true;
+        for (field in childSpecFields) {
+            if (fieldNames.indexOf(field) == -1) {
+                hasChildSpecFields = false;
+                break;
+            }
+        }
+        
+        if (hasChildSpecFields) {
+            #if debug_otp_compilation
+            trace("[OTPCompiler] Detected child spec pattern - using atom keys");
+            #end
+            return true;
+        }
+        
+        // Default to string keys for safety
+        #if debug_otp_compilation
+        trace("[OTPCompiler] No OTP pattern detected - using string keys");
+        #end
+        return false;
+    }
+    
+    /**
+     * Helper to strip quotes from string literals
+     * 
+     * WHY: Need clean strings for atom conversion
+     * WHAT: Removes surrounding quotes from strings
+     * HOW: Checks for quotes and removes them
+     * 
+     * @param str String that may have quotes
+     * @return String without surrounding quotes
+     */
+    private function stripQuotes(str: String): String {
+        if ((str.startsWith('"') && str.endsWith('"')) || 
+            (str.startsWith("'") && str.endsWith("'"))) {
+            return str.substring(1, str.length - 1);
+        }
+        return str;
+    }
+    
+    /**
+     * Helper to strip leading colon from atom strings
+     * 
+     * WHY: Prevent double colons in atom literals
+     * WHAT: Removes leading colon if present
+     * HOW: Checks for colon and strips it
+     * 
+     * @param str String that may have leading colon
+     * @return String without leading colon
+     */
+    private function stripColon(str: String): String {
+        if (str.startsWith(":")) {
+            return str.substring(1);
+        }
+        return str;
+    }
+    
+    /**
+     * Resolve app name interpolation in a string at compile time
+     * 
+     * WHY: Child specs need proper module names with app prefix
+     * WHAT: Replaces app_name placeholders with actual app name
+     * HOW: Pattern matching on common interpolation patterns
+     * 
+     * @param str String with potential app name placeholders
+     * @param appName The actual application name
+     * @return String with resolved app name
+     */
+    public function resolveAppNameInString(str: String, appName: String): String {
+        if (str == null) return "";
+        
+        // Remove outer quotes
+        str = stripQuotes(str);
+        
+        // Handle common interpolation patterns from Haxe string interpolation
+        str = StringTools.replace(str, '" <> app_name <> "', appName);
+        str = StringTools.replace(str, '${appName}', appName);
+        str = StringTools.replace(str, 'app_name', appName);
+        
+        // Clean up any remaining empty string concatenations
+        str = StringTools.replace(str, '" <> "', '');
+        str = StringTools.replace(str, ' <> ', '');
+        
+        return str;
     }
 }
 
