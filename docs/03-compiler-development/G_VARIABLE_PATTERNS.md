@@ -4,6 +4,87 @@
 
 The Haxe→Elixir compiler encounters various `g` variables during compilation. Understanding their origins, purposes, and proper handling is crucial for maintaining correct code generation, especially in pattern matching and array operations.
 
+## Why Elixir Needs Special `g` Variable Handling
+
+### The Fundamental Challenge: Immutability vs Imperative Desugaring
+
+**This is unique to the Elixir compiler.** Other Reflaxe targets (C++, C#, Go) don't need this special handling because they support mutable variables and imperative programming naturally.
+
+#### The Problem
+
+Haxe generates imperative AST that assumes mutability:
+```haxe
+// Original Haxe
+var filtered = myArray.filter(x -> x > 5);
+
+// Haxe desugars to imperative code:
+var g = [];        // Array accumulator
+var g1 = 0;        // Loop counter
+while (g1 < myArray.length) {
+    if (myArray[g1] > 5) {
+        g.push(item);  // ASSUMES MUTATION!
+    }
+    g1++;
+}
+```
+
+But Elixir is immutable:
+```elixir
+# Can't do this in Elixir!
+g = []           # Initial array
+g = [item | g]   # ERROR - can't rebind in same scope!
+```
+
+#### Why Other Reflaxe Compilers Don't Need This
+
+**C++ (Reflaxe.CPP)**:
+```cpp
+std::vector<int> g;     // Mutable array
+g.push_back(item);      // Direct mutation works fine
+```
+
+**C# (Reflaxe.CSharp)**:
+```csharp
+var g = new List<int>();  // Mutable list
+g.Add(item);              // No problem
+```
+
+**Go (Reflaxe.Go)**:
+```go
+g := []int{}
+g = append(g, item)  // Can reassign variables
+```
+
+#### The Elixir Solution: Smart Variable Renaming
+
+Since Elixir can't mutate or easily rebind variables, we rename them to avoid conflicts:
+
+```elixir
+# Instead of collision:
+g = []        # Array accumulator
+g = value     # Switch value (COLLISION!)
+
+# We generate:
+g_array = []  # Renamed for array operations
+g = value     # Keep original for switch
+```
+
+This is a **pragmatic solution** while we develop more sophisticated functional transformations.
+
+#### Future: Idiomatic Elixir Generation
+
+The ideal solution would generate functional Elixir directly:
+```elixir
+# Instead of imperative loops with g_array
+filtered = Enum.filter(my_array, fn x -> x > 5 end)
+
+# Instead of g = getValue(); switch(g)
+case get_value() do
+  pattern1 -> result1
+  pattern2 -> result2
+end
+```
+
 ## The `g` Variable Family
 
 ### 1. Plain `g` Variable
@@ -104,6 +185,35 @@ todo = g_param_0                  // Assign to pattern variable
 - Nested switch expressions
 - Multiple pattern extractions in same scope
 - Complex pattern matching scenarios
+
+## Understanding the Variable Mapping Code
+
+### The Code in VariableCompiler.hx (lines 1318-1328)
+
+```haxe
+// SIMPLE FIX: If this is a 'g' variable and we have a mapping for it, use it
+var originalName = getOriginalVarName(tvar);
+if (originalName == "g" || originalName == "_g") {
+    var nameMapping = compiler.currentFunctionParameterMap.get(originalName);
+    if (nameMapping == "g_array") {
+        return "g_array";
+    }
+}
+```
+
+**What This Does**: This code checks if a variable reference to `g` should be mapped to `g_array` based on context.
+
+**Why It's Needed**: 
+1. **Haxe reuses `g` for multiple purposes** - switches, arrays, loops
+2. **Elixir can't rebind variables** in the same scope like imperative languages
+3. **We must disambiguate** which `g` is being referenced
+
+**The Mapping Process**:
+1. When we detect `g` used for array initialization → map to `g_array`
+2. When we detect `g` used for loop counter → map to `g_counter`  
+3. When referencing `g` later → check mapping to use correct variable
+
+**This is Elixir-specific** because other targets don't have immutability constraints that prevent variable reuse.
 
 ## Common Problems and Solutions
 
@@ -254,6 +364,8 @@ Work with Haxe team to:
 
 ## See Also
 
-- [Pattern Matching Compilation](PATTERN_MATCHING_PATTERNS.md)
 - [AST Cleanup Patterns](AST_CLEANUP_PATTERNS.md)
-- [Variable Mapping Architecture](../05-architecture/variable-mapping.md)
+- [Variable Mapping Implementation](VARIABLE_MAPPING_IMPLEMENTATION_STATUS.md)
+- [Variable Substitution Patterns](variable-substitution-patterns.md)  
+- [Compilation Flow](COMPILATION_FLOW.md)
+- [Compiler Best Practices](COMPILER_BEST_PRACTICES.md)
