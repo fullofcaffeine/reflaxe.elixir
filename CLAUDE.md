@@ -109,11 +109,25 @@ When documenting new features or fixes:
 
 ## 📁 Project Directory Structure Map
 
-**CRITICAL FOR NAVIGATION**: This monorepo contains multiple important projects and directories:
+**CRITICAL FOR NAVIGATION**: This follows standard Reflaxe compiler conventions (like Reflaxe.CPP):
+
+### Directory Purpose & Separation of Concerns
 
 ```
-haxe.elixir/                          # Project root
-├── docs/                             # 📚 ALL DOCUMENTATION (NEW STRUCTURE)
+haxe.elixir/                          # Project root (Reflaxe convention)
+├── src/                              # 🔧 COMPILER SOURCE (macro-time code)
+│   └── reflaxe/elixir/               # The actual transpiler implementation
+│       ├── ElixirCompiler.hx         # Main compiler extending DirectToStringCompiler
+│       └── helpers/                  # Specialized compilation helpers
+├── std/                              # 📚 STANDARD LIBRARY (compile-time classpath)
+│   ├── elixir/                       # Elixir stdlib externs (IO, File, etc.)
+│   ├── phoenix/                      # Phoenix framework externs  
+│   └── ecto/                         # Ecto ORM externs
+├── lib/                              # 🏃 ELIXIR RUNTIME (Mix integration)
+│   ├── haxe_compiler.ex              # Mix task for compilation
+│   ├── haxe_watcher.ex               # File watcher for development
+│   └── haxe_server.ex                # Haxe compilation server wrapper
+├── docs/                             # 📚 ALL DOCUMENTATION
 │   ├── 01-getting-started/           # Setup and quickstart
 │   ├── 02-user-guide/                # Application development
 │   ├── 03-compiler-development/      # Compiler contributor docs (with CLAUDE.md)
@@ -124,21 +138,41 @@ haxe.elixir/                          # Project root
 │   ├── 08-roadmap/                   # Vision and planning
 │   ├── 09-history/                   # Historical records
 │   └── 10-contributing/              # Contribution guidelines
-├── src/reflaxe/elixir/                # 🔧 Compiler source code
-│   ├── ElixirCompiler.hx              # Main transpiler
-│   ├── helpers/                       # Specialized compilers
-│   └── ...
-├── std/                               # 📚 Standard library & framework types
 ├── test/                              # 🧪 Compiler snapshot tests
-├── examples/todo-app/                 # 🎯 Main integration test & showcase
-└── ...
+├── examples/                          # 📝 Example applications
+│   └── todo-app/                     # Main integration test & showcase
+│       └── src_haxe/                  # User application code in Haxe
+└── extraParams.hxml                  # Configures -cp src and -cp std
 ```
 
+### Why This Structure (Reflaxe Convention)
+
+1. **`src/`** - Contains the compiler itself (macro-time code that runs during Haxe compilation)
+   - This is where ElixirCompiler.hx lives - the actual transpiler
+   - Only exists at macro-time, not in generated output
+
+2. **`std/`** - Standard library included in classpath (`-cp std` in extraParams.hxml)
+   - Provides Haxe externs for Elixir/Phoenix/Ecto functionality
+   - Available to all user code during compilation
+   - Similar to how Reflaxe.CPP has `std/` for C++ standard library
+
+3. **`lib/`** - Elixir runtime support (specific to our Mix integration)
+   - Contains .ex files for Mix tasks and compilation support
+   - These are actual Elixir files needed to integrate with Mix build system
+   - Not part of Haxe compilation, but needed for Elixir project to work
+
+4. **`src_haxe/`** - User application code (in examples)
+   - This is where users write their Haxe code
+   - Gets compiled to Elixir via the transpiler
+   - Separate from compiler source to avoid confusion
+
 **Key Locations for Common Tasks**:
-- **Compiler bugs**: `src/reflaxe/elixir/`
+- **Compiler bugs**: `src/reflaxe/elixir/` (macro-time transpiler code)
+- **Standard library**: `std/` (externs and framework integration)
+- **Mix integration**: `lib/*.ex` (Elixir runtime support)
 - **Integration testing**: `examples/todo-app/`
 - **Documentation**: `docs/` (ALL documentation)
-- **Snapshot tests**: `test/tests/`
+- **Snapshot tests**: `test/snapshot/`
 
 ## IMPORTANT: Agent Execution Instructions
 1. **ALWAYS verify docs/ first** - All documentation is in the organized docs/ structure

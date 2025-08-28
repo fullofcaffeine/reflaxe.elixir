@@ -239,6 +239,37 @@ npm run test:all  # Full test suite (Haxe + Mix)
 
 📖 **New to lix or Haxe?** See [INSTALLATION.md](INSTALLATION.md) for complete setup guide with troubleshooting.
 
+## Project Structure
+
+Reflaxe.Elixir follows standard Reflaxe compiler conventions (similar to Reflaxe.CPP):
+
+```
+haxe.elixir/
+├── src/                    # Compiler source (macro-time transpiler code)
+│   └── reflaxe/elixir/     # ElixirCompiler.hx and helpers
+├── std/                    # Standard library (compile-time classpath)
+│   ├── elixir/             # Elixir stdlib externs (IO, File, GenServer, etc.)
+│   ├── phoenix/            # Phoenix framework externs (LiveView, Socket, etc.)
+│   └── ecto/               # Ecto ORM externs (Schema, Changeset, Query)
+├── lib/                    # Elixir runtime support (Mix integration)
+│   ├── haxe_compiler.ex   # Mix compilation task
+│   ├── haxe_watcher.ex     # File watching for development
+│   └── haxe_server.ex      # Haxe compilation server wrapper
+├── test/                   # Compiler tests (snapshot testing)
+└── examples/               # Example applications
+    └── todo-app/           
+        └── src_haxe/       # User application code in Haxe
+```
+
+### Directory Purposes
+
+- **`src/`** - The actual compiler that transforms Haxe AST to Elixir strings (macro-time code)
+- **`std/`** - Haxe externs and abstractions for Elixir/Phoenix/Ecto functionality (included via `-cp std`)
+- **`lib/`** - Elixir runtime files needed for Mix integration and compilation support
+- **`src_haxe/`** - User application code written in Haxe (in examples)
+
+This separation follows Reflaxe conventions and ensures clear boundaries between compiler code, standard library, and user application code.
+
 ## Architecture
 
 Reflaxe.Elixir uses a **dual-ecosystem architecture**:
