@@ -46,7 +46,9 @@ test/
 
 ### Snapshot Tests (`snapshot/`)
 
-**Purpose**: Validate compiler output matches expected Elixir code
+**Purpose**: Dual-level validation of the compiler
+1. **Compilation Testing**: Ensures Haxe code successfully compiles through our transpiler
+2. **Output Validation**: Verifies generated Elixir matches expected output
 
 **Structure**:
 - `Main.hx` - Haxe source code to compile
@@ -54,10 +56,23 @@ test/
 - `intended/` - Expected Elixir output (committed)
 - `out/` - Generated output (NOT committed, in .gitignore)
 
-**Workflow**:
-1. Haxe code compiles to `out/`
-2. Compare with `intended/`
-3. Fail if mismatch
+**Testing Workflow**:
+1. **Compilation Phase**: Haxe→Elixir transpilation (catches compiler crashes, type errors)
+2. **Comparison Phase**: Generated `out/` vs expected `intended/` (catches incorrect code generation)
+3. **Result**: Pass only if BOTH compilation succeeds AND output matches
+
+**What Each Phase Tests**:
+- **Compilation Phase Catches**:
+  - Compiler crashes or hangs
+  - Unhandled AST patterns
+  - Type system integration issues
+  - Missing or broken compiler features
+  
+- **Comparison Phase Catches**:
+  - Incorrect variable naming
+  - Wrong code structure generation
+  - Missing or extra code blocks
+  - Incorrect Elixir idioms
 
 ### Integration Tests (`.exs` files)
 
@@ -174,6 +189,23 @@ The Makefile needs updating to properly handle the nested `snapshot/` structure 
 5. **Keep tests fast and focused** - Parallel execution, minimal code
 
 ## 🔍 Debugging Test Failures
+
+### Understanding Test Failure Types
+
+**Compilation Failed**: The Haxe code couldn't be transpiled to Elixir
+- Usually indicates a compiler bug or unhandled AST pattern
+- Check for recent compiler changes that might have broken this
+- Run with debug flags to see where compilation stops
+
+**Output Mismatch**: Compilation succeeded but generated code differs from expected
+- May be an improvement (review the diff carefully)
+- Could be a regression (incorrect code generation)
+- Sometimes just needs `make update-intended` if the change is correct
+
+**Timeout**: Test took too long (>60s default)
+- Often indicates infinite loop in compiler
+- May be caused by complex nested structures
+- Check for recursive patterns in the test code
 
 ### When Tests Fail
 
