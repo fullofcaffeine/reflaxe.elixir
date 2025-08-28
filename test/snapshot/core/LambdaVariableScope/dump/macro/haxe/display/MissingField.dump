@@ -1,1 +1,0 @@
-typedef haxe.display.MissingField = { unique : Bool, type : haxe.display.JsonType<Dynamic>, field : haxe.display.JsonClassField }

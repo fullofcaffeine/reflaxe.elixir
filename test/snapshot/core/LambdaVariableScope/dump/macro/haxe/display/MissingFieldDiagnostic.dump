@@ -1,1 +1,0 @@
-typedef haxe.display.MissingFieldDiagnostic = { fields : Array<haxe.display.MissingField>, cause : haxe.display.MissingFieldCause<Dynamic> }

@@ -1,1 +1,0 @@
-typedef haxe.display.DisplayLocal<T> = { type : haxe.display.JsonType<haxe.display.DisplayLocal.T>, pos : haxe.display.JsonPos, origin : haxe.display.LocalOrigin, name : String, meta : haxe.display.JsonMetadata, isInline : Bool, isFinal : Bool, id : Int, ?extra : Null<{ params : Array<haxe.display.JsonTypeParameter>, expr : haxe.display.JsonExpr }>, capture : Bool }

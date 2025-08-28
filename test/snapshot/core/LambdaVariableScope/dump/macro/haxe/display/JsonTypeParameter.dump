@@ -1,1 +1,0 @@
-typedef haxe.display.JsonTypeParameter = { name : String, constraints : haxe.display.JsonTypes }

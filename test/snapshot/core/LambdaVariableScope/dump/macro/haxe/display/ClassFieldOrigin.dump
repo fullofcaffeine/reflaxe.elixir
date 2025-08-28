@@ -1,1 +1,0 @@
-typedef haxe.display.ClassFieldOrigin<T> = { kind : haxe.display.ClassFieldOriginKind<haxe.display.ClassFieldOrigin.T>, ?args : Null<haxe.display.ClassFieldOrigin.T> }

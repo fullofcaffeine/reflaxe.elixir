@@ -1,1 +1,0 @@
-typedef haxe.display.InitializeResult = haxe.display.Response<{ protocolVersion : haxe.display.Version, methods : Array<String>, haxeVersion : haxe.display.Version }>

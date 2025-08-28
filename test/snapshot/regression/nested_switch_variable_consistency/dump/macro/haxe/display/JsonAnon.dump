@@ -1,1 +1,0 @@
-typedef haxe.display.JsonAnon = { status : haxe.display.JsonAnonStatus<Dynamic>, fields : haxe.display.JsonClassFields }

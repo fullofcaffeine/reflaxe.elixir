@@ -1,1 +1,0 @@
-typedef haxe.display.JsonAbstractCast = { t : haxe.display.JsonType<Dynamic>, field : haxe.display.JsonClassFieldReference }

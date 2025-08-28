@@ -1,1 +1,0 @@
-typedef haxe.display.DeterminePackageResult = haxe.display.Response<Array<String>>

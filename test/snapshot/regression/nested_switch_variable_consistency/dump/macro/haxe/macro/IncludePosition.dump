@@ -1,2 +1,0 @@
-@:enum
-abstract haxe.macro.IncludePosition from String to String {}

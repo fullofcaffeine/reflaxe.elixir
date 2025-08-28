@@ -1,1 +1,0 @@
-typedef haxe.display.JsonFieldKind<T> = { kind : haxe.display.JsonFieldKindKind<haxe.display.JsonFieldKind.T>, args : haxe.display.JsonFieldKind.T }

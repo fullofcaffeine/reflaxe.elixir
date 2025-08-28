@@ -1,5 +1,0 @@
-enum haxe.macro.PackageRule {
-	Forbidden;
-	Directory(path:String);
-	Remap(path:String);
-}

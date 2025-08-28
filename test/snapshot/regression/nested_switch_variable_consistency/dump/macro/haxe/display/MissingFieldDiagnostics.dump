@@ -1,1 +1,0 @@
-typedef haxe.display.MissingFieldDiagnostics = { moduleType : haxe.display.JsonModuleType<Dynamic>, moduleFile : String, entries : Array<haxe.display.MissingFieldDiagnostic> }

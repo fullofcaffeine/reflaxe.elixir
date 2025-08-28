@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.VariableToFieldPattern = { varName : String, sourceObject : String, sourceFieldAccess : String }

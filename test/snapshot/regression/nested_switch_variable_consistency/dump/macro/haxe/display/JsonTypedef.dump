@@ -1,1 +1,0 @@
-typedef haxe.display.JsonTypedef = { type : haxe.display.JsonType<Dynamic> }

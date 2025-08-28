@@ -1,1 +1,0 @@
-typedef haxe.display.SignatureHelpResult = haxe.display.Response<Null<haxe.display.SignatureItem>>

@@ -1,1 +1,0 @@
-typedef haxe.display.JsonMetadataEntry = { pos : haxe.display.JsonPos, name : String, args : Array<haxe.display.JsonExpr> }

@@ -1,3 +1,0 @@
-@:flatEnum
-enum haxe.display.NoData {
-}

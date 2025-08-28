@@ -1,7 +1,0 @@
-class haxe.io.Eof {
-
-	public function new[Function:() -> Void] [Block:Void]
-
-	@:ifFeature("haxe.io.Eof.*")
-	function toString[Function:() -> String] [Block:Dynamic] [Return:Dynamic] [Const:String] "Eof"
-}

@@ -1,1 +1,0 @@
-typedef haxe.display.Define = { value : Null<String>, platforms : Array<haxe.display.Platform>, parameters : Array<String>, ?origin : Null<String>, name : String, links : Array<String>, doc : haxe.display.JsonDoc, ?deprecated : Null<String> }

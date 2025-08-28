@@ -1,1 +1,0 @@
-typedef haxe.display.DiagnosticsParams = { ?fileContents : Null<Array<{ file : haxe.display.FsPath, ?contents : Null<String> }>>, ?file : Null<haxe.display.FsPath>, ?contents : Null<String> }

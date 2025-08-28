@@ -1,9 +1,0 @@
-@:enum
-private class haxe.display._Display.HoverExpectedNameKind_Impl_ {
-
-	@:value(cast 0) @:impl @:enum
-	public static inline var FunctionArgument:haxe.display.HoverExpectedNameKind = [Cast:haxe.display.HoverExpectedNameKind] [Const:Int] 0;
-
-	@:value(cast 1) @:impl @:enum
-	public static inline var StructureField:haxe.display.HoverExpectedNameKind = [Cast:haxe.display.HoverExpectedNameKind] [Const:Int] 1;
-}

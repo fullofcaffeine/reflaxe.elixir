@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.schema.FieldInfo = { type : String, nullable : Bool, name : String, indexed : Bool, defaultValue : Dynamic }

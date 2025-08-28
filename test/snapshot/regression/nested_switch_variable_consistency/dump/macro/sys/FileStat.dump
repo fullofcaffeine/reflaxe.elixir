@@ -1,1 +1,0 @@
-typedef sys.FileStat = { uid : Int, size : Int, rdev : Int, nlink : Int, mtime : Date, mode : Int, ino : Int, gid : Int, dev : Int, ctime : Date, atime : Date }

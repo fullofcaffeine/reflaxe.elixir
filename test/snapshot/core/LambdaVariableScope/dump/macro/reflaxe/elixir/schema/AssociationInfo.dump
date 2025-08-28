@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.schema.AssociationInfo = { type : String, throughAssociation : Null<String>, schema : String, name : String, foreignKey : String }

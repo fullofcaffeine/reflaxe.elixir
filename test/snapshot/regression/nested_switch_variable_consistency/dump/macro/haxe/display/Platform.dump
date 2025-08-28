@@ -1,2 +1,0 @@
-@:enum
-abstract haxe.display.Platform {}

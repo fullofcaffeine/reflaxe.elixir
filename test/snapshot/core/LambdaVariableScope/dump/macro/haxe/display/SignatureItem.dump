@@ -1,1 +1,0 @@
-typedef haxe.display.SignatureItem = { signatures : Array<haxe.display.SignatureInformation>, kind : haxe.display.SignatureItemKind, activeSignature : Int, activeParameter : Int }

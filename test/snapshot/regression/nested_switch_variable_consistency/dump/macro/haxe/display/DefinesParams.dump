@@ -1,1 +1,0 @@
-typedef haxe.display.DefinesParams = { user : Bool, compiler : Bool }

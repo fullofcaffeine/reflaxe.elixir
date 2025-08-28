@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.GeneratorConfig = { ?updateClaude : Null<Bool>, ?projectRoot : Null<String>, ?outputDir : Null<String>, ?generateTroubleshooting : Null<Bool>, ?generatePatterns : Null<Bool>, ?generateAPI : Null<Bool> }

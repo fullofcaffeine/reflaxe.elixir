@@ -1,1 +1,0 @@
-typedef haxe.display.JsonClassFields = Array<haxe.display.JsonClassField>

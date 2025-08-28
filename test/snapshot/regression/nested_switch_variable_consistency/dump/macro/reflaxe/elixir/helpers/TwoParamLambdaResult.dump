@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.TwoParamLambdaResult = { param2 : String, param1 : String, body : String }
