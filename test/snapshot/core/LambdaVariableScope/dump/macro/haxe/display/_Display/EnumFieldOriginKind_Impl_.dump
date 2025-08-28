@@ -1,9 +1,0 @@
-@:enum
-private class haxe.display._Display.EnumFieldOriginKind_Impl_ {
-
-	@:value(cast 0) @:impl @:enum
-	public static inline var Self:haxe.display.EnumFieldOriginKind<haxe.display.JsonModuleType<haxe.display.EnumFieldOriginKind.T>> = [Cast:haxe.display.EnumFieldOriginKind<haxe.display.JsonModuleType<haxe.display.EnumFieldOriginKind.T>>] [Const:Int] 0;
-
-	@:value(cast 1) @:impl @:enum
-	public static inline var StaticImport:haxe.display.EnumFieldOriginKind<haxe.display.JsonModuleType<haxe.display.EnumFieldOriginKind.T>> = [Cast:haxe.display.EnumFieldOriginKind<haxe.display.JsonModuleType<haxe.display.EnumFieldOriginKind.T>>] [Const:Int] 1;
-}

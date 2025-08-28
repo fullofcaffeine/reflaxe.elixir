@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.ComponentAttribute = { type : String, required : Bool, name : String, defaultValue : Null<String> }

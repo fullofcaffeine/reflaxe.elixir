@@ -1,1 +1,0 @@
-typedef haxe.display.InitializeParams = { ?supportsResolve : Null<Bool>, ?maxCompletionItems : Null<Int>, ?exclude : Null<Array<String>> }

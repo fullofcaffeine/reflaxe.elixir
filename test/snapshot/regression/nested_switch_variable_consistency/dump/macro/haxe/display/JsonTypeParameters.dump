@@ -1,1 +1,0 @@
-typedef haxe.display.JsonTypeParameters = Array<haxe.display.JsonTypeParameter>

@@ -1,1 +1,0 @@
-typedef haxe.display.CompletionResult = haxe.display.Response<Null<haxe.display.CompletionResponse<Dynamic, Dynamic>>>

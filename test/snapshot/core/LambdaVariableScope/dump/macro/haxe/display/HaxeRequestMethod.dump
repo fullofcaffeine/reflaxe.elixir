@@ -1,1 +1,0 @@
-abstract haxe.display.HaxeRequestMethod<TParams, TResponse> to String {}

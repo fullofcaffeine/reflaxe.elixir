@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.PreloadInfo = { ?nested : Null<Array<{ name : String, children : Array<String> }>>, name : String }

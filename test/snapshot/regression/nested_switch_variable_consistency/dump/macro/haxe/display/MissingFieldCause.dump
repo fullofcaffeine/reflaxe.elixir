@@ -1,1 +1,0 @@
-typedef haxe.display.MissingFieldCause<T> = { kind : haxe.display.MissingFieldCauseKind<haxe.display.MissingFieldCause.T>, args : haxe.display.MissingFieldCause.T }

@@ -1,9 +1,0 @@
-@:enum
-private class haxe.display._Display.SignatureItemKind_Impl_ {
-
-	@:value(cast 0) @:impl @:enum
-	public static inline var Call:haxe.display.SignatureItemKind = [Cast:haxe.display.SignatureItemKind] [Const:Int] 0;
-
-	@:value(cast 1) @:impl @:enum
-	public static inline var ArrayAccess:haxe.display.SignatureItemKind = [Cast:haxe.display.SignatureItemKind] [Const:Int] 1;
-}

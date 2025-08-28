@@ -1,6 +1,0 @@
-enum haxe.macro.ModuleType {
-	TClassDecl(c:haxe.macro.Ref<haxe.macro.ClassType>);
-	TEnumDecl(e:haxe.macro.Ref<haxe.macro.EnumType>);
-	TTypeDecl(t:haxe.macro.Ref<haxe.macro.DefType>);
-	TAbstract(a:haxe.macro.Ref<haxe.macro.AbstractType>);
-}

@@ -1,1 +1,0 @@
-typedef reflaxe.elixir.helpers.AggregationInfo = { functionName : String, field : String, alias : String }

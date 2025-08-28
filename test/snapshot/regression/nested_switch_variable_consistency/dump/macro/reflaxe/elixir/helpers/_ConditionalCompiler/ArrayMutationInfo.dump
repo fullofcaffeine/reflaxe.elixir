@@ -1,1 +1,0 @@
-private typedef reflaxe.elixir.helpers._ConditionalCompiler.ArrayMutationInfo = { variable : String, type : String, arrayExpr : haxe.macro.TypedExpr, args : Array<haxe.macro.TypedExpr> }

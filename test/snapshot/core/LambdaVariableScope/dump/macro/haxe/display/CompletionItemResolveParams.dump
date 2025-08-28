@@ -1,1 +1,0 @@
-typedef haxe.display.CompletionItemResolveParams = { index : Int }

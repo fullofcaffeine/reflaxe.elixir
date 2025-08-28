@@ -1,7 +1,0 @@
-@:directlyUsed @:used
-enum Message {
-	TodoCreated(todo:Dynamic);
-	TodoUpdated(todo:Dynamic);
-	TodoDeleted(id:Int);
-	SystemAlert(message:String);
-}
