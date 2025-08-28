@@ -746,7 +746,45 @@ end)';
         // trace('[XRay EnumPatterns] - Analyzing iteration expression...');
         #end
         
-        var arrayExpr = compiler.compileExpression(iterExpr);
+        /**
+         * CRITICAL FIX: g vs g_array Variable Mismatch Issue
+         * 
+         * WHY: When compiling for-in loops over arrays, regular user variables (like 'fruits')
+         * were incorrectly being mapped to Haxe's internal desugaring variables ('g_array').
+         * This caused generated Elixir code to reference undefined variables.
+         * 
+         * WHAT: Bypass the complex variable mapping system for simple TLocal variables.
+         * User-defined variables should NEVER be mapped through the desugaring system
+         * which is meant only for Haxe compiler-generated variables like _g, _g_array, _g_counter.
+         * 
+         * HOW: Check if the iteration expression is a simple TLocal variable reference.
+         * If so, directly convert it to snake_case without going through currentFunctionParameterMap
+         * or variableIdMap which might have incorrect mappings from array desugaring.
+         * 
+         * RELATED ISSUES:
+         * - Commit 6e528a9: Previous fix for g vs g_array mismatch in Type.typeof switch expressions
+         * - docs/03-compiler-development/G_ARRAY_MISMATCH_ISSUE.md: Full documentation of the issue
+         * - The two-system disconnect between name-based and ID-based variable mappings
+         * 
+         * EXAMPLE BUG:
+         * Haxe: for (fruit in fruits) { trace(fruit); }
+         * Wrong: Enum.each(g_array, fn fruit -> ... end)  // g_array is undefined!
+         * Fixed: Enum.each(fruits, fn fruit -> ... end)   // Correct variable name
+         */
+        var arrayExpr = switch(iterExpr.expr) {
+            case TLocal(v):
+                // For regular user variables, just convert to snake_case
+                // Don't apply Haxe desugaring mappings
+                var varName = v.name;
+                // Remove underscore prefix if present (Haxe's unused var convention)
+                if (varName.charAt(0) == "_") {
+                    varName = varName.substr(1);
+                }
+                NamingHelper.toSnakeCase(varName);
+            case _:
+                // For complex expressions, use normal compilation
+                compiler.compileExpression(iterExpr);
+        };
         
         #if debug_enum_patterns
         // trace('[XRay EnumPatterns] - Array expression: ${CompilerUtilities.safeSubstring(arrayExpr, 50)}');
@@ -1453,7 +1491,22 @@ end)';
      * @return Generic Elixir loop implementation
      */
     private function compileGenericForLoop(loopVar: String, iterExpr: TypedExpr, blockExpr: TypedExpr): String {
-        var iterable = compiler.compileExpression(iterExpr);
+        // CRITICAL FIX: Extract actual variable name from TLocal instead of compiling it
+        // Same issue as in tryOptimizeArrayIteration - need to get real variable name
+        var iterable = switch(iterExpr.expr) {
+            case TLocal(v):
+                // Directly get the variable name, avoiding any g_array mapping confusion
+                var originalName = v.name;
+                // Remove any underscore prefix that might have been added
+                if (originalName.charAt(0) == "_") {
+                    originalName = originalName.substr(1);
+                }
+                // Convert to snake_case for Elixir
+                NamingHelper.toSnakeCase(originalName);
+            case _:
+                // For non-local expressions, compile normally
+                compiler.compileExpression(iterExpr);
+        };
         var body = compiler.compileExpression(blockExpr);
         
         return 'Enum.each(${iterable}, fn ${loopVar} ->
@@ -4067,7 +4120,21 @@ ${CompilerUtilities.indentCode(body, 6)}
         #end
         
         // Compile the source array expression
-        var arrayExpr = compiler.compileExpression(pattern.sourceArray);
+        // CRITICAL FIX: For simple TLocal variables (regular user variables like "fruits"),
+        // bypass the desugaring variable mapping system to prevent g_array mismatch
+        var arrayExpr = switch(pattern.sourceArray.expr) {
+            case TLocal(v):
+                // For regular user variables, just convert to snake_case
+                // Don't apply Haxe desugaring mappings that would return "g_array"
+                var varName = v.name;
+                if (varName.charAt(0) == "_") {
+                    varName = varName.substr(1);
+                }
+                NamingHelper.toSnakeCase(varName);
+            case _:
+                // For complex expressions, use normal compilation
+                compiler.compileExpression(pattern.sourceArray);
+        };
         
         #if debug_loops
         // trace('[XRay EnumGen] - Source array: ${arrayExpr}');
