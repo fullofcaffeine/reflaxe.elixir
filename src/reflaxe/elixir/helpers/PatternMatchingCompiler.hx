@@ -108,61 +108,63 @@ class PatternMatchingCompiler {
         defaultExpr: Null<TypedExpr>,
         ?context: FunctionContext
     ): String {
-        trace('[DEBUG] compileSwitchExpression called');
-        trace('[DEBUG] Number of cases: ${cases.length}');
-        for (i in 0...cases.length) {
-            var c = cases[i];
-            trace('[DEBUG] Case ${i}: ${c.values.length} values');
-            for (v in c.values) {
-                switch (v.expr) {
-                    case TCall(e, args):
-                        switch (e.expr) {
-                            case TField(_, FEnum(_, ef)):
-                                trace('[DEBUG]   - Pattern: ${ef.name} with ${args.length} args');
-                                for (j in 0...args.length) {
-                                    switch (args[j].expr) {
-                                        case TLocal(tv):
-                                            trace('[DEBUG]     - Arg ${j}: TLocal(${tv.name}, id=${tv.id}, unused=${tv.meta != null && tv.meta.has("-reflaxe.unused")})');
-                                        case _:
-                                            trace('[DEBUG]     - Arg ${j}: ${Type.enumConstructor(args[j].expr)}');
-                                    }
-                                }
-                            case _:
-                        }
-                    case _:
-                        trace('[DEBUG]   - Pattern: ${Type.enumConstructor(v.expr)}');
-                }
-            }
-            // Check case body for variable extraction
-            trace('[DEBUG] Case ${i} body type: ${Type.enumConstructor(c.expr.expr)}');
-        }
-        switch(switchExpr.expr) {
-            case TLocal(v):
-                trace('[DEBUG] compileSwitchExpression: switching on TLocal(${v.name}, id=${v.id})');
-            case TParenthesis(e):
-                trace('[DEBUG] compileSwitchExpression: switching on TParenthesis wrapping ${Type.enumConstructor(e.expr)}');
-                switch(e.expr) {
-                    case TLocal(v):
-                        trace('[DEBUG]   -> Inner is TLocal(${v.name}, id=${v.id})');
-                    case TMeta(m, e2):
-                        trace('[DEBUG]   -> Inner is TMeta(${m.name}) wrapping ${Type.enumConstructor(e2.expr)}');
-                        switch(e2.expr) {
-                            case TLocal(v):
-                                trace('[DEBUG]     -> TMeta wraps TLocal(${v.name}, id=${v.id})');
-                            case TEnumIndex(e3):
-                                trace('[DEBUG]     -> TEnumIndex of ${Type.enumConstructor(e3.expr)}');
-                                switch(e3.expr) {
-                                    case TLocal(v):
-                                        trace('[DEBUG]       -> TEnumIndex contains TLocal(${v.name}, id=${v.id})');
-                                    case _:
-                                }
-                            case _:
-                        }
-                    case _:
-                }
-            case _:
-                trace('[DEBUG] compileSwitchExpression: switching on ${Type.enumConstructor(switchExpr.expr)}');
-        }
+        #if debug_pattern_matching
+        // trace('[DEBUG] compileSwitchExpression called');
+        // trace('[DEBUG] Number of cases: ${cases.length}');
+        // for (i in 0...cases.length) {
+        //     var c = cases[i];
+        //     trace('[DEBUG] Case ${i}: ${c.values.length} values');
+        //     for (v in c.values) {
+        //         switch (v.expr) {
+        //             case TCall(e, args):
+        //                 switch (e.expr) {
+        //                     case TField(_, FEnum(_, ef)):
+        //                         trace('[DEBUG]   - Pattern: ${ef.name} with ${args.length} args');
+        //                         for (j in 0...args.length) {
+        //                             switch (args[j].expr) {
+        //                                 case TLocal(tv):
+        //                                     trace('[DEBUG]     - Arg ${j}: TLocal(${tv.name}, id=${tv.id}, unused=${tv.meta != null && tv.meta.has("-reflaxe.unused")})');
+        //                                 case _:
+        //                                     trace('[DEBUG]     - Arg ${j}: ${Type.enumConstructor(args[j].expr)}');
+        //                             }
+        //                         }
+        //                     case _:
+        //                 }
+        //             case _:
+        //                 trace('[DEBUG]   - Pattern: ${Type.enumConstructor(v.expr)}');
+        //         }
+        //     }
+        //     // Check case body for variable extraction
+        //     trace('[DEBUG] Case ${i} body type: ${Type.enumConstructor(c.expr.expr)}');
+        // }
+        // switch(switchExpr.expr) {
+        //     case TLocal(v):
+        //         trace('[DEBUG] compileSwitchExpression: switching on TLocal(${v.name}, id=${v.id})');
+        //     case TParenthesis(e):
+        //         trace('[DEBUG] compileSwitchExpression: switching on TParenthesis wrapping ${Type.enumConstructor(e.expr)}');
+        //         switch(e.expr) {
+        //             case TLocal(v):
+        //                 trace('[DEBUG]   -> Inner is TLocal(${v.name}, id=${v.id})');
+        //             case TMeta(m, e2):
+        //                 trace('[DEBUG]   -> Inner is TMeta(${m.name}) wrapping ${Type.enumConstructor(e2.expr)}');
+        //                 switch(e2.expr) {
+        //                     case TLocal(v):
+        //                         trace('[DEBUG]     -> TMeta wraps TLocal(${v.name}, id=${v.id})');
+        //                     case TEnumIndex(e3):
+        //                         trace('[DEBUG]     -> TEnumIndex of ${Type.enumConstructor(e3.expr)}');
+        //                         switch(e3.expr) {
+        //                             case TLocal(v):
+        //                                 trace('[DEBUG]       -> TEnumIndex contains TLocal(${v.name}, id=${v.id})');
+        //                             case _:
+        //                 }
+        //                     case _:
+        //                 }
+        //             case _:
+        //         }
+        //     case _:
+        //         trace('[DEBUG] compileSwitchExpression: switching on ${Type.enumConstructor(switchExpr.expr)}');
+        // }
+        #end
         
         // CRITICAL FIX: Track nesting level to prevent enum pattern variable collisions
         enumNestingLevel++;
@@ -2398,15 +2400,19 @@ class PatternMatchingCompiler {
          *       system, not against it.
          */
         // Compile the inner expression directly with mappings intact
-        trace('[DEBUG] compileSwitchOnEnumIndexDirectly: About to compile innerExpr');
-        switch(innerExpr.expr) {
-            case TLocal(v):
-                trace('[DEBUG]   innerExpr is TLocal(${v.name}, id=${v.id})');
-            case _:
-        }
+        #if debug_pattern_matching
+        // trace('[DEBUG] compileSwitchOnEnumIndexDirectly: About to compile innerExpr');
+        // switch(innerExpr.expr) {
+        //     case TLocal(v):
+        //         trace('[DEBUG]   innerExpr is TLocal(${v.name}, id=${v.id})');
+        //     case _:
+        // }
+        #end
         var compiledExpr = compiler.compileExpression(innerExpr);
         var innerExprStr = compiledExpr;
-        trace('[DEBUG] compileSwitchOnEnumIndexDirectly: compiledExpr = ${compiledExpr}');
+        #if debug_pattern_matching
+        // trace('[DEBUG] compileSwitchOnEnumIndexDirectly: compiledExpr = ${compiledExpr}');
+        #end
         
         // Extract variable if an assignment was generated
         var assignmentPattern = ~/^([a-z_][a-zA-Z0-9_]*) = /;
