@@ -43,7 +43,6 @@ import reflaxe.elixir.helpers.LLMDocsGenerator;
 import reflaxe.elixir.helpers.ExUnitCompiler;
 import reflaxe.elixir.helpers.AlgebraicDataTypeCompiler;
 import reflaxe.elixir.helpers.ExpressionCompiler;
-import reflaxe.elixir.helpers.ArrayOptimizationCompiler;
 import reflaxe.elixir.helpers.ExpressionDispatcher;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.helpers.DebugHelper;
@@ -146,8 +145,6 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Reflection compilation
     private var reflectionCompiler: reflaxe.elixir.helpers.ReflectionCompiler;
     
-    // Array optimization compiler for loop pattern detection and Enum function generation
-    private var arrayOptimizationCompiler: reflaxe.elixir.helpers.ArrayOptimizationCompiler;
     
     // Variable substitution and renaming compiler for centralized variable handling
     public var substitutionCompiler: reflaxe.elixir.helpers.SubstitutionCompiler;
@@ -323,7 +320,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.genServerCompiler = new reflaxe.elixir.helpers.GenServerCompiler(this);
         this.methodCallCompiler = new reflaxe.elixir.helpers.MethodCallCompiler(this);
         this.reflectionCompiler = new reflaxe.elixir.helpers.ReflectionCompiler(this);
-        this.arrayOptimizationCompiler = new reflaxe.elixir.helpers.ArrayOptimizationCompiler(this);
         this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
         this.variableMappingManager = new VariableMappingManager(this);
         this.variableCompiler = new reflaxe.elixir.helpers.VariableCompiler(this);
@@ -1877,37 +1873,38 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Generate Enum.find pattern for early return loops
+     * TODO: Implement based on test requirements (TDD)
      */
     private function generateEnumFindPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        return arrayOptimizationCompiler.generateEnumFindPattern(arrayExpr, loopVar, ebody);
+        return ""; // TDD stub - implement when tests require it
     }
     
     /**
      * Extract condition from return statement in loop body
      */
     private function extractConditionFromReturn(expr: TypedExpr): Null<String> {
-        return arrayOptimizationCompiler.extractConditionFromReturn(expr);
+        return null; // TDD stub - implement when tests require it
     }
     
     /**
      * Transform loop body for find patterns with reduce_while
      */
     private function transformFindLoopBody(expr: TypedExpr, loopVar: String): String {
-        return arrayOptimizationCompiler.transformFindLoopBody(expr, loopVar);
+        return ""; // TDD stub - implement when tests require it
     }
     
     /**
      * Generate Enum.count pattern for conditional counting
      */
     private function generateEnumCountPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        return arrayOptimizationCompiler.generateEnumCountPattern(arrayExpr, loopVar, conditionExpr);
+        return ""; // TDD stub - implement when tests require it
     }
     
     /**
      * Find the first local variable referenced in an expression
      */
     private function findFirstLocalVariable(expr: TypedExpr): Null<String> {
-        return arrayOptimizationCompiler.findFirstLocalVariable(expr);
+        return null; // TDD stub - implement when tests require it
     }
     
     /**
@@ -1915,42 +1912,42 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This is more robust than string-based matching as it uses object identity
      */
     private function findFirstLocalTVar(expr: TypedExpr): Null<TVar> {
-        return arrayOptimizationCompiler.findFirstLocalTVar(expr);
+        return null; // TDD stub - implement when tests require it
     }
     
     /**
      * Generate Enum.filter pattern for filtering arrays
      */
     private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        return arrayOptimizationCompiler.generateEnumFilterPattern(arrayExpr, loopVar, conditionExpr);
+        return ""; // TDD stub - implement when tests require it
     }
     
     /**
      * Generate Enum.map pattern for transforming arrays
      */
     private function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        return arrayOptimizationCompiler.generateEnumMapPattern(arrayExpr, loopVar, ebody);
+        return ""; // TDD stub - implement when tests require it
     }
     
     /**
      * Find the loop variable by looking for patterns like "v.field" where v is the loop variable
      */
     private function findFirstTLocalInExpression(expr: TypedExpr): Null<TVar> {
-        return arrayOptimizationCompiler.findFirstTLocalInExpression(expr);
+        return null; // TDD stub - implement when tests require it
     }
 
     /**
      * Find TLocal from field access patterns (e.g., v.id -> return v)
      */
     private function findTLocalFromFieldAccess(expr: TypedExpr): Null<TVar> {
-        return arrayOptimizationCompiler.findTLocalFromFieldAccess(expr);
+        return null; // TDD stub - implement when tests require it
     }
 
     /**
      * Find the first TLocal variable in an expression recursively
      */
     private function findFirstTLocalInExpressionRecursive(expr: TypedExpr): Null<TVar> {
-        return arrayOptimizationCompiler.findFirstTLocalInExpressionRecursive(expr);
+        return null; // TDD stub - implement when tests require it
     }
 
     /**
@@ -2040,7 +2037,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * that should not be substituted in loop contexts
      */
     private function isSystemVariable(varName: String): Bool {
-        return arrayOptimizationCompiler.isSystemVariable(varName);
+        return false; // TDD stub - implement when tests require it
     }
     
     /**
@@ -2098,8 +2095,9 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This handles variable collisions in desugared loop code
      */
     private function compileWhileLoopWithRenamings(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool, renamings: Map<String, String>): String {
-        // Delegate to UnifiedLoopCompiler's CoreLoopCompiler which has the idiomatic implementation
-        return unifiedLoopCompiler.coreLoopCompiler.compileWhileLoopWithRenamings(econd, ebody, normalWhile, renamings);
+        // TODO: Implement variable renaming for while loops (TDD)
+        // For now, compile without renamings
+        return unifiedLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
     }
     
     /**
@@ -2139,7 +2137,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Extract variable name from condition string
      */
     private function extractVariableFromCondition(condition: String): Null<String> {
-        return arrayOptimizationCompiler.extractVariableFromCondition(condition);
+        return null; // TDD stub - implement when tests require it
     }
 
     /**
@@ -2158,7 +2156,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Transform complex loop bodies that can't be simplified to Enum.reduce
      */
     private function transformComplexLoopBody(ebody: TypedExpr): String {
-        return arrayOptimizationCompiler.transformComplexLoopBody(ebody);
+        return ""; // TDD stub - implement when tests require it
     }
     
     /**
