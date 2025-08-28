@@ -1,0 +1,30 @@
+@:enum
+private class haxe.display._Display.MetadataTarget_Impl_ {
+
+	@:value(cast "TClass") @:impl @:enum
+	public static inline var Class:haxe.display.MetadataTarget = [Cast:haxe.display.MetadataTarget] [Const:String] "TClass";
+
+	@:value(cast "TClassField") @:impl @:enum
+	public static inline var ClassField:haxe.display.MetadataTarget = [Cast:haxe.display.MetadataTarget] [Const:String] "TClassField";
+
+	@:value(cast "TAbstract") @:impl @:enum
+	public static inline var Abstract:haxe.display.MetadataTarget = [Cast:haxe.display.MetadataTarget] [Const:String] "TAbstract";
+
+	@:value(cast "TAbstractField") @:impl @:enum
+	public static inline var AbstractField:haxe.display.MetadataTarget = [Cast:haxe.display.MetadataTarget] [Const:String] "TAbstractField";
+
+	@:value(cast "TEnum") @:impl @:enum
+	public static inline var Enum:haxe.display.MetadataTarget = [Cast:haxe.display.MetadataTarget] [Const:String] "TEnum";
+
+	@:value(cast "TTypedef") @:impl @:enum
+	public static inline var Typedef:haxe.display.MetadataTarget = [Cast:haxe.display.MetadataTarget] [Const:String] "TTypedef";
+
+	@:value(cast "TAnyField") @:impl @:enum
+	public static inline var AnyField:haxe.display.MetadataTarget = [Cast:haxe.display.MetadataTarget] [Const:String] "TAnyField";
+
+	@:value(cast "TExpr") @:impl @:enum
+	public static inline var Expr:haxe.display.MetadataTarget = [Cast:haxe.display.MetadataTarget] [Const:String] "TExpr";
+
+	@:value(cast "TTypeParameter") @:impl @:enum
+	public static inline var TypeParameter:haxe.display.MetadataTarget = [Cast:haxe.display.MetadataTarget] [Const:String] "TTypeParameter";
+}

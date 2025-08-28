@@ -1,0 +1,1191 @@
+class haxe.io.FPHelper {
+
+	@:value(Int64.ofInt(0))
+	static var i64tmp:haxe.Int64 = [Block:haxe.Int64]
+		[Var x(2156):haxe._Int64.__Int64]
+			[New:haxe._Int64.___Int64]
+				haxe._Int64.___Int64
+				[Binop:Int]
+					[Const:Int] 0
+					>>
+					[Const:Int] 31
+				[Const:Int] 0
+		[Var this(2157):haxe._Int64.__Int64]
+		[Binop:haxe._Int64.__Int64]
+			[Local this(2157):haxe._Int64.__Int64:haxe._Int64.__Int64]
+			=
+			[Local x(2156):haxe._Int64.__Int64:haxe._Int64.__Int64]
+		[Cast:haxe.Int64] [Cast:haxe._Int64.__Int64] [Local this(2157):haxe._Int64.__Int64:haxe._Int64.__Int64];
+
+	@:value(0.6931471805599453)
+	static inline var LN2:Float = [Const:Float] 0.6931471805599453;
+
+	static inline function _i32ToFloat[Function:(i : Int) -> Float]
+		[Arg:Int] [Local i(2139):Int]
+		[Block:Dynamic]
+			[Var sign(2140):Int]
+				[Binop:Int]
+					[Const:Int] 1
+					-
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Local i(2139):Int:Int]
+									>>>
+									[Const:Int] 31
+							<<
+							[Const:Int] 1
+			[Var e(2141):Int]
+				[Binop:Int]
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Local i(2139):Int:Int]
+							>>
+							[Const:Int] 23
+					&
+					[Const:Int] 255
+			[If:Void]
+				[Binop:Bool]
+					[Local e(2141):Int:Int]
+					==
+					[Const:Int] 255
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[If:Float]
+							[Binop:Bool]
+								[Binop:Int]
+									[Local i(2139):Int:Int]
+									&
+									[Const:Int] 8388607
+								==
+								[Const:Int] 0
+							[Then:Float] [Block:Float]
+								[Parenthesis:Float]
+									[If:Float]
+										[Binop:Bool]
+											[Local sign(2140):Int:Int]
+											>
+											[Const:Int] 0
+										[Then:Float] [Block:Float]
+											[Field:Float]
+												[TypeExpr Math:Class<Math>]
+												[FStatic:Float]
+													Math
+													POSITIVE_INFINITY:Float
+										[Else:Float] [Block:Float]
+											[Field:Float]
+												[TypeExpr Math:Class<Math>]
+												[FStatic:Float]
+													Math
+													NEGATIVE_INFINITY:Float
+							[Else:Float] [Block:Float]
+								[Field:Float]
+									[TypeExpr Math:Class<Math>]
+									[FStatic:Float]
+										Math
+										NaN:Float
+			[Var m(2142):Int]
+				[If:Int]
+					[Binop:Bool]
+						[Local e(2141):Int:Int]
+						==
+						[Const:Int] 0
+					[Then:Int] [Block:Int]
+						[Binop:Int]
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Local i(2139):Int:Int]
+									&
+									[Const:Int] 8388607
+							<<
+							[Const:Int] 1
+					[Else:Int] [Block:Int]
+						[Binop:Int]
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Local i(2139):Int:Int]
+									&
+									[Const:Int] 8388607
+							|
+							[Const:Int] 8388608
+			[Return:Dynamic]
+				[Binop:Float]
+					[Binop:Int]
+						[Local sign(2140):Int:Int]
+						*
+						[Local m(2142):Int:Int]
+					*
+					[Call:Float]
+						[Field:(v : Float, exp : Float) -> Float]
+							[TypeExpr Math:Class<Math>]
+							[FStatic:(v : Float, exp : Float) -> Float]
+								Math
+								pow:(v : Float, exp : Float) -> Float
+						[Const:Int] 2
+						[Binop:Int]
+							[Local e(2141):Int:Int]
+							-
+							[Const:Int] 150
+
+	static inline function _i64ToDouble[Function:(lo : Int, hi : Int) -> Float]
+		[Arg:Int] [Local lo(2158):Int]
+		[Arg:Int] [Local hi(2159):Int]
+		[Block:Dynamic]
+			[Var sign(2160):Int]
+				[Binop:Int]
+					[Const:Int] 1
+					-
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Local hi(2159):Int:Int]
+									>>>
+									[Const:Int] 31
+							<<
+							[Const:Int] 1
+			[Var e(2161):Int]
+				[Binop:Int]
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Local hi(2159):Int:Int]
+							>>
+							[Const:Int] 20
+					&
+					[Const:Int] 2047
+			[If:Void]
+				[Binop:Bool]
+					[Local e(2161):Int:Int]
+					==
+					[Const:Int] 2047
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[If:Float]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local lo(2158):Int:Int]
+									==
+									[Const:Int] 0
+								&&
+								[Binop:Bool]
+									[Parenthesis:Int]
+										[Binop:Int]
+											[Local hi(2159):Int:Int]
+											&
+											[Const:Int] 1048575
+									==
+									[Const:Int] 0
+							[Then:Float] [Block:Float]
+								[Parenthesis:Float]
+									[If:Float]
+										[Binop:Bool]
+											[Local sign(2160):Int:Int]
+											>
+											[Const:Int] 0
+										[Then:Float] [Block:Float]
+											[Field:Float]
+												[TypeExpr Math:Class<Math>]
+												[FStatic:Float]
+													Math
+													POSITIVE_INFINITY:Float
+										[Else:Float] [Block:Float]
+											[Field:Float]
+												[TypeExpr Math:Class<Math>]
+												[FStatic:Float]
+													Math
+													NEGATIVE_INFINITY:Float
+							[Else:Float] [Block:Float]
+								[Field:Float]
+									[TypeExpr Math:Class<Math>]
+									[FStatic:Float]
+										Math
+										NaN:Float
+			[Var m(2162):Float]
+				[Binop:Float]
+					[Const:Float] 2.220446049250313e-16
+					*
+					[Parenthesis:Float]
+						[Binop:Float]
+							[Binop:Float]
+								[Binop:Float]
+									[Parenthesis:Int]
+										[Binop:Int]
+											[Local hi(2159):Int:Int]
+											&
+											[Const:Int] 1048575
+									*
+									[Const:Float] 4294967296.
+								+
+								[Binop:Float]
+									[Parenthesis:Int]
+										[Binop:Int]
+											[Local lo(2158):Int:Int]
+											>>>
+											[Const:Int] 31
+									*
+									[Const:Float] 2147483648.
+							+
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Local lo(2158):Int:Int]
+									&
+									[Const:Int] 2147483647
+			[Binop:Float]
+				[Local m(2162):Float:Float]
+				=
+				[If:Float]
+					[Binop:Bool]
+						[Local e(2161):Int:Int]
+						==
+						[Const:Int] 0
+					[Then:Float] [Block:Float]
+						[Binop:Float]
+							[Local m(2162):Float:Float]
+							*
+							[Const:Float] 2.0
+					[Else:Float] [Block:Float]
+						[Binop:Float]
+							[Local m(2162):Float:Float]
+							+
+							[Const:Float] 1.0
+			[Return:Dynamic]
+				[Binop:Float]
+					[Binop:Float]
+						[Local sign(2160):Int:Int]
+						*
+						[Local m(2162):Float:Float]
+					*
+					[Call:Float]
+						[Field:(v : Float, exp : Float) -> Float]
+							[TypeExpr Math:Class<Math>]
+							[FStatic:(v : Float, exp : Float) -> Float]
+								Math
+								pow:(v : Float, exp : Float) -> Float
+						[Const:Int] 2
+						[Binop:Int]
+							[Local e(2161):Int:Int]
+							-
+							[Const:Int] 1023
+
+	static inline function _floatToI32[Function:(f : Float) -> Int]
+		[Arg:Float] [Local f(2163):Float]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local f(2163):Float:Float]
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Int] 0
+			[Var af(2164):Float]
+				[If:Float]
+					[Binop:Bool]
+						[Local f(2163):Float:Float]
+						<
+						[Const:Int] 0
+					[Then:Float] [Block:Float]
+						[Unop:Float]
+							-
+							Prefix
+							[Local f(2163):Float:Float]
+					[Else:Float] [Block:Float] [Local f(2163):Float:Float]
+			[Var exp(2165):Int]
+				[Call:Int]
+					[Field:(v : Float) -> Int]
+						[TypeExpr Math:Class<Math>]
+						[FStatic:(v : Float) -> Int]
+							Math
+							floor:(v : Float) -> Int
+					[Binop:Float]
+						[Call:Float]
+							[Field:(v : Float) -> Float]
+								[TypeExpr Math:Class<Math>]
+								[FStatic:(v : Float) -> Float]
+									Math
+									log:(v : Float) -> Float
+							[Local af(2164):Float:Float]
+						/
+						[Const:Float] 0.6931471805599453
+			[If:Void]
+				[Binop:Bool]
+					[Local exp(2165):Int:Int]
+					>
+					[Const:Int] 127
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Int] 2139095040
+				[Else:Dynamic] [Block:Dynamic]
+					[If:Void]
+						[Binop:Bool]
+							[Local exp(2165):Int:Int]
+							<=
+							[Const:Int] -127
+						[Then:Float] [Block:Float]
+							[Binop:Int]
+								[Local exp(2165):Int:Int]
+								=
+								[Const:Int] -127
+							[Binop:Float]
+								[Local af(2164):Float:Float]
+								*=
+								[Const:Float] 7.1362384635298e+44
+						[Else:Float] [Block:Float]
+							[Binop:Float]
+								[Local af(2164):Float:Float]
+								=
+								[Binop:Float]
+									[Parenthesis:Float]
+										[Binop:Float]
+											[Binop:Float]
+												[Local af(2164):Float:Float]
+												/
+												[Call:Float]
+													[Field:(v : Float, exp : Float) -> Float]
+														[TypeExpr Math:Class<Math>]
+														[FStatic:(v : Float, exp : Float) -> Float]
+															Math
+															pow:(v : Float, exp : Float) -> Float
+													[Const:Int] 2
+													[Local exp(2165):Int:Int]
+											-
+											[Const:Float] 1.0
+									*
+									[Const:Int] 8388608
+					[Return:Dynamic]
+						[Binop:Int]
+							[Binop:Int]
+								[Parenthesis:Int]
+									[If:Int]
+										[Binop:Bool]
+											[Local f(2163):Float:Float]
+											<
+											[Const:Int] 0
+										[Then:Int] [Block:Int] [Const:Int] -2147483648
+										[Else:Int] [Block:Int] [Const:Int] 0
+								|
+								[Parenthesis:Int]
+									[Binop:Int]
+										[Parenthesis:Int]
+											[Binop:Int]
+												[Local exp(2165):Int:Int]
+												+
+												[Const:Int] 127
+										<<
+										[Const:Int] 23
+							|
+							[Call:Int]
+								[Field:(v : Float) -> Int]
+									[TypeExpr Math:Class<Math>]
+									[FStatic:(v : Float) -> Int]
+										Math
+										round:(v : Float) -> Int
+								[Local af(2164):Float:Float]
+
+	static inline function _doubleToI64[Function:(v : Float) -> haxe.Int64]
+		[Arg:Float] [Local v(2166):Float]
+		[Block:Dynamic]
+			[Var i64(2167):haxe.Int64]
+				[Field:haxe.Int64]
+					[TypeExpr haxe.io.FPHelper:Class<haxe.io.FPHelper>]
+					[FStatic:haxe.Int64]
+						haxe.io.FPHelper
+						i64tmp:haxe.Int64
+			[If:Void]
+				[Binop:Bool]
+					[Local v(2166):Float:Float]
+					==
+					[Const:Int] 0
+				[Then:haxe.Int32] [Block:haxe.Int32]
+					[Binop:haxe.Int32]
+						[Field:haxe.Int32]
+							[Cast:haxe._Int64.__Int64] [Local i64(2167):haxe.Int64:haxe.Int64]
+							[FInstance:haxe.Int32]
+								haxe._Int64.___Int64
+								low:haxe.Int32
+						=
+						[Const:Int] 0
+					[Binop:haxe.Int32]
+						[Field:haxe.Int32]
+							[Cast:haxe._Int64.__Int64] [Local i64(2167):haxe.Int64:haxe.Int64]
+							[FInstance:haxe.Int32]
+								haxe._Int64.___Int64
+								high:haxe.Int32
+						=
+						[Const:Int] 0
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Unop:Bool]
+							!
+							Prefix
+							[Call:Bool]
+								[Field:(f : Float) -> Bool]
+									[TypeExpr Math:Class<Math>]
+									[FStatic:(f : Float) -> Bool]
+										Math
+										isFinite:(f : Float) -> Bool
+								[Local v(2166):Float:Float]
+						[Then:haxe.Int32] [Block:haxe.Int32]
+							[Binop:haxe.Int32]
+								[Field:haxe.Int32]
+									[Cast:haxe._Int64.__Int64] [Local i64(2167):haxe.Int64:haxe.Int64]
+									[FInstance:haxe.Int32]
+										haxe._Int64.___Int64
+										low:haxe.Int32
+								=
+								[Const:Int] 0
+							[Binop:haxe.Int32]
+								[Field:haxe.Int32]
+									[Cast:haxe._Int64.__Int64] [Local i64(2167):haxe.Int64:haxe.Int64]
+									[FInstance:haxe.Int32]
+										haxe._Int64.___Int64
+										high:haxe.Int32
+								=
+								[If:haxe.Int32]
+									[Parenthesis:Bool]
+										[Binop:Bool]
+											[Local v(2166):Float:Float]
+											>
+											[Const:Int] 0
+									[Then:Int] [Const:Int] 2146435072
+									[Else:Int] [Const:Int] -1048576
+						[Else:Void] [Block:Void]
+							[Var av(2184):Float]
+								[If:Float]
+									[Binop:Bool]
+										[Local v(2166):Float:Float]
+										<
+										[Const:Int] 0
+									[Then:Float] [Block:Float]
+										[Unop:Float]
+											-
+											Prefix
+											[Local v(2166):Float:Float]
+									[Else:Float] [Block:Float] [Local v(2166):Float:Float]
+							[Var exp(2185):Int]
+								[Call:Int]
+									[Field:(v : Float) -> Int]
+										[TypeExpr Math:Class<Math>]
+										[FStatic:(v : Float) -> Int]
+											Math
+											floor:(v : Float) -> Int
+									[Binop:Float]
+										[Call:Float]
+											[Field:(v : Float) -> Float]
+												[TypeExpr Math:Class<Math>]
+												[FStatic:(v : Float) -> Float]
+													Math
+													log:(v : Float) -> Float
+											[Local av(2184):Float:Float]
+										/
+										[Const:Float] 0.6931471805599453
+							[If:Void]
+								[Binop:Bool]
+									[Local exp(2185):Int:Int]
+									>
+									[Const:Int] 1023
+								[Then:haxe.Int32] [Block:haxe.Int32]
+									[Binop:haxe.Int32]
+										[Field:haxe.Int32]
+											[Cast:haxe._Int64.__Int64] [Local i64(2167):haxe.Int64:haxe.Int64]
+											[FInstance:haxe.Int32]
+												haxe._Int64.___Int64
+												low:haxe.Int32
+										=
+										[Const:Int] -1
+									[Binop:haxe.Int32]
+										[Field:haxe.Int32]
+											[Cast:haxe._Int64.__Int64] [Local i64(2167):haxe.Int64:haxe.Int64]
+											[FInstance:haxe.Int32]
+												haxe._Int64.___Int64
+												high:haxe.Int32
+										=
+										[Const:Int] 2146435071
+								[Else:haxe.Int32] [Block:haxe.Int32]
+									[If:Void]
+										[Binop:Bool]
+											[Local exp(2185):Int:Int]
+											<=
+											[Const:Int] -1023
+										[Then:Float] [Block:Float]
+											[Binop:Int]
+												[Local exp(2185):Int:Int]
+												=
+												[Const:Int] -1023
+											[Binop:Float]
+												[Local av(2184):Float:Float]
+												=
+												[Binop:Float]
+													[Local av(2184):Float:Float]
+													/
+													[Const:Float] 2.2250738585072014e-308
+										[Else:Float] [Block:Float]
+											[Binop:Float]
+												[Local av(2184):Float:Float]
+												=
+												[Binop:Float]
+													[Binop:Float]
+														[Local av(2184):Float:Float]
+														/
+														[Call:Float]
+															[Field:(v : Float, exp : Float) -> Float]
+																[TypeExpr Math:Class<Math>]
+																[FStatic:(v : Float, exp : Float) -> Float]
+																	Math
+																	pow:(v : Float, exp : Float) -> Float
+															[Const:Int] 2
+															[Local exp(2185):Int:Int]
+													-
+													[Const:Float] 1.0
+									[Var sig(2194):Float]
+										[Call:Float]
+											[Field:(v : Float) -> Float]
+												[TypeExpr Math:Class<Math>]
+												[FStatic:(v : Float) -> Float]
+													Math
+													fround:(v : Float) -> Float
+											[Binop:Float]
+												[Local av(2184):Float:Float]
+												*
+												[Const:Float] 4503599627370496.
+									[Var sig_l(2195):Int]
+										[Call:Int]
+											[Field:(x : Float) -> Int]
+												[TypeExpr Std:Class<Std>]
+												[FStatic:(x : Float) -> Int]
+													Std
+													int:(x : Float) -> Int
+											[Local sig(2194):Float:Float]
+									[Var sig_h(2196):Int]
+										[Call:Int]
+											[Field:(x : Float) -> Int]
+												[TypeExpr Std:Class<Std>]
+												[FStatic:(x : Float) -> Int]
+													Std
+													int:(x : Float) -> Int
+											[Binop:Float]
+												[Local sig(2194):Float:Float]
+												/
+												[Const:Float] 4294967296.0
+									[Binop:haxe.Int32]
+										[Field:haxe.Int32]
+											[Cast:haxe._Int64.__Int64] [Local i64(2167):haxe.Int64:haxe.Int64]
+											[FInstance:haxe.Int32]
+												haxe._Int64.___Int64
+												low:haxe.Int32
+										=
+										[Local sig_l(2195):Int:Int]
+									[Binop:haxe.Int32]
+										[Field:haxe.Int32]
+											[Cast:haxe._Int64.__Int64] [Local i64(2167):haxe.Int64:haxe.Int64]
+											[FInstance:haxe.Int32]
+												haxe._Int64.___Int64
+												high:haxe.Int32
+										=
+										[Binop:Int]
+											[Binop:Int]
+												[Parenthesis:Int]
+													[If:Int]
+														[Parenthesis:Bool]
+															[Binop:Bool]
+																[Local v(2166):Float:Float]
+																<
+																[Const:Int] 0
+														[Then:Int] [Const:Int] -2147483648
+														[Else:Int] [Const:Int] 0
+												|
+												[Binop:Int]
+													[Binop:Int]
+														[Local exp(2185):Int:Int]
+														+
+														[Const:Int] 1023
+													<<
+													[Const:Int] 20
+											|
+											[Local sig_h(2196):Int:Int]
+			[Return:Dynamic] [Local i64(2167):haxe.Int64:haxe.Int64]
+
+	public static function i32ToFloat[Function:(i : Int) -> Float]
+		[Arg:Int] [Local i(2138):Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:Float]
+					[Var sign(2146):Int]
+						[Binop:Int]
+							[Const:Int] 1
+							-
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Parenthesis:Int]
+										[Binop:Int]
+											[Local i(2138):Int:Int]
+											>>>
+											[Const:Int] 31
+									<<
+									[Const:Int] 1
+					[Var e(2147):Int]
+						[Binop:Int]
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Local i(2138):Int:Int]
+									>>
+									[Const:Int] 23
+							&
+							[Const:Int] 255
+					[If:Float]
+						[Binop:Bool]
+							[Local e(2147):Int:Int]
+							==
+							[Const:Int] 255
+						[Then:Float] [Block:Float]
+							[If:Float]
+								[Binop:Bool]
+									[Binop:Int]
+										[Local i(2138):Int:Int]
+										&
+										[Const:Int] 8388607
+									==
+									[Const:Int] 0
+								[Then:Float] [Block:Float]
+									[Parenthesis:Float]
+										[If:Float]
+											[Binop:Bool]
+												[Local sign(2146):Int:Int]
+												>
+												[Const:Int] 0
+											[Then:Float] [Block:Float]
+												[Field:Float]
+													[TypeExpr Math:Class<Math>]
+													[FStatic:Float]
+														Math
+														POSITIVE_INFINITY:Float
+											[Else:Float] [Block:Float]
+												[Field:Float]
+													[TypeExpr Math:Class<Math>]
+													[FStatic:Float]
+														Math
+														NEGATIVE_INFINITY:Float
+								[Else:Float] [Block:Float]
+									[Field:Float]
+										[TypeExpr Math:Class<Math>]
+										[FStatic:Float]
+											Math
+											NaN:Float
+						[Else:Float] [Block:Float]
+							[Var m(2148):Int]
+								[If:Int]
+									[Binop:Bool]
+										[Local e(2147):Int:Int]
+										==
+										[Const:Int] 0
+									[Then:Int] [Block:Int]
+										[Binop:Int]
+											[Parenthesis:Int]
+												[Binop:Int]
+													[Local i(2138):Int:Int]
+													&
+													[Const:Int] 8388607
+											<<
+											[Const:Int] 1
+									[Else:Int] [Block:Int]
+										[Binop:Int]
+											[Parenthesis:Int]
+												[Binop:Int]
+													[Local i(2138):Int:Int]
+													&
+													[Const:Int] 8388607
+											|
+											[Const:Int] 8388608
+							[Binop:Float]
+								[Binop:Int]
+									[Local sign(2146):Int:Int]
+									*
+									[Local m(2148):Int:Int]
+								*
+								[Call:Float]
+									[Field:(v : Float, exp : Float) -> Float]
+										[TypeExpr Math:Class<Math>]
+										[FStatic:(v : Float, exp : Float) -> Float]
+											Math
+											pow:(v : Float, exp : Float) -> Float
+									[Const:Int] 2
+									[Binop:Int]
+										[Local e(2147):Int:Int]
+										-
+										[Const:Int] 150
+
+	public static function floatToI32[Function:(f : Float) -> Int]
+		[Arg:Float] [Local f(2205):Float]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:Int]
+					[Binop:Bool]
+						[Local f(2205):Float:Float]
+						==
+						[Const:Int] 0
+					[Then:Int] [Block:Int] [Const:Int] 0
+					[Else:Int] [Block:Int]
+						[Var af(2209):Float]
+							[If:Float]
+								[Binop:Bool]
+									[Local f(2205):Float:Float]
+									<
+									[Const:Int] 0
+								[Then:Float] [Block:Float]
+									[Unop:Float]
+										-
+										Prefix
+										[Local f(2205):Float:Float]
+								[Else:Float] [Block:Float] [Local f(2205):Float:Float]
+						[Var exp(2210):Int]
+							[Call:Int]
+								[Field:(v : Float) -> Int]
+									[TypeExpr Math:Class<Math>]
+									[FStatic:(v : Float) -> Int]
+										Math
+										floor:(v : Float) -> Int
+								[Binop:Float]
+									[Call:Float]
+										[Field:(v : Float) -> Float]
+											[TypeExpr Math:Class<Math>]
+											[FStatic:(v : Float) -> Float]
+												Math
+												log:(v : Float) -> Float
+										[Local af(2209):Float:Float]
+									/
+									[Const:Float] 0.6931471805599453
+						[If:Int]
+							[Binop:Bool]
+								[Local exp(2210):Int:Int]
+								>
+								[Const:Int] 127
+							[Then:Int] [Block:Int] [Const:Int] 2139095040
+							[Else:Int] [Block:Int]
+								[If:Void]
+									[Binop:Bool]
+										[Local exp(2210):Int:Int]
+										<=
+										[Const:Int] -127
+									[Then:Float] [Block:Float]
+										[Binop:Int]
+											[Local exp(2210):Int:Int]
+											=
+											[Const:Int] -127
+										[Binop:Float]
+											[Local af(2209):Float:Float]
+											*=
+											[Const:Float] 7.1362384635298e+44
+									[Else:Float] [Block:Float]
+										[Binop:Float]
+											[Local af(2209):Float:Float]
+											=
+											[Binop:Float]
+												[Parenthesis:Float]
+													[Binop:Float]
+														[Binop:Float]
+															[Local af(2209):Float:Float]
+															/
+															[Call:Float]
+																[Field:(v : Float, exp : Float) -> Float]
+																	[TypeExpr Math:Class<Math>]
+																	[FStatic:(v : Float, exp : Float) -> Float]
+																		Math
+																		pow:(v : Float, exp : Float) -> Float
+																[Const:Int] 2
+																[Local exp(2210):Int:Int]
+														-
+														[Const:Float] 1.0
+												*
+												[Const:Int] 8388608
+								[Binop:Int]
+									[Binop:Int]
+										[Parenthesis:Int]
+											[If:Int]
+												[Binop:Bool]
+													[Local f(2205):Float:Float]
+													<
+													[Const:Int] 0
+												[Then:Int] [Block:Int] [Const:Int] -2147483648
+												[Else:Int] [Block:Int] [Const:Int] 0
+										|
+										[Parenthesis:Int]
+											[Binop:Int]
+												[Parenthesis:Int]
+													[Binop:Int]
+														[Local exp(2210):Int:Int]
+														+
+														[Const:Int] 127
+												<<
+												[Const:Int] 23
+									|
+									[Call:Int]
+										[Field:(v : Float) -> Int]
+											[TypeExpr Math:Class<Math>]
+											[FStatic:(v : Float) -> Int]
+												Math
+												round:(v : Float) -> Int
+										[Local af(2209):Float:Float]
+
+	public static function i64ToDouble[Function:(low : Int, high : Int) -> Float]
+		[Arg:Int] [Local low(2211):Int]
+		[Arg:Int] [Local high(2212):Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:Float]
+					[Var sign(2217):Int]
+						[Binop:Int]
+							[Const:Int] 1
+							-
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Parenthesis:Int]
+										[Binop:Int]
+											[Local high(2212):Int:Int]
+											>>>
+											[Const:Int] 31
+									<<
+									[Const:Int] 1
+					[Var e(2218):Int]
+						[Binop:Int]
+							[Parenthesis:Int]
+								[Binop:Int]
+									[Local high(2212):Int:Int]
+									>>
+									[Const:Int] 20
+							&
+							[Const:Int] 2047
+					[If:Float]
+						[Binop:Bool]
+							[Local e(2218):Int:Int]
+							==
+							[Const:Int] 2047
+						[Then:Float] [Block:Float]
+							[If:Float]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local low(2211):Int:Int]
+										==
+										[Const:Int] 0
+									&&
+									[Binop:Bool]
+										[Parenthesis:Int]
+											[Binop:Int]
+												[Local high(2212):Int:Int]
+												&
+												[Const:Int] 1048575
+										==
+										[Const:Int] 0
+								[Then:Float] [Block:Float]
+									[Parenthesis:Float]
+										[If:Float]
+											[Binop:Bool]
+												[Local sign(2217):Int:Int]
+												>
+												[Const:Int] 0
+											[Then:Float] [Block:Float]
+												[Field:Float]
+													[TypeExpr Math:Class<Math>]
+													[FStatic:Float]
+														Math
+														POSITIVE_INFINITY:Float
+											[Else:Float] [Block:Float]
+												[Field:Float]
+													[TypeExpr Math:Class<Math>]
+													[FStatic:Float]
+														Math
+														NEGATIVE_INFINITY:Float
+								[Else:Float] [Block:Float]
+									[Field:Float]
+										[TypeExpr Math:Class<Math>]
+										[FStatic:Float]
+											Math
+											NaN:Float
+						[Else:Float] [Block:Float]
+							[Var m(2219):Float]
+								[Binop:Float]
+									[Const:Float] 2.220446049250313e-16
+									*
+									[Parenthesis:Float]
+										[Binop:Float]
+											[Binop:Float]
+												[Binop:Float]
+													[Parenthesis:Int]
+														[Binop:Int]
+															[Local high(2212):Int:Int]
+															&
+															[Const:Int] 1048575
+													*
+													[Const:Float] 4294967296.
+												+
+												[Binop:Float]
+													[Parenthesis:Int]
+														[Binop:Int]
+															[Local low(2211):Int:Int]
+															>>>
+															[Const:Int] 31
+													*
+													[Const:Float] 2147483648.
+											+
+											[Parenthesis:Int]
+												[Binop:Int]
+													[Local low(2211):Int:Int]
+													&
+													[Const:Int] 2147483647
+							[Binop:Float]
+								[Local m(2219):Float:Float]
+								=
+								[If:Float]
+									[Binop:Bool]
+										[Local e(2218):Int:Int]
+										==
+										[Const:Int] 0
+									[Then:Float] [Block:Float]
+										[Binop:Float]
+											[Local m(2219):Float:Float]
+											*
+											[Const:Float] 2.0
+									[Else:Float] [Block:Float]
+										[Binop:Float]
+											[Local m(2219):Float:Float]
+											+
+											[Const:Float] 1.0
+							[Binop:Float]
+								[Binop:Float]
+									[Local sign(2217):Int:Int]
+									*
+									[Local m(2219):Float:Float]
+								*
+								[Call:Float]
+									[Field:(v : Float, exp : Float) -> Float]
+										[TypeExpr Math:Class<Math>]
+										[FStatic:(v : Float, exp : Float) -> Float]
+											Math
+											pow:(v : Float, exp : Float) -> Float
+									[Const:Int] 2
+									[Binop:Int]
+										[Local e(2218):Int:Int]
+										-
+										[Const:Int] 1023
+
+	public static function doubleToI64[Function:(v : Float) -> haxe.Int64]
+		[Arg:Float] [Local v(2220):Float]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:haxe.Int64]
+					[Var i64(2224):haxe.Int64]
+						[Field:haxe.Int64]
+							[TypeExpr haxe.io.FPHelper:Class<haxe.io.FPHelper>]
+							[FStatic:haxe.Int64]
+								haxe.io.FPHelper
+								i64tmp:haxe.Int64
+					[If:Void]
+						[Binop:Bool]
+							[Local v(2220):Float:Float]
+							==
+							[Const:Int] 0
+						[Then:haxe.Int32] [Block:haxe.Int32]
+							[Binop:haxe.Int32]
+								[Field:haxe.Int32]
+									[Cast:haxe._Int64.__Int64] [Local i64(2224):haxe.Int64:haxe.Int64]
+									[FInstance:haxe.Int32]
+										haxe._Int64.___Int64
+										low:haxe.Int32
+								=
+								[Const:Int] 0
+							[Binop:haxe.Int32]
+								[Field:haxe.Int32]
+									[Cast:haxe._Int64.__Int64] [Local i64(2224):haxe.Int64:haxe.Int64]
+									[FInstance:haxe.Int32]
+										haxe._Int64.___Int64
+										high:haxe.Int32
+								=
+								[Const:Int] 0
+						[Else:Void] [Block:Void]
+							[If:Void]
+								[Unop:Bool]
+									!
+									Prefix
+									[Call:Bool]
+										[Field:(f : Float) -> Bool]
+											[TypeExpr Math:Class<Math>]
+											[FStatic:(f : Float) -> Bool]
+												Math
+												isFinite:(f : Float) -> Bool
+										[Local v(2220):Float:Float]
+								[Then:haxe.Int32] [Block:haxe.Int32]
+									[Binop:haxe.Int32]
+										[Field:haxe.Int32]
+											[Cast:haxe._Int64.__Int64] [Local i64(2224):haxe.Int64:haxe.Int64]
+											[FInstance:haxe.Int32]
+												haxe._Int64.___Int64
+												low:haxe.Int32
+										=
+										[Const:Int] 0
+									[Binop:haxe.Int32]
+										[Field:haxe.Int32]
+											[Cast:haxe._Int64.__Int64] [Local i64(2224):haxe.Int64:haxe.Int64]
+											[FInstance:haxe.Int32]
+												haxe._Int64.___Int64
+												high:haxe.Int32
+										=
+										[If:haxe.Int32]
+											[Parenthesis:Bool]
+												[Binop:Bool]
+													[Local v(2220):Float:Float]
+													>
+													[Const:Int] 0
+											[Then:Int] [Const:Int] 2146435072
+											[Else:Int] [Const:Int] -1048576
+								[Else:Void] [Block:Void]
+									[Var av(2225):Float]
+										[If:Float]
+											[Binop:Bool]
+												[Local v(2220):Float:Float]
+												<
+												[Const:Int] 0
+											[Then:Float] [Block:Float]
+												[Unop:Float]
+													-
+													Prefix
+													[Local v(2220):Float:Float]
+											[Else:Float] [Block:Float] [Local v(2220):Float:Float]
+									[Var exp(2226):Int]
+										[Call:Int]
+											[Field:(v : Float) -> Int]
+												[TypeExpr Math:Class<Math>]
+												[FStatic:(v : Float) -> Int]
+													Math
+													floor:(v : Float) -> Int
+											[Binop:Float]
+												[Call:Float]
+													[Field:(v : Float) -> Float]
+														[TypeExpr Math:Class<Math>]
+														[FStatic:(v : Float) -> Float]
+															Math
+															log:(v : Float) -> Float
+													[Local av(2225):Float:Float]
+												/
+												[Const:Float] 0.6931471805599453
+									[If:Void]
+										[Binop:Bool]
+											[Local exp(2226):Int:Int]
+											>
+											[Const:Int] 1023
+										[Then:haxe.Int32] [Block:haxe.Int32]
+											[Binop:haxe.Int32]
+												[Field:haxe.Int32]
+													[Cast:haxe._Int64.__Int64] [Local i64(2224):haxe.Int64:haxe.Int64]
+													[FInstance:haxe.Int32]
+														haxe._Int64.___Int64
+														low:haxe.Int32
+												=
+												[Const:Int] -1
+											[Binop:haxe.Int32]
+												[Field:haxe.Int32]
+													[Cast:haxe._Int64.__Int64] [Local i64(2224):haxe.Int64:haxe.Int64]
+													[FInstance:haxe.Int32]
+														haxe._Int64.___Int64
+														high:haxe.Int32
+												=
+												[Const:Int] 2146435071
+										[Else:haxe.Int32] [Block:haxe.Int32]
+											[If:Void]
+												[Binop:Bool]
+													[Local exp(2226):Int:Int]
+													<=
+													[Const:Int] -1023
+												[Then:Float] [Block:Float]
+													[Binop:Int]
+														[Local exp(2226):Int:Int]
+														=
+														[Const:Int] -1023
+													[Binop:Float]
+														[Local av(2225):Float:Float]
+														=
+														[Binop:Float]
+															[Local av(2225):Float:Float]
+															/
+															[Const:Float] 2.2250738585072014e-308
+												[Else:Float] [Block:Float]
+													[Binop:Float]
+														[Local av(2225):Float:Float]
+														=
+														[Binop:Float]
+															[Binop:Float]
+																[Local av(2225):Float:Float]
+																/
+																[Call:Float]
+																	[Field:(v : Float, exp : Float) -> Float]
+																		[TypeExpr Math:Class<Math>]
+																		[FStatic:(v : Float, exp : Float) -> Float]
+																			Math
+																			pow:(v : Float, exp : Float) -> Float
+																	[Const:Int] 2
+																	[Local exp(2226):Int:Int]
+															-
+															[Const:Float] 1.0
+											[Var sig(2227):Float]
+												[Call:Float]
+													[Field:(v : Float) -> Float]
+														[TypeExpr Math:Class<Math>]
+														[FStatic:(v : Float) -> Float]
+															Math
+															fround:(v : Float) -> Float
+													[Binop:Float]
+														[Local av(2225):Float:Float]
+														*
+														[Const:Float] 4503599627370496.
+											[Var sig_l(2228):Int]
+												[Call:Int]
+													[Field:(x : Float) -> Int]
+														[TypeExpr Std:Class<Std>]
+														[FStatic:(x : Float) -> Int]
+															Std
+															int:(x : Float) -> Int
+													[Local sig(2227):Float:Float]
+											[Var sig_h(2229):Int]
+												[Call:Int]
+													[Field:(x : Float) -> Int]
+														[TypeExpr Std:Class<Std>]
+														[FStatic:(x : Float) -> Int]
+															Std
+															int:(x : Float) -> Int
+													[Binop:Float]
+														[Local sig(2227):Float:Float]
+														/
+														[Const:Float] 4294967296.0
+											[Binop:haxe.Int32]
+												[Field:haxe.Int32]
+													[Cast:haxe._Int64.__Int64] [Local i64(2224):haxe.Int64:haxe.Int64]
+													[FInstance:haxe.Int32]
+														haxe._Int64.___Int64
+														low:haxe.Int32
+												=
+												[Local sig_l(2228):Int:Int]
+											[Binop:haxe.Int32]
+												[Field:haxe.Int32]
+													[Cast:haxe._Int64.__Int64] [Local i64(2224):haxe.Int64:haxe.Int64]
+													[FInstance:haxe.Int32]
+														haxe._Int64.___Int64
+														high:haxe.Int32
+												=
+												[Binop:Int]
+													[Binop:Int]
+														[Parenthesis:Int]
+															[If:Int]
+																[Parenthesis:Bool]
+																	[Binop:Bool]
+																		[Local v(2220):Float:Float]
+																		<
+																		[Const:Int] 0
+																[Then:Int] [Const:Int] -2147483648
+																[Else:Int] [Const:Int] 0
+														|
+														[Binop:Int]
+															[Binop:Int]
+																[Local exp(2226):Int:Int]
+																+
+																[Const:Int] 1023
+															<<
+															[Const:Int] 20
+													|
+													[Local sig_h(2229):Int:Int]
+					[Local i64(2224):haxe.Int64:haxe.Int64]
+}

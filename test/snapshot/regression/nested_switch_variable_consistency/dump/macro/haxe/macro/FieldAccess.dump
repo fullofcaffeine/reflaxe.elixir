@@ -1,0 +1,8 @@
+enum haxe.macro.FieldAccess {
+	FInstance(c:haxe.macro.Ref<haxe.macro.ClassType>, params:Array<haxe.macro.Type>, cf:haxe.macro.Ref<haxe.macro.ClassField>);
+	FStatic(c:haxe.macro.Ref<haxe.macro.ClassType>, cf:haxe.macro.Ref<haxe.macro.ClassField>);
+	FAnon(cf:haxe.macro.Ref<haxe.macro.ClassField>);
+	FDynamic(s:String);
+	FClosure(c:Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>, cf:haxe.macro.Ref<haxe.macro.ClassField>);
+	FEnum(e:haxe.macro.Ref<haxe.macro.EnumType>, ef:haxe.macro.EnumField);
+}

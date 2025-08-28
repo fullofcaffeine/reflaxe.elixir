@@ -1,7 +1,0 @@
--cp /REDACTED_LOCAL_PATH
--cp /REDACTED_LOCAL_PATH
--cp /REDACTED_LOCAL_PATH
--cp /REDACTED_LOCAL_PATH
--D reflaxe_runtime
--main test.CleanExternTest
---interp

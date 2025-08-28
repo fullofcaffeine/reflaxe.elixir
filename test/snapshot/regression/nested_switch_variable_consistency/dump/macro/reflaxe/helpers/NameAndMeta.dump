@@ -1,0 +1,1 @@
+typedef reflaxe.helpers.NameAndMeta = { name : String, meta : Null<haxe.macro.MetaAccess> }

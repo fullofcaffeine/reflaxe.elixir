@@ -40,10 +40,10 @@ defmodule Users do
 
   @doc "Generated from Haxe update_user"
   def update_user(user, attrs) do
-    changeset = UserChangeset.changeset(user, attrs)
+    changeset = UserChangeset.changeset(_user, attrs)
 
     if ((changeset != nil)) do
-      %{"status" => "ok", "user" => user}
+      %{"status" => "ok", "user" => _user}
     else
       %{"status" => "error", "changeset" => changeset}
     end
@@ -51,7 +51,7 @@ defmodule Users do
 
   @doc "Generated from Haxe delete_user"
   def delete_user(user) do
-    Users.update_user(user, %{"active" => false})
+    Users.update_user(_user, %{"active" => false})
   end
 
   @doc "Generated from Haxe search_users"

@@ -1,5 +1,0 @@
--cp ../src
--cp .
--D reflaxe_runtime
--main test.PatternMatchingTest
---interp

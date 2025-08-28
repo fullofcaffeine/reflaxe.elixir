@@ -1,0 +1,6 @@
+@:flatEnum
+enum haxe.macro.CapturePolicy {
+	None;
+	WrapRef;
+	LoopVars;
+}

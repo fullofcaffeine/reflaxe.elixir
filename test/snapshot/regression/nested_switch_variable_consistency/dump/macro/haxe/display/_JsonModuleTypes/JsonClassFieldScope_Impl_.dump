@@ -1,0 +1,12 @@
+@:enum
+private class haxe.display._JsonModuleTypes.JsonClassFieldScope_Impl_ {
+
+	@:value(cast 0) @:impl @:enum
+	public static inline var Static:haxe.display.JsonClassFieldScope = [Cast:haxe.display.JsonClassFieldScope] [Const:Int] 0;
+
+	@:value(cast 1) @:impl @:enum
+	public static inline var Member:haxe.display.JsonClassFieldScope = [Cast:haxe.display.JsonClassFieldScope] [Const:Int] 1;
+
+	@:value(cast 2) @:impl @:enum
+	public static inline var Constructor:haxe.display.JsonClassFieldScope = [Cast:haxe.display.JsonClassFieldScope] [Const:Int] 2;
+}

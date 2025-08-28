@@ -1,0 +1,63 @@
+class reflaxe.data.EnumOptionData {
+
+	public function new[Function:(enumType : haxe.macro.EnumType, field : haxe.macro.EnumField, name : String) -> Void]
+		[Arg:haxe.macro.EnumType] [Local enumType(13226):haxe.macro.EnumType]
+		[Arg:haxe.macro.EnumField] [Local field(13227):haxe.macro.EnumField]
+		[Arg:String] [Local name(13228):String]
+		[Block:Array<reflaxe.data.EnumOptionArg>]
+			[Binop:haxe.macro.EnumType]
+				[Field:haxe.macro.EnumType]
+					[Const:reflaxe.data.EnumOptionData] this
+					[FInstance:haxe.macro.EnumType]
+						reflaxe.data.EnumOptionData
+						enumType:haxe.macro.EnumType
+				=
+				[Local enumType(13226):haxe.macro.EnumType:haxe.macro.EnumType]
+			[Binop:haxe.macro.EnumField]
+				[Field:haxe.macro.EnumField]
+					[Const:reflaxe.data.EnumOptionData] this
+					[FInstance:haxe.macro.EnumField]
+						reflaxe.data.EnumOptionData
+						field:haxe.macro.EnumField
+				=
+				[Local field(13227):haxe.macro.EnumField:haxe.macro.EnumField]
+			[Binop:String]
+				[Field:String]
+					[Const:reflaxe.data.EnumOptionData] this
+					[FInstance:String]
+						reflaxe.data.EnumOptionData
+						name:String
+				=
+				[Local name(13228):String:String]
+			[Binop:Array<reflaxe.data.EnumOptionArg>]
+				[Field:Array<reflaxe.data.EnumOptionArg>]
+					[Const:reflaxe.data.EnumOptionData] this
+					[FInstance:Array<reflaxe.data.EnumOptionArg>]
+						reflaxe.data.EnumOptionData
+						args:Array<reflaxe.data.EnumOptionArg>
+				=
+				[ArrayDecl:Array<reflaxe.data.EnumOptionArg>]
+
+	public var enumType(default,null):haxe.macro.EnumType;
+
+	public var field(default,null):haxe.macro.EnumField;
+
+	public var name(default,null):String;
+
+	public var args(default,null):Array<reflaxe.data.EnumOptionArg>;
+
+	public function addArg[Function:(arg : reflaxe.data.EnumOptionArg) -> Void]
+		[Arg:reflaxe.data.EnumOptionArg] [Local arg(13229):reflaxe.data.EnumOptionArg]
+		[Block:Int]
+			[Call:Int]
+				[Field:(x : reflaxe.data.EnumOptionArg) -> Int]
+					[Field:Array<reflaxe.data.EnumOptionArg>]
+						[Const:reflaxe.data.EnumOptionData] this
+						[FInstance:Array<reflaxe.data.EnumOptionArg>]
+							reflaxe.data.EnumOptionData
+							args:Array<reflaxe.data.EnumOptionArg>
+					[FInstance:(x : reflaxe.data.EnumOptionArg) -> Int]
+						Array<reflaxe.data.EnumOptionArg>
+						push:(x : Array.T) -> Int
+				[Local arg(13229):reflaxe.data.EnumOptionArg:reflaxe.data.EnumOptionArg]
+}

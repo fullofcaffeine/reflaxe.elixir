@@ -1,0 +1,3184 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.OperatorCompiler {
+
+	public function new[Function:(compiler : Dynamic, literalCompiler : reflaxe.elixir.helpers.LiteralCompiler) -> Void]
+		[Arg:Dynamic] [Local compiler(28055):Dynamic]
+		[Arg:reflaxe.elixir.helpers.LiteralCompiler] [Local literalCompiler(28056):reflaxe.elixir.helpers.LiteralCompiler]
+		[Block:reflaxe.elixir.helpers.LiteralCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.OperatorCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(28055):Dynamic:Dynamic]
+			[Binop:reflaxe.elixir.helpers.LiteralCompiler]
+				[Field:reflaxe.elixir.helpers.LiteralCompiler]
+					[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+					[FInstance:reflaxe.elixir.helpers.LiteralCompiler]
+						reflaxe.elixir.helpers.OperatorCompiler
+						literalCompiler:reflaxe.elixir.helpers.LiteralCompiler
+				=
+				[Local literalCompiler(28056):reflaxe.elixir.helpers.LiteralCompiler:reflaxe.elixir.helpers.LiteralCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	var literalCompiler:reflaxe.elixir.helpers.LiteralCompiler;
+
+	public function compileBinaryOperation[Function:(op : haxe.macro.Binop, e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> String]
+		[Arg:haxe.macro.Binop] [Local op(21008):haxe.macro.Binop]
+		[Arg:haxe.macro.TypedExpr] [Local e1(21009):haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local e2(21010):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var left(21037):Null<String>]
+				[If:Null<String>]
+					[Binop:Bool]
+						[Local op(21008):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Field:haxe.macro.Binop]
+							[TypeExpr haxe.macro.Binop:Enum<haxe.macro.Binop>]
+							[FEnum:haxe.macro.Binop]
+								haxe.macro.Binop
+								OpAssign
+					[Then:Null<String>] [Block:Null<String>]
+						[Meta:Null<String>]
+							:ast(switch (e1.expr) {
+	case TLocal(v) if (v.name == "_this"):
+		if (compiler.currentFunctionParameterMap.exists("_this")) {
+			compiler.currentFunctionParameterMap.get("_this");
+		} else if (compiler.isCompilingStructMethod && compiler.globalStructParameterMap.exists("_this")) {
+			compiler.globalStructParameterMap.get("_this");
+		} else {
+			compiler.compileExpression(e1);
+		};	
+	default:
+		compiler.compileExpression(e1);	
+})
+							[Block:Null<String>]
+								[Var `(21030):haxe.macro.TypedExprDef]
+									[Field:haxe.macro.TypedExprDef]
+										[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+								[If:Null<String>]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(21030):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										==
+										[Const:Int] 1
+									[Then:Null<String>] [Block:Null<String>]
+										[Var `(21031):haxe.macro.TVar]
+											[EnumParameter:haxe.macro.TVar]
+												[Local `(21030):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TLocal
+												0
+										[Block:Null<String>]
+											[Var v(21032):haxe.macro.TVar] [Local `(21031):haxe.macro.TVar:haxe.macro.TVar]
+											[If:Null<String>]
+												[Binop:Bool]
+													[Field:String]
+														[Local v(21032):haxe.macro.TVar:haxe.macro.TVar]
+														[FAnon:String] name:String
+													==
+													[Const:String] "_this"
+												[Then:Null<String>] [Block:Null<String>]
+													[If:Null<String>]
+														[Block:Bool]
+															[Var this(21033):haxe.IMap<String, String>]
+																[Field:Map<String, String>]
+																	[Field:reflaxe.elixir.ElixirCompiler]
+																		[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+																		[FInstance:reflaxe.elixir.ElixirCompiler]
+																			reflaxe.elixir.helpers.OperatorCompiler
+																			compiler:reflaxe.elixir.ElixirCompiler
+																	[FInstance:Map<String, String>]
+																		reflaxe.elixir.ElixirCompiler
+																		currentFunctionParameterMap:Map<String, String>
+															[Call:Bool]
+																[Field:(key : String) -> Bool]
+																	[Cast:haxe.ds.StringMap<String>] [Local this(21033):haxe.IMap<String, String>:haxe.IMap<String, String>]
+																	[FInstance:(key : String) -> Bool]
+																		haxe.ds.StringMap<String>
+																		exists:(key : String) -> Bool
+																[Const:String] "_this"
+														[Then:Null<String>] [Block:Null<String>]
+															[Block:Null<String>]
+																[Var this(21034):haxe.IMap<String, String>]
+																	[Field:Map<String, String>]
+																		[Field:reflaxe.elixir.ElixirCompiler]
+																			[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+																			[FInstance:reflaxe.elixir.ElixirCompiler]
+																				reflaxe.elixir.helpers.OperatorCompiler
+																				compiler:reflaxe.elixir.ElixirCompiler
+																		[FInstance:Map<String, String>]
+																			reflaxe.elixir.ElixirCompiler
+																			currentFunctionParameterMap:Map<String, String>
+																[Call:Null<String>]
+																	[Field:(key : String) -> Null<String>]
+																		[Cast:haxe.ds.StringMap<String>] [Local this(21034):haxe.IMap<String, String>:haxe.IMap<String, String>]
+																		[FInstance:(key : String) -> Null<String>]
+																			haxe.ds.StringMap<String>
+																			get:(key : String) -> Null<haxe.ds.StringMap.T>
+																	[Const:String] "_this"
+														[Else:Null<String>] [Block:Null<String>]
+															[If:Null<String>]
+																[Binop:Bool]
+																	[Field:Bool]
+																		[Field:reflaxe.elixir.ElixirCompiler]
+																			[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+																			[FInstance:reflaxe.elixir.ElixirCompiler]
+																				reflaxe.elixir.helpers.OperatorCompiler
+																				compiler:reflaxe.elixir.ElixirCompiler
+																		[FInstance:Bool]
+																			reflaxe.elixir.ElixirCompiler
+																			isCompilingStructMethod:Bool
+																	&&
+																	[Block:Bool]
+																		[Var this(21035):haxe.IMap<String, String>]
+																			[Field:Map<String, String>]
+																				[Field:reflaxe.elixir.ElixirCompiler]
+																					[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+																					[FInstance:reflaxe.elixir.ElixirCompiler]
+																						reflaxe.elixir.helpers.OperatorCompiler
+																						compiler:reflaxe.elixir.ElixirCompiler
+																				[FInstance:Map<String, String>]
+																					reflaxe.elixir.ElixirCompiler
+																					globalStructParameterMap:Map<String, String>
+																		[Call:Bool]
+																			[Field:(key : String) -> Bool]
+																				[Cast:haxe.ds.StringMap<String>] [Local this(21035):haxe.IMap<String, String>:haxe.IMap<String, String>]
+																				[FInstance:(key : String) -> Bool]
+																					haxe.ds.StringMap<String>
+																					exists:(key : String) -> Bool
+																			[Const:String] "_this"
+																[Then:Null<String>] [Block:Null<String>]
+																	[Block:Null<String>]
+																		[Var this(21036):haxe.IMap<String, String>]
+																			[Field:Map<String, String>]
+																				[Field:reflaxe.elixir.ElixirCompiler]
+																					[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+																					[FInstance:reflaxe.elixir.ElixirCompiler]
+																						reflaxe.elixir.helpers.OperatorCompiler
+																						compiler:reflaxe.elixir.ElixirCompiler
+																				[FInstance:Map<String, String>]
+																					reflaxe.elixir.ElixirCompiler
+																					globalStructParameterMap:Map<String, String>
+																		[Call:Null<String>]
+																			[Field:(key : String) -> Null<String>]
+																				[Cast:haxe.ds.StringMap<String>] [Local this(21036):haxe.IMap<String, String>:haxe.IMap<String, String>]
+																				[FInstance:(key : String) -> Null<String>]
+																					haxe.ds.StringMap<String>
+																					get:(key : String) -> Null<haxe.ds.StringMap.T>
+																			[Const:String] "_this"
+																[Else:Null<String>] [Block:Null<String>]
+																	[Call:Null<String>]
+																		[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																			[Field:reflaxe.elixir.ElixirCompiler]
+																				[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+																				[FInstance:reflaxe.elixir.ElixirCompiler]
+																					reflaxe.elixir.helpers.OperatorCompiler
+																					compiler:reflaxe.elixir.ElixirCompiler
+																			[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																				reflaxe.elixir.ElixirCompiler
+																				compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+																		[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																		[Const:Null<Bool>] null
+												[Else:Null<String>] [Block:Null<String>]
+													[Call:Null<String>]
+														[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+															[Field:reflaxe.elixir.ElixirCompiler]
+																[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+																[FInstance:reflaxe.elixir.ElixirCompiler]
+																	reflaxe.elixir.helpers.OperatorCompiler
+																	compiler:reflaxe.elixir.ElixirCompiler
+															[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																reflaxe.elixir.ElixirCompiler
+																compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+														[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Const:Null<Bool>] null
+									[Else:Null<String>] [Block:Null<String>]
+										[Call:Null<String>]
+											[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.OperatorCompiler
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+													reflaxe.elixir.ElixirCompiler
+													compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+											[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Const:Null<Bool>] null
+					[Else:Null<String>] [Block:Null<String>]
+						[Call:Null<String>]
+							[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+								[Field:reflaxe.elixir.ElixirCompiler]
+									[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+									[FInstance:reflaxe.elixir.ElixirCompiler]
+										reflaxe.elixir.helpers.OperatorCompiler
+										compiler:reflaxe.elixir.ElixirCompiler
+								[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+									reflaxe.elixir.ElixirCompiler
+									compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+							[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Const:Null<Bool>] null
+			[Var compiledRight(21038):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+						[Field:reflaxe.elixir.ElixirCompiler]
+							[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+							[FInstance:reflaxe.elixir.ElixirCompiler]
+								reflaxe.elixir.helpers.OperatorCompiler
+								compiler:reflaxe.elixir.ElixirCompiler
+						[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+							reflaxe.elixir.ElixirCompiler
+							compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+					[Local e2(21010):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Const:Null<Bool>] null
+			[Var right(21056):Null<String>]
+				[If:Null<String>]
+					[Binop:Bool]
+						[Local op(21008):haxe.macro.Binop:haxe.macro.Binop]
+						==
+						[Field:haxe.macro.Binop]
+							[TypeExpr haxe.macro.Binop:Enum<haxe.macro.Binop>]
+							[FEnum:haxe.macro.Binop]
+								haxe.macro.Binop
+								OpAssign
+					[Then:Null<String>] [Block:Null<String>]
+						[Var structParam(21039):Null<String>] [Const:Null<String>] null
+						[If:Void]
+							[Block:Bool]
+								[Var this(21042):haxe.IMap<String, String>]
+									[Field:Map<String, String>]
+										[Field:reflaxe.elixir.ElixirCompiler]
+											[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+											[FInstance:reflaxe.elixir.ElixirCompiler]
+												reflaxe.elixir.helpers.OperatorCompiler
+												compiler:reflaxe.elixir.ElixirCompiler
+										[FInstance:Map<String, String>]
+											reflaxe.elixir.ElixirCompiler
+											currentFunctionParameterMap:Map<String, String>
+								[Call:Bool]
+									[Field:(key : String) -> Bool]
+										[Cast:haxe.ds.StringMap<String>] [Local this(21042):haxe.IMap<String, String>:haxe.IMap<String, String>]
+										[FInstance:(key : String) -> Bool]
+											haxe.ds.StringMap<String>
+											exists:(key : String) -> Bool
+									[Const:String] "_this"
+							[Then:Null<String>] [Block:Null<String>]
+								[Binop:Null<String>]
+									[Local structParam(21039):Null<String>:Null<String>]
+									=
+									[Block:Null<String>]
+										[Var this(21046):haxe.IMap<String, String>]
+											[Field:Map<String, String>]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.OperatorCompiler
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:Map<String, String>]
+													reflaxe.elixir.ElixirCompiler
+													currentFunctionParameterMap:Map<String, String>
+										[Call:Null<String>]
+											[Field:(key : String) -> Null<String>]
+												[Cast:haxe.ds.StringMap<String>] [Local this(21046):haxe.IMap<String, String>:haxe.IMap<String, String>]
+												[FInstance:(key : String) -> Null<String>]
+													haxe.ds.StringMap<String>
+													get:(key : String) -> Null<haxe.ds.StringMap.T>
+											[Const:String] "_this"
+							[Else:Void] [Block:Void]
+								[If:Void]
+									[Binop:Bool]
+										[Field:Bool]
+											[Field:reflaxe.elixir.ElixirCompiler]
+												[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+												[FInstance:reflaxe.elixir.ElixirCompiler]
+													reflaxe.elixir.helpers.OperatorCompiler
+													compiler:reflaxe.elixir.ElixirCompiler
+											[FInstance:Bool]
+												reflaxe.elixir.ElixirCompiler
+												isCompilingStructMethod:Bool
+										&&
+										[Block:Bool]
+											[Var this(21050):haxe.IMap<String, String>]
+												[Field:Map<String, String>]
+													[Field:reflaxe.elixir.ElixirCompiler]
+														[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+														[FInstance:reflaxe.elixir.ElixirCompiler]
+															reflaxe.elixir.helpers.OperatorCompiler
+															compiler:reflaxe.elixir.ElixirCompiler
+													[FInstance:Map<String, String>]
+														reflaxe.elixir.ElixirCompiler
+														globalStructParameterMap:Map<String, String>
+											[Call:Bool]
+												[Field:(key : String) -> Bool]
+													[Cast:haxe.ds.StringMap<String>] [Local this(21050):haxe.IMap<String, String>:haxe.IMap<String, String>]
+													[FInstance:(key : String) -> Bool]
+														haxe.ds.StringMap<String>
+														exists:(key : String) -> Bool
+												[Const:String] "_this"
+									[Then:Null<String>] [Block:Null<String>]
+										[Binop:Null<String>]
+											[Local structParam(21039):Null<String>:Null<String>]
+											=
+											[Block:Null<String>]
+												[Var this(21054):haxe.IMap<String, String>]
+													[Field:Map<String, String>]
+														[Field:reflaxe.elixir.ElixirCompiler]
+															[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+															[FInstance:reflaxe.elixir.ElixirCompiler]
+																reflaxe.elixir.helpers.OperatorCompiler
+																compiler:reflaxe.elixir.ElixirCompiler
+														[FInstance:Map<String, String>]
+															reflaxe.elixir.ElixirCompiler
+															globalStructParameterMap:Map<String, String>
+												[Call:Null<String>]
+													[Field:(key : String) -> Null<String>]
+														[Cast:haxe.ds.StringMap<String>] [Local this(21054):haxe.IMap<String, String>:haxe.IMap<String, String>]
+														[FInstance:(key : String) -> Null<String>]
+															haxe.ds.StringMap<String>
+															get:(key : String) -> Null<haxe.ds.StringMap.T>
+													[Const:String] "_this"
+						[If:Null<String>]
+							[Binop:Bool]
+								[Local structParam(21039):Null<String>:Null<String>]
+								!=
+								[Const:Null<String>] null
+							[Then:String] [Block:String]
+								[Call:String]
+									[Field:(s : String, sub : String, by : String) -> String]
+										[TypeExpr StringTools:Class<StringTools>]
+										[FStatic:(s : String, sub : String, by : String) -> String]
+											StringTools
+											replace:(s : String, sub : String, by : String) -> String
+									[Local compiledRight(21038):Null<String>:Null<String>]
+									[Const:String] "_this"
+									[Local structParam(21039):Null<String>:Null<String>]
+							[Else:Null<String>] [Block:Null<String>] [Local compiledRight(21038):Null<String>:Null<String>]
+					[Else:Null<String>] [Block:Null<String>] [Local compiledRight(21038):Null<String>:Null<String>]
+			[Var result(21404):String]
+				[Meta:String]
+					:ast(switch (op) {
+	case OpAdd:
+		if (isStringConcatenation(e1, e2)) {
+			compileStringConcatenation(e1, e2);
+		} else {
+			"(${left} + ${right})";
+		};	
+	case OpSub:
+		"(${left} - ${right})";	
+	case OpMult:
+		"(${left} * ${right})";	
+	case OpDiv:
+		"(${left} / ${right})";	
+	case OpMod:
+		"rem(${left}, ${right})";	
+	case OpEq:
+		"(${left} == ${right})";	
+	case OpNotEq:
+		"(${left} != ${right})";	
+	case OpGt:
+		"(${left} > ${right})";	
+	case OpGte:
+		"(${left} >= ${right})";	
+	case OpLt:
+		"(${left} < ${right})";	
+	case OpLte:
+		"(${left} <= ${right})";	
+	case OpAnd:
+		"(${left} and ${right})";	
+	case OpOr:
+		"(${left} or ${right})";	
+	case OpXor:
+		"Bitwise.bxor(${left}, ${right})";	
+	case OpShl:
+		"Bitwise.bsl(${left}, ${right})";	
+	case OpShr:
+		"Bitwise.bsr(${left}, ${right})";	
+	case OpUShr:
+		"Bitwise.bsr(${left}, ${right})";	
+	case OpAssign:
+		if (isFieldAssignment(e1)) {
+			compileFieldAssignment(e1, e2);
+		} else {
+			"${left} = ${right}";
+		};	
+	case OpAssignOp(op):
+		compileCompoundAssignment(op, e1, e2, left, right);	
+	case OpBoolAnd:
+		"(${left} && ${right})";	
+	case OpBoolOr:
+		"(${left} || ${right})";	
+	case OpInterval:
+		"${left}..${right}";	
+	case OpArrow:
+		"${left} -> ${right}";	
+	case OpIn:
+		"${left} in ${right}";	
+	case OpNullCoal:
+		"${left} || ${right}";	
+})
+					[Switch:String]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local op(21008):haxe.macro.Binop:haxe.macro.Binop]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Call:Bool]
+											[Field:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool]
+												[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+												[FInstance:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool]
+													reflaxe.elixir.helpers.OperatorCompiler
+													isStringConcatenation:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool
+											[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local e2(21010):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Then:String] [Block:String]
+											[Call:String]
+												[Field:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> String]
+													[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+													[FInstance:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> String]
+														reflaxe.elixir.helpers.OperatorCompiler
+														compileStringConcatenation:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> String
+												[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Local e2(21010):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Const:String] "("
+															+
+															[Local left(21037):Null<String>:Null<String>]
+														+
+														[Const:String] " + "
+													+
+													[Local right(21056):Null<String>:Null<String>]
+												+
+												[Const:String] ")"
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " * "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 2
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " / "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 3
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " - "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 4
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Call:Bool]
+											[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+												[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+													reflaxe.elixir.helpers.OperatorCompiler
+													isFieldAssignment:(expr : haxe.macro.TypedExpr) -> Bool
+											[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Then:String] [Block:String]
+											[Call:String]
+												[Field:(fieldExpr : haxe.macro.TypedExpr, valueExpr : haxe.macro.TypedExpr) -> String]
+													[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+													[FInstance:(fieldExpr : haxe.macro.TypedExpr, valueExpr : haxe.macro.TypedExpr) -> String]
+														reflaxe.elixir.helpers.OperatorCompiler
+														compileFieldAssignment:(fieldExpr : haxe.macro.TypedExpr, valueExpr : haxe.macro.TypedExpr) -> String
+												[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Local e2(21010):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] ""
+														+
+														[Local left(21037):Null<String>:Null<String>]
+													+
+													[Const:String] " = "
+												+
+												[Local right(21056):Null<String>:Null<String>]
+						[Case:String]
+							[Const:Int] 5
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " == "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 6
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " != "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 7
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " > "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 8
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " >= "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 9
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " < "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 10
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " <= "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 11
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " and "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 12
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " or "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 13
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Bitwise.bxor("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 14
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " && "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 15
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] " || "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 16
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Bitwise.bsl("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 17
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Bitwise.bsr("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 18
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Bitwise.bsr("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 19
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "rem("
+													+
+													[Local left(21037):Null<String>:Null<String>]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21056):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 20
+							[Block:String]
+								[Var `(21402):haxe.macro.Binop]
+									[EnumParameter:haxe.macro.Binop]
+										[Local op(21008):haxe.macro.Binop:haxe.macro.Binop]
+										OpAssignOp
+										0
+								[Block:String]
+									[Var op(21403):haxe.macro.Binop] [Local `(21402):haxe.macro.Binop:haxe.macro.Binop]
+									[Block:String]
+										[Call:String]
+											[Field:(op : haxe.macro.Binop, e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr, left : String, right : String) -> String]
+												[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+												[FInstance:(op : haxe.macro.Binop, e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr, left : String, right : String) -> String]
+													reflaxe.elixir.helpers.OperatorCompiler
+													compileCompoundAssignment:(op : haxe.macro.Binop, e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr, left : String, right : String) -> String
+											[Local op(21403):haxe.macro.Binop:haxe.macro.Binop]
+											[Local e1(21009):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local e2(21010):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local left(21037):Null<String>:Null<String>]
+											[Local right(21056):Null<String>:Null<String>]
+						[Case:String]
+							[Const:Int] 21
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local left(21037):Null<String>:Null<String>]
+											+
+											[Const:String] ".."
+										+
+										[Local right(21056):Null<String>:Null<String>]
+						[Case:String]
+							[Const:Int] 22
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local left(21037):Null<String>:Null<String>]
+											+
+											[Const:String] " -> "
+										+
+										[Local right(21056):Null<String>:Null<String>]
+						[Case:String]
+							[Const:Int] 23
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local left(21037):Null<String>:Null<String>]
+											+
+											[Const:String] " in "
+										+
+										[Local right(21056):Null<String>:Null<String>]
+						[Case:String]
+							[Const:Int] 24
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local left(21037):Null<String>:Null<String>]
+											+
+											[Const:String] " || "
+										+
+										[Local right(21056):Null<String>:Null<String>]
+			[Return:Dynamic] [Local result(21404):String:String]
+
+	public function compileUnaryOperation[Function:(op : haxe.macro.Unop, postFix : Bool, e : haxe.macro.TypedExpr) -> String]
+		[Arg:haxe.macro.Unop] [Local op(21408):haxe.macro.Unop]
+		[Arg:Bool] [Local postFix(21409):Bool]
+		[Arg:haxe.macro.TypedExpr] [Local e(21410):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var operand(21411):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+						[Field:reflaxe.elixir.ElixirCompiler]
+							[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+							[FInstance:reflaxe.elixir.ElixirCompiler]
+								reflaxe.elixir.helpers.OperatorCompiler
+								compiler:reflaxe.elixir.ElixirCompiler
+						[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+							reflaxe.elixir.ElixirCompiler
+							compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+					[Local e(21410):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Const:Null<Bool>] null
+			[Var result(21412):String]
+				[Meta:String]
+					:ast(switch (op) {
+	case OpNot:
+		"not ${operand}";	
+	case OpNeg:
+		"-${operand}";	
+	case OpNegBits:
+		"Bitwise.bnot(${operand})";	
+	case OpIncrement:
+		if (postFix) {
+			"${operand} + 1";
+		} else {
+			"${operand} + 1";
+		};	
+	case OpDecrement:
+		if (postFix) {
+			"${operand} - 1";
+		} else {
+			"${operand} - 1";
+		};	
+	case OpSpread:
+		"...${operand}";	
+})
+					[Switch:String]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local op(21408):haxe.macro.Unop:haxe.macro.Unop]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Local postFix(21409):Bool:Bool]
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Local operand(21411):Null<String>:Null<String>]
+												+
+												[Const:String] " + 1"
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Local operand(21411):Null<String>:Null<String>]
+												+
+												[Const:String] " + 1"
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Local postFix(21409):Bool:Bool]
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Local operand(21411):Null<String>:Null<String>]
+												+
+												[Const:String] " - 1"
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Local operand(21411):Null<String>:Null<String>]
+												+
+												[Const:String] " - 1"
+						[Case:String]
+							[Const:Int] 2
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Const:String] "not "
+										+
+										[Local operand(21411):Null<String>:Null<String>]
+						[Case:String]
+							[Const:Int] 3
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Const:String] "-"
+										+
+										[Local operand(21411):Null<String>:Null<String>]
+						[Case:String]
+							[Const:Int] 4
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "Bitwise.bnot("
+											+
+											[Local operand(21411):Null<String>:Null<String>]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 5
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Const:String] "..."
+										+
+										[Local operand(21411):Null<String>:Null<String>]
+			[Return:Dynamic] [Local result(21412):String:String]
+
+	function isStringConcatenation[Function:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local e1(21057):haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local e2(21058):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(type : haxe.macro.Type) -> Bool]
+							[Field:reflaxe.elixir.ElixirCompiler]
+								[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+								[FInstance:reflaxe.elixir.ElixirCompiler]
+									reflaxe.elixir.helpers.OperatorCompiler
+									compiler:reflaxe.elixir.ElixirCompiler
+							[FInstance:(type : haxe.macro.Type) -> Bool]
+								reflaxe.elixir.ElixirCompiler
+								isStringType:(type : haxe.macro.Type) -> Bool
+						[Field:haxe.macro.Type]
+							[Local e1(21057):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.Type] t:haxe.macro.Type
+					||
+					[Call:Bool]
+						[Field:(type : haxe.macro.Type) -> Bool]
+							[Field:reflaxe.elixir.ElixirCompiler]
+								[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+								[FInstance:reflaxe.elixir.ElixirCompiler]
+									reflaxe.elixir.helpers.OperatorCompiler
+									compiler:reflaxe.elixir.ElixirCompiler
+							[FInstance:(type : haxe.macro.Type) -> Bool]
+								reflaxe.elixir.ElixirCompiler
+								isStringType:(type : haxe.macro.Type) -> Bool
+						[Field:haxe.macro.Type]
+							[Local e2(21058):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.Type] t:haxe.macro.Type
+
+	function compileStringConcatenation[Function:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> String]
+		[Arg:haxe.macro.TypedExpr] [Local e1(21072):haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local e2(21073):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var left(21082):Null<String>]
+				[Meta:Null<String>]
+					:ast(switch (e1.expr) {
+	case TConst(TString(s)):
+		literalCompiler.compileStringLiteral(s);	
+	case _:
+		compiler.compileExpression(e1);	
+})
+					[Block:Null<String>]
+						[Var `(21078):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local e1(21072):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[If:Null<String>]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(21078):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+								==
+								[Const:Int] 0
+							[Then:Null<String>] [Block:Null<String>]
+								[Var `(21079):haxe.macro.TConstant]
+									[EnumParameter:haxe.macro.TConstant]
+										[Local `(21078):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TConst
+										0
+								[If:Null<String>]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(21079):haxe.macro.TConstant:haxe.macro.TConstant]
+										==
+										[Const:Int] 2
+									[Then:String] [Block:String]
+										[Var `(21080):String]
+											[EnumParameter:String]
+												[Local `(21079):haxe.macro.TConstant:haxe.macro.TConstant]
+												TString
+												0
+										[Block:String]
+											[Var s(21081):String] [Local `(21080):String:String]
+											[Block:String]
+												[Call:String]
+													[Field:(s : String) -> String]
+														[Field:reflaxe.elixir.helpers.LiteralCompiler]
+															[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+															[FInstance:reflaxe.elixir.helpers.LiteralCompiler]
+																reflaxe.elixir.helpers.OperatorCompiler
+																literalCompiler:reflaxe.elixir.helpers.LiteralCompiler
+														[FInstance:(s : String) -> String]
+															reflaxe.elixir.helpers.LiteralCompiler
+															compileStringLiteral:(s : String) -> String
+													[Local s(21081):String:String]
+									[Else:Null<String>] [Block:Null<String>]
+										[Call:Null<String>]
+											[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.OperatorCompiler
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+													reflaxe.elixir.ElixirCompiler
+													compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+											[Local e1(21072):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Const:Null<Bool>] null
+							[Else:Null<String>] [Block:Null<String>]
+								[Call:Null<String>]
+									[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+										[Field:reflaxe.elixir.ElixirCompiler]
+											[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+											[FInstance:reflaxe.elixir.ElixirCompiler]
+												reflaxe.elixir.helpers.OperatorCompiler
+												compiler:reflaxe.elixir.ElixirCompiler
+										[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+											reflaxe.elixir.ElixirCompiler
+											compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+									[Local e1(21072):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Const:Null<Bool>] null
+			[Var right(21091):Null<String>]
+				[Meta:Null<String>]
+					:ast(switch (e2.expr) {
+	case TConst(TString(s)):
+		literalCompiler.compileStringLiteral(s);	
+	case _:
+		compiler.compileExpression(e2);	
+})
+					[Block:Null<String>]
+						[Var `(21087):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local e2(21073):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[If:Null<String>]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(21087):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+								==
+								[Const:Int] 0
+							[Then:Null<String>] [Block:Null<String>]
+								[Var `(21088):haxe.macro.TConstant]
+									[EnumParameter:haxe.macro.TConstant]
+										[Local `(21087):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TConst
+										0
+								[If:Null<String>]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(21088):haxe.macro.TConstant:haxe.macro.TConstant]
+										==
+										[Const:Int] 2
+									[Then:String] [Block:String]
+										[Var `(21089):String]
+											[EnumParameter:String]
+												[Local `(21088):haxe.macro.TConstant:haxe.macro.TConstant]
+												TString
+												0
+										[Block:String]
+											[Var s(21090):String] [Local `(21089):String:String]
+											[Block:String]
+												[Call:String]
+													[Field:(s : String) -> String]
+														[Field:reflaxe.elixir.helpers.LiteralCompiler]
+															[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+															[FInstance:reflaxe.elixir.helpers.LiteralCompiler]
+																reflaxe.elixir.helpers.OperatorCompiler
+																literalCompiler:reflaxe.elixir.helpers.LiteralCompiler
+														[FInstance:(s : String) -> String]
+															reflaxe.elixir.helpers.LiteralCompiler
+															compileStringLiteral:(s : String) -> String
+													[Local s(21090):String:String]
+									[Else:Null<String>] [Block:Null<String>]
+										[Call:Null<String>]
+											[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.OperatorCompiler
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+													reflaxe.elixir.ElixirCompiler
+													compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+											[Local e2(21073):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Const:Null<Bool>] null
+							[Else:Null<String>] [Block:Null<String>]
+								[Call:Null<String>]
+									[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+										[Field:reflaxe.elixir.ElixirCompiler]
+											[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+											[FInstance:reflaxe.elixir.ElixirCompiler]
+												reflaxe.elixir.helpers.OperatorCompiler
+												compiler:reflaxe.elixir.ElixirCompiler
+										[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+											reflaxe.elixir.ElixirCompiler
+											compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+									[Local e2(21073):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Const:Null<Bool>] null
+			[If:Void]
+				[Binop:Bool]
+					[Unop:Bool]
+						!
+						Prefix
+						[Call:Bool]
+							[Field:(type : haxe.macro.Type) -> Bool]
+								[Field:reflaxe.elixir.ElixirCompiler]
+									[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+									[FInstance:reflaxe.elixir.ElixirCompiler]
+										reflaxe.elixir.helpers.OperatorCompiler
+										compiler:reflaxe.elixir.ElixirCompiler
+								[FInstance:(type : haxe.macro.Type) -> Bool]
+									reflaxe.elixir.ElixirCompiler
+									isStringType:(type : haxe.macro.Type) -> Bool
+							[Field:haxe.macro.Type]
+								[Local e1(21072):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.Type] t:haxe.macro.Type
+					&&
+					[Call:Bool]
+						[Field:(type : haxe.macro.Type) -> Bool]
+							[Field:reflaxe.elixir.ElixirCompiler]
+								[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+								[FInstance:reflaxe.elixir.ElixirCompiler]
+									reflaxe.elixir.helpers.OperatorCompiler
+									compiler:reflaxe.elixir.ElixirCompiler
+							[FInstance:(type : haxe.macro.Type) -> Bool]
+								reflaxe.elixir.ElixirCompiler
+								isStringType:(type : haxe.macro.Type) -> Bool
+						[Field:haxe.macro.Type]
+							[Local e2(21073):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.Type] t:haxe.macro.Type
+				[Then:Null<String>] [Block:Null<String>]
+					[Binop:Null<String>]
+						[Local left(21082):Null<String>:Null<String>]
+						=
+						[Call:String]
+							[Field:(expr : haxe.macro.TypedExpr, compiled : String) -> String]
+								[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+								[FInstance:(expr : haxe.macro.TypedExpr, compiled : String) -> String]
+									reflaxe.elixir.helpers.OperatorCompiler
+									convertToString:(expr : haxe.macro.TypedExpr, compiled : String) -> String
+							[Local e1(21072):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Local left(21082):Null<String>:Null<String>]
+				[Else:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Call:Bool]
+								[Field:(type : haxe.macro.Type) -> Bool]
+									[Field:reflaxe.elixir.ElixirCompiler]
+										[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+										[FInstance:reflaxe.elixir.ElixirCompiler]
+											reflaxe.elixir.helpers.OperatorCompiler
+											compiler:reflaxe.elixir.ElixirCompiler
+									[FInstance:(type : haxe.macro.Type) -> Bool]
+										reflaxe.elixir.ElixirCompiler
+										isStringType:(type : haxe.macro.Type) -> Bool
+								[Field:haxe.macro.Type]
+									[Local e1(21072):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[FAnon:haxe.macro.Type] t:haxe.macro.Type
+							&&
+							[Unop:Bool]
+								!
+								Prefix
+								[Call:Bool]
+									[Field:(type : haxe.macro.Type) -> Bool]
+										[Field:reflaxe.elixir.ElixirCompiler]
+											[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+											[FInstance:reflaxe.elixir.ElixirCompiler]
+												reflaxe.elixir.helpers.OperatorCompiler
+												compiler:reflaxe.elixir.ElixirCompiler
+										[FInstance:(type : haxe.macro.Type) -> Bool]
+											reflaxe.elixir.ElixirCompiler
+											isStringType:(type : haxe.macro.Type) -> Bool
+									[Field:haxe.macro.Type]
+										[Local e2(21073):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[FAnon:haxe.macro.Type] t:haxe.macro.Type
+						[Then:Null<String>] [Block:Null<String>]
+							[Binop:Null<String>]
+								[Local right(21091):Null<String>:Null<String>]
+								=
+								[Call:String]
+									[Field:(expr : haxe.macro.TypedExpr, compiled : String) -> String]
+										[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+										[FInstance:(expr : haxe.macro.TypedExpr, compiled : String) -> String]
+											reflaxe.elixir.helpers.OperatorCompiler
+											convertToString:(expr : haxe.macro.TypedExpr, compiled : String) -> String
+									[Local e2(21073):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Local right(21091):Null<String>:Null<String>]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] ""
+							+
+							[Local left(21082):Null<String>:Null<String>]
+						+
+						[Const:String] " <> "
+					+
+					[Local right(21091):Null<String>:Null<String>]
+
+	function convertToString[Function:(expr : haxe.macro.TypedExpr, compiled : String) -> String]
+		[Arg:haxe.macro.TypedExpr] [Local expr(21092):haxe.macro.TypedExpr]
+		[Arg:String] [Local compiled(21093):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (expr.t) {
+	case TInst(t, _) if (t.get().name == "Int"):
+		"Integer.to_string(${compiled})";	
+	case TInst(t, _) if (t.get().name == "Float"):
+		"Float.to_string(${compiled})";	
+	case TAbstract(t, _) if (t.get().name == "Bool"):
+		"Atom.to_string(${compiled})";	
+	case _:
+		"to_string(${compiled})";	
+})
+					[Block:String]
+						[Var `(21102):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local expr(21092):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.Type] t:haxe.macro.Type
+						[Switch:String]
+							[EnumIndex:Int] [Local `(21102):haxe.macro.Type:haxe.macro.Type]
+							[Case:String]
+								[Const:Int] 2
+								[Block:String]
+									[Var `(21103):haxe.macro.Ref<haxe.macro.ClassType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Local `(21102):haxe.macro.Type:haxe.macro.Type]
+											TInst
+											0
+									[Var `(21104):Array<haxe.macro.Type>]
+										[EnumParameter:Array<haxe.macro.Type>]
+											[Local `(21102):haxe.macro.Type:haxe.macro.Type]
+											TInst
+											1
+									[Block:String]
+										[Var t(21105):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(21103):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+										[If:String]
+											[Binop:Bool]
+												[Field:String]
+													[Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local t(21105):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+													[FAnon:String] name:String
+												==
+												[Const:String] "Int"
+											[Then:String] [Block:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "Integer.to_string("
+														+
+														[Local compiled(21093):String:String]
+													+
+													[Const:String] ")"
+											[Else:String] [Block:String]
+												[Var t(21106):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(21103):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+												[If:String]
+													[Binop:Bool]
+														[Field:String]
+															[Call:haxe.macro.ClassType]
+																[Field:() -> haxe.macro.ClassType]
+																	[Local t(21106):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+																	[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+															[FAnon:String] name:String
+														==
+														[Const:String] "Float"
+													[Then:String] [Block:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "Float.to_string("
+																+
+																[Local compiled(21093):String:String]
+															+
+															[Const:String] ")"
+													[Else:String] [Block:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "to_string("
+																+
+																[Local compiled(21093):String:String]
+															+
+															[Const:String] ")"
+							[Case:String]
+								[Const:Int] 8
+								[Block:String]
+									[Var `(21107):haxe.macro.Ref<haxe.macro.AbstractType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.AbstractType>]
+											[Local `(21102):haxe.macro.Type:haxe.macro.Type]
+											TAbstract
+											0
+									[Var `(21108):Array<haxe.macro.Type>]
+										[EnumParameter:Array<haxe.macro.Type>]
+											[Local `(21102):haxe.macro.Type:haxe.macro.Type]
+											TAbstract
+											1
+									[Block:String]
+										[Var t(21109):haxe.macro.Ref<haxe.macro.AbstractType>] [Local `(21107):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+										[If:String]
+											[Binop:Bool]
+												[Field:String]
+													[Call:haxe.macro.AbstractType]
+														[Field:() -> haxe.macro.AbstractType]
+															[Local t(21109):haxe.macro.Ref<haxe.macro.AbstractType>:haxe.macro.Ref<haxe.macro.AbstractType>]
+															[FAnon:() -> haxe.macro.AbstractType] get:() -> haxe.macro.AbstractType
+													[FAnon:String] name:String
+												==
+												[Const:String] "Bool"
+											[Then:String] [Block:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "Atom.to_string("
+														+
+														[Local compiled(21093):String:String]
+													+
+													[Const:String] ")"
+											[Else:String] [Block:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "to_string("
+														+
+														[Local compiled(21093):String:String]
+													+
+													[Const:String] ")"
+							[Default:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "to_string("
+											+
+											[Local compiled(21093):String:String]
+										+
+										[Const:String] ")"
+
+	function compileCompoundAssignment[Function:(op : haxe.macro.Binop, e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr, left : String, right : String) -> String]
+		[Arg:haxe.macro.Binop] [Local op(21317):haxe.macro.Binop]
+		[Arg:haxe.macro.TypedExpr] [Local e1(21318):haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local e2(21319):haxe.macro.TypedExpr]
+		[Arg:String] [Local left(21320):String]
+		[Arg:String] [Local right(21321):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:() -> Bool]
+							[Field:reflaxe.elixir.ElixirCompiler]
+								[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+								[FInstance:reflaxe.elixir.ElixirCompiler]
+									reflaxe.elixir.helpers.OperatorCompiler
+									compiler:reflaxe.elixir.ElixirCompiler
+							[FInstance:() -> Bool]
+								reflaxe.elixir.ElixirCompiler
+								isStateThreadingEnabled:() -> Bool
+					&&
+					[Call:Bool]
+						[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+							[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+							[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+								reflaxe.elixir.helpers.OperatorCompiler
+								isFieldAssignment:(expr : haxe.macro.TypedExpr) -> Bool
+						[Local e1(21318):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Then:Void] [Block:Void]
+					[Meta:Void]
+						:ast(switch (e1.expr) {
+	case TField(obj, fieldAccess):
+		var isThisAccess = switch (obj.expr) {
+			case TConst(TThis):
+				true;			
+			case TLocal(v) if (v.name == "this" || v.name == "_this"):
+				true;			
+			case _:
+				false;			
+		};
+		if (isThisAccess) {
+			var fieldName = switch (fieldAccess) {
+				case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf):
+					NamingHelper.toSnakeCase(cf.get().name);				
+				case FEnum(_, ef):
+					NamingHelper.toSnakeCase(ef.name);				
+				case FClosure(_, cf):
+					NamingHelper.toSnakeCase(cf.get().name);				
+				case FDynamic(s):
+					NamingHelper.toSnakeCase(s);				
+				case _:
+					"unknown_field";				
+			};
+			var operation = switch (op) {
+				case OpAdd:
+					if (isStringConcatenation(e1, e2)) {
+						"struct.${fieldName} <> ${right}";
+					} else {
+						"struct.${fieldName} + ${right}";
+					};				
+				case OpSub:
+					"struct.${fieldName} - ${right}";				
+				case OpMult:
+					"struct.${fieldName} * ${right}";				
+				case OpDiv:
+					"struct.${fieldName} / ${right}";				
+				case OpMod:
+					"rem(struct.${fieldName}, ${right})";				
+				case OpXor:
+					"Bitwise.bxor(struct.${fieldName}, ${right})";				
+				case OpShl:
+					"Bitwise.bsl(struct.${fieldName}, ${right})";				
+				case OpShr:
+					"Bitwise.bsr(struct.${fieldName}, ${right})";				
+				case OpUShr:
+					"Bitwise.bsr(struct.${fieldName}, ${right})";				
+				case OpOr:
+					"struct.${fieldName} or ${right}";				
+				case OpAnd:
+					"struct.${fieldName} and ${right}";				
+				default:
+					"struct.${fieldName} UNKNOWN_COMPOUND_OP_${op} ${right}";				
+			};
+			return "struct = %{struct | ${fieldName}: ${operation}}";
+		};	
+	case _:
+})
+						[Block:Void]
+							[Var `(21370):haxe.macro.TypedExprDef]
+								[Field:haxe.macro.TypedExprDef]
+									[Local e1(21318):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+							[If:Void]
+								[Binop:Bool]
+									[EnumIndex:Int] [Local `(21370):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									==
+									[Const:Int] 4
+								[Then:Void] [Block:Void]
+									[Var `(21371):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(21370):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TField
+											0
+									[Var `(21372):haxe.macro.FieldAccess]
+										[EnumParameter:haxe.macro.FieldAccess]
+											[Local `(21370):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TField
+											1
+									[Block:Void]
+										[Var obj(21373):haxe.macro.TypedExpr] [Local `(21371):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Var fieldAccess(21374):haxe.macro.FieldAccess] [Local `(21372):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										[Block:Void]
+											[Var isThisAccess(21375):Bool]
+												[Meta:Bool]
+													:ast(switch (obj.expr) {
+	case TConst(TThis):
+		true;	
+	case TLocal(v) if (v.name == "this" || v.name == "_this"):
+		true;	
+	case _:
+		false;	
+})
+													[Block:Bool]
+														[Var `(21376):haxe.macro.TypedExprDef]
+															[Field:haxe.macro.TypedExprDef]
+																[Local obj(21373):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+														[Switch:Bool]
+															[EnumIndex:Int] [Local `(21376):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															[Case:Bool]
+																[Const:Int] 0
+																[Block:Bool]
+																	[Var `(21377):haxe.macro.TConstant]
+																		[EnumParameter:haxe.macro.TConstant]
+																			[Local `(21376):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TConst
+																			0
+																	[If:Bool]
+																		[Binop:Bool]
+																			[EnumIndex:Int] [Local `(21377):haxe.macro.TConstant:haxe.macro.TConstant]
+																			==
+																			[Const:Int] 5
+																		[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+																		[Else:Bool] [Block:Bool] [Const:Bool] false
+															[Case:Bool]
+																[Const:Int] 1
+																[Block:Bool]
+																	[Var `(21378):haxe.macro.TVar]
+																		[EnumParameter:haxe.macro.TVar]
+																			[Local `(21376):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TLocal
+																			0
+																	[Block:Bool]
+																		[Var v(21379):haxe.macro.TVar] [Local `(21378):haxe.macro.TVar:haxe.macro.TVar]
+																		[If:Bool]
+																			[Binop:Bool]
+																				[Binop:Bool]
+																					[Field:String]
+																						[Local v(21379):haxe.macro.TVar:haxe.macro.TVar]
+																						[FAnon:String] name:String
+																					==
+																					[Const:String] "this"
+																				||
+																				[Binop:Bool]
+																					[Field:String]
+																						[Local v(21379):haxe.macro.TVar:haxe.macro.TVar]
+																						[FAnon:String] name:String
+																					==
+																					[Const:String] "_this"
+																			[Then:Bool] [Block:Bool] [Const:Bool] true
+																			[Else:Bool] [Block:Bool] [Const:Bool] false
+															[Default:Bool] [Block:Bool] [Const:Bool] false
+											[If:Void]
+												[Local isThisAccess(21375):Bool:Bool]
+												[Then:Dynamic] [Block:Dynamic]
+													[Var fieldName(21380):String]
+														[Meta:String]
+															:ast(switch (fieldAccess) {
+	case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf):
+		NamingHelper.toSnakeCase(cf.get().name);	
+	case FEnum(_, ef):
+		NamingHelper.toSnakeCase(ef.name);	
+	case FClosure(_, cf):
+		NamingHelper.toSnakeCase(cf.get().name);	
+	case FDynamic(s):
+		NamingHelper.toSnakeCase(s);	
+	case _:
+		"unknown_field";	
+})
+															[Switch:String]
+																[Meta:Int]
+																	:exhaustive
+																	[EnumIndex:Int] [Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																[Case:String]
+																	[Const:Int] 0
+																	[Block:String]
+																		[Var `(21381):haxe.macro.Ref<haxe.macro.ClassType>]
+																			[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FInstance
+																				0
+																		[Var `(21382):Array<haxe.macro.Type>]
+																			[EnumParameter:Array<haxe.macro.Type>]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FInstance
+																				1
+																		[Var `(21383):haxe.macro.Ref<haxe.macro.ClassField>]
+																			[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FInstance
+																				2
+																		[Block:String]
+																			[Var cf(21384):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21383):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																			[Block:String]
+																				[Call:String]
+																					[Field:(camelCase : String) -> String]
+																						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																						[FStatic:(camelCase : String) -> String]
+																							reflaxe.elixir.helpers.NamingHelper
+																							toSnakeCase:(camelCase : String) -> String
+																					[Field:String]
+																						[Call:haxe.macro.ClassField]
+																							[Field:() -> haxe.macro.ClassField]
+																								[Local cf(21384):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																								[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																						[FAnon:String] name:String
+																[Case:String]
+																	[Const:Int] 1
+																	[Block:String]
+																		[Var `(21385):haxe.macro.Ref<haxe.macro.ClassType>]
+																			[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FStatic
+																				0
+																		[Var `(21386):haxe.macro.Ref<haxe.macro.ClassField>]
+																			[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FStatic
+																				1
+																		[Block:String]
+																			[Var cf(21387):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21386):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																			[Block:String]
+																				[Call:String]
+																					[Field:(camelCase : String) -> String]
+																						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																						[FStatic:(camelCase : String) -> String]
+																							reflaxe.elixir.helpers.NamingHelper
+																							toSnakeCase:(camelCase : String) -> String
+																					[Field:String]
+																						[Call:haxe.macro.ClassField]
+																							[Field:() -> haxe.macro.ClassField]
+																								[Local cf(21387):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																								[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																						[FAnon:String] name:String
+																[Case:String]
+																	[Const:Int] 2
+																	[Block:String]
+																		[Var `(21388):haxe.macro.Ref<haxe.macro.ClassField>]
+																			[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FAnon
+																				0
+																		[Block:String]
+																			[Var cf(21389):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21388):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																			[Block:String]
+																				[Call:String]
+																					[Field:(camelCase : String) -> String]
+																						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																						[FStatic:(camelCase : String) -> String]
+																							reflaxe.elixir.helpers.NamingHelper
+																							toSnakeCase:(camelCase : String) -> String
+																					[Field:String]
+																						[Call:haxe.macro.ClassField]
+																							[Field:() -> haxe.macro.ClassField]
+																								[Local cf(21389):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																								[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																						[FAnon:String] name:String
+																[Case:String]
+																	[Const:Int] 3
+																	[Block:String]
+																		[Var `(21390):String]
+																			[EnumParameter:String]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FDynamic
+																				0
+																		[Block:String]
+																			[Var s(21391):String] [Local `(21390):String:String]
+																			[Block:String]
+																				[Call:String]
+																					[Field:(camelCase : String) -> String]
+																						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																						[FStatic:(camelCase : String) -> String]
+																							reflaxe.elixir.helpers.NamingHelper
+																							toSnakeCase:(camelCase : String) -> String
+																					[Local s(21391):String:String]
+																[Case:String]
+																	[Const:Int] 4
+																	[Block:String]
+																		[Var `(21392):Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+																			[EnumParameter:Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FClosure
+																				0
+																		[Var `(21393):haxe.macro.Ref<haxe.macro.ClassField>]
+																			[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FClosure
+																				1
+																		[Block:String]
+																			[Var cf(21394):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21393):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																			[Block:String]
+																				[Call:String]
+																					[Field:(camelCase : String) -> String]
+																						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																						[FStatic:(camelCase : String) -> String]
+																							reflaxe.elixir.helpers.NamingHelper
+																							toSnakeCase:(camelCase : String) -> String
+																					[Field:String]
+																						[Call:haxe.macro.ClassField]
+																							[Field:() -> haxe.macro.ClassField]
+																								[Local cf(21394):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																								[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																						[FAnon:String] name:String
+																[Case:String]
+																	[Const:Int] 5
+																	[Block:String]
+																		[Var `(21395):haxe.macro.Ref<haxe.macro.EnumType>]
+																			[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FEnum
+																				0
+																		[Var `(21396):haxe.macro.EnumField]
+																			[EnumParameter:haxe.macro.EnumField]
+																				[Local fieldAccess(21374):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																				FEnum
+																				1
+																		[Block:String]
+																			[Var ef(21397):haxe.macro.EnumField] [Local `(21396):haxe.macro.EnumField:haxe.macro.EnumField]
+																			[Block:String]
+																				[Call:String]
+																					[Field:(camelCase : String) -> String]
+																						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																						[FStatic:(camelCase : String) -> String]
+																							reflaxe.elixir.helpers.NamingHelper
+																							toSnakeCase:(camelCase : String) -> String
+																					[Field:String]
+																						[Local ef(21397):haxe.macro.EnumField:haxe.macro.EnumField]
+																						[FAnon:String] name:String
+													[Var operation(21398):String]
+														[Meta:String]
+															:ast(switch (op) {
+	case OpAdd:
+		if (isStringConcatenation(e1, e2)) {
+			"struct.${fieldName} <> ${right}";
+		} else {
+			"struct.${fieldName} + ${right}";
+		};	
+	case OpSub:
+		"struct.${fieldName} - ${right}";	
+	case OpMult:
+		"struct.${fieldName} * ${right}";	
+	case OpDiv:
+		"struct.${fieldName} / ${right}";	
+	case OpMod:
+		"rem(struct.${fieldName}, ${right})";	
+	case OpXor:
+		"Bitwise.bxor(struct.${fieldName}, ${right})";	
+	case OpShl:
+		"Bitwise.bsl(struct.${fieldName}, ${right})";	
+	case OpShr:
+		"Bitwise.bsr(struct.${fieldName}, ${right})";	
+	case OpUShr:
+		"Bitwise.bsr(struct.${fieldName}, ${right})";	
+	case OpOr:
+		"struct.${fieldName} or ${right}";	
+	case OpAnd:
+		"struct.${fieldName} and ${right}";	
+	default:
+		"struct.${fieldName} UNKNOWN_COMPOUND_OP_${op} ${right}";	
+})
+															[Switch:String]
+																[EnumIndex:Int] [Local op(21317):haxe.macro.Binop:haxe.macro.Binop]
+																[Case:String]
+																	[Const:Int] 0
+																	[Block:String]
+																		[Block:String]
+																			[If:String]
+																				[Call:Bool]
+																					[Field:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool]
+																						[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+																						[FInstance:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool]
+																							reflaxe.elixir.helpers.OperatorCompiler
+																							isStringConcatenation:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool
+																					[Local e1(21318):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																					[Local e2(21319):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																				[Then:String] [Block:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Const:String] "struct."
+																								+
+																								[Local fieldName(21380):String:String]
+																							+
+																							[Const:String] " <> "
+																						+
+																						[Local right(21321):String:String]
+																				[Else:String] [Block:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Binop:String]
+																								[Const:String] "struct."
+																								+
+																								[Local fieldName(21380):String:String]
+																							+
+																							[Const:String] " + "
+																						+
+																						[Local right(21321):String:String]
+																[Case:String]
+																	[Const:Int] 1
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "struct."
+																						+
+																						[Local fieldName(21380):String:String]
+																					+
+																					[Const:String] " * "
+																				+
+																				[Local right(21321):String:String]
+																[Case:String]
+																	[Const:Int] 2
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "struct."
+																						+
+																						[Local fieldName(21380):String:String]
+																					+
+																					[Const:String] " / "
+																				+
+																				[Local right(21321):String:String]
+																[Case:String]
+																	[Const:Int] 3
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "struct."
+																						+
+																						[Local fieldName(21380):String:String]
+																					+
+																					[Const:String] " - "
+																				+
+																				[Local right(21321):String:String]
+																[Case:String]
+																	[Const:Int] 11
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "struct."
+																						+
+																						[Local fieldName(21380):String:String]
+																					+
+																					[Const:String] " and "
+																				+
+																				[Local right(21321):String:String]
+																[Case:String]
+																	[Const:Int] 12
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Const:String] "struct."
+																						+
+																						[Local fieldName(21380):String:String]
+																					+
+																					[Const:String] " or "
+																				+
+																				[Local right(21321):String:String]
+																[Case:String]
+																	[Const:Int] 13
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Const:String] "Bitwise.bxor(struct."
+																							+
+																							[Local fieldName(21380):String:String]
+																						+
+																						[Const:String] ", "
+																					+
+																					[Local right(21321):String:String]
+																				+
+																				[Const:String] ")"
+																[Case:String]
+																	[Const:Int] 16
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Const:String] "Bitwise.bsl(struct."
+																							+
+																							[Local fieldName(21380):String:String]
+																						+
+																						[Const:String] ", "
+																					+
+																					[Local right(21321):String:String]
+																				+
+																				[Const:String] ")"
+																[Case:String]
+																	[Const:Int] 17
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Const:String] "Bitwise.bsr(struct."
+																							+
+																							[Local fieldName(21380):String:String]
+																						+
+																						[Const:String] ", "
+																					+
+																					[Local right(21321):String:String]
+																				+
+																				[Const:String] ")"
+																[Case:String]
+																	[Const:Int] 18
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Const:String] "Bitwise.bsr(struct."
+																							+
+																							[Local fieldName(21380):String:String]
+																						+
+																						[Const:String] ", "
+																					+
+																					[Local right(21321):String:String]
+																				+
+																				[Const:String] ")"
+																[Case:String]
+																	[Const:Int] 19
+																	[Block:String]
+																		[Block:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Const:String] "rem(struct."
+																							+
+																							[Local fieldName(21380):String:String]
+																						+
+																						[Const:String] ", "
+																					+
+																					[Local right(21321):String:String]
+																				+
+																				[Const:String] ")"
+																[Default:String]
+																	[Block:String]
+																		[Binop:String]
+																			[Binop:String]
+																				[Binop:String]
+																					[Binop:String]
+																						[Binop:String]
+																							[Const:String] "struct."
+																							+
+																							[Local fieldName(21380):String:String]
+																						+
+																						[Const:String] " UNKNOWN_COMPOUND_OP_"
+																					+
+																					[Call:String]
+																						[Field:(s : Dynamic) -> String]
+																							[TypeExpr Std:Class<Std>]
+																							[FStatic:(s : Dynamic) -> String]
+																								Std
+																								string:(s : Dynamic) -> String
+																						[Local op(21317):haxe.macro.Binop:haxe.macro.Binop]
+																				+
+																				[Const:String] " "
+																			+
+																			[Local right(21321):String:String]
+													[Return:Dynamic]
+														[Binop:String]
+															[Binop:String]
+																[Binop:String]
+																	[Binop:String]
+																		[Const:String] "struct = %{struct | "
+																		+
+																		[Local fieldName(21380):String:String]
+																	+
+																	[Const:String] ": "
+																+
+																[Local operation(21398):String:String]
+															+
+															[Const:String] "}"
+								[Else:Void] [Block:Void]
+			[Var expandedOp(21399):String]
+				[Meta:String]
+					:ast(switch (op) {
+	case OpAdd:
+		if (isStringConcatenation(e1, e2)) {
+			"${left} <> ${right}";
+		} else {
+			"${left} + ${right}";
+		};	
+	case OpSub:
+		"${left} - ${right}";	
+	case OpMult:
+		"${left} * ${right}";	
+	case OpDiv:
+		"${left} / ${right}";	
+	case OpMod:
+		"rem(${left}, ${right})";	
+	case OpXor:
+		"Bitwise.bxor(${left}, ${right})";	
+	case OpShl:
+		"Bitwise.bsl(${left}, ${right})";	
+	case OpShr:
+		"Bitwise.bsr(${left}, ${right})";	
+	case OpUShr:
+		"Bitwise.bsr(${left}, ${right})";	
+	case OpOr:
+		"${left} or ${right}";	
+	case OpAnd:
+		"${left} and ${right}";	
+	default:
+		"${left} UNKNOWN_COMPOUND_OP_${op} ${right}";	
+})
+					[Switch:String]
+						[EnumIndex:Int] [Local op(21317):haxe.macro.Binop:haxe.macro.Binop]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Block:String]
+									[If:String]
+										[Call:Bool]
+											[Field:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool]
+												[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+												[FInstance:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool]
+													reflaxe.elixir.helpers.OperatorCompiler
+													isStringConcatenation:(e1 : haxe.macro.TypedExpr, e2 : haxe.macro.TypedExpr) -> Bool
+											[Local e1(21318):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local e2(21319):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Then:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] ""
+														+
+														[Local left(21320):String:String]
+													+
+													[Const:String] " <> "
+												+
+												[Local right(21321):String:String]
+										[Else:String] [Block:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] ""
+														+
+														[Local left(21320):String:String]
+													+
+													[Const:String] " + "
+												+
+												[Local right(21321):String:String]
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local left(21320):String:String]
+											+
+											[Const:String] " * "
+										+
+										[Local right(21321):String:String]
+						[Case:String]
+							[Const:Int] 2
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local left(21320):String:String]
+											+
+											[Const:String] " / "
+										+
+										[Local right(21321):String:String]
+						[Case:String]
+							[Const:Int] 3
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local left(21320):String:String]
+											+
+											[Const:String] " - "
+										+
+										[Local right(21321):String:String]
+						[Case:String]
+							[Const:Int] 11
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local left(21320):String:String]
+											+
+											[Const:String] " and "
+										+
+										[Local right(21321):String:String]
+						[Case:String]
+							[Const:Int] 12
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Local left(21320):String:String]
+											+
+											[Const:String] " or "
+										+
+										[Local right(21321):String:String]
+						[Case:String]
+							[Const:Int] 13
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Bitwise.bxor("
+													+
+													[Local left(21320):String:String]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21321):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 16
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Bitwise.bsl("
+													+
+													[Local left(21320):String:String]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21321):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 17
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Bitwise.bsr("
+													+
+													[Local left(21320):String:String]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21321):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 18
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Bitwise.bsr("
+													+
+													[Local left(21320):String:String]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21321):String:String]
+										+
+										[Const:String] ")"
+						[Case:String]
+							[Const:Int] 19
+							[Block:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "rem("
+													+
+													[Local left(21320):String:String]
+												+
+												[Const:String] ", "
+											+
+											[Local right(21321):String:String]
+										+
+										[Const:String] ")"
+						[Default:String]
+							[Block:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] ""
+													+
+													[Local left(21320):String:String]
+												+
+												[Const:String] " UNKNOWN_COMPOUND_OP_"
+											+
+											[Call:String]
+												[Field:(s : Dynamic) -> String]
+													[TypeExpr Std:Class<Std>]
+													[FStatic:(s : Dynamic) -> String]
+														Std
+														string:(s : Dynamic) -> String
+												[Local op(21317):haxe.macro.Binop:haxe.macro.Binop]
+										+
+										[Const:String] " "
+									+
+									[Local right(21321):String:String]
+			[Var result(21400):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] ""
+							+
+							[Local left(21320):String:String]
+						+
+						[Const:String] " = "
+					+
+					[Local expandedOp(21399):String:String]
+			[Return:Dynamic] [Local result(21400):String:String]
+
+	function isFieldAssignment[Function:(expr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local expr(21110):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (expr.expr) {
+	case TField(obj, fieldAccess):
+		true;	
+	case _:
+		false;	
+})
+					[Block:Bool]
+						[Var `(21116):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local expr(21110):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(21116):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+								==
+								[Const:Int] 4
+							[Then:Bool] [Block:Bool]
+								[Var `(21117):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(21116):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										0
+								[Var `(21118):haxe.macro.FieldAccess]
+									[EnumParameter:haxe.macro.FieldAccess]
+										[Local `(21116):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										1
+								[Block:Bool]
+									[Var obj(21119):haxe.macro.TypedExpr] [Local `(21117):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var fieldAccess(21120):haxe.macro.FieldAccess] [Local `(21118):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+									[Block:Bool] [Const:Bool] true
+							[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	function isComplexFieldAssignment[Function:(left : haxe.macro.TypedExpr, right : haxe.macro.TypedExpr, varName : String) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local left(28057):haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local right(28058):haxe.macro.TypedExpr]
+		[Arg:String] [Local varName(28059):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (right.expr) {
+	case TField(obj, fieldAccess):
+		switch (obj.expr) {
+			case TLocal(localVar):
+				localVar.name == varName;			
+			case _:
+				false;			
+		};	
+	case _:
+		false;	
+})
+					[Block:Bool]
+						[Var `(28071):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local right(28058):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(28071):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+								==
+								[Const:Int] 4
+							[Then:Bool] [Block:Bool]
+								[Var `(28072):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(28071):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										0
+								[Var `(28073):haxe.macro.FieldAccess]
+									[EnumParameter:haxe.macro.FieldAccess]
+										[Local `(28071):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										1
+								[Block:Bool]
+									[Var obj(28074):haxe.macro.TypedExpr] [Local `(28072):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var fieldAccess(28075):haxe.macro.FieldAccess] [Local `(28073):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+									[Block:Bool]
+										[Meta:Bool]
+											:ast(switch (obj.expr) {
+	case TLocal(localVar):
+		localVar.name == varName;	
+	case _:
+		false;	
+})
+											[Block:Bool]
+												[Var `(28076):haxe.macro.TypedExprDef]
+													[Field:haxe.macro.TypedExprDef]
+														[Local obj(28074):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+												[If:Bool]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(28076):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														==
+														[Const:Int] 1
+													[Then:Bool] [Block:Bool]
+														[Var `(28077):haxe.macro.TVar]
+															[EnumParameter:haxe.macro.TVar]
+																[Local `(28076):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TLocal
+																0
+														[Block:Bool]
+															[Var localVar(28078):haxe.macro.TVar] [Local `(28077):haxe.macro.TVar:haxe.macro.TVar]
+															[Block:Bool]
+																[Binop:Bool]
+																	[Field:String]
+																		[Local localVar(28078):haxe.macro.TVar:haxe.macro.TVar]
+																		[FAnon:String] name:String
+																	==
+																	[Local varName(28059):String:String]
+													[Else:Bool] [Block:Bool] [Const:Bool] false
+							[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	function compileFieldAssignment[Function:(fieldExpr : haxe.macro.TypedExpr, valueExpr : haxe.macro.TypedExpr) -> String]
+		[Arg:haxe.macro.TypedExpr] [Local fieldExpr(21121):haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local valueExpr(21122):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (fieldExpr.expr) {
+	case TField(obj, fieldAccess):
+		var isStateThreading = compiler.isStateThreadingEnabled();
+		var isThisAccess = false;
+		switch (obj.expr) {
+			case TConst(TThis):
+				isThisAccess = true;			
+			case TLocal(v) if (v.name == "this" || v.name == "_this"):
+				isThisAccess = true;			
+			case _:
+		};
+		var objCompiled = if (isStateThreading && isThisAccess) {
+			"struct";
+		} else {
+			compiler.compileExpression(obj);
+		};
+		var valueCompiled = compiler.compileExpression(valueExpr);
+		var fieldName = switch (fieldAccess) {
+			case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf):
+				NamingHelper.toSnakeCase(cf.get().name);			
+			case FEnum(_, ef):
+				NamingHelper.toSnakeCase(ef.name);			
+			case FClosure(_, cf):
+				NamingHelper.toSnakeCase(cf.get().name);			
+			case FDynamic(s):
+				NamingHelper.toSnakeCase(s);			
+			case _:
+				"unknown_field";			
+		};
+		if (isComplexFieldUpdatePattern(objCompiled, fieldName, valueExpr)) {
+			var complexUpdate = compileComplexFieldUpdate(objCompiled, fieldName, valueExpr);
+			if (isStateThreading && isThisAccess) {
+				return "struct = ${complexUpdate}";
+			};
+			return complexUpdate;
+		};
+		var mapUpdate = "%{${objCompiled} | ${fieldName}: ${valueCompiled}}";
+		if (isStateThreading && isThisAccess) {
+			return "struct = ${mapUpdate}";
+		};
+		return mapUpdate;	
+	case _:
+		return "${compiler.compileExpression(fieldExpr)} = ${compiler.compileExpression(valueExpr)}";	
+})
+				[Block:Void]
+					[Var `(21283):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local fieldExpr(21121):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(21283):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 4
+						[Then:Dynamic] [Block:Dynamic]
+							[Var `(21284):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(21283):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TField
+									0
+							[Var `(21285):haxe.macro.FieldAccess]
+								[EnumParameter:haxe.macro.FieldAccess]
+									[Local `(21283):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TField
+									1
+							[Block:Dynamic]
+								[Var obj(21286):haxe.macro.TypedExpr] [Local `(21284):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[Var fieldAccess(21287):haxe.macro.FieldAccess] [Local `(21285):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+								[Block:Dynamic]
+									[Var isStateThreading(21288):Bool]
+										[Call:Bool]
+											[Field:() -> Bool]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.OperatorCompiler
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:() -> Bool]
+													reflaxe.elixir.ElixirCompiler
+													isStateThreadingEnabled:() -> Bool
+									[Var isThisAccess(21289):Bool] [Const:Bool] false
+									[Meta:Void]
+										:ast(switch (obj.expr) {
+	case TConst(TThis):
+		isThisAccess = true;	
+	case TLocal(v) if (v.name == "this" || v.name == "_this"):
+		isThisAccess = true;	
+	case _:
+})
+										[Block:Void]
+											[Var `(21290):haxe.macro.TypedExprDef]
+												[Field:haxe.macro.TypedExprDef]
+													[Local obj(21286):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+											[Switch:Void]
+												[EnumIndex:Int] [Local `(21290):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												[Case:Void]
+													[Const:Int] 0
+													[Block:Void]
+														[Var `(21291):haxe.macro.TConstant]
+															[EnumParameter:haxe.macro.TConstant]
+																[Local `(21290):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TConst
+																0
+														[If:Void]
+															[Binop:Bool]
+																[EnumIndex:Int] [Local `(21291):haxe.macro.TConstant:haxe.macro.TConstant]
+																==
+																[Const:Int] 5
+															[Then:Bool] [Block:Bool]
+																[Block:Bool]
+																	[Binop:Bool]
+																		[Local isThisAccess(21289):Bool:Bool]
+																		=
+																		[Const:Bool] true
+															[Else:Void] [Block:Void]
+												[Case:Void]
+													[Const:Int] 1
+													[Block:Void]
+														[Var `(21292):haxe.macro.TVar]
+															[EnumParameter:haxe.macro.TVar]
+																[Local `(21290):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TLocal
+																0
+														[Block:Void]
+															[Var v(21293):haxe.macro.TVar] [Local `(21292):haxe.macro.TVar:haxe.macro.TVar]
+															[If:Void]
+																[Binop:Bool]
+																	[Binop:Bool]
+																		[Field:String]
+																			[Local v(21293):haxe.macro.TVar:haxe.macro.TVar]
+																			[FAnon:String] name:String
+																		==
+																		[Const:String] "this"
+																	||
+																	[Binop:Bool]
+																		[Field:String]
+																			[Local v(21293):haxe.macro.TVar:haxe.macro.TVar]
+																			[FAnon:String] name:String
+																		==
+																		[Const:String] "_this"
+																[Then:Bool] [Block:Bool]
+																	[Binop:Bool]
+																		[Local isThisAccess(21289):Bool:Bool]
+																		=
+																		[Const:Bool] true
+																[Else:Void] [Block:Void]
+												[Default:Void] [Block:Void]
+									[Var objCompiled(21294):Null<String>]
+										[If:Null<String>]
+											[Binop:Bool]
+												[Local isStateThreading(21288):Bool:Bool]
+												&&
+												[Local isThisAccess(21289):Bool:Bool]
+											[Then:String] [Block:String] [Const:String] "struct"
+											[Else:Null<String>] [Block:Null<String>]
+												[Call:Null<String>]
+													[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+														[Field:reflaxe.elixir.ElixirCompiler]
+															[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+															[FInstance:reflaxe.elixir.ElixirCompiler]
+																reflaxe.elixir.helpers.OperatorCompiler
+																compiler:reflaxe.elixir.ElixirCompiler
+														[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+															reflaxe.elixir.ElixirCompiler
+															compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+													[Local obj(21286):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Const:Null<Bool>] null
+									[Var valueCompiled(21295):Null<String>]
+										[Call:Null<String>]
+											[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+												[Field:reflaxe.elixir.ElixirCompiler]
+													[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+													[FInstance:reflaxe.elixir.ElixirCompiler]
+														reflaxe.elixir.helpers.OperatorCompiler
+														compiler:reflaxe.elixir.ElixirCompiler
+												[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+													reflaxe.elixir.ElixirCompiler
+													compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+											[Local valueExpr(21122):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Const:Null<Bool>] null
+									[Var fieldName(21296):String]
+										[Meta:String]
+											:ast(switch (fieldAccess) {
+	case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf):
+		NamingHelper.toSnakeCase(cf.get().name);	
+	case FEnum(_, ef):
+		NamingHelper.toSnakeCase(ef.name);	
+	case FClosure(_, cf):
+		NamingHelper.toSnakeCase(cf.get().name);	
+	case FDynamic(s):
+		NamingHelper.toSnakeCase(s);	
+	case _:
+		"unknown_field";	
+})
+											[Switch:String]
+												[Meta:Int]
+													:exhaustive
+													[EnumIndex:Int] [Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+												[Case:String]
+													[Const:Int] 0
+													[Block:String]
+														[Var `(21297):haxe.macro.Ref<haxe.macro.ClassType>]
+															[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FInstance
+																0
+														[Var `(21298):Array<haxe.macro.Type>]
+															[EnumParameter:Array<haxe.macro.Type>]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FInstance
+																1
+														[Var `(21299):haxe.macro.Ref<haxe.macro.ClassField>]
+															[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FInstance
+																2
+														[Block:String]
+															[Var cf(21300):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21299):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+															[Block:String]
+																[Call:String]
+																	[Field:(camelCase : String) -> String]
+																		[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																		[FStatic:(camelCase : String) -> String]
+																			reflaxe.elixir.helpers.NamingHelper
+																			toSnakeCase:(camelCase : String) -> String
+																	[Field:String]
+																		[Call:haxe.macro.ClassField]
+																			[Field:() -> haxe.macro.ClassField]
+																				[Local cf(21300):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																		[FAnon:String] name:String
+												[Case:String]
+													[Const:Int] 1
+													[Block:String]
+														[Var `(21301):haxe.macro.Ref<haxe.macro.ClassType>]
+															[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FStatic
+																0
+														[Var `(21302):haxe.macro.Ref<haxe.macro.ClassField>]
+															[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FStatic
+																1
+														[Block:String]
+															[Var cf(21303):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21302):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+															[Block:String]
+																[Call:String]
+																	[Field:(camelCase : String) -> String]
+																		[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																		[FStatic:(camelCase : String) -> String]
+																			reflaxe.elixir.helpers.NamingHelper
+																			toSnakeCase:(camelCase : String) -> String
+																	[Field:String]
+																		[Call:haxe.macro.ClassField]
+																			[Field:() -> haxe.macro.ClassField]
+																				[Local cf(21303):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																		[FAnon:String] name:String
+												[Case:String]
+													[Const:Int] 2
+													[Block:String]
+														[Var `(21304):haxe.macro.Ref<haxe.macro.ClassField>]
+															[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FAnon
+																0
+														[Block:String]
+															[Var cf(21305):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21304):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+															[Block:String]
+																[Call:String]
+																	[Field:(camelCase : String) -> String]
+																		[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																		[FStatic:(camelCase : String) -> String]
+																			reflaxe.elixir.helpers.NamingHelper
+																			toSnakeCase:(camelCase : String) -> String
+																	[Field:String]
+																		[Call:haxe.macro.ClassField]
+																			[Field:() -> haxe.macro.ClassField]
+																				[Local cf(21305):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																		[FAnon:String] name:String
+												[Case:String]
+													[Const:Int] 3
+													[Block:String]
+														[Var `(21306):String]
+															[EnumParameter:String]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FDynamic
+																0
+														[Block:String]
+															[Var s(21307):String] [Local `(21306):String:String]
+															[Block:String]
+																[Call:String]
+																	[Field:(camelCase : String) -> String]
+																		[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																		[FStatic:(camelCase : String) -> String]
+																			reflaxe.elixir.helpers.NamingHelper
+																			toSnakeCase:(camelCase : String) -> String
+																	[Local s(21307):String:String]
+												[Case:String]
+													[Const:Int] 4
+													[Block:String]
+														[Var `(21308):Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+															[EnumParameter:Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FClosure
+																0
+														[Var `(21309):haxe.macro.Ref<haxe.macro.ClassField>]
+															[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FClosure
+																1
+														[Block:String]
+															[Var cf(21310):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21309):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+															[Block:String]
+																[Call:String]
+																	[Field:(camelCase : String) -> String]
+																		[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																		[FStatic:(camelCase : String) -> String]
+																			reflaxe.elixir.helpers.NamingHelper
+																			toSnakeCase:(camelCase : String) -> String
+																	[Field:String]
+																		[Call:haxe.macro.ClassField]
+																			[Field:() -> haxe.macro.ClassField]
+																				[Local cf(21310):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																				[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																		[FAnon:String] name:String
+												[Case:String]
+													[Const:Int] 5
+													[Block:String]
+														[Var `(21311):haxe.macro.Ref<haxe.macro.EnumType>]
+															[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FEnum
+																0
+														[Var `(21312):haxe.macro.EnumField]
+															[EnumParameter:haxe.macro.EnumField]
+																[Local fieldAccess(21287):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																FEnum
+																1
+														[Block:String]
+															[Var ef(21313):haxe.macro.EnumField] [Local `(21312):haxe.macro.EnumField:haxe.macro.EnumField]
+															[Block:String]
+																[Call:String]
+																	[Field:(camelCase : String) -> String]
+																		[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+																		[FStatic:(camelCase : String) -> String]
+																			reflaxe.elixir.helpers.NamingHelper
+																			toSnakeCase:(camelCase : String) -> String
+																	[Field:String]
+																		[Local ef(21313):haxe.macro.EnumField:haxe.macro.EnumField]
+																		[FAnon:String] name:String
+									[If:Void]
+										[Call:Bool]
+											[Field:(objCompiled : String, fieldName : String, valueExpr : haxe.macro.TypedExpr) -> Bool]
+												[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+												[FInstance:(objCompiled : String, fieldName : String, valueExpr : haxe.macro.TypedExpr) -> Bool]
+													reflaxe.elixir.helpers.OperatorCompiler
+													isComplexFieldUpdatePattern:(objCompiled : String, fieldName : String, valueExpr : haxe.macro.TypedExpr) -> Bool
+											[Local objCompiled(21294):Null<String>:Null<String>]
+											[Local fieldName(21296):String:String]
+											[Local valueExpr(21122):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Then:Dynamic] [Block:Dynamic]
+											[Var complexUpdate(21314):String]
+												[Call:String]
+													[Field:(objCompiled : String, fieldName : String, valueExpr : haxe.macro.TypedExpr) -> String]
+														[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+														[FInstance:(objCompiled : String, fieldName : String, valueExpr : haxe.macro.TypedExpr) -> String]
+															reflaxe.elixir.helpers.OperatorCompiler
+															compileComplexFieldUpdate:(objCompiled : String, fieldName : String, valueExpr : haxe.macro.TypedExpr) -> String
+													[Local objCompiled(21294):Null<String>:Null<String>]
+													[Local fieldName(21296):String:String]
+													[Local valueExpr(21122):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[If:Void]
+												[Binop:Bool]
+													[Local isStateThreading(21288):Bool:Bool]
+													&&
+													[Local isThisAccess(21289):Bool:Bool]
+												[Then:Dynamic] [Block:Dynamic]
+													[Return:Dynamic]
+														[Binop:String]
+															[Const:String] "struct = "
+															+
+															[Local complexUpdate(21314):String:String]
+											[Return:Dynamic] [Local complexUpdate(21314):String:String]
+									[Var mapUpdate(21315):String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "%{"
+																+
+																[Local objCompiled(21294):Null<String>:Null<String>]
+															+
+															[Const:String] " | "
+														+
+														[Local fieldName(21296):String:String]
+													+
+													[Const:String] ": "
+												+
+												[Local valueCompiled(21295):Null<String>:Null<String>]
+											+
+											[Const:String] "}"
+									[If:Void]
+										[Binop:Bool]
+											[Local isStateThreading(21288):Bool:Bool]
+											&&
+											[Local isThisAccess(21289):Bool:Bool]
+										[Then:Dynamic] [Block:Dynamic]
+											[Return:Dynamic]
+												[Binop:String]
+													[Const:String] "struct = "
+													+
+													[Local mapUpdate(21315):String:String]
+									[Return:Dynamic] [Local mapUpdate(21315):String:String]
+						[Else:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Call:Null<String>]
+												[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+													[Field:reflaxe.elixir.ElixirCompiler]
+														[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+														[FInstance:reflaxe.elixir.ElixirCompiler]
+															reflaxe.elixir.helpers.OperatorCompiler
+															compiler:reflaxe.elixir.ElixirCompiler
+													[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+														reflaxe.elixir.ElixirCompiler
+														compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+												[Local fieldExpr(21121):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Const:Null<Bool>] null
+										+
+										[Const:String] " = "
+									+
+									[Call:Null<String>]
+										[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+											[Field:reflaxe.elixir.ElixirCompiler]
+												[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+												[FInstance:reflaxe.elixir.ElixirCompiler]
+													reflaxe.elixir.helpers.OperatorCompiler
+													compiler:reflaxe.elixir.ElixirCompiler
+											[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+												reflaxe.elixir.ElixirCompiler
+												compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+										[Local valueExpr(21122):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Const:Null<Bool>] null
+
+	function isComplexFieldUpdatePattern[Function:(objCompiled : String, fieldName : String, valueExpr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:String] [Local objCompiled(21170):String]
+		[Arg:String] [Local fieldName(21171):String]
+		[Arg:haxe.macro.TypedExpr] [Local valueExpr(21172):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (valueExpr.expr) {
+	case TBinop(op, e1, e2):
+		switch (e1.expr) {
+			case TField(obj, fieldAccess):
+				var leftFieldName = switch (fieldAccess) {
+					case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf):
+						cf.get().name;					
+					case FEnum(_, ef):
+						ef.name;					
+					case FClosure(_, cf):
+						cf.get().name;					
+					case FDynamic(s):
+						s;					
+					case _:
+						"unknown_field";					
+				};
+				var leftObjCompiled = compiler.compileExpression(obj);
+				return leftObjCompiled == objCompiled && leftFieldName == fieldName;			
+			case _:
+				return false;			
+		};	
+	case _:
+		return false;	
+})
+				[Block:Void]
+					[Var `(21243):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local valueExpr(21172):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(21243):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 3
+						[Then:Void] [Block:Void]
+							[Var `(21244):haxe.macro.Binop]
+								[EnumParameter:haxe.macro.Binop]
+									[Local `(21243):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									0
+							[Var `(21245):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(21243):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									1
+							[Var `(21246):haxe.macro.TypedExpr]
+								[EnumParameter:haxe.macro.TypedExpr]
+									[Local `(21243):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TBinop
+									2
+							[Block:Void]
+								[Var op(21247):haxe.macro.Binop] [Local `(21244):haxe.macro.Binop:haxe.macro.Binop]
+								[Var e1(21248):haxe.macro.TypedExpr] [Local `(21245):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[Var e2(21249):haxe.macro.TypedExpr] [Local `(21246):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[Block:Void]
+									[Meta:Void]
+										:ast(switch (e1.expr) {
+	case TField(obj, fieldAccess):
+		var leftFieldName = switch (fieldAccess) {
+			case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf):
+				cf.get().name;			
+			case FEnum(_, ef):
+				ef.name;			
+			case FClosure(_, cf):
+				cf.get().name;			
+			case FDynamic(s):
+				s;			
+			case _:
+				"unknown_field";			
+		};
+		var leftObjCompiled = compiler.compileExpression(obj);
+		return leftObjCompiled == objCompiled && leftFieldName == fieldName;	
+	case _:
+		return false;	
+})
+										[Block:Void]
+											[Var `(21250):haxe.macro.TypedExprDef]
+												[Field:haxe.macro.TypedExprDef]
+													[Local e1(21248):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+											[If:Void]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local `(21250):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													==
+													[Const:Int] 4
+												[Then:Dynamic] [Block:Dynamic]
+													[Var `(21251):haxe.macro.TypedExpr]
+														[EnumParameter:haxe.macro.TypedExpr]
+															[Local `(21250):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															TField
+															0
+													[Var `(21252):haxe.macro.FieldAccess]
+														[EnumParameter:haxe.macro.FieldAccess]
+															[Local `(21250):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															TField
+															1
+													[Block:Dynamic]
+														[Var obj(21253):haxe.macro.TypedExpr] [Local `(21251):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Var fieldAccess(21254):haxe.macro.FieldAccess] [Local `(21252):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+														[Block:Dynamic]
+															[Var leftFieldName(21255):String]
+																[Meta:String]
+																	:ast(switch (fieldAccess) {
+	case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf):
+		cf.get().name;	
+	case FEnum(_, ef):
+		ef.name;	
+	case FClosure(_, cf):
+		cf.get().name;	
+	case FDynamic(s):
+		s;	
+	case _:
+		"unknown_field";	
+})
+																	[Switch:String]
+																		[Meta:Int]
+																			:exhaustive
+																			[EnumIndex:Int] [Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																		[Case:String]
+																			[Const:Int] 0
+																			[Block:String]
+																				[Var `(21256):haxe.macro.Ref<haxe.macro.ClassType>]
+																					[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FInstance
+																						0
+																				[Var `(21257):Array<haxe.macro.Type>]
+																					[EnumParameter:Array<haxe.macro.Type>]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FInstance
+																						1
+																				[Var `(21258):haxe.macro.Ref<haxe.macro.ClassField>]
+																					[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FInstance
+																						2
+																				[Block:String]
+																					[Var cf(21259):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21258):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																					[Block:String]
+																						[Field:String]
+																							[Call:haxe.macro.ClassField]
+																								[Field:() -> haxe.macro.ClassField]
+																									[Local cf(21259):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																									[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																							[FAnon:String] name:String
+																		[Case:String]
+																			[Const:Int] 1
+																			[Block:String]
+																				[Var `(21260):haxe.macro.Ref<haxe.macro.ClassType>]
+																					[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FStatic
+																						0
+																				[Var `(21261):haxe.macro.Ref<haxe.macro.ClassField>]
+																					[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FStatic
+																						1
+																				[Block:String]
+																					[Var cf(21262):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21261):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																					[Block:String]
+																						[Field:String]
+																							[Call:haxe.macro.ClassField]
+																								[Field:() -> haxe.macro.ClassField]
+																									[Local cf(21262):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																									[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																							[FAnon:String] name:String
+																		[Case:String]
+																			[Const:Int] 2
+																			[Block:String]
+																				[Var `(21263):haxe.macro.Ref<haxe.macro.ClassField>]
+																					[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FAnon
+																						0
+																				[Block:String]
+																					[Var cf(21264):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21263):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																					[Block:String]
+																						[Field:String]
+																							[Call:haxe.macro.ClassField]
+																								[Field:() -> haxe.macro.ClassField]
+																									[Local cf(21264):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																									[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																							[FAnon:String] name:String
+																		[Case:String]
+																			[Const:Int] 3
+																			[Block:String]
+																				[Var `(21265):String]
+																					[EnumParameter:String]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FDynamic
+																						0
+																				[Block:String]
+																					[Var s(21266):String] [Local `(21265):String:String]
+																					[Block:String] [Local s(21266):String:String]
+																		[Case:String]
+																			[Const:Int] 4
+																			[Block:String]
+																				[Var `(21267):Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+																					[EnumParameter:Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FClosure
+																						0
+																				[Var `(21268):haxe.macro.Ref<haxe.macro.ClassField>]
+																					[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FClosure
+																						1
+																				[Block:String]
+																					[Var cf(21269):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(21268):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																					[Block:String]
+																						[Field:String]
+																							[Call:haxe.macro.ClassField]
+																								[Field:() -> haxe.macro.ClassField]
+																									[Local cf(21269):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+																									[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+																							[FAnon:String] name:String
+																		[Case:String]
+																			[Const:Int] 5
+																			[Block:String]
+																				[Var `(21270):haxe.macro.Ref<haxe.macro.EnumType>]
+																					[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FEnum
+																						0
+																				[Var `(21271):haxe.macro.EnumField]
+																					[EnumParameter:haxe.macro.EnumField]
+																						[Local fieldAccess(21254):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+																						FEnum
+																						1
+																				[Block:String]
+																					[Var ef(21272):haxe.macro.EnumField] [Local `(21271):haxe.macro.EnumField:haxe.macro.EnumField]
+																					[Block:String]
+																						[Field:String]
+																							[Local ef(21272):haxe.macro.EnumField:haxe.macro.EnumField]
+																							[FAnon:String] name:String
+															[Var leftObjCompiled(21273):Null<String>]
+																[Call:Null<String>]
+																	[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																		[Field:reflaxe.elixir.ElixirCompiler]
+																			[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+																			[FInstance:reflaxe.elixir.ElixirCompiler]
+																				reflaxe.elixir.helpers.OperatorCompiler
+																				compiler:reflaxe.elixir.ElixirCompiler
+																		[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+																			reflaxe.elixir.ElixirCompiler
+																			compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+																	[Local obj(21253):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																	[Const:Null<Bool>] null
+															[Return:Dynamic]
+																[Binop:Bool]
+																	[Binop:Bool]
+																		[Local leftObjCompiled(21273):Null<String>:Null<String>]
+																		==
+																		[Local objCompiled(21170):String:String]
+																	&&
+																	[Binop:Bool]
+																		[Local leftFieldName(21255):String:String]
+																		==
+																		[Local fieldName(21171):String:String]
+												[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+						[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+
+	function compileComplexFieldUpdate[Function:(objCompiled : String, fieldName : String, valueExpr : haxe.macro.TypedExpr) -> String]
+		[Arg:String] [Local objCompiled(21274):String]
+		[Arg:String] [Local fieldName(21275):String]
+		[Arg:haxe.macro.TypedExpr] [Local valueExpr(21276):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var valueCompiled(21277):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+						[Field:reflaxe.elixir.ElixirCompiler]
+							[Const:reflaxe.elixir.helpers.OperatorCompiler] this
+							[FInstance:reflaxe.elixir.ElixirCompiler]
+								reflaxe.elixir.helpers.OperatorCompiler
+								compiler:reflaxe.elixir.ElixirCompiler
+						[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+							reflaxe.elixir.ElixirCompiler
+							compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+					[Local valueExpr(21276):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Const:Null<Bool>] null
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] "%{"
+										+
+										[Local objCompiled(21274):String:String]
+									+
+									[Const:String] " | "
+								+
+								[Local fieldName(21275):String:String]
+							+
+							[Const:String] ": "
+						+
+						[Local valueCompiled(21277):Null<String>:Null<String>]
+					+
+					[Const:String] "}"
+}

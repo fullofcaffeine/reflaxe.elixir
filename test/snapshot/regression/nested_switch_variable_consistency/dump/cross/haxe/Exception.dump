@@ -1,0 +1,31 @@
+@:directlyUsed @:used
+extern class haxe.Exception {
+
+	function new(message:String, previous:Null<haxe.Exception>, native:Null<Any>):Void;
+
+	var message(get,never):String;
+
+	function get_message():String;
+
+	var stack(get,never):haxe.CallStack;
+
+	function get_stack():haxe.CallStack;
+
+	var previous(get,never):Null<haxe.Exception>;
+
+	function get_previous():Null<haxe.Exception>;
+
+	var native(get,never):Any;
+
+	function get_native():Any;
+
+	function unwrap():Any;
+
+	function toString():String;
+
+	function details():String;
+
+	static function caught(value:Any):haxe.Exception;
+
+	static function thrown(value:Any):Any;
+}

@@ -1,0 +1,750 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.ExceptionCompiler {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(28034):reflaxe.elixir.ElixirCompiler]
+		[Block:reflaxe.elixir.ElixirCompiler]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.ExceptionCompiler
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(28034):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	@:value({ finallyExpr : null })
+	public function compileTryExpression[Function:(e : haxe.macro.TypedExpr, catches : Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>, ?finallyExpr : Null<haxe.macro.TypedExpr>) -> String]
+		[Arg:haxe.macro.TypedExpr] [Local e(20963):haxe.macro.TypedExpr]
+		[Arg:Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>] [Local catches(20964):Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>]
+		[Arg:Null<haxe.macro.TypedExpr>]
+			[Local finallyExpr(20965):Null<haxe.macro.TypedExpr>]
+			[Const:Null<haxe.macro.TypedExpr>] null
+		[Block:Dynamic]
+			[Var tryStr(20966):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+						[Field:reflaxe.elixir.ElixirCompiler]
+							[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+							[FInstance:reflaxe.elixir.ElixirCompiler]
+								reflaxe.elixir.helpers.ExceptionCompiler
+								compiler:reflaxe.elixir.ElixirCompiler
+						[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+							reflaxe.elixir.ElixirCompiler
+							compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+					[Local e(20963):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Const:Null<Bool>] null
+			[Var rescueClauses(20967):Array<String>] [ArrayDecl:Array<String>]
+			[Var catchAllClause(20968):Null<String>] [Const:Null<String>] null
+			[Block:Void]
+				[Var `(20985):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(20985):Int:Int]
+						<
+						[Field:Int]
+							[Local catches(20964):Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>:Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>]
+							[FInstance:Int]
+								Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>
+								length:Int
+					[Block:Void]
+						[Var c(20969):{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }]
+							[Array:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }]
+								[Local catches(20964):Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>:Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>]
+								[Local `(20985):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(20985):Int:Int]
+						[Var clause(20984):{ isGeneric : Bool, code : String }]
+							[Call:{ isGeneric : Bool, code : String }]
+								[Field:(v : haxe.macro.TVar, expr : haxe.macro.TypedExpr) -> { isGeneric : Bool, code : String }]
+									[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+									[FInstance:(v : haxe.macro.TVar, expr : haxe.macro.TypedExpr) -> { isGeneric : Bool, code : String }]
+										reflaxe.elixir.helpers.ExceptionCompiler
+										compileCatchClause:(v : haxe.macro.TVar, expr : haxe.macro.TypedExpr) -> { isGeneric : Bool, code : String }
+								[Field:haxe.macro.TVar]
+									[Local c(20969):{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }]
+									[FAnon:haxe.macro.TVar] v:haxe.macro.TVar
+								[Field:haxe.macro.TypedExpr]
+									[Local c(20969):{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }]
+									[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+						[If:Void]
+							[Field:Bool]
+								[Local clause(20984):{ isGeneric : Bool, code : String }:{ isGeneric : Bool, code : String }]
+								[FAnon:Bool] isGeneric:Bool
+							[Then:Null<String>] [Block:Null<String>]
+								[Binop:Null<String>]
+									[Local catchAllClause(20968):Null<String>:Null<String>]
+									=
+									[Field:String]
+										[Local clause(20984):{ isGeneric : Bool, code : String }:{ isGeneric : Bool, code : String }]
+										[FAnon:String] code:String
+							[Else:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local rescueClauses(20967):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Field:String]
+										[Local clause(20984):{ isGeneric : Bool, code : String }:{ isGeneric : Bool, code : String }]
+										[FAnon:String] code:String
+			[Var result(20986):StringBuf] [New:StringBuf] StringBuf
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(20986):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "try do\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(20986):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Call:String]
+					[Field:(code : String, ?level : Int) -> String]
+						[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+						[FInstance:(code : String, ?level : Int) -> String]
+							reflaxe.elixir.helpers.ExceptionCompiler
+							indent:(code : String, ?level : Int) -> String
+					[Local tryStr(20966):Null<String>:Null<String>]
+					[Const:Null<Int>] null
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(20986):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "\n"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local rescueClauses(20967):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(20986):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "rescue\n"
+					[Block:Void]
+						[Var `(21004):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(21004):Int:Int]
+								<
+								[Field:Int]
+									[Local rescueClauses(20967):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var clause(21003):String]
+									[Array:String]
+										[Local rescueClauses(20967):Array<String>:Array<String>]
+										[Local `(21004):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(21004):Int:Int]
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(20986):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Call:String]
+										[Field:(code : String, ?level : Int) -> String]
+											[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+											[FInstance:(code : String, ?level : Int) -> String]
+												reflaxe.elixir.helpers.ExceptionCompiler
+												indent:(code : String, ?level : Int) -> String
+										[Local clause(21003):String:String]
+										[Const:Null<Int>] null
+								[Call:Void]
+									[Field:(x : String) -> Void]
+										[Local result(20986):StringBuf:StringBuf]
+										[FInstance:(x : String) -> Void]
+											StringBuf
+											add:(x : add.T) -> Void
+									[Const:String] "\n"
+			[If:Void]
+				[Binop:Bool]
+					[Local catchAllClause(20968):Null<String>:Null<String>]
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Field:Int]
+								[Local rescueClauses(20967):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							==
+							[Const:Int] 0
+						[Then:Void] [Block:Void]
+							[Call:Void]
+								[Field:(x : String) -> Void]
+									[Local result(20986):StringBuf:StringBuf]
+									[FInstance:(x : String) -> Void]
+										StringBuf
+										add:(x : add.T) -> Void
+								[Const:String] "rescue\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(20986):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Call:String]
+							[Field:(code : String, ?level : Int) -> String]
+								[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+								[FInstance:(code : String, ?level : Int) -> String]
+									reflaxe.elixir.helpers.ExceptionCompiler
+									indent:(code : String, ?level : Int) -> String
+							[Local catchAllClause(20968):Null<String>:Null<String>]
+							[Const:Null<Int>] null
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(20986):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "\n"
+			[If:Void]
+				[Binop:Bool]
+					[Local finallyExpr(20965):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+					!=
+					[Const:Null<haxe.macro.TypedExpr>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(20986):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "after\n"
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(20986):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Call:String]
+							[Field:(code : String, ?level : Int) -> String]
+								[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+								[FInstance:(code : String, ?level : Int) -> String]
+									reflaxe.elixir.helpers.ExceptionCompiler
+									indent:(code : String, ?level : Int) -> String
+							[Call:Null<String>]
+								[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+									[Field:reflaxe.elixir.ElixirCompiler]
+										[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+										[FInstance:reflaxe.elixir.ElixirCompiler]
+											reflaxe.elixir.helpers.ExceptionCompiler
+											compiler:reflaxe.elixir.ElixirCompiler
+									[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+										reflaxe.elixir.ElixirCompiler
+										compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+								[Local finallyExpr(20965):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+								[Const:Null<Bool>] null
+							[Const:Null<Int>] null
+					[Call:Void]
+						[Field:(x : String) -> Void]
+							[Local result(20986):StringBuf:StringBuf]
+							[FInstance:(x : String) -> Void]
+								StringBuf
+								add:(x : add.T) -> Void
+						[Const:String] "\n"
+			[Call:Void]
+				[Field:(x : String) -> Void]
+					[Local result(20986):StringBuf:StringBuf]
+					[FInstance:(x : String) -> Void]
+						StringBuf
+						add:(x : add.T) -> Void
+				[Const:String] "end"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(20986):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	function compileCatchClause[Function:(v : haxe.macro.TVar, expr : haxe.macro.TypedExpr) -> { isGeneric : Bool, code : String }]
+		[Arg:haxe.macro.TVar] [Local v(20970):haxe.macro.TVar]
+		[Arg:haxe.macro.TypedExpr] [Local expr(20971):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Var varName(20972):String]
+				[Call:String]
+					[Field:(v : haxe.macro.TVar) -> String]
+						[Field:reflaxe.elixir.helpers.VariableCompiler]
+							[Field:reflaxe.elixir.ElixirCompiler]
+								[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+								[FInstance:reflaxe.elixir.ElixirCompiler]
+									reflaxe.elixir.helpers.ExceptionCompiler
+									compiler:reflaxe.elixir.ElixirCompiler
+							[FInstance:reflaxe.elixir.helpers.VariableCompiler]
+								reflaxe.elixir.ElixirCompiler
+								variableCompiler:reflaxe.elixir.helpers.VariableCompiler
+						[FInstance:(v : haxe.macro.TVar) -> String]
+							reflaxe.elixir.helpers.VariableCompiler
+							compileLocalVariable:(v : haxe.macro.TVar) -> String
+					[Local v(20970):haxe.macro.TVar:haxe.macro.TVar]
+			[Var bodyStr(20973):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+						[Field:reflaxe.elixir.ElixirCompiler]
+							[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+							[FInstance:reflaxe.elixir.ElixirCompiler]
+								reflaxe.elixir.helpers.ExceptionCompiler
+								compiler:reflaxe.elixir.ElixirCompiler
+						[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+							reflaxe.elixir.ElixirCompiler
+							compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+					[Local expr(20971):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Const:Null<Bool>] null
+			[Var exceptionPattern(20983):{ pattern : String, isGeneric : Bool }]
+				[Call:{ pattern : String, isGeneric : Bool }]
+					[Field:(type : haxe.macro.Type) -> { pattern : String, isGeneric : Bool }]
+						[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+						[FInstance:(type : haxe.macro.Type) -> { pattern : String, isGeneric : Bool }]
+							reflaxe.elixir.helpers.ExceptionCompiler
+							getExceptionPattern:(type : haxe.macro.Type) -> { pattern : String, isGeneric : Bool }
+					[Field:haxe.macro.Type]
+						[Local v(20970):haxe.macro.TVar:haxe.macro.TVar]
+						[FAnon:haxe.macro.Type] t:haxe.macro.Type
+			[If:Void]
+				[Field:Bool]
+					[Local exceptionPattern(20983):{ pattern : String, isGeneric : Bool }:{ pattern : String, isGeneric : Bool }]
+					[FAnon:Bool] isGeneric:Bool
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[ObjectDecl:{ isGeneric : Bool, code : String }]
+							code: [Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Local varName(20972):String:String]
+									+
+									[Const:String] " -> "
+								+
+								[Local bodyStr(20973):Null<String>:Null<String>]
+							isGeneric: [Const:Bool] true
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[ObjectDecl:{ isGeneric : Bool, code : String }]
+							code: [Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] ""
+												+
+												[Field:String]
+													[Local exceptionPattern(20983):{ pattern : String, isGeneric : Bool }:{ pattern : String, isGeneric : Bool }]
+													[FAnon:String] pattern:String
+											+
+											[Const:String] " = "
+										+
+										[Local varName(20972):String:String]
+									+
+									[Const:String] " -> "
+								+
+								[Local bodyStr(20973):Null<String>:Null<String>]
+							isGeneric: [Const:Bool] false
+
+	function getExceptionPattern[Function:(type : haxe.macro.Type) -> { pattern : String, isGeneric : Bool }]
+		[Arg:haxe.macro.Type] [Local type(20974):haxe.macro.Type]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:{ pattern : String, isGeneric : Bool }]
+					:ast(switch (type) {
+	case TInst(t, _):
+		var className = t.get().name;
+		switch (className) {
+			case "Dynamic", "Any", "Exception":
+				{ pattern : "_", isGeneric : true };			
+			default:
+				{ pattern : "%${className}{}", isGeneric : false };			
+		};	
+	default:
+		{ pattern : "_", isGeneric : true };	
+})
+					[If:{ pattern : String, isGeneric : Bool }]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local type(20974):haxe.macro.Type:haxe.macro.Type]
+							==
+							[Const:Int] 2
+						[Then:{ pattern : String, isGeneric : Bool }] [Block:{ pattern : String, isGeneric : Bool }]
+							[Var `(20979):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local type(20974):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									0
+							[Var `(20980):Array<haxe.macro.Type>]
+								[EnumParameter:Array<haxe.macro.Type>]
+									[Local type(20974):haxe.macro.Type:haxe.macro.Type]
+									TInst
+									1
+							[Block:{ pattern : String, isGeneric : Bool }]
+								[Var t(20981):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(20979):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Block:{ pattern : String, isGeneric : Bool }]
+									[Var className(20982):String]
+										[Field:String]
+											[Call:haxe.macro.ClassType]
+												[Field:() -> haxe.macro.ClassType]
+													[Local t(20981):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+													[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+											[FAnon:String] name:String
+									[Meta:{ pattern : String, isGeneric : Bool }]
+										:ast(switch (className) {
+	case "Dynamic", "Any", "Exception":
+		{ pattern : "_", isGeneric : true };	
+	default:
+		{ pattern : "%${className}{}", isGeneric : false };	
+})
+										[Switch:{ pattern : String, isGeneric : Bool }]
+											[Local className(20982):String:String]
+											[Case:{ pattern : String, isGeneric : Bool }]
+												[Const:String] "Any"
+												[Const:String] "Dynamic"
+												[Const:String] "Exception"
+												[Block:{ pattern : String, isGeneric : Bool }]
+													[Block:{ pattern : String, isGeneric : Bool }]
+														[ObjectDecl:{ pattern : String, isGeneric : Bool }]
+															pattern: [Const:String] "_"
+															isGeneric: [Const:Bool] true
+											[Default:{ pattern : String, isGeneric : Bool }]
+												[Block:{ pattern : String, isGeneric : Bool }]
+													[ObjectDecl:{ pattern : String, isGeneric : Bool }]
+														pattern: [Binop:String]
+															[Binop:String]
+																[Const:String] "%"
+																+
+																[Local className(20982):String:String]
+															+
+															[Const:String] "{}"
+														isGeneric: [Const:Bool] false
+						[Else:{ pattern : String, isGeneric : Bool }] [Block:{ pattern : String, isGeneric : Bool }]
+							[ObjectDecl:{ pattern : String, isGeneric : Bool }]
+								pattern: [Const:String] "_"
+								isGeneric: [Const:Bool] true
+
+	public function compileThrowExpression[Function:(expr : haxe.macro.TypedExpr) -> String]
+		[Arg:haxe.macro.TypedExpr] [Local expr(28035):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Var exprStr(28036):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+						[Field:reflaxe.elixir.ElixirCompiler]
+							[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+							[FInstance:reflaxe.elixir.ElixirCompiler]
+								reflaxe.elixir.helpers.ExceptionCompiler
+								compiler:reflaxe.elixir.ElixirCompiler
+						[FInstance:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>]
+							reflaxe.elixir.ElixirCompiler
+							compileExpression:(expr : haxe.macro.TypedExpr, ?topLevel : Bool) -> Null<String>
+					[Local expr(28035):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Const:Null<Bool>] null
+			[If:Void]
+				[Call:Bool]
+					[Field:(expr : haxe.macro.TypedExpr) -> Bool]
+						[Const:reflaxe.elixir.helpers.ExceptionCompiler] this
+						[FInstance:(expr : haxe.macro.TypedExpr) -> Bool]
+							reflaxe.elixir.helpers.ExceptionCompiler
+							isExceptionStruct:(expr : haxe.macro.TypedExpr) -> Bool
+					[Local expr(28035):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Const:String] "raise "
+							+
+							[Local exprStr(28036):Null<String>:Null<String>]
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "throw("
+								+
+								[Local exprStr(28036):Null<String>:Null<String>]
+							+
+							[Const:String] ")"
+
+	public function compileRethrowExpression[Function:() -> String] [Block:Dynamic] [Return:Dynamic] [Const:String] "reraise(__exception__, __STACKTRACE__)"
+
+	function isExceptionStruct[Function:(expr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:haxe.macro.TypedExpr] [Local expr(28037):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (expr.t) {
+	case TInst(t, _):
+		var cls = t.get();
+		cls.name.endsWith("Exception") || cls.name.endsWith("Error");	
+	default:
+		false;	
+})
+					[Block:Bool]
+						[Var `(28043):haxe.macro.Type]
+							[Field:haxe.macro.Type]
+								[Local expr(28037):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.Type] t:haxe.macro.Type
+						[If:Bool]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(28043):haxe.macro.Type:haxe.macro.Type]
+								==
+								[Const:Int] 2
+							[Then:Bool] [Block:Bool]
+								[Var `(28044):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local `(28043):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										0
+								[Var `(28045):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local `(28043):haxe.macro.Type:haxe.macro.Type]
+										TInst
+										1
+								[Block:Bool]
+									[Var t(28046):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(28044):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Block:Bool]
+										[Var cls(28047):haxe.macro.ClassType]
+											[Call:haxe.macro.ClassType]
+												[Field:() -> haxe.macro.ClassType]
+													[Local t(28046):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+													[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+										[Binop:Bool]
+											[Call:Bool]
+												[Field:(s : String, end : String) -> Bool]
+													[TypeExpr StringTools:{ Statics StringTools }]
+													[FStatic:(s : String, end : String) -> Bool]
+														StringTools
+														endsWith:(s : String, end : String) -> Bool
+												[Field:String]
+													[Local cls(28047):haxe.macro.ClassType:haxe.macro.ClassType]
+													[FAnon:String] name:String
+												[Const:String] "Exception"
+											||
+											[Call:Bool]
+												[Field:(s : String, end : String) -> Bool]
+													[TypeExpr StringTools:{ Statics StringTools }]
+													[FStatic:(s : String, end : String) -> Bool]
+														StringTools
+														endsWith:(s : String, end : String) -> Bool
+												[Field:String]
+													[Local cls(28047):haxe.macro.ClassType:haxe.macro.ClassType]
+													[FAnon:String] name:String
+												[Const:String] "Error"
+							[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	public function compileExceptionDefinition[Function:(classType : haxe.macro.ClassType) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(28048):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var moduleName(28049):String]
+				[Field:String]
+					[Local classType(28048):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var fields(28050):Array<String>] [ArrayDecl:Array<String>]
+			[Call:Int]
+				[Field:(x : String) -> Int]
+					[Local fields(28050):Array<String>:Array<String>]
+					[FInstance:(x : String) -> Int]
+						Array<String>
+						push:(x : Array.T) -> Int
+				[Const:String] "message: nil"
+			[Block:Void]
+				[Var `(28053):Int] [Const:Int] 0
+				[Var `(28054):Array<haxe.macro.ClassField>]
+					[Call:Array<haxe.macro.ClassField>]
+						[Field:() -> Array<haxe.macro.ClassField>]
+							[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+								[Local classType(28048):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+							[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(28053):Int:Int]
+						<
+						[Field:Int]
+							[Local `(28054):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+					[Block:Void]
+						[Var field(28051):haxe.macro.ClassField]
+							[Array:haxe.macro.ClassField]
+								[Local `(28054):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+								[Local `(28053):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(28053):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Field:Bool]
+									[Local field(28051):haxe.macro.ClassField:haxe.macro.ClassField]
+									[FAnon:Bool] isPublic:Bool
+								&&
+								[Unop:Bool]
+									!
+									Prefix
+									[Call:Bool]
+										[Field:(s : String, start : String) -> Bool]
+											[TypeExpr StringTools:{ Statics StringTools }]
+											[FStatic:(s : String, start : String) -> Bool]
+												StringTools
+												startsWith:(s : String, start : String) -> Bool
+										[Field:String]
+											[Local field(28051):haxe.macro.ClassField:haxe.macro.ClassField]
+											[FAnon:String] name:String
+										[Const:String] "_"
+							[Then:Int] [Block:Int]
+								[Var fieldName(28052):String]
+									[Call:String]
+										[Field:(s : String, sub : String, by : String) -> String]
+											[TypeExpr StringTools:Class<StringTools>]
+											[FStatic:(s : String, sub : String, by : String) -> String]
+												StringTools
+												replace:(s : String, sub : String, by : String) -> String
+										[Field:String]
+											[Local field(28051):haxe.macro.ClassField:haxe.macro.ClassField]
+											[FAnon:String] name:String
+										[Const:String] "_"
+										[Const:String] "_"
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local fields(28050):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Local fieldName(28052):String:String]
+										+
+										[Const:String] ": nil"
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "defexception ["
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local fields(28050):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] "]"
+
+	@:value({ level : 2 })
+	function indent[Function:(code : String, ?level : Int) -> String]
+		[Arg:String] [Local code(20987):String]
+		[Arg:Int]
+			[Local level(20988):Int]
+			[Const:Int] 2
+		[Block:Dynamic]
+			[Var spaces(20993):String]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Block:Array<String>]
+							[Var `(20989):Array<String>] [ArrayDecl:Array<String>]
+							[Block:Void]
+								[Var `(20991):Int] [Const:Int] 0
+								[Var `(20992):Int] [Local level(20988):Int:Int]
+								[While:Void]
+									[Binop:Bool]
+										[Local `(20991):Int:Int]
+										<
+										[Local `(20992):Int:Int]
+									[Block:Int]
+										[Var i(20990):Int]
+											[Unop:Int]
+												++
+												Postfix
+												[Local `(20991):Int:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local `(20989):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Const:String] " "
+							[Local `(20989):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] ""
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Block:Array<String>]
+							[Var _this(20996):Array<String>]
+								[Call:Array<String>]
+									[Field:(delimiter : String) -> Array<String>]
+										[Local code(20987):String:String]
+										[FInstance:(delimiter : String) -> Array<String>]
+											String
+											split:(delimiter : String) -> Array<String>
+									[Const:String] "\n"
+							[Block:Array<String>]
+								[Var `(20998):Array<String>] [ArrayDecl:Array<String>]
+								[Block:Void]
+									[Var `(20999):Int] [Const:Int] 0
+									[Var `(21000):Array<String>] [Local _this(20996):Array<String>:Array<String>]
+									[While:Void]
+										[Binop:Bool]
+											[Local `(20999):Int:Int]
+											<
+											[Field:Int]
+												[Local `(21000):Array<String>:Array<String>]
+												[FInstance:Int]
+													Array<String>
+													length:Int
+										[Block:Void]
+											[Var v(21001):String]
+												[Array:String]
+													[Local `(21000):Array<String>:Array<String>]
+													[Local `(20999):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(20999):Int:Int]
+											[Call:Int]
+												[Field:(x : String) -> Int]
+													[Local `(20998):Array<String>:Array<String>]
+													[FInstance:(x : String) -> Int]
+														Array<String>
+														push:(x : Array.T) -> Int
+												[Call:String]
+													[Function:(line : String) -> String]
+														[Arg:String] [Local line(21002):String]
+														[Block:Dynamic]
+															[Return:Dynamic]
+																[Binop:String]
+																	[Local spaces(20993):String:String]
+																	+
+																	[Local line(21002):String:String]
+													[Local v(21001):String:String]
+								[Local `(20998):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+}

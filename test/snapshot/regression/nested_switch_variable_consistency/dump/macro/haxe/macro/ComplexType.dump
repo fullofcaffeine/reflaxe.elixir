@@ -1,0 +1,10 @@
+enum haxe.macro.ComplexType {
+	TPath(p:haxe.macro.TypePath);
+	TFunction(args:Array<haxe.macro.ComplexType>, ret:haxe.macro.ComplexType);
+	TAnonymous(fields:Array<haxe.macro.Field>);
+	TParent(t:haxe.macro.ComplexType);
+	TExtend(p:Array<haxe.macro.TypePath>, fields:Array<haxe.macro.Field>);
+	TOptional(t:haxe.macro.ComplexType);
+	TNamed(n:String, t:haxe.macro.ComplexType);
+	TIntersection(tl:Array<haxe.macro.ComplexType>);
+}

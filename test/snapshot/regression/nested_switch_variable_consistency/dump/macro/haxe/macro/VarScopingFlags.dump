@@ -1,0 +1,10 @@
+enum haxe.macro.VarScopingFlags {
+	VarHoisting;
+	NoShadowing;
+	NoCatchVarShadowing;
+	ReserveCurrentTopLevelSymbol;
+	ReserveAllTopLevelSymbols;
+	ReserveAllTypesFlat;
+	ReserveNames(names:Array<String>);
+	SwitchCasesNoBlocks;
+}

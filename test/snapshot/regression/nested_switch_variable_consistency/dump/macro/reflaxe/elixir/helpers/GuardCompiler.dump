@@ -1,0 +1,2503 @@
+class reflaxe.elixir.helpers.GuardCompiler {
+
+	public function new[Function:() -> Void] [Block:Void]
+
+	public function compileGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25242):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local guardExpr(25242):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (getExprType(guardExpr)) {
+	case "TBinop":
+		compileBinaryGuard(guardExpr);	
+	case "TUnop":
+		compileUnaryGuard(guardExpr);	
+	case "TCall":
+		compileFunctionGuard(guardExpr);	
+	case "TLocal":
+		compileVariableGuard(guardExpr);	
+	case "TConst":
+		compileConstantGuard(guardExpr);	
+	case "TParenthesis":
+		compileParenthesesGuard(guardExpr);	
+	case _:
+		compileComplexGuard(guardExpr);	
+})
+					[Block:String]
+						[Var `(25338):String]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.GuardCompiler] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.GuardCompiler
+										getExprType:(expr : Dynamic) -> String
+								[Local guardExpr(25242):Dynamic:Dynamic]
+						[Switch:String]
+							[Local `(25338):String:String]
+							[Case:String]
+								[Const:String] "TBinop"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileBinaryGuard:(guardExpr : Dynamic) -> String
+											[Local guardExpr(25242):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TCall"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileFunctionGuard:(guardExpr : Dynamic) -> String
+											[Local guardExpr(25242):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TConst"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileConstantGuard:(guardExpr : Dynamic) -> String
+											[Local guardExpr(25242):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TLocal"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileVariableGuard:(guardExpr : Dynamic) -> String
+											[Local guardExpr(25242):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TParenthesis"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileParenthesesGuard:(guardExpr : Dynamic) -> String
+											[Local guardExpr(25242):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TUnop"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileUnaryGuard:(guardExpr : Dynamic) -> String
+											[Local guardExpr(25242):Dynamic:Dynamic]
+							[Default:String]
+								[Block:String]
+									[Call:String]
+										[Field:(guardExpr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.GuardCompiler] this
+											[FInstance:(guardExpr : Dynamic) -> String]
+												reflaxe.elixir.helpers.GuardCompiler
+												compileComplexGuard:(guardExpr : Dynamic) -> String
+										[Local guardExpr(25242):Dynamic:Dynamic]
+
+	function compileBinaryGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25244):Dynamic]
+		[Block:Void]
+			[Var binop(25245):{ op : String, e2 : Unknown<35>, e1 : Unknown<34> }]
+				[Field:Dynamic]
+					[Local guardExpr(25244):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var left(25303):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							compileGuardOperand:(expr : Dynamic) -> String
+					[Field:Unknown<34>]
+						[Local binop(25245):{ op : String, e2 : Unknown<35>, e1 : Unknown<34> }:{ op : String, e2 : Unknown<35>, e1 : Unknown<34> }]
+						[FAnon:Unknown<34>] e1:Unknown<34>
+			[Var right(25304):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							compileGuardOperand:(expr : Dynamic) -> String
+					[Field:Unknown<35>]
+						[Local binop(25245):{ op : String, e2 : Unknown<35>, e1 : Unknown<34> }:{ op : String, e2 : Unknown<35>, e1 : Unknown<34> }]
+						[FAnon:Unknown<35>] e2:Unknown<35>
+			[Var op(25306):String]
+				[Call:String]
+					[Field:(op : String) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(op : String) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							convertGuardOperator:(op : String) -> String
+					[Field:String]
+						[Local binop(25245):{ op : String, e2 : Unknown<35>, e1 : Unknown<34> }:{ op : String, e2 : Unknown<35>, e1 : Unknown<34> }]
+						[FAnon:String] op:String
+			[If:Void]
+				[Call:Bool]
+					[Field:(op : String) -> Bool]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(op : String) -> Bool]
+							reflaxe.elixir.helpers.GuardCompiler
+							isLogicalOperator:(op : String) -> Bool
+					[Field:String]
+						[Local binop(25245):{ op : String, e2 : Unknown<35>, e1 : Unknown<34> }:{ op : String, e2 : Unknown<35>, e1 : Unknown<34> }]
+						[FAnon:String] op:String
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Local left(25303):String:String]
+										+
+										[Const:String] " "
+									+
+									[Local op(25306):String:String]
+								+
+								[Const:String] " "
+							+
+							[Local right(25304):String:String]
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Local left(25303):String:String]
+										+
+										[Const:String] " "
+									+
+									[Local op(25306):String:String]
+								+
+								[Const:String] " "
+							+
+							[Local right(25304):String:String]
+
+	function compileUnaryGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25308):Dynamic]
+		[Block:Dynamic]
+			[Var unop(25309):{ op : String, e : Unknown<36> }]
+				[Field:Dynamic]
+					[Local guardExpr(25308):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var operand(25310):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							compileGuardOperand:(expr : Dynamic) -> String
+					[Field:Unknown<36>]
+						[Local unop(25309):{ op : String, e : Unknown<36> }:{ op : String, e : Unknown<36> }]
+						[FAnon:Unknown<36>] e:Unknown<36>
+			[Var op(25312):String]
+				[Call:String]
+					[Field:(op : String) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(op : String) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							convertUnaryOperator:(op : String) -> String
+					[Field:String]
+						[Local unop(25309):{ op : String, e : Unknown<36> }:{ op : String, e : Unknown<36> }]
+						[FAnon:String] op:String
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (unop.op) {
+	case "!":
+		"not ${operand}";	
+	case "-":
+		"-${operand}";	
+	case _:
+		"${op}${operand}";	
+})
+					[Block:String]
+						[Var `(25314):String]
+							[Field:String]
+								[Local unop(25309):{ op : String, e : Unknown<36> }:{ op : String, e : Unknown<36> }]
+								[FAnon:String] op:String
+						[Switch:String]
+							[Local `(25314):String:String]
+							[Case:String]
+								[Const:String] "!"
+								[Block:String]
+									[Block:String]
+										[Binop:String]
+											[Const:String] "not "
+											+
+											[Local operand(25310):String:String]
+							[Case:String]
+								[Const:String] "-"
+								[Block:String]
+									[Block:String]
+										[Binop:String]
+											[Const:String] "-"
+											+
+											[Local operand(25310):String:String]
+							[Default:String]
+								[Block:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Local op(25312):String:String]
+										+
+										[Local operand(25310):String:String]
+
+	function compileFunctionGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25281):Dynamic]
+		[Block:Dynamic]
+			[Var call(25282):{ el : Null<Array<Dynamic>>, e : Unknown<37> }]
+				[Field:Dynamic]
+					[Local guardExpr(25281):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var funcName(25290):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							extractFunctionName:(expr : Dynamic) -> String
+					[Field:Unknown<37>]
+						[Local call(25282):{ el : Null<Array<Dynamic>>, e : Unknown<37> }:{ el : Null<Array<Dynamic>>, e : Unknown<37> }]
+						[FAnon:Unknown<37>] e:Unknown<37>
+			[Var args(25291):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Array<Dynamic>>]
+						[Local call(25282):{ el : Null<Array<Dynamic>>, e : Unknown<37> }:{ el : Null<Array<Dynamic>>, e : Unknown<37> }]
+						[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+					!=
+					[Const:Null<Array<Dynamic>>] null
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(25293):Int] [Const:Int] 0
+						[Var `(25294):Array<Dynamic>]
+							[Parenthesis:Array<Dynamic>]
+								[Cast:Array<Dynamic>]
+									[Field:Null<Array<Dynamic>>]
+										[Local call(25282):{ el : Null<Array<Dynamic>>, e : Unknown<37> }:{ el : Null<Array<Dynamic>>, e : Unknown<37> }]
+										[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(25293):Int:Int]
+								<
+								[Field:Int]
+									[Local `(25294):Array<Dynamic>:Array<Dynamic>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+							[Block:Void]
+								[Var arg(25292):Dynamic]
+									[Array:Dynamic]
+										[Local `(25294):Array<Dynamic>:Array<Dynamic>]
+										[Local `(25293):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(25293):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local args(25291):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Field:(expr : Dynamic) -> String]
+											[Const:reflaxe.elixir.helpers.GuardCompiler] this
+											[FInstance:(expr : Dynamic) -> String]
+												reflaxe.elixir.helpers.GuardCompiler
+												compileGuardOperand:(expr : Dynamic) -> String
+										[Local arg(25292):Dynamic:Dynamic]
+			[Var elixirFuncName(25296):String]
+				[Call:String]
+					[Field:(funcName : String) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(funcName : String) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							convertGuardFunction:(funcName : String) -> String
+					[Local funcName(25290):String:String]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Local elixirFuncName(25296):String:String]
+							+
+							[Const:String] "("
+						+
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local args(25291):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] ", "
+					+
+					[Const:String] ")"
+
+	function compileVariableGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25247):Dynamic]
+		[Block:Dynamic]
+			[Var local(25248):{ v : Null<{ name : Null<String> }> }]
+				[Field:Dynamic]
+					[Local guardExpr(25247):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Null<{ name : Null<String> }>]
+							[Local local(25248):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+							[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+						!=
+						[Const:Null<{ name : Null<String> }>] null
+					&&
+					[Binop:Bool]
+						[Field:Null<String>]
+							[Field:Null<{ name : Null<String> }>]
+								[Local local(25248):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+								[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+							[FAnon:Null<String>] name:Null<String>
+						!=
+						[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(camelCase : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(camelCase : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									toSnakeCase:(camelCase : String) -> String
+							[Field:Null<String>]
+								[Field:Null<{ name : Null<String> }>]
+									[Local local(25248):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+									[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+								[FAnon:Null<String>] name:Null<String>
+			[Return:Dynamic] [Const:String] "_"
+
+	function compileConstantGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25249):Dynamic]
+		[Block:Dynamic]
+			[Var const(25250):haxe.macro.Constant]
+				[Field:Dynamic]
+					[Local guardExpr(25249):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (const) {
+	case CInt(v, _):
+		v;	
+	case CFloat(f, _):
+		f;	
+	case CString(s, _):
+		"\"${s}\"";	
+	case CIdent(s):
+		s;	
+	case CRegexp(r, opt):
+		"~r/${r}/${opt}";	
+	case _:
+		"nil";	
+})
+					[Switch:String]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Var `(25266):String]
+									[EnumParameter:String]
+										[Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+										CInt
+										0
+								[Var `(25267):Null<String>]
+									[EnumParameter:Null<String>]
+										[Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+										CInt
+										1
+								[Block:String]
+									[Var v(25268):String] [Local `(25266):String:String]
+									[Block:String] [Local v(25268):String:String]
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Var `(25269):String]
+									[EnumParameter:String]
+										[Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+										CFloat
+										0
+								[Var `(25270):Null<String>]
+									[EnumParameter:Null<String>]
+										[Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+										CFloat
+										1
+								[Block:String]
+									[Var f(25271):String] [Local `(25269):String:String]
+									[Block:String] [Local f(25271):String:String]
+						[Case:String]
+							[Const:Int] 2
+							[Block:String]
+								[Var `(25272):String]
+									[EnumParameter:String]
+										[Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+										CString
+										0
+								[Var `(25273):Null<haxe.macro.StringLiteralKind>]
+									[EnumParameter:Null<haxe.macro.StringLiteralKind>]
+										[Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+										CString
+										1
+								[Block:String]
+									[Var s(25274):String] [Local `(25272):String:String]
+									[Block:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "\""
+												+
+												[Local s(25274):String:String]
+											+
+											[Const:String] "\""
+						[Case:String]
+							[Const:Int] 3
+							[Block:String]
+								[Var `(25275):String]
+									[EnumParameter:String]
+										[Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+										CIdent
+										0
+								[Block:String]
+									[Var s(25276):String] [Local `(25275):String:String]
+									[Block:String] [Local s(25276):String:String]
+						[Case:String]
+							[Const:Int] 4
+							[Block:String]
+								[Var `(25277):String]
+									[EnumParameter:String]
+										[Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+										CRegexp
+										0
+								[Var `(25278):String]
+									[EnumParameter:String]
+										[Local const(25250):haxe.macro.Constant:haxe.macro.Constant]
+										CRegexp
+										1
+								[Block:String]
+									[Var r(25279):String] [Local `(25277):String:String]
+									[Var opt(25280):String] [Local `(25278):String:String]
+									[Block:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "~r/"
+													+
+													[Local r(25279):String:String]
+												+
+												[Const:String] "/"
+											+
+											[Local opt(25280):String:String]
+
+	function compileParenthesesGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25315):Dynamic]
+		[Block:Dynamic]
+			[Var paren(25316):{ e : Unknown<38> }]
+				[Field:Dynamic]
+					[Local guardExpr(25315):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var inner(25317):String]
+				[Call:String]
+					[Field:(guardExpr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(guardExpr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							compileGuard:(guardExpr : Dynamic) -> String
+					[Field:Unknown<38>]
+						[Local paren(25316):{ e : Unknown<38> }:{ e : Unknown<38> }]
+						[FAnon:Unknown<38>] e:Unknown<38>
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Const:String] "("
+						+
+						[Local inner(25317):String:String]
+					+
+					[Const:String] ")"
+
+	function compileComplexGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25318):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(expr : Dynamic) -> Bool]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> Bool]
+							reflaxe.elixir.helpers.GuardCompiler
+							isRangeGuard:(expr : Dynamic) -> Bool
+					[Local guardExpr(25318):Dynamic:Dynamic]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(guardExpr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(guardExpr : Dynamic) -> String]
+									reflaxe.elixir.helpers.GuardCompiler
+									compileRangeGuard:(guardExpr : Dynamic) -> String
+							[Local guardExpr(25318):Dynamic:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(expr : Dynamic) -> Bool]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> Bool]
+							reflaxe.elixir.helpers.GuardCompiler
+							isMembershipGuard:(expr : Dynamic) -> Bool
+					[Local guardExpr(25318):Dynamic:Dynamic]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(guardExpr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(guardExpr : Dynamic) -> String]
+									reflaxe.elixir.helpers.GuardCompiler
+									compileMembershipGuard:(guardExpr : Dynamic) -> String
+							[Local guardExpr(25318):Dynamic:Dynamic]
+			[Return:Dynamic] [Const:String] "true"
+
+	function isRangeGuard[Function:(expr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local expr(25319):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(25319):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.GuardCompiler
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(25319):Dynamic:Dynamic]
+					==
+					[Const:String] "TBinop"
+				[Then:Dynamic] [Block:Dynamic]
+					[Var binop(25320):{ op : String, e2 : Unknown<39> }]
+						[Field:Dynamic]
+							[Local expr(25319):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[Return:Dynamic]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Field:String]
+									[Local binop(25320):{ op : String, e2 : Unknown<39> }:{ op : String, e2 : Unknown<39> }]
+									[FAnon:String] op:String
+								==
+								[Const:String] "OpIn"
+							&&
+							[Call:Bool]
+								[Field:(expr : Dynamic) -> Bool]
+									[Const:reflaxe.elixir.helpers.GuardCompiler] this
+									[FInstance:(expr : Dynamic) -> Bool]
+										reflaxe.elixir.helpers.GuardCompiler
+										isRangeExpression:(expr : Dynamic) -> Bool
+								[Field:Unknown<39>]
+									[Local binop(25320):{ op : String, e2 : Unknown<39> }:{ op : String, e2 : Unknown<39> }]
+									[FAnon:Unknown<39>] e2:Unknown<39>
+			[Return:Dynamic] [Const:Bool] false
+
+	function isRangeExpression[Function:(expr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local expr(25321):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(25321):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.GuardCompiler
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(25321):Dynamic:Dynamic]
+					==
+					[Const:String] "TBinop"
+				[Then:Dynamic] [Block:Dynamic]
+					[Var binop(25322):{ op : String }]
+						[Field:Dynamic]
+							[Local expr(25321):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[Return:Dynamic]
+						[Binop:Bool]
+							[Field:String]
+								[Local binop(25322):{ op : String }:{ op : String }]
+								[FAnon:String] op:String
+							==
+							[Const:String] "OpInterval"
+			[Return:Dynamic] [Const:Bool] false
+
+	function compileRangeGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25323):Dynamic]
+		[Block:Dynamic]
+			[Var binop(25324):{ e2 : Unknown<41>, e1 : Unknown<40> }]
+				[Field:Dynamic]
+					[Local guardExpr(25323):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var value(25325):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							compileGuardOperand:(expr : Dynamic) -> String
+					[Field:Unknown<40>]
+						[Local binop(25324):{ e2 : Unknown<41>, e1 : Unknown<40> }:{ e2 : Unknown<41>, e1 : Unknown<40> }]
+						[FAnon:Unknown<40>] e1:Unknown<40>
+			[Var range(25330):String]
+				[Call:String]
+					[Field:(rangeExpr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(rangeExpr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							compileRangeExpression:(rangeExpr : Dynamic) -> String
+					[Field:Unknown<41>]
+						[Local binop(25324):{ e2 : Unknown<41>, e1 : Unknown<40> }:{ e2 : Unknown<41>, e1 : Unknown<40> }]
+						[FAnon:Unknown<41>] e2:Unknown<41>
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] ""
+							+
+							[Local value(25325):String:String]
+						+
+						[Const:String] " in "
+					+
+					[Local range(25330):String:String]
+
+	function compileRangeExpression[Function:(rangeExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local rangeExpr(25326):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.GuardCompiler
+								getExprType:(expr : Dynamic) -> String
+						[Local rangeExpr(25326):Dynamic:Dynamic]
+					==
+					[Const:String] "TBinop"
+				[Then:Void] [Block:Void]
+					[Var binop(25327):{ op : String, e2 : Unknown<43>, e1 : Unknown<42> }]
+						[Field:Dynamic]
+							[Local rangeExpr(25326):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[If:Void]
+						[Binop:Bool]
+							[Field:String]
+								[Local binop(25327):{ op : String, e2 : Unknown<43>, e1 : Unknown<42> }:{ op : String, e2 : Unknown<43>, e1 : Unknown<42> }]
+								[FAnon:String] op:String
+							==
+							[Const:String] "OpInterval"
+						[Then:Dynamic] [Block:Dynamic]
+							[Var start(25328):String]
+								[Call:String]
+									[Field:(expr : Dynamic) -> String]
+										[Const:reflaxe.elixir.helpers.GuardCompiler] this
+										[FInstance:(expr : Dynamic) -> String]
+											reflaxe.elixir.helpers.GuardCompiler
+											compileGuardOperand:(expr : Dynamic) -> String
+									[Field:Unknown<42>]
+										[Local binop(25327):{ op : String, e2 : Unknown<43>, e1 : Unknown<42> }:{ op : String, e2 : Unknown<43>, e1 : Unknown<42> }]
+										[FAnon:Unknown<42>] e1:Unknown<42>
+							[Var end(25329):String]
+								[Call:String]
+									[Field:(expr : Dynamic) -> String]
+										[Const:reflaxe.elixir.helpers.GuardCompiler] this
+										[FInstance:(expr : Dynamic) -> String]
+											reflaxe.elixir.helpers.GuardCompiler
+											compileGuardOperand:(expr : Dynamic) -> String
+									[Field:Unknown<43>]
+										[Local binop(25327):{ op : String, e2 : Unknown<43>, e1 : Unknown<42> }:{ op : String, e2 : Unknown<43>, e1 : Unknown<42> }]
+										[FAnon:Unknown<43>] e2:Unknown<43>
+							[Return:Dynamic]
+								[Binop:String]
+									[Binop:String]
+										[Binop:String]
+											[Const:String] ""
+											+
+											[Local start(25328):String:String]
+										+
+										[Const:String] ".."
+									+
+									[Local end(25329):String:String]
+			[Return:Dynamic] [Const:String] "1..10"
+
+	function isMembershipGuard[Function:(expr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local expr(25331):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(25331):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.GuardCompiler
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(25331):Dynamic:Dynamic]
+					==
+					[Const:String] "TBinop"
+				[Then:Dynamic] [Block:Dynamic]
+					[Var binop(25332):{ op : String, e2 : Unknown<44> }]
+						[Field:Dynamic]
+							[Local expr(25331):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+					[Return:Dynamic]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Field:String]
+									[Local binop(25332):{ op : String, e2 : Unknown<44> }:{ op : String, e2 : Unknown<44> }]
+									[FAnon:String] op:String
+								==
+								[Const:String] "OpIn"
+							&&
+							[Unop:Bool]
+								!
+								Prefix
+								[Call:Bool]
+									[Field:(expr : Dynamic) -> Bool]
+										[Const:reflaxe.elixir.helpers.GuardCompiler] this
+										[FInstance:(expr : Dynamic) -> Bool]
+											reflaxe.elixir.helpers.GuardCompiler
+											isRangeExpression:(expr : Dynamic) -> Bool
+									[Field:Unknown<44>]
+										[Local binop(25332):{ op : String, e2 : Unknown<44> }:{ op : String, e2 : Unknown<44> }]
+										[FAnon:Unknown<44>] e2:Unknown<44>
+			[Return:Dynamic] [Const:Bool] false
+
+	function compileMembershipGuard[Function:(guardExpr : Dynamic) -> String]
+		[Arg:Dynamic] [Local guardExpr(25333):Dynamic]
+		[Block:Dynamic]
+			[Var binop(25334):{ e2 : Unknown<46>, e1 : Unknown<45> }]
+				[Field:Dynamic]
+					[Local guardExpr(25333):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var value(25335):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							compileGuardOperand:(expr : Dynamic) -> String
+					[Field:Unknown<45>]
+						[Local binop(25334):{ e2 : Unknown<46>, e1 : Unknown<45> }:{ e2 : Unknown<46>, e1 : Unknown<45> }]
+						[FAnon:Unknown<45>] e1:Unknown<45>
+			[Var list(25336):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							compileGuardOperand:(expr : Dynamic) -> String
+					[Field:Unknown<46>]
+						[Local binop(25334):{ e2 : Unknown<46>, e1 : Unknown<45> }:{ e2 : Unknown<46>, e1 : Unknown<45> }]
+						[FAnon:Unknown<46>] e2:Unknown<46>
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] ""
+							+
+							[Local value(25335):String:String]
+						+
+						[Const:String] " in "
+					+
+					[Local list(25336):String:String]
+
+	function compileGuardOperand[Function:(expr : Dynamic) -> String]
+		[Arg:Dynamic] [Local expr(25246):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(25246):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "nil"
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (getExprType(expr)) {
+	case "TLocal":
+		compileVariableGuard(expr);	
+	case "TConst":
+		compileConstantGuard(expr);	
+	case "TBinop":
+		compileBinaryGuard(expr);	
+	case "TCall":
+		compileFunctionGuard(expr);	
+	case "TField":
+		compileFieldAccess(expr);	
+	case _:
+		"expr";	
+})
+					[Block:String]
+						[Var `(25302):String]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.GuardCompiler] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.GuardCompiler
+										getExprType:(expr : Dynamic) -> String
+								[Local expr(25246):Dynamic:Dynamic]
+						[Switch:String]
+							[Local `(25302):String:String]
+							[Case:String]
+								[Const:String] "TBinop"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileBinaryGuard:(guardExpr : Dynamic) -> String
+											[Local expr(25246):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TCall"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileFunctionGuard:(guardExpr : Dynamic) -> String
+											[Local expr(25246):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TConst"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileConstantGuard:(guardExpr : Dynamic) -> String
+											[Local expr(25246):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TField"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(expr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(expr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileFieldAccess:(expr : Dynamic) -> String
+											[Local expr(25246):Dynamic:Dynamic]
+							[Case:String]
+								[Const:String] "TLocal"
+								[Block:String]
+									[Block:String]
+										[Call:String]
+											[Field:(guardExpr : Dynamic) -> String]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> String]
+													reflaxe.elixir.helpers.GuardCompiler
+													compileVariableGuard:(guardExpr : Dynamic) -> String
+											[Local expr(25246):Dynamic:Dynamic]
+							[Default:String] [Block:String] [Const:String] "expr"
+
+	function compileFieldAccess[Function:(expr : Dynamic) -> String]
+		[Arg:Dynamic] [Local expr(25297):Dynamic]
+		[Block:Dynamic]
+			[Var field(25298):{ fa : Null<{ name : String }>, e : Null<Unknown<47>> }]
+				[Field:Dynamic]
+					[Local expr(25297):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Null<Unknown<47>>]
+							[Local field(25298):{ fa : Null<{ name : String }>, e : Null<Unknown<47>> }:{ fa : Null<{ name : String }>, e : Null<Unknown<47>> }]
+							[FAnon:Null<Unknown<47>>] e:Null<Unknown<47>>
+						!=
+						[Const:Null<Unknown<47>>] null
+					&&
+					[Binop:Bool]
+						[Field:Null<{ name : String }>]
+							[Local field(25298):{ fa : Null<{ name : String }>, e : Null<Unknown<47>> }:{ fa : Null<{ name : String }>, e : Null<Unknown<47>> }]
+							[FAnon:Null<{ name : String }>] fa:Null<{ name : String }>
+						!=
+						[Const:Null<{ name : String }>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Var obj(25299):String]
+						[Call:String]
+							[Field:(expr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(expr : Dynamic) -> String]
+									reflaxe.elixir.helpers.GuardCompiler
+									compileGuardOperand:(expr : Dynamic) -> String
+							[Field:Null<Unknown<47>>]
+								[Local field(25298):{ fa : Null<{ name : String }>, e : Null<Unknown<47>> }:{ fa : Null<{ name : String }>, e : Null<Unknown<47>> }]
+								[FAnon:Null<Unknown<47>>] e:Null<Unknown<47>>
+					[Var fieldName(25300):String]
+						[Call:String]
+							[Field:(camelCase : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+								[FStatic:(camelCase : String) -> String]
+									reflaxe.elixir.helpers.NamingHelper
+									toSnakeCase:(camelCase : String) -> String
+							[Field:String]
+								[Field:Null<{ name : String }>]
+									[Local field(25298):{ fa : Null<{ name : String }>, e : Null<Unknown<47>> }:{ fa : Null<{ name : String }>, e : Null<Unknown<47>> }]
+									[FAnon:Null<{ name : String }>] fa:Null<{ name : String }>
+								[FAnon:String] name:String
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] ""
+									+
+									[Local obj(25299):String:String]
+								+
+								[Const:String] "."
+							+
+							[Local fieldName(25300):String:String]
+			[Return:Dynamic] [Const:String] "field"
+
+	function convertGuardOperator[Function:(op : String) -> String]
+		[Arg:String] [Local op(25305):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (op) {
+	case "==":
+		"==";	
+	case "!=":
+		"!=";	
+	case ">":
+		">";	
+	case "<":
+		"<";	
+	case ">=":
+		">=";	
+	case "<=":
+		"<=";	
+	case "&&":
+		"and";	
+	case "||":
+		"or";	
+	case "+":
+		"+";	
+	case "-":
+		"-";	
+	case "*":
+		"*";	
+	case "/":
+		"/";	
+	case "%":
+		"rem";	
+	case _:
+		op;	
+})
+					[Switch:String]
+						[Local op(25305):String:String]
+						[Case:String]
+							[Const:String] "!="
+							[Block:String] [Block:String] [Const:String] "!="
+						[Case:String]
+							[Const:String] "%"
+							[Block:String] [Block:String] [Const:String] "rem"
+						[Case:String]
+							[Const:String] "&&"
+							[Block:String] [Block:String] [Const:String] "and"
+						[Case:String]
+							[Const:String] "*"
+							[Block:String] [Block:String] [Const:String] "*"
+						[Case:String]
+							[Const:String] "+"
+							[Block:String] [Block:String] [Const:String] "+"
+						[Case:String]
+							[Const:String] "-"
+							[Block:String] [Block:String] [Const:String] "-"
+						[Case:String]
+							[Const:String] "/"
+							[Block:String] [Block:String] [Const:String] "/"
+						[Case:String]
+							[Const:String] "<"
+							[Block:String] [Block:String] [Const:String] "<"
+						[Case:String]
+							[Const:String] "<="
+							[Block:String] [Block:String] [Const:String] "<="
+						[Case:String]
+							[Const:String] "=="
+							[Block:String] [Block:String] [Const:String] "=="
+						[Case:String]
+							[Const:String] ">"
+							[Block:String] [Block:String] [Const:String] ">"
+						[Case:String]
+							[Const:String] ">="
+							[Block:String] [Block:String] [Const:String] ">="
+						[Case:String]
+							[Const:String] "||"
+							[Block:String] [Block:String] [Const:String] "or"
+						[Default:String] [Block:String] [Local op(25305):String:String]
+
+	function convertUnaryOperator[Function:(op : String) -> String]
+		[Arg:String] [Local op(25311):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (op) {
+	case "!":
+		"not ";	
+	case "-":
+		"-";	
+	case "+":
+		"+";	
+	case _:
+		op;	
+})
+					[Switch:String]
+						[Local op(25311):String:String]
+						[Case:String]
+							[Const:String] "!"
+							[Block:String] [Block:String] [Const:String] "not "
+						[Case:String]
+							[Const:String] "+"
+							[Block:String] [Block:String] [Const:String] "+"
+						[Case:String]
+							[Const:String] "-"
+							[Block:String] [Block:String] [Const:String] "-"
+						[Default:String] [Block:String] [Local op(25311):String:String]
+
+	function convertGuardFunction[Function:(funcName : String) -> String]
+		[Arg:String] [Local funcName(25295):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (funcName) {
+	case "isString":
+		"is_binary";	
+	case "isBinary":
+		"is_binary";	
+	case "isInt":
+		"is_integer";	
+	case "isFloat":
+		"is_float";	
+	case "isBool":
+		"is_boolean";	
+	case "isArray":
+		"is_list";	
+	case "isList":
+		"is_list";	
+	case "isMap":
+		"is_map";	
+	case "isAtom":
+		"is_atom";	
+	case "isTuple":
+		"is_tuple";	
+	case "isFunction":
+		"is_function";	
+	case "isNil":
+		"is_nil";	
+	case "isNumber":
+		"is_number";	
+	case "isPort":
+		"is_port";	
+	case "isPid":
+		"is_pid";	
+	case "isReference":
+		"is_reference";	
+	case "length":
+		"length";	
+	case "size":
+		"byte_size";	
+	case "byteSize":
+		"byte_size";	
+	case "tupleSize":
+		"tuple_size";	
+	case "mapSize":
+		"map_size";	
+	case "bitSize":
+		"bit_size";	
+	case "abs":
+		"abs";	
+	case "round":
+		"round";	
+	case "trunc":
+		"trunc";	
+	case "floor":
+		"floor";	
+	case "ceil":
+		"ceil";	
+	case "elem":
+		"elem";	
+	case "hd":
+		"hd";	
+	case "tl":
+		"tl";	
+	case "div":
+		"div";	
+	case "rem":
+		"rem";	
+	case _:
+		NamingHelper.getElixirFunctionName(funcName);	
+})
+					[Switch:String]
+						[Local funcName(25295):String:String]
+						[Case:String]
+							[Const:String] "abs"
+							[Block:String] [Block:String] [Const:String] "abs"
+						[Case:String]
+							[Const:String] "bitSize"
+							[Block:String] [Block:String] [Const:String] "bit_size"
+						[Case:String]
+							[Const:String] "byteSize"
+							[Block:String] [Block:String] [Const:String] "byte_size"
+						[Case:String]
+							[Const:String] "ceil"
+							[Block:String] [Block:String] [Const:String] "ceil"
+						[Case:String]
+							[Const:String] "div"
+							[Block:String] [Block:String] [Const:String] "div"
+						[Case:String]
+							[Const:String] "elem"
+							[Block:String] [Block:String] [Const:String] "elem"
+						[Case:String]
+							[Const:String] "floor"
+							[Block:String] [Block:String] [Const:String] "floor"
+						[Case:String]
+							[Const:String] "hd"
+							[Block:String] [Block:String] [Const:String] "hd"
+						[Case:String]
+							[Const:String] "isArray"
+							[Block:String] [Block:String] [Const:String] "is_list"
+						[Case:String]
+							[Const:String] "isAtom"
+							[Block:String] [Block:String] [Const:String] "is_atom"
+						[Case:String]
+							[Const:String] "isBinary"
+							[Block:String] [Block:String] [Const:String] "is_binary"
+						[Case:String]
+							[Const:String] "isBool"
+							[Block:String] [Block:String] [Const:String] "is_boolean"
+						[Case:String]
+							[Const:String] "isFloat"
+							[Block:String] [Block:String] [Const:String] "is_float"
+						[Case:String]
+							[Const:String] "isFunction"
+							[Block:String] [Block:String] [Const:String] "is_function"
+						[Case:String]
+							[Const:String] "isInt"
+							[Block:String] [Block:String] [Const:String] "is_integer"
+						[Case:String]
+							[Const:String] "isList"
+							[Block:String] [Block:String] [Const:String] "is_list"
+						[Case:String]
+							[Const:String] "isMap"
+							[Block:String] [Block:String] [Const:String] "is_map"
+						[Case:String]
+							[Const:String] "isNil"
+							[Block:String] [Block:String] [Const:String] "is_nil"
+						[Case:String]
+							[Const:String] "isNumber"
+							[Block:String] [Block:String] [Const:String] "is_number"
+						[Case:String]
+							[Const:String] "isPid"
+							[Block:String] [Block:String] [Const:String] "is_pid"
+						[Case:String]
+							[Const:String] "isPort"
+							[Block:String] [Block:String] [Const:String] "is_port"
+						[Case:String]
+							[Const:String] "isReference"
+							[Block:String] [Block:String] [Const:String] "is_reference"
+						[Case:String]
+							[Const:String] "isString"
+							[Block:String] [Block:String] [Const:String] "is_binary"
+						[Case:String]
+							[Const:String] "isTuple"
+							[Block:String] [Block:String] [Const:String] "is_tuple"
+						[Case:String]
+							[Const:String] "length"
+							[Block:String] [Block:String] [Const:String] "length"
+						[Case:String]
+							[Const:String] "mapSize"
+							[Block:String] [Block:String] [Const:String] "map_size"
+						[Case:String]
+							[Const:String] "rem"
+							[Block:String] [Block:String] [Const:String] "rem"
+						[Case:String]
+							[Const:String] "round"
+							[Block:String] [Block:String] [Const:String] "round"
+						[Case:String]
+							[Const:String] "size"
+							[Block:String] [Block:String] [Const:String] "byte_size"
+						[Case:String]
+							[Const:String] "tl"
+							[Block:String] [Block:String] [Const:String] "tl"
+						[Case:String]
+							[Const:String] "trunc"
+							[Block:String] [Block:String] [Const:String] "trunc"
+						[Case:String]
+							[Const:String] "tupleSize"
+							[Block:String] [Block:String] [Const:String] "tuple_size"
+						[Default:String]
+							[Block:String]
+								[Call:String]
+									[Field:(haxeName : String) -> String]
+										[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+										[FStatic:(haxeName : String) -> String]
+											reflaxe.elixir.helpers.NamingHelper
+											getElixirFunctionName:(haxeName : String) -> String
+									[Local funcName(25295):String:String]
+
+	function isLogicalOperator[Function:(op : String) -> Bool]
+		[Arg:String] [Local op(25307):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local op(25307):String:String]
+						==
+						[Const:String] "&&"
+					||
+					[Binop:Bool]
+						[Local op(25307):String:String]
+						==
+						[Const:String] "||"
+
+	function extractFunctionName[Function:(expr : Dynamic) -> String]
+		[Arg:Dynamic] [Local expr(25283):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(25283):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "unknown"
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (getExprType(expr)) {
+	case "TField":
+		var field = expr.expr;
+		if (field.fa != null && field.fa.name != null) {
+			field.fa.name;
+		} else {
+			"func";
+		};	
+	case "TLocal":
+		var local = expr.expr;
+		if (local.v != null && local.v.name != null) {
+			local.v.name;
+		} else {
+			"func";
+		};	
+	case _:
+		"func";	
+})
+					[Block:String]
+						[Var `(25287):String]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.GuardCompiler] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.GuardCompiler
+										getExprType:(expr : Dynamic) -> String
+								[Local expr(25283):Dynamic:Dynamic]
+						[Switch:String]
+							[Local `(25287):String:String]
+							[Case:String]
+								[Const:String] "TField"
+								[Block:String]
+									[Block:String]
+										[Var field(25288):{ fa : Null<{ name : Null<String> }> }]
+											[Field:Dynamic]
+												[Local expr(25283):Dynamic:Dynamic]
+												[FDynamic:Dynamic] expr
+										[If:String]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Field:Null<{ name : Null<String> }>]
+														[Local field(25288):{ fa : Null<{ name : Null<String> }> }:{ fa : Null<{ name : Null<String> }> }]
+														[FAnon:Null<{ name : Null<String> }>] fa:Null<{ name : Null<String> }>
+													!=
+													[Const:Null<{ name : Null<String> }>] null
+												&&
+												[Binop:Bool]
+													[Field:Null<String>]
+														[Field:Null<{ name : Null<String> }>]
+															[Local field(25288):{ fa : Null<{ name : Null<String> }> }:{ fa : Null<{ name : Null<String> }> }]
+															[FAnon:Null<{ name : Null<String> }>] fa:Null<{ name : Null<String> }>
+														[FAnon:Null<String>] name:Null<String>
+													!=
+													[Const:Null<String>] null
+											[Then:Null<String>] [Block:Null<String>]
+												[Field:Null<String>]
+													[Field:Null<{ name : Null<String> }>]
+														[Local field(25288):{ fa : Null<{ name : Null<String> }> }:{ fa : Null<{ name : Null<String> }> }]
+														[FAnon:Null<{ name : Null<String> }>] fa:Null<{ name : Null<String> }>
+													[FAnon:Null<String>] name:Null<String>
+											[Else:String] [Block:String] [Const:String] "func"
+							[Case:String]
+								[Const:String] "TLocal"
+								[Block:String]
+									[Block:String]
+										[Var local(25289):{ v : Null<{ name : Null<String> }> }]
+											[Field:Dynamic]
+												[Local expr(25283):Dynamic:Dynamic]
+												[FDynamic:Dynamic] expr
+										[If:String]
+											[Binop:Bool]
+												[Binop:Bool]
+													[Field:Null<{ name : Null<String> }>]
+														[Local local(25289):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+														[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+													!=
+													[Const:Null<{ name : Null<String> }>] null
+												&&
+												[Binop:Bool]
+													[Field:Null<String>]
+														[Field:Null<{ name : Null<String> }>]
+															[Local local(25289):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+															[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+														[FAnon:Null<String>] name:Null<String>
+													!=
+													[Const:Null<String>] null
+											[Then:Null<String>] [Block:Null<String>]
+												[Field:Null<String>]
+													[Field:Null<{ name : Null<String> }>]
+														[Local local(25289):{ v : Null<{ name : Null<String> }> }:{ v : Null<{ name : Null<String> }> }]
+														[FAnon:Null<{ name : Null<String> }>] v:Null<{ name : Null<String> }>
+													[FAnon:Null<String>] name:Null<String>
+											[Else:String] [Block:String] [Const:String] "func"
+							[Default:String] [Block:String] [Const:String] "func"
+
+	@:value({ op : "and" })
+	public function compileMultipleGuards[Function:(guards : Array<Dynamic>, ?op : String) -> String]
+		[Arg:Array<Dynamic>] [Local guards(25339):Array<Dynamic>]
+		[Arg:String]
+			[Local op(25340):String]
+			[Const:String] "and"
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local guards(25339):Array<Dynamic>:Array<Dynamic>]
+						==
+						[Const:Array<Dynamic>] null
+					||
+					[Binop:Bool]
+						[Field:Int]
+							[Local guards(25339):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+						==
+						[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local guards(25339):Array<Dynamic>:Array<Dynamic>]
+						[FInstance:Int]
+							Array<Dynamic>
+							length:Int
+					==
+					[Const:Int] 1
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(guardExpr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(guardExpr : Dynamic) -> String]
+									reflaxe.elixir.helpers.GuardCompiler
+									compileGuard:(guardExpr : Dynamic) -> String
+							[Array:Dynamic]
+								[Local guards(25339):Array<Dynamic>:Array<Dynamic>]
+								[Const:Int] 0
+			[Var compiledGuards(25341):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(25344):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25344):Int:Int]
+						<
+						[Field:Int]
+							[Local guards(25339):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+					[Block:Void]
+						[Var guard(25342):Dynamic]
+							[Array:Dynamic]
+								[Local guards(25339):Array<Dynamic>:Array<Dynamic>]
+								[Local `(25344):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25344):Int:Int]
+						[Var compiled(25343):String]
+							[Call:String]
+								[Field:(guardExpr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.GuardCompiler] this
+									[FInstance:(guardExpr : Dynamic) -> String]
+										reflaxe.elixir.helpers.GuardCompiler
+										compileGuard:(guardExpr : Dynamic) -> String
+								[Local guard(25342):Dynamic:Dynamic]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local compiled(25343):String:String]
+									!=
+									[Const:String] null
+								&&
+								[Binop:Bool]
+									[Field:Int]
+										[Local compiled(25343):String:String]
+										[FInstance:Int]
+											String
+											length:Int
+									>
+									[Const:Int] 0
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local compiledGuards(25341):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local compiled(25343):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local compiledGuards(25341):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local compiledGuards(25341):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 1
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Array:String]
+							[Local compiledGuards(25341):Array<String>:Array<String>]
+							[Const:Int] 0
+			[Var elixirOp(25345):String]
+				[Call:String]
+					[Field:(op : String) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(op : String) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							convertGuardOperator:(op : String) -> String
+					[Local op(25340):String:String]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local compiledGuards(25341):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Binop:String]
+						[Binop:String]
+							[Const:String] " "
+							+
+							[Local elixirOp(25345):String:String]
+						+
+						[Const:String] " "
+
+	public function isValidGuardExpression[Function:(expr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local expr(25346):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(25346):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (getExprType(expr)) {
+	case "TBinop":
+		true;	
+	case "TUnop":
+		true;	
+	case "TCall":
+		isGuardFunction(expr);	
+	case "TLocal":
+		true;	
+	case "TConst":
+		true;	
+	case "TField":
+		true;	
+	case "TParenthesis":
+		true;	
+	case _:
+		false;	
+})
+					[Block:Bool]
+						[Var `(25352):String]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.GuardCompiler] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.GuardCompiler
+										getExprType:(expr : Dynamic) -> String
+								[Local expr(25346):Dynamic:Dynamic]
+						[Switch:Bool]
+							[Local `(25352):String:String]
+							[Case:Bool]
+								[Const:String] "TBinop"
+								[Block:Bool] [Block:Bool] [Const:Bool] true
+							[Case:Bool]
+								[Const:String] "TCall"
+								[Block:Bool]
+									[Block:Bool]
+										[Call:Bool]
+											[Field:(callExpr : Dynamic) -> Bool]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(callExpr : Dynamic) -> Bool]
+													reflaxe.elixir.helpers.GuardCompiler
+													isGuardFunction:(callExpr : Dynamic) -> Bool
+											[Local expr(25346):Dynamic:Dynamic]
+							[Case:Bool]
+								[Const:String] "TConst"
+								[Block:Bool] [Block:Bool] [Const:Bool] true
+							[Case:Bool]
+								[Const:String] "TField"
+								[Block:Bool] [Block:Bool] [Const:Bool] true
+							[Case:Bool]
+								[Const:String] "TLocal"
+								[Block:Bool] [Block:Bool] [Const:Bool] true
+							[Case:Bool]
+								[Const:String] "TParenthesis"
+								[Block:Bool] [Block:Bool] [Const:Bool] true
+							[Case:Bool]
+								[Const:String] "TUnop"
+								[Block:Bool] [Block:Bool] [Const:Bool] true
+							[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	function isGuardFunction[Function:(callExpr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local callExpr(25347):Dynamic]
+		[Block:Dynamic]
+			[Var funcName(25348):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							extractFunctionName:(expr : Dynamic) -> String
+					[Field:Dynamic]
+						[Field:Dynamic]
+							[Local callExpr(25347):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+						[FDynamic:Dynamic] e
+			[Var allowedGuardFunctions(25349):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "is_atom"
+					[Const:String] "is_binary"
+					[Const:String] "is_boolean"
+					[Const:String] "is_float"
+					[Const:String] "is_function"
+					[Const:String] "is_integer"
+					[Const:String] "is_list"
+					[Const:String] "is_map"
+					[Const:String] "is_nil"
+					[Const:String] "is_tuple"
+					[Const:String] "is_number"
+					[Const:String] "is_port"
+					[Const:String] "is_pid"
+					[Const:String] "is_reference"
+					[Const:String] "length"
+					[Const:String] "byte_size"
+					[Const:String] "tuple_size"
+					[Const:String] "map_size"
+					[Const:String] "bit_size"
+					[Const:String] "abs"
+					[Const:String] "round"
+					[Const:String] "trunc"
+					[Const:String] "floor"
+					[Const:String] "ceil"
+					[Const:String] "div"
+					[Const:String] "rem"
+					[Const:String] "hd"
+					[Const:String] "tl"
+					[Const:String] "elem"
+					[Const:String] "in"
+					[Const:String] "not"
+					[Const:String] "and"
+					[Const:String] "or"
+			[Var elixirFuncName(25350):String]
+				[Call:String]
+					[Field:(funcName : String) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(funcName : String) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							convertGuardFunction:(funcName : String) -> String
+					[Local funcName(25348):String:String]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local allowedGuardFunctions(25349):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Local elixirFuncName(25350):String:String]
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+
+	@:value({ context : null })
+	public function compileOptimizedGuard[Function:(guardExpr : Dynamic, ?context : Null<Dynamic>) -> String]
+		[Arg:Dynamic] [Local guardExpr(25353):Dynamic]
+		[Arg:Null<Dynamic>]
+			[Local context(25354):Null<Dynamic>]
+			[Const:Null<Dynamic>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local guardExpr(25353):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[Var optimized(25379):Unknown<48>]
+				[Call:Dynamic]
+					[Field:(guardExpr : Dynamic, context : Dynamic) -> Dynamic]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(guardExpr : Dynamic, context : Dynamic) -> Dynamic]
+							reflaxe.elixir.helpers.GuardCompiler
+							optimizeGuardExpression:(guardExpr : Dynamic, context : Dynamic) -> Dynamic
+					[Local guardExpr(25353):Dynamic:Dynamic]
+					[Local context(25354):Null<Dynamic>:Null<Dynamic>]
+			[If:Void]
+				[Binop:Bool]
+					[Local optimized(25379):Unknown<48>:Unknown<48>]
+					!=
+					[Local guardExpr(25353):Dynamic:Dynamic]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:String]
+							[Field:(guardExpr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(guardExpr : Dynamic) -> String]
+									reflaxe.elixir.helpers.GuardCompiler
+									compileGuard:(guardExpr : Dynamic) -> String
+							[Local optimized(25379):Unknown<48>:Unknown<48>]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(guardExpr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(guardExpr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							compileGuard:(guardExpr : Dynamic) -> String
+					[Local guardExpr(25353):Dynamic:Dynamic]
+
+	function optimizeGuardExpression[Function:(guardExpr : Dynamic, context : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local guardExpr(25355):Dynamic]
+		[Arg:Dynamic] [Local context(25356):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local guardExpr(25355):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local guardExpr(25355):Dynamic:Dynamic]
+			[Return:Dynamic]
+				[Meta:Dynamic]
+					:ast(switch (getExprType(guardExpr)) {
+	case "TBinop":
+		optimizeBinaryGuard(guardExpr, context);	
+	case "TCall":
+		optimizeFunctionGuard(guardExpr, context);	
+	case _:
+		guardExpr;	
+})
+					[Block:Dynamic]
+						[Var `(25378):String]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.GuardCompiler] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.GuardCompiler
+										getExprType:(expr : Dynamic) -> String
+								[Local guardExpr(25355):Dynamic:Dynamic]
+						[Switch:Dynamic]
+							[Local `(25378):String:String]
+							[Case:Dynamic]
+								[Const:String] "TBinop"
+								[Block:Dynamic]
+									[Block:Dynamic]
+										[Call:Dynamic]
+											[Field:(guardExpr : Dynamic, context : Dynamic) -> Dynamic]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic, context : Dynamic) -> Dynamic]
+													reflaxe.elixir.helpers.GuardCompiler
+													optimizeBinaryGuard:(guardExpr : Dynamic, context : Dynamic) -> Dynamic
+											[Local guardExpr(25355):Dynamic:Dynamic]
+											[Local context(25356):Dynamic:Dynamic]
+							[Case:Dynamic]
+								[Const:String] "TCall"
+								[Block:Dynamic]
+									[Block:Dynamic]
+										[Call:Dynamic]
+											[Field:(guardExpr : Dynamic, context : Dynamic) -> Dynamic]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic, context : Dynamic) -> Dynamic]
+													reflaxe.elixir.helpers.GuardCompiler
+													optimizeFunctionGuard:(guardExpr : Dynamic, context : Dynamic) -> Dynamic
+											[Local guardExpr(25355):Dynamic:Dynamic]
+											[Local context(25356):Dynamic:Dynamic]
+							[Default:Dynamic] [Block:Dynamic] [Local guardExpr(25355):Dynamic:Dynamic]
+
+	function optimizeBinaryGuard[Function:(guardExpr : Dynamic, context : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local guardExpr(25357):Dynamic]
+		[Arg:Dynamic] [Local context(25358):Dynamic]
+		[Block:Dynamic]
+			[Var binop(25359):{ e2 : Unknown<50>, e1 : Unknown<49> }]
+				[Field:Dynamic]
+					[Local guardExpr(25357):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Call:Bool]
+					[Field:(e1 : Dynamic, e2 : Dynamic) -> Bool]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(e1 : Dynamic, e2 : Dynamic) -> Bool]
+							reflaxe.elixir.helpers.GuardCompiler
+							areConstantOperands:(e1 : Dynamic, e2 : Dynamic) -> Bool
+					[Field:Unknown<49>]
+						[Local binop(25359):{ e2 : Unknown<50>, e1 : Unknown<49> }:{ e2 : Unknown<50>, e1 : Unknown<49> }]
+						[FAnon:Unknown<49>] e1:Unknown<49>
+					[Field:Unknown<50>]
+						[Local binop(25359):{ e2 : Unknown<50>, e1 : Unknown<49> }:{ e2 : Unknown<50>, e1 : Unknown<49> }]
+						[FAnon:Unknown<50>] e2:Unknown<50>
+				[Then:Void] [Block:Void]
+					[Var result(25363):Null<Unknown<51>>]
+						[Call:Dynamic]
+							[Field:(binop : Dynamic) -> Dynamic]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(binop : Dynamic) -> Dynamic]
+									reflaxe.elixir.helpers.GuardCompiler
+									evaluateConstantBinaryOp:(binop : Dynamic) -> Dynamic
+							[Local binop(25359):{ e2 : Unknown<50>, e1 : Unknown<49> }:{ e2 : Unknown<50>, e1 : Unknown<49> }]
+					[If:Void]
+						[Binop:Bool]
+							[Local result(25363):Null<Unknown<51>>:Null<Unknown<51>>]
+							!=
+							[Const:Null<Unknown<51>>] null
+						[Then:Dynamic] [Block:Dynamic]
+							[Return:Dynamic]
+								[Call:Dynamic]
+									[Field:(value : Dynamic) -> Dynamic]
+										[Const:reflaxe.elixir.helpers.GuardCompiler] this
+										[FInstance:(value : Dynamic) -> Dynamic]
+											reflaxe.elixir.helpers.GuardCompiler
+											createConstantExpression:(value : Dynamic) -> Dynamic
+									[Local result(25363):Null<Unknown<51>>:Null<Unknown<51>>]
+			[If:Void]
+				[Call:Bool]
+					[Field:(binop : Dynamic) -> Bool]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(binop : Dynamic) -> Bool]
+							reflaxe.elixir.helpers.GuardCompiler
+							isRangePattern:(binop : Dynamic) -> Bool
+					[Local binop(25359):{ e2 : Unknown<50>, e1 : Unknown<49> }:{ e2 : Unknown<50>, e1 : Unknown<49> }]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:Dynamic]
+							[Field:(binop : Dynamic) -> Dynamic]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(binop : Dynamic) -> Dynamic]
+									reflaxe.elixir.helpers.GuardCompiler
+									optimizeToRange:(binop : Dynamic) -> Dynamic
+							[Local binop(25359):{ e2 : Unknown<50>, e1 : Unknown<49> }:{ e2 : Unknown<50>, e1 : Unknown<49> }]
+			[Return:Dynamic] [Local guardExpr(25357):Dynamic:Dynamic]
+
+	function optimizeFunctionGuard[Function:(guardExpr : Dynamic, context : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local guardExpr(25369):Dynamic]
+		[Arg:Dynamic] [Local context(25370):Dynamic]
+		[Block:Dynamic]
+			[Var call(25371):{ e : Unknown<52> }]
+				[Field:Dynamic]
+					[Local guardExpr(25369):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var funcName(25372):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							extractFunctionName:(expr : Dynamic) -> String
+					[Field:Unknown<52>]
+						[Local call(25371):{ e : Unknown<52> }:{ e : Unknown<52> }]
+						[FAnon:Unknown<52>] e:Unknown<52>
+			[If:Void]
+				[Call:Bool]
+					[Field:(funcName : String) -> Bool]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(funcName : String) -> Bool]
+							reflaxe.elixir.helpers.GuardCompiler
+							isTypeCheckFunction:(funcName : String) -> Bool
+					[Local funcName(25372):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Call:Dynamic]
+							[Field:(call : Dynamic, context : Dynamic) -> Dynamic]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(call : Dynamic, context : Dynamic) -> Dynamic]
+									reflaxe.elixir.helpers.GuardCompiler
+									optimizeTypeCheck:(call : Dynamic, context : Dynamic) -> Dynamic
+							[Local call(25371):{ e : Unknown<52> }:{ e : Unknown<52> }]
+							[Local context(25370):Dynamic:Dynamic]
+			[Return:Dynamic] [Local guardExpr(25369):Dynamic:Dynamic]
+
+	public function validateGuardExpression[Function:(guardExpr : Dynamic) -> Array<String>]
+		[Arg:Dynamic] [Local guardExpr(25380):Dynamic]
+		[Block:Dynamic]
+			[Var warnings(25381):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Binop:Bool]
+					[Local guardExpr(25380):Dynamic:Dynamic]
+					==
+					[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local warnings(25381):Array<String>:Array<String>]
+			[Return:Dynamic]
+				[Meta:Array<String>]
+					:ast(switch (getExprType(guardExpr)) {
+	case "TBinop":
+		validateBinaryGuard(guardExpr, warnings);	
+	case "TUnop":
+		validateUnaryGuard(guardExpr, warnings);	
+	case "TCall":
+		validateFunctionGuard(guardExpr, warnings);	
+	case "TLocal":
+		validateVariableGuard(guardExpr, warnings);	
+	case "TConst":
+		validateConstantGuard(guardExpr, warnings);	
+	case _:
+		warnings.push("Unsupported guard expression type: " + getExprType(guardExpr));
+		warnings;	
+})
+					[Block:Array<String>]
+						[Var `(25404):String]
+							[Call:String]
+								[Field:(expr : Dynamic) -> String]
+									[Const:reflaxe.elixir.helpers.GuardCompiler] this
+									[FInstance:(expr : Dynamic) -> String]
+										reflaxe.elixir.helpers.GuardCompiler
+										getExprType:(expr : Dynamic) -> String
+								[Local guardExpr(25380):Dynamic:Dynamic]
+						[Switch:Array<String>]
+							[Local `(25404):String:String]
+							[Case:Array<String>]
+								[Const:String] "TBinop"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.GuardCompiler
+													validateBinaryGuard:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local guardExpr(25380):Dynamic:Dynamic]
+											[Local warnings(25381):Array<String>:Array<String>]
+							[Case:Array<String>]
+								[Const:String] "TCall"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.GuardCompiler
+													validateFunctionGuard:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local guardExpr(25380):Dynamic:Dynamic]
+											[Local warnings(25381):Array<String>:Array<String>]
+							[Case:Array<String>]
+								[Const:String] "TConst"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.GuardCompiler
+													validateConstantGuard:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local guardExpr(25380):Dynamic:Dynamic]
+											[Local warnings(25381):Array<String>:Array<String>]
+							[Case:Array<String>]
+								[Const:String] "TLocal"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.GuardCompiler
+													validateVariableGuard:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local guardExpr(25380):Dynamic:Dynamic]
+											[Local warnings(25381):Array<String>:Array<String>]
+							[Case:Array<String>]
+								[Const:String] "TUnop"
+								[Block:Array<String>]
+									[Block:Array<String>]
+										[Call:Array<String>]
+											[Field:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+													reflaxe.elixir.helpers.GuardCompiler
+													validateUnaryGuard:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>
+											[Local guardExpr(25380):Dynamic:Dynamic]
+											[Local warnings(25381):Array<String>:Array<String>]
+							[Default:Array<String>]
+								[Block:Array<String>]
+									[Call:Int]
+										[Field:(x : String) -> Int]
+											[Local warnings(25381):Array<String>:Array<String>]
+											[FInstance:(x : String) -> Int]
+												Array<String>
+												push:(x : Array.T) -> Int
+										[Binop:String]
+											[Const:String] "Unsupported guard expression type: "
+											+
+											[Call:String]
+												[Field:(expr : Dynamic) -> String]
+													[Const:reflaxe.elixir.helpers.GuardCompiler] this
+													[FInstance:(expr : Dynamic) -> String]
+														reflaxe.elixir.helpers.GuardCompiler
+														getExprType:(expr : Dynamic) -> String
+												[Local guardExpr(25380):Dynamic:Dynamic]
+									[Local warnings(25381):Array<String>:Array<String>]
+
+	function validateBinaryGuard[Function:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Dynamic] [Local guardExpr(25382):Dynamic]
+		[Arg:Array<String>] [Local warnings(25383):Array<String>]
+		[Block:Dynamic]
+			[Var binop(25384):{ op : String, e2 : Unknown<54>, e1 : Unknown<53> }]
+				[Field:Dynamic]
+					[Local guardExpr(25382):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(op : String) -> Bool]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(op : String) -> Bool]
+								reflaxe.elixir.helpers.GuardCompiler
+								isAllowedGuardOperator:(op : String) -> Bool
+						[Field:String]
+							[Local binop(25384):{ op : String, e2 : Unknown<54>, e1 : Unknown<53> }:{ op : String, e2 : Unknown<54>, e1 : Unknown<53> }]
+							[FAnon:String] op:String
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local warnings(25383):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Operator \""
+								+
+								[Field:String]
+									[Local binop(25384):{ op : String, e2 : Unknown<54>, e1 : Unknown<53> }:{ op : String, e2 : Unknown<54>, e1 : Unknown<53> }]
+									[FAnon:String] op:String
+							+
+							[Const:String] "\" is not allowed in Elixir guards"
+			[Binop:Array<String>]
+				[Local warnings(25383):Array<String>:Array<String>]
+				=
+				[Call:Array<String>]
+					[Field:(a : Array<String>) -> Array<String>]
+						[Local warnings(25383):Array<String>:Array<String>]
+						[FInstance:(a : Array<String>) -> Array<String>]
+							Array<String>
+							concat:(a : Array<Array.T>) -> Array<Array.T>
+					[Call:Array<String>]
+						[Field:(guardExpr : Dynamic) -> Array<String>]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(guardExpr : Dynamic) -> Array<String>]
+								reflaxe.elixir.helpers.GuardCompiler
+								validateGuardExpression:(guardExpr : Dynamic) -> Array<String>
+						[Field:Unknown<53>]
+							[Local binop(25384):{ op : String, e2 : Unknown<54>, e1 : Unknown<53> }:{ op : String, e2 : Unknown<54>, e1 : Unknown<53> }]
+							[FAnon:Unknown<53>] e1:Unknown<53>
+			[Binop:Array<String>]
+				[Local warnings(25383):Array<String>:Array<String>]
+				=
+				[Call:Array<String>]
+					[Field:(a : Array<String>) -> Array<String>]
+						[Local warnings(25383):Array<String>:Array<String>]
+						[FInstance:(a : Array<String>) -> Array<String>]
+							Array<String>
+							concat:(a : Array<Array.T>) -> Array<Array.T>
+					[Call:Array<String>]
+						[Field:(guardExpr : Dynamic) -> Array<String>]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(guardExpr : Dynamic) -> Array<String>]
+								reflaxe.elixir.helpers.GuardCompiler
+								validateGuardExpression:(guardExpr : Dynamic) -> Array<String>
+						[Field:Unknown<54>]
+							[Local binop(25384):{ op : String, e2 : Unknown<54>, e1 : Unknown<53> }:{ op : String, e2 : Unknown<54>, e1 : Unknown<53> }]
+							[FAnon:Unknown<54>] e2:Unknown<54>
+			[Return:Dynamic] [Local warnings(25383):Array<String>:Array<String>]
+
+	function validateUnaryGuard[Function:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Dynamic] [Local guardExpr(25387):Dynamic]
+		[Arg:Array<String>] [Local warnings(25388):Array<String>]
+		[Block:Dynamic]
+			[Var unop(25389):{ op : String, e : Unknown<55> }]
+				[Field:Dynamic]
+					[Local guardExpr(25387):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(op : String) -> Bool]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(op : String) -> Bool]
+								reflaxe.elixir.helpers.GuardCompiler
+								isAllowedGuardUnaryOperator:(op : String) -> Bool
+						[Field:String]
+							[Local unop(25389):{ op : String, e : Unknown<55> }:{ op : String, e : Unknown<55> }]
+							[FAnon:String] op:String
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local warnings(25388):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Unary operator \""
+								+
+								[Field:String]
+									[Local unop(25389):{ op : String, e : Unknown<55> }:{ op : String, e : Unknown<55> }]
+									[FAnon:String] op:String
+							+
+							[Const:String] "\" is not allowed in Elixir guards"
+			[Binop:Array<String>]
+				[Local warnings(25388):Array<String>:Array<String>]
+				=
+				[Call:Array<String>]
+					[Field:(a : Array<String>) -> Array<String>]
+						[Local warnings(25388):Array<String>:Array<String>]
+						[FInstance:(a : Array<String>) -> Array<String>]
+							Array<String>
+							concat:(a : Array<Array.T>) -> Array<Array.T>
+					[Call:Array<String>]
+						[Field:(guardExpr : Dynamic) -> Array<String>]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(guardExpr : Dynamic) -> Array<String>]
+								reflaxe.elixir.helpers.GuardCompiler
+								validateGuardExpression:(guardExpr : Dynamic) -> Array<String>
+						[Field:Unknown<55>]
+							[Local unop(25389):{ op : String, e : Unknown<55> }:{ op : String, e : Unknown<55> }]
+							[FAnon:Unknown<55>] e:Unknown<55>
+			[Return:Dynamic] [Local warnings(25388):Array<String>:Array<String>]
+
+	function validateFunctionGuard[Function:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Dynamic] [Local guardExpr(25392):Dynamic]
+		[Arg:Array<String>] [Local warnings(25393):Array<String>]
+		[Block:Dynamic]
+			[Var call(25394):{ el : Null<Array<Dynamic>>, e : Unknown<56> }]
+				[Field:Dynamic]
+					[Local guardExpr(25392):Dynamic:Dynamic]
+					[FDynamic:Dynamic] expr
+			[Var funcName(25395):String]
+				[Call:String]
+					[Field:(expr : Dynamic) -> String]
+						[Const:reflaxe.elixir.helpers.GuardCompiler] this
+						[FInstance:(expr : Dynamic) -> String]
+							reflaxe.elixir.helpers.GuardCompiler
+							extractFunctionName:(expr : Dynamic) -> String
+					[Field:Unknown<56>]
+						[Local call(25394):{ el : Null<Array<Dynamic>>, e : Unknown<56> }:{ el : Null<Array<Dynamic>>, e : Unknown<56> }]
+						[FAnon:Unknown<56>] e:Unknown<56>
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(callExpr : Dynamic) -> Bool]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(callExpr : Dynamic) -> Bool]
+								reflaxe.elixir.helpers.GuardCompiler
+								isGuardFunction:(callExpr : Dynamic) -> Bool
+						[Local call(25394):{ el : Null<Array<Dynamic>>, e : Unknown<56> }:{ el : Null<Array<Dynamic>>, e : Unknown<56> }]
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local warnings(25393):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Function \""
+								+
+								[Local funcName(25395):String:String]
+							+
+							[Const:String] "\" is not allowed in Elixir guards"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Array<Dynamic>>]
+						[Local call(25394):{ el : Null<Array<Dynamic>>, e : Unknown<56> }:{ el : Null<Array<Dynamic>>, e : Unknown<56> }]
+						[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+					!=
+					[Const:Null<Array<Dynamic>>] null
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(25397):Int] [Const:Int] 0
+						[Var `(25398):Array<Dynamic>]
+							[Parenthesis:Array<Dynamic>]
+								[Cast:Array<Dynamic>]
+									[Field:Null<Array<Dynamic>>]
+										[Local call(25394):{ el : Null<Array<Dynamic>>, e : Unknown<56> }:{ el : Null<Array<Dynamic>>, e : Unknown<56> }]
+										[FAnon:Null<Array<Dynamic>>] el:Null<Array<Dynamic>>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(25397):Int:Int]
+								<
+								[Field:Int]
+									[Local `(25398):Array<Dynamic>:Array<Dynamic>]
+									[FInstance:Int]
+										Array<Dynamic>
+										length:Int
+							[Block:Void]
+								[Var arg(25396):Dynamic]
+									[Array:Dynamic]
+										[Local `(25398):Array<Dynamic>:Array<Dynamic>]
+										[Local `(25397):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(25397):Int:Int]
+								[Binop:Array<String>]
+									[Local warnings(25393):Array<String>:Array<String>]
+									=
+									[Call:Array<String>]
+										[Field:(a : Array<String>) -> Array<String>]
+											[Local warnings(25393):Array<String>:Array<String>]
+											[FInstance:(a : Array<String>) -> Array<String>]
+												Array<String>
+												concat:(a : Array<Array.T>) -> Array<Array.T>
+										[Call:Array<String>]
+											[Field:(guardExpr : Dynamic) -> Array<String>]
+												[Const:reflaxe.elixir.helpers.GuardCompiler] this
+												[FInstance:(guardExpr : Dynamic) -> Array<String>]
+													reflaxe.elixir.helpers.GuardCompiler
+													validateGuardExpression:(guardExpr : Dynamic) -> Array<String>
+											[Local arg(25396):Dynamic:Dynamic]
+			[Return:Dynamic] [Local warnings(25393):Array<String>:Array<String>]
+
+	function validateVariableGuard[Function:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Dynamic] [Local guardExpr(25399):Dynamic]
+		[Arg:Array<String>] [Local warnings(25400):Array<String>]
+		[Block:Dynamic] [Return:Dynamic] [Local warnings(25400):Array<String>:Array<String>]
+
+	function validateConstantGuard[Function:(guardExpr : Dynamic, warnings : Array<String>) -> Array<String>]
+		[Arg:Dynamic] [Local guardExpr(25401):Dynamic]
+		[Arg:Array<String>] [Local warnings(25402):Array<String>]
+		[Block:Dynamic] [Return:Dynamic] [Local warnings(25402):Array<String>:Array<String>]
+
+	function areConstantOperands[Function:(e1 : Dynamic, e2 : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local e1(25360):Dynamic]
+		[Arg:Dynamic] [Local e2(25361):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Call:String]
+							[Field:(expr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(expr : Dynamic) -> String]
+									reflaxe.elixir.helpers.GuardCompiler
+									getExprType:(expr : Dynamic) -> String
+							[Local e1(25360):Dynamic:Dynamic]
+						==
+						[Const:String] "TConst"
+					&&
+					[Binop:Bool]
+						[Call:String]
+							[Field:(expr : Dynamic) -> String]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(expr : Dynamic) -> String]
+									reflaxe.elixir.helpers.GuardCompiler
+									getExprType:(expr : Dynamic) -> String
+							[Local e2(25361):Dynamic:Dynamic]
+						==
+						[Const:String] "TConst"
+
+	function evaluateConstantBinaryOp[Function:(binop : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local binop(25362):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [Const:Dynamic] null
+
+	function createConstantExpression[Function:(value : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local value(25364):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [Const:Dynamic] null
+
+	function isRangePattern[Function:(binop : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local binop(25365):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Field:Dynamic]
+								[Local binop(25365):Dynamic:Dynamic]
+								[FDynamic:Dynamic] op
+							==
+							[Const:String] "&&"
+						&&
+						[Call:Bool]
+							[Field:(expr : Dynamic) -> Bool]
+								[Const:reflaxe.elixir.helpers.GuardCompiler] this
+								[FInstance:(expr : Dynamic) -> Bool]
+									reflaxe.elixir.helpers.GuardCompiler
+									isRangeComparison:(expr : Dynamic) -> Bool
+							[Field:Dynamic]
+								[Local binop(25365):Dynamic:Dynamic]
+								[FDynamic:Dynamic] e1
+					&&
+					[Call:Bool]
+						[Field:(expr : Dynamic) -> Bool]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(expr : Dynamic) -> Bool]
+								reflaxe.elixir.helpers.GuardCompiler
+								isRangeComparison:(expr : Dynamic) -> Bool
+						[Field:Dynamic]
+							[Local binop(25365):Dynamic:Dynamic]
+							[FDynamic:Dynamic] e2
+
+	function isRangeComparison[Function:(expr : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local expr(25366):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(expr : Dynamic) -> String]
+							[Const:reflaxe.elixir.helpers.GuardCompiler] this
+							[FInstance:(expr : Dynamic) -> String]
+								reflaxe.elixir.helpers.GuardCompiler
+								getExprType:(expr : Dynamic) -> String
+						[Local expr(25366):Dynamic:Dynamic]
+					==
+					[Const:String] "TBinop"
+				[Then:Dynamic] [Block:Dynamic]
+					[Var op(25367):String]
+						[Field:Dynamic]
+							[Field:Dynamic]
+								[Local expr(25366):Dynamic:Dynamic]
+								[FDynamic:Dynamic] expr
+							[FDynamic:Dynamic] op
+					[Return:Dynamic]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Local op(25367):String:String]
+										==
+										[Const:String] ">="
+									||
+									[Binop:Bool]
+										[Local op(25367):String:String]
+										==
+										[Const:String] "<="
+								||
+								[Binop:Bool]
+									[Local op(25367):String:String]
+									==
+									[Const:String] ">"
+							||
+							[Binop:Bool]
+								[Local op(25367):String:String]
+								==
+								[Const:String] "<"
+			[Return:Dynamic] [Const:Bool] false
+
+	function optimizeToRange[Function:(binop : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local binop(25368):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [Local binop(25368):Dynamic:Dynamic]
+
+	function isTypeCheckFunction[Function:(funcName : String) -> Bool]
+		[Arg:String] [Local funcName(25373):String]
+		[Block:Dynamic]
+			[Var typeCheckFunctions(25374):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "isString"
+					[Const:String] "isBinary"
+					[Const:String] "isInt"
+					[Const:String] "isFloat"
+					[Const:String] "isBool"
+					[Const:String] "isArray"
+					[Const:String] "isList"
+					[Const:String] "isMap"
+					[Const:String] "isAtom"
+					[Const:String] "isTuple"
+					[Const:String] "isFunction"
+					[Const:String] "isNil"
+					[Const:String] "isNumber"
+					[Const:String] "isPort"
+					[Const:String] "isPid"
+					[Const:String] "isReference"
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local typeCheckFunctions(25374):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Local funcName(25373):String:String]
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+
+	function optimizeTypeCheck[Function:(call : Dynamic, context : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local call(25375):Dynamic]
+		[Arg:Dynamic] [Local context(25376):Dynamic]
+		[Block:Dynamic] [Return:Dynamic] [Local call(25375):Dynamic:Dynamic]
+
+	function isAllowedGuardOperator[Function:(op : String) -> Bool]
+		[Arg:String] [Local op(25385):String]
+		[Block:Dynamic]
+			[Var allowedOps(25386):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "=="
+					[Const:String] "!="
+					[Const:String] "==="
+					[Const:String] "!=="
+					[Const:String] ">"
+					[Const:String] "<"
+					[Const:String] ">="
+					[Const:String] "<="
+					[Const:String] "+"
+					[Const:String] "-"
+					[Const:String] "*"
+					[Const:String] "/"
+					[Const:String] "&&"
+					[Const:String] "||"
+					[Const:String] "%"
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local allowedOps(25386):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Local op(25385):String:String]
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+
+	function isAllowedGuardUnaryOperator[Function:(op : String) -> Bool]
+		[Arg:String] [Local op(25390):String]
+		[Block:Dynamic]
+			[Var allowedUnaryOps(25391):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "!"
+					[Const:String] "-"
+					[Const:String] "+"
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local allowedUnaryOps(25391):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Local op(25390):String:String]
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+
+	function getExprType[Function:(expr : Dynamic) -> String]
+		[Arg:Dynamic] [Local expr(25243):Dynamic]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local expr(25243):Dynamic:Dynamic]
+						==
+						[Const:Dynamic] null
+					||
+					[Binop:Bool]
+						[Field:Dynamic]
+							[Local expr(25243):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+						==
+						[Const:Dynamic] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "null"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(c : Class<Dynamic>) -> String]
+						[TypeExpr Type:Class<Type>]
+						[FStatic:(c : Class<Dynamic>) -> String]
+							Type
+							getClassName:(c : Class<Dynamic>) -> String
+					[Call:Class<Unknown<57>>]
+						[Field:(o : Unknown<57>) -> Class<Unknown<57>>]
+							[TypeExpr Type:Class<Type>]
+							[FStatic:(o : Unknown<57>) -> Class<Unknown<57>>]
+								Type
+								getClass:(o : getClass.T) -> Class<getClass.T>
+						[Field:Dynamic]
+							[Local expr(25243):Dynamic:Dynamic]
+							[FDynamic:Dynamic] expr
+}

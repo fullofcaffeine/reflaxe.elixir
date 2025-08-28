@@ -11,7 +11,7 @@ defmodule TypeSafeChildSpecBuilder do
   # Static functions
   @doc "Generated from Haxe pubsub"
   def pubsub(app_name) do
-    {Phoenix.PubSub, name: app_name <> ".PubSub"}
+    {Phoenix.PubSub, name: _app_name <> ".PubSub"}
   end
 
   @doc "Generated from Haxe repo"
@@ -43,19 +43,19 @@ defmodule TypeSafeChildSpecBuilder do
     temp_string = nil
 
     tmp = pubsub_name
-    if ((tmp != nil)), do: temp_string = tmp, else: temp_string = "" <> app_name <> ".PubSub"
+    if ((tmp != nil)), do: temp_string = tmp, else: temp_string = "" <> _app_name <> ".PubSub"
 
-    {:presence, %{"name" => "" <> app_name <> ".Presence", "pubsub_server" => temp_string}}
+    {:presence, %{"name" => "" <> _app_name <> ".Presence", "pubsub_server" => temp_string}}
   end
 
   @doc "Generated from Haxe worker"
   def worker(module, args) do
-    {:custom, module, args, :permanent, ShutdownType.timeout(5000)}
+    {:custom, module, _args, :permanent, ShutdownType.timeout(5000)}
   end
 
   @doc "Generated from Haxe supervisor"
   def supervisor(module, args) do
-    {:custom, module, args, :permanent, :infinity}
+    {:custom, module, _args, :permanent, :infinity}
   end
 
 end

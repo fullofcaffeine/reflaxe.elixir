@@ -1,0 +1,1 @@
+private typedef reflaxe.elixir.helpers._UnifiedLoopCompiler.ForInPattern = { body : haxe.macro.TypedExpr, array : haxe.macro.TypedExpr }

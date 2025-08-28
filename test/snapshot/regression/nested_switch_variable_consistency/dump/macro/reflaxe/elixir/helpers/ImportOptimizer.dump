@@ -1,0 +1,2030 @@
+class reflaxe.elixir.helpers.ImportOptimizer {
+
+	public function new[Function:(compiler : reflaxe.elixir.ElixirCompiler) -> Void]
+		[Arg:reflaxe.elixir.ElixirCompiler] [Local compiler(25748):reflaxe.elixir.ElixirCompiler]
+		[Block:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+			[Binop:reflaxe.elixir.ElixirCompiler]
+				[Field:reflaxe.elixir.ElixirCompiler]
+					[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+					[FInstance:reflaxe.elixir.ElixirCompiler]
+						reflaxe.elixir.helpers.ImportOptimizer
+						compiler:reflaxe.elixir.ElixirCompiler
+				=
+				[Local compiler(25748):reflaxe.elixir.ElixirCompiler:reflaxe.elixir.ElixirCompiler]
+			[Binop:Map<String, reflaxe.elixir.helpers.ImportStatement>]
+				[Field:Map<String, reflaxe.elixir.helpers.ImportStatement>]
+					[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+					[FInstance:Map<String, reflaxe.elixir.helpers.ImportStatement>]
+						reflaxe.elixir.helpers.ImportOptimizer
+						detectedImports:Map<String, reflaxe.elixir.helpers.ImportStatement>
+				=
+				[Block:haxe.ds.StringMap<reflaxe.elixir.helpers.ImportStatement>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<reflaxe.elixir.helpers.ImportStatement>] haxe.ds.StringMap<reflaxe.elixir.helpers.ImportStatement>
+			[Binop:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+				[Field:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+					[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+					[FInstance:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+						reflaxe.elixir.helpers.ImportOptimizer
+						functionUsage:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>
+				=
+				[Block:haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>] haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	var detectedImports:Map<String, reflaxe.elixir.helpers.ImportStatement>;
+
+	var functionUsage:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>;
+
+	public function reset[Function:() -> Void]
+		[Block:Void]
+			[Block:Void]
+				[Var this(25751):haxe.IMap<String, reflaxe.elixir.helpers.ImportStatement>]
+					[Field:Map<String, reflaxe.elixir.helpers.ImportStatement>]
+						[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+						[FInstance:Map<String, reflaxe.elixir.helpers.ImportStatement>]
+							reflaxe.elixir.helpers.ImportOptimizer
+							detectedImports:Map<String, reflaxe.elixir.helpers.ImportStatement>
+				[Call:Void]
+					[Field:() -> Void]
+						[Cast:haxe.ds.StringMap<reflaxe.elixir.helpers.ImportStatement>] [Local this(25751):haxe.IMap<String, reflaxe.elixir.helpers.ImportStatement>:haxe.IMap<String, reflaxe.elixir.helpers.ImportStatement>]
+						[FInstance:() -> Void]
+							haxe.ds.StringMap<reflaxe.elixir.helpers.ImportStatement>
+							clear:() -> Void
+			[Block:Void]
+				[Var this(25754):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+					[Field:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+						[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+						[FInstance:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+							reflaxe.elixir.helpers.ImportOptimizer
+							functionUsage:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>
+				[Call:Void]
+					[Field:() -> Void]
+						[Cast:haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>] [Local this(25754):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>:haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+						[FInstance:() -> Void]
+							haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>
+							clear:() -> Void
+
+	@:value({ arity : 1 })
+	public function registerFunctionUsage[Function:(module : String, functionName : String, ?arity : Int) -> Void]
+		[Arg:String] [Local module(25755):String]
+		[Arg:String] [Local functionName(25756):String]
+		[Arg:Int]
+			[Local arity(25757):Int]
+			[Const:Int] 1
+		[Block:Void]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var this(25760):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[Field:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+								[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+								[FInstance:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+									reflaxe.elixir.helpers.ImportOptimizer
+									functionUsage:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>] [Local this(25760):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>:haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>
+									exists:(key : String) -> Bool
+							[Local module(25755):String:String]
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var this(25764):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[Field:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+								[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+								[FInstance:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+									reflaxe.elixir.helpers.ImportOptimizer
+									functionUsage:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>
+						[Call:Void]
+							[Field:(key : String, value : Array<reflaxe.elixir.helpers.ImportFunction>) -> Void]
+								[Cast:haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>] [Local this(25764):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>:haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+								[FInstance:(key : String, value : Array<reflaxe.elixir.helpers.ImportFunction>) -> Void]
+									haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>
+									set:(key : String, value : haxe.ds.StringMap.T) -> Void
+							[Local module(25755):String:String]
+							[ArrayDecl:Array<reflaxe.elixir.helpers.ImportFunction>]
+			[Var functions(25771):Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+				[Block:Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+					[Var this(25769):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+						[Field:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+							[FInstance:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+								reflaxe.elixir.helpers.ImportOptimizer
+								functionUsage:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>
+					[Call:Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+						[Field:(key : String) -> Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[Cast:haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>] [Local this(25769):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>:haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[FInstance:(key : String) -> Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+								haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local module(25755):String:String]
+			[Var func(25772):{ name : String, arity : Int }]
+				[ObjectDecl:{ name : String, arity : Int }]
+					name: [Local functionName(25756):String:String]
+					arity: [Local arity(25757):Int:Int]
+			[Var exists(25773):Bool] [Const:Bool] false
+			[Block:Void]
+				[Var `(25775):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25775):Int:Int]
+						<
+						[Field:Int]
+							[Local functions(25771):Null<Array<reflaxe.elixir.helpers.ImportFunction>>:Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.ImportFunction>
+								length:Int
+					[Block:Void]
+						[Var existing(25774):reflaxe.elixir.helpers.ImportFunction]
+							[Array:reflaxe.elixir.helpers.ImportFunction]
+								[Local functions(25771):Null<Array<reflaxe.elixir.helpers.ImportFunction>>:Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+								[Local `(25775):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25775):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Field:String]
+										[Local existing(25774):reflaxe.elixir.helpers.ImportFunction:reflaxe.elixir.helpers.ImportFunction]
+										[FAnon:String] name:String
+									==
+									[Field:String]
+										[Local func(25772):{ name : String, arity : Int }:{ name : String, arity : Int }]
+										[FAnon:String] name:String
+								&&
+								[Binop:Bool]
+									[Field:Int]
+										[Local existing(25774):reflaxe.elixir.helpers.ImportFunction:reflaxe.elixir.helpers.ImportFunction]
+										[FAnon:Int] arity:Int
+									==
+									[Field:Int]
+										[Local func(25772):{ name : String, arity : Int }:{ name : String, arity : Int }]
+										[FAnon:Int] arity:Int
+							[Then:Dynamic] [Block:Dynamic]
+								[Binop:Bool]
+									[Local exists(25773):Bool:Bool]
+									=
+									[Const:Bool] true
+								[Break:Dynamic]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Local exists(25773):Bool:Bool]
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : reflaxe.elixir.helpers.ImportFunction) -> Int]
+							[Local functions(25771):Null<Array<reflaxe.elixir.helpers.ImportFunction>>:Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[FInstance:(x : reflaxe.elixir.helpers.ImportFunction) -> Int]
+								Array<reflaxe.elixir.helpers.ImportFunction>
+								push:(x : Array.T) -> Int
+						[Local func(25772):{ name : String, arity : Int }:{ name : String, arity : Int }]
+
+	public function registerPipelineImports[Function:(patterns : Array<reflaxe.elixir.helpers.PipelinePattern>) -> Void]
+		[Arg:Array<reflaxe.elixir.helpers.PipelinePattern>] [Local patterns(25776):Array<reflaxe.elixir.helpers.PipelinePattern>]
+		[Block:Void]
+			[Block:Void]
+				[Var `(25783):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25783):Int:Int]
+						<
+						[Field:Int]
+							[Local patterns(25776):Array<reflaxe.elixir.helpers.PipelinePattern>:Array<reflaxe.elixir.helpers.PipelinePattern>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.PipelinePattern>
+								length:Int
+					[Block:Void]
+						[Var pattern(25777):reflaxe.elixir.helpers.PipelinePattern]
+							[Array:reflaxe.elixir.helpers.PipelinePattern]
+								[Local patterns(25776):Array<reflaxe.elixir.helpers.PipelinePattern>:Array<reflaxe.elixir.helpers.PipelinePattern>]
+								[Local `(25783):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25783):Int:Int]
+						[Block:Void]
+							[Var `(25781):Int] [Const:Int] 0
+							[Var `(25782):Array<reflaxe.elixir.helpers.PipelineOperation>]
+								[Field:Array<reflaxe.elixir.helpers.PipelineOperation>]
+									[Local pattern(25777):reflaxe.elixir.helpers.PipelinePattern:reflaxe.elixir.helpers.PipelinePattern]
+									[FAnon:Array<reflaxe.elixir.helpers.PipelineOperation>] operations:Array<reflaxe.elixir.helpers.PipelineOperation>
+							[While:Void]
+								[Binop:Bool]
+									[Local `(25781):Int:Int]
+									<
+									[Field:Int]
+										[Local `(25782):Array<reflaxe.elixir.helpers.PipelineOperation>:Array<reflaxe.elixir.helpers.PipelineOperation>]
+										[FInstance:Int]
+											Array<reflaxe.elixir.helpers.PipelineOperation>
+											length:Int
+								[Block:Void]
+									[Var operation(25778):reflaxe.elixir.helpers.PipelineOperation]
+										[Array:reflaxe.elixir.helpers.PipelineOperation]
+											[Local `(25782):Array<reflaxe.elixir.helpers.PipelineOperation>:Array<reflaxe.elixir.helpers.PipelineOperation>]
+											[Local `(25781):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(25781):Int:Int]
+									[Var module(25780):Null<String>]
+										[Call:Null<String>]
+											[Field:(functionName : String) -> Null<String>]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(functionName : String) -> Null<String>]
+													reflaxe.elixir.helpers.ImportOptimizer
+													getModuleForFunction:(functionName : String) -> Null<String>
+											[Field:String]
+												[Local operation(25778):reflaxe.elixir.helpers.PipelineOperation:reflaxe.elixir.helpers.PipelineOperation]
+												[FAnon:String] functionName:String
+									[If:Void]
+										[Binop:Bool]
+											[Local module(25780):Null<String>:Null<String>]
+											!=
+											[Const:Null<String>] null
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(module : String, functionName : String, ?arity : Int) -> Void]
+													[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+													[FInstance:(module : String, functionName : String, ?arity : Int) -> Void]
+														reflaxe.elixir.helpers.ImportOptimizer
+														registerFunctionUsage:(module : String, functionName : String, ?arity : Int) -> Void
+												[Local module(25780):Null<String>:Null<String>]
+												[Field:String]
+													[Local operation(25778):reflaxe.elixir.helpers.PipelineOperation:reflaxe.elixir.helpers.PipelineOperation]
+													[FAnon:String] functionName:String
+												[Binop:Int]
+													[Field:Int]
+														[Field:Array<String>]
+															[Local operation(25778):reflaxe.elixir.helpers.PipelineOperation:reflaxe.elixir.helpers.PipelineOperation]
+															[FAnon:Array<String>] arguments:Array<String>
+														[FInstance:Int]
+															Array<String>
+															length:Int
+													+
+													[Const:Int] 1
+
+	function getModuleForFunction[Function:(functionName : String) -> Null<String>]
+		[Arg:String] [Local functionName(25779):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<String>]
+					:ast(switch (functionName) {
+	case "map" | "filter" | "reduce" | "reject" | "find" | "any?" | "all?" | "count" | "empty?" | "member?":
+		"Enum";	
+	case "trim" | "downcase" | "upcase" | "split" | "replace" | "contains?" | "starts_with?" | "ends_with?":
+		"String";	
+	case "put" | "get" | "merge" | "delete" | "keys" | "values" | "has_key?":
+		"Map";	
+	case "first" | "last" | "flatten" | "reverse":
+		"List";	
+	case "assign" | "push_event" | "push_patch" | "push_redirect" | "redirect":
+		"Phoenix.LiveView";	
+	case "change" | "validate_required" | "validate_length" | "cast":
+		"Ecto.Changeset";	
+	case "info" | "debug" | "warn" | "error":
+		"Logger";	
+	default:
+		null;	
+})
+					[Switch:Null<String>]
+						[Local functionName(25779):String:String]
+						[Case:String]
+							[Const:String] "cast"
+							[Const:String] "change"
+							[Const:String] "validate_length"
+							[Const:String] "validate_required"
+							[Block:String] [Block:String] [Const:String] "Ecto.Changeset"
+						[Case:String]
+							[Const:String] "contains?"
+							[Const:String] "downcase"
+							[Const:String] "ends_with?"
+							[Const:String] "replace"
+							[Const:String] "split"
+							[Const:String] "starts_with?"
+							[Const:String] "trim"
+							[Const:String] "upcase"
+							[Block:String] [Block:String] [Const:String] "String"
+						[Case:String]
+							[Const:String] "debug"
+							[Const:String] "error"
+							[Const:String] "info"
+							[Const:String] "warn"
+							[Block:String] [Block:String] [Const:String] "Logger"
+						[Case:String]
+							[Const:String] "delete"
+							[Const:String] "get"
+							[Const:String] "has_key?"
+							[Const:String] "keys"
+							[Const:String] "merge"
+							[Const:String] "put"
+							[Const:String] "values"
+							[Block:String] [Block:String] [Const:String] "Map"
+						[Case:String]
+							[Const:String] "all?"
+							[Const:String] "any?"
+							[Const:String] "count"
+							[Const:String] "empty?"
+							[Const:String] "filter"
+							[Const:String] "find"
+							[Const:String] "map"
+							[Const:String] "member?"
+							[Const:String] "reduce"
+							[Const:String] "reject"
+							[Block:String] [Block:String] [Const:String] "Enum"
+						[Case:String]
+							[Const:String] "assign"
+							[Const:String] "push_event"
+							[Const:String] "push_patch"
+							[Const:String] "push_redirect"
+							[Const:String] "redirect"
+							[Block:String] [Block:String] [Const:String] "Phoenix.LiveView"
+						[Case:String]
+							[Const:String] "first"
+							[Const:String] "flatten"
+							[Const:String] "last"
+							[Const:String] "reverse"
+							[Block:String] [Block:String] [Const:String] "List"
+						[Default:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+
+	public function optimizeImports[Function:() -> Array<reflaxe.elixir.helpers.ImportStatement>]
+		[Block:Dynamic]
+			[Var optimized(17344):Array<reflaxe.elixir.helpers.ImportStatement>] [ArrayDecl:Array<reflaxe.elixir.helpers.ImportStatement>]
+			[For:Void]
+				[Local module(17348):String]
+				[Block:Iterator<String>]
+					[Var this(17347):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+						[Field:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+							[FInstance:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+								reflaxe.elixir.helpers.ImportOptimizer
+								functionUsage:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>
+					[Call:Iterator<String>]
+						[Field:() -> Iterator<String>]
+							[Cast:haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>] [Local this(17347):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>:haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[FInstance:() -> Iterator<String>]
+								haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>
+								keys:() -> Iterator<String>
+				[Block:Void]
+					[Var functions(17353):Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+						[Block:Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+							[Var this(17351):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+								[Field:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+									[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+									[FInstance:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+										reflaxe.elixir.helpers.ImportOptimizer
+										functionUsage:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>
+							[Call:Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+								[Field:(key : String) -> Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+									[Cast:haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>] [Local this(17351):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>:haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+									[FInstance:(key : String) -> Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+										haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>
+										get:(key : String) -> Null<haxe.ds.StringMap.T>
+								[Local module(17348):String:String]
+					[Var importStmt(17362):Null<reflaxe.elixir.helpers.ImportStatement>]
+						[Call:Null<reflaxe.elixir.helpers.ImportStatement>]
+							[Field:(module : String, functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> Null<reflaxe.elixir.helpers.ImportStatement>]
+								[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+								[FInstance:(module : String, functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> Null<reflaxe.elixir.helpers.ImportStatement>]
+									reflaxe.elixir.helpers.ImportOptimizer
+									optimizeModuleImport:(module : String, functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> Null<reflaxe.elixir.helpers.ImportStatement>
+							[Local module(17348):String:String]
+							[Local functions(17353):Null<Array<reflaxe.elixir.helpers.ImportFunction>>:Null<Array<reflaxe.elixir.helpers.ImportFunction>>]
+					[If:Void]
+						[Binop:Bool]
+							[Local importStmt(17362):Null<reflaxe.elixir.helpers.ImportStatement>:Null<reflaxe.elixir.helpers.ImportStatement>]
+							!=
+							[Const:Null<reflaxe.elixir.helpers.ImportStatement>] null
+						[Then:Int] [Block:Int]
+							[Call:Int]
+								[Field:(x : reflaxe.elixir.helpers.ImportStatement) -> Int]
+									[Local optimized(17344):Array<reflaxe.elixir.helpers.ImportStatement>:Array<reflaxe.elixir.helpers.ImportStatement>]
+									[FInstance:(x : reflaxe.elixir.helpers.ImportStatement) -> Int]
+										Array<reflaxe.elixir.helpers.ImportStatement>
+										push:(x : Array.T) -> Int
+								[Local importStmt(17362):Null<reflaxe.elixir.helpers.ImportStatement>:Null<reflaxe.elixir.helpers.ImportStatement>]
+			[Call:Void]
+				[Field:(f : ((reflaxe.elixir.helpers.ImportStatement, reflaxe.elixir.helpers.ImportStatement) -> Int)) -> Void]
+					[Local optimized(17344):Array<reflaxe.elixir.helpers.ImportStatement>:Array<reflaxe.elixir.helpers.ImportStatement>]
+					[FInstance:(f : ((reflaxe.elixir.helpers.ImportStatement, reflaxe.elixir.helpers.ImportStatement) -> Int)) -> Void]
+						Array<reflaxe.elixir.helpers.ImportStatement>
+						sort:(f : ((Array.T, Array.T) -> Int)) -> Void
+				[Field:(a : reflaxe.elixir.helpers.ImportStatement, b : reflaxe.elixir.helpers.ImportStatement) -> Int]
+					[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+					[FClosure:(a : reflaxe.elixir.helpers.ImportStatement, b : reflaxe.elixir.helpers.ImportStatement) -> Int]
+						reflaxe.elixir.helpers.ImportOptimizer
+						compareImports:(a : reflaxe.elixir.helpers.ImportStatement, b : reflaxe.elixir.helpers.ImportStatement) -> Int
+			[Return:Dynamic] [Local optimized(17344):Array<reflaxe.elixir.helpers.ImportStatement>:Array<reflaxe.elixir.helpers.ImportStatement>]
+
+	function optimizeModuleImport[Function:(module : String, functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> Null<reflaxe.elixir.helpers.ImportStatement>]
+		[Arg:String] [Local module(17354):String]
+		[Arg:Array<reflaxe.elixir.helpers.ImportFunction>] [Local functions(17355):Array<reflaxe.elixir.helpers.ImportFunction>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local functions(17355):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+						[FInstance:Int]
+							Array<reflaxe.elixir.helpers.ImportFunction>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.helpers.ImportStatement>] null
+			[Return:Dynamic]
+				[Meta:Null<reflaxe.elixir.helpers.ImportStatement>]
+					:ast(switch (module) {
+	case "Enum":
+		optimizeEnumImport(functions);	
+	case "String":
+		optimizeStringImport(functions);	
+	case "Phoenix.LiveView":
+		optimizeLiveViewImport(functions);	
+	case "Ecto.Changeset":
+		optimizeChangesetImport(functions);	
+	default:
+		optimizeGenericImport(module, functions);	
+})
+					[Switch:Null<reflaxe.elixir.helpers.ImportStatement>]
+						[Local module(17354):String:String]
+						[Case:reflaxe.elixir.helpers.ImportStatement]
+							[Const:String] "Ecto.Changeset"
+							[Block:reflaxe.elixir.helpers.ImportStatement]
+								[Block:reflaxe.elixir.helpers.ImportStatement]
+									[Call:reflaxe.elixir.helpers.ImportStatement]
+										[Field:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+											[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+											[FInstance:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+												reflaxe.elixir.helpers.ImportOptimizer
+												optimizeChangesetImport:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement
+										[Local functions(17355):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+						[Case:reflaxe.elixir.helpers.ImportStatement]
+							[Const:String] "Enum"
+							[Block:reflaxe.elixir.helpers.ImportStatement]
+								[Block:reflaxe.elixir.helpers.ImportStatement]
+									[Call:reflaxe.elixir.helpers.ImportStatement]
+										[Field:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+											[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+											[FInstance:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+												reflaxe.elixir.helpers.ImportOptimizer
+												optimizeEnumImport:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement
+										[Local functions(17355):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+						[Case:reflaxe.elixir.helpers.ImportStatement]
+							[Const:String] "Phoenix.LiveView"
+							[Block:reflaxe.elixir.helpers.ImportStatement]
+								[Block:reflaxe.elixir.helpers.ImportStatement]
+									[Call:reflaxe.elixir.helpers.ImportStatement]
+										[Field:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+											[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+											[FInstance:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+												reflaxe.elixir.helpers.ImportOptimizer
+												optimizeLiveViewImport:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement
+										[Local functions(17355):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+						[Case:reflaxe.elixir.helpers.ImportStatement]
+							[Const:String] "String"
+							[Block:reflaxe.elixir.helpers.ImportStatement]
+								[Block:reflaxe.elixir.helpers.ImportStatement]
+									[Call:reflaxe.elixir.helpers.ImportStatement]
+										[Field:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+											[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+											[FInstance:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+												reflaxe.elixir.helpers.ImportOptimizer
+												optimizeStringImport:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement
+										[Local functions(17355):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+						[Default:reflaxe.elixir.helpers.ImportStatement]
+							[Block:reflaxe.elixir.helpers.ImportStatement]
+								[Call:reflaxe.elixir.helpers.ImportStatement]
+									[Field:(module : String, functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+										[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+										[FInstance:(module : String, functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+											reflaxe.elixir.helpers.ImportOptimizer
+											optimizeGenericImport:(module : String, functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement
+									[Local module(17354):String:String]
+									[Local functions(17355):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+
+	function optimizeEnumImport[Function:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+		[Arg:Array<reflaxe.elixir.helpers.ImportFunction>] [Local functions(17356):Array<reflaxe.elixir.helpers.ImportFunction>]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local functions(17356):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+						[FInstance:Int]
+							Array<reflaxe.elixir.helpers.ImportFunction>
+							length:Int
+					>=
+					[Const:Int] 3
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[ObjectDecl:{ module : String, importType : reflaxe.elixir.helpers.ImportType, functions : Array<reflaxe.elixir.helpers.ImportFunction>, alias : Null<String> }]
+							module: [Const:String] "Enum"
+							functions: [ArrayDecl:Array<reflaxe.elixir.helpers.ImportFunction>]
+							alias: [Const:Null<String>] null
+							importType: [Field:reflaxe.elixir.helpers.ImportType]
+								[TypeExpr reflaxe.elixir.helpers.ImportType:Enum<reflaxe.elixir.helpers.ImportType>]
+								[FEnum:reflaxe.elixir.helpers.ImportType]
+									reflaxe.elixir.helpers.ImportType
+									FullImport
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[ObjectDecl:{ module : String, importType : reflaxe.elixir.helpers.ImportType, functions : Array<reflaxe.elixir.helpers.ImportFunction>, alias : Null<String> }]
+							module: [Const:String] "Enum"
+							functions: [Local functions(17356):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+							alias: [Const:Null<String>] null
+							importType: [Field:reflaxe.elixir.helpers.ImportType]
+								[TypeExpr reflaxe.elixir.helpers.ImportType:Enum<reflaxe.elixir.helpers.ImportType>]
+								[FEnum:reflaxe.elixir.helpers.ImportType]
+									reflaxe.elixir.helpers.ImportType
+									SelectiveImport
+
+	function optimizeStringImport[Function:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+		[Arg:Array<reflaxe.elixir.helpers.ImportFunction>] [Local functions(17357):Array<reflaxe.elixir.helpers.ImportFunction>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ module : String, importType : reflaxe.elixir.helpers.ImportType, functions : Array<reflaxe.elixir.helpers.ImportFunction>, alias : Null<String> }]
+					module: [Const:String] "String"
+					functions: [Local functions(17357):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+					alias: [Const:Null<String>] null
+					importType: [Field:reflaxe.elixir.helpers.ImportType]
+						[TypeExpr reflaxe.elixir.helpers.ImportType:Enum<reflaxe.elixir.helpers.ImportType>]
+						[FEnum:reflaxe.elixir.helpers.ImportType]
+							reflaxe.elixir.helpers.ImportType
+							SelectiveImport
+
+	function optimizeLiveViewImport[Function:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+		[Arg:Array<reflaxe.elixir.helpers.ImportFunction>] [Local functions(17358):Array<reflaxe.elixir.helpers.ImportFunction>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ module : String, importType : reflaxe.elixir.helpers.ImportType, functions : Array<reflaxe.elixir.helpers.ImportFunction>, alias : Null<String> }]
+					module: [Const:String] "Phoenix.LiveView"
+					functions: [Local functions(17358):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+					alias: [Const:Null<String>] null
+					importType: [Field:reflaxe.elixir.helpers.ImportType]
+						[TypeExpr reflaxe.elixir.helpers.ImportType:Enum<reflaxe.elixir.helpers.ImportType>]
+						[FEnum:reflaxe.elixir.helpers.ImportType]
+							reflaxe.elixir.helpers.ImportType
+							SelectiveImport
+
+	function optimizeChangesetImport[Function:(functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+		[Arg:Array<reflaxe.elixir.helpers.ImportFunction>] [Local functions(17359):Array<reflaxe.elixir.helpers.ImportFunction>]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local functions(17359):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+						[FInstance:Int]
+							Array<reflaxe.elixir.helpers.ImportFunction>
+							length:Int
+					>=
+					[Const:Int] 2
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[ObjectDecl:{ module : String, importType : reflaxe.elixir.helpers.ImportType, functions : Array<reflaxe.elixir.helpers.ImportFunction>, alias : String }]
+							module: [Const:String] "Ecto.Changeset"
+							functions: [ArrayDecl:Array<reflaxe.elixir.helpers.ImportFunction>]
+							alias: [Const:String] "Changeset"
+							importType: [Field:reflaxe.elixir.helpers.ImportType]
+								[TypeExpr reflaxe.elixir.helpers.ImportType:Enum<reflaxe.elixir.helpers.ImportType>]
+								[FEnum:reflaxe.elixir.helpers.ImportType]
+									reflaxe.elixir.helpers.ImportType
+									AliasImport
+				[Else:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[ObjectDecl:{ module : String, importType : reflaxe.elixir.helpers.ImportType, functions : Array<reflaxe.elixir.helpers.ImportFunction>, alias : Null<String> }]
+							module: [Const:String] "Ecto.Changeset"
+							functions: [Local functions(17359):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+							alias: [Const:Null<String>] null
+							importType: [Field:reflaxe.elixir.helpers.ImportType]
+								[TypeExpr reflaxe.elixir.helpers.ImportType:Enum<reflaxe.elixir.helpers.ImportType>]
+								[FEnum:reflaxe.elixir.helpers.ImportType]
+									reflaxe.elixir.helpers.ImportType
+									SelectiveImport
+
+	function optimizeGenericImport[Function:(module : String, functions : Array<reflaxe.elixir.helpers.ImportFunction>) -> reflaxe.elixir.helpers.ImportStatement]
+		[Arg:String] [Local module(17360):String]
+		[Arg:Array<reflaxe.elixir.helpers.ImportFunction>] [Local functions(17361):Array<reflaxe.elixir.helpers.ImportFunction>]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ module : String, importType : reflaxe.elixir.helpers.ImportType, functions : Array<reflaxe.elixir.helpers.ImportFunction>, alias : Null<String> }]
+					module: [Local module(17360):String:String]
+					functions: [Local functions(17361):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+					alias: [Const:Null<String>] null
+					importType: [Field:reflaxe.elixir.helpers.ImportType]
+						[TypeExpr reflaxe.elixir.helpers.ImportType:Enum<reflaxe.elixir.helpers.ImportType>]
+						[FEnum:reflaxe.elixir.helpers.ImportType]
+							reflaxe.elixir.helpers.ImportType
+							SelectiveImport
+
+	public function generateImportStatements[Function:(imports : Array<reflaxe.elixir.helpers.ImportStatement>) -> Array<String>]
+		[Arg:Array<reflaxe.elixir.helpers.ImportStatement>] [Local imports(17372):Array<reflaxe.elixir.helpers.ImportStatement>]
+		[Block:Dynamic]
+			[Var statements(17373):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(17396):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(17396):Int:Int]
+						<
+						[Field:Int]
+							[Local imports(17372):Array<reflaxe.elixir.helpers.ImportStatement>:Array<reflaxe.elixir.helpers.ImportStatement>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.helpers.ImportStatement>
+								length:Int
+					[Block:Void]
+						[Var importStmt(17374):reflaxe.elixir.helpers.ImportStatement]
+							[Array:reflaxe.elixir.helpers.ImportStatement]
+								[Local imports(17372):Array<reflaxe.elixir.helpers.ImportStatement>:Array<reflaxe.elixir.helpers.ImportStatement>]
+								[Local `(17396):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(17396):Int:Int]
+						[Var statement(17395):Null<String>]
+							[Call:Null<String>]
+								[Field:(importStmt : reflaxe.elixir.helpers.ImportStatement) -> Null<String>]
+									[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+									[FInstance:(importStmt : reflaxe.elixir.helpers.ImportStatement) -> Null<String>]
+										reflaxe.elixir.helpers.ImportOptimizer
+										generateSingleImport:(importStmt : reflaxe.elixir.helpers.ImportStatement) -> Null<String>
+								[Local importStmt(17374):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+						[If:Void]
+							[Binop:Bool]
+								[Local statement(17395):Null<String>:Null<String>]
+								!=
+								[Const:Null<String>] null
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local statements(17373):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local statement(17395):Null<String>:Null<String>]
+			[Return:Dynamic] [Local statements(17373):Array<String>:Array<String>]
+
+	function generateSingleImport[Function:(importStmt : reflaxe.elixir.helpers.ImportStatement) -> Null<String>]
+		[Arg:reflaxe.elixir.helpers.ImportStatement] [Local importStmt(17375):reflaxe.elixir.helpers.ImportStatement]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<String>]
+					:ast(switch (importStmt.importType) {
+	case FullImport:
+		"import ${importStmt.module}";	
+	case AliasImport:
+		"alias ${importStmt.module}, as: ${importStmt.alias}";	
+	case SelectiveImport:
+		if (importStmt.functions.length == 0) {
+			null;
+		} else {
+			var funcList = importStmt.functions.map(function(f) ->  @:implicitReturn return "${f.name}: ${f.arity}").join(", ");
+			"import ${importStmt.module}, only: [${funcList}]";
+		};	
+})
+					[Block:Null<String>]
+						[Var `(17387):reflaxe.elixir.helpers.ImportType]
+							[Field:reflaxe.elixir.helpers.ImportType]
+								[Local importStmt(17375):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+								[FAnon:reflaxe.elixir.helpers.ImportType] importType:reflaxe.elixir.helpers.ImportType
+						[Switch:Null<String>]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local `(17387):reflaxe.elixir.helpers.ImportType:reflaxe.elixir.helpers.ImportType]
+							[Case:String]
+								[Const:Int] 0
+								[Block:String]
+									[Block:String]
+										[Binop:String]
+											[Const:String] "import "
+											+
+											[Field:String]
+												[Local importStmt(17375):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+												[FAnon:String] module:String
+							[Case:Null<String>]
+								[Const:Int] 1
+								[Block:Null<String>]
+									[Block:Null<String>]
+										[If:Null<String>]
+											[Binop:Bool]
+												[Field:Int]
+													[Field:Array<reflaxe.elixir.helpers.ImportFunction>]
+														[Local importStmt(17375):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+														[FAnon:Array<reflaxe.elixir.helpers.ImportFunction>] functions:Array<reflaxe.elixir.helpers.ImportFunction>
+													[FInstance:Int]
+														Array<reflaxe.elixir.helpers.ImportFunction>
+														length:Int
+												==
+												[Const:Int] 0
+											[Then:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+											[Else:String] [Block:String]
+												[Var funcList(17388):String]
+													[Call:String]
+														[Field:(sep : String) -> String]
+															[Block:Array<String>]
+																[Var _this(17389):Array<reflaxe.elixir.helpers.ImportFunction>]
+																	[Field:Array<reflaxe.elixir.helpers.ImportFunction>]
+																		[Local importStmt(17375):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+																		[FAnon:Array<reflaxe.elixir.helpers.ImportFunction>] functions:Array<reflaxe.elixir.helpers.ImportFunction>
+																[Block:Array<String>]
+																	[Var `(17390):Array<String>] [ArrayDecl:Array<String>]
+																	[Block:Void]
+																		[Var `(17391):Int] [Const:Int] 0
+																		[Var `(17392):Array<reflaxe.elixir.helpers.ImportFunction>] [Local _this(17389):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+																		[While:Void]
+																			[Binop:Bool]
+																				[Local `(17391):Int:Int]
+																				<
+																				[Field:Int]
+																					[Local `(17392):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+																					[FInstance:Int]
+																						Array<reflaxe.elixir.helpers.ImportFunction>
+																						length:Int
+																			[Block:Void]
+																				[Var v(17393):reflaxe.elixir.helpers.ImportFunction]
+																					[Array:reflaxe.elixir.helpers.ImportFunction]
+																						[Local `(17392):Array<reflaxe.elixir.helpers.ImportFunction>:Array<reflaxe.elixir.helpers.ImportFunction>]
+																						[Local `(17391):Int:Int]
+																				[Unop:Int]
+																					++
+																					Prefix
+																					[Local `(17391):Int:Int]
+																				[Call:Int]
+																					[Field:(x : String) -> Int]
+																						[Local `(17390):Array<String>:Array<String>]
+																						[FInstance:(x : String) -> Int]
+																							Array<String>
+																							push:(x : Array.T) -> Int
+																					[Call:String]
+																						[Function:(f : reflaxe.elixir.helpers.ImportFunction) -> String]
+																							[Arg:reflaxe.elixir.helpers.ImportFunction] [Local f(17394):reflaxe.elixir.helpers.ImportFunction]
+																							[Block:Dynamic]
+																								[Return:Dynamic]
+																									[Binop:String]
+																										[Binop:String]
+																											[Binop:String]
+																												[Const:String] ""
+																												+
+																												[Field:String]
+																													[Local f(17394):reflaxe.elixir.helpers.ImportFunction:reflaxe.elixir.helpers.ImportFunction]
+																													[FAnon:String] name:String
+																											+
+																											[Const:String] ": "
+																										+
+																										[Field:Int]
+																											[Local f(17394):reflaxe.elixir.helpers.ImportFunction:reflaxe.elixir.helpers.ImportFunction]
+																											[FAnon:Int] arity:Int
+																						[Local v(17393):reflaxe.elixir.helpers.ImportFunction:reflaxe.elixir.helpers.ImportFunction]
+																	[Local `(17390):Array<String>:Array<String>]
+															[FInstance:(sep : String) -> String]
+																Array<String>
+																join:(sep : String) -> String
+														[Const:String] ", "
+												[Binop:String]
+													[Binop:String]
+														[Binop:String]
+															[Binop:String]
+																[Const:String] "import "
+																+
+																[Field:String]
+																	[Local importStmt(17375):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+																	[FAnon:String] module:String
+															+
+															[Const:String] ", only: ["
+														+
+														[Local funcList(17388):String:String]
+													+
+													[Const:String] "]"
+							[Case:String]
+								[Const:Int] 2
+								[Block:String]
+									[Block:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "alias "
+													+
+													[Field:String]
+														[Local importStmt(17375):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+														[FAnon:String] module:String
+												+
+												[Const:String] ", as: "
+											+
+											[Field:Null<String>]
+												[Local importStmt(17375):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+												[FAnon:Null<String>] alias:Null<String>
+
+	function compareImports[Function:(a : reflaxe.elixir.helpers.ImportStatement, b : reflaxe.elixir.helpers.ImportStatement) -> Int]
+		[Arg:reflaxe.elixir.helpers.ImportStatement] [Local a(17363):reflaxe.elixir.helpers.ImportStatement]
+		[Arg:reflaxe.elixir.helpers.ImportStatement] [Local b(17364):reflaxe.elixir.helpers.ImportStatement]
+		[Block:Dynamic]
+			[Var aOrder(17369):Int]
+				[Call:Int]
+					[Field:(module : String) -> Int]
+						[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+						[FInstance:(module : String) -> Int]
+							reflaxe.elixir.helpers.ImportOptimizer
+							getImportOrder:(module : String) -> Int
+					[Field:String]
+						[Local a(17363):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+						[FAnon:String] module:String
+			[Var bOrder(17370):Int]
+				[Call:Int]
+					[Field:(module : String) -> Int]
+						[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+						[FInstance:(module : String) -> Int]
+							reflaxe.elixir.helpers.ImportOptimizer
+							getImportOrder:(module : String) -> Int
+					[Field:String]
+						[Local b(17364):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+						[FAnon:String] module:String
+			[If:Void]
+				[Binop:Bool]
+					[Local aOrder(17369):Int:Int]
+					!=
+					[Local bOrder(17370):Int:Int]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:Int]
+							[Local aOrder(17369):Int:Int]
+							-
+							[Local bOrder(17370):Int:Int]
+			[If:Void]
+				[Binop:Bool]
+					[Field:String]
+						[Local a(17363):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+						[FAnon:String] module:String
+					<
+					[Field:String]
+						[Local b(17364):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+						[FAnon:String] module:String
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Int] -1
+			[If:Void]
+				[Binop:Bool]
+					[Field:String]
+						[Local a(17363):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+						[FAnon:String] module:String
+					>
+					[Field:String]
+						[Local b(17364):reflaxe.elixir.helpers.ImportStatement:reflaxe.elixir.helpers.ImportStatement]
+						[FAnon:String] module:String
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Int] 1
+			[Return:Dynamic] [Const:Int] 0
+
+	function getImportOrder[Function:(module : String) -> Int]
+		[Arg:String] [Local module(17365):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:Int]
+					[Call:Bool]
+						[Field:(module : String) -> Bool]
+							[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+							[FInstance:(module : String) -> Bool]
+								reflaxe.elixir.helpers.ImportOptimizer
+								isStandardLibrary:(module : String) -> Bool
+						[Local module(17365):String:String]
+					[Then:Int] [Block:Int] [Const:Int] 0
+					[Else:Int] [Block:Int]
+						[If:Int]
+							[Call:Bool]
+								[Field:(module : String) -> Bool]
+									[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+									[FInstance:(module : String) -> Bool]
+										reflaxe.elixir.helpers.ImportOptimizer
+										isExternalDependency:(module : String) -> Bool
+								[Local module(17365):String:String]
+							[Then:Int] [Block:Int] [Const:Int] 1
+							[Else:Int] [Block:Int] [Const:Int] 2
+
+	function isStandardLibrary[Function:(module : String) -> Bool]
+		[Arg:String] [Local module(17366):String]
+		[Block:Dynamic]
+			[Var stdLibModules(17367):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "Enum"
+					[Const:String] "Stream"
+					[Const:String] "String"
+					[Const:String] "Map"
+					[Const:String] "List"
+					[Const:String] "Keyword"
+					[Const:String] "Agent"
+					[Const:String] "GenServer"
+					[Const:String] "Task"
+					[Const:String] "Process"
+					[Const:String] "Logger"
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local stdLibModules(17367):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Local module(17366):String:String]
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+
+	function isExternalDependency[Function:(module : String) -> Bool]
+		[Arg:String] [Local module(17368):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Call:Bool]
+								[Field:(s : String, start : String) -> Bool]
+									[TypeExpr StringTools:{ Statics StringTools }]
+									[FStatic:(s : String, start : String) -> Bool]
+										StringTools
+										startsWith:(s : String, start : String) -> Bool
+								[Local module(17368):String:String]
+								[Const:String] "Phoenix."
+							||
+							[Call:Bool]
+								[Field:(s : String, start : String) -> Bool]
+									[TypeExpr StringTools:{ Statics StringTools }]
+									[FStatic:(s : String, start : String) -> Bool]
+										StringTools
+										startsWith:(s : String, start : String) -> Bool
+								[Local module(17368):String:String]
+								[Const:String] "Ecto."
+						||
+						[Call:Bool]
+							[Field:(s : String, start : String) -> Bool]
+								[TypeExpr StringTools:{ Statics StringTools }]
+								[FStatic:(s : String, start : String) -> Bool]
+									StringTools
+									startsWith:(s : String, start : String) -> Bool
+							[Local module(17368):String:String]
+							[Const:String] "Plug."
+					||
+					[Call:Bool]
+						[Field:(s : String, start : String) -> Bool]
+							[TypeExpr StringTools:{ Statics StringTools }]
+							[FStatic:(s : String, start : String) -> Bool]
+								StringTools
+								startsWith:(s : String, start : String) -> Bool
+						[Local module(17368):String:String]
+						[Const:String] "ExUnit."
+
+	public function analyzeModule[Function:(moduleAST : Array<haxe.macro.TypedExpr>) -> Void]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local moduleAST(25784):Array<haxe.macro.TypedExpr>]
+		[Block:Void]
+			[Block:Void]
+				[Var `(25991):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25991):Int:Int]
+						<
+						[Field:Int]
+							[Local moduleAST(25784):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+					[Block:Void]
+						[Var expr(25785):haxe.macro.TypedExpr]
+							[Array:haxe.macro.TypedExpr]
+								[Local moduleAST(25784):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[Local `(25991):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25991):Int:Int]
+						[Call:Void]
+							[Field:(expr : haxe.macro.TypedExpr) -> Void]
+								[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+								[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+									reflaxe.elixir.helpers.ImportOptimizer
+									analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+							[Local expr(25785):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+
+	function analyzeExpression[Function:(expr : haxe.macro.TypedExpr) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local expr(25786):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TCall(func, args):
+		analyzeCall(func, args);	
+	case TBlock(exprs):
+		for (e  in  exprs) analyzeExpression(e);	
+	case TBinop(_, e1, e2):
+		analyzeExpression(e1);
+		analyzeExpression(e2);	
+	case TUnop(_, _, e):
+		analyzeExpression(e);	
+	case TVar(_, init) if (init != null):
+		analyzeExpression(init);	
+	case TIf(cond, ifExpr, elseExpr):
+		analyzeExpression(cond);
+		analyzeExpression(ifExpr);
+		if (elseExpr != null) analyzeExpression(elseExpr);	
+	case TReturn(e) if (e != null):
+		analyzeExpression(e);	
+	case TFor(_, e1, e2):
+		analyzeExpression(e1);
+		analyzeExpression(e2);	
+	case TWhile(cond, e, normalWhile):
+		analyzeExpression(cond);
+		analyzeExpression(e);	
+	case TSwitch(e, cases, def):
+		analyzeExpression(e);
+		for (c  in  cases) {
+			for (val  in  c.values) analyzeExpression(val);
+			analyzeExpression(c.expr);
+		};
+		if (def != null) analyzeExpression(def);	
+	case TArray(e1, e2):
+		analyzeExpression(e1);
+		analyzeExpression(e2);	
+	case TArrayDecl(el):
+		for (e  in  el) analyzeExpression(e);	
+	case TObjectDecl(fields):
+		for (field  in  fields) analyzeExpression(field.expr);	
+	case TField(e, _):
+		analyzeExpression(e);	
+	case TParenthesis(e):
+		analyzeExpression(e);	
+	case TMeta(_, e):
+		analyzeExpression(e);	
+	case TCast(e, _):
+		analyzeExpression(e);	
+	default:
+})
+				[Block:Void]
+					[Var `(25917):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(25786):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Void]
+							[Const:Int] 2
+							[Block:Void]
+								[Var `(25918):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TArray
+										0
+								[Var `(25919):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TArray
+										1
+								[Block:Void]
+									[Var e1(25920):haxe.macro.TypedExpr] [Local `(25918):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var e2(25921):haxe.macro.TypedExpr] [Local `(25919):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e1(25920):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e2(25921):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 3
+							[Block:Void]
+								[Var `(25922):haxe.macro.Binop]
+									[EnumParameter:haxe.macro.Binop]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										0
+								[Var `(25923):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										1
+								[Var `(25924):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										2
+								[Block:Void]
+									[Var e1(25925):haxe.macro.TypedExpr] [Local `(25923):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var e2(25926):haxe.macro.TypedExpr] [Local `(25924):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e1(25925):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e2(25926):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 4
+							[Block:Void]
+								[Var `(25927):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										0
+								[Var `(25928):haxe.macro.FieldAccess]
+									[EnumParameter:haxe.macro.FieldAccess]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										1
+								[Block:Void]
+									[Var e(25929):haxe.macro.TypedExpr] [Local `(25927):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e(25929):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 6
+							[Block:Void]
+								[Var `(25930):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TParenthesis
+										0
+								[Block:Void]
+									[Var e(25931):haxe.macro.TypedExpr] [Local `(25930):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e(25931):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 7
+							[Block:Void]
+								[Var `(25932):Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+									[EnumParameter:Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TObjectDecl
+										0
+								[Block:Void]
+									[Var fields(25933):Array<{ name : String, expr : haxe.macro.TypedExpr }>] [Local `(25932):Array<{ name : String, expr : haxe.macro.TypedExpr }>:Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(25934):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(25934):Int:Int]
+													<
+													[Field:Int]
+														[Local fields(25933):Array<{ name : String, expr : haxe.macro.TypedExpr }>:Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+														[FInstance:Int]
+															Array<{ name : String, expr : haxe.macro.TypedExpr }>
+															length:Int
+												[Block:Void]
+													[Var field(25935):{ name : String, expr : haxe.macro.TypedExpr }]
+														[Array:{ name : String, expr : haxe.macro.TypedExpr }]
+															[Local fields(25933):Array<{ name : String, expr : haxe.macro.TypedExpr }>:Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+															[Local `(25934):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(25934):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr) -> Void]
+															[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+															[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+																reflaxe.elixir.helpers.ImportOptimizer
+																analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+														[Field:haxe.macro.TypedExpr]
+															[Local field(25935):{ name : String, expr : haxe.macro.TypedExpr }:{ name : String, expr : haxe.macro.TypedExpr }]
+															[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+						[Case:Void]
+							[Const:Int] 8
+							[Block:Void]
+								[Var `(25936):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TArrayDecl
+										0
+								[Block:Void]
+									[Var el(25937):Array<haxe.macro.TypedExpr>] [Local `(25936):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(25938):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(25938):Int:Int]
+													<
+													[Field:Int]
+														[Local el(25937):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+												[Block:Void]
+													[Var e(25939):haxe.macro.TypedExpr]
+														[Array:haxe.macro.TypedExpr]
+															[Local el(25937):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Local `(25938):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(25938):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr) -> Void]
+															[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+															[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+																reflaxe.elixir.helpers.ImportOptimizer
+																analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+														[Local e(25939):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 9
+							[Block:Void]
+								[Var `(25940):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCall
+										0
+								[Var `(25941):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCall
+										1
+								[Block:Void]
+									[Var func(25942):haxe.macro.TypedExpr] [Local `(25940):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var args(25943):Array<haxe.macro.TypedExpr>] [Local `(25941):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(func : haxe.macro.TypedExpr, args : Array<haxe.macro.TypedExpr>) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(func : haxe.macro.TypedExpr, args : Array<haxe.macro.TypedExpr>) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeCall:(func : haxe.macro.TypedExpr, args : Array<haxe.macro.TypedExpr>) -> Void
+											[Local func(25942):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local args(25943):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						[Case:Void]
+							[Const:Int] 11
+							[Block:Void]
+								[Var `(25944):haxe.macro.Unop]
+									[EnumParameter:haxe.macro.Unop]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TUnop
+										0
+								[Var `(25945):Bool]
+									[EnumParameter:Bool]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TUnop
+										1
+								[Var `(25946):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TUnop
+										2
+								[Block:Void]
+									[Var e(25947):haxe.macro.TypedExpr] [Local `(25946):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e(25947):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 13
+							[Block:Void]
+								[Var `(25948):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										0
+								[Var `(25949):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										1
+								[Block:Void]
+									[Var init(25950):Null<haxe.macro.TypedExpr>] [Local `(25949):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[If:Void]
+										[Binop:Bool]
+											[Local init(25950):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+											!=
+											[Const:Null<haxe.macro.TypedExpr>] null
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(expr : haxe.macro.TypedExpr) -> Void]
+													[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+													[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+														reflaxe.elixir.helpers.ImportOptimizer
+														analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+												[Local init(25950):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+										[Else:Void] [Block:Void]
+						[Case:Void]
+							[Const:Int] 14
+							[Block:Void]
+								[Var `(25951):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBlock
+										0
+								[Block:Void]
+									[Var exprs(25952):Array<haxe.macro.TypedExpr>] [Local `(25951):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(25953):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(25953):Int:Int]
+													<
+													[Field:Int]
+														[Local exprs(25952):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+												[Block:Void]
+													[Var e(25954):haxe.macro.TypedExpr]
+														[Array:haxe.macro.TypedExpr]
+															[Local exprs(25952):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Local `(25953):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(25953):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr) -> Void]
+															[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+															[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+																reflaxe.elixir.helpers.ImportOptimizer
+																analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+														[Local e(25954):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 15
+							[Block:Void]
+								[Var `(25955):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										0
+								[Var `(25956):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										1
+								[Var `(25957):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										2
+								[Block:Void]
+									[Var e1(25958):haxe.macro.TypedExpr] [Local `(25956):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var e2(25959):haxe.macro.TypedExpr] [Local `(25957):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e1(25958):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e2(25959):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 16
+							[Block:Void]
+								[Var `(25960):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIf
+										0
+								[Var `(25961):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIf
+										1
+								[Var `(25962):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIf
+										2
+								[Block:Void]
+									[Var cond(25963):haxe.macro.TypedExpr] [Local `(25960):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var ifExpr(25964):haxe.macro.TypedExpr] [Local `(25961):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var elseExpr(25965):Null<haxe.macro.TypedExpr>] [Local `(25962):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local cond(25963):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local ifExpr(25964):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[If:Void]
+											[Binop:Bool]
+												[Local elseExpr(25965):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												!=
+												[Const:Null<haxe.macro.TypedExpr>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr) -> Void]
+														[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+														[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+															reflaxe.elixir.helpers.ImportOptimizer
+															analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+													[Local elseExpr(25965):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+						[Case:Void]
+							[Const:Int] 17
+							[Block:Void]
+								[Var `(25966):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										0
+								[Var `(25967):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										1
+								[Var `(25968):Bool]
+									[EnumParameter:Bool]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										2
+								[Block:Void]
+									[Var cond(25969):haxe.macro.TypedExpr] [Local `(25966):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var e(25970):haxe.macro.TypedExpr] [Local `(25967):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var normalWhile(25971):Bool] [Local `(25968):Bool:Bool]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local cond(25969):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e(25970):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 18
+							[Block:Void]
+								[Var `(25972):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TSwitch
+										0
+								[Var `(25973):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+									[EnumParameter:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TSwitch
+										1
+								[Var `(25974):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TSwitch
+										2
+								[Block:Void]
+									[Var e(25975):haxe.macro.TypedExpr] [Local `(25972):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var cases(25976):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>] [Local `(25973):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+									[Var def(25977):Null<haxe.macro.TypedExpr>] [Local `(25974):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e(25975):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Block:Void]
+											[Var `(25978):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(25978):Int:Int]
+													<
+													[Field:Int]
+														[Local cases(25976):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+														[FInstance:Int]
+															Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>
+															length:Int
+												[Block:Void]
+													[Var c(25979):{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }]
+														[Array:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }]
+															[Local cases(25976):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+															[Local `(25978):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(25978):Int:Int]
+													[Block:Void]
+														[Var `(25980):Int] [Const:Int] 0
+														[Var `(25981):Array<haxe.macro.TypedExpr>]
+															[Field:Array<haxe.macro.TypedExpr>]
+																[Local c(25979):{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }]
+																[FAnon:Array<haxe.macro.TypedExpr>] values:Array<haxe.macro.TypedExpr>
+														[While:Void]
+															[Binop:Bool]
+																[Local `(25980):Int:Int]
+																<
+																[Field:Int]
+																	[Local `(25981):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																	[FInstance:Int]
+																		Array<haxe.macro.TypedExpr>
+																		length:Int
+															[Block:Void]
+																[Var val(25982):haxe.macro.TypedExpr]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local `(25981):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Local `(25980):Int:Int]
+																[Unop:Int]
+																	++
+																	Prefix
+																	[Local `(25980):Int:Int]
+																[Call:Void]
+																	[Field:(expr : haxe.macro.TypedExpr) -> Void]
+																		[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+																		[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+																			reflaxe.elixir.helpers.ImportOptimizer
+																			analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+																	[Local val(25982):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr) -> Void]
+															[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+															[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+																reflaxe.elixir.helpers.ImportOptimizer
+																analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+														[Field:haxe.macro.TypedExpr]
+															[Local c(25979):{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }]
+															[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+										[If:Void]
+											[Binop:Bool]
+												[Local def(25977):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												!=
+												[Const:Null<haxe.macro.TypedExpr>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr) -> Void]
+														[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+														[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+															reflaxe.elixir.helpers.ImportOptimizer
+															analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+													[Local def(25977):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+						[Case:Void]
+							[Const:Int] 20
+							[Block:Void]
+								[Var `(25983):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TReturn
+										0
+								[Block:Void]
+									[Var e(25984):Null<haxe.macro.TypedExpr>] [Local `(25983):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[If:Void]
+										[Binop:Bool]
+											[Local e(25984):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+											!=
+											[Const:Null<haxe.macro.TypedExpr>] null
+										[Then:Void] [Block:Void]
+											[Call:Void]
+												[Field:(expr : haxe.macro.TypedExpr) -> Void]
+													[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+													[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+														reflaxe.elixir.helpers.ImportOptimizer
+														analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+												[Local e(25984):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+										[Else:Void] [Block:Void]
+						[Case:Void]
+							[Const:Int] 24
+							[Block:Void]
+								[Var `(25985):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCast
+										0
+								[Var `(25986):Null<haxe.macro.ModuleType>]
+									[EnumParameter:Null<haxe.macro.ModuleType>]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCast
+										1
+								[Block:Void]
+									[Var e(25987):haxe.macro.TypedExpr] [Local `(25985):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e(25987):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Case:Void]
+							[Const:Int] 25
+							[Block:Void]
+								[Var `(25988):haxe.macro.MetadataEntry]
+									[EnumParameter:haxe.macro.MetadataEntry]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TMeta
+										0
+								[Var `(25989):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25917):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TMeta
+										1
+								[Block:Void]
+									[Var e(25990):haxe.macro.TypedExpr] [Local `(25989):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr) -> Void]
+												[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+												[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+													reflaxe.elixir.helpers.ImportOptimizer
+													analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+											[Local e(25990):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Default:Void] [Block:Void]
+
+	function analyzeCall[Function:(func : haxe.macro.TypedExpr, args : Array<haxe.macro.TypedExpr>) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local func(25789):haxe.macro.TypedExpr]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local args(25790):Array<haxe.macro.TypedExpr>]
+		[Block:Void]
+			[Block:Void]
+				[Var `(25792):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(25792):Int:Int]
+						<
+						[Field:Int]
+							[Local args(25790):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+					[Block:Void]
+						[Var arg(25791):haxe.macro.TypedExpr]
+							[Array:haxe.macro.TypedExpr]
+								[Local args(25790):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[Local `(25792):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(25792):Int:Int]
+						[Call:Void]
+							[Field:(expr : haxe.macro.TypedExpr) -> Void]
+								[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+								[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+									reflaxe.elixir.helpers.ImportOptimizer
+									analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+							[Local arg(25791):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Meta:Void]
+				:ast(switch (func.expr) {
+	case TField(obj, field):
+		var functionName = getFunctionNameFromField(field);
+		if (functionName != null) {
+			var module = getModuleForFunction(functionName);
+			if (module != null) {
+				registerFunctionUsage(module, functionName, args.length);
+			};
+		};	
+	case TLocal(v):
+		var module = getModuleForFunction(v.name);
+		if (module != null) {
+			registerFunctionUsage(module, v.name, args.length);
+		};	
+	default:
+		analyzeExpression(func);	
+})
+				[Block:Void]
+					[Var `(25835):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local func(25789):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(25835):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Void]
+							[Const:Int] 1
+							[Block:Void]
+								[Var `(25836):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(25835):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TLocal
+										0
+								[Block:Void]
+									[Var v(25837):haxe.macro.TVar] [Local `(25836):haxe.macro.TVar:haxe.macro.TVar]
+									[Block:Void]
+										[Var module(25838):Null<String>]
+											[Call:Null<String>]
+												[Field:(functionName : String) -> Null<String>]
+													[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+													[FInstance:(functionName : String) -> Null<String>]
+														reflaxe.elixir.helpers.ImportOptimizer
+														getModuleForFunction:(functionName : String) -> Null<String>
+												[Field:String]
+													[Local v(25837):haxe.macro.TVar:haxe.macro.TVar]
+													[FAnon:String] name:String
+										[If:Void]
+											[Binop:Bool]
+												[Local module(25838):Null<String>:Null<String>]
+												!=
+												[Const:Null<String>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(module : String, functionName : String, ?arity : Int) -> Void]
+														[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+														[FInstance:(module : String, functionName : String, ?arity : Int) -> Void]
+															reflaxe.elixir.helpers.ImportOptimizer
+															registerFunctionUsage:(module : String, functionName : String, ?arity : Int) -> Void
+													[Local module(25838):Null<String>:Null<String>]
+													[Field:String]
+														[Local v(25837):haxe.macro.TVar:haxe.macro.TVar]
+														[FAnon:String] name:String
+													[Field:Int]
+														[Local args(25790):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+						[Case:Void]
+							[Const:Int] 4
+							[Block:Void]
+								[Var `(25839):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(25835):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										0
+								[Var `(25840):haxe.macro.FieldAccess]
+									[EnumParameter:haxe.macro.FieldAccess]
+										[Local `(25835):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										1
+								[Block:Void]
+									[Var obj(25841):haxe.macro.TypedExpr] [Local `(25839):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var field(25842):haxe.macro.FieldAccess] [Local `(25840):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+									[Block:Void]
+										[Var functionName(25843):Null<String>]
+											[Call:Null<String>]
+												[Field:(field : haxe.macro.FieldAccess) -> Null<String>]
+													[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+													[FInstance:(field : haxe.macro.FieldAccess) -> Null<String>]
+														reflaxe.elixir.helpers.ImportOptimizer
+														getFunctionNameFromField:(field : haxe.macro.FieldAccess) -> Null<String>
+												[Local field(25842):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										[If:Void]
+											[Binop:Bool]
+												[Local functionName(25843):Null<String>:Null<String>]
+												!=
+												[Const:Null<String>] null
+											[Then:Void] [Block:Void]
+												[Var module(25844):Null<String>]
+													[Call:Null<String>]
+														[Field:(functionName : String) -> Null<String>]
+															[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+															[FInstance:(functionName : String) -> Null<String>]
+																reflaxe.elixir.helpers.ImportOptimizer
+																getModuleForFunction:(functionName : String) -> Null<String>
+														[Local functionName(25843):Null<String>:Null<String>]
+												[If:Void]
+													[Binop:Bool]
+														[Local module(25844):Null<String>:Null<String>]
+														!=
+														[Const:Null<String>] null
+													[Then:Void] [Block:Void]
+														[Call:Void]
+															[Field:(module : String, functionName : String, ?arity : Int) -> Void]
+																[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+																[FInstance:(module : String, functionName : String, ?arity : Int) -> Void]
+																	reflaxe.elixir.helpers.ImportOptimizer
+																	registerFunctionUsage:(module : String, functionName : String, ?arity : Int) -> Void
+															[Local module(25844):Null<String>:Null<String>]
+															[Local functionName(25843):Null<String>:Null<String>]
+															[Field:Int]
+																[Local args(25790):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																[FInstance:Int]
+																	Array<haxe.macro.TypedExpr>
+																	length:Int
+						[Default:Void]
+							[Block:Void]
+								[Call:Void]
+									[Field:(expr : haxe.macro.TypedExpr) -> Void]
+										[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+										[FInstance:(expr : haxe.macro.TypedExpr) -> Void]
+											reflaxe.elixir.helpers.ImportOptimizer
+											analyzeExpression:(expr : haxe.macro.TypedExpr) -> Void
+									[Local func(25789):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+
+	function getFunctionNameFromField[Function:(field : haxe.macro.FieldAccess) -> Null<String>]
+		[Arg:haxe.macro.FieldAccess] [Local field(25795):haxe.macro.FieldAccess]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<String>]
+					:ast(switch (field) {
+	case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+		cf.get().name;	
+	case FDynamic(s):
+		s;	
+	case FEnum(_, ef):
+		ef.name;	
+})
+					[Switch:Null<String>]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Var `(25810):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										0
+								[Var `(25811):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										1
+								[Var `(25812):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FInstance
+										2
+								[Block:String]
+									[Var cf(25813):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(25812):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:String]
+										[Field:String]
+											[Call:haxe.macro.ClassField]
+												[Field:() -> haxe.macro.ClassField]
+													[Local cf(25813):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+													[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+											[FAnon:String] name:String
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Var `(25814):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										0
+								[Var `(25815):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FStatic
+										1
+								[Block:String]
+									[Var cf(25816):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(25815):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:String]
+										[Field:String]
+											[Call:haxe.macro.ClassField]
+												[Field:() -> haxe.macro.ClassField]
+													[Local cf(25816):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+													[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+											[FAnon:String] name:String
+						[Case:String]
+							[Const:Int] 2
+							[Block:String]
+								[Var `(25817):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FAnon
+										0
+								[Block:String]
+									[Var cf(25818):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(25817):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:String]
+										[Field:String]
+											[Call:haxe.macro.ClassField]
+												[Field:() -> haxe.macro.ClassField]
+													[Local cf(25818):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+													[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+											[FAnon:String] name:String
+						[Case:String]
+							[Const:Int] 3
+							[Block:String]
+								[Var `(25819):String]
+									[EnumParameter:String]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FDynamic
+										0
+								[Block:String]
+									[Var s(25820):String] [Local `(25819):String:String]
+									[Block:String] [Local s(25820):String:String]
+						[Case:String]
+							[Const:Int] 4
+							[Block:String]
+								[Var `(25821):Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+									[EnumParameter:Null<{ params : Array<haxe.macro.Type>, c : haxe.macro.Ref<haxe.macro.ClassType> }>]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FClosure
+										0
+								[Var `(25822):haxe.macro.Ref<haxe.macro.ClassField>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassField>]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FClosure
+										1
+								[Block:String]
+									[Var cf(25823):haxe.macro.Ref<haxe.macro.ClassField>] [Local `(25822):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+									[Block:String]
+										[Field:String]
+											[Call:haxe.macro.ClassField]
+												[Field:() -> haxe.macro.ClassField]
+													[Local cf(25823):haxe.macro.Ref<haxe.macro.ClassField>:haxe.macro.Ref<haxe.macro.ClassField>]
+													[FAnon:() -> haxe.macro.ClassField] get:() -> haxe.macro.ClassField
+											[FAnon:String] name:String
+						[Case:String]
+							[Const:Int] 5
+							[Block:String]
+								[Var `(25824):haxe.macro.Ref<haxe.macro.EnumType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.EnumType>]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FEnum
+										0
+								[Var `(25825):haxe.macro.EnumField]
+									[EnumParameter:haxe.macro.EnumField]
+										[Local field(25795):haxe.macro.FieldAccess:haxe.macro.FieldAccess]
+										FEnum
+										1
+								[Block:String]
+									[Var ef(25826):haxe.macro.EnumField] [Local `(25825):haxe.macro.EnumField:haxe.macro.EnumField]
+									[Block:String]
+										[Field:String]
+											[Local ef(25826):haxe.macro.EnumField:haxe.macro.EnumField]
+											[FAnon:String] name:String
+
+	public function generateImportSection[Function:() -> String]
+		[Block:Dynamic]
+			[Var imports(17371):Array<reflaxe.elixir.helpers.ImportStatement>]
+				[Call:Array<reflaxe.elixir.helpers.ImportStatement>]
+					[Field:() -> Array<reflaxe.elixir.helpers.ImportStatement>]
+						[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+						[FInstance:() -> Array<reflaxe.elixir.helpers.ImportStatement>]
+							reflaxe.elixir.helpers.ImportOptimizer
+							optimizeImports:() -> Array<reflaxe.elixir.helpers.ImportStatement>
+			[Var statements(17397):Array<String>]
+				[Call:Array<String>]
+					[Field:(imports : Array<reflaxe.elixir.helpers.ImportStatement>) -> Array<String>]
+						[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+						[FInstance:(imports : Array<reflaxe.elixir.helpers.ImportStatement>) -> Array<String>]
+							reflaxe.elixir.helpers.ImportOptimizer
+							generateImportStatements:(imports : Array<reflaxe.elixir.helpers.ImportStatement>) -> Array<String>
+					[Local imports(17371):Array<reflaxe.elixir.helpers.ImportStatement>:Array<reflaxe.elixir.helpers.ImportStatement>]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local statements(17397):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] ""
+			[Return:Dynamic]
+				[Binop:String]
+					[Call:String]
+						[Field:(sep : String) -> String]
+							[Local statements(17397):Array<String>:Array<String>]
+							[FInstance:(sep : String) -> String]
+								Array<String>
+								join:(sep : String) -> String
+						[Const:String] "\n"
+					+
+					[Const:String] "\n"
+
+	public function hasImports[Function:() -> Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:() -> Bool]
+						[Block:Iterator<String>]
+							[Var this(17343):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+								[Field:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+									[Const:reflaxe.elixir.helpers.ImportOptimizer] this
+									[FInstance:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+										reflaxe.elixir.helpers.ImportOptimizer
+										functionUsage:Map<String, Array<reflaxe.elixir.helpers.ImportFunction>>
+							[Call:Iterator<String>]
+								[Field:() -> Iterator<String>]
+									[Cast:haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>] [Local this(17343):haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>:haxe.IMap<String, Array<reflaxe.elixir.helpers.ImportFunction>>]
+									[FInstance:() -> Iterator<String>]
+										haxe.ds.StringMap<Array<reflaxe.elixir.helpers.ImportFunction>>
+										keys:() -> Iterator<String>
+						[FAnon:() -> Bool] hasNext:() -> Bool
+}

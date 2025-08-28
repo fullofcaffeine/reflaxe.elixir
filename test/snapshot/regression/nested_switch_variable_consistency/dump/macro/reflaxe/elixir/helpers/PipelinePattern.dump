@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.PipelinePattern = { variable : String, operations : Array<reflaxe.elixir.helpers.PipelineOperation>, isChain : Bool }

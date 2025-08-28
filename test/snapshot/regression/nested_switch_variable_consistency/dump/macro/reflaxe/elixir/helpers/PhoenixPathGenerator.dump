@@ -1,0 +1,816 @@
+class reflaxe.elixir.helpers.PhoenixPathGenerator {
+
+	public static function generateAnnotationAwareOutputPath[Function:(classType : haxe.macro.ClassType, outputDir : String, fileExtension : String) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(28450):haxe.macro.ClassType]
+		[Arg:String] [Local outputDir(28451):String]
+		[Arg:String] [Local fileExtension(28452):String]
+		[Block:Dynamic]
+			[Var className(28453):String]
+				[Field:String]
+					[Local classType(28450):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var annotationInfo(28454):reflaxe.elixir.helpers.AnnotationInfo]
+				[Call:reflaxe.elixir.helpers.AnnotationInfo]
+					[Field:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo]
+							reflaxe.elixir.helpers.AnnotationSystem
+							detectAnnotations:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo
+					[Local classType(28450):haxe.macro.ClassType:haxe.macro.ClassType]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<String>]
+						[Local annotationInfo(28454):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+						[FAnon:Null<String>] primaryAnnotation:Null<String>
+					==
+					[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Var defaultPath(28472):String]
+						[Call:String]
+							[Field:(paths : Array<String>) -> String]
+								[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+								[FStatic:(paths : Array<String>) -> String]
+									haxe.io.Path
+									join:(paths : Array<String>) -> String
+							[ArrayDecl:Array<String>]
+								[Local outputDir(28451):String:String]
+								[Call:String]
+									[Field:(classType : haxe.macro.ClassType, fileExtension : String) -> String]
+										[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+										[FStatic:(classType : haxe.macro.ClassType, fileExtension : String) -> String]
+											reflaxe.elixir.helpers.PhoenixPathGenerator
+											convertPackageToDirectoryPath:(classType : haxe.macro.ClassType, fileExtension : String) -> String
+									[Local classType(28450):haxe.macro.ClassType:haxe.macro.ClassType]
+									[Local fileExtension(28452):String:String]
+					[Return:Dynamic] [Local defaultPath(28472):String:String]
+			[Var result(28505):String]
+				[Meta:String]
+					:ast(switch (annotationInfo.primaryAnnotation) {
+	case ":router":
+		generatePhoenixRouterPath(className, outputDir, fileExtension);	
+	case ":liveview":
+		generatePhoenixLiveViewPath(className, outputDir, fileExtension);	
+	case ":controller":
+		generatePhoenixControllerPath(className, outputDir, fileExtension);	
+	case ":schema":
+		generatePhoenixSchemaPath(className, outputDir, fileExtension);	
+	case ":endpoint":
+		haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType, fileExtension)]);	
+	case _:
+		haxe.io.Path.join([outputDir, convertPackageToDirectoryPath(classType, fileExtension)]);	
+})
+					[Block:String]
+						[Var `(28504):Null<String>]
+							[Field:Null<String>]
+								[Local annotationInfo(28454):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+								[FAnon:Null<String>] primaryAnnotation:Null<String>
+						[If:String]
+							[Binop:Bool]
+								[Local `(28504):Null<String>:Null<String>]
+								==
+								[Const:Null<String>] null
+							[Then:String] [Block:String]
+								[Call:String]
+									[Field:(paths : Array<String>) -> String]
+										[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+										[FStatic:(paths : Array<String>) -> String]
+											haxe.io.Path
+											join:(paths : Array<String>) -> String
+									[ArrayDecl:Array<String>]
+										[Local outputDir(28451):String:String]
+										[Call:String]
+											[Field:(classType : haxe.macro.ClassType, fileExtension : String) -> String]
+												[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+												[FStatic:(classType : haxe.macro.ClassType, fileExtension : String) -> String]
+													reflaxe.elixir.helpers.PhoenixPathGenerator
+													convertPackageToDirectoryPath:(classType : haxe.macro.ClassType, fileExtension : String) -> String
+											[Local classType(28450):haxe.macro.ClassType:haxe.macro.ClassType]
+											[Local fileExtension(28452):String:String]
+							[Else:String] [Switch:String]
+								[Local `(28504):Null<String>:Null<String>]
+								[Case:String]
+									[Const:String] ":controller"
+									[Block:String]
+										[Block:String]
+											[Call:String]
+												[Field:(className : String, outputDir : String, fileExtension : String) -> String]
+													[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+													[FStatic:(className : String, outputDir : String, fileExtension : String) -> String]
+														reflaxe.elixir.helpers.PhoenixPathGenerator
+														generatePhoenixControllerPath:(className : String, outputDir : String, fileExtension : String) -> String
+												[Local className(28453):String:String]
+												[Local outputDir(28451):String:String]
+												[Local fileExtension(28452):String:String]
+								[Case:String]
+									[Const:String] ":endpoint"
+									[Block:String]
+										[Block:String]
+											[Call:String]
+												[Field:(paths : Array<String>) -> String]
+													[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+													[FStatic:(paths : Array<String>) -> String]
+														haxe.io.Path
+														join:(paths : Array<String>) -> String
+												[ArrayDecl:Array<String>]
+													[Local outputDir(28451):String:String]
+													[Call:String]
+														[Field:(classType : haxe.macro.ClassType, fileExtension : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+															[FStatic:(classType : haxe.macro.ClassType, fileExtension : String) -> String]
+																reflaxe.elixir.helpers.PhoenixPathGenerator
+																convertPackageToDirectoryPath:(classType : haxe.macro.ClassType, fileExtension : String) -> String
+														[Local classType(28450):haxe.macro.ClassType:haxe.macro.ClassType]
+														[Local fileExtension(28452):String:String]
+								[Case:String]
+									[Const:String] ":liveview"
+									[Block:String]
+										[Block:String]
+											[Call:String]
+												[Field:(className : String, outputDir : String, fileExtension : String) -> String]
+													[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+													[FStatic:(className : String, outputDir : String, fileExtension : String) -> String]
+														reflaxe.elixir.helpers.PhoenixPathGenerator
+														generatePhoenixLiveViewPath:(className : String, outputDir : String, fileExtension : String) -> String
+												[Local className(28453):String:String]
+												[Local outputDir(28451):String:String]
+												[Local fileExtension(28452):String:String]
+								[Case:String]
+									[Const:String] ":router"
+									[Block:String]
+										[Block:String]
+											[Call:String]
+												[Field:(className : String, outputDir : String, fileExtension : String) -> String]
+													[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+													[FStatic:(className : String, outputDir : String, fileExtension : String) -> String]
+														reflaxe.elixir.helpers.PhoenixPathGenerator
+														generatePhoenixRouterPath:(className : String, outputDir : String, fileExtension : String) -> String
+												[Local className(28453):String:String]
+												[Local outputDir(28451):String:String]
+												[Local fileExtension(28452):String:String]
+								[Case:String]
+									[Const:String] ":schema"
+									[Block:String]
+										[Block:String]
+											[Call:String]
+												[Field:(className : String, outputDir : String, fileExtension : String) -> String]
+													[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+													[FStatic:(className : String, outputDir : String, fileExtension : String) -> String]
+														reflaxe.elixir.helpers.PhoenixPathGenerator
+														generatePhoenixSchemaPath:(className : String, outputDir : String, fileExtension : String) -> String
+												[Local className(28453):String:String]
+												[Local outputDir(28451):String:String]
+												[Local fileExtension(28452):String:String]
+								[Default:String]
+									[Block:String]
+										[Call:String]
+											[Field:(paths : Array<String>) -> String]
+												[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+												[FStatic:(paths : Array<String>) -> String]
+													haxe.io.Path
+													join:(paths : Array<String>) -> String
+											[ArrayDecl:Array<String>]
+												[Local outputDir(28451):String:String]
+												[Call:String]
+													[Field:(classType : haxe.macro.ClassType, fileExtension : String) -> String]
+														[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+														[FStatic:(classType : haxe.macro.ClassType, fileExtension : String) -> String]
+															reflaxe.elixir.helpers.PhoenixPathGenerator
+															convertPackageToDirectoryPath:(classType : haxe.macro.ClassType, fileExtension : String) -> String
+													[Local classType(28450):haxe.macro.ClassType:haxe.macro.ClassType]
+													[Local fileExtension(28452):String:String]
+			[Return:Dynamic] [Local result(28505):String:String]
+
+	public static function generatePhoenixRouterPath[Function:(className : String, outputDir : String, fileExtension : String) -> String]
+		[Arg:String] [Local className(28473):String]
+		[Arg:String] [Local outputDir(28474):String]
+		[Arg:String] [Local fileExtension(28475):String]
+		[Block:Dynamic]
+			[Var appName(28479):String]
+				[Call:String]
+					[Field:(className : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+						[FStatic:(className : String) -> String]
+							reflaxe.elixir.helpers.PhoenixPathGenerator
+							extractAppName:(className : String) -> String
+					[Local className(28473):String:String]
+			[Var phoenixPath(28480):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] ""
+							+
+							[Local appName(28479):String:String]
+						+
+						[Const:String] "_web/router"
+					+
+					[Local fileExtension(28475):String:String]
+			[Var result(28481):String]
+				[Call:String]
+					[Field:(paths : Array<String>) -> String]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(paths : Array<String>) -> String]
+							haxe.io.Path
+							join:(paths : Array<String>) -> String
+					[ArrayDecl:Array<String>]
+						[Local outputDir(28474):String:String]
+						[Local phoenixPath(28480):String:String]
+			[Return:Dynamic] [Local result(28481):String:String]
+
+	public static function generatePhoenixLiveViewPath[Function:(className : String, outputDir : String, fileExtension : String) -> String]
+		[Arg:String] [Local className(28482):String]
+		[Arg:String] [Local outputDir(28483):String]
+		[Arg:String] [Local fileExtension(28484):String]
+		[Block:Dynamic]
+			[Var appName(28485):String]
+				[Call:String]
+					[Field:(className : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+						[FStatic:(className : String) -> String]
+							reflaxe.elixir.helpers.PhoenixPathGenerator
+							extractAppName:(className : String) -> String
+					[Local className(28482):String:String]
+			[Var liveViewName(28486):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Call:String]
+						[Field:(s : String, sub : String, by : String) -> String]
+							[TypeExpr StringTools:{ Statics StringTools }]
+							[FStatic:(s : String, sub : String, by : String) -> String]
+								StringTools
+								replace:(s : String, sub : String, by : String) -> String
+						[Local className(28482):String:String]
+						[Const:String] "Live"
+						[Const:String] ""
+			[Var phoenixPath(28487):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] ""
+									+
+									[Local appName(28485):String:String]
+								+
+								[Const:String] "_web/live/"
+							+
+							[Local liveViewName(28486):String:String]
+						+
+						[Const:String] "_live"
+					+
+					[Local fileExtension(28484):String:String]
+			[Var result(28488):String]
+				[Call:String]
+					[Field:(paths : Array<String>) -> String]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(paths : Array<String>) -> String]
+							haxe.io.Path
+							join:(paths : Array<String>) -> String
+					[ArrayDecl:Array<String>]
+						[Local outputDir(28483):String:String]
+						[Local phoenixPath(28487):String:String]
+			[Return:Dynamic] [Local result(28488):String:String]
+
+	public static function generatePhoenixControllerPath[Function:(className : String, outputDir : String, fileExtension : String) -> String]
+		[Arg:String] [Local className(28489):String]
+		[Arg:String] [Local outputDir(28490):String]
+		[Arg:String] [Local fileExtension(28491):String]
+		[Block:Dynamic]
+			[Var appName(28492):String]
+				[Call:String]
+					[Field:(className : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+						[FStatic:(className : String) -> String]
+							reflaxe.elixir.helpers.PhoenixPathGenerator
+							extractAppName:(className : String) -> String
+					[Local className(28489):String:String]
+			[Var controllerName(28493):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Local className(28489):String:String]
+			[Var phoenixPath(28494):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Local appName(28492):String:String]
+							+
+							[Const:String] "_web/controllers/"
+						+
+						[Local controllerName(28493):String:String]
+					+
+					[Local fileExtension(28491):String:String]
+			[Var result(28495):String]
+				[Call:String]
+					[Field:(paths : Array<String>) -> String]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(paths : Array<String>) -> String]
+							haxe.io.Path
+							join:(paths : Array<String>) -> String
+					[ArrayDecl:Array<String>]
+						[Local outputDir(28490):String:String]
+						[Local phoenixPath(28494):String:String]
+			[Return:Dynamic] [Local result(28495):String:String]
+
+	public static function generatePhoenixSchemaPath[Function:(className : String, outputDir : String, fileExtension : String) -> String]
+		[Arg:String] [Local className(28496):String]
+		[Arg:String] [Local outputDir(28497):String]
+		[Arg:String] [Local fileExtension(28498):String]
+		[Block:Dynamic]
+			[Var appName(28499):String]
+				[Call:String]
+					[Field:(className : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+						[FStatic:(className : String) -> String]
+							reflaxe.elixir.helpers.PhoenixPathGenerator
+							extractAppName:(className : String) -> String
+					[Local className(28496):String:String]
+			[Var schemaName(28500):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Local className(28496):String:String]
+			[Var phoenixPath(28501):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] ""
+								+
+								[Local appName(28499):String:String]
+							+
+							[Const:String] "/schemas/"
+						+
+						[Local schemaName(28500):String:String]
+					+
+					[Local fileExtension(28498):String:String]
+			[Var result(28502):String]
+				[Call:String]
+					[Field:(paths : Array<String>) -> String]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(paths : Array<String>) -> String]
+							haxe.io.Path
+							join:(paths : Array<String>) -> String
+					[ArrayDecl:Array<String>]
+						[Local outputDir(28497):String:String]
+						[Local phoenixPath(28501):String:String]
+			[Return:Dynamic] [Local result(28502):String:String]
+
+	public static function extractAppName[Function:(className : String) -> String]
+		[Arg:String] [Local className(28476):String]
+		[Block:Dynamic]
+			[Var appPart(28477):String]
+				[Call:String]
+					[Field:(s : String, sub : String, by : String) -> String]
+						[TypeExpr StringTools:{ Statics StringTools }]
+						[FStatic:(s : String, sub : String, by : String) -> String]
+							StringTools
+							replace:(s : String, sub : String, by : String) -> String
+					[Call:String]
+						[Field:(s : String, sub : String, by : String) -> String]
+							[TypeExpr StringTools:{ Statics StringTools }]
+							[FStatic:(s : String, sub : String, by : String) -> String]
+								StringTools
+								replace:(s : String, sub : String, by : String) -> String
+						[Call:String]
+							[Field:(s : String, sub : String, by : String) -> String]
+								[TypeExpr StringTools:{ Statics StringTools }]
+								[FStatic:(s : String, sub : String, by : String) -> String]
+									StringTools
+									replace:(s : String, sub : String, by : String) -> String
+							[Call:String]
+								[Field:(s : String, sub : String, by : String) -> String]
+									[TypeExpr StringTools:{ Statics StringTools }]
+									[FStatic:(s : String, sub : String, by : String) -> String]
+										StringTools
+										replace:(s : String, sub : String, by : String) -> String
+								[Call:String]
+									[Field:(s : String, sub : String, by : String) -> String]
+										[TypeExpr StringTools:{ Statics StringTools }]
+										[FStatic:(s : String, sub : String, by : String) -> String]
+											StringTools
+											replace:(s : String, sub : String, by : String) -> String
+									[Call:String]
+										[Field:(s : String, sub : String, by : String) -> String]
+											[TypeExpr StringTools:{ Statics StringTools }]
+											[FStatic:(s : String, sub : String, by : String) -> String]
+												StringTools
+												replace:(s : String, sub : String, by : String) -> String
+										[Local className(28476):String:String]
+										[Const:String] "Router"
+										[Const:String] ""
+									[Const:String] "Live"
+									[Const:String] ""
+								[Const:String] "Controller"
+								[Const:String] ""
+							[Const:String] "Schema"
+							[Const:String] ""
+						[Const:String] "Channel"
+						[Const:String] ""
+					[Const:String] "View"
+					[Const:String] ""
+			[If:Void]
+				[Binop:Bool]
+					[Local appPart(28477):String:String]
+					==
+					[Const:String] ""
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local appPart(28477):String:String]
+						=
+						[Const:String] "app"
+			[Var result(28478):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Local appPart(28477):String:String]
+			[Return:Dynamic] [Local result(28478):String:String]
+
+	public static function convertPackageToDirectoryPath[Function:(classType : haxe.macro.ClassType, fileExtension : String) -> String]
+		[Arg:haxe.macro.ClassType] [Local classType(28455):haxe.macro.ClassType]
+		[Arg:String] [Local fileExtension(28456):String]
+		[Block:Dynamic]
+			[Var packageParts(28457):Array<String>]
+				[Field:Array<String>]
+					[Local classType(28455):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:Array<String>] pack:Array<String>
+			[Var className(28458):String]
+				[Field:String]
+					[Local classType(28455):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var snakeClassName(28459):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Local className(28458):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local packageParts(28457):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var result(28460):String]
+						[Binop:String]
+							[Local snakeClassName(28459):String:String]
+							+
+							[Local fileExtension(28456):String:String]
+					[Return:Dynamic] [Local result(28460):String:String]
+			[Var snakePackageParts(28470):Array<String>]
+				[Block:Array<String>]
+					[Var `(28465):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(28466):Int] [Const:Int] 0
+						[Var `(28467):Array<String>] [Local packageParts(28457):Array<String>:Array<String>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(28466):Int:Int]
+								<
+								[Field:Int]
+									[Local `(28467):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var v(28468):String]
+									[Array:String]
+										[Local `(28467):Array<String>:Array<String>]
+										[Local `(28466):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(28466):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local `(28465):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Function:(part : String) -> String]
+											[Arg:String] [Local part(28469):String]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Call:String]
+														[Field:(camelCase : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+															[FStatic:(camelCase : String) -> String]
+																reflaxe.elixir.helpers.NamingHelper
+																toSnakeCase:(camelCase : String) -> String
+														[Local part(28469):String:String]
+										[Local v(28468):String:String]
+					[Local `(28465):Array<String>:Array<String>]
+			[Var result(28471):String]
+				[Call:String]
+					[Field:(paths : Array<String>) -> String]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(paths : Array<String>) -> String]
+							haxe.io.Path
+							join:(paths : Array<String>) -> String
+					[Call:Array<String>]
+						[Field:(a : Array<String>) -> Array<String>]
+							[Local snakePackageParts(28470):Array<String>:Array<String>]
+							[FInstance:(a : Array<String>) -> Array<String>]
+								Array<String>
+								concat:(a : Array<Array.T>) -> Array<Array.T>
+						[ArrayDecl:Array<String>]
+							[Binop:String]
+								[Local snakeClassName(28459):String:String]
+								+
+								[Local fileExtension(28456):String:String]
+			[Return:Dynamic] [Local result(28471):String:String]
+
+	public static function getComprehensiveNamingRule[Function:(classType : haxe.macro.ClassType) -> { fileName : String, dirPath : String }]
+		[Arg:haxe.macro.ClassType] [Local classType(28506):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var className(28507):String]
+				[Field:String]
+					[Local classType(28506):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:String] name:String
+			[Var packageParts(28508):Array<String>]
+				[Field:Array<String>]
+					[Local classType(28506):haxe.macro.ClassType:haxe.macro.ClassType]
+					[FAnon:Array<String>] pack:Array<String>
+			[Var annotationInfo(28509):reflaxe.elixir.helpers.AnnotationInfo]
+				[Call:reflaxe.elixir.helpers.AnnotationInfo]
+					[Field:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo]
+						[TypeExpr reflaxe.elixir.helpers.AnnotationSystem:Class<reflaxe.elixir.helpers.AnnotationSystem>]
+						[FStatic:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo]
+							reflaxe.elixir.helpers.AnnotationSystem
+							detectAnnotations:(classType : haxe.macro.ClassType) -> reflaxe.elixir.helpers.AnnotationInfo
+					[Local classType(28506):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Var baseFileName(28510):String]
+				[Call:String]
+					[Field:(camelCase : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+						[FStatic:(camelCase : String) -> String]
+							reflaxe.elixir.helpers.NamingHelper
+							toSnakeCase:(camelCase : String) -> String
+					[Local className(28507):String:String]
+			[Var snakePackageParts(28520):Array<String>]
+				[Block:Array<String>]
+					[Var `(28515):Array<String>] [ArrayDecl:Array<String>]
+					[Block:Void]
+						[Var `(28516):Int] [Const:Int] 0
+						[Var `(28517):Array<String>] [Local packageParts(28508):Array<String>:Array<String>]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(28516):Int:Int]
+								<
+								[Field:Int]
+									[Local `(28517):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var v(28518):String]
+									[Array:String]
+										[Local `(28517):Array<String>:Array<String>]
+										[Local `(28516):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(28516):Int:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local `(28515):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Call:String]
+										[Function:(part : String) -> String]
+											[Arg:String] [Local part(28519):String]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Call:String]
+														[Field:(camelCase : String) -> String]
+															[TypeExpr reflaxe.elixir.helpers.NamingHelper:Class<reflaxe.elixir.helpers.NamingHelper>]
+															[FStatic:(camelCase : String) -> String]
+																reflaxe.elixir.helpers.NamingHelper
+																toSnakeCase:(camelCase : String) -> String
+														[Local part(28519):String:String]
+										[Local v(28518):String:String]
+					[Local `(28515):Array<String>:Array<String>]
+			[Var packagePath(28521):String]
+				[If:String]
+					[Binop:Bool]
+						[Field:Int]
+							[Local snakePackageParts(28520):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						>
+						[Const:Int] 0
+					[Then:String] [Block:String]
+						[Call:String]
+							[Field:(sep : String) -> String]
+								[Local snakePackageParts(28520):Array<String>:Array<String>]
+								[FInstance:(sep : String) -> String]
+									Array<String>
+									join:(sep : String) -> String
+							[Const:String] "/"
+					[Else:String] [Block:String] [Const:String] ""
+			[Var rule(28522):{ fileName : String, dirPath : String }]
+				[ObjectDecl:{ fileName : String, dirPath : String }]
+					fileName: [Local baseFileName(28510):String:String]
+					dirPath: [Local packagePath(28521):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<String>]
+						[Local annotationInfo(28509):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+						[FAnon:Null<String>] primaryAnnotation:Null<String>
+					!=
+					[Const:Null<String>] null
+				[Then:Void] [Block:Void]
+					[Var appName(28523):String]
+						[Call:String]
+							[Field:(className : String) -> String]
+								[TypeExpr reflaxe.elixir.helpers.PhoenixPathGenerator:Class<reflaxe.elixir.helpers.PhoenixPathGenerator>]
+								[FStatic:(className : String) -> String]
+									reflaxe.elixir.helpers.PhoenixPathGenerator
+									extractAppName:(className : String) -> String
+							[Local className(28507):String:String]
+					[Meta:Void]
+						:ast(switch (annotationInfo.primaryAnnotation) {
+	case ":router":
+		rule.fileName = "router";
+		rule.dirPath = appName + "_web";	
+	case ":liveview":
+		var liveViewName = baseFileName.replace("_live", "");
+		rule.fileName = liveViewName + "_live";
+		rule.dirPath = appName + "_web/live";	
+	case ":controller":
+		rule.fileName = baseFileName;
+		rule.dirPath = appName + "_web/controllers";	
+	case ":schema":
+		rule.fileName = baseFileName;
+		rule.dirPath = appName + "/schemas";	
+	case ":endpoint":
+		rule.fileName = "endpoint";
+		rule.dirPath = appName + "_web";	
+	case ":application":
+		rule.fileName = baseFileName;
+		rule.dirPath = "";	
+	default:
+})
+						[Block:Void]
+							[Var `(28526):Null<String>]
+								[Field:Null<String>]
+									[Local annotationInfo(28509):reflaxe.elixir.helpers.AnnotationInfo:reflaxe.elixir.helpers.AnnotationInfo]
+									[FAnon:Null<String>] primaryAnnotation:Null<String>
+							[If:Void]
+								[Binop:Bool]
+									[Local `(28526):Null<String>:Null<String>]
+									==
+									[Const:Null<String>] null
+								[Then:Void] [Block:Void]
+								[Else:Void] [Switch:Void]
+									[Local `(28526):Null<String>:Null<String>]
+									[Case:String]
+										[Const:String] ":application"
+										[Block:String]
+											[Block:String]
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] fileName:String
+													=
+													[Local baseFileName(28510):String:String]
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] dirPath:String
+													=
+													[Const:String] ""
+									[Case:String]
+										[Const:String] ":controller"
+										[Block:String]
+											[Block:String]
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] fileName:String
+													=
+													[Local baseFileName(28510):String:String]
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] dirPath:String
+													=
+													[Binop:String]
+														[Local appName(28523):String:String]
+														+
+														[Const:String] "_web/controllers"
+									[Case:String]
+										[Const:String] ":endpoint"
+										[Block:String]
+											[Block:String]
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] fileName:String
+													=
+													[Const:String] "endpoint"
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] dirPath:String
+													=
+													[Binop:String]
+														[Local appName(28523):String:String]
+														+
+														[Const:String] "_web"
+									[Case:String]
+										[Const:String] ":liveview"
+										[Block:String]
+											[Block:String]
+												[Var liveViewName(28527):String]
+													[Call:String]
+														[Field:(s : String, sub : String, by : String) -> String]
+															[TypeExpr StringTools:{ Statics StringTools }]
+															[FStatic:(s : String, sub : String, by : String) -> String]
+																StringTools
+																replace:(s : String, sub : String, by : String) -> String
+														[Local baseFileName(28510):String:String]
+														[Const:String] "_live"
+														[Const:String] ""
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] fileName:String
+													=
+													[Binop:String]
+														[Local liveViewName(28527):String:String]
+														+
+														[Const:String] "_live"
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] dirPath:String
+													=
+													[Binop:String]
+														[Local appName(28523):String:String]
+														+
+														[Const:String] "_web/live"
+									[Case:String]
+										[Const:String] ":router"
+										[Block:String]
+											[Block:String]
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] fileName:String
+													=
+													[Const:String] "router"
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] dirPath:String
+													=
+													[Binop:String]
+														[Local appName(28523):String:String]
+														+
+														[Const:String] "_web"
+									[Case:String]
+										[Const:String] ":schema"
+										[Block:String]
+											[Block:String]
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] fileName:String
+													=
+													[Local baseFileName(28510):String:String]
+												[Binop:String]
+													[Field:String]
+														[Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+														[FAnon:String] dirPath:String
+													=
+													[Binop:String]
+														[Local appName(28523):String:String]
+														+
+														[Const:String] "/schemas"
+									[Default:Void] [Block:Void]
+			[Return:Dynamic] [Local rule(28522):{ fileName : String, dirPath : String }:{ fileName : String, dirPath : String }]
+}

@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.helpers.ADTConfig = { typeName : String, moduleName : String, constructors : Map<String, reflaxe.elixir.helpers.ADTConstructorConfig> }

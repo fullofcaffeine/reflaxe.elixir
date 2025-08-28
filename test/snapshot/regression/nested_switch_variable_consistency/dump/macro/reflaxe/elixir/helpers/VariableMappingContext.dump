@@ -1,0 +1,241 @@
+@:structInit
+class reflaxe.elixir.helpers.VariableMappingContext {
+
+	@:compilerGenerated @:inheritDoc
+	public function new[Function:(?currentFunction : Null<Null<String>>, ?currentClass : Null<Null<haxe.macro.ClassType>>, ?currentModule : Null<Null<String>>, ?scopeDepth : Null<Int>, ?loopDepth : Null<Int>, ?conditionalDepth : Null<Int>, ?isInLiveViewContext : Null<Bool>, ?isInGenServerContext : Null<Bool>, ?isInSchemaContext : Null<Bool>) -> Void]
+		[Arg:Null<Null<String>>] [Local currentFunction(14364):Null<Null<String>>]
+		[Arg:Null<Null<haxe.macro.ClassType>>] [Local currentClass(14363):Null<Null<haxe.macro.ClassType>>]
+		[Arg:Null<Null<String>>] [Local currentModule(14362):Null<Null<String>>]
+		[Arg:Null<Int>] [Local scopeDepth(14361):Null<Int>]
+		[Arg:Null<Int>] [Local loopDepth(14360):Null<Int>]
+		[Arg:Null<Int>] [Local conditionalDepth(14359):Null<Int>]
+		[Arg:Null<Bool>] [Local isInLiveViewContext(14358):Null<Bool>]
+		[Arg:Null<Bool>] [Local isInGenServerContext(14357):Null<Bool>]
+		[Arg:Null<Bool>] [Local isInSchemaContext(14356):Null<Bool>]
+		[Block:Void]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.VariableMappingContext
+						isInSchemaContext:Bool
+				=
+				[Const:Bool] false
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.VariableMappingContext
+						isInGenServerContext:Bool
+				=
+				[Const:Bool] false
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+					[FInstance:Bool]
+						reflaxe.elixir.helpers.VariableMappingContext
+						isInLiveViewContext:Bool
+				=
+				[Const:Bool] false
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+					[FInstance:Int]
+						reflaxe.elixir.helpers.VariableMappingContext
+						conditionalDepth:Int
+				=
+				[Const:Int] 0
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+					[FInstance:Int]
+						reflaxe.elixir.helpers.VariableMappingContext
+						loopDepth:Int
+				=
+				[Const:Int] 0
+			[Binop:Int]
+				[Field:Int]
+					[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+					[FInstance:Int]
+						reflaxe.elixir.helpers.VariableMappingContext
+						scopeDepth:Int
+				=
+				[Const:Int] 0
+			[Binop:Null<String>]
+				[Field:Null<String>]
+					[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+					[FInstance:Null<String>]
+						reflaxe.elixir.helpers.VariableMappingContext
+						currentModule:Null<String>
+				=
+				[Const:Null<String>] null
+			[Binop:Null<haxe.macro.ClassType>]
+				[Field:Null<haxe.macro.ClassType>]
+					[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+					[FInstance:Null<haxe.macro.ClassType>]
+						reflaxe.elixir.helpers.VariableMappingContext
+						currentClass:Null<haxe.macro.ClassType>
+				=
+				[Const:Null<haxe.macro.ClassType>] null
+			[Binop:Null<String>]
+				[Field:Null<String>]
+					[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+					[FInstance:Null<String>]
+						reflaxe.elixir.helpers.VariableMappingContext
+						currentFunction:Null<String>
+				=
+				[Const:Null<String>] null
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local currentFunction(14364):Null<Null<String>>:Null<Null<String>>]
+						!=
+						[Const:Null<Null<String>>] null
+				[Then:Null<String>] [Binop:Null<String>]
+					[Field:Null<String>]
+						[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+						[FInstance:Null<String>]
+							reflaxe.elixir.helpers.VariableMappingContext
+							currentFunction:Null<String>
+					=
+					[Local currentFunction(14364):Null<Null<String>>:Null<Null<String>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local currentClass(14363):Null<Null<haxe.macro.ClassType>>:Null<Null<haxe.macro.ClassType>>]
+						!=
+						[Const:Null<Null<haxe.macro.ClassType>>] null
+				[Then:Null<haxe.macro.ClassType>] [Binop:Null<haxe.macro.ClassType>]
+					[Field:Null<haxe.macro.ClassType>]
+						[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+						[FInstance:Null<haxe.macro.ClassType>]
+							reflaxe.elixir.helpers.VariableMappingContext
+							currentClass:Null<haxe.macro.ClassType>
+					=
+					[Local currentClass(14363):Null<Null<haxe.macro.ClassType>>:Null<Null<haxe.macro.ClassType>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local currentModule(14362):Null<Null<String>>:Null<Null<String>>]
+						!=
+						[Const:Null<Null<String>>] null
+				[Then:Null<String>] [Binop:Null<String>]
+					[Field:Null<String>]
+						[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+						[FInstance:Null<String>]
+							reflaxe.elixir.helpers.VariableMappingContext
+							currentModule:Null<String>
+					=
+					[Local currentModule(14362):Null<Null<String>>:Null<Null<String>>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local scopeDepth(14361):Null<Int>:Null<Int>]
+						!=
+						[Const:Null<Int>] null
+				[Then:Int] [Binop:Int]
+					[Field:Int]
+						[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+						[FInstance:Int]
+							reflaxe.elixir.helpers.VariableMappingContext
+							scopeDepth:Int
+					=
+					[Local scopeDepth(14361):Null<Int>:Null<Int>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local loopDepth(14360):Null<Int>:Null<Int>]
+						!=
+						[Const:Null<Int>] null
+				[Then:Int] [Binop:Int]
+					[Field:Int]
+						[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+						[FInstance:Int]
+							reflaxe.elixir.helpers.VariableMappingContext
+							loopDepth:Int
+					=
+					[Local loopDepth(14360):Null<Int>:Null<Int>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local conditionalDepth(14359):Null<Int>:Null<Int>]
+						!=
+						[Const:Null<Int>] null
+				[Then:Int] [Binop:Int]
+					[Field:Int]
+						[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+						[FInstance:Int]
+							reflaxe.elixir.helpers.VariableMappingContext
+							conditionalDepth:Int
+					=
+					[Local conditionalDepth(14359):Null<Int>:Null<Int>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local isInLiveViewContext(14358):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+						[FInstance:Bool]
+							reflaxe.elixir.helpers.VariableMappingContext
+							isInLiveViewContext:Bool
+					=
+					[Local isInLiveViewContext(14358):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local isInGenServerContext(14357):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+						[FInstance:Bool]
+							reflaxe.elixir.helpers.VariableMappingContext
+							isInGenServerContext:Bool
+					=
+					[Local isInGenServerContext(14357):Null<Bool>:Null<Bool>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[Local isInSchemaContext(14356):Null<Bool>:Null<Bool>]
+						!=
+						[Const:Null<Bool>] null
+				[Then:Bool] [Binop:Bool]
+					[Field:Bool]
+						[Const:reflaxe.elixir.helpers.VariableMappingContext] this
+						[FInstance:Bool]
+							reflaxe.elixir.helpers.VariableMappingContext
+							isInSchemaContext:Bool
+					=
+					[Local isInSchemaContext(14356):Null<Bool>:Null<Bool>]
+
+	@:value(null)
+	public var currentFunction:Null<String>;
+
+	@:value(null)
+	public var currentClass:Null<haxe.macro.ClassType>;
+
+	@:value(null)
+	public var currentModule:Null<String>;
+
+	@:value(0)
+	public var scopeDepth:Int;
+
+	@:value(0)
+	public var loopDepth:Int;
+
+	@:value(0)
+	public var conditionalDepth:Int;
+
+	@:value(false)
+	public var isInLiveViewContext:Bool;
+
+	@:value(false)
+	public var isInGenServerContext:Bool;
+
+	@:value(false)
+	public var isInSchemaContext:Bool;
+}

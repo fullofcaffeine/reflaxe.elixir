@@ -1,0 +1,1 @@
+typedef haxe.macro.TypedExpr = { t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }

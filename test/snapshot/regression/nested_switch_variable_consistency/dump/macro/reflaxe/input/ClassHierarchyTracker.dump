@@ -1,0 +1,2278 @@
+class reflaxe.input.ClassHierarchyTracker {
+
+	@:value(false)
+	public static var initialized(default,null):Bool = [Const:Bool] false;
+
+	@:value([])
+	static var classData:Map<String, reflaxe.input.ClassHierarchyClassData> = [Block:haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>]
+		[Block:Void]
+		[New:haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>] haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>;
+
+	public static function getAllDirectChildClasses[Function:(cls : Null<haxe.macro.ClassType>) -> Array<haxe.macro.ClassType>]
+		[Arg:Null<haxe.macro.ClassType>] [Local cls(12199):Null<haxe.macro.ClassType>]
+		[Block:Dynamic]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Field:Bool]
+						[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+						[FStatic:Bool]
+							reflaxe.input.ClassHierarchyTracker
+							initialized:Bool
+				[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "The `trackClassHierarchy` option must be enabled to use this `ClassHierarchyTracker` function."
+			[If:Void]
+				[Binop:Bool]
+					[Local cls(12199):Null<haxe.macro.ClassType>:Null<haxe.macro.ClassType>]
+					==
+					[Const:Null<haxe.macro.ClassType>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [ArrayDecl:Array<haxe.macro.ClassType>]
+			[Var name(12200):String]
+				[Call:String]
+					[Field:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+						[TypeExpr reflaxe.helpers.BaseTypeHelper:{ Statics reflaxe.helpers.BaseTypeHelper }]
+						[FStatic:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+							reflaxe.helpers.BaseTypeHelper
+							globalName:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String
+					[Local cls(12199):Null<haxe.macro.ClassType>:Null<haxe.macro.ClassType>]
+					[Const:Null<Bool>] null
+			[Var data(12205):Null<reflaxe.input.ClassHierarchyClassData>]
+				[Block:Null<reflaxe.input.ClassHierarchyClassData>]
+					[Var this(12203):haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>]
+						[Field:Map<String, reflaxe.input.ClassHierarchyClassData>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:Map<String, reflaxe.input.ClassHierarchyClassData>]
+								reflaxe.input.ClassHierarchyTracker
+								classData:Map<String, reflaxe.input.ClassHierarchyClassData>
+					[Call:Null<reflaxe.input.ClassHierarchyClassData>]
+						[Field:(key : String) -> Null<reflaxe.input.ClassHierarchyClassData>]
+							[Cast:haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>] [Local this(12203):haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>:haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>]
+							[FInstance:(key : String) -> Null<reflaxe.input.ClassHierarchyClassData>]
+								haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local name(12200):String:String]
+			[Return:Dynamic]
+				[If:Array<haxe.macro.ClassType>]
+					[Binop:Bool]
+						[Local data(12205):Null<reflaxe.input.ClassHierarchyClassData>:Null<reflaxe.input.ClassHierarchyClassData>]
+						!=
+						[Const:Null<reflaxe.input.ClassHierarchyClassData>] null
+					[Then:Array<haxe.macro.ClassType>] [Block:Array<haxe.macro.ClassType>]
+						[Field:Array<haxe.macro.ClassType>]
+							[Local data(12205):Null<reflaxe.input.ClassHierarchyClassData>:Null<reflaxe.input.ClassHierarchyClassData>]
+							[FInstance:Array<haxe.macro.ClassType>]
+								reflaxe.input.ClassHierarchyClassData
+								children:Array<haxe.macro.ClassType>
+					[Else:Array<haxe.macro.ClassType>] [Block:Array<haxe.macro.ClassType>] [ArrayDecl:Array<haxe.macro.ClassType>]
+
+	public static function getAllChildClasses[Function:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+		[Arg:haxe.macro.ClassType] [Local cls(12197):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var result(12198):Array<haxe.macro.ClassType>] [ArrayDecl:Array<haxe.macro.ClassType>]
+			[Block:Void]
+				[Var `(12210):Int] [Const:Int] 0
+				[Var `(12211):Array<haxe.macro.ClassType>]
+					[Call:Array<haxe.macro.ClassType>]
+						[Field:(cls : Null<haxe.macro.ClassType>) -> Array<haxe.macro.ClassType>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(cls : Null<haxe.macro.ClassType>) -> Array<haxe.macro.ClassType>]
+								reflaxe.input.ClassHierarchyTracker
+								getAllDirectChildClasses:(cls : Null<haxe.macro.ClassType>) -> Array<haxe.macro.ClassType>
+						[Local cls(12197):haxe.macro.ClassType:haxe.macro.ClassType]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12210):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12211):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassType>
+								length:Int
+					[Block:Void]
+						[Var c(12206):haxe.macro.ClassType]
+							[Array:haxe.macro.ClassType]
+								[Local `(12211):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+								[Local `(12210):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12210):Int:Int]
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Call:Bool]
+									[Field:(x : haxe.macro.ClassType) -> Bool]
+										[Local result(12198):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+										[FInstance:(x : haxe.macro.ClassType) -> Bool]
+											Array<haxe.macro.ClassType>
+											contains:(x : Array.T) -> Bool
+									[Local c(12206):haxe.macro.ClassType:haxe.macro.ClassType]
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : haxe.macro.ClassType) -> Int]
+										[Local result(12198):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+										[FInstance:(x : haxe.macro.ClassType) -> Int]
+											Array<haxe.macro.ClassType>
+											push:(x : Array.T) -> Int
+									[Local c(12206):haxe.macro.ClassType:haxe.macro.ClassType]
+						[Block:Void]
+							[Var `(12208):Int] [Const:Int] 0
+							[Var `(12209):Array<haxe.macro.ClassType>]
+								[Call:Array<haxe.macro.ClassType>]
+									[Field:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+										[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+										[FStatic:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+											reflaxe.input.ClassHierarchyTracker
+											getAllChildClasses:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>
+									[Local c(12206):haxe.macro.ClassType:haxe.macro.ClassType]
+							[While:Void]
+								[Binop:Bool]
+									[Local `(12208):Int:Int]
+									<
+									[Field:Int]
+										[Local `(12209):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassType>
+											length:Int
+								[Block:Void]
+									[Var cChild(12207):haxe.macro.ClassType]
+										[Array:haxe.macro.ClassType]
+											[Local `(12209):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+											[Local `(12208):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(12208):Int:Int]
+									[If:Void]
+										[Unop:Bool]
+											!
+											Prefix
+											[Call:Bool]
+												[Field:(x : haxe.macro.ClassType) -> Bool]
+													[Local result(12198):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+													[FInstance:(x : haxe.macro.ClassType) -> Bool]
+														Array<haxe.macro.ClassType>
+														contains:(x : Array.T) -> Bool
+												[Local cChild(12207):haxe.macro.ClassType:haxe.macro.ClassType]
+										[Then:Int] [Block:Int]
+											[Call:Int]
+												[Field:(x : haxe.macro.ClassType) -> Int]
+													[Local result(12198):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+													[FInstance:(x : haxe.macro.ClassType) -> Int]
+														Array<haxe.macro.ClassType>
+														push:(x : Array.T) -> Int
+												[Local cChild(12207):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Return:Dynamic] [Local result(12198):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+
+	public static function getAllParentClasses[Function:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+		[Arg:haxe.macro.ClassType] [Local cls(12330):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:Array<haxe.macro.ClassType>]
+					[Binop:Bool]
+						[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+							[Local cls(12330):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+						!=
+						[Const:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] null
+					[Then:Array<haxe.macro.ClassType>] [Block:Array<haxe.macro.ClassType>]
+						[Var superClass(12331):haxe.macro.ClassType]
+							[Call:haxe.macro.ClassType]
+								[Field:() -> haxe.macro.ClassType]
+									[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+											[Local cls(12330):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+										[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+									[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+						[Call:Array<haxe.macro.ClassType>]
+							[Field:(a : Array<haxe.macro.ClassType>) -> Array<haxe.macro.ClassType>]
+								[ArrayDecl:Array<haxe.macro.ClassType>] [Local superClass(12331):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FInstance:(a : Array<haxe.macro.ClassType>) -> Array<haxe.macro.ClassType>]
+									Array<haxe.macro.ClassType>
+									concat:(a : Array<Array.T>) -> Array<Array.T>
+							[Call:Array<haxe.macro.ClassType>]
+								[Field:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+									[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+									[FStatic:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+										reflaxe.input.ClassHierarchyTracker
+										getAllParentClasses:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>
+								[Local superClass(12331):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Else:Array<haxe.macro.ClassType>] [Block:Array<haxe.macro.ClassType>] [ArrayDecl:Array<haxe.macro.ClassType>]
+
+	@:value({ resultArray : null, params : null })
+	public static function getAllParentTypes[Function:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+		[Arg:haxe.macro.ClassType] [Local cls(12138):haxe.macro.ClassType]
+		[Arg:Null<Array<haxe.macro.Type>>]
+			[Local params(12139):Null<Array<haxe.macro.Type>>]
+			[Const:Null<Array<haxe.macro.Type>>] null
+		[Arg:Null<Array<haxe.macro.Type>>]
+			[Local resultArray(12140):Null<Array<haxe.macro.Type>>]
+			[Const:Null<Array<haxe.macro.Type>>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:Array<haxe.macro.Type>]
+					[Binop:Bool]
+						[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+							[Local cls(12138):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+						!=
+						[Const:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] null
+					[Then:Null<Array<haxe.macro.Type>>] [Block:Null<Array<haxe.macro.Type>>]
+						[Var clsRef(12141):haxe.macro.Ref<haxe.macro.ClassType>]
+							[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+									[Local cls(12138):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+								[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+						[If:Void]
+							[Binop:Bool]
+								[Local params(12139):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+								==
+								[Const:Null<Array<haxe.macro.Type>>] null
+							[Then:Null<Array<haxe.macro.Type>>] [Block:Null<Array<haxe.macro.Type>>]
+								[Binop:Null<Array<haxe.macro.Type>>]
+									[Local params(12139):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+									=
+									[Block:Array<haxe.macro.Type>]
+										[Var _this(12144):Array<haxe.macro.TypeParameter>]
+											[Field:Array<haxe.macro.TypeParameter>]
+												[Local cls(12138):haxe.macro.ClassType:haxe.macro.ClassType]
+												[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+										[Block:Array<haxe.macro.Type>]
+											[Var `(12146):Array<haxe.macro.Type>] [ArrayDecl:Array<haxe.macro.Type>]
+											[Block:Void]
+												[Var `(12147):Int] [Const:Int] 0
+												[Var `(12148):Array<haxe.macro.TypeParameter>] [Local _this(12144):Array<haxe.macro.TypeParameter>:Array<haxe.macro.TypeParameter>]
+												[While:Void]
+													[Binop:Bool]
+														[Local `(12147):Int:Int]
+														<
+														[Field:Int]
+															[Local `(12148):Array<haxe.macro.TypeParameter>:Array<haxe.macro.TypeParameter>]
+															[FInstance:Int]
+																Array<haxe.macro.TypeParameter>
+																length:Int
+													[Block:Void]
+														[Var v(12149):haxe.macro.TypeParameter]
+															[Array:haxe.macro.TypeParameter]
+																[Local `(12148):Array<haxe.macro.TypeParameter>:Array<haxe.macro.TypeParameter>]
+																[Local `(12147):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(12147):Int:Int]
+														[Call:Int]
+															[Field:(x : haxe.macro.Type) -> Int]
+																[Local `(12146):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+																[FInstance:(x : haxe.macro.Type) -> Int]
+																	Array<haxe.macro.Type>
+																	push:(x : Array.T) -> Int
+															[Call:haxe.macro.Type]
+																[Function:(c : haxe.macro.TypeParameter) -> haxe.macro.Type]
+																	[Arg:haxe.macro.TypeParameter] [Local c(12150):haxe.macro.TypeParameter]
+																	[Block:Dynamic]
+																		[Return:Dynamic]
+																			[Field:haxe.macro.Type]
+																				[Local c(12150):haxe.macro.TypeParameter:haxe.macro.TypeParameter]
+																				[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																[Local v(12149):haxe.macro.TypeParameter:haxe.macro.TypeParameter]
+											[Local `(12146):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+						[Var newParams(12151):Array<haxe.macro.Type>]
+							[Field:Array<haxe.macro.Type>]
+								[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+									[Local cls(12138):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+								[FAnon:Array<haxe.macro.Type>] params:Array<haxe.macro.Type>
+						[Var superClass(12152):haxe.macro.Type]
+							[Call:haxe.macro.Type]
+								[Field:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+									[TypeExpr haxe.macro.TypeTools:Class<haxe.macro.TypeTools>]
+									[FStatic:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+										haxe.macro.TypeTools
+										applyTypeParameters:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type
+								[Call:haxe.macro.Type]
+									[Field:(t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+										[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+										[FEnum:(t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+											haxe.macro.Type
+											TInst
+									[Local clsRef(12141):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local newParams(12151):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[Field:Array<haxe.macro.TypeParameter>]
+									[Local cls(12138):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+								[Local params(12139):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+						[If:Void]
+							[Binop:Bool]
+								[Local resultArray(12140):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+								==
+								[Const:Null<Array<haxe.macro.Type>>] null
+							[Then:Null<Array<haxe.macro.Type>>] [Block:Null<Array<haxe.macro.Type>>]
+								[Binop:Null<Array<haxe.macro.Type>>]
+									[Local resultArray(12140):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+									=
+									[ArrayDecl:Array<haxe.macro.Type>]
+						[Call:Int]
+							[Field:(x : haxe.macro.Type) -> Int]
+								[Local resultArray(12140):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+								[FInstance:(x : haxe.macro.Type) -> Int]
+									Array<haxe.macro.Type>
+									push:(x : Array.T) -> Int
+							[Local superClass(12152):haxe.macro.Type:haxe.macro.Type]
+						[Call:Array<haxe.macro.Type>]
+							[Field:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+								[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+								[FStatic:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+									reflaxe.input.ClassHierarchyTracker
+									getAllParentTypes:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>
+							[Call:haxe.macro.ClassType]
+								[Field:() -> haxe.macro.ClassType]
+									[Local clsRef(12141):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+									[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+							[Local newParams(12151):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+							[Local resultArray(12140):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+						[Local resultArray(12140):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+					[Else:Array<haxe.macro.Type>] [Block:Array<haxe.macro.Type>] [ArrayDecl:Array<haxe.macro.Type>]
+
+	public static function getAllParentInterfaces[Function:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+		[Arg:haxe.macro.ClassType] [Local cls(12332):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var result(12342):Array<haxe.macro.ClassType>]
+				[Block:Array<haxe.macro.ClassType>]
+					[Var _this(12335):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+						[Field:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+							[Local cls(12332):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] interfaces:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+					[Block:Array<haxe.macro.ClassType>]
+						[Var `(12337):Array<haxe.macro.ClassType>] [ArrayDecl:Array<haxe.macro.ClassType>]
+						[Block:Void]
+							[Var `(12338):Int] [Const:Int] 0
+							[Var `(12339):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] [Local _this(12335):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+							[While:Void]
+								[Binop:Bool]
+									[Local `(12338):Int:Int]
+									<
+									[Field:Int]
+										[Local `(12339):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+										[FInstance:Int]
+											Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+											length:Int
+								[Block:Void]
+									[Var v(12340):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+										[Array:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+											[Local `(12339):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+											[Local `(12338):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(12338):Int:Int]
+									[Call:Int]
+										[Field:(x : haxe.macro.ClassType) -> Int]
+											[Local `(12337):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+											[FInstance:(x : haxe.macro.ClassType) -> Int]
+												Array<haxe.macro.ClassType>
+												push:(x : Array.T) -> Int
+										[Call:haxe.macro.ClassType]
+											[Function:(int : { t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }) -> haxe.macro.ClassType]
+												[Arg:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }] [Local int(12341):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+												[Block:Dynamic]
+													[Return:Dynamic]
+														[Call:haxe.macro.ClassType]
+															[Field:() -> haxe.macro.ClassType]
+																[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+																	[Local int(12341):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+																	[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+																[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+											[Local v(12340):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+						[Local `(12337):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+						[Local cls(12332):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+					!=
+					[Const:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] null
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(12344):Int] [Const:Int] 0
+						[Var `(12345):Array<haxe.macro.ClassType>]
+							[Call:Array<haxe.macro.ClassType>]
+								[Field:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+									[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+									[FStatic:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+										reflaxe.input.ClassHierarchyTracker
+										getAllParentInterfaces:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>
+								[Call:haxe.macro.ClassType]
+									[Field:() -> haxe.macro.ClassType]
+										[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+												[Local cls(12332):haxe.macro.ClassType:haxe.macro.ClassType]
+												[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+											[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+										[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+						[While:Void]
+							[Binop:Bool]
+								[Local `(12344):Int:Int]
+								<
+								[Field:Int]
+									[Local `(12345):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+									[FInstance:Int]
+										Array<haxe.macro.ClassType>
+										length:Int
+							[Block:Void]
+								[Var int(12343):haxe.macro.ClassType]
+									[Array:haxe.macro.ClassType]
+										[Local `(12345):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+										[Local `(12344):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(12344):Int:Int]
+								[If:Void]
+									[Unop:Bool]
+										!
+										Prefix
+										[Call:Bool]
+											[Field:(x : haxe.macro.ClassType) -> Bool]
+												[Local result(12342):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+												[FInstance:(x : haxe.macro.ClassType) -> Bool]
+													Array<haxe.macro.ClassType>
+													contains:(x : Array.T) -> Bool
+											[Local int(12343):haxe.macro.ClassType:haxe.macro.ClassType]
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : haxe.macro.ClassType) -> Int]
+												[Local result(12342):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+												[FInstance:(x : haxe.macro.ClassType) -> Int]
+													Array<haxe.macro.ClassType>
+													push:(x : Array.T) -> Int
+											[Local int(12343):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Return:Dynamic] [Local result(12342):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+
+	@:value({ resultArray : null, params : null })
+	public static function getAllParentInterfaceTypes[Function:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+		[Arg:haxe.macro.ClassType] [Local cls(12154):haxe.macro.ClassType]
+		[Arg:Null<Array<haxe.macro.Type>>]
+			[Local params(12155):Null<Array<haxe.macro.Type>>]
+			[Const:Null<Array<haxe.macro.Type>>] null
+		[Arg:Null<Array<haxe.macro.Type>>]
+			[Local resultArray(12156):Null<Array<haxe.macro.Type>>]
+			[Const:Null<Array<haxe.macro.Type>>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local params(12155):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+					==
+					[Const:Null<Array<haxe.macro.Type>>] null
+				[Then:Null<Array<haxe.macro.Type>>] [Block:Null<Array<haxe.macro.Type>>]
+					[Binop:Null<Array<haxe.macro.Type>>]
+						[Local params(12155):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+						=
+						[Block:Array<haxe.macro.Type>]
+							[Var _this(12159):Array<haxe.macro.TypeParameter>]
+								[Field:Array<haxe.macro.TypeParameter>]
+									[Local cls(12154):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+							[Block:Array<haxe.macro.Type>]
+								[Var `(12161):Array<haxe.macro.Type>] [ArrayDecl:Array<haxe.macro.Type>]
+								[Block:Void]
+									[Var `(12162):Int] [Const:Int] 0
+									[Var `(12163):Array<haxe.macro.TypeParameter>] [Local _this(12159):Array<haxe.macro.TypeParameter>:Array<haxe.macro.TypeParameter>]
+									[While:Void]
+										[Binop:Bool]
+											[Local `(12162):Int:Int]
+											<
+											[Field:Int]
+												[Local `(12163):Array<haxe.macro.TypeParameter>:Array<haxe.macro.TypeParameter>]
+												[FInstance:Int]
+													Array<haxe.macro.TypeParameter>
+													length:Int
+										[Block:Void]
+											[Var v(12164):haxe.macro.TypeParameter]
+												[Array:haxe.macro.TypeParameter]
+													[Local `(12163):Array<haxe.macro.TypeParameter>:Array<haxe.macro.TypeParameter>]
+													[Local `(12162):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(12162):Int:Int]
+											[Call:Int]
+												[Field:(x : haxe.macro.Type) -> Int]
+													[Local `(12161):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+													[FInstance:(x : haxe.macro.Type) -> Int]
+														Array<haxe.macro.Type>
+														push:(x : Array.T) -> Int
+												[Call:haxe.macro.Type]
+													[Function:(c : haxe.macro.TypeParameter) -> haxe.macro.Type]
+														[Arg:haxe.macro.TypeParameter] [Local c(12165):haxe.macro.TypeParameter]
+														[Block:Dynamic]
+															[Return:Dynamic]
+																[Field:haxe.macro.Type]
+																	[Local c(12165):haxe.macro.TypeParameter:haxe.macro.TypeParameter]
+																	[FAnon:haxe.macro.Type] t:haxe.macro.Type
+													[Local v(12164):haxe.macro.TypeParameter:haxe.macro.TypeParameter]
+								[Local `(12161):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+			[If:Void]
+				[Binop:Bool]
+					[Local resultArray(12156):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+					==
+					[Const:Null<Array<haxe.macro.Type>>] null
+				[Then:Null<Array<haxe.macro.Type>>] [Block:Null<Array<haxe.macro.Type>>]
+					[Binop:Null<Array<haxe.macro.Type>>]
+						[Local resultArray(12156):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+						=
+						[ArrayDecl:Array<haxe.macro.Type>]
+			[Block:Void]
+				[Var `(12167):Int] [Const:Int] 0
+				[Var `(12168):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+					[Field:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+						[Local cls(12154):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] interfaces:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12167):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12168):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+							[FInstance:Int]
+								Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+								length:Int
+					[Block:Void]
+						[Var int(12166):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+							[Array:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+								[Local `(12168):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+								[Local `(12167):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12167):Int:Int]
+						[Call:Int]
+							[Field:(x : haxe.macro.Type) -> Int]
+								[Local resultArray(12156):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+								[FInstance:(x : haxe.macro.Type) -> Int]
+									Array<haxe.macro.Type>
+									push:(x : Array.T) -> Int
+							[Call:haxe.macro.Type]
+								[Field:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+									[TypeExpr haxe.macro.TypeTools:Class<haxe.macro.TypeTools>]
+									[FStatic:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+										haxe.macro.TypeTools
+										applyTypeParameters:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type
+								[Call:haxe.macro.Type]
+									[Field:(t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+										[TypeExpr haxe.macro.Type:Enum<haxe.macro.Type>]
+										[FEnum:(t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type>) -> haxe.macro.Type]
+											haxe.macro.Type
+											TInst
+									[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local int(12166):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+										[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+									[Field:Array<haxe.macro.Type>]
+										[Local int(12166):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+										[FAnon:Array<haxe.macro.Type>] params:Array<haxe.macro.Type>
+								[Field:Array<haxe.macro.TypeParameter>]
+									[Local cls(12154):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+								[Local params(12155):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+						[Local cls(12154):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+					!=
+					[Const:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] null
+				[Then:Array<haxe.macro.Type>] [Block:Array<haxe.macro.Type>]
+					[Call:Array<haxe.macro.Type>]
+						[Field:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+								reflaxe.input.ClassHierarchyTracker
+								getAllParentInterfaceTypes:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>
+						[Call:haxe.macro.ClassType]
+							[Field:() -> haxe.macro.ClassType]
+								[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+										[Local cls(12154):haxe.macro.ClassType:haxe.macro.ClassType]
+										[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+									[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+								[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+						[Field:Array<haxe.macro.Type>]
+							[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+								[Local cls(12154):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+							[FAnon:Array<haxe.macro.Type>] params:Array<haxe.macro.Type>
+						[Local resultArray(12156):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+			[Return:Dynamic] [Local resultArray(12156):Null<Array<haxe.macro.Type>>:Null<Array<haxe.macro.Type>>]
+
+	public static function funcHasChildOverride[Function:(superClass : haxe.macro.ClassType, superClassField : haxe.macro.ClassField, isStatic : Bool) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local superClass(12346):haxe.macro.ClassType]
+		[Arg:haxe.macro.ClassField] [Local superClassField(12347):haxe.macro.ClassField]
+		[Arg:Bool] [Local isStatic(12348):Bool]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(12350):Int] [Const:Int] 0
+				[Var `(12351):Array<haxe.macro.ClassType>]
+					[Call:Array<haxe.macro.ClassType>]
+						[Field:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+								reflaxe.input.ClassHierarchyTracker
+								getAllChildClasses:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>
+						[Local superClass(12346):haxe.macro.ClassType:haxe.macro.ClassType]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12350):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12351):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassType>
+								length:Int
+					[Block:Void]
+						[Var child(12349):haxe.macro.ClassType]
+							[Array:haxe.macro.ClassType]
+								[Local `(12351):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+								[Local `(12350):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12350):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Call:Null<Array<haxe.macro.ClassField>>]
+									[Field:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>]
+										[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+										[FStatic:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>]
+											reflaxe.input.ClassHierarchyTracker
+											getFieldsOfName:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>
+									[Local child(12349):haxe.macro.ClassType:haxe.macro.ClassType]
+									[Field:String]
+										[Local superClassField(12347):haxe.macro.ClassField:haxe.macro.ClassField]
+										[FAnon:String] name:String
+								!=
+								[Const:Null<Array<haxe.macro.ClassField>>] null
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	public static function childFuncIsCovariant[Function:(childClass : haxe.macro.ClassType, childClassField : haxe.macro.ClassField, isStatic : Bool) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local childClass(12352):haxe.macro.ClassType]
+		[Arg:haxe.macro.ClassField] [Local childClassField(12353):haxe.macro.ClassField]
+		[Arg:Bool] [Local isStatic(12354):Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Null<haxe.macro.Type>]
+						[Field:(childClass : haxe.macro.ClassType, childClassField : haxe.macro.ClassField, isStatic : Bool) -> Null<haxe.macro.Type>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(childClass : haxe.macro.ClassType, childClassField : haxe.macro.ClassField, isStatic : Bool) -> Null<haxe.macro.Type>]
+								reflaxe.input.ClassHierarchyTracker
+								funcGetCovariantBaseType:(childClass : haxe.macro.ClassType, childClassField : haxe.macro.ClassField, isStatic : Bool) -> Null<haxe.macro.Type>
+						[Local childClass(12352):haxe.macro.ClassType:haxe.macro.ClassType]
+						[Local childClassField(12353):haxe.macro.ClassField:haxe.macro.ClassField]
+						[Local isStatic(12354):Bool:Bool]
+					!=
+					[Const:Null<haxe.macro.Type>] null
+
+	public static function getAllParentTypesAndInterfaces[Function:(childClass : haxe.macro.ClassType) -> Array<haxe.macro.Type>]
+		[Arg:haxe.macro.ClassType] [Local childClass(12137):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[Var result(12153):Array<haxe.macro.Type>]
+				[Call:Array<haxe.macro.Type>]
+					[Field:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+						[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+						[FStatic:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+							reflaxe.input.ClassHierarchyTracker
+							getAllParentTypes:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>
+					[Local childClass(12137):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Const:Null<Array<haxe.macro.Type>>] null
+					[Const:Null<Array<haxe.macro.Type>>] null
+			[Call:Void]
+				[Field:() -> Void]
+					[Local result(12153):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+					[FInstance:() -> Void]
+						Array<haxe.macro.Type>
+						reverse:() -> Void
+			[Call:Array<haxe.macro.Type>]
+				[Field:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+					[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+					[FStatic:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+						reflaxe.input.ClassHierarchyTracker
+						getAllParentInterfaceTypes:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>
+				[Local childClass(12137):haxe.macro.ClassType:haxe.macro.ClassType]
+				[Const:Null<Array<haxe.macro.Type>>] null
+				[Local result(12153):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+			[Return:Dynamic] [Local result(12153):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+
+	@:value([])
+	static var getFieldsOfName_cache:Map<String, Map<String, Array<haxe.macro.ClassField>>> = [Block:haxe.ds.StringMap<Map<String, Array<haxe.macro.ClassField>>>]
+		[Block:Void]
+		[New:haxe.ds.StringMap<Map<String, Array<haxe.macro.ClassField>>>] haxe.ds.StringMap<Map<String, Array<haxe.macro.ClassField>>>;
+
+	static function getFieldsOfName[Function:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>]
+		[Arg:haxe.macro.ClassType] [Local cls(12213):haxe.macro.ClassType]
+		[Arg:String] [Local fieldName(12214):String]
+		[Block:Dynamic]
+			[Var uniqueClassId(12215):String]
+				[Binop:String]
+					[Call:String]
+						[Field:(arr : Array<String>, connector : String) -> String]
+							[TypeExpr reflaxe.helpers.ArrayHelper:{ Statics reflaxe.helpers.ArrayHelper }]
+							[FStatic:(arr : Array<String>, connector : String) -> String]
+								reflaxe.helpers.ArrayHelper
+								joinAppend:(arr : Array<joinAppend.T>, connector : String) -> String
+						[Field:Array<String>]
+							[Local cls(12213):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:Array<String>] pack:Array<String>
+						[Const:String] "."
+					+
+					[Field:String]
+						[Local cls(12213):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:String] name:String
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var this(12218):haxe.IMap<String, Map<String, Array<haxe.macro.ClassField>>>]
+							[Field:Map<String, Map<String, Array<haxe.macro.ClassField>>>]
+								[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+								[FStatic:Map<String, Map<String, Array<haxe.macro.ClassField>>>]
+									reflaxe.input.ClassHierarchyTracker
+									getFieldsOfName_cache:Map<String, Map<String, Array<haxe.macro.ClassField>>>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<Map<String, Array<haxe.macro.ClassField>>>] [Local this(12218):haxe.IMap<String, Map<String, Array<haxe.macro.ClassField>>>:haxe.IMap<String, Map<String, Array<haxe.macro.ClassField>>>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<Map<String, Array<haxe.macro.ClassField>>>
+									exists:(key : String) -> Bool
+							[Local uniqueClassId(12215):String:String]
+				[Then:Void] [Block:Void]
+					[Var fieldMap(12220):Map<String, Array<haxe.macro.ClassField>>]
+						[Block:haxe.ds.StringMap<Array<haxe.macro.ClassField>>]
+							[Block:Void]
+							[New:haxe.ds.StringMap<Array<haxe.macro.ClassField>>] haxe.ds.StringMap<Array<haxe.macro.ClassField>>
+					[Var add(12221):(field : haxe.macro.ClassField) -> Void]
+						[Function:(field : haxe.macro.ClassField) -> Void]
+							[Arg:haxe.macro.ClassField] [Local field(12222):haxe.macro.ClassField]
+							[Block:Int]
+								[Var arr(12227):Null<Array<haxe.macro.ClassField>>]
+									[Block:Null<Array<haxe.macro.ClassField>>]
+										[Var key(12226):String]
+											[Field:String]
+												[Local field(12222):haxe.macro.ClassField:haxe.macro.ClassField]
+												[FAnon:String] name:String
+										[Call:Null<Array<haxe.macro.ClassField>>]
+											[Field:(key : String) -> Null<Array<haxe.macro.ClassField>>]
+												[Local fieldMap(12220):Map<String, Array<haxe.macro.ClassField>>:haxe.ds.StringMap<Array<haxe.macro.ClassField>>]
+												[FInstance:(key : String) -> Null<Array<haxe.macro.ClassField>>]
+													haxe.ds.StringMap<Array<haxe.macro.ClassField>>
+													get:(key : String) -> Null<haxe.ds.StringMap.T>
+											[Local key(12226):String:String]
+								[If:Void]
+									[Binop:Bool]
+										[Local arr(12227):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+										==
+										[Const:Null<Array<haxe.macro.ClassField>>] null
+									[Then:Void] [Block:Void]
+										[Binop:Null<Array<haxe.macro.ClassField>>]
+											[Local arr(12227):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+											=
+											[ArrayDecl:Array<haxe.macro.ClassField>]
+										[Block:Void]
+											[Var key(12231):String]
+												[Field:String]
+													[Local field(12222):haxe.macro.ClassField:haxe.macro.ClassField]
+													[FAnon:String] name:String
+											[Call:Void]
+												[Field:(key : String, value : Array<haxe.macro.ClassField>) -> Void]
+													[Local fieldMap(12220):Map<String, Array<haxe.macro.ClassField>>:haxe.ds.StringMap<Array<haxe.macro.ClassField>>]
+													[FInstance:(key : String, value : Array<haxe.macro.ClassField>) -> Void]
+														haxe.ds.StringMap<Array<haxe.macro.ClassField>>
+														set:(key : String, value : haxe.ds.StringMap.T) -> Void
+												[Local key(12231):String:String]
+												[Local arr(12227):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+								[Call:Int]
+									[Field:(x : haxe.macro.ClassField) -> Int]
+										[Local arr(12227):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+										[FInstance:(x : haxe.macro.ClassField) -> Int]
+											Array<haxe.macro.ClassField>
+											push:(x : Array.T) -> Int
+									[Local field(12222):haxe.macro.ClassField:haxe.macro.ClassField]
+					[Block:Void]
+						[Var `(12234):Int] [Const:Int] 0
+						[Var `(12235):Array<haxe.macro.ClassField>]
+							[Call:Array<haxe.macro.ClassField>]
+								[Field:() -> Array<haxe.macro.ClassField>]
+									[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+										[Local cls(12213):haxe.macro.ClassType:haxe.macro.ClassType]
+										[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] statics:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+									[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(12234):Int:Int]
+								<
+								[Field:Int]
+									[Local `(12235):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+									[FInstance:Int]
+										Array<haxe.macro.ClassField>
+										length:Int
+							[Block:Void]
+								[Var field(12233):haxe.macro.ClassField]
+									[Array:haxe.macro.ClassField]
+										[Local `(12235):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+										[Local `(12234):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(12234):Int:Int]
+								[Call:Void]
+									[Local add(12221):(field : haxe.macro.ClassField) -> Void:(field : haxe.macro.ClassField) -> Void]
+									[Local field(12233):haxe.macro.ClassField:haxe.macro.ClassField]
+					[Block:Void]
+						[Var `(12237):Int] [Const:Int] 0
+						[Var `(12238):Array<haxe.macro.ClassField>]
+							[Call:Array<haxe.macro.ClassField>]
+								[Field:() -> Array<haxe.macro.ClassField>]
+									[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+										[Local cls(12213):haxe.macro.ClassType:haxe.macro.ClassType]
+										[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+									[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+						[While:Void]
+							[Binop:Bool]
+								[Local `(12237):Int:Int]
+								<
+								[Field:Int]
+									[Local `(12238):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+									[FInstance:Int]
+										Array<haxe.macro.ClassField>
+										length:Int
+							[Block:Void]
+								[Var field(12236):haxe.macro.ClassField]
+									[Array:haxe.macro.ClassField]
+										[Local `(12238):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+										[Local `(12237):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(12237):Int:Int]
+								[Call:Void]
+									[Local add(12221):(field : haxe.macro.ClassField) -> Void:(field : haxe.macro.ClassField) -> Void]
+									[Local field(12236):haxe.macro.ClassField:haxe.macro.ClassField]
+					[Block:Void]
+						[Var this(12241):haxe.IMap<String, Map<String, Array<haxe.macro.ClassField>>>]
+							[Field:Map<String, Map<String, Array<haxe.macro.ClassField>>>]
+								[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+								[FStatic:Map<String, Map<String, Array<haxe.macro.ClassField>>>]
+									reflaxe.input.ClassHierarchyTracker
+									getFieldsOfName_cache:Map<String, Map<String, Array<haxe.macro.ClassField>>>
+						[Call:Void]
+							[Field:(key : String, value : Map<String, Array<haxe.macro.ClassField>>) -> Void]
+								[Cast:haxe.ds.StringMap<Map<String, Array<haxe.macro.ClassField>>>] [Local this(12241):haxe.IMap<String, Map<String, Array<haxe.macro.ClassField>>>:haxe.IMap<String, Map<String, Array<haxe.macro.ClassField>>>]
+								[FInstance:(key : String, value : Map<String, Array<haxe.macro.ClassField>>) -> Void]
+									haxe.ds.StringMap<Map<String, Array<haxe.macro.ClassField>>>
+									set:(key : String, value : haxe.ds.StringMap.T) -> Void
+							[Local uniqueClassId(12215):String:String]
+							[Local fieldMap(12220):Map<String, Array<haxe.macro.ClassField>>:Map<String, Array<haxe.macro.ClassField>>]
+			[Return:Dynamic]
+				[Block:Null<Array<haxe.macro.ClassField>>]
+					[Var this(12253):haxe.IMap<String, Array<haxe.macro.ClassField>>]
+						[Block:haxe.ds.Map<String, Array<haxe.macro.ClassField>>]
+							[Var maybe(12250):Null<haxe.ds.Map<String, Array<haxe.macro.ClassField>>>]
+								[Block:Null<Map<String, Array<haxe.macro.ClassField>>>]
+									[Var this(12246):haxe.IMap<String, Map<String, Array<haxe.macro.ClassField>>>]
+										[Field:Map<String, Map<String, Array<haxe.macro.ClassField>>>]
+											[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+											[FStatic:Map<String, Map<String, Array<haxe.macro.ClassField>>>]
+												reflaxe.input.ClassHierarchyTracker
+												getFieldsOfName_cache:Map<String, Map<String, Array<haxe.macro.ClassField>>>
+									[Call:Null<Map<String, Array<haxe.macro.ClassField>>>]
+										[Field:(key : String) -> Null<Map<String, Array<haxe.macro.ClassField>>>]
+											[Cast:haxe.ds.StringMap<Map<String, Array<haxe.macro.ClassField>>>] [Local this(12246):haxe.IMap<String, Map<String, Array<haxe.macro.ClassField>>>:haxe.IMap<String, Map<String, Array<haxe.macro.ClassField>>>]
+											[FInstance:(key : String) -> Null<Map<String, Array<haxe.macro.ClassField>>>]
+												haxe.ds.StringMap<Map<String, Array<haxe.macro.ClassField>>>
+												get:(key : String) -> Null<haxe.ds.StringMap.T>
+										[Local uniqueClassId(12215):String:String]
+							[Cast:haxe.ds.Map<String, Array<haxe.macro.ClassField>>]
+								[Block:Dynamic]
+									[If:Void]
+										[Parenthesis:Bool]
+											[Binop:Bool]
+												[Local maybe(12250):Null<haxe.ds.Map<String, Array<haxe.macro.ClassField>>>:Null<haxe.ds.Map<String, Array<haxe.macro.ClassField>>>]
+												==
+												[Const:Null<haxe.ds.Map<String, Array<haxe.macro.ClassField>>>] null
+										[Then:Dynamic] [Throw:Dynamic] [Const:String] "Trusted on null value."
+									[Meta:Dynamic]
+										:nullSafety(Off)
+										[Local maybe(12250):Null<haxe.ds.Map<String, Array<haxe.macro.ClassField>>>:Null<haxe.ds.Map<String, Array<haxe.macro.ClassField>>>]
+					[Call:Null<Array<haxe.macro.ClassField>>]
+						[Field:(key : String) -> Null<Array<haxe.macro.ClassField>>]
+							[Cast:haxe.ds.StringMap<Array<haxe.macro.ClassField>>] [Local this(12253):haxe.IMap<String, Array<haxe.macro.ClassField>>:haxe.IMap<String, Array<haxe.macro.ClassField>>]
+							[FInstance:(key : String) -> Null<Array<haxe.macro.ClassField>>]
+								haxe.ds.StringMap<Array<haxe.macro.ClassField>>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local fieldName(12214):String:String]
+
+	public static function funcGetCovariantBaseType[Function:(childClass : haxe.macro.ClassType, childClassField : haxe.macro.ClassField, isStatic : Bool) -> Null<haxe.macro.Type>]
+		[Arg:haxe.macro.ClassType] [Local childClass(12355):haxe.macro.ClassType]
+		[Arg:haxe.macro.ClassField] [Local childClassField(12356):haxe.macro.ClassField]
+		[Arg:Bool] [Local isStatic(12357):Bool]
+		[Block:Dynamic]
+			[Var childData(12358):Null<reflaxe.data.ClassFuncData>]
+				[Call:Null<reflaxe.data.ClassFuncData>]
+					[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+						[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+						[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+							reflaxe.helpers.ClassFieldHelper
+							findFuncData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>
+					[Local childClassField(12356):haxe.macro.ClassField:haxe.macro.ClassField]
+					[Local childClass(12355):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Const:Null<Bool>] null
+			[Block:Void]
+				[Var `(12384):Int] [Const:Int] 0
+				[Var `(12385):Array<haxe.macro.Type>]
+					[Call:Array<haxe.macro.Type>]
+						[Field:(childClass : haxe.macro.ClassType) -> Array<haxe.macro.Type>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(childClass : haxe.macro.ClassType) -> Array<haxe.macro.Type>]
+								reflaxe.input.ClassHierarchyTracker
+								getAllParentTypesAndInterfaces:(childClass : haxe.macro.ClassType) -> Array<haxe.macro.Type>
+						[Local childClass(12355):haxe.macro.ClassType:haxe.macro.ClassType]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12384):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12385):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+							[FInstance:Int]
+								Array<haxe.macro.Type>
+								length:Int
+					[Block:Void]
+						[Var p(12359):haxe.macro.Type]
+							[Array:haxe.macro.Type]
+								[Local `(12385):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[Local `(12384):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12384):Int:Int]
+						[Var decl(12368):{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+							[Meta:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+								:ast(switch (p) {
+	case TInst(clsRef, params):
+		{ cls : clsRef.get(), params : params };	
+	case _:
+		throw "Impossible";	
+})
+								[If:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local p(12359):haxe.macro.Type:haxe.macro.Type]
+										==
+										[Const:Int] 2
+									[Then:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+										[Var `(12364):haxe.macro.Ref<haxe.macro.ClassType>]
+											[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+												[Local p(12359):haxe.macro.Type:haxe.macro.Type]
+												TInst
+												0
+										[Var `(12365):Array<haxe.macro.Type>]
+											[EnumParameter:Array<haxe.macro.Type>]
+												[Local p(12359):haxe.macro.Type:haxe.macro.Type]
+												TInst
+												1
+										[Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+											[Var clsRef(12366):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12364):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Var params(12367):Array<haxe.macro.Type>] [Local `(12365):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+											[Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+												[ObjectDecl:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+													cls: [Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local clsRef(12366):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+													params: [Local params(12367):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+									[Else:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Throw:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Const:String] "Impossible"
+						[Var possibleFields(12369):Null<Array<haxe.macro.ClassField>>]
+							[Call:Null<Array<haxe.macro.ClassField>>]
+								[Field:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>]
+									[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+									[FStatic:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>]
+										reflaxe.input.ClassHierarchyTracker
+										getFieldsOfName:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>
+								[Field:haxe.macro.ClassType]
+									[Local decl(12368):{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+									[FAnon:haxe.macro.ClassType] cls:haxe.macro.ClassType
+								[Field:String]
+									[Local childClassField(12356):haxe.macro.ClassField:haxe.macro.ClassField]
+									[FAnon:String] name:String
+						[If:Void]
+							[Binop:Bool]
+								[Local possibleFields(12369):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+								==
+								[Const:Null<Array<haxe.macro.ClassField>>] null
+							[Then:Dynamic] [Block:Dynamic] [Continue:Dynamic]
+						[Block:Void]
+							[Var `(12383):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(12383):Int:Int]
+									<
+									[Field:Int]
+										[Local possibleFields(12369):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassField>
+											length:Int
+								[Block:Void]
+									[Var field(12370):haxe.macro.ClassField]
+										[Array:haxe.macro.ClassField]
+											[Local possibleFields(12369):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+											[Local `(12383):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(12383):Int:Int]
+									[If:Void]
+										[Call:Bool]
+											[Field:(superField : Null<reflaxe.data.ClassFuncData>, childField : Null<reflaxe.data.ClassFuncData>) -> Bool]
+												[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+												[FStatic:(superField : Null<reflaxe.data.ClassFuncData>, childField : Null<reflaxe.data.ClassFuncData>) -> Bool]
+													reflaxe.input.ClassHierarchyTracker
+													isCovariant:(superField : Null<reflaxe.data.ClassFuncData>, childField : Null<reflaxe.data.ClassFuncData>) -> Bool
+											[Call:Null<reflaxe.data.ClassFuncData>]
+												[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+													[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+													[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+														reflaxe.helpers.ClassFieldHelper
+														findFuncData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>
+												[Local field(12370):haxe.macro.ClassField:haxe.macro.ClassField]
+												[Field:haxe.macro.ClassType]
+													[Local decl(12368):{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+													[FAnon:haxe.macro.ClassType] cls:haxe.macro.ClassType
+												[Const:Null<Bool>] null
+											[Local childData(12358):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+										[Then:Dynamic] [Block:Dynamic]
+											[Return:Dynamic]
+												[Call:haxe.macro.Type]
+													[Field:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+														[TypeExpr haxe.macro.TypeTools:Class<haxe.macro.TypeTools>]
+														[FStatic:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type]
+															haxe.macro.TypeTools
+															applyTypeParameters:(t : haxe.macro.Type, typeParameters : Array<haxe.macro.TypeParameter>, concreteTypes : Array<haxe.macro.Type>) -> haxe.macro.Type
+													[Call:Null<haxe.macro.Type>]
+														[Field:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+															[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+															[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+																reflaxe.helpers.TypeHelper
+																getTFunReturn:(t : haxe.macro.Type) -> Null<haxe.macro.Type>
+														[Field:haxe.macro.Type]
+															[Local field(12370):haxe.macro.ClassField:haxe.macro.ClassField]
+															[FAnon:haxe.macro.Type] type:haxe.macro.Type
+													[Field:Array<haxe.macro.TypeParameter>]
+														[Field:haxe.macro.ClassType]
+															[Local decl(12368):{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+															[FAnon:haxe.macro.ClassType] cls:haxe.macro.ClassType
+														[FAnon:Array<haxe.macro.TypeParameter>] params:Array<haxe.macro.TypeParameter>
+													[Field:Array<haxe.macro.Type>]
+														[Local decl(12368):{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+														[FAnon:Array<haxe.macro.Type>] params:Array<haxe.macro.Type>
+			[Return:Dynamic] [Const:Null<haxe.macro.Type>] null
+
+	public static function funcIsCovariant[Function:(childClass : haxe.macro.ClassType, childClassField : haxe.macro.ClassField, isStatic : Bool) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local childClass(12386):haxe.macro.ClassType]
+		[Arg:haxe.macro.ClassField] [Local childClassField(12387):haxe.macro.ClassField]
+		[Arg:Bool] [Local isStatic(12388):Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Null<haxe.macro.Type>]
+						[Field:(childClass : haxe.macro.ClassType, childClassField : haxe.macro.ClassField, isStatic : Bool) -> Null<haxe.macro.Type>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(childClass : haxe.macro.ClassType, childClassField : haxe.macro.ClassField, isStatic : Bool) -> Null<haxe.macro.Type>]
+								reflaxe.input.ClassHierarchyTracker
+								funcGetCovariantBaseType:(childClass : haxe.macro.ClassType, childClassField : haxe.macro.ClassField, isStatic : Bool) -> Null<haxe.macro.Type>
+						[Local childClass(12386):haxe.macro.ClassType:haxe.macro.ClassType]
+						[Local childClassField(12387):haxe.macro.ClassField:haxe.macro.ClassField]
+						[Local isStatic(12388):Bool:Bool]
+					!=
+					[Const:Null<haxe.macro.Type>] null
+
+	public static function superFuncIsCovariant[Function:(superClass : haxe.macro.ClassType, superClassField : haxe.macro.ClassField, isStatic : Bool) -> Bool]
+		[Arg:haxe.macro.ClassType] [Local superClass(12389):haxe.macro.ClassType]
+		[Arg:haxe.macro.ClassField] [Local superClassField(12390):haxe.macro.ClassField]
+		[Arg:Bool] [Local isStatic(12391):Bool]
+		[Block:Dynamic]
+			[Var superFieldData(12392):Null<reflaxe.data.ClassFuncData>]
+				[Call:Null<reflaxe.data.ClassFuncData>]
+					[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+						[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+						[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+							reflaxe.helpers.ClassFieldHelper
+							findFuncData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>
+					[Local superClassField(12390):haxe.macro.ClassField:haxe.macro.ClassField]
+					[Local superClass(12389):haxe.macro.ClassType:haxe.macro.ClassType]
+					[Const:Null<Bool>] null
+			[Block:Void]
+				[Var `(12397):Int] [Const:Int] 0
+				[Var `(12398):Array<haxe.macro.ClassType>]
+					[Call:Array<haxe.macro.ClassType>]
+						[Field:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+								reflaxe.input.ClassHierarchyTracker
+								getAllChildClasses:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>
+						[Local superClass(12389):haxe.macro.ClassType:haxe.macro.ClassType]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12397):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12398):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassType>
+								length:Int
+					[Block:Void]
+						[Var child(12393):haxe.macro.ClassType]
+							[Array:haxe.macro.ClassType]
+								[Local `(12398):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+								[Local `(12397):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12397):Int:Int]
+						[Var possibleFields(12394):Null<Array<haxe.macro.ClassField>>]
+							[Call:Null<Array<haxe.macro.ClassField>>]
+								[Field:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>]
+									[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+									[FStatic:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>]
+										reflaxe.input.ClassHierarchyTracker
+										getFieldsOfName:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>
+								[Local child(12393):haxe.macro.ClassType:haxe.macro.ClassType]
+								[Field:String]
+									[Local superClassField(12390):haxe.macro.ClassField:haxe.macro.ClassField]
+									[FAnon:String] name:String
+						[If:Void]
+							[Binop:Bool]
+								[Local possibleFields(12394):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+								==
+								[Const:Null<Array<haxe.macro.ClassField>>] null
+							[Then:Dynamic] [Block:Dynamic] [Continue:Dynamic]
+						[Block:Void]
+							[Var `(12396):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(12396):Int:Int]
+									<
+									[Field:Int]
+										[Local possibleFields(12394):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassField>
+											length:Int
+								[Block:Void]
+									[Var field(12395):haxe.macro.ClassField]
+										[Array:haxe.macro.ClassField]
+											[Local possibleFields(12394):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+											[Local `(12396):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(12396):Int:Int]
+									[If:Void]
+										[Call:Bool]
+											[Field:(superField : Null<reflaxe.data.ClassFuncData>, childField : Null<reflaxe.data.ClassFuncData>) -> Bool]
+												[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+												[FStatic:(superField : Null<reflaxe.data.ClassFuncData>, childField : Null<reflaxe.data.ClassFuncData>) -> Bool]
+													reflaxe.input.ClassHierarchyTracker
+													isCovariant:(superField : Null<reflaxe.data.ClassFuncData>, childField : Null<reflaxe.data.ClassFuncData>) -> Bool
+											[Local superFieldData(12392):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+											[Call:Null<reflaxe.data.ClassFuncData>]
+												[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+													[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+													[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+														reflaxe.helpers.ClassFieldHelper
+														findFuncData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>
+												[Local field(12395):haxe.macro.ClassField:haxe.macro.ClassField]
+												[Local child(12393):haxe.macro.ClassType:haxe.macro.ClassType]
+												[Const:Null<Bool>] null
+										[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	static function isCovariant[Function:(superField : Null<reflaxe.data.ClassFuncData>, childField : Null<reflaxe.data.ClassFuncData>) -> Bool]
+		[Arg:Null<reflaxe.data.ClassFuncData>] [Local superField(12371):Null<reflaxe.data.ClassFuncData>]
+		[Arg:Null<reflaxe.data.ClassFuncData>] [Local childField(12372):Null<reflaxe.data.ClassFuncData>]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local superField(12371):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+						==
+						[Const:Null<reflaxe.data.ClassFuncData>] null
+					||
+					[Binop:Bool]
+						[Local childField(12372):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+						==
+						[Const:Null<reflaxe.data.ClassFuncData>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool]
+								reflaxe.input.ClassHierarchyTracker
+								isOverride:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool
+						[Local superField(12371):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+						[Local childField(12372):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Var superFieldRet(12380):Null<haxe.macro.Type>]
+				[Call:Null<haxe.macro.Type>]
+					[Field:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+						[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+						[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+							reflaxe.helpers.TypeHelper
+							getTFunReturn:(t : haxe.macro.Type) -> Null<haxe.macro.Type>
+					[Field:haxe.macro.Type]
+						[Field:haxe.macro.ClassField]
+							[Local superField(12371):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+							[FInstance:haxe.macro.ClassField]
+								reflaxe.data.ClassFuncData
+								field:haxe.macro.ClassField
+						[FAnon:haxe.macro.Type] type:haxe.macro.Type
+			[Var childFieldRet(12381):Null<haxe.macro.Type>]
+				[Call:Null<haxe.macro.Type>]
+					[Field:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+						[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+						[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.Type>]
+							reflaxe.helpers.TypeHelper
+							getTFunReturn:(t : haxe.macro.Type) -> Null<haxe.macro.Type>
+					[Field:haxe.macro.Type]
+						[Field:haxe.macro.ClassField]
+							[Local childField(12372):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+							[FInstance:haxe.macro.ClassField]
+								reflaxe.data.ClassFuncData
+								field:haxe.macro.ClassField
+						[FAnon:haxe.macro.Type] type:haxe.macro.Type
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local superFieldRet(12380):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+						==
+						[Const:Null<haxe.macro.Type>] null
+					||
+					[Binop:Bool]
+						[Local childFieldRet(12381):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+						==
+						[Const:Null<haxe.macro.Type>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Binop:Null<haxe.macro.Type>]
+				[Local superFieldRet(12380):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+				=
+				[Call:haxe.macro.Type]
+					[Field:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+							haxe.macro.Context
+							follow:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type
+					[Local superFieldRet(12380):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+					[Const:Null<Bool>] null
+			[Binop:Null<haxe.macro.Type>]
+				[Local childFieldRet(12381):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+				=
+				[Call:haxe.macro.Type]
+					[Field:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+							haxe.macro.Context
+							follow:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type
+					[Local childFieldRet(12381):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+					[Const:Null<Bool>] null
+			[If:Void]
+				[Binop:Bool]
+					[Call:Bool]
+						[Field:(t : haxe.macro.Type) -> Bool]
+							[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+							[FStatic:(t : haxe.macro.Type) -> Bool]
+								reflaxe.helpers.TypeHelper
+								isTypeParameter:(t : haxe.macro.Type) -> Bool
+						[Local superFieldRet(12380):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+					||
+					[Call:Bool]
+						[Field:(t : haxe.macro.Type) -> Bool]
+							[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+							[FStatic:(t : haxe.macro.Type) -> Bool]
+								reflaxe.helpers.TypeHelper
+								isTypeParameter:(t : haxe.macro.Type) -> Bool
+						[Local childFieldRet(12381):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Local superFieldRet(12380):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+					!=
+					[Call:String]
+						[Field:(s : Dynamic) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(s : Dynamic) -> String]
+								Std
+								string:(s : Dynamic) -> String
+						[Local childFieldRet(12381):Null<haxe.macro.Type>:Null<haxe.macro.Type>]
+
+	static function isOverride[Function:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool]
+		[Arg:reflaxe.data.ClassFuncData] [Local superField(12189):reflaxe.data.ClassFuncData]
+		[Arg:reflaxe.data.ClassFuncData] [Local childField(12190):reflaxe.data.ClassFuncData]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:String]
+						[Field:haxe.macro.ClassField]
+							[Local superField(12189):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+							[FInstance:haxe.macro.ClassField]
+								reflaxe.data.ClassFuncData
+								field:haxe.macro.ClassField
+						[FAnon:String] name:String
+					!=
+					[Field:String]
+						[Field:haxe.macro.ClassField]
+							[Local childField(12190):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+							[FInstance:haxe.macro.ClassField]
+								reflaxe.data.ClassFuncData
+								field:haxe.macro.ClassField
+						[FAnon:String] name:String
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Int]
+							[Call:Array<haxe.macro.ClassField>]
+								[Field:() -> Array<haxe.macro.ClassField>]
+									[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+										[Field:haxe.macro.ClassField]
+											[Local superField(12189):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:haxe.macro.ClassField]
+												reflaxe.data.ClassFuncData
+												field:haxe.macro.ClassField
+										[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] overloads:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+									[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+						==
+						[Const:Int] 0
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Call:Array<haxe.macro.ClassField>]
+								[Field:() -> Array<haxe.macro.ClassField>]
+									[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+										[Field:haxe.macro.ClassField]
+											[Local childField(12190):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+											[FInstance:haxe.macro.ClassField]
+												reflaxe.data.ClassFuncData
+												field:haxe.macro.ClassField
+										[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] overloads:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+									[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+							[FInstance:Int]
+								Array<haxe.macro.ClassField>
+								length:Int
+						==
+						[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(childData : reflaxe.data.ClassFuncData) -> Bool]
+						[Local superField(12189):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+						[FInstance:(childData : reflaxe.data.ClassFuncData) -> Bool]
+							reflaxe.data.ClassFuncData
+							argumentsMatch:(childData : reflaxe.data.ClassFuncData) -> Bool
+					[Local childField(12190):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+
+	public static function findAllChildOverrides[Function:(superField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+		[Arg:reflaxe.data.ClassFuncData] [Local superField(12195):reflaxe.data.ClassFuncData]
+		[Block:Dynamic]
+			[Var result(12196):Array<reflaxe.data.ClassFuncData>] [ArrayDecl:Array<reflaxe.data.ClassFuncData>]
+			[Block:Void]
+				[Var `(12259):Int] [Const:Int] 0
+				[Var `(12260):Array<haxe.macro.ClassType>]
+					[Call:Array<haxe.macro.ClassType>]
+						[Field:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>]
+								reflaxe.input.ClassHierarchyTracker
+								getAllChildClasses:(cls : haxe.macro.ClassType) -> Array<haxe.macro.ClassType>
+						[Field:haxe.macro.ClassType]
+							[Local superField(12195):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+							[FInstance:haxe.macro.ClassType]
+								reflaxe.data.ClassFuncData
+								classType:haxe.macro.ClassType
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12259):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12260):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+							[FInstance:Int]
+								Array<haxe.macro.ClassType>
+								length:Int
+					[Block:Void]
+						[Var child(12212):haxe.macro.ClassType]
+							[Array:haxe.macro.ClassType]
+								[Local `(12260):Array<haxe.macro.ClassType>:Array<haxe.macro.ClassType>]
+								[Local `(12259):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12259):Int:Int]
+						[Var possibleFields(12255):Null<Array<haxe.macro.ClassField>>]
+							[Call:Null<Array<haxe.macro.ClassField>>]
+								[Field:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>]
+									[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+									[FStatic:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>]
+										reflaxe.input.ClassHierarchyTracker
+										getFieldsOfName:(cls : haxe.macro.ClassType, fieldName : String) -> Null<Array<haxe.macro.ClassField>>
+								[Local child(12212):haxe.macro.ClassType:haxe.macro.ClassType]
+								[Field:String]
+									[Field:haxe.macro.ClassField]
+										[Local superField(12195):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+										[FInstance:haxe.macro.ClassField]
+											reflaxe.data.ClassFuncData
+											field:haxe.macro.ClassField
+									[FAnon:String] name:String
+						[If:Void]
+							[Binop:Bool]
+								[Local possibleFields(12255):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+								==
+								[Const:Null<Array<haxe.macro.ClassField>>] null
+							[Then:Dynamic] [Block:Dynamic] [Continue:Dynamic]
+						[Block:Void]
+							[Var `(12258):Int] [Const:Int] 0
+							[While:Void]
+								[Binop:Bool]
+									[Local `(12258):Int:Int]
+									<
+									[Field:Int]
+										[Local possibleFields(12255):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassField>
+											length:Int
+								[Block:Void]
+									[Var field(12256):haxe.macro.ClassField]
+										[Array:haxe.macro.ClassField]
+											[Local possibleFields(12255):Null<Array<haxe.macro.ClassField>>:Null<Array<haxe.macro.ClassField>>]
+											[Local `(12258):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(12258):Int:Int]
+									[Var data(12257):Null<reflaxe.data.ClassFuncData>]
+										[Call:Null<reflaxe.data.ClassFuncData>]
+											[Field:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+												[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+												[FStatic:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>]
+													reflaxe.helpers.ClassFieldHelper
+													findFuncData:(field : haxe.macro.ClassField, clsType : haxe.macro.ClassType, ?isStatic : Null<Bool>) -> Null<reflaxe.data.ClassFuncData>
+											[Local field(12256):haxe.macro.ClassField:haxe.macro.ClassField]
+											[Local child(12212):haxe.macro.ClassType:haxe.macro.ClassType]
+											[Const:Null<Bool>] null
+									[If:Void]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Local data(12257):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+												!=
+												[Const:Null<reflaxe.data.ClassFuncData>] null
+											&&
+											[Call:Bool]
+												[Field:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool]
+													[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+													[FStatic:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool]
+														reflaxe.input.ClassHierarchyTracker
+														isOverride:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool
+												[Local superField(12195):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+												[Local data(12257):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+										[Then:Int] [Block:Int]
+											[Call:Int]
+												[Field:(x : reflaxe.data.ClassFuncData) -> Int]
+													[Local result(12196):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+													[FInstance:(x : reflaxe.data.ClassFuncData) -> Int]
+														Array<reflaxe.data.ClassFuncData>
+														push:(x : Array.T) -> Int
+												[Local data(12257):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+			[Return:Dynamic] [Local result(12196):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+
+	public static function getParentOverrideChain[Function:(childField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+		[Arg:reflaxe.data.ClassFuncData] [Local childField(12135):reflaxe.data.ClassFuncData]
+		[Block:Dynamic]
+			[Var result(12136):Array<reflaxe.data.ClassFuncData>] [ArrayDecl:Array<reflaxe.data.ClassFuncData>]
+			[Block:Void]
+				[Var `(12193):Int] [Const:Int] 0
+				[Var `(12194):Array<haxe.macro.Type>]
+					[Call:Array<haxe.macro.Type>]
+						[Field:(childClass : haxe.macro.ClassType) -> Array<haxe.macro.Type>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(childClass : haxe.macro.ClassType) -> Array<haxe.macro.Type>]
+								reflaxe.input.ClassHierarchyTracker
+								getAllParentTypesAndInterfaces:(childClass : haxe.macro.ClassType) -> Array<haxe.macro.Type>
+						[Field:haxe.macro.ClassType]
+							[Local childField(12135):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+							[FInstance:haxe.macro.ClassType]
+								reflaxe.data.ClassFuncData
+								classType:haxe.macro.ClassType
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12193):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12194):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+							[FInstance:Int]
+								Array<haxe.macro.Type>
+								length:Int
+					[Block:Void]
+						[Var parent(12169):haxe.macro.Type]
+							[Array:haxe.macro.Type]
+								[Local `(12194):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[Local `(12193):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12193):Int:Int]
+						[Var decl(12178):{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+							[Meta:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+								:ast(switch (parent) {
+	case TInst(clsRef, params):
+		{ cls : clsRef.get(), params : params };	
+	case _:
+		throw "Impossible";	
+})
+								[If:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local parent(12169):haxe.macro.Type:haxe.macro.Type]
+										==
+										[Const:Int] 2
+									[Then:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+										[Var `(12174):haxe.macro.Ref<haxe.macro.ClassType>]
+											[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+												[Local parent(12169):haxe.macro.Type:haxe.macro.Type]
+												TInst
+												0
+										[Var `(12175):Array<haxe.macro.Type>]
+											[EnumParameter:Array<haxe.macro.Type>]
+												[Local parent(12169):haxe.macro.Type:haxe.macro.Type]
+												TInst
+												1
+										[Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+											[Var clsRef(12176):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12174):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Var params(12177):Array<haxe.macro.Type>] [Local `(12175):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+											[Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+												[ObjectDecl:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+													cls: [Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local clsRef(12176):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+													params: [Local params(12177):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+									[Else:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Throw:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Const:String] "Impossible"
+						[Block:Void]
+							[Var `(12191):Int] [Const:Int] 0
+							[Var `(12192):Array<haxe.macro.ClassField>]
+								[Call:Array<haxe.macro.ClassField>]
+									[Field:() -> Array<haxe.macro.ClassField>]
+										[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+											[Field:haxe.macro.ClassType]
+												[Local decl(12178):{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+												[FAnon:haxe.macro.ClassType] cls:haxe.macro.ClassType
+											[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+										[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+							[While:Void]
+								[Binop:Bool]
+									[Local `(12191):Int:Int]
+									<
+									[Field:Int]
+										[Local `(12192):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassField>
+											length:Int
+								[Block:Void]
+									[Var field(12179):haxe.macro.ClassField]
+										[Array:haxe.macro.ClassField]
+											[Local `(12192):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+											[Local `(12191):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(12191):Int:Int]
+									[Var data(12188):Null<reflaxe.data.ClassFuncData>]
+										[Call:Null<reflaxe.data.ClassFuncData>]
+											[Field:(field : haxe.macro.ClassField, type : haxe.macro.Type) -> Null<reflaxe.data.ClassFuncData>]
+												[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+												[FStatic:(field : haxe.macro.ClassField, type : haxe.macro.Type) -> Null<reflaxe.data.ClassFuncData>]
+													reflaxe.helpers.ClassFieldHelper
+													findFuncDataFromType:(field : haxe.macro.ClassField, type : haxe.macro.Type) -> Null<reflaxe.data.ClassFuncData>
+											[Local field(12179):haxe.macro.ClassField:haxe.macro.ClassField]
+											[Local parent(12169):haxe.macro.Type:haxe.macro.Type]
+									[If:Void]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Local data(12188):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+												!=
+												[Const:Null<reflaxe.data.ClassFuncData>] null
+											&&
+											[Call:Bool]
+												[Field:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool]
+													[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+													[FStatic:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool]
+														reflaxe.input.ClassHierarchyTracker
+														isOverride:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool
+												[Local data(12188):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+												[Local childField(12135):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+										[Then:Int] [Block:Int]
+											[Call:Int]
+												[Field:(x : reflaxe.data.ClassFuncData) -> Int]
+													[Local result(12136):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+													[FInstance:(x : reflaxe.data.ClassFuncData) -> Int]
+														Array<reflaxe.data.ClassFuncData>
+														push:(x : Array.T) -> Int
+												[Local data(12188):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+			[Return:Dynamic] [Local result(12136):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+
+	public static function getParentOverrideChainNoAbstracts[Function:(childField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+		[Arg:reflaxe.data.ClassFuncData] [Local childField(12399):reflaxe.data.ClassFuncData]
+		[Block:Dynamic]
+			[Var result(12400):Array<reflaxe.data.ClassFuncData>] [ArrayDecl:Array<reflaxe.data.ClassFuncData>]
+			[Block:Void]
+				[Var `(12415):Int] [Const:Int] 0
+				[Var `(12416):Array<haxe.macro.Type>]
+					[Call:Array<haxe.macro.Type>]
+						[Field:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>]
+								reflaxe.input.ClassHierarchyTracker
+								getAllParentTypes:(cls : haxe.macro.ClassType, ?params : Null<Array<haxe.macro.Type>>, ?resultArray : Null<Array<haxe.macro.Type>>) -> Array<haxe.macro.Type>
+						[Field:haxe.macro.ClassType]
+							[Local childField(12399):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+							[FInstance:haxe.macro.ClassType]
+								reflaxe.data.ClassFuncData
+								classType:haxe.macro.ClassType
+						[Const:Null<Array<haxe.macro.Type>>] null
+						[Const:Null<Array<haxe.macro.Type>>] null
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12415):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12416):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+							[FInstance:Int]
+								Array<haxe.macro.Type>
+								length:Int
+					[Block:Void]
+						[Var parent(12401):haxe.macro.Type]
+							[Array:haxe.macro.Type]
+								[Local `(12416):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+								[Local `(12415):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12415):Int:Int]
+						[Var decl(12410):{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+							[Meta:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+								:ast(switch (parent) {
+	case TInst(clsRef, params):
+		{ cls : clsRef.get(), params : params };	
+	case _:
+		throw "Impossible";	
+})
+								[If:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local parent(12401):haxe.macro.Type:haxe.macro.Type]
+										==
+										[Const:Int] 2
+									[Then:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+										[Var `(12406):haxe.macro.Ref<haxe.macro.ClassType>]
+											[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+												[Local parent(12401):haxe.macro.Type:haxe.macro.Type]
+												TInst
+												0
+										[Var `(12407):Array<haxe.macro.Type>]
+											[EnumParameter:Array<haxe.macro.Type>]
+												[Local parent(12401):haxe.macro.Type:haxe.macro.Type]
+												TInst
+												1
+										[Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+											[Var clsRef(12408):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12406):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Var params(12409):Array<haxe.macro.Type>] [Local `(12407):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+											[Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+												[ObjectDecl:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+													cls: [Call:haxe.macro.ClassType]
+														[Field:() -> haxe.macro.ClassType]
+															[Local clsRef(12408):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+															[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+													params: [Local params(12409):Array<haxe.macro.Type>:Array<haxe.macro.Type>]
+									[Else:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Block:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Throw:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }] [Const:String] "Impossible"
+						[Block:Void]
+							[Var `(12413):Int] [Const:Int] 0
+							[Var `(12414):Array<haxe.macro.ClassField>]
+								[Call:Array<haxe.macro.ClassField>]
+									[Field:() -> Array<haxe.macro.ClassField>]
+										[Field:haxe.macro.Ref<Array<haxe.macro.ClassField>>]
+											[Field:haxe.macro.ClassType]
+												[Local decl(12410):{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }:{ params : Array<haxe.macro.Type>, cls : haxe.macro.ClassType }]
+												[FAnon:haxe.macro.ClassType] cls:haxe.macro.ClassType
+											[FAnon:haxe.macro.Ref<Array<haxe.macro.ClassField>>] fields:haxe.macro.Ref<Array<haxe.macro.ClassField>>
+										[FAnon:() -> Array<haxe.macro.ClassField>] get:() -> Array<haxe.macro.ClassField>
+							[While:Void]
+								[Binop:Bool]
+									[Local `(12413):Int:Int]
+									<
+									[Field:Int]
+										[Local `(12414):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+										[FInstance:Int]
+											Array<haxe.macro.ClassField>
+											length:Int
+								[Block:Void]
+									[Var field(12411):haxe.macro.ClassField]
+										[Array:haxe.macro.ClassField]
+											[Local `(12414):Array<haxe.macro.ClassField>:Array<haxe.macro.ClassField>]
+											[Local `(12413):Int:Int]
+									[Unop:Int]
+										++
+										Prefix
+										[Local `(12413):Int:Int]
+									[If:Void]
+										[Field:Bool]
+											[Local field(12411):haxe.macro.ClassField:haxe.macro.ClassField]
+											[FAnon:Bool] isAbstract:Bool
+										[Then:Dynamic] [Block:Dynamic] [Continue:Dynamic]
+									[Var data(12412):Null<reflaxe.data.ClassFuncData>]
+										[Call:Null<reflaxe.data.ClassFuncData>]
+											[Field:(field : haxe.macro.ClassField, type : haxe.macro.Type) -> Null<reflaxe.data.ClassFuncData>]
+												[TypeExpr reflaxe.helpers.ClassFieldHelper:{ Statics reflaxe.helpers.ClassFieldHelper }]
+												[FStatic:(field : haxe.macro.ClassField, type : haxe.macro.Type) -> Null<reflaxe.data.ClassFuncData>]
+													reflaxe.helpers.ClassFieldHelper
+													findFuncDataFromType:(field : haxe.macro.ClassField, type : haxe.macro.Type) -> Null<reflaxe.data.ClassFuncData>
+											[Local field(12411):haxe.macro.ClassField:haxe.macro.ClassField]
+											[Local parent(12401):haxe.macro.Type:haxe.macro.Type]
+									[If:Void]
+										[Binop:Bool]
+											[Binop:Bool]
+												[Local data(12412):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+												!=
+												[Const:Null<reflaxe.data.ClassFuncData>] null
+											&&
+											[Call:Bool]
+												[Field:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool]
+													[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+													[FStatic:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool]
+														reflaxe.input.ClassHierarchyTracker
+														isOverride:(superField : reflaxe.data.ClassFuncData, childField : reflaxe.data.ClassFuncData) -> Bool
+												[Local data(12412):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+												[Local childField(12399):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+										[Then:Int] [Block:Int]
+											[Call:Int]
+												[Field:(x : reflaxe.data.ClassFuncData) -> Int]
+													[Local result(12400):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+													[FInstance:(x : reflaxe.data.ClassFuncData) -> Int]
+														Array<reflaxe.data.ClassFuncData>
+														push:(x : Array.T) -> Int
+												[Local data(12412):Null<reflaxe.data.ClassFuncData>:Null<reflaxe.data.ClassFuncData>]
+			[Return:Dynamic] [Local result(12400):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+
+	public static function funcIsOverride[Function:(childField : reflaxe.data.ClassFuncData) -> Bool]
+		[Arg:reflaxe.data.ClassFuncData] [Local childField(12417):reflaxe.data.ClassFuncData]
+		[Block:Dynamic]
+			[Var chain(12418):Array<reflaxe.data.ClassFuncData>]
+				[Call:Array<reflaxe.data.ClassFuncData>]
+					[Field:(childField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+						[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+						[FStatic:(childField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+							reflaxe.input.ClassHierarchyTracker
+							getParentOverrideChainNoAbstracts:(childField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>
+					[Local childField(12417):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Field:Int]
+						[Local chain(12418):Array<reflaxe.data.ClassFuncData>:Array<reflaxe.data.ClassFuncData>]
+						[FInstance:Int]
+							Array<reflaxe.data.ClassFuncData>
+							length:Int
+					>
+					[Const:Int] 0
+
+	public static function findAllOverrides[Function:(field : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+		[Arg:reflaxe.data.ClassFuncData] [Local field(12134):reflaxe.data.ClassFuncData]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<reflaxe.data.ClassFuncData>]
+					[Field:(a : Array<reflaxe.data.ClassFuncData>) -> Array<reflaxe.data.ClassFuncData>]
+						[Call:Array<reflaxe.data.ClassFuncData>]
+							[Field:(childField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+								[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+								[FStatic:(childField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+									reflaxe.input.ClassHierarchyTracker
+									getParentOverrideChain:(childField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>
+							[Local field(12134):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+						[FInstance:(a : Array<reflaxe.data.ClassFuncData>) -> Array<reflaxe.data.ClassFuncData>]
+							Array<reflaxe.data.ClassFuncData>
+							concat:(a : Array<Array.T>) -> Array<Array.T>
+					[Call:Array<reflaxe.data.ClassFuncData>]
+						[Field:(superField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(superField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>]
+								reflaxe.input.ClassHierarchyTracker
+								findAllChildOverrides:(superField : reflaxe.data.ClassFuncData) -> Array<reflaxe.data.ClassFuncData>
+						[Local field(12134):reflaxe.data.ClassFuncData:reflaxe.data.ClassFuncData]
+
+	public static function getNonRepeatInterfaces[Function:(cls : haxe.macro.ClassType) -> Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+		[Arg:haxe.macro.ClassType] [Local cls(12419):haxe.macro.ClassType]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+							[Local cls(12419):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+						==
+						[Const:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] null
+					||
+					[Binop:Bool]
+						[Field:Int]
+							[Field:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+								[Local cls(12419):haxe.macro.ClassType:haxe.macro.ClassType]
+								[FAnon:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] interfaces:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+							[FInstance:Int]
+								Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+								length:Int
+						==
+						[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Field:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+							[Local cls(12419):haxe.macro.ClassType:haxe.macro.ClassType]
+							[FAnon:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] interfaces:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+			[Var result(12420):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] [ArrayDecl:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+			[Block:Void]
+				[Var `(12428):Int] [Const:Int] 0
+				[Var `(12429):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+					[Field:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+						[Local cls(12419):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] interfaces:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12428):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12429):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+							[FInstance:Int]
+								Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+								length:Int
+					[Block:Void]
+						[Var int(12421):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+							[Array:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+								[Local `(12429):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+								[Local `(12428):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12428):Int:Int]
+						[Var intName(12422):String]
+							[Call:String]
+								[Field:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+									[TypeExpr reflaxe.helpers.BaseTypeHelper:{ Statics reflaxe.helpers.BaseTypeHelper }]
+									[FStatic:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+										reflaxe.helpers.BaseTypeHelper
+										globalName:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String
+								[Call:haxe.macro.ClassType]
+									[Field:() -> haxe.macro.ClassType]
+										[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Local int(12421):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+											[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+										[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+								[Const:Null<Bool>] null
+						[Var c(12423):haxe.macro.ClassType] [Local cls(12419):haxe.macro.ClassType:haxe.macro.ClassType]
+						[Var exists(12424):Bool] [Const:Bool] false
+						[While:Void]
+							[Binop:Bool]
+								[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+									[Local c(12423):haxe.macro.ClassType:haxe.macro.ClassType]
+									[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+								!=
+								[Const:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] null
+							[Block:Void]
+								[Binop:haxe.macro.ClassType]
+									[Local c(12423):haxe.macro.ClassType:haxe.macro.ClassType]
+									=
+									[Call:haxe.macro.ClassType]
+										[Field:() -> haxe.macro.ClassType]
+											[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+												[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+													[Local c(12423):haxe.macro.ClassType:haxe.macro.ClassType]
+													[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+												[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+											[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+								[Block:Void]
+									[Var `(12426):Int] [Const:Int] 0
+									[Var `(12427):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+										[Field:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+											[Local c(12423):haxe.macro.ClassType:haxe.macro.ClassType]
+											[FAnon:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] interfaces:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+									[While:Void]
+										[Binop:Bool]
+											[Local `(12426):Int:Int]
+											<
+											[Field:Int]
+												[Local `(12427):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+												[FInstance:Int]
+													Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+													length:Int
+										[Block:Void]
+											[Var superInt(12425):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+												[Array:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+													[Local `(12427):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+													[Local `(12426):Int:Int]
+											[Unop:Int]
+												++
+												Prefix
+												[Local `(12426):Int:Int]
+											[If:Void]
+												[Binop:Bool]
+													[Call:String]
+														[Field:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+															[TypeExpr reflaxe.helpers.BaseTypeHelper:{ Statics reflaxe.helpers.BaseTypeHelper }]
+															[FStatic:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+																reflaxe.helpers.BaseTypeHelper
+																globalName:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String
+														[Call:haxe.macro.ClassType]
+															[Field:() -> haxe.macro.ClassType]
+																[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+																	[Local superInt(12425):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+																	[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+																[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+														[Const:Null<Bool>] null
+													==
+													[Local intName(12422):String:String]
+												[Then:Dynamic] [Block:Dynamic]
+													[Binop:Bool]
+														[Local exists(12424):Bool:Bool]
+														=
+														[Const:Bool] true
+													[Break:Dynamic]
+								[If:Void]
+									[Local exists(12424):Bool:Bool]
+									[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Local exists(12424):Bool:Bool]
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : { t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }) -> Int]
+										[Local result(12420):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+										[FInstance:(x : { t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }) -> Int]
+											Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+											push:(x : Array.T) -> Int
+									[Local int(12421):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+			[Return:Dynamic] [Local result(12420):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+
+	public static function processAllClasses[Function:(modules : Null<Array<haxe.macro.ModuleType>>) -> Void]
+		[Arg:Null<Array<haxe.macro.ModuleType>>] [Local modules(12430):Null<Array<haxe.macro.ModuleType>>]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local modules(12430):Null<Array<haxe.macro.ModuleType>>:Null<Array<haxe.macro.ModuleType>>]
+					!=
+					[Const:Null<Array<haxe.macro.ModuleType>>] null
+				[Then:Bool] [Block:Bool]
+					[Block:Void]
+						[Var `(12531):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(12531):Int:Int]
+								<
+								[Field:Int]
+									[Local modules(12430):Null<Array<haxe.macro.ModuleType>>:Null<Array<haxe.macro.ModuleType>>]
+									[FInstance:Int]
+										Array<haxe.macro.ModuleType>
+										length:Int
+							[Block:Void]
+								[Var mt(12431):haxe.macro.ModuleType]
+									[Array:haxe.macro.ModuleType]
+										[Local modules(12430):Null<Array<haxe.macro.ModuleType>>:Null<Array<haxe.macro.ModuleType>>]
+										[Local `(12531):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(12531):Int:Int]
+								[Call:Void]
+									[Field:(mt : haxe.macro.ModuleType) -> Void]
+										[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+										[FStatic:(mt : haxe.macro.ModuleType) -> Void]
+											reflaxe.input.ClassHierarchyTracker
+											processModule:(mt : haxe.macro.ModuleType) -> Void
+									[Local mt(12431):haxe.macro.ModuleType:haxe.macro.ModuleType]
+					[Binop:Bool]
+						[Field:Bool]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:Bool]
+								reflaxe.input.ClassHierarchyTracker
+								initialized:Bool
+						=
+						[Const:Bool] true
+
+	static function processModule[Function:(mt : haxe.macro.ModuleType) -> Void]
+		[Arg:haxe.macro.ModuleType] [Local mt(12432):haxe.macro.ModuleType]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (mt) {
+	case TClassDecl(clsRef):
+		{
+			processClass(clsRef.get());
+		};	
+	case TTypeDecl(defRef):
+		{
+			var mt = Context.follow(TypeHelper.fromModuleType(mt)).toModuleType();
+			if (mt != null) {
+				processModule(mt);
+			};
+		};	
+	case _:
+})
+				[Switch:Void]
+					[EnumIndex:Int] [Local mt(12432):haxe.macro.ModuleType:haxe.macro.ModuleType]
+					[Case:Void]
+						[Const:Int] 0
+						[Block:Void]
+							[Var `(12526):haxe.macro.Ref<haxe.macro.ClassType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Local mt(12432):haxe.macro.ModuleType:haxe.macro.ModuleType]
+									TClassDecl
+									0
+							[Block:Void]
+								[Var clsRef(12527):haxe.macro.Ref<haxe.macro.ClassType>] [Local `(12526):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+								[Block:Void]
+									[Block:Void]
+										[Call:Void]
+											[Field:(cls : haxe.macro.ClassType) -> Void]
+												[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+												[FStatic:(cls : haxe.macro.ClassType) -> Void]
+													reflaxe.input.ClassHierarchyTracker
+													processClass:(cls : haxe.macro.ClassType) -> Void
+											[Call:haxe.macro.ClassType]
+												[Field:() -> haxe.macro.ClassType]
+													[Local clsRef(12527):haxe.macro.Ref<haxe.macro.ClassType>:haxe.macro.Ref<haxe.macro.ClassType>]
+													[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+					[Case:Void]
+						[Const:Int] 2
+						[Block:Void]
+							[Var `(12528):haxe.macro.Ref<haxe.macro.DefType>]
+								[EnumParameter:haxe.macro.Ref<haxe.macro.DefType>]
+									[Local mt(12432):haxe.macro.ModuleType:haxe.macro.ModuleType]
+									TTypeDecl
+									0
+							[Block:Void]
+								[Var defRef(12529):haxe.macro.Ref<haxe.macro.DefType>] [Local `(12528):haxe.macro.Ref<haxe.macro.DefType>:haxe.macro.Ref<haxe.macro.DefType>]
+								[Block:Void]
+									[Block:Void]
+										[Var mt(12530):Null<haxe.macro.ModuleType>]
+											[Call:Null<haxe.macro.ModuleType>]
+												[Field:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+													[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+													[FStatic:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>]
+														reflaxe.helpers.TypeHelper
+														toModuleType:(t : haxe.macro.Type) -> Null<haxe.macro.ModuleType>
+												[Call:haxe.macro.Type]
+													[Field:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+														[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+														[FStatic:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type]
+															haxe.macro.Context
+															follow:(t : haxe.macro.Type, ?once : Null<Bool>) -> haxe.macro.Type
+													[Call:haxe.macro.Type]
+														[Field:(t : haxe.macro.ModuleType) -> haxe.macro.Type]
+															[TypeExpr reflaxe.helpers.TypeHelper:Class<reflaxe.helpers.TypeHelper>]
+															[FStatic:(t : haxe.macro.ModuleType) -> haxe.macro.Type]
+																reflaxe.helpers.TypeHelper
+																fromModuleType:(t : haxe.macro.ModuleType) -> haxe.macro.Type
+														[Local mt(12432):haxe.macro.ModuleType:haxe.macro.ModuleType]
+													[Const:Null<Bool>] null
+										[If:Void]
+											[Binop:Bool]
+												[Local mt(12530):Null<haxe.macro.ModuleType>:Null<haxe.macro.ModuleType>]
+												!=
+												[Const:Null<haxe.macro.ModuleType>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(mt : haxe.macro.ModuleType) -> Void]
+														[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+														[FStatic:(mt : haxe.macro.ModuleType) -> Void]
+															reflaxe.input.ClassHierarchyTracker
+															processModule:(mt : haxe.macro.ModuleType) -> Void
+													[Local mt(12530):Null<haxe.macro.ModuleType>:Null<haxe.macro.ModuleType>]
+					[Default:Void] [Block:Void]
+
+	static function processClass[Function:(cls : haxe.macro.ClassType) -> Void]
+		[Arg:haxe.macro.ClassType] [Local cls(12434):haxe.macro.ClassType]
+		[Block:Void]
+			[If:Void]
+				[Call:Bool]
+					[Field:(cls : haxe.macro.ClassType) -> Bool]
+						[TypeExpr reflaxe.helpers.ClassTypeHelper:{ Statics reflaxe.helpers.ClassTypeHelper }]
+						[FStatic:(cls : haxe.macro.ClassType) -> Bool]
+							reflaxe.helpers.ClassTypeHelper
+							isTypeParameter:(cls : haxe.macro.ClassType) -> Bool
+					[Local cls(12434):haxe.macro.ClassType:haxe.macro.ClassType]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+						[Local cls(12434):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+					!=
+					[Const:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(baseCls : Null<haxe.macro.ClassType>, childCls : Null<haxe.macro.ClassType>) -> Void]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:(baseCls : Null<haxe.macro.ClassType>, childCls : Null<haxe.macro.ClassType>) -> Void]
+								reflaxe.input.ClassHierarchyTracker
+								addDirectChild:(baseCls : Null<haxe.macro.ClassType>, childCls : Null<haxe.macro.ClassType>) -> Void
+						[Call:haxe.macro.ClassType]
+							[Field:() -> haxe.macro.ClassType]
+								[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+									[Field:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+										[Local cls(12434):haxe.macro.ClassType:haxe.macro.ClassType]
+										[FAnon:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] superClass:Null<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+									[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+								[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+						[Local cls(12434):haxe.macro.ClassType:haxe.macro.ClassType]
+			[Block:Void]
+				[Var `(12458):Int] [Const:Int] 0
+				[Var `(12459):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+					[Field:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+						[Local cls(12434):haxe.macro.ClassType:haxe.macro.ClassType]
+						[FAnon:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>] interfaces:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(12458):Int:Int]
+						<
+						[Field:Int]
+							[Local `(12459):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+							[FInstance:Int]
+								Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>
+								length:Int
+					[Block:Void]
+						[Var int(12457):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+							[Array:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+								[Local `(12459):Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>:Array<{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }>]
+								[Local `(12458):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(12458):Int:Int]
+						[Call:Void]
+							[Field:(baseCls : Null<haxe.macro.ClassType>, childCls : Null<haxe.macro.ClassType>) -> Void]
+								[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+								[FStatic:(baseCls : Null<haxe.macro.ClassType>, childCls : Null<haxe.macro.ClassType>) -> Void]
+									reflaxe.input.ClassHierarchyTracker
+									addDirectChild:(baseCls : Null<haxe.macro.ClassType>, childCls : Null<haxe.macro.ClassType>) -> Void
+							[Call:haxe.macro.ClassType]
+								[Field:() -> haxe.macro.ClassType]
+									[Field:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local int(12457):{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }]
+										[FAnon:haxe.macro.Ref<haxe.macro.ClassType>] t:haxe.macro.Ref<haxe.macro.ClassType>
+									[FAnon:() -> haxe.macro.ClassType] get:() -> haxe.macro.ClassType
+							[Local cls(12434):haxe.macro.ClassType:haxe.macro.ClassType]
+
+	static function addDirectChild[Function:(baseCls : Null<haxe.macro.ClassType>, childCls : Null<haxe.macro.ClassType>) -> Void]
+		[Arg:Null<haxe.macro.ClassType>] [Local baseCls(12440):Null<haxe.macro.ClassType>]
+		[Arg:Null<haxe.macro.ClassType>] [Local childCls(12441):Null<haxe.macro.ClassType>]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local baseCls(12440):Null<haxe.macro.ClassType>:Null<haxe.macro.ClassType>]
+					==
+					[Const:Null<haxe.macro.ClassType>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local childCls(12441):Null<haxe.macro.ClassType>:Null<haxe.macro.ClassType>]
+					==
+					[Const:Null<haxe.macro.ClassType>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[Var id(12442):String]
+				[Call:String]
+					[Field:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+						[TypeExpr reflaxe.helpers.BaseTypeHelper:{ Statics reflaxe.helpers.BaseTypeHelper }]
+						[FStatic:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String]
+							reflaxe.helpers.BaseTypeHelper
+							globalName:(self : haxe.macro.BaseType, ?removeSpecialSuffixes : Bool) -> String
+					[Local baseCls(12440):Null<haxe.macro.ClassType>:Null<haxe.macro.ClassType>]
+					[Const:Null<Bool>] null
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Block:Bool]
+						[Var this(12445):haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>]
+							[Field:Map<String, reflaxe.input.ClassHierarchyClassData>]
+								[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+								[FStatic:Map<String, reflaxe.input.ClassHierarchyClassData>]
+									reflaxe.input.ClassHierarchyTracker
+									classData:Map<String, reflaxe.input.ClassHierarchyClassData>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>] [Local this(12445):haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>:haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>
+									exists:(key : String) -> Bool
+							[Local id(12442):String:String]
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var this(12449):haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>]
+							[Field:Map<String, reflaxe.input.ClassHierarchyClassData>]
+								[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+								[FStatic:Map<String, reflaxe.input.ClassHierarchyClassData>]
+									reflaxe.input.ClassHierarchyTracker
+									classData:Map<String, reflaxe.input.ClassHierarchyClassData>
+						[Var value(12451):reflaxe.input.ClassHierarchyClassData]
+							[New:reflaxe.input.ClassHierarchyClassData]
+								reflaxe.input.ClassHierarchyClassData
+								[Local baseCls(12440):Null<haxe.macro.ClassType>:Null<haxe.macro.ClassType>]
+						[Call:Void]
+							[Field:(key : String, value : reflaxe.input.ClassHierarchyClassData) -> Void]
+								[Cast:haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>] [Local this(12449):haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>:haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>]
+								[FInstance:(key : String, value : reflaxe.input.ClassHierarchyClassData) -> Void]
+									haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>
+									set:(key : String, value : haxe.ds.StringMap.T) -> Void
+							[Local id(12442):String:String]
+							[Local value(12451):reflaxe.input.ClassHierarchyClassData:reflaxe.input.ClassHierarchyClassData]
+			[Var data(12456):Null<reflaxe.input.ClassHierarchyClassData>]
+				[Block:Null<reflaxe.input.ClassHierarchyClassData>]
+					[Var this(12454):haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>]
+						[Field:Map<String, reflaxe.input.ClassHierarchyClassData>]
+							[TypeExpr reflaxe.input.ClassHierarchyTracker:Class<reflaxe.input.ClassHierarchyTracker>]
+							[FStatic:Map<String, reflaxe.input.ClassHierarchyClassData>]
+								reflaxe.input.ClassHierarchyTracker
+								classData:Map<String, reflaxe.input.ClassHierarchyClassData>
+					[Call:Null<reflaxe.input.ClassHierarchyClassData>]
+						[Field:(key : String) -> Null<reflaxe.input.ClassHierarchyClassData>]
+							[Cast:haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>] [Local this(12454):haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>:haxe.IMap<String, reflaxe.input.ClassHierarchyClassData>]
+							[FInstance:(key : String) -> Null<reflaxe.input.ClassHierarchyClassData>]
+								haxe.ds.StringMap<reflaxe.input.ClassHierarchyClassData>
+								get:(key : String) -> Null<haxe.ds.StringMap.T>
+						[Local id(12442):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Local data(12456):Null<reflaxe.input.ClassHierarchyClassData>:Null<reflaxe.input.ClassHierarchyClassData>]
+					!=
+					[Const:Null<reflaxe.input.ClassHierarchyClassData>] null
+				[Then:Void] [Block:Void]
+					[Call:Void]
+						[Field:(c : haxe.macro.ClassType) -> Void]
+							[Local data(12456):Null<reflaxe.input.ClassHierarchyClassData>:Null<reflaxe.input.ClassHierarchyClassData>]
+							[FInstance:(c : haxe.macro.ClassType) -> Void]
+								reflaxe.input.ClassHierarchyClassData
+								addChild:(c : haxe.macro.ClassType) -> Void
+						[Local childCls(12441):Null<haxe.macro.ClassType>:Null<haxe.macro.ClassType>]
+}

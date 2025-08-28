@@ -1,0 +1,2 @@
+@:transitive
+abstract haxe.Int64 from haxe._Int64.__Int64 to haxe._Int64.__Int64 {}

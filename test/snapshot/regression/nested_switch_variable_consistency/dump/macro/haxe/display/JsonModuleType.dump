@@ -1,0 +1,1 @@
+typedef haxe.display.JsonModuleType<T> = { pos : haxe.display.JsonPos, params : haxe.display.JsonTypeParameters, pack : Array<String>, name : String, moduleName : String, meta : haxe.display.JsonMetadata, kind : haxe.display.JsonModuleTypeKind<haxe.display.JsonModuleType.T>, isPrivate : Bool, doc : haxe.display.JsonDoc, args : haxe.display.JsonModuleType.T }

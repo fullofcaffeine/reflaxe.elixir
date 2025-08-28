@@ -1,0 +1,1844 @@
+class reflaxe.elixir.helpers.EctoErrorReporter {
+
+	@:value([{ pattern : "Unknown field .* in schema", solution : "Check that the field exists in your schema definition. Did you mean to add it with @:field annotation?", docs : "See documentation/ANNOTATIONS.md#field-annotation" }, { pattern : "Invalid association type", solution : "Association must be one of: has_one, has_many, belongs_to, many_to_many", docs : "See documentation/guides/ADVANCED_ECTO_GUIDE.md#associations" }, { pattern : "Missing required changeset function", solution : "Classes with @:changeset must have a static changeset function", docs : "See documentation/guides/ADVANCED_ECTO_GUIDE.md#changesets" }, { pattern : "Invalid field type", solution : "Field types must be valid Ecto types: string, integer, boolean, date, datetime, etc.", docs : "See documentation/guides/ADVANCED_ECTO_GUIDE.md#field-types" }, { pattern : "Circular association detected", solution : "Schema has circular associations. Consider using :on_replace option or restructuring associations", docs : "See Ecto documentation on association cycles" }, { pattern : "Reserved keyword in metadata", solution : "Cannot use Haxe reserved keywords (default, interface, operator) in metadata. Use alternatives like 'defaultValue'", docs : "See documentation/TESTING_PRINCIPLES.md#simplification-principle" }])
+	static var ERROR_PATTERNS(default,never):Array<{ solution : String, pattern : String, docs : String }> = [ArrayDecl:Array<{ solution : String, pattern : String, docs : String }>]
+		[ObjectDecl:{ solution : String, pattern : String, docs : String }]
+			pattern: [Const:String] "Unknown field .* in schema"
+			solution: [Const:String] "Check that the field exists in your schema definition. Did you mean to add it with @:field annotation?"
+			docs: [Const:String] "See documentation/ANNOTATIONS.md#field-annotation"
+		[ObjectDecl:{ solution : String, pattern : String, docs : String }]
+			pattern: [Const:String] "Invalid association type"
+			solution: [Const:String] "Association must be one of: has_one, has_many, belongs_to, many_to_many"
+			docs: [Const:String] "See documentation/guides/ADVANCED_ECTO_GUIDE.md#associations"
+		[ObjectDecl:{ solution : String, pattern : String, docs : String }]
+			pattern: [Const:String] "Missing required changeset function"
+			solution: [Const:String] "Classes with @:changeset must have a static changeset function"
+			docs: [Const:String] "See documentation/guides/ADVANCED_ECTO_GUIDE.md#changesets"
+		[ObjectDecl:{ solution : String, pattern : String, docs : String }]
+			pattern: [Const:String] "Invalid field type"
+			solution: [Const:String] "Field types must be valid Ecto types: string, integer, boolean, date, datetime, etc."
+			docs: [Const:String] "See documentation/guides/ADVANCED_ECTO_GUIDE.md#field-types"
+		[ObjectDecl:{ solution : String, pattern : String, docs : String }]
+			pattern: [Const:String] "Circular association detected"
+			solution: [Const:String] "Schema has circular associations. Consider using :on_replace option or restructuring associations"
+			docs: [Const:String] "See Ecto documentation on association cycles"
+		[ObjectDecl:{ solution : String, pattern : String, docs : String }]
+			pattern: [Const:String] "Reserved keyword in metadata"
+			solution: [Const:String] "Cannot use Haxe reserved keywords (default, interface, operator) in metadata. Use alternatives like 'defaultValue'"
+			docs: [Const:String] "See documentation/TESTING_PRINCIPLES.md#simplification-principle";
+
+	public static function reportSchemaError[Function:(schemaName : String, error : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local schemaName(27143):String]
+		[Arg:String] [Local error(27144):String]
+		[Arg:haxe.macro.Position] [Local pos(27145):haxe.macro.Position]
+		[Block:Dynamic]
+			[Var message(27148):String]
+				[Call:String]
+					[Field:(schemaName : String, error : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:(schemaName : String, error : String) -> String]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							formatSchemaError:(schemaName : String, error : String) -> String
+					[Local schemaName(27143):String:String]
+					[Local error(27144):String:String]
+			[Var suggestion(27157):String]
+				[Call:String]
+					[Field:(error : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:(error : String) -> String]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							getSuggestion:(error : String) -> String
+					[Local error(27144):String:String]
+			[Var fullMessage(27158):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] ""
+							+
+							[Local message(27148):String:String]
+						+
+						[Const:String] "\n"
+					+
+					[Local suggestion(27157):String:String]
+			[Call:Dynamic]
+				[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+						haxe.macro.Context
+						error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+				[Local fullMessage(27158):String:String]
+				[Local pos(27145):haxe.macro.Position:haxe.macro.Position]
+				[Const:Null<Int>] null
+
+	public static function reportChangesetError[Function:(className : String, error : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local className(27159):String]
+		[Arg:String] [Local error(27160):String]
+		[Arg:haxe.macro.Position] [Local pos(27161):haxe.macro.Position]
+		[Block:Dynamic]
+			[Var message(27162):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "Changeset error in "
+							+
+							[Local className(27159):String:String]
+						+
+						[Const:String] ": "
+					+
+					[Local error(27160):String:String]
+			[Var suggestion(27176):String]
+				[Call:String]
+					[Field:(error : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:(error : String) -> String]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							getChangesetSuggestion:(error : String) -> String
+					[Local error(27160):String:String]
+			[Var example(27177):String]
+				[Call:String]
+					[Field:() -> String]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:() -> String]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							getChangesetExample:() -> String
+			[Var fullMessage(27178):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] ""
+									+
+									[Local message(27162):String:String]
+								+
+								[Const:String] "\n"
+							+
+							[Local suggestion(27176):String:String]
+						+
+						[Const:String] "\n\nExample:\n"
+					+
+					[Local example(27177):String:String]
+			[Call:Dynamic]
+				[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+						haxe.macro.Context
+						error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+				[Local fullMessage(27178):String:String]
+				[Local pos(27161):haxe.macro.Position:haxe.macro.Position]
+				[Const:Null<Int>] null
+
+	public static function reportQueryError[Function:(queryExpr : String, error : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local queryExpr(27179):String]
+		[Arg:String] [Local error(27180):String]
+		[Arg:haxe.macro.Position] [Local pos(27181):haxe.macro.Position]
+		[Block:Dynamic]
+			[Var message(27182):String]
+				[Binop:String]
+					[Const:String] "Query compilation failed: "
+					+
+					[Local error(27180):String:String]
+			[Var suggestion(27197):String]
+				[Call:String]
+					[Field:(queryExpr : String, error : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:(queryExpr : String, error : String) -> String]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							getQuerySuggestion:(queryExpr : String, error : String) -> String
+					[Local queryExpr(27179):String:String]
+					[Local error(27180):String:String]
+			[Var alternatives(27208):Array<String>]
+				[Call:Array<String>]
+					[Field:(queryExpr : String) -> Array<String>]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:(queryExpr : String) -> Array<String>]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							getQueryAlternatives:(queryExpr : String) -> Array<String>
+					[Local queryExpr(27179):String:String]
+			[Var fullMessage(27209):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] ""
+							+
+							[Local message(27182):String:String]
+						+
+						[Const:String] "\n"
+					+
+					[Local suggestion(27197):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local alternatives(27208):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local fullMessage(27209):String:String]
+						+=
+						[Binop:String]
+							[Const:String] "\n\nAlternatives:\n"
+							+
+							[Call:String]
+								[Field:(sep : String) -> String]
+									[Local alternatives(27208):Array<String>:Array<String>]
+									[FInstance:(sep : String) -> String]
+										Array<String>
+										join:(sep : String) -> String
+								[Const:String] "\n"
+			[Call:Dynamic]
+				[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+						haxe.macro.Context
+						error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+				[Local fullMessage(27209):String:String]
+				[Local pos(27181):haxe.macro.Position:haxe.macro.Position]
+				[Const:Null<Int>] null
+
+	public static function reportMigrationError[Function:(operation : String, error : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local operation(27210):String]
+		[Arg:String] [Local error(27211):String]
+		[Arg:haxe.macro.Position] [Local pos(27212):haxe.macro.Position]
+		[Block:Dynamic]
+			[Var message(27213):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "Migration error in "
+							+
+							[Local operation(27210):String:String]
+						+
+						[Const:String] ": "
+					+
+					[Local error(27211):String:String]
+			[Var suggestion(27216):String]
+				[Call:String]
+					[Field:(operation : String, error : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:(operation : String, error : String) -> String]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							getMigrationSuggestion:(operation : String, error : String) -> String
+					[Local operation(27210):String:String]
+					[Local error(27211):String:String]
+			[Var example(27218):String]
+				[Call:String]
+					[Field:(operation : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:(operation : String) -> String]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							getMigrationExample:(operation : String) -> String
+					[Local operation(27210):String:String]
+			[Var fullMessage(27219):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] ""
+									+
+									[Local message(27213):String:String]
+								+
+								[Const:String] "\n"
+							+
+							[Local suggestion(27216):String:String]
+						+
+						[Const:String] "\n\nCorrect usage:\n"
+					+
+					[Local example(27218):String:String]
+			[Call:Dynamic]
+				[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+						haxe.macro.Context
+						error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+				[Local fullMessage(27219):String:String]
+				[Local pos(27212):haxe.macro.Position:haxe.macro.Position]
+				[Const:Null<Int>] null
+
+	public static function reportAssociationError[Function:(field : String, assocType : String, error : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local field(27220):String]
+		[Arg:String] [Local assocType(27221):String]
+		[Arg:String] [Local error(27222):String]
+		[Arg:haxe.macro.Position] [Local pos(27223):haxe.macro.Position]
+		[Block:Dynamic]
+			[Var message(27224):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] "Association error for field \""
+									+
+									[Local field(27220):String:String]
+								+
+								[Const:String] "\" ("
+							+
+							[Local assocType(27221):String:String]
+						+
+						[Const:String] "): "
+					+
+					[Local error(27222):String:String]
+			[Var suggestion(27227):String]
+				[Call:String]
+					[Field:(assocType : String, error : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:(assocType : String, error : String) -> String]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							getAssociationSuggestion:(assocType : String, error : String) -> String
+					[Local assocType(27221):String:String]
+					[Local error(27222):String:String]
+			[Var requirements(27229):String]
+				[Call:String]
+					[Field:(assocType : String) -> String]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:(assocType : String) -> String]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							getAssociationRequirements:(assocType : String) -> String
+					[Local assocType(27221):String:String]
+			[Var fullMessage(27230):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] ""
+									+
+									[Local message(27224):String:String]
+								+
+								[Const:String] "\n"
+							+
+							[Local suggestion(27227):String:String]
+						+
+						[Const:String] "\n\nRequirements:\n"
+					+
+					[Local requirements(27229):String:String]
+			[Call:Dynamic]
+				[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+						haxe.macro.Context
+						error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+				[Local fullMessage(27230):String:String]
+				[Local pos(27223):haxe.macro.Position:haxe.macro.Position]
+				[Const:Null<Int>] null
+
+	public static function warnAboutPattern[Function:(pattern : String, suggestion : String, pos : haxe.macro.Position) -> Void]
+		[Arg:String] [Local pattern(27231):String]
+		[Arg:String] [Local suggestion(27232):String]
+		[Arg:haxe.macro.Position] [Local pos(27233):haxe.macro.Position]
+		[Block:Void]
+			[Var message(27234):String]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "Warning: "
+							+
+							[Local pattern(27231):String:String]
+						+
+						[Const:String] "\nSuggestion: "
+					+
+					[Local suggestion(27232):String:String]
+			[Call:Void]
+				[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+					[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+					[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+						haxe.macro.Context
+						warning:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void
+				[Local message(27234):String:String]
+				[Local pos(27233):haxe.macro.Position:haxe.macro.Position]
+				[Const:Null<Int>] null
+
+	public static function validateSchemaFields[Function:(fields : Array<{ type : String, name : String, meta : Dynamic }>, pos : haxe.macro.Position) -> Bool]
+		[Arg:Array<{ type : String, name : String, meta : Dynamic }>] [Local fields(27235):Array<{ type : String, name : String, meta : Dynamic }>]
+		[Arg:haxe.macro.Position] [Local pos(27236):haxe.macro.Position]
+		[Block:Dynamic]
+			[Var errors(27237):Array<String>] [ArrayDecl:Array<String>]
+			[Var warnings(27238):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(27247):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27247):Int:Int]
+						<
+						[Field:Int]
+							[Local fields(27235):Array<{ type : String, name : String, meta : Dynamic }>:Array<{ type : String, name : String, meta : Dynamic }>]
+							[FInstance:Int]
+								Array<{ type : String, name : String, meta : Dynamic }>
+								length:Int
+					[Block:Void]
+						[Var field(27239):{ type : String, name : String, meta : Dynamic }]
+							[Array:{ type : String, name : String, meta : Dynamic }]
+								[Local fields(27235):Array<{ type : String, name : String, meta : Dynamic }>:Array<{ type : String, name : String, meta : Dynamic }>]
+								[Local `(27247):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(27247):Int:Int]
+						[If:Void]
+							[Call:Bool]
+								[Field:(name : String) -> Bool]
+									[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+									[FStatic:(name : String) -> Bool]
+										reflaxe.elixir.helpers.EctoErrorReporter
+										isReservedKeyword:(name : String) -> Bool
+								[Field:String]
+									[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+									[FAnon:String] name:String
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local errors(27237):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Const:String] "Field name \""
+											+
+											[Field:String]
+												[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+												[FAnon:String] name:String
+										+
+										[Const:String] "\" is a reserved keyword. Use a different name."
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Call:Bool]
+									[Field:(type : String) -> Bool]
+										[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+										[FStatic:(type : String) -> Bool]
+											reflaxe.elixir.helpers.EctoErrorReporter
+											isValidEctoType:(type : String) -> Bool
+									[Field:String]
+										[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+										[FAnon:String] type:String
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local errors(27237):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Field \""
+													+
+													[Field:String]
+														[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+														[FAnon:String] name:String
+												+
+												[Const:String] "\" has invalid type \""
+											+
+											[Field:String]
+												[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+												[FAnon:String] type:String
+										+
+										[Const:String] "\". Valid types: string, integer, boolean, date, datetime, decimal, map, array"
+						[If:Void]
+							[Binop:Bool]
+								[Field:Dynamic]
+									[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+									[FAnon:Dynamic] meta:Dynamic
+								!=
+								[Const:Dynamic] null
+							[Then:Void] [Block:Void]
+								[Var metaErrors(27246):Array<String>]
+									[Call:Array<String>]
+										[Field:(meta : Dynamic) -> Array<String>]
+											[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+											[FStatic:(meta : Dynamic) -> Array<String>]
+												reflaxe.elixir.helpers.EctoErrorReporter
+												validateMetadata:(meta : Dynamic) -> Array<String>
+										[Field:Dynamic]
+											[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+											[FAnon:Dynamic] meta:Dynamic
+								[If:Void]
+									[Binop:Bool]
+										[Field:Int]
+											[Local metaErrors(27246):Array<String>:Array<String>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+										>
+										[Const:Int] 0
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local errors(27237):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Binop:String]
+													[Binop:String]
+														[Const:String] "Field \""
+														+
+														[Field:String]
+															[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+															[FAnon:String] name:String
+													+
+													[Const:String] "\" metadata errors: "
+												+
+												[Call:String]
+													[Field:(sep : String) -> String]
+														[Local metaErrors(27246):Array<String>:Array<String>]
+														[FInstance:(sep : String) -> String]
+															Array<String>
+															join:(sep : String) -> String
+													[Const:String] ", "
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Field:String]
+											[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+											[FAnon:String] name:String
+										==
+										[Const:String] "id"
+									&&
+									[Binop:Bool]
+										[Field:Dynamic]
+											[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+											[FAnon:Dynamic] meta:Dynamic
+										!=
+										[Const:Dynamic] null
+								&&
+								[Binop:Bool]
+									[Field:Dynamic]
+										[Field:Dynamic]
+											[Local field(27239):{ type : String, name : String, meta : Dynamic }:{ type : String, name : String, meta : Dynamic }]
+											[FAnon:Dynamic] meta:Dynamic
+										[FDynamic:Dynamic] nullable
+									==
+									[Const:Bool] true
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local warnings(27238):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Const:String] "Primary key \"id\" should not be nullable"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local errors(27237):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var errorMessage(27257):String]
+						[Binop:String]
+							[Const:String] "Schema validation failed:\n"
+							+
+							[Call:String]
+								[Field:(sep : String) -> String]
+									[Block:Array<String>]
+										[Var `(27252):Array<String>] [ArrayDecl:Array<String>]
+										[Block:Void]
+											[Var `(27253):Int] [Const:Int] 0
+											[Var `(27254):Array<String>] [Local errors(27237):Array<String>:Array<String>]
+											[While:Void]
+												[Binop:Bool]
+													[Local `(27253):Int:Int]
+													<
+													[Field:Int]
+														[Local `(27254):Array<String>:Array<String>]
+														[FInstance:Int]
+															Array<String>
+															length:Int
+												[Block:Void]
+													[Var v(27255):String]
+														[Array:String]
+															[Local `(27254):Array<String>:Array<String>]
+															[Local `(27253):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(27253):Int:Int]
+													[Call:Int]
+														[Field:(x : String) -> Int]
+															[Local `(27252):Array<String>:Array<String>]
+															[FInstance:(x : String) -> Int]
+																Array<String>
+																push:(x : Array.T) -> Int
+														[Call:String]
+															[Function:(e : String) -> String]
+																[Arg:String] [Local e(27256):String]
+																[Block:Dynamic]
+																	[Return:Dynamic]
+																		[Binop:String]
+																			[Const:String] "  - "
+																			+
+																			[Local e(27256):String:String]
+															[Local v(27255):String:String]
+										[Local `(27252):Array<String>:Array<String>]
+									[FInstance:(sep : String) -> String]
+										Array<String>
+										join:(sep : String) -> String
+								[Const:String] "\n"
+					[Binop:String]
+						[Local errorMessage(27257):String:String]
+						+=
+						[Const:String] "\n\nSee documentation/guides/ADVANCED_ECTO_GUIDE.md for schema examples"
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Local errorMessage(27257):String:String]
+						[Local pos(27236):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
+					[Return:Dynamic] [Const:Bool] false
+			[Block:Void]
+				[Var `(27259):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27259):Int:Int]
+						<
+						[Field:Int]
+							[Local warnings(27238):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var warning(27258):String]
+							[Array:String]
+								[Local warnings(27238):Array<String>:Array<String>]
+								[Local `(27259):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(27259):Int:Int]
+						[Call:Void]
+							[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+								[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+								[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void]
+									haxe.macro.Context
+									warning:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Void
+							[Local warning(27258):String:String]
+							[Local pos(27236):haxe.macro.Position:haxe.macro.Position]
+							[Const:Null<Int>] null
+			[Return:Dynamic] [Const:Bool] true
+
+	public static function validateChangesetConfig[Function:(className : String, config : Dynamic, pos : haxe.macro.Position) -> Bool]
+		[Arg:String] [Local className(27260):String]
+		[Arg:Dynamic] [Local config(27261):Dynamic]
+		[Arg:haxe.macro.Position] [Local pos(27262):haxe.macro.Position]
+		[Block:Dynamic]
+			[Var errors(27263):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Unop:Bool]
+					!
+					Prefix
+					[Call:Bool]
+						[Field:(className : String) -> Bool]
+							[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+							[FStatic:(className : String) -> Bool]
+								reflaxe.elixir.helpers.EctoErrorReporter
+								hasChangesetFunction:(className : String) -> Bool
+						[Local className(27260):String:String]
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local errors(27263):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Class "
+								+
+								[Local className(27260):String:String]
+							+
+							[Const:String] " with @:changeset must have a static changeset function"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local config(27261):Dynamic:Dynamic]
+						[FDynamic:Dynamic] castFields
+					!=
+					[Const:Dynamic] null
+				[Then:Void] [Block:Void]
+					[Var castFields(27265):Array<String>]
+						[Cast:Array<String>]
+							[Field:Dynamic]
+								[Local config(27261):Dynamic:Dynamic]
+								[FDynamic:Dynamic] castFields
+					[Block:Void]
+						[Var `(27269):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(27269):Int:Int]
+								<
+								[Field:Int]
+									[Local castFields(27265):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var field(27266):String]
+									[Array:String]
+										[Local castFields(27265):Array<String>:Array<String>]
+										[Local `(27269):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(27269):Int:Int]
+								[If:Void]
+									[Unop:Bool]
+										!
+										Prefix
+										[Call:Bool]
+											[Field:(className : String, fieldName : String) -> Bool]
+												[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+												[FStatic:(className : String, fieldName : String) -> Bool]
+													reflaxe.elixir.helpers.EctoErrorReporter
+													schemaHasField:(className : String, fieldName : String) -> Bool
+											[Local className(27260):String:String]
+											[Local field(27266):String:String]
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local errors(27263):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Cast field \""
+													+
+													[Local field(27266):String:String]
+												+
+												[Const:String] "\" does not exist in schema"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Dynamic]
+						[Local config(27261):Dynamic:Dynamic]
+						[FDynamic:Dynamic] requiredFields
+					!=
+					[Const:Dynamic] null
+				[Then:Void] [Block:Void]
+					[Var requiredFields(27270):Array<String>]
+						[Cast:Array<String>]
+							[Field:Dynamic]
+								[Local config(27261):Dynamic:Dynamic]
+								[FDynamic:Dynamic] requiredFields
+					[Block:Void]
+						[Var `(27272):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(27272):Int:Int]
+								<
+								[Field:Int]
+									[Local requiredFields(27270):Array<String>:Array<String>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var field(27271):String]
+									[Array:String]
+										[Local requiredFields(27270):Array<String>:Array<String>]
+										[Local `(27272):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(27272):Int:Int]
+								[If:Void]
+									[Unop:Bool]
+										!
+										Prefix
+										[Call:Bool]
+											[Field:(className : String, fieldName : String) -> Bool]
+												[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+												[FStatic:(className : String, fieldName : String) -> Bool]
+													reflaxe.elixir.helpers.EctoErrorReporter
+													schemaHasField:(className : String, fieldName : String) -> Bool
+											[Local className(27260):String:String]
+											[Local field(27271):String:String]
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : String) -> Int]
+												[Local errors(27263):Array<String>:Array<String>]
+												[FInstance:(x : String) -> Int]
+													Array<String>
+													push:(x : Array.T) -> Int
+											[Binop:String]
+												[Binop:String]
+													[Const:String] "Required field \""
+													+
+													[Local field(27271):String:String]
+												+
+												[Const:String] "\" does not exist in schema"
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local errors(27263):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Var errorMessage(27282):String]
+						[Binop:String]
+							[Const:String] "Changeset validation failed for $className:\n"
+							+
+							[Call:String]
+								[Field:(sep : String) -> String]
+									[Block:Array<String>]
+										[Var `(27277):Array<String>] [ArrayDecl:Array<String>]
+										[Block:Void]
+											[Var `(27278):Int] [Const:Int] 0
+											[Var `(27279):Array<String>] [Local errors(27263):Array<String>:Array<String>]
+											[While:Void]
+												[Binop:Bool]
+													[Local `(27278):Int:Int]
+													<
+													[Field:Int]
+														[Local `(27279):Array<String>:Array<String>]
+														[FInstance:Int]
+															Array<String>
+															length:Int
+												[Block:Void]
+													[Var v(27280):String]
+														[Array:String]
+															[Local `(27279):Array<String>:Array<String>]
+															[Local `(27278):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(27278):Int:Int]
+													[Call:Int]
+														[Field:(x : String) -> Int]
+															[Local `(27277):Array<String>:Array<String>]
+															[FInstance:(x : String) -> Int]
+																Array<String>
+																push:(x : Array.T) -> Int
+														[Call:String]
+															[Function:(e : String) -> String]
+																[Arg:String] [Local e(27281):String]
+																[Block:Dynamic]
+																	[Return:Dynamic]
+																		[Binop:String]
+																			[Const:String] "  - "
+																			+
+																			[Local e(27281):String:String]
+															[Local v(27280):String:String]
+										[Local `(27277):Array<String>:Array<String>]
+									[FInstance:(sep : String) -> String]
+										Array<String>
+										join:(sep : String) -> String
+								[Const:String] "\n"
+					[Binop:String]
+						[Local errorMessage(27282):String:String]
+						+=
+						[Binop:String]
+							[Const:String] "\n\nExample changeset:\n"
+							+
+							[Call:String]
+								[Field:() -> String]
+									[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+									[FStatic:() -> String]
+										reflaxe.elixir.helpers.EctoErrorReporter
+										getChangesetExample:() -> String
+					[Call:Dynamic]
+						[Field:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+							[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+							[FStatic:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic]
+								haxe.macro.Context
+								error:(msg : String, pos : haxe.macro.Position, ?depth : Null<Int>) -> Dynamic
+						[Local errorMessage(27282):String:String]
+						[Local pos(27262):haxe.macro.Position:haxe.macro.Position]
+						[Const:Null<Int>] null
+					[Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic] [Const:Bool] true
+
+	static function formatSchemaError[Function:(schemaName : String, error : String) -> String]
+		[Arg:String] [Local schemaName(27146):String]
+		[Arg:String] [Local error(27147):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:String]
+					[Binop:String]
+						[Binop:String]
+							[Const:String] "Schema \""
+							+
+							[Local schemaName(27146):String:String]
+						+
+						[Const:String] "\" compilation failed: "
+					+
+					[Local error(27147):String:String]
+
+	static function getSuggestion[Function:(error : String) -> String]
+		[Arg:String] [Local error(27149):String]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(27155):Int] [Const:Int] 0
+				[Var `(27156):Array<{ solution : String, pattern : String, docs : String }>]
+					[Field:Array<{ solution : String, pattern : String, docs : String }>]
+						[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+						[FStatic:Array<{ solution : String, pattern : String, docs : String }>]
+							reflaxe.elixir.helpers.EctoErrorReporter
+							ERROR_PATTERNS:Array<{ solution : String, pattern : String, docs : String }>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27155):Int:Int]
+						<
+						[Field:Int]
+							[Local `(27156):Array<{ solution : String, pattern : String, docs : String }>:Array<{ solution : String, pattern : String, docs : String }>]
+							[FInstance:Int]
+								Array<{ solution : String, pattern : String, docs : String }>
+								length:Int
+					[Block:Void]
+						[Var pattern(27150):{ solution : String, pattern : String, docs : String }]
+							[Array:{ solution : String, pattern : String, docs : String }]
+								[Local `(27156):Array<{ solution : String, pattern : String, docs : String }>:Array<{ solution : String, pattern : String, docs : String }>]
+								[Local `(27155):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(27155):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Block:Bool]
+									[Var value(27154):String]
+										[Field:String]
+											[Local pattern(27150):{ solution : String, pattern : String, docs : String }:{ solution : String, pattern : String, docs : String }]
+											[FAnon:String] pattern:String
+									[Binop:Bool]
+										[Call:Int]
+											[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+												[Local error(27149):String:String]
+												[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+													String
+													indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+											[Local value(27154):String:String]
+											[Const:Null<Int>] null
+										!=
+										[Const:Int] -1
+								||
+								[Call:Bool]
+									[Field:(s : String) -> Bool]
+										[New:EReg]
+											EReg
+											[Field:String]
+												[Local pattern(27150):{ solution : String, pattern : String, docs : String }:{ solution : String, pattern : String, docs : String }]
+												[FAnon:String] pattern:String
+											[Const:String] "i"
+										[FInstance:(s : String) -> Bool]
+											EReg
+											match:(s : String) -> Bool
+									[Local error(27149):String:String]
+							[Then:Dynamic] [Block:Dynamic]
+								[Return:Dynamic]
+									[Binop:String]
+										[Binop:String]
+											[Binop:String]
+												[Const:String] "Suggestion: "
+												+
+												[Field:String]
+													[Local pattern(27150):{ solution : String, pattern : String, docs : String }:{ solution : String, pattern : String, docs : String }]
+													[FAnon:String] solution:String
+											+
+											[Const:String] "\nDocumentation: "
+										+
+										[Field:String]
+											[Local pattern(27150):{ solution : String, pattern : String, docs : String }:{ solution : String, pattern : String, docs : String }]
+											[FAnon:String] docs:String
+			[Return:Dynamic] [Const:String] "Check your schema definition and ensure all annotations are correct."
+
+	static function getChangesetSuggestion[Function:(error : String) -> String]
+		[Arg:String] [Local error(27163):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local error(27163):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "cast"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Ensure all cast fields exist in your schema and are properly typed"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local error(27163):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "validate"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Validation functions must match Ecto patterns (validate_required, validate_format, etc.)"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local error(27163):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "constraint"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Constraints must reference existing database constraints or indexes"
+			[Return:Dynamic] [Const:String] "Review your changeset function for proper Ecto patterns"
+
+	static function getChangesetExample[Function:() -> String] [Block:Dynamic] [Return:Dynamic] [Const:String] "\npublic static function changeset(user: User, params: Dynamic): Dynamic {\n    return user\n        |> cast(params, [\"name\", \"email\", \"age\"])\n        |> validateRequired([\"name\", \"email\"])\n        |> validateFormat(\"email\", ~r/@/)\n        |> validateNumber(\"age\", greaterThan: 0, lessThan: 150)\n        |> uniqueConstraint(\"email\");\n}"
+
+	static function getQuerySuggestion[Function:(queryExpr : String, error : String) -> String]
+		[Arg:String] [Local queryExpr(27183):String]
+		[Arg:String] [Local error(27184):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local error(27184):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "from"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Query must start with 'from' clause: from(u in User)"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local error(27184):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "where"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Where clauses use == for equality: where(u.active == true)"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local error(27184):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "select"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:String] "Select clause must be last: ...select(u)"
+			[Return:Dynamic] [Const:String] "Review Ecto.Query syntax in documentation/guides/ADVANCED_ECTO_GUIDE.md"
+
+	static function getQueryAlternatives[Function:(queryExpr : String) -> Array<String>]
+		[Arg:String] [Local queryExpr(27198):String]
+		[Block:Dynamic]
+			[Var alternatives(27199):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local queryExpr(27198):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "User.where"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local alternatives(27199):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "from(u in User) |> where(u.active == true)"
+			[If:Void]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+							[Local queryExpr(27198):String:String]
+							[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+								String
+								indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+						[Const:String] "Repo.get"
+						[Const:Null<Int>] null
+					!=
+					[Const:Int] -1
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local alternatives(27199):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "Repo.get(User, id)"
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local alternatives(27199):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "Repo.get_by(User, email: \"user@example.com\")"
+			[Return:Dynamic] [Local alternatives(27199):Array<String>:Array<String>]
+
+	static function getMigrationSuggestion[Function:(operation : String, error : String) -> String]
+		[Arg:String] [Local operation(27214):String]
+		[Arg:String] [Local error(27215):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (operation) {
+	case "create_table":
+		"Table creation requires a block: create table(:users) do ... end";	
+	case "add_column":
+		"Column addition syntax: add :field_name, :field_type, options";	
+	case "create_index":
+		"Index creation: create index(:table, [:field1, :field2])";	
+	default:
+		"Check migration DSL syntax in documentation";	
+})
+					[Switch:String]
+						[Local operation(27214):String:String]
+						[Case:String]
+							[Const:String] "add_column"
+							[Block:String] [Block:String] [Const:String] "Column addition syntax: add :field_name, :field_type, options"
+						[Case:String]
+							[Const:String] "create_index"
+							[Block:String] [Block:String] [Const:String] "Index creation: create index(:table, [:field1, :field2])"
+						[Case:String]
+							[Const:String] "create_table"
+							[Block:String] [Block:String] [Const:String] "Table creation requires a block: create table(:users) do ... end"
+						[Default:String] [Block:String] [Const:String] "Check migration DSL syntax in documentation"
+
+	static function getMigrationExample[Function:(operation : String) -> String]
+		[Arg:String] [Local operation(27217):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (operation) {
+	case "create_table":
+		"create table(:users) do\n    add :id, :bigserial, primary_key: true\n    add :name, :string, null: false\n    add :email, :string, null: false\n    timestamps()\nend";	
+	case "add_column":
+		"alter table(:users) do\n    add :age, :integer, default: 0\nend";	
+	default:
+		"";	
+})
+					[Switch:String]
+						[Local operation(27217):String:String]
+						[Case:String]
+							[Const:String] "add_column"
+							[Block:String] [Block:String] [Const:String] "alter table(:users) do\n    add :age, :integer, default: 0\nend"
+						[Case:String]
+							[Const:String] "create_table"
+							[Block:String] [Block:String] [Const:String] "create table(:users) do\n    add :id, :bigserial, primary_key: true\n    add :name, :string, null: false\n    add :email, :string, null: false\n    timestamps()\nend"
+						[Default:String] [Block:String] [Const:String] ""
+
+	static function getAssociationSuggestion[Function:(assocType : String, error : String) -> String]
+		[Arg:String] [Local assocType(27225):String]
+		[Arg:String] [Local error(27226):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (assocType) {
+	case "has_many":
+		"has_many requires: plural field name, target schema, foreign_key option";	
+	case "belongs_to":
+		"belongs_to requires: singular field name, target schema, creates foreign_key field";	
+	case "many_to_many":
+		"many_to_many requires: join_through table or schema";	
+	default:
+		"Check association configuration in documentation";	
+})
+					[Switch:String]
+						[Local assocType(27225):String:String]
+						[Case:String]
+							[Const:String] "belongs_to"
+							[Block:String] [Block:String] [Const:String] "belongs_to requires: singular field name, target schema, creates foreign_key field"
+						[Case:String]
+							[Const:String] "has_many"
+							[Block:String] [Block:String] [Const:String] "has_many requires: plural field name, target schema, foreign_key option"
+						[Case:String]
+							[Const:String] "many_to_many"
+							[Block:String] [Block:String] [Const:String] "many_to_many requires: join_through table or schema"
+						[Default:String] [Block:String] [Const:String] "Check association configuration in documentation"
+
+	static function getAssociationRequirements[Function:(assocType : String) -> String]
+		[Arg:String] [Local assocType(27228):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (assocType) {
+	case "has_many":
+		"- Plural field name (e.g., 'posts')\n- Target schema exists\n- Foreign key in target table";	
+	case "belongs_to":
+		"- Singular field name (e.g., 'user')\n- Creates foreign_key field (e.g., 'user_id')\n- Target schema exists";	
+	case "many_to_many":
+		"- Join table or schema specified\n- Both foreign keys exist in join table";	
+	default:
+		"";	
+})
+					[Switch:String]
+						[Local assocType(27228):String:String]
+						[Case:String]
+							[Const:String] "belongs_to"
+							[Block:String] [Block:String] [Const:String] "- Singular field name (e.g., 'user')\n- Creates foreign_key field (e.g., 'user_id')\n- Target schema exists"
+						[Case:String]
+							[Const:String] "has_many"
+							[Block:String] [Block:String] [Const:String] "- Plural field name (e.g., 'posts')\n- Target schema exists\n- Foreign key in target table"
+						[Case:String]
+							[Const:String] "many_to_many"
+							[Block:String] [Block:String] [Const:String] "- Join table or schema specified\n- Both foreign keys exist in join table"
+						[Default:String] [Block:String] [Const:String] ""
+
+	static function isReservedKeyword[Function:(name : String) -> Bool]
+		[Arg:String] [Local name(27240):String]
+		[Block:Dynamic]
+			[Var reserved(27241):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "default"
+					[Const:String] "interface"
+					[Const:String] "operator"
+					[Const:String] "overload"
+					[Const:String] "class"
+					[Const:String] "enum"
+					[Const:String] "function"
+					[Const:String] "var"
+					[Const:String] "if"
+					[Const:String] "else"
+					[Const:String] "switch"
+					[Const:String] "case"
+					[Const:String] "return"
+					[Const:String] "break"
+					[Const:String] "continue"
+					[Const:String] "while"
+					[Const:String] "for"
+					[Const:String] "do"
+					[Const:String] "try"
+					[Const:String] "catch"
+					[Const:String] "throw"
+					[Const:String] "new"
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(x : String) -> Bool]
+						[Local reserved(27241):Array<String>:Array<String>]
+						[FInstance:(x : String) -> Bool]
+							Array<String>
+							contains:(x : Array.T) -> Bool
+					[Local name(27240):String:String]
+
+	static function isValidEctoType[Function:(type : String) -> Bool]
+		[Arg:String] [Local type(27242):String]
+		[Block:Dynamic]
+			[Var validTypes(27243):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "string"
+					[Const:String] "integer"
+					[Const:String] "boolean"
+					[Const:String] "date"
+					[Const:String] "datetime"
+					[Const:String] "naive_datetime"
+					[Const:String] "decimal"
+					[Const:String] "float"
+					[Const:String] "binary"
+					[Const:String] "map"
+					[Const:String] "array"
+					[Const:String] "text"
+					[Const:String] "uuid"
+					[Const:String] "id"
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(x : String) -> Bool]
+						[Local validTypes(27243):Array<String>:Array<String>]
+						[FInstance:(x : String) -> Bool]
+							Array<String>
+							contains:(x : Array.T) -> Bool
+					[Call:String]
+						[Field:() -> String]
+							[Local type(27242):String:String]
+							[FInstance:() -> String]
+								String
+								toLowerCase:() -> String
+
+	static function validateMetadata[Function:(meta : Dynamic) -> Array<String>]
+		[Arg:Dynamic] [Local meta(27244):Dynamic]
+		[Block:Dynamic]
+			[Var errors(27245):Array<String>] [ArrayDecl:Array<String>]
+			[If:Void]
+				[Call:Bool]
+					[Field:(o : Dynamic, field : String) -> Bool]
+						[TypeExpr Reflect:Class<Reflect>]
+						[FStatic:(o : Dynamic, field : String) -> Bool]
+							Reflect
+							hasField:(o : Dynamic, field : String) -> Bool
+					[Local meta(27244):Dynamic:Dynamic]
+					[Const:String] "default"
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local errors(27245):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "Use 'defaultValue' instead of 'default' (reserved keyword)"
+			[If:Void]
+				[Call:Bool]
+					[Field:(o : Dynamic, field : String) -> Bool]
+						[TypeExpr Reflect:Class<Reflect>]
+						[FStatic:(o : Dynamic, field : String) -> Bool]
+							Reflect
+							hasField:(o : Dynamic, field : String) -> Bool
+					[Local meta(27244):Dynamic:Dynamic]
+					[Const:String] "interface"
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local errors(27245):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "Cannot use 'interface' in metadata (reserved keyword)"
+			[If:Void]
+				[Call:Bool]
+					[Field:(o : Dynamic, field : String) -> Bool]
+						[TypeExpr Reflect:Class<Reflect>]
+						[FStatic:(o : Dynamic, field : String) -> Bool]
+							Reflect
+							hasField:(o : Dynamic, field : String) -> Bool
+					[Local meta(27244):Dynamic:Dynamic]
+					[Const:String] "operator"
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local errors(27245):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Const:String] "Cannot use 'operator' in metadata (reserved keyword)"
+			[Return:Dynamic] [Local errors(27245):Array<String>:Array<String>]
+
+	static function hasChangesetFunction[Function:(className : String) -> Bool]
+		[Arg:String] [Local className(27264):String]
+		[Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+
+	static function schemaHasField[Function:(className : String, fieldName : String) -> Bool]
+		[Arg:String] [Local className(27267):String]
+		[Arg:String] [Local fieldName(27268):String]
+		[Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+
+	public static function formatErrorWithContext[Function:(error : String, code : String, line : Int, column : Int) -> String]
+		[Arg:String] [Local error(27283):String]
+		[Arg:String] [Local code(27284):String]
+		[Arg:Int] [Local line(27285):Int]
+		[Arg:Int] [Local column(27286):Int]
+		[Block:Dynamic]
+			[Var lines(27287):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local code(27284):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "\n"
+			[Var context(27288):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(27290):Int]
+					[Call:Int]
+						[Field:(x : Float) -> Int]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(x : Float) -> Int]
+								Std
+								int:(x : Float) -> Int
+						[Call:Float]
+							[Field:(a : Float, b : Float) -> Float]
+								[TypeExpr Math:Class<Math>]
+								[FStatic:(a : Float, b : Float) -> Float]
+									Math
+									max:(a : Float, b : Float) -> Float
+							[Const:Int] 0
+							[Binop:Int]
+								[Local line(27285):Int:Int]
+								-
+								[Const:Int] 2
+				[Var `(27291):Int] [Local line(27285):Int:Int]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27290):Int:Int]
+						<
+						[Local `(27291):Int:Int]
+					[Block:Int]
+						[Var i(27289):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(27290):Int:Int]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local context(27288):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Binop:Int]
+											[Local i(27289):Int:Int]
+											+
+											[Const:Int] 1
+									+
+									[Const:String] " | "
+								+
+								[Array:String]
+									[Local lines(27287):Array<String>:Array<String>]
+									[Local i(27289):Int:Int]
+			[If:Void]
+				[Binop:Bool]
+					[Local line(27285):Int:Int]
+					<
+					[Field:Int]
+						[Local lines(27287):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+				[Then:Int] [Block:Int]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local context(27288):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Binop:String]
+							[Binop:String]
+								[Binop:String]
+									[Const:String] ""
+									+
+									[Binop:Int]
+										[Local line(27285):Int:Int]
+										+
+										[Const:Int] 1
+								+
+								[Const:String] " | "
+							+
+							[Array:String]
+								[Local lines(27287):Array<String>:Array<String>]
+								[Local line(27285):Int:Int]
+					[Var marker(27292):String]
+						[Binop:String]
+							[Binop:String]
+								[Call:String]
+									[Field:(s : String, c : String, l : Int) -> String]
+										[TypeExpr StringTools:Class<StringTools>]
+										[FStatic:(s : String, c : String, l : Int) -> String]
+											StringTools
+											lpad:(s : String, c : String, l : Int) -> String
+									[Const:String] ""
+									[Const:String] " "
+									[Binop:Int]
+										[Local column(27286):Int:Int]
+										+
+										[Const:Int] 5
+								+
+								[Const:String] "^--- "
+							+
+							[Local error(27283):String:String]
+					[Call:Int]
+						[Field:(x : String) -> Int]
+							[Local context(27288):Array<String>:Array<String>]
+							[FInstance:(x : String) -> Int]
+								Array<String>
+								push:(x : Array.T) -> Int
+						[Local marker(27292):String:String]
+			[Block:Void]
+				[Var `(27294):Int]
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Local line(27285):Int:Int]
+							+
+							[Const:Int] 1
+				[Var `(27295):Int]
+					[Call:Int]
+						[Field:(x : Float) -> Int]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(x : Float) -> Int]
+								Std
+								int:(x : Float) -> Int
+						[Call:Float]
+							[Field:(a : Float, b : Float) -> Float]
+								[TypeExpr Math:Class<Math>]
+								[FStatic:(a : Float, b : Float) -> Float]
+									Math
+									min:(a : Float, b : Float) -> Float
+							[Field:Int]
+								[Local lines(27287):Array<String>:Array<String>]
+								[FInstance:Int]
+									Array<String>
+									length:Int
+							[Binop:Int]
+								[Local line(27285):Int:Int]
+								+
+								[Const:Int] 3
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27294):Int:Int]
+						<
+						[Local `(27295):Int:Int]
+					[Block:Int]
+						[Var i(27293):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(27294):Int:Int]
+						[Call:Int]
+							[Field:(x : String) -> Int]
+								[Local context(27288):Array<String>:Array<String>]
+								[FInstance:(x : String) -> Int]
+									Array<String>
+									push:(x : Array.T) -> Int
+							[Binop:String]
+								[Binop:String]
+									[Binop:String]
+										[Const:String] ""
+										+
+										[Binop:Int]
+											[Local i(27293):Int:Int]
+											+
+											[Const:Int] 1
+									+
+									[Const:String] " | "
+								+
+								[Array:String]
+									[Local lines(27287):Array<String>:Array<String>]
+									[Local i(27293):Int:Int]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local context(27288):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+
+	public static function suggestFieldName[Function:(wrongName : String, availableFields : Array<String>) -> String]
+		[Arg:String] [Local wrongName(27296):String]
+		[Arg:Array<String>] [Local availableFields(27297):Array<String>]
+		[Block:Dynamic]
+			[Var suggestions(27298):Array<String>] [ArrayDecl:Array<String>]
+			[Block:Void]
+				[Var `(27319):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27319):Int:Int]
+						<
+						[Field:Int]
+							[Local availableFields(27297):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var field(27299):String]
+							[Array:String]
+								[Local availableFields(27297):Array<String>:Array<String>]
+								[Local `(27319):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(27319):Int:Int]
+						[Var distance(27318):Int]
+							[Call:Int]
+								[Field:(s1 : String, s2 : String) -> Int]
+									[TypeExpr reflaxe.elixir.helpers.EctoErrorReporter:Class<reflaxe.elixir.helpers.EctoErrorReporter>]
+									[FStatic:(s1 : String, s2 : String) -> Int]
+										reflaxe.elixir.helpers.EctoErrorReporter
+										levenshteinDistance:(s1 : String, s2 : String) -> Int
+								[Call:String]
+									[Field:() -> String]
+										[Local wrongName(27296):String:String]
+										[FInstance:() -> String]
+											String
+											toLowerCase:() -> String
+								[Call:String]
+									[Field:() -> String]
+										[Local field(27299):String:String]
+										[FInstance:() -> String]
+											String
+											toLowerCase:() -> String
+						[If:Void]
+							[Binop:Bool]
+								[Local distance(27318):Int:Int]
+								<=
+								[Const:Int] 2
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(x : String) -> Int]
+										[Local suggestions(27298):Array<String>:Array<String>]
+										[FInstance:(x : String) -> Int]
+											Array<String>
+											push:(x : Array.T) -> Int
+									[Local field(27299):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local suggestions(27298):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					>
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Binop:String]
+								[Const:String] "Did you mean: "
+								+
+								[Call:String]
+									[Field:(sep : String) -> String]
+										[Local suggestions(27298):Array<String>:Array<String>]
+										[FInstance:(sep : String) -> String]
+											Array<String>
+											join:(sep : String) -> String
+									[Const:String] ", "
+							+
+							[Const:String] "?"
+			[Return:Dynamic]
+				[Binop:String]
+					[Const:String] "Available fields: "
+					+
+					[Call:String]
+						[Field:(sep : String) -> String]
+							[Local availableFields(27297):Array<String>:Array<String>]
+							[FInstance:(sep : String) -> String]
+								Array<String>
+								join:(sep : String) -> String
+						[Const:String] ", "
+
+	static function levenshteinDistance[Function:(s1 : String, s2 : String) -> Int]
+		[Arg:String] [Local s1(27300):String]
+		[Arg:String] [Local s2(27301):String]
+		[Block:Dynamic]
+			[Var len1(27302):Int]
+				[Field:Int]
+					[Local s1(27300):String:String]
+					[FInstance:Int]
+						String
+						length:Int
+			[Var len2(27303):Int]
+				[Field:Int]
+					[Local s2(27301):String:String]
+					[FInstance:Int]
+						String
+						length:Int
+			[Var matrix(27304):Array<Array<Int>>] [ArrayDecl:Array<Array<Int>>]
+			[Block:Void]
+				[Var `(27306):Int] [Const:Int] 0
+				[Var `(27307):Int]
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Local len1(27302):Int:Int]
+							+
+							[Const:Int] 1
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27306):Int:Int]
+						<
+						[Local `(27307):Int:Int]
+					[Block:Int]
+						[Var i(27305):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(27306):Int:Int]
+						[Binop:Array<Int>]
+							[Array:Array<Int>]
+								[Local matrix(27304):Array<Array<Int>>:Array<Array<Int>>]
+								[Local i(27305):Int:Int]
+							=
+							[ArrayDecl:Array<Int>]
+						[Binop:Int]
+							[Array:Int]
+								[Array:Array<Int>]
+									[Local matrix(27304):Array<Array<Int>>:Array<Array<Int>>]
+									[Local i(27305):Int:Int]
+								[Const:Int] 0
+							=
+							[Local i(27305):Int:Int]
+			[Block:Void]
+				[Var `(27309):Int] [Const:Int] 0
+				[Var `(27310):Int]
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Local len2(27303):Int:Int]
+							+
+							[Const:Int] 1
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27309):Int:Int]
+						<
+						[Local `(27310):Int:Int]
+					[Block:Int]
+						[Var j(27308):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(27309):Int:Int]
+						[Binop:Int]
+							[Array:Int]
+								[Array:Array<Int>]
+									[Local matrix(27304):Array<Array<Int>>:Array<Array<Int>>]
+									[Const:Int] 0
+								[Local j(27308):Int:Int]
+							=
+							[Local j(27308):Int:Int]
+			[Block:Void]
+				[Var `(27316):Int] [Const:Int] 1
+				[Var `(27317):Int]
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Local len1(27302):Int:Int]
+							+
+							[Const:Int] 1
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27316):Int:Int]
+						<
+						[Local `(27317):Int:Int]
+					[Block:Void]
+						[Var i(27311):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(27316):Int:Int]
+						[Block:Void]
+							[Var `(27314):Int] [Const:Int] 1
+							[Var `(27315):Int]
+								[Parenthesis:Int]
+									[Binop:Int]
+										[Local len2(27303):Int:Int]
+										+
+										[Const:Int] 1
+							[While:Void]
+								[Binop:Bool]
+									[Local `(27314):Int:Int]
+									<
+									[Local `(27315):Int:Int]
+								[Block:Int]
+									[Var j(27312):Int]
+										[Unop:Int]
+											++
+											Postfix
+											[Local `(27314):Int:Int]
+									[Var cost(27313):Int]
+										[If:Int]
+											[Binop:Bool]
+												[Call:String]
+													[Field:(index : Int) -> String]
+														[Local s1(27300):String:String]
+														[FInstance:(index : Int) -> String]
+															String
+															charAt:(index : Int) -> String
+													[Binop:Int]
+														[Local i(27311):Int:Int]
+														-
+														[Const:Int] 1
+												==
+												[Call:String]
+													[Field:(index : Int) -> String]
+														[Local s2(27301):String:String]
+														[FInstance:(index : Int) -> String]
+															String
+															charAt:(index : Int) -> String
+													[Binop:Int]
+														[Local j(27312):Int:Int]
+														-
+														[Const:Int] 1
+											[Then:Int] [Block:Int] [Const:Int] 0
+											[Else:Int] [Block:Int] [Const:Int] 1
+									[Binop:Int]
+										[Array:Int]
+											[Array:Array<Int>]
+												[Local matrix(27304):Array<Array<Int>>:Array<Array<Int>>]
+												[Local i(27311):Int:Int]
+											[Local j(27312):Int:Int]
+										=
+										[Call:Int]
+											[Field:(v : Float) -> Int]
+												[TypeExpr Math:Class<Math>]
+												[FStatic:(v : Float) -> Int]
+													Math
+													floor:(v : Float) -> Int
+											[Call:Float]
+												[Field:(a : Float, b : Float) -> Float]
+													[TypeExpr Math:Class<Math>]
+													[FStatic:(a : Float, b : Float) -> Float]
+														Math
+														min:(a : Float, b : Float) -> Float
+												[Binop:Int]
+													[Array:Int]
+														[Array:Array<Int>]
+															[Local matrix(27304):Array<Array<Int>>:Array<Array<Int>>]
+															[Binop:Int]
+																[Local i(27311):Int:Int]
+																-
+																[Const:Int] 1
+														[Local j(27312):Int:Int]
+													+
+													[Const:Int] 1
+												[Call:Float]
+													[Field:(a : Float, b : Float) -> Float]
+														[TypeExpr Math:Class<Math>]
+														[FStatic:(a : Float, b : Float) -> Float]
+															Math
+															min:(a : Float, b : Float) -> Float
+													[Binop:Int]
+														[Array:Int]
+															[Array:Array<Int>]
+																[Local matrix(27304):Array<Array<Int>>:Array<Array<Int>>]
+																[Local i(27311):Int:Int]
+															[Binop:Int]
+																[Local j(27312):Int:Int]
+																-
+																[Const:Int] 1
+														+
+														[Const:Int] 1
+													[Binop:Int]
+														[Array:Int]
+															[Array:Array<Int>]
+																[Local matrix(27304):Array<Array<Int>>:Array<Array<Int>>]
+																[Binop:Int]
+																	[Local i(27311):Int:Int]
+																	-
+																	[Const:Int] 1
+															[Binop:Int]
+																[Local j(27312):Int:Int]
+																-
+																[Const:Int] 1
+														+
+														[Local cost(27313):Int:Int]
+			[Return:Dynamic]
+				[Array:Int]
+					[Array:Array<Int>]
+						[Local matrix(27304):Array<Array<Int>>:Array<Array<Int>>]
+						[Local len1(27302):Int:Int]
+					[Local len2(27303):Int:Int]
+}

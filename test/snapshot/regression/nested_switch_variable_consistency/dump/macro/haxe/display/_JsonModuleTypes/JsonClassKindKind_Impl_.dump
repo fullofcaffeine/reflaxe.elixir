@@ -1,0 +1,33 @@
+@:enum
+private class haxe.display._JsonModuleTypes.JsonClassKindKind_Impl_ {
+
+	@:value(cast "KNormal") @:impl @:enum
+	public static inline var KNormal:haxe.display.JsonClassKindKind<haxe.display.JsonClassKindKind.T> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonClassKindKind.T>] [Const:String] "KNormal";
+
+	@:value(cast "KTypeParameter") @:impl @:enum
+	public static inline var KTypeParameter:haxe.display.JsonClassKindKind<haxe.display.JsonTypes> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonTypes>] [Const:String] "KTypeParameter";
+
+	@:value(cast "KExtension") @:impl @:enum
+	public static inline var KExtension:haxe.display.JsonClassKindKind<haxe.display.JsonTypePathWithParams> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonTypePathWithParams>] [Const:String] "KExtension";
+
+	@:value(cast "KExpr") @:impl @:enum
+	public static inline var KExpr:haxe.display.JsonClassKindKind<haxe.display.JsonExpr> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonExpr>] [Const:String] "KExpr";
+
+	@:value(cast "KGeneric") @:impl @:enum
+	public static inline var KGeneric:haxe.display.JsonClassKindKind<haxe.display.JsonClassKindKind.T> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonClassKindKind.T>] [Const:String] "KGeneric";
+
+	@:value(cast "KGenericInstance") @:impl @:enum
+	public static inline var KGenericInstance:haxe.display.JsonClassKindKind<haxe.display.JsonTypePathWithParams> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonTypePathWithParams>] [Const:String] "KGenericInstance";
+
+	@:value(cast "KMacroType") @:impl @:enum
+	public static inline var KMacroType:haxe.display.JsonClassKindKind<haxe.display.JsonClassKindKind.T> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonClassKindKind.T>] [Const:String] "KMacroType";
+
+	@:value(cast "KAbstractImpl") @:impl @:enum
+	public static inline var KAbstractImpl:haxe.display.JsonClassKindKind<haxe.display.JsonTypePath> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonTypePath>] [Const:String] "KAbstractImpl";
+
+	@:value(cast "KGenericBuild") @:impl @:enum
+	public static inline var KGenericBuild:haxe.display.JsonClassKindKind<haxe.display.JsonClassKindKind.T> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonClassKindKind.T>] [Const:String] "KGenericBuild";
+
+	@:value(cast "KModuleFields") @:impl @:enum
+	public static inline var KModuleFields:haxe.display.JsonClassKindKind<haxe.display.JsonModulePath> = [Cast:haxe.display.JsonClassKindKind<haxe.display.JsonModulePath>] [Const:String] "KModuleFields";
+}
