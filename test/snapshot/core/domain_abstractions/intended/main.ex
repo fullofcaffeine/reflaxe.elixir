@@ -43,8 +43,8 @@ defmodule Main do
 
     email_result = Email_Impl_.parse("user@example.com")
 
-    case (case email_result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, email} -> g_array = elem(emailResult, 1)
+    case email_result do
+      0 -> email = elem(email_result, 1)
     domain = Email_Impl_.get_domain(email)
     local_part = Email_Impl_.get_local_part(email)
     Log.trace("Valid email - Domain: " <> domain <> ", Local: " <> local_part, %{"fileName" => "Main.hx", "lineNumber" => 52, "className" => "Main", "methodName" => "testEmailValidation"})
@@ -52,21 +52,29 @@ defmodule Main do
     Log.trace("Is example.com domain: " <> Std.string(is_example_domain), %{"fileName" => "Main.hx", "lineNumber" => 56, "className" => "Main", "methodName" => "testEmailValidation"})
     normalized = Email_Impl_.normalize(email)
     Log.trace("Normalized: " <> Email_Impl_.to_string(normalized), %{"fileName" => "Main.hx", "lineNumber" => 60, "className" => "Main", "methodName" => "testEmailValidation"})
-      {1, reason} -> g_array = elem(emailResult, 1)
+      1 -> g_param_0 = elem(email_result, 1)
+    reason = g_param_0
     Log.trace("Unexpected email validation failure: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 63, "className" => "Main", "methodName" => "testEmailValidation"})
     end
 
     invalid_emails = ["invalid-email", "@example.com", "user@", "user@@example.com", "", "user space@example.com"]
 
     g_counter = 0
-    Enum.each(g_array, fn invalid_email -> 
-      g_array = Email_Impl_.parse(invalid_email)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> Log.trace("ERROR: Invalid email \"" <> invalid_email <> "\" was accepted", %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "testEmailValidation"})
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Correctly rejected \"" <> invalid_email <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 81, "className" => "Main", "methodName" => "testEmailValidation"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < invalid_emails.length)) do
+            invalid_email = Enum.at(invalid_emails, g_counter)
+        g_counter + 1
+        g_array = Email_Impl_.parse(invalid_email)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        Log.trace("ERROR: Invalid email \"" <> invalid_email <> "\" was accepted", %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "testEmailValidation"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Correctly rejected \"" <> invalid_email <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 81, "className" => "Main", "methodName" => "testEmailValidation"})
+        end
+        loop.()
+      end
+    end).()
 
     email1_result = Email_Impl_.parse("Test@Example.Com")
 
@@ -91,55 +99,56 @@ defmodule Main do
     valid_ids = ["user123", "Alice", "Bob42", "testUser"]
 
     g_counter = 0
-    Enum.each(g_array, fn valid_id -> 
-      g_array = UserId_Impl_.parse(valid_id)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, _user_id} -> g_array = elem(g2_array, 1)
-    length = length(UserId_Impl_)
-    normalized = UserId_Impl_.normalize(user_id)
-    Log.trace("Valid UserId \"" <> valid_id <> "\" - Length: " <> to_string(length) <> ", Normalized: " <> UserId_Impl_.to_string(normalized), %{"fileName" => "Main.hx", "lineNumber" => 111, "className" => "Main", "methodName" => "testUserIdValidation"})
-    starts_with_user = UserId_Impl_.starts_with_ignore_case(user_id, "user")
-    Log.trace("Starts with \"user\" (case-insensitive): " <> Std.string(starts_with_user), %{"fileName" => "Main.hx", "lineNumber" => 115, "className" => "Main", "methodName" => "testUserIdValidation"})
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Unexpected UserId validation failure for \"" <> valid_id <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 118, "className" => "Main", "methodName" => "testUserIdValidation"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < valid_ids.length)) do
+            valid_id = Enum.at(valid_ids, g_counter)
+        g_counter + 1
+        g_array = UserId_Impl_.parse(valid_id)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        user_id = g_param_0
+        length = length(UserId_Impl_)
+        normalized = UserId_Impl_.normalize(user_id)
+        Log.trace("Valid UserId \"" <> valid_id <> "\" - Length: " <> to_string(length) <> ", Normalized: " <> UserId_Impl_.to_string(normalized), %{"fileName" => "Main.hx", "lineNumber" => 111, "className" => "Main", "methodName" => "testUserIdValidation"})
+        starts_with_user = UserId_Impl_.starts_with_ignore_case(user_id, "user")
+        Log.trace("Starts with \"user\" (case-insensitive): " <> Std.string(starts_with_user), %{"fileName" => "Main.hx", "lineNumber" => 115, "className" => "Main", "methodName" => "testUserIdValidation"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Unexpected UserId validation failure for \"" <> valid_id <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 118, "className" => "Main", "methodName" => "testUserIdValidation"})
+        end
+        loop.()
+      end
+    end).()
 
     g_array = []
     g_counter = 0
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((g_counter < 60)) do
+            _i = g_counter + 1
+        g_array = g_array ++ ["a"]
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((g_counter < 60)) end,
-        fn ->
-          _i = g_counter + 1
-          g_array ++ ["a"]
-        end,
-        loop_helper
-      )
-    )
+    end).()
     temp_array = g_array
 
     invalid_ids = ["ab", "user@123", "user 123", "user-123", "", Enum.join(temp_array, "")]
 
     g_counter = 0
-    Enum.each(g_array, fn invalid_id -> 
-      g_array = UserId_Impl_.parse(invalid_id)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> Log.trace("ERROR: Invalid UserId \"" <> invalid_id <> "\" was accepted", %{"fileName" => "Main.hx", "lineNumber" => 135, "className" => "Main", "methodName" => "testUserIdValidation"})
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Correctly rejected \"" <> invalid_id <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 137, "className" => "Main", "methodName" => "testUserIdValidation"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < invalid_ids.length)) do
+            invalid_id = Enum.at(invalid_ids, g_counter)
+        g_counter + 1
+        g_array = UserId_Impl_.parse(invalid_id)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        Log.trace("ERROR: Invalid UserId \"" <> invalid_id <> "\" was accepted", %{"fileName" => "Main.hx", "lineNumber" => 135, "className" => "Main", "methodName" => "testUserIdValidation"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Correctly rejected \"" <> invalid_id <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 137, "className" => "Main", "methodName" => "testUserIdValidation"})
+        end
+        loop.()
+      end
+    end).()
 
     id1_result = UserId_Impl_.parse("User123")
 
@@ -163,51 +172,69 @@ defmodule Main do
     valid_numbers = [1, 5, 42, 100, 999]
 
     g_counter = 0
-    Enum.each(g_array, fn valid_num -> 
-      g_array = PositiveInt_Impl_.parse(valid_num)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, _pos_int} -> g_array = elem(g2_array, 1)
-    Log.trace("Valid PositiveInt: " <> PositiveInt_Impl_.to_string(pos_int), %{"fileName" => "Main.hx", "lineNumber" => 166, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-    doubled = PositiveInt_Impl_.multiply(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(2)))
-    added = PositiveInt_Impl_.add(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(10)))
-    Log.trace("Doubled: " <> PositiveInt_Impl_.to_string(doubled) <> ", Added 10: " <> PositiveInt_Impl_.to_string(added), %{"fileName" => "Main.hx", "lineNumber" => 171, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-    subtract_result = PositiveInt_Impl_.safe_sub(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
-    case (case subtract_result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, result} -> g_array = elem(subtractResult, 1)
-    Log.trace("Safe subtraction result: " <> PositiveInt_Impl_.to_string(result), %{"fileName" => "Main.hx", "lineNumber" => 177, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-      {1, reason} -> g_array = elem(subtractResult, 1)
-    Log.trace("Safe subtraction failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 179, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-    end
-    five = ResultTools.unwrap(PositiveInt_Impl_.parse(5))
-    is_greater = PositiveInt_Impl_.greater_than(pos_int, five)
-    min = PositiveInt_Impl_.min(pos_int, five)
-    max = PositiveInt_Impl_.max(pos_int, five)
-    Log.trace("Greater than 5: " <> Std.string(is_greater) <> ", Min with 5: " <> PositiveInt_Impl_.to_string(min) <> ", Max with 5: " <> PositiveInt_Impl_.to_string(max), %{"fileName" => "Main.hx", "lineNumber" => 187, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Unexpected PositiveInt validation failure for " <> to_string(valid_num) <> ": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 190, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < valid_numbers.length)) do
+            valid_num = Enum.at(valid_numbers, g_counter)
+        g_counter + 1
+        g_array = PositiveInt_Impl_.parse(valid_num)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        pos_int = g_param_0
+        Log.trace("Valid PositiveInt: " <> PositiveInt_Impl_.to_string(pos_int), %{"fileName" => "Main.hx", "lineNumber" => 166, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
+        doubled = PositiveInt_Impl_.multiply(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(2)))
+        added = PositiveInt_Impl_.add(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(10)))
+        Log.trace("Doubled: " <> PositiveInt_Impl_.to_string(doubled) <> ", Added 10: " <> PositiveInt_Impl_.to_string(added), %{"fileName" => "Main.hx", "lineNumber" => 171, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
+        subtract_result = PositiveInt_Impl_.safe_sub(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
+        case subtract_result do
+          0 -> g_param_0 = elem(subtract_result, 1)
+        result = g_param_0
+        Log.trace("Safe subtraction result: " <> PositiveInt_Impl_.to_string(result), %{"fileName" => "Main.hx", "lineNumber" => 177, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
+          1 -> g_param_0 = elem(subtract_result, 1)
+        reason = g_param_0
+        Log.trace("Safe subtraction failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 179, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
+        end
+        five = ResultTools.unwrap(PositiveInt_Impl_.parse(5))
+        is_greater = PositiveInt_Impl_.greater_than(pos_int, five)
+        min = PositiveInt_Impl_.min(pos_int, five)
+        max = PositiveInt_Impl_.max(pos_int, five)
+        Log.trace("Greater than 5: " <> Std.string(is_greater) <> ", Min with 5: " <> PositiveInt_Impl_.to_string(min) <> ", Max with 5: " <> PositiveInt_Impl_.to_string(max), %{"fileName" => "Main.hx", "lineNumber" => 187, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Unexpected PositiveInt validation failure for " <> to_string(valid_num) <> ": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 190, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
+        end
+        loop.()
+      end
+    end).()
 
     invalid_numbers = [0, -1, -42, -100]
 
     g_counter = 0
-    Enum.each(g_array, fn invalid_num -> 
-      g_array = PositiveInt_Impl_.parse(invalid_num)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> Log.trace("ERROR: Invalid PositiveInt " <> to_string(invalid_num) <> " was accepted", %{"fileName" => "Main.hx", "lineNumber" => 200, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Correctly rejected " <> to_string(invalid_num) <> ": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 202, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < invalid_numbers.length)) do
+            invalid_num = Enum.at(invalid_numbers, g_counter)
+        g_counter + 1
+        g_array = PositiveInt_Impl_.parse(invalid_num)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        Log.trace("ERROR: Invalid PositiveInt " <> to_string(invalid_num) <> " was accepted", %{"fileName" => "Main.hx", "lineNumber" => 200, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Correctly rejected " <> to_string(invalid_num) <> ": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 202, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
+        end
+        loop.()
+      end
+    end).()
 
     five = ResultTools.unwrap(PositiveInt_Impl_.parse(5))
 
     ten = ResultTools.unwrap(PositiveInt_Impl_.parse(10))
 
     g_array = PositiveInt_Impl_.safe_sub(five, ten)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> Log.trace("ERROR: Subtraction that should fail succeeded", %{"fileName" => "Main.hx", "lineNumber" => 213, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-      {1, reason} -> g_array = elem(g_array, 1)
+    case g_array do
+      0 -> g_param_0 = elem(g_array, 1)
+    Log.trace("ERROR: Subtraction that should fail succeeded", %{"fileName" => "Main.hx", "lineNumber" => 213, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
+      1 -> g_param_0 = elem(g_array, 1)
+    reason = g_param_0
     Log.trace("Correctly prevented invalid subtraction: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 215, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
     end
 
@@ -218,18 +245,22 @@ defmodule Main do
     three = ResultTools.unwrap(PositiveInt_Impl_.parse(3))
 
     g_array = PositiveInt_Impl_.safe_div(twenty, four)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, result} -> g_array = elem(g_array, 1)
+    case g_array do
+      0 -> g_param_0 = elem(g_array, 1)
+    result = g_param_0
     Log.trace("20 / 4 = " <> PositiveInt_Impl_.to_string(result), %{"fileName" => "Main.hx", "lineNumber" => 225, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-      {1, reason} -> g_array = elem(g_array, 1)
+      1 -> g_param_0 = elem(g_array, 1)
+    reason = g_param_0
     Log.trace("Division failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 227, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
     end
 
     g_array = PositiveInt_Impl_.safe_div(twenty, three)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, result} -> g_array = elem(g_array, 1)
+    case g_array do
+      0 -> g_param_0 = elem(g_array, 1)
+    result = g_param_0
     Log.trace("20 / 3 = " <> PositiveInt_Impl_.to_string(result) <> " (unexpected success)", %{"fileName" => "Main.hx", "lineNumber" => 232, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
-      {1, reason} -> g_array = elem(g_array, 1)
+      1 -> g_param_0 = elem(g_array, 1)
+    reason = g_param_0
     Log.trace("20 / 3 correctly failed (not exact): " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 234, "className" => "Main", "methodName" => "testPositiveIntArithmetic"})
     end
   end
@@ -241,56 +272,79 @@ defmodule Main do
     valid_strings = ["hello", "world", "test", "NonEmptyString"]
 
     g_counter = 0
-    Enum.each(g_array, fn valid_str -> 
-      g_array = NonEmptyString_Impl_.parse(valid_str)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, _non_empty_str} -> g_array = elem(g2_array, 1)
-    length = length(NonEmptyString_Impl_)
-    upper = NonEmptyString_Impl_.to_upper_case(non_empty_str)
-    lower = NonEmptyString_Impl_.to_lower_case(non_empty_str)
-    Log.trace("Valid NonEmptyString \"" <> valid_str <> "\" - Length: " <> to_string(length) <> ", Upper: " <> NonEmptyString_Impl_.to_string(upper) <> ", Lower: " <> NonEmptyString_Impl_.to_string(lower), %{"fileName" => "Main.hx", "lineNumber" => 253, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-    other = ResultTools.unwrap(NonEmptyString_Impl_.parse("!"))
-    concatenated = NonEmptyString_Impl_ ++ non_empty_str
-    Log.trace("Concatenated with \"!\": " <> NonEmptyString_Impl_.to_string(concatenated), %{"fileName" => "Main.hx", "lineNumber" => 258, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-    first_char = NonEmptyString_Impl_.first_char(non_empty_str)
-    last_char = NonEmptyString_Impl_.last_char(non_empty_str)
-    Log.trace("First char: " <> NonEmptyString_Impl_.to_string(first_char) <> ", Last char: " <> NonEmptyString_Impl_.to_string(last_char), %{"fileName" => "Main.hx", "lineNumber" => 263, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-    g_array = NonEmptyString_Impl_.safe_substring(non_empty_str, 1)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, substr} -> g_array = elem(g4_array, 1)
-    Log.trace("Substring from index 1: " <> NonEmptyString_Impl_.to_string(substr), %{"fileName" => "Main.hx", "lineNumber" => 268, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-      {1, reason} -> g_array = elem(g4_array, 1)
-    Log.trace("Substring failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 270, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-    end
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Unexpected NonEmptyString validation failure for \"" <> valid_str <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 274, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < valid_strings.length)) do
+            valid_str = Enum.at(valid_strings, g_counter)
+        g_counter + 1
+        g_array = NonEmptyString_Impl_.parse(valid_str)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        non_empty_str = g_param_0
+        length = length(NonEmptyString_Impl_)
+        upper = NonEmptyString_Impl_.to_upper_case(non_empty_str)
+        lower = NonEmptyString_Impl_.to_lower_case(non_empty_str)
+        Log.trace("Valid NonEmptyString \"" <> valid_str <> "\" - Length: " <> to_string(length) <> ", Upper: " <> NonEmptyString_Impl_.to_string(upper) <> ", Lower: " <> NonEmptyString_Impl_.to_string(lower), %{"fileName" => "Main.hx", "lineNumber" => 253, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+        other = ResultTools.unwrap(NonEmptyString_Impl_.parse("!"))
+        concatenated = NonEmptyString_Impl_ ++ non_empty_str
+        Log.trace("Concatenated with \"!\": " <> NonEmptyString_Impl_.to_string(concatenated), %{"fileName" => "Main.hx", "lineNumber" => 258, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+        first_char = NonEmptyString_Impl_.first_char(non_empty_str)
+        last_char = NonEmptyString_Impl_.last_char(non_empty_str)
+        Log.trace("First char: " <> NonEmptyString_Impl_.to_string(first_char) <> ", Last char: " <> NonEmptyString_Impl_.to_string(last_char), %{"fileName" => "Main.hx", "lineNumber" => 263, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+        g_array = NonEmptyString_Impl_.safe_substring(non_empty_str, 1)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        substr = g_param_0
+        Log.trace("Substring from index 1: " <> NonEmptyString_Impl_.to_string(substr), %{"fileName" => "Main.hx", "lineNumber" => 268, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Substring failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 270, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+        end
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Unexpected NonEmptyString validation failure for \"" <> valid_str <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 274, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+        end
+        loop.()
+      end
+    end).()
 
     invalid_strings = ["", "   ", "\t\n"]
 
     g_counter = 0
-    Enum.each(g_array, fn invalid_str -> 
-      g_array = NonEmptyString_Impl_.parse(invalid_str)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> Log.trace("ERROR: Invalid NonEmptyString \"" <> invalid_str <> "\" was accepted", %{"fileName" => "Main.hx", "lineNumber" => 284, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Correctly rejected \"" <> invalid_str <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 286, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < invalid_strings.length)) do
+            invalid_str = Enum.at(invalid_strings, g_counter)
+        g_counter + 1
+        g_array = NonEmptyString_Impl_.parse(invalid_str)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        Log.trace("ERROR: Invalid NonEmptyString \"" <> invalid_str <> "\" was accepted", %{"fileName" => "Main.hx", "lineNumber" => 284, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Correctly rejected \"" <> invalid_str <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 286, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+        end
+        loop.()
+      end
+    end).()
 
     whitespace_strings = ["  hello  ", "\tworld\n", "  test  "]
 
     g_counter = 0
-    Enum.each(g_array, fn whitespace_str -> 
-      g_array = NonEmptyString_Impl_.parse_and_trim(whitespace_str)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, trimmed} -> g_array = elem(g2_array, 1)
-    Log.trace("Trimmed \"" <> whitespace_str <> "\" to \"" <> NonEmptyString_Impl_.to_string(trimmed) <> "\"", %{"fileName" => "Main.hx", "lineNumber" => 296, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Trim and parse failed for \"" <> whitespace_str <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 298, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < whitespace_strings.length)) do
+            whitespace_str = Enum.at(whitespace_strings, g_counter)
+        g_counter + 1
+        g_array = NonEmptyString_Impl_.parse_and_trim(whitespace_str)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        trimmed = g_param_0
+        Log.trace("Trimmed \"" <> whitespace_str <> "\" to \"" <> NonEmptyString_Impl_.to_string(trimmed) <> "\"", %{"fileName" => "Main.hx", "lineNumber" => 296, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Trim and parse failed for \"" <> whitespace_str <> "\": " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 298, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+        end
+        loop.()
+      end
+    end).()
 
     test_str = ResultTools.unwrap(NonEmptyString_Impl_.parse("Hello World"))
 
@@ -303,10 +357,11 @@ defmodule Main do
     Log.trace("String operations - Starts with \"Hello\": " <> Std.string(starts_with_hello) <> ", Ends with \"World\": " <> Std.string(ends_with_world) <> ", Contains space: " <> Std.string(contains_space), %{"fileName" => "Main.hx", "lineNumber" => 307, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
 
     g_array = NonEmptyString_Impl_.safe_replace(test_str, "World", "Universe")
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, replaced} -> g_array = elem(g_array, 1)
+    case g_array do
+      0 -> replaced = elem(g_array, 1)
     Log.trace("Replaced \"World\" with \"Universe\": " <> NonEmptyString_Impl_.to_string(replaced), %{"fileName" => "Main.hx", "lineNumber" => 312, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-      {1, reason} -> g_array = elem(g_array, 1)
+      1 -> g_param_0 = elem(g_array, 1)
+    reason = g_param_0
     Log.trace("Replacement failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 314, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
     end
 
@@ -315,9 +370,14 @@ defmodule Main do
     Log.trace("Split by space: " <> to_string(parts.length) <> " parts", %{"fileName" => "Main.hx", "lineNumber" => 319, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
 
     g_counter = 0
-    Enum.each(g_array, fn part -> 
-      Log.trace("  Part: " <> NonEmptyString_Impl_.to_string(part), %{"fileName" => "Main.hx", "lineNumber" => 321, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
-    end)
+    (fn loop ->
+      if ((g_counter < parts.length)) do
+            part = Enum.at(parts, g_counter)
+        g_counter + 1
+        Log.trace("  Part: " <> NonEmptyString_Impl_.to_string(part), %{"fileName" => "Main.hx", "lineNumber" => 321, "className" => "Main", "methodName" => "testNonEmptyStringOperations"})
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe testFunctionalComposition"
@@ -342,13 +402,13 @@ defmodule Main do
 
     composition_result = Main.build_user_profile("user123", "  alice@example.com  ", "5")
 
-    case (case composition_result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, profile} -> g_array = elem(compositionResult, 1)
+    case composition_result do
+      0 -> profile = elem(composition_result, 1)
     Log.trace("User profile created successfully:", %{"fileName" => "Main.hx", "lineNumber" => 364, "className" => "Main", "methodName" => "testFunctionalComposition"})
     Log.trace("  UserId: " <> UserId_Impl_.to_string(profile.user_id), %{"fileName" => "Main.hx", "lineNumber" => 365, "className" => "Main", "methodName" => "testFunctionalComposition"})
     Log.trace("  Email: " <> Email_Impl_.to_string(profile.email), %{"fileName" => "Main.hx", "lineNumber" => 366, "className" => "Main", "methodName" => "testFunctionalComposition"})
     Log.trace("  Score: " <> PositiveInt_Impl_.to_string(profile.score), %{"fileName" => "Main.hx", "lineNumber" => 367, "className" => "Main", "methodName" => "testFunctionalComposition"})
-      {1, reason} -> g_array = elem(compositionResult, 1)
+      1 -> reason = elem(composition_result, 1)
     Log.trace("User profile creation failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 369, "className" => "Main", "methodName" => "testFunctionalComposition"})
     end
   end
@@ -360,29 +420,43 @@ defmodule Main do
     invalid_inputs = [%{"email" => "invalid-email", "userId" => "ab", "score" => "0"}, %{"email" => "user@domain", "userId" => "user@123", "score" => "-5"}, %{"email" => "", "userId" => "", "score" => "not-a-number"}]
 
     g_counter = 0
-    Enum.each(g_array, fn input -> 
-      g_array = Main.build_user_profile(input.user_id, input.email, input.score)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> Log.trace("ERROR: Invalid input was accepted", %{"fileName" => "Main.hx", "lineNumber" => 389, "className" => "Main", "methodName" => "testErrorHandling"})
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Correctly rejected invalid input: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 391, "className" => "Main", "methodName" => "testErrorHandling"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < invalid_inputs.length)) do
+            input = Enum.at(invalid_inputs, g_counter)
+        g_counter + 1
+        g_array = Main.build_user_profile(input.user_id, input.email, input.score)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        Log.trace("ERROR: Invalid input was accepted", %{"fileName" => "Main.hx", "lineNumber" => 389, "className" => "Main", "methodName" => "testErrorHandling"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Correctly rejected invalid input: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 391, "className" => "Main", "methodName" => "testErrorHandling"})
+        end
+        loop.()
+      end
+    end).()
 
     Log.trace("Testing edge cases that should succeed:", %{"fileName" => "Main.hx", "lineNumber" => 396, "className" => "Main", "methodName" => "testErrorHandling"})
 
     edge_cases = [%{"email" => "a@b.co", "userId" => "usr", "score" => "1"}, %{"email" => "very.long.email.address@very.long.domain.name.example.com", "userId" => "user123456789", "score" => "999"}]
 
     g_counter = 0
-    Enum.each(g_array, fn edge_case -> 
-      g_array = Main.build_user_profile(edge_case.user_id, edge_case.email, edge_case.score)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, profile} -> g_array = elem(g2_array, 1)
-    Log.trace("Edge case succeeded: UserId " <> UserId_Impl_.to_string(profile.user_id) <> ", Email " <> Email_Impl_.get_domain(profile.email), %{"fileName" => "Main.hx", "lineNumber" => 406, "className" => "Main", "methodName" => "testErrorHandling"})
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Edge case failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 408, "className" => "Main", "methodName" => "testErrorHandling"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < edge_cases.length)) do
+            edge_case = Enum.at(edge_cases, g_counter)
+        g_counter + 1
+        g_array = Main.build_user_profile(edge_case.user_id, edge_case.email, edge_case.score)
+        case g_array do
+          0 -> g_param_0 = elem(g_array, 1)
+        profile = g_param_0
+        Log.trace("Edge case succeeded: UserId " <> UserId_Impl_.to_string(profile.user_id) <> ", Email " <> Email_Impl_.get_domain(profile.email), %{"fileName" => "Main.hx", "lineNumber" => 406, "className" => "Main", "methodName" => "testErrorHandling"})
+          1 -> g_param_0 = elem(g_array, 1)
+        reason = g_param_0
+        Log.trace("Edge case failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 408, "className" => "Main", "methodName" => "testErrorHandling"})
+        end
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe testRealWorldScenarios"
@@ -394,31 +468,45 @@ defmodule Main do
     valid_users = []
 
     g_counter = 0
-    Enum.each(g_array, fn user_data -> 
-      user_result = Main.create_user(user_data.user_id, user_data.email, user_data.preferred_name)
-      case (case user_result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, user} -> g_array = elem(userResult, 1)
-    valid_users ++ [user]
-    Log.trace("User created: " <> NonEmptyString_Impl_.to_string(user.display_name) <> " (" <> Email_Impl_.to_string(user.email) <> ")", %{"fileName" => "Main.hx", "lineNumber" => 433, "className" => "Main", "methodName" => "testRealWorldScenarios"})
-      {1, reason} -> g_array = elem(userResult, 1)
-    Log.trace("User creation failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 435, "className" => "Main", "methodName" => "testRealWorldScenarios"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < registration_data.length)) do
+            user_data = Enum.at(registration_data, g_counter)
+        g_counter + 1
+        user_result = Main.create_user(user_data.user_id, user_data.email, user_data.preferred_name)
+        case user_result do
+          0 -> g_param_0 = elem(user_result, 1)
+        user = g_param_0
+        valid_users = valid_users ++ [user]
+        Log.trace("User created: " <> NonEmptyString_Impl_.to_string(user.display_name) <> " (" <> Email_Impl_.to_string(user.email) <> ")", %{"fileName" => "Main.hx", "lineNumber" => 433, "className" => "Main", "methodName" => "testRealWorldScenarios"})
+          1 -> g_param_0 = elem(user_result, 1)
+        reason = g_param_0
+        Log.trace("User creation failed: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 435, "className" => "Main", "methodName" => "testRealWorldScenarios"})
+        end
+        loop.()
+      end
+    end).()
 
     Log.trace("Successfully created " <> to_string(valid_users.length) <> " users", %{"fileName" => "Main.hx", "lineNumber" => 439, "className" => "Main", "methodName" => "testRealWorldScenarios"})
 
     config_data = [%{"timeout" => "30", "retries" => "3", "name" => "production"}, %{"timeout" => "0", "retries" => "5", "name" => ""}, %{"timeout" => "60", "retries" => "-1", "name" => "test"}]
 
     g_counter = 0
-    Enum.each(g_array, fn config -> 
-      config_result = Main.validate_configuration(config.timeout, config.retries, config.name)
-      case (case config_result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, _valid_config} -> g_array = elem(configResult, 1)
-    Log.trace("Config valid: " <> NonEmptyString_Impl_.to_string(valid_config.name) <> ", timeout: " <> PositiveInt_Impl_.to_string(valid_config.timeout) <> "s, retries: " <> PositiveInt_Impl_.to_string(valid_config.retries), %{"fileName" => "Main.hx", "lineNumber" => 452, "className" => "Main", "methodName" => "testRealWorldScenarios"})
-      {1, reason} -> g_array = elem(configResult, 1)
-    Log.trace("Config invalid: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 454, "className" => "Main", "methodName" => "testRealWorldScenarios"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < config_data.length)) do
+            config = Enum.at(config_data, g_counter)
+        g_counter + 1
+        config_result = Main.validate_configuration(config.timeout, config.retries, config.name)
+        case config_result do
+          0 -> g_param_0 = elem(config_result, 1)
+        valid_config = g_param_0
+        Log.trace("Config valid: " <> NonEmptyString_Impl_.to_string(valid_config.name) <> ", timeout: " <> PositiveInt_Impl_.to_string(valid_config.timeout) <> "s, retries: " <> PositiveInt_Impl_.to_string(valid_config.retries), %{"fileName" => "Main.hx", "lineNumber" => 452, "className" => "Main", "methodName" => "testRealWorldScenarios"})
+          1 -> g_param_0 = elem(config_result, 1)
+        reason = g_param_0
+        Log.trace("Config invalid: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 454, "className" => "Main", "methodName" => "testRealWorldScenarios"})
+        end
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe buildUserProfile"

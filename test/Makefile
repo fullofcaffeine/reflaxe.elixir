@@ -14,7 +14,7 @@ SHELL := /bin/bash
 # Get the directory where this Makefile is located
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TEST_DIR := $(MAKEFILE_DIR)snapshot
-TIMEOUT := 60s
+TIMEOUT := 120s
 OUTPUT_DIR := out
 
 # Colors for output

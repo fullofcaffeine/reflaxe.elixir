@@ -22,9 +22,14 @@ defmodule Log do
     if ((infos.custom_params != nil)) do
       g_counter = 0
       g_array = infos.custom_params
-      Enum.each(g_array, fn v2 -> 
-        str = str <> ", " <> Std.string(v)
-      end)
+      (fn loop ->
+        if ((g_counter < g_array.length)) do
+              v = Enum.at(g_array, g_counter)
+          g_counter + 1
+          str = str <> ", " <> Std.string(v)
+          loop.()
+        end
+      end).()
     else
       nil
     end

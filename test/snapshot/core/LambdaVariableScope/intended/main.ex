@@ -24,7 +24,14 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.filter(items, fn item -> item != target_item end)
+    (fn loop ->
+      if ((g_counter < items.length)) do
+            v = Enum.at(items, g_counter)
+        g_counter + 1
+        g_array = if ((v != target_item)), do: g_array ++ [v], else: g_array
+        loop.()
+      end
+    end).()
     temp_array = g_array
 
     todos = [%{"id" => 1, "name" => "first"}, %{"id" => 2, "name" => "second"}]
@@ -33,7 +40,14 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.filter(todos, fn item -> item.id != id end)
+    (fn loop ->
+      if ((g_counter < todos.length)) do
+            v = Enum.at(todos, g_counter)
+        g_counter + 1
+        g_array = if ((v.id != id)), do: g_array ++ [v], else: g_array
+        loop.()
+      end
+    end).()
     temp_array1 = g_array
   end
 
@@ -48,14 +62,28 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.map(numbers, fn item -> item * multiplier end)
+    (fn loop ->
+      if ((g_counter < numbers.length)) do
+            v = Enum.at(numbers, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [(v * multiplier)]
+        loop.()
+      end
+    end).()
     temp_array = g_array
 
     prefix = "Item: "
 
     g_array = []
     g_counter = 0
-    Enum.map(numbers, fn item -> prefix <> Std.string(item) end)
+    (fn loop ->
+      if ((g_counter < numbers.length)) do
+            v = Enum.at(numbers, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [prefix <> Std.string(v)]
+        loop.()
+      end
+    end).()
     temp_array1 = g_array
   end
 
@@ -71,7 +99,26 @@ defmodule Main do
 
     g_counter = 0
 
-    Enum.map(data, fn item -> temp_array1 end)
+    (fn loop ->
+      if ((g_counter < data.length)) do
+            v = Enum.at(data, g_counter)
+        g_counter + 1
+        g_array = []
+        g_counter = 0
+        g_array = v
+        (fn loop ->
+          if ((g_counter < g_array.length)) do
+                v = Enum.at(g_array, g_counter)
+            g_counter + 1
+            g_array = if ((v > threshold)), do: g_array ++ [v], else: g_array
+            loop.()
+          end
+        end).()
+        temp_array1 = g_array
+        g_array = g_array ++ [temp_array1]
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe testMultipleOuterVariables"
@@ -89,12 +136,26 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.filter(items, fn item -> item != exclude_item end)
+    (fn loop ->
+      if ((g_counter < items.length)) do
+            v = Enum.at(items, g_counter)
+        g_counter + 1
+        g_array = if ((v != exclude_item)), do: g_array ++ [v], else: g_array
+        loop.()
+      end
+    end).()
     temp_array1 = g_array
 
     g_array = []
     g_counter = 0
-    Enum.map(temp_array1, fn item -> prefix <> item <> suffix end)
+    (fn loop ->
+      if ((g_counter < temp_array1.length)) do
+            v = Enum.at(temp_array1, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [prefix <> v <> suffix]
+        loop.()
+      end
+    end).()
     temp_array = g_array
   end
 

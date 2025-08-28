@@ -31,59 +31,44 @@ defmodule SysTools do
       bs_buf = StringBuf.new()
       g_counter = 0
       g_array = argument.length
-      (
-        # Simple module-level pattern (inline for now)
-        loop_helper = fn condition_fn, body_fn, loop_fn ->
-          if condition_fn.() do
-            body_fn.()
-            loop_fn.(condition_fn, body_fn, loop_fn)
-          else
-            nil
-          end
-        end
-      
-        loop_helper.(
-          fn -> ((g_counter < g_array)) end,
-          fn ->
-            i = g_counter + 1
-            g_array = argument.char_code_at(i)
-            if ((g_array == nil)) do
-              c = g_array
-              if ((bs_buf.b.length > 0)) do
-                x = bs_buf.b
-                result_b = result_b <> Std.string(x)
-                bs_buf = StringBuf.new()
-              else
-                nil
-              end
-              c = c
-              result_b = result_b <> String.from_char_code(c)
-            else
-              case (g_array) do
-                _ ->
-                  bs = bs_buf.b
-              result_b = result_b <> Std.string(bs)
-              result_b = result_b <> Std.string(bs)
+      (fn loop ->
+        if ((g_counter < g_array)) do
+              i = g_counter + 1
+          g_array = argument.char_code_at(i)
+          if ((g_array == nil)) do
+            c = g_array
+            if ((bs_buf.b.length > 0)) do
+              x = bs_buf.b
+              result_b = result_b <> Std.string(x)
               bs_buf = StringBuf.new()
-              result_b = result_b <> "\\\""
-                _ ->
-                  bs_buf.b = bs_buf.b <> "\\"
-                _ -> c = g_array
-              if ((bs_buf.b.length > 0)) do
-                x = bs_buf.b
-                result_b = result_b <> Std.string(x)
-                bs_buf = StringBuf.new()
-              else
-                nil
-              end
-              c = c
-              result_b = result_b <> String.from_char_code(c)
-              end
+            else
+              nil
             end
-          end,
-          loop_helper
-        )
-      )
+            c = c
+            result_b = result_b <> String.from_char_code(c)
+          else
+            case g_array do
+              34 -> bs = bs_buf.b
+            result_b = result_b <> Std.string(bs)
+            result_b = result_b <> Std.string(bs)
+            bs_buf = StringBuf.new()
+            result_b = result_b <> "\\\""
+              92 -> bs_buf.b = bs_buf.b <> "\\"
+              _ -> c = g_array
+            if ((bs_buf.b.length > 0)) do
+              x = bs_buf.b
+              result_b = result_b <> Std.string(x)
+              bs_buf = StringBuf.new()
+            else
+              nil
+            end
+            c = c
+            result_b = result_b <> String.from_char_code(c)
+            end
+          end
+          loop.()
+        end
+      end).()
       x = bs_buf.b
       result_b = result_b <> Std.string(x)
       if needquote do
@@ -103,29 +88,16 @@ defmodule SysTools do
       result_b = ""
       g_counter = 0
       g_array = argument.length
-      (
-        # Simple module-level pattern (inline for now)
-        loop_helper = fn condition_fn, body_fn, loop_fn ->
-          if condition_fn.() do
-            body_fn.()
-            loop_fn.(condition_fn, body_fn, loop_fn)
-          else
-            nil
-          end
+      (fn loop ->
+        if ((g_counter < g_array)) do
+              i = g_counter + 1
+          c = argument.char_code_at(i)
+          if ((SysTools.win_meta_characters.index_of(c) >= 0)), do: result_b = result_b <> "^", else: nil
+          c = c
+          result_b = result_b <> String.from_char_code(c)
+          loop.()
         end
-      
-        loop_helper.(
-          fn -> ((g_counter < g_array)) end,
-          fn ->
-            i = g_counter + 1
-            c = argument.char_code_at(i)
-            if ((SysTools.win_meta_characters.index_of(c) >= 0)), do: result_b = result_b <> "^", else: nil
-            c = c
-            result_b = result_b <> String.from_char_code(c)
-          end,
-          loop_helper
-        )
-      )
+      end).()
       result_b
     else
       argument

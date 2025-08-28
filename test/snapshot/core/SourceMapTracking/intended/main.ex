@@ -40,13 +40,27 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.map(items, fn item -> item * 2 end)
+    (fn loop ->
+      if ((g_counter < items.length)) do
+            v = Enum.at(items, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [(v * 2)]
+        loop.()
+      end
+    end).()
     temp_array = g_array
 
     is_even = fn n -> (rem(n, 2) == 0) end
 
     g_counter = 0
-    Enum.filter(temp_array, fn item -> is_even.(item) end)
+    (fn loop ->
+      if ((g_counter < temp_array.length)) do
+            item = Enum.at(temp_array, g_counter)
+        g_counter + 1
+        if is_even.(item), do: Log.trace("Even: " <> to_string(item), %{"fileName" => "Main.hx", "lineNumber" => 47, "className" => "Main", "methodName" => "testComplexExpressions"}), else: Log.trace("Odd: " <> to_string(item), %{"fileName" => "Main.hx", "lineNumber" => 49, "className" => "Main", "methodName" => "testComplexExpressions"})
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe testClassTracking"

@@ -10,17 +10,17 @@ defmodule Int64Helper do
   def parse_string(s_param) do
     temp_int64 = nil
     temp_int641 = nil
+    temp_right = nil
     temp_number = nil
     temp_number1 = nil
     temp_number2 = nil
-    temp_right = nil
+    temp_right1 = nil
     temp_number3 = nil
     temp_number4 = nil
     temp_number5 = nil
-    temp_right1 = nil
+    temp_right2 = nil
     temp_number6 = nil
     temp_number7 = nil
-    temp_right2 = nil
 
     base_high = 0
 
@@ -53,191 +53,188 @@ defmodule Int64Helper do
 
     g_array = len
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        digit_int = (s.char_code_at(((len - 1) - _i)) - 48)
+        if (((digit_int < 0) || (digit_int > 9))) do
+          raise "NumberFormatError"
         else
           nil
         end
-      end
-
-      loop_helper.(
-        fn -> ((g_counter < g_array)) end,
-        fn ->
-          i = g_counter + 1
-          digit_int = (s.char_code_at(((len - 1) - i)) - 48)
-          if (((digit_int < 0) || (digit_int > 9))) do
-            raise "NumberFormatError"
-          else
-            nil
-          end
-          if ((digit_int != 0)) do
-            digit_low = nil
-            digit_high = nil
-            digit_high = Bitwise.bsr(digit_int, 31)
-            digit_low = digit_int
-            if s_is_negative do
-              b_low = nil
-              b_high = nil
-              mask = 65535
-              al = (temp_int641.low and mask)
-              ah = Bitwise.bsr(temp_int641.low, 16)
-              bl = (digit_low and mask)
-              bh = Bitwise.bsr(digit_low, 16)
-              p00 = (al * bl)
-              p10 = (ah * bl)
-              p01 = (al * bh)
-              p11 = (ah * bh)
-              low = p00
-              high = ((p11 + (Bitwise.bsr(p01, 16))) + (Bitwise.bsr(p10, 16)))
-              p01 = Bitwise.bsl(p01, 16)
-              low = (low + p01)
-              if ((Int32_Impl_.ucompare(low, p01) < 0)) do
-                ret = high + 1
-                high = high
-                temp_number = ret
-                temp_number
-              else
-                nil
-              end
-              p10 = Bitwise.bsl(p10, 16)
-              low = (low + p10)
-              if ((Int32_Impl_.ucompare(low, p10) < 0)) do
-                ret = high + 1
-                high = high
-                temp_number1 = ret
-                temp_number1
-              else
-                nil
-              end
-              high = (high + (((temp_int641.low * digit_high) + (temp_int641.high * digit_low))))
-              b_high = high
-              b_low = low
-              high = (temp_int64.high - b_high)
-              low = (temp_int64.low - b_low)
-              if ((Int32_Impl_.ucompare(temp_int64.low, b_low) < 0)) do
-                ret = high - 1
-                high = high
-                temp_number2 = ret
-                temp_number2
-              else
-                nil
-              end
-              x = Int64.new(high, low)
-              this = nil
-              this = x
-              temp_right = this
-              temp_int64 = temp_right
-              if (not ((temp_int64.high < 0))) do
-                raise "NumberFormatError: Underflow"
-              else
-                nil
-              end
+        if ((digit_int != 0)) do
+          digit_low = nil
+          digit_high = nil
+          digit_high = Bitwise.bsr(digit_int, 31)
+          digit_low = digit_int
+          if s_is_negative do
+            temp_right = nil
+            b_low = nil
+            b_high = nil
+            mask = 65535
+            al = (temp_int641.low and mask)
+            ah = Bitwise.bsr(temp_int641.low, 16)
+            bl = (digit_low and mask)
+            bh = Bitwise.bsr(digit_low, 16)
+            p00 = (al * bl)
+            p10 = (ah * bl)
+            p01 = (al * bh)
+            p11 = (ah * bh)
+            low = p00
+            high = ((p11 + (Bitwise.bsr(p01, 16))) + (Bitwise.bsr(p10, 16)))
+            p01 = Bitwise.bsl(p01, 16)
+            low = (low + p01)
+            if ((Int32_Impl_.ucompare(low, p01) < 0)) do
+              ret = high + 1
+              high = high
+              temp_number = ret
+              temp_number
             else
-              b_low = nil
-              b_high = nil
-              mask = 65535
-              al = (temp_int641.low and mask)
-              ah = Bitwise.bsr(temp_int641.low, 16)
-              bl = (digit_low and mask)
-              bh = Bitwise.bsr(digit_low, 16)
-              p00 = (al * bl)
-              p10 = (ah * bl)
-              p01 = (al * bh)
-              p11 = (ah * bh)
-              low = p00
-              high = ((p11 + (Bitwise.bsr(p01, 16))) + (Bitwise.bsr(p10, 16)))
-              p01 = Bitwise.bsl(p01, 16)
-              low = (low + p01)
-              if ((Int32_Impl_.ucompare(low, p01) < 0)) do
-                ret = high + 1
-                high = high
-                temp_number3 = ret
-                temp_number3
-              else
-                nil
-              end
-              p10 = Bitwise.bsl(p10, 16)
-              low = (low + p10)
-              if ((Int32_Impl_.ucompare(low, p10) < 0)) do
-                ret = high + 1
-                high = high
-                temp_number4 = ret
-                temp_number4
-              else
-                nil
-              end
-              high = (high + (((temp_int641.low * digit_high) + (temp_int641.high * digit_low))))
-              b_high = high
-              b_low = low
-              high = (temp_int64.high + b_high)
-              low = (temp_int64.low + b_low)
-              if ((Int32_Impl_.ucompare(low, temp_int64.low) < 0)) do
-                ret = high + 1
-                high = high
-                temp_number5 = ret
-                temp_number5
-              else
-                nil
-              end
-              x = Int64.new(high, low)
-              this = nil
-              this = x
-              temp_right1 = this
-              temp_int64 = temp_right1
-              if ((temp_int64.high < 0)) do
-                raise "NumberFormatError: Overflow"
-              else
-                nil
-              end
+              nil
+            end
+            p10 = Bitwise.bsl(p10, 16)
+            low = (low + p10)
+            if ((Int32_Impl_.ucompare(low, p10) < 0)) do
+              temp_number1 = nil
+              ret = high + 1
+              high = high
+              temp_number1 = ret
+              temp_number1
+            else
+              nil
+            end
+            high = (high + (((temp_int641.low * digit_high) + (temp_int641.high * digit_low))))
+            b_high = high
+            b_low = low
+            high = (temp_int64.high - b_high)
+            low = (temp_int64.low - b_low)
+            if ((Int32_Impl_.ucompare(temp_int64.low, b_low) < 0)) do
+              temp_number2 = nil
+              ret = high - 1
+              high = high
+              temp_number2 = ret
+              temp_number2
+            else
+              nil
+            end
+            x = Int64.new(high, low)
+            this = nil
+            this = x
+            temp_right = this
+            temp_int64 = temp_right
+            if (not ((temp_int64.high < 0))) do
+              raise "NumberFormatError: Underflow"
+            else
+              nil
             end
           else
-            nil
+            temp_right1 = nil
+            b_low = nil
+            b_high = nil
+            mask = 65535
+            al = (temp_int641.low and mask)
+            ah = Bitwise.bsr(temp_int641.low, 16)
+            bl = (digit_low and mask)
+            bh = Bitwise.bsr(digit_low, 16)
+            p00 = (al * bl)
+            p10 = (ah * bl)
+            p01 = (al * bh)
+            p11 = (ah * bh)
+            low = p00
+            high = ((p11 + (Bitwise.bsr(p01, 16))) + (Bitwise.bsr(p10, 16)))
+            p01 = Bitwise.bsl(p01, 16)
+            low = (low + p01)
+            if ((Int32_Impl_.ucompare(low, p01) < 0)) do
+              temp_number3 = nil
+              ret = high + 1
+              high = high
+              temp_number3 = ret
+              temp_number3
+            else
+              nil
+            end
+            p10 = Bitwise.bsl(p10, 16)
+            low = (low + p10)
+            if ((Int32_Impl_.ucompare(low, p10) < 0)) do
+              temp_number4 = nil
+              ret = high + 1
+              high = high
+              temp_number4 = ret
+              temp_number4
+            else
+              nil
+            end
+            high = (high + (((temp_int641.low * digit_high) + (temp_int641.high * digit_low))))
+            b_high = high
+            b_low = low
+            high = (temp_int64.high + b_high)
+            low = (temp_int64.low + b_low)
+            if ((Int32_Impl_.ucompare(low, temp_int64.low) < 0)) do
+              temp_number5 = nil
+              ret = high + 1
+              high = high
+              temp_number5 = ret
+              temp_number5
+            else
+              nil
+            end
+            x = Int64.new(high, low)
+            this = nil
+            this = x
+            temp_right1 = this
+            temp_int64 = temp_right1
+            if ((temp_int64.high < 0)) do
+              raise "NumberFormatError: Overflow"
+            else
+              nil
+            end
           end
-          mask = 65535
-          al = (temp_int641.low and mask)
-          ah = Bitwise.bsr(temp_int641.low, 16)
-          bl = (base_low and mask)
-          bh = Bitwise.bsr(base_low, 16)
-          p00 = (al * bl)
-          p10 = (ah * bl)
-          p01 = (al * bh)
-          p11 = (ah * bh)
-          low = p00
-          high = ((p11 + (Bitwise.bsr(p01, 16))) + (Bitwise.bsr(p10, 16)))
-          p01 = Bitwise.bsl(p01, 16)
-          low = (low + p01)
-          if ((Int32_Impl_.ucompare(low, p01) < 0)) do
-            ret = high + 1
-            high = high
-            temp_number6 = ret
-            temp_number6
-          else
-            nil
-          end
-          p10 = Bitwise.bsl(p10, 16)
-          low = (low + p10)
-          if ((Int32_Impl_.ucompare(low, p10) < 0)) do
-            ret = high + 1
-            high = high
-            temp_number7 = ret
-            temp_number7
-          else
-            nil
-          end
-          high = (high + (((temp_int641.low * base_high) + (temp_int641.high * base_low))))
-          x = Int64.new(high, low)
-          this = nil
-          this = x
-          temp_right2 = this
-          temp_int641 = temp_right2
-        end,
-        loop_helper
-      )
-    )
+        else
+          nil
+        end
+        temp_right2 = nil
+        mask = 65535
+        al = (temp_int641.low and mask)
+        ah = Bitwise.bsr(temp_int641.low, 16)
+        bl = (base_low and mask)
+        bh = Bitwise.bsr(base_low, 16)
+        p00 = (al * bl)
+        p10 = (ah * bl)
+        p01 = (al * bh)
+        p11 = (ah * bh)
+        low = p00
+        high = ((p11 + (Bitwise.bsr(p01, 16))) + (Bitwise.bsr(p10, 16)))
+        p01 = Bitwise.bsl(p01, 16)
+        low = (low + p01)
+        if ((Int32_Impl_.ucompare(low, p01) < 0)) do
+          temp_number6 = nil
+          ret = high + 1
+          high = high
+          temp_number6 = ret
+          temp_number6
+        else
+          nil
+        end
+        p10 = Bitwise.bsl(p10, 16)
+        low = (low + p10)
+        if ((Int32_Impl_.ucompare(low, p10) < 0)) do
+          temp_number7 = nil
+          ret = high + 1
+          high = high
+          temp_number7 = ret
+          temp_number7
+        else
+          nil
+        end
+        high = (high + (((temp_int641.low * base_high) + (temp_int641.high * base_low))))
+        x = Int64.new(high, low)
+        this = nil
+        this = x
+        temp_right2 = this
+        temp_int641 = temp_right2
+        loop.()
+      end
+    end).()
 
     temp_int64
   end
@@ -283,76 +280,63 @@ defmodule Int64Helper do
 
     i = 0
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((rest >= 1)) end,
-        fn ->
-          curr = rem(rest, 2)
-          rest = (rest / 2)
-          if ((curr >= 1)) do
-            a_low = nil
-            a_high = nil
-            a_high = 0
-            a_low = 1
-            _b = i
-            _b = _b and 63
-            if ((_b == 0)) do
-              high = a_high
-              low = a_low
+    (fn loop ->
+      if ((rest >= 1)) do
+            curr = rem(rest, 2)
+        rest = (rest / 2)
+        if ((curr >= 1)) do
+          a_low = nil
+          a_high = nil
+          a_high = 0
+          a_low = 1
+          _b = _i
+          _b = _b and 63
+          if ((_b == 0)) do
+            high = a_high
+            low = a_low
+            x = Int64.new(high, low)
+            this = nil
+            this = x
+            temp_int641 = this
+          else
+            if ((_b < 32)) do
+              high = (Bitwise.bsl(a_high, _b) or Bitwise.bsr(a_low, (32 - _b)))
+              low = Bitwise.bsl(a_low, _b)
               x = Int64.new(high, low)
               this = nil
               this = x
               temp_int641 = this
             else
-              if ((_b < 32)) do
-                high = (Bitwise.bsl(a_high, _b) or Bitwise.bsr(a_low, (32 - _b)))
-                low = Bitwise.bsl(a_low, _b)
-                x = Int64.new(high, low)
-                this = nil
-                this = x
-                temp_int641 = this
-              else
-                high = Bitwise.bsl(a_low, (_b - 32))
-                x = Int64.new(high, 0)
-                this = nil
-                this = x
-                temp_int641 = this
-              end
+              high = Bitwise.bsl(a_low, (_b - 32))
+              x = Int64.new(high, 0)
+              this = nil
+              this = x
+              temp_int641 = this
             end
-            _b = temp_int641
-            high = (temp_int64.high + _b.high)
-            low = (temp_int64.low + _b.low)
-            if ((Int32_Impl_.ucompare(low, temp_int64.low) < 0)) do
-              ret = high + 1
-              high = high
-              temp_number1 = ret
-              temp_number1
-            else
-              nil
-            end
-            x = Int64.new(high, low)
-            this = nil
-            this = x
-            temp_right = this
-            temp_int64 = temp_right
+          end
+          _b = temp_int641
+          high = (temp_int64.high + _b.high)
+          low = (temp_int64.low + _b.low)
+          if ((Int32_Impl_.ucompare(low, temp_int64.low) < 0)) do
+            ret = high + 1
+            high = high
+            temp_number1 = ret
+            temp_number1
           else
             nil
           end
-          i + 1
-        end,
-        loop_helper
-      )
-    )
+          x = Int64.new(high, low)
+          this = nil
+          this = x
+          temp_right = this
+          temp_int64 = temp_right
+        else
+          nil
+        end
+        _i + 1
+        loop.()
+      end
+    end).()
 
     if neg do
       high = Bitwise.bnot(temp_int64.high)

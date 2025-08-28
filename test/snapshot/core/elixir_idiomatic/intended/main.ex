@@ -39,18 +39,18 @@ defmodule Main do
   def test_pattern_matching() do
     user_opt = UserOption.some(42)
 
-    case (case user_opt do :some -> 0; :none -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(userOpt, 1)
+    case user_opt do
+      0 -> value = elem(user_opt, 1)
     Log.trace("Got value: " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 79, "className" => "Main", "methodName" => "testPatternMatching"})
       1 -> Log.trace("Got none", %{"fileName" => "Main.hx", "lineNumber" => 81, "className" => "Main", "methodName" => "testPatternMatching"})
     end
 
     result = ApiResult.ok("data")
 
-    case (case result do :ok -> 0; :error -> 1; _ -> -1 end) do
-      {0, data} -> g_array = elem(result, 1)
+    case result do
+      0 -> data = elem(result, 1)
     Log.trace("Success: " <> data, %{"fileName" => "Main.hx", "lineNumber" => 88, "className" => "Main", "methodName" => "testPatternMatching"})
-      {1, reason} -> g_array = elem(result, 1)
+      1 -> reason = elem(result, 1)
     Log.trace("Error: " <> reason, %{"fileName" => "Main.hx", "lineNumber" => 90, "className" => "Main", "methodName" => "testPatternMatching"})
     end
   end

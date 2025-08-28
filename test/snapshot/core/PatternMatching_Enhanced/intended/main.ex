@@ -27,11 +27,14 @@ defmodule Main do
 
     temp_string = nil
 
-    case (case color do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end) do
+    case color do
       0 -> temp_string = "red"
       1 -> temp_string = "green"
       2 -> temp_string = "blue"
-      3 -> temp_string = "custom"
+      3 -> g_param_0 = elem(color, 1)
+    g_param_1 = elem(color, 2)
+    g_param_2 = elem(color, 3)
+    temp_string = "custom"
     end
 
     Log.trace("Simple enum result: " <> temp_string, %{"fileName" => "Main.hx", "lineNumber" => 54, "className" => "Main", "methodName" => "testSimpleEnumPattern"})
@@ -43,19 +46,28 @@ defmodule Main do
 
     color = Color.r_g_b(255, 128, 0)
 
-    case (case color do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end) do
+    case color do
       0 -> temp_string = "primary"
       1 -> temp_string = "primary"
       2 -> temp_string = "primary"
-      {3, _r, _g, _b} -> g_array = elem(color, 1)
-    g_array = elem(color, 2)
-    g_array = elem(color, 3)
+      3 -> g_param_0 = elem(color, 1)
+    g_param_1 = elem(color, 2)
+    g_param_2 = elem(color, 3)
+    r = g_param_2
+    g_array = g_array
+    b = g_param_2
     if ((((r + g_array) + b) > 500)) do
       temp_string = "bright"
     else
+      r = g_param_2
+      g_array = g_array
+      b = g_param_2
       if ((((r + g_array) + b) < 100)) do
         temp_string = "dark"
       else
+        _r = g_param_2
+        g_array = g_array
+        _b = g_param_2
         temp_string = "medium"
       end
     end
@@ -70,10 +82,10 @@ defmodule Main do
 
     result = {:ok, "success"}
 
-    case (case result do :ok -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_string = "Got value: " <> value
-      {1, error} -> g_array = elem(result, 1)
+      1 -> error = elem(result, 1)
     temp_string = "Got error: " <> error
     end
 
@@ -88,23 +100,27 @@ defmodule Main do
 
     g_counter = 0
 
-    Enum.each(g_array, fn num -> 
-      
-      n = num
-    if ((n < 5)) do
-      temp_string = "small"
-    else
-      n = num
-      if (((n >= 5) && (n < 15))) do
-        temp_string = "medium"
-      else
+    (fn loop ->
+      if ((g_counter < numbers.length)) do
+            num = Enum.at(numbers, g_counter)
+        g_counter + 1
         n = num
-        if ((n >= 15)), do: temp_string = "large", else: temp_string = "unknown"
+        if ((n < 5)) do
+          temp_string = "small"
+        else
+          n = num
+          if (((n >= 5) && (n < 15))) do
+            temp_string = "medium"
+          else
+            n = num
+            if ((n >= 15)), do: temp_string = "large", else: temp_string = "unknown"
+          end
+        end
+        category = temp_string
+        Log.trace("Number " <> to_string(num) <> " is " <> category, %{"fileName" => "Main.hx", "lineNumber" => 98, "className" => "Main", "methodName" => "testGuardPatterns"})
+        loop.()
       end
-    end
-      category = temp_string
-      Log.trace("Number " <> to_string(num) <> " is " <> category, %{"fileName" => "Main.hx", "lineNumber" => 98, "className" => "Main", "methodName" => "testGuardPatterns"})
-    end)
+    end).()
   end
 
   @doc "Generated from Haxe testArrayPatterns"
@@ -116,36 +132,36 @@ defmodule Main do
 
     g_counter = 0
 
-    Enum.each(g_array, fn arr -> 
-      
-      case (arr.length) do
-      _ ->
-        temp_string = "empty"
-      _ ->
-        g_array = Enum.at(arr, 0)
-    x = g_array
-    temp_string = "single: " <> to_string(x)
-      _ ->
-        g_array = Enum.at(arr, 0)
-    g_array = Enum.at(arr, 1)
-    x = g_array
-    y = g_array
-    temp_string = "pair: " <> to_string(x) <> ", " <> to_string(y)
-      _ ->
-        g_array = Enum.at(arr, 0)
-    g_array = Enum.at(arr, 1)
-    g_array = Enum.at(arr, 2)
-    x = g_array
-    y = g_array
-    z = g_array
-    temp_string = "triple: " <> to_string(x) <> ", " <> to_string(y) <> ", " <> to_string(z)
-      _ -> temp_string1 = nil
-    if ((arr.length > 0)), do: temp_string1 = Std.string(Enum.at(arr, 0)), else: temp_string1 = "none"
-    temp_string = "length=" <> to_string(arr.length) <> ", first=" <> temp_string1
-    end
-      description = temp_string
-      Log.trace("Array pattern: " <> description, %{"fileName" => "Main.hx", "lineNumber" => 119, "className" => "Main", "methodName" => "testArrayPatterns"})
-    end)
+    (fn loop ->
+      if ((g_counter < arrays.length)) do
+            arr = Enum.at(arrays, g_counter)
+        g_counter + 1
+        case arr.length do
+          0 -> temp_string = "empty"
+          1 -> g_array = Enum.at(arr, 0)
+        x = g_array
+        temp_string = "single: " <> to_string(x)
+          2 -> g_array = Enum.at(arr, 0)
+        g_array = Enum.at(arr, 1)
+        x = g_array
+        y = g_array
+        temp_string = "pair: " <> to_string(x) <> ", " <> to_string(y)
+          3 -> g_array = Enum.at(arr, 0)
+        g_array = Enum.at(arr, 1)
+        g_array = Enum.at(arr, 2)
+        x = g_array
+        y = g_array
+        z = g_array
+        temp_string = "triple: " <> to_string(x) <> ", " <> to_string(y) <> ", " <> to_string(z)
+          _ -> temp_string1 = nil
+        if ((arr.length > 0)), do: temp_string1 = Std.string(Enum.at(arr, 0)), else: temp_string1 = "none"
+        temp_string = "length=" <> to_string(arr.length) <> ", first=" <> temp_string1
+        end
+        description = temp_string
+        Log.trace("Array pattern: " <> description, %{"fileName" => "Main.hx", "lineNumber" => 119, "className" => "Main", "methodName" => "testArrayPatterns"})
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe testObjectPatterns"

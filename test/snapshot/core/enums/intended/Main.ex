@@ -8,13 +8,16 @@ defmodule Main do
 
     temp_result = nil
 
-    case (case color do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end) do
+    case color do
       0 -> temp_result = "red"
       1 -> temp_result = "green"
       2 -> temp_result = "blue"
-      {3, r, g, b} -> g_array = elem(color, 1)
-    g_array = elem(color, 2)
-    g_array = elem(color, 3)
+      3 -> g_param_0 = elem(color, 1)
+    g_param_1 = elem(color, 2)
+    g_param_2 = elem(color, 3)
+    r = g_param_2
+    g_array = g_array
+    b = g_param_2
     temp_result = "rgb(" <> to_string(r) <> ", " <> to_string(g_array) <> ", " <> to_string(b) <> ")"
     end
 
@@ -25,8 +28,8 @@ defmodule Main do
   def get_value(opt, default_value) do
     temp_result = nil
 
-    case (case opt do :some -> 0; :none -> 1; _ -> -1 end) do
-      {0, v} -> g_array = elem(opt, 1)
+    case opt do
+      0 -> v = elem(opt, 1)
     temp_result = v
       1 -> temp_result = default_value
     end
@@ -38,11 +41,13 @@ defmodule Main do
   def tree_sum(tree) do
     temp_result = nil
 
-    case (case tree do :leaf -> 0; :node_ -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(tree, 1)
+    case tree do
+      0 -> value = elem(tree, 1)
     temp_result = value
-      {1, left, right} -> g_array = elem(tree, 1)
-    g_array = elem(tree, 2)
+      1 -> g_param_0 = elem(tree, 1)
+    g_param_1 = elem(tree, 2)
+    left = g_param_1
+    right = g_param_1
     temp_result = (Main.tree_sum(left) + Main.tree_sum(right))
     end
 
@@ -54,30 +59,30 @@ defmodule Main do
     temp_result = nil
 
     if ((case color do :red -> 0; :green -> 1; :blue -> 2; :r_g_b -> 3; _ -> -1 end == 3)) do
-      g_array = elem(color, 1)
-      g_array = elem(color, 2)
-      g_array = elem(color, 3)
-      r = g_array
+      g_param_0 = elem(color, 1)
+      g_param_1 = elem(color, 2)
+      g_param_2 = elem(color, 3)
+      r = g_param_2
       g_array = g_array
-      b = g_array
+      b = g_param_2
       if ((((r > 200) && (g_array < 50)) && (b < 50))) do
         temp_result = "mostly red"
       else
-        r = g_array
+        r = g_param_2
         g_array = g_array
-        b = g_array
+        b = g_param_2
         if ((((g_array > 200) && (r < 50)) && (b < 50))) do
           temp_result = "mostly green"
         else
-          r = g_array
+          r = g_param_2
           g_array = g_array
-          b = g_array
+          b = g_param_2
           if ((((b > 200) && (r < 50)) && (g_array < 50))) do
             temp_result = "mostly blue"
           else
-            _r = g_array
+            _r = g_param_2
             g_array = g_array
-            _b = g_array
+            _b = g_param_2
             temp_result = "mixed color"
           end
         end
@@ -93,16 +98,25 @@ defmodule Main do
   def compare_trees(t1, t2) do
     temp_result = nil
 
-    case (case t1 do :leaf -> 0; :node_ -> 1; _ -> -1 end) do
-      {0, v} -> g_array = elem(t1, 1)
+    case t1 do
+      0 -> g_param_0 = elem(t1, 1)
     if ((case t2 do :leaf -> 0; :node_ -> 1; _ -> -1 end == 0)) do
+      g_param_0 = elem(t2, 1)
+      v2 = g_param_0
+      v1 = g_param_0
       temp_result = (v1 == v2)
     else
       temp_result = false
     end
-      {1, l, r} -> g_array = elem(t1, 1)
-    g_array = elem(t1, 2)
+      1 -> g_param_0 = elem(t1, 1)
+    g_param_1 = elem(t1, 2)
     if ((case t2 do :leaf -> 0; :node_ -> 1; _ -> -1 end == 1)) do
+      g_param_0 = elem(t2, 1)
+      g_param_1 = elem(t2, 2)
+      l2 = g_param_1
+      r2 = g_param_1
+      r1 = g_param_1
+      l1 = g_param_1
       temp_result = (Main.compare_trees(l1, l2) && Main.compare_trees(r1, r2))
     else
       temp_result = false

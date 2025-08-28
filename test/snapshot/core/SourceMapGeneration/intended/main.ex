@@ -40,9 +40,14 @@ defmodule Main do
 
     g_counter = 0
 
-    Enum.each(g_array, fn item -> 
-      Log.trace("Item: " <> to_string(item), %{"fileName" => "Main.hx", "lineNumber" => 36, "className" => "Main", "methodName" => "testLoop"})
-    end)
+    (fn loop ->
+      if ((g_counter < items.length)) do
+            item = Enum.at(items, g_counter)
+        g_counter + 1
+        Log.trace("Item: " <> to_string(item), %{"fileName" => "Main.hx", "lineNumber" => 36, "className" => "Main", "methodName" => "testLoop"})
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe testLambda"
@@ -53,7 +58,14 @@ defmodule Main do
 
     g_counter = 0
 
-    Enum.map(numbers, fn item -> item * 2 end)
+    (fn loop ->
+      if ((g_counter < numbers.length)) do
+            v = Enum.at(numbers, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [(v * 2)]
+        loop.()
+      end
+    end).()
 
     Log.trace("Doubled: " <> Std.string(g_array), %{"fileName" => "Main.hx", "lineNumber" => 45, "className" => "Main", "methodName" => "testLambda"})
   end

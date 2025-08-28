@@ -15,7 +15,7 @@ defmodule Main do
 
     Log.trace(numbers.length, %{"fileName" => "Main.hx", "lineNumber" => 15, "className" => "Main", "methodName" => "basicArrayOps"})
 
-    numbers ++ [6]
+    numbers = numbers ++ [6]
 
     [0 | numbers]
 
@@ -35,27 +35,34 @@ defmodule Main do
     fruits = ["apple", "banana", "orange", "grape"]
 
     g_counter = 0
-    Enum.each(g_array, fn fruit -> 
-      Log.trace("Fruit: " <> fruit, %{"fileName" => "Main.hx", "lineNumber" => 35, "className" => "Main", "methodName" => "arrayIteration"})
-    end)
+    (fn loop ->
+      if ((g_counter < fruits.length)) do
+            fruit = Enum.at(fruits, g_counter)
+        g_counter + 1
+        Log.trace("Fruit: " <> fruit, %{"fileName" => "Main.hx", "lineNumber" => 35, "className" => "Main", "methodName" => "arrayIteration"})
+        loop.()
+      end
+    end).()
 
     g_counter = 0
-    g_array = g_array.length
-    g_array
-    |> Enum.with_index()
-    |> Enum.each(fn {item, i} ->
-      i = g_counter + 1
-      Log.trace("" <> to_string(i) <> ": " <> item, %{"fileName" => "Main.hx", "lineNumber" => 40, "className" => "Main", "methodName" => "arrayIteration"})
-    end)
+    g_array = fruits.length
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        Log.trace("" <> to_string(i) <> ": " <> Enum.at(fruits, i), %{"fileName" => "Main.hx", "lineNumber" => 40, "className" => "Main", "methodName" => "arrayIteration"})
+        loop.()
+      end
+    end).()
 
     i = 0
 
-    g_array
-    |> Enum.with_index()
-    |> Enum.each(fn {item, g_counter} ->
-      Log.trace("While: " <> item, %{"fileName" => "Main.hx", "lineNumber" => 46, "className" => "Main", "methodName" => "arrayIteration"})
-      g_counter + 1
-    end)
+    (fn loop ->
+      if ((i < fruits.length)) do
+            Log.trace("While: " <> Enum.at(fruits, i), %{"fileName" => "Main.hx", "lineNumber" => 46, "className" => "Main", "methodName" => "arrayIteration"})
+        i + 1
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe arrayMethods"
@@ -67,21 +74,35 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.map(numbers, fn item -> item * 2 end)
+    (fn loop ->
+      if ((g_counter < numbers.length)) do
+            v = Enum.at(numbers, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [(v * 2)]
+        loop.()
+      end
+    end).()
     temp_array = g_array
 
     Log.trace("Doubled: " <> Std.string(temp_array), %{"fileName" => "Main.hx", "lineNumber" => 57, "className" => "Main", "methodName" => "arrayMethods"})
 
     g_array = []
     g_counter = 0
-    Enum.filter(numbers, fn item -> rem(item, 2) == 0 end)
+    (fn loop ->
+      if ((g_counter < numbers.length)) do
+            v = Enum.at(numbers, g_counter)
+        g_counter + 1
+        g_array = if ((rem(v, 2) == 0)), do: g_array ++ [v], else: g_array
+        loop.()
+      end
+    end).()
     temp_array1 = g_array
 
     Log.trace("Evens: " <> Std.string(temp_array1), %{"fileName" => "Main.hx", "lineNumber" => 61, "className" => "Main", "methodName" => "arrayMethods"})
 
     more = [6, 7, 8]
 
-    combined = g_array ++ more
+    combined = numbers ++ more
 
     Log.trace("Combined: " <> Std.string(combined), %{"fileName" => "Main.hx", "lineNumber" => 66, "className" => "Main", "methodName" => "arrayMethods"})
 
@@ -91,7 +112,7 @@ defmodule Main do
 
     Log.trace("Sentence: " <> sentence, %{"fileName" => "Main.hx", "lineNumber" => 71, "className" => "Main", "methodName" => "arrayMethods"})
 
-    reversed = g_array
+    reversed = numbers
 
     Enum.reverse(reversed)
 
@@ -111,36 +132,36 @@ defmodule Main do
     temp_array2 = nil
 
     g_array = []
-    g_array ++ [1]
-    g_array ++ [4]
-    g_array ++ [9]
-    g_array ++ [16]
-    g_array ++ [25]
+    g_array = g_array ++ [1]
+    g_array = g_array ++ [4]
+    g_array = g_array ++ [9]
+    g_array = g_array ++ [16]
+    g_array = g_array ++ [25]
     temp_array = g_array
 
     Log.trace("Squares: " <> Std.string(temp_array), %{"fileName" => "Main.hx", "lineNumber" => 88, "className" => "Main", "methodName" => "arrayComprehensions"})
 
     g_array = []
-    if ((rem(1, 2) == 0)), do: g_array ++ [1], else: nil
-    if ((rem(2, 2) == 0)), do: g_array ++ [4], else: nil
-    if ((rem(3, 2) == 0)), do: g_array ++ [9], else: nil
-    if ((rem(4, 2) == 0)), do: g_array ++ [16], else: nil
-    if ((rem(5, 2) == 0)), do: g_array ++ [25], else: nil
-    if ((rem(6, 2) == 0)), do: g_array ++ [36], else: nil
-    if ((rem(7, 2) == 0)), do: g_array ++ [49], else: nil
-    if ((rem(8, 2) == 0)), do: g_array ++ [64], else: nil
-    if ((rem(9, 2) == 0)), do: g_array ++ [81], else: nil
+    g_array = if ((rem(1, 2) == 0)), do: g_array ++ [1], else: g_array
+    g_array = if ((rem(2, 2) == 0)), do: g_array ++ [4], else: g_array
+    g_array = if ((rem(3, 2) == 0)), do: g_array ++ [9], else: g_array
+    g_array = if ((rem(4, 2) == 0)), do: g_array ++ [16], else: g_array
+    g_array = if ((rem(5, 2) == 0)), do: g_array ++ [25], else: g_array
+    g_array = if ((rem(6, 2) == 0)), do: g_array ++ [36], else: g_array
+    g_array = if ((rem(7, 2) == 0)), do: g_array ++ [49], else: g_array
+    g_array = if ((rem(8, 2) == 0)), do: g_array ++ [64], else: g_array
+    g_array = if ((rem(9, 2) == 0)), do: g_array ++ [81], else: g_array
     temp_array1 = g_array
 
     Log.trace("Even squares: " <> Std.string(temp_array1), %{"fileName" => "Main.hx", "lineNumber" => 92, "className" => "Main", "methodName" => "arrayComprehensions"})
 
     g_array = []
-    g_array ++ [%{"x" => 1, "y" => 2}]
-    g_array ++ [%{"x" => 1, "y" => 3}]
-    g_array ++ [%{"x" => 2, "y" => 1}]
-    g_array ++ [%{"x" => 2, "y" => 3}]
-    g_array ++ [%{"x" => 3, "y" => 1}]
-    g_array ++ [%{"x" => 3, "y" => 2}]
+    g_array = g_array ++ [%{"x" => 1, "y" => 2}]
+    g_array = g_array ++ [%{"x" => 1, "y" => 3}]
+    g_array = g_array ++ [%{"x" => 2, "y" => 1}]
+    g_array = g_array ++ [%{"x" => 2, "y" => 3}]
+    g_array = g_array ++ [%{"x" => 3, "y" => 1}]
+    g_array = g_array ++ [%{"x" => 3, "y" => 2}]
     nil
     temp_array2 = g_array
 
@@ -159,32 +180,42 @@ defmodule Main do
     Log.trace("Matrix element [1][2]: " <> to_string(Enum.at(Enum.at(matrix, 1), 2)), %{"fileName" => "Main.hx", "lineNumber" => 108, "className" => "Main", "methodName" => "multiDimensional"})
 
     g_counter = 0
-    Enum.each(g_array, fn row -> 
-      g_counter = 0
-    Enum.each(g_array, fn elem_ -> 
-      Log.trace("Element: " <> to_string(elem_), %{"fileName" => "Main.hx", "lineNumber" => 113, "className" => "Main", "methodName" => "multiDimensional"})
-    end)
-    end)
+    (fn loop ->
+      if ((g_counter < matrix.length)) do
+            row = Enum.at(matrix, g_counter)
+        g_counter + 1
+        g_counter = 0
+        (fn loop ->
+          if ((g_counter < row.length)) do
+                elem_ = Enum.at(row, g_counter)
+            g_counter + 1
+            Log.trace("Element: " <> to_string(elem_), %{"fileName" => "Main.hx", "lineNumber" => 113, "className" => "Main", "methodName" => "multiDimensional"})
+            loop.()
+          end
+        end).()
+        loop.()
+      end
+    end).()
 
     g_array = []
     g_array = []
-    g_array ++ [0]
-    g_array ++ [1]
-    g_array ++ [2]
+    g_array = g_array ++ [0]
+    g_array = g_array ++ [1]
+    g_array = g_array ++ [2]
     temp_array1 = g_array
-    g_array ++ [temp_array1]
+    g_array = g_array ++ [temp_array1]
     g_array = []
-    g_array ++ [3]
-    g_array ++ [4]
-    g_array ++ [5]
+    g_array = g_array ++ [3]
+    g_array = g_array ++ [4]
+    g_array = g_array ++ [5]
     temp_array2 = g_array
-    g_array ++ [temp_array2]
+    g_array = g_array ++ [temp_array2]
     g_array = []
-    g_array ++ [6]
-    g_array ++ [7]
-    g_array ++ [8]
+    g_array = g_array ++ [6]
+    g_array = g_array ++ [7]
+    g_array = g_array ++ [8]
     temp_array3 = g_array
-    g_array ++ [temp_array3]
+    g_array = g_array ++ [temp_array3]
     temp_array = g_array
 
     Log.trace("Grid: " <> Std.string(temp_array), %{"fileName" => "Main.hx", "lineNumber" => 119, "className" => "Main", "methodName" => "multiDimensional"})
@@ -199,12 +230,26 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.map(arr, fn item -> item * item end)
+    (fn loop ->
+      if ((g_counter < arr.length)) do
+            v = Enum.at(arr, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [(v * v)]
+        loop.()
+      end
+    end).()
     temp_array = g_array
 
     g_array = []
     g_counter = 0
-    Enum.filter(temp_array, fn item -> item > 10 end)
+    (fn loop ->
+      if ((g_counter < temp_array.length)) do
+            v = Enum.at(temp_array, g_counter)
+        g_counter + 1
+        g_array = if ((v > 10)), do: g_array ++ [v], else: g_array
+        loop.()
+      end
+    end).()
     temp_result = g_array
 
     temp_result
@@ -218,9 +263,13 @@ defmodule Main do
 
     g_array = Std.int(Math.min(n, arr.length))
 
-    arr
-    |> Enum.with_index()
-    |> Enum.map(fn {item, i} -> item end)
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        g_array = g_array ++ [Enum.at(arr, i)]
+        loop.()
+      end
+    end).()
 
     g_array
   end
@@ -292,7 +341,14 @@ defmodule Main do
     flattened = ArrayTools.flat_map(nested_arrays, fn arr -> g_array = []
     g_counter = 0
     g_array = arr
-    Enum.map(g2, fn item -> item * 2 end)
+    (fn loop ->
+      if ((g_counter < g_array.length)) do
+            v = Enum.at(g_array, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [(v * 2)]
+        loop.()
+      end
+    end).()
     temp_result = g_array
     temp_result end)
 
@@ -300,12 +356,26 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.filter(numbers, fn item -> item > 2 end)
+    (fn loop ->
+      if ((g_counter < numbers.length)) do
+            v = Enum.at(numbers, g_counter)
+        g_counter + 1
+        g_array = if ((v > 2)), do: g_array ++ [v], else: g_array
+        loop.()
+      end
+    end).()
     temp_array1 = g_array
 
     g_array = []
     g_counter = 0
-    Enum.map(temp_array1, fn item -> item * item end)
+    (fn loop ->
+      if ((g_counter < temp_array1.length)) do
+            v = Enum.at(temp_array1, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [(v * v)]
+        loop.()
+      end
+    end).()
     temp_array = g_array
 
     processed = Enum.reduce(Enum.take(temp_array, 2), 0, fn item, acc -> (acc + item) end)

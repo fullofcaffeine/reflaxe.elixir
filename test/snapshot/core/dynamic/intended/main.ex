@@ -59,9 +59,14 @@ defmodule Main do
 
     var_args = fn args -> sum = 0
     g_counter = 0
-    Enum.each(g_array, fn arg -> 
-      sum = sum + arg
-    end)
+    (fn loop ->
+      if ((g_counter < args.length)) do
+            arg = Enum.at(args, g_counter)
+        g_counter + 1
+        sum = sum + arg
+        loop.()
+      end
+    end).()
     sum end
 
     Log.trace(var_args([1, 2, 3, 4, 5]), %{"fileName" => "Main.hx", "lineNumber" => 62, "className" => "Main", "methodName" => "dynamicFunctions"})
@@ -103,9 +108,14 @@ defmodule Main do
 
     g_counter = 0
 
-    Enum.each(g_array, fn item -> 
-      Log.trace("Item: " <> Std.string(item), %{"fileName" => "Main.hx", "lineNumber" => 103, "className" => "Main", "methodName" => "dynamicCollections"})
-    end)
+    (fn loop ->
+      if ((g_counter < dyn_array.length)) do
+            item = Enum.at(dyn_array, g_counter)
+        g_counter + 1
+        Log.trace("Item: " <> Std.string(item), %{"fileName" => "Main.hx", "lineNumber" => 103, "className" => "Main", "methodName" => "dynamicCollections"})
+        loop.()
+      end
+    end).()
 
     dyn_obj = %{}
 

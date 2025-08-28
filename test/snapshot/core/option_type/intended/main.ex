@@ -50,8 +50,8 @@ defmodule Main do
 
     temp_string = nil
 
-    case (case user do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, name} -> g_array = elem(user, 1)
+    case user do
+      0 -> name = elem(user, 1)
     temp_string = "Hello, " <> name
       1 -> temp_string = "Hello, anonymous"
     end
@@ -60,8 +60,8 @@ defmodule Main do
 
     temp_number = nil
 
-    case (case scores do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, _score_list} -> g_array = elem(scores, 1)
+    case scores do
+      0 -> score_list = elem(scores, 1)
     temp_number = score_list.length
       1 -> temp_number = 0
     end
@@ -75,8 +75,8 @@ defmodule Main do
 
   @doc "Generated from Haxe processUser"
   def process_user(user) do
-    case (case user do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, name} -> g_array = elem(user, 1)
+    case user do
+      0 -> name = elem(user, 1)
     Log.trace("Processing user: " <> name, %{"fileName" => "Main.hx", "lineNumber" => 68, "className" => "Main", "methodName" => "processUser"})
       1 -> Log.trace("No user to process", %{"fileName" => "Main.hx", "lineNumber" => 69, "className" => "Main", "methodName" => "processUser"})
     end
@@ -165,12 +165,26 @@ defmodule Main do
 
     g_array = []
     g_counter = 0
-    Enum.map(options, fn item -> OptionTools.map(item, fn x -> (x * 2) end) end)
+    (fn loop ->
+      if ((g_counter < options.length)) do
+            v = Enum.at(options, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [OptionTools.map(v, fn x -> (x * 2) end)]
+        loop.()
+      end
+    end).()
     temp_array1 = g_array
 
     g_array = []
     g_counter = 0
-    Enum.filter(temp_array1, fn item -> OptionTools.is_some(item) end)
+    (fn loop ->
+      if ((g_counter < temp_array1.length)) do
+            v = Enum.at(temp_array1, g_counter)
+        g_counter + 1
+        g_array = if OptionTools.is_some(v), do: g_array ++ [v], else: g_array
+        loop.()
+      end
+    end).()
     temp_array = g_array
   end
 

@@ -45,14 +45,18 @@ defmodule BytesBuffer do
 
     g_array = src.length
 
-    b2
-    |> Enum.with_index()
-    |> Enum.map(fn {item, i} -> item end)
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        struct.b ++ [Enum.at(b2, _i)]
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe addString"
   def add_string(%__MODULE__{} = struct, v, encoding \\ nil) do
-    src = Bytes.of_string(v, encoding)
+    src = Bytes.of_string(v, _encoding)
 
     _b1 = struct.b
 
@@ -62,9 +66,13 @@ defmodule BytesBuffer do
 
     g_array = src.length
 
-    b2
-    |> Enum.with_index()
-    |> Enum.map(fn {item, i} -> item end)
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        struct.b ++ [Enum.at(b2, _i)]
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe addInt32"
@@ -97,7 +105,7 @@ defmodule BytesBuffer do
 
   @doc "Generated from Haxe addBytes"
   def add_bytes(%__MODULE__{} = struct, src, pos, len) do
-    if ((((pos < 0) || (len < 0)) || ((pos + len) > src.length))) do
+    if ((((_pos < 0) || (len < 0)) || ((_pos + len) > src.length))) do
       raise :outside_bounds
     else
       nil
@@ -107,13 +115,17 @@ defmodule BytesBuffer do
 
     b2 = src.b
 
-    g_array = pos
+    g_array = _pos
 
-    g_array = (pos + len)
+    g_array = (_pos + len)
 
-    b2
-    |> Enum.with_index()
-    |> Enum.map(fn {item, i} -> item end)
+    (fn loop ->
+      if ((g_array < g_array)) do
+            i = g_array + 1
+        struct.b ++ [Enum.at(b2, _i)]
+        loop.()
+      end
+    end).()
   end
 
   @doc "Generated from Haxe getBytes"

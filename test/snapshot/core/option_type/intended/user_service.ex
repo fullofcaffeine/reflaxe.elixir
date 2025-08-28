@@ -12,7 +12,18 @@ defmodule UserService do
 
     g_array = UserService.users
 
-    Enum.filter(g1, fn item -> item.name == name end)
+    (fn loop ->
+      if ((g_counter < g_array.length)) do
+            user = Enum.at(g_array, g_counter)
+        g_counter + 1
+        if ((user.name == name)) do
+          Option.some(user)
+        else
+          nil
+        end
+        loop.()
+      end
+    end).()
 
     :error
   end

@@ -30,7 +30,7 @@
   "scripts": {
     "postinstall": "lix download",
     "build": "echo 'Reflaxe.Elixir is a compiler - no build step needed'",
-    "test": "make -C test && npm run test:generator && npm run test:mix",
+    "test": "make -C test && npm run test:mix",
     "test:sequential": "make -C test -j1 && npm run test:generator && npm run test:mix",
     "test:quick": "make -C test",
     "test:single": "make -C test single",

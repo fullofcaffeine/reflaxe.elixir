@@ -9,55 +9,84 @@ defmodule Main do
     result = []
 
     g_counter = 0
-    Enum.filter(array, fn item -> item > 2 end)
+    (fn loop ->
+      if ((g_counter < array.length)) do
+            item = Enum.at(array, g_counter)
+        g_counter + 1
+        result = if ((item > 2)), do: result ++ [(item * 2)], else: result
+        loop.()
+      end
+    end).()
 
     g_counter = 0
-    g_array = g_array.length
-    g_array
-    |> Enum.with_index()
-    |> Enum.each(fn {item, j} ->
-      i = g_counter + 1
-      g_counter = 0
-      g_array = g_array.length
-      g_array
-      |> Enum.with_index()
-      |> Enum.map(fn {item, i} -> (item + item) end)
-    end)
+    g_array = array.length
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        g_counter = 0
+        g_array = array.length
+        (fn loop ->
+          if ((g_counter < g_array)) do
+                j = g_counter + 1
+            result = if ((Enum.at(array, _i) < Enum.at(array, j))), do: result ++ [(Enum.at(array, _i) + Enum.at(array, j))], else: result
+            loop.()
+          end
+        end).()
+        loop.()
+      end
+    end).()
 
     filtered = []
 
     g_counter = 0
-    Enum.filter(array, fn item -> rem(item, 2) == 0 end)
+    (fn loop ->
+      if ((g_counter < array.length)) do
+            x = Enum.at(array, g_counter)
+        g_counter + 1
+        filtered = if ((rem(x, 2) == 0)), do: filtered ++ [x], else: filtered
+        loop.()
+      end
+    end).()
 
     functions = []
 
-    functions ++ [fn  -> 0 end]
+    functions = functions ++ [fn  -> 0 end]
 
-    functions ++ [fn  -> 1 end]
+    functions = functions ++ [fn  -> 1 end]
 
-    functions ++ [fn  -> 2 end]
+    functions = functions ++ [fn  -> 2 end]
 
     i = 100
 
-    result ++ [0]
+    result = result ++ [0]
 
-    result ++ [1]
+    result = result ++ [1]
 
-    result ++ [2]
+    result = result ++ [2]
 
-    result ++ [i]
+    result = result ++ [_i]
 
     sum = 0
 
     g_counter = 0
-    Enum.each(g_array, fn n -> 
-      sum = sum + n
-    end)
+    (fn loop ->
+      if ((g_counter < array.length)) do
+            n = Enum.at(array, g_counter)
+        g_counter + 1
+        sum = sum + n
+        loop.()
+      end
+    end).()
 
     g_counter = 0
-    Enum.each(g_array, fn n -> 
-      sum = sum - n
-    end)
+    (fn loop ->
+      if ((g_counter < array.length)) do
+            n = Enum.at(array, g_counter)
+        g_counter + 1
+        sum = sum - n
+        loop.()
+      end
+    end).()
 
     Log.trace(result, %{"fileName" => "Main.hx", "lineNumber" => 54, "className" => "Main", "methodName" => "main"})
 
