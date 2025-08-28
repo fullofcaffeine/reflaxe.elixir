@@ -207,15 +207,19 @@ class FunctionCompiler {
                     paramName = "_" + paramName;
                     baseParamName = paramName; // Update base name with underscore
                     
-                    // CRITICAL FIX: Map the original parameter name to the prefixed version
-                    // WITHOUT the default value syntax - just the variable name
-                    compiler.currentFunctionParameterMap.set(originalName, baseParamName);
-                    
                     #if debug_function_compilation
                     DebugHelper.debugFunction("Unused Parameter", "Prefixed with underscore", 'Param: ${baseParamName}');
-                    DebugHelper.debugFunction("Parameter Mapping", "Added mapping", '${originalName} -> ${baseParamName}');
                     #end
                 }
+                
+                // CRITICAL FIX: Always set up parameter mapping for ALL parameters
+                // This ensures that when VariableCompiler compiles variable references in the body,
+                // it uses the correct name (with or without underscore prefix)
+                compiler.currentFunctionParameterMap.set(originalName, baseParamName);
+                
+                #if debug_function_compilation
+                DebugHelper.debugFunction("Parameter Mapping", "Added mapping", '${originalName} -> ${baseParamName}');
+                #end
                 
                 // Handle optional parameters by adding Elixir default value syntax
                 // IMPORTANT: This happens AFTER setting up the mapping, so the mapping
