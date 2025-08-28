@@ -114,6 +114,18 @@ class VariableCompiler {
     public function registerVariableMapping(tvar: TVar, mappedName: String): Void {
         variableIdMap.set(tvar.id, mappedName);
         
+        // CRITICAL FIX: Also register in underscorePrefixMap if the name has underscore prefix
+        // This handles cases where different TVar instances refer to the same logical variable
+        // (e.g., pattern-extracted variables referenced in nested switches)
+        if (StringTools.startsWith(mappedName, "_")) {
+            var baseName = mappedName.substring(1);  // Remove underscore prefix
+            underscorePrefixMap.set(baseName, mappedName);
+            
+            #if debug_variable_compiler
+            // trace('[XRay VariableCompiler] ✓ REGISTERED UNDERSCORE PREFIX: ${baseName} -> ${mappedName}');
+            #end
+        }
+        
         #if debug_variable_compiler
         // trace('[XRay VariableCompiler] ✓ REGISTERED MAPPING: TVar.id=${tvar.id} (${tvar.name}) -> ${mappedName}');
         #end
