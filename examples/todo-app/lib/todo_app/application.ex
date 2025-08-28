@@ -22,7 +22,7 @@ defmodule TodoApp.Application do
 
     children = type_safe_children
 
-    opts = [strategy: :one_for_one, name: TodoApp.Supervisor]
+    opts = [strategy: :one_for_one, name: TodoApp.Supervisor, max_restarts: 3, max_seconds: 5]
 
     supervisor_result = Supervisor.start_link(children, opts)
 

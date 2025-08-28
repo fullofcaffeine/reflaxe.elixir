@@ -53,6 +53,7 @@ import reflaxe.elixir.helpers.PatternMatchingCompiler;
 import reflaxe.elixir.helpers.MigrationCompiler;
 import reflaxe.elixir.helpers.LiveViewCompiler;
 import reflaxe.elixir.helpers.GenServerCompiler;
+import reflaxe.elixir.helpers.StringMethodCompiler;
 import reflaxe.elixir.helpers.MethodCallCompiler;
 import reflaxe.elixir.helpers.ReflectionCompiler;
 import reflaxe.elixir.helpers.ArrayMethodCompiler;
@@ -139,8 +140,14 @@ class ElixirCompiler extends DirectToStringCompiler {
     // GenServer compilation helper
     private var genServerCompiler: reflaxe.elixir.helpers.GenServerCompiler;
     
+    // String method compilation helper
+    private var stringMethodCompiler: reflaxe.elixir.helpers.StringMethodCompiler;
+    
     // Method call compilation (public for ExpressionDispatcher access)
     public var methodCallCompiler: reflaxe.elixir.helpers.MethodCallCompiler;
+    
+    // OTP compilation for supervisor and child spec patterns
+    public var otpCompiler: reflaxe.elixir.helpers.OTPCompiler;
     
     // Reflection compilation
     private var reflectionCompiler: reflaxe.elixir.helpers.ReflectionCompiler;
@@ -322,7 +329,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         this.migrationCompiler = new reflaxe.elixir.helpers.MigrationCompiler(this);
         this.liveViewCompiler = new reflaxe.elixir.helpers.LiveViewCompiler(this);
         this.genServerCompiler = new reflaxe.elixir.helpers.GenServerCompiler(this);
+        this.stringMethodCompiler = new reflaxe.elixir.helpers.StringMethodCompiler(this);
         this.methodCallCompiler = new reflaxe.elixir.helpers.MethodCallCompiler(this);
+        this.otpCompiler = new reflaxe.elixir.helpers.OTPCompiler(this);
         this.reflectionCompiler = new reflaxe.elixir.helpers.ReflectionCompiler(this);
         this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
         this.variableMappingManager = new VariableMappingManager(this);
@@ -2275,57 +2284,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile String method calls to Elixir equivalents
      */
     private function compileStringMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
-        var compiledArgs = args.map(arg -> compileExpression(arg));
-        
-        return switch (methodName) {
-            case "charCodeAt":
-                // s.charCodeAt(pos) → String.to_charlist(s) |> Enum.at(pos) 
-                if (compiledArgs.length > 0) {
-                    'case String.at(${objStr}, ${compiledArgs[0]}) do nil -> nil; c -> :binary.first(c) end';
-                } else {
-                    'nil';
-                }
-            case "charAt":
-                // s.charAt(pos) → String.at(s, pos)
-                if (compiledArgs.length > 0) {
-                    'String.at(${objStr}, ${compiledArgs[0]})';
-                } else {
-                    '""';
-                }
-            case "toLowerCase":
-                'String.downcase(${objStr})';
-            case "toUpperCase":
-                'String.upcase(${objStr})';
-            case "substr" | "substring":
-                // Handle substr/substring with Elixir's String.slice
-                if (compiledArgs.length >= 2) {
-                    'String.slice(${objStr}, ${compiledArgs[0]}, ${compiledArgs[1]})';
-                } else if (compiledArgs.length == 1) {
-                    'String.slice(${objStr}, ${compiledArgs[0]}..-1)';
-                } else {
-                    objStr;
-                }
-            case "indexOf":
-                // s.indexOf(substr) → find index or -1
-                if (compiledArgs.length > 0) {
-                    'case :binary.match(${objStr}, ${compiledArgs[0]}) do {pos, _} -> pos; :nomatch -> -1 end';
-                } else {
-                    '-1';
-                }
-            case "split":
-                if (compiledArgs.length > 0) {
-                    'String.split(${objStr}, ${compiledArgs[0]})';
-                } else {
-                    '[${objStr}]';
-                }
-            case "trim":
-                'String.trim(${objStr})';
-            case "length":
-                'String.length(${objStr})';
-            case _:
-                // Default: try to call as a regular method (might fail at runtime)
-                '${objStr}.${methodName}(${compiledArgs.join(", ")})';
-        };
+        return stringMethodCompiler.compileStringMethod(objStr, methodName, args);
     }
     
     /**
@@ -2403,39 +2362,19 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Only uses atoms for very specific OTP patterns to avoid breaking user code
      */
     private function shouldUseAtomKeys(fields: Array<{name: String, expr: TypedExpr}>): Bool {
-        if (fields == null || fields.length == 0) return false;
-        
-        var fieldNames = fields.map(f -> f.name);
-        
-        // Only use atom keys for the most obvious OTP supervisor option pattern
-        // This requires all three supervisor configuration fields to be present
-        var supervisorFields = ["strategy", "max_restarts", "max_seconds"];
-        var hasAllSupervisorFields = true;
-        for (field in supervisorFields) {
-            if (fieldNames.indexOf(field) == -1) {
-                hasAllSupervisorFields = false;
-                break;
-            }
-        }
-        
-        if (hasAllSupervisorFields && fieldNames.length == 3) {
-            // Verify all field names can be atoms
-            for (field in fields) {
-                if (!isValidAtomName(field.name)) {
-                    return false;
-                }
-            }
+        // First check if this matches known OTP patterns
+        if (otpCompiler.shouldUseAtomKeys(fields)) {
             return true;
         }
         
         // Check for Phoenix.PubSub configuration pattern
         // Objects with just a "name" field are typically PubSub configs
-        if (fieldNames.length == 1 && fieldNames[0] == "name") {
+        if (fields != null && fields.length == 1 && fields[0].name == "name") {
             return isValidAtomName("name");
         }
         
         // Default to string keys for all other cases
-        // This is safer and more predictable than trying to guess OTP patterns
+        // This is safer and more predictable than trying to guess patterns
         return false;
     }
     
@@ -2542,6 +2481,15 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Converts from Haxe objects to Elixir maps as expected by Supervisor.start_link
      */
     public function compileChildSpec(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
+        // Delegate to OTPCompiler for specialized child spec handling
+        return otpCompiler.compileChildSpec(fields, classType);
+    }
+    
+    /**
+     * Legacy implementation - preserved temporarily for reference
+     * TODO: Remove after verifying OTPCompiler handles all cases
+     */
+    private function legacyCompileChildSpec(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
         var compiledFields = new Map<String, String>();
         
         // Get app name from annotation at compile time
@@ -2689,21 +2637,8 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Handles patterns like: '"" <> app_name <> ".Repo"' -> 'TodoApp.Repo'
      */
     private function resolveAppNameInString(str: String, appName: String): String {
-        if (str == null) return "";
-        
-        // Remove outer quotes
-        str = str.split('"').join('');
-        
-        // Handle common interpolation patterns from Haxe string interpolation
-        str = str.replace('" <> app_name <> "', appName);
-        str = str.replace('${appName}', appName);
-        str = str.replace('app_name', appName);
-        
-        // Clean up any remaining empty string concatenations
-        str = str.replace('" <> "', '');
-        str = str.replace(' <> ', '');
-        
-        return str;
+        // Delegate to OTPCompiler for proper app name resolution
+        return otpCompiler.resolveAppNameInString(str, appName);
     }
     
     /**
@@ -2722,6 +2657,15 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Converts from Haxe objects to Elixir keyword lists as expected by Supervisor.start_link
      */
     public function compileSupervisorOptions(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
+        // Delegate to OTPCompiler for specialized supervisor options handling
+        return otpCompiler.compileSupervisorOptions(fields, classType);
+    }
+    
+    /**
+     * Legacy implementation - preserved temporarily for reference
+     * TODO: Remove after verifying OTPCompiler handles all cases
+     */
+    private function legacyCompileSupervisorOptions(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
         var strategy = "one_for_one";
         var name = "";
         

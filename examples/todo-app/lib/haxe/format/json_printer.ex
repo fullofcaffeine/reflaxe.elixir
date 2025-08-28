@@ -126,7 +126,7 @@ defmodule JsonPrinter do
         _value = Reflect.field(obj, field)
         _key = struct.quote_string(field)
         val = struct.write_value(_value, field)
-        if ((struct.space != nil)), do: pairs = pairs ++ [_key <> ": " <> val], else: pairs = pairs ++ [_key <> ":" <> val]
+        pairs = if ((struct.space != nil)), do: pairs ++ [_key <> ": " <> val], else: pairs ++ [_key <> ":" <> val]
         loop.()
       end
     end).()

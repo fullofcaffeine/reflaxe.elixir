@@ -16,12 +16,12 @@ defmodule TypeSafeChildSpecTools do
 
     case (elem(spec, 0)) do
       {0, name} -> g_array = elem(spec, 1)
-    temp_result = {Phoenix.PubSub, name: name}
+    temp_result = %{type: :worker, start: {%{"module" => "Phoenix.PubSub", "func" => "start_link", "args" => [%{name: name}]}, :start_link, []}, restart: :permanent, id: :Phoenix.PubSub}
       {1, config} -> g_array = elem(spec, 1)
     repo_module = "" <> app_name <> ".Repo"
     if ((config != nil)), do: temp_array = [config], else: temp_array = []
     _args = temp_array
-    temp_result = repo_module
+    temp_result = %{type: :worker, start: {%{"module" => repo_module, "func" => "start_link", "args" => _args}, :start_link, []}, restart: :permanent, id: :repo_module}
       {2, port, config} -> g_array = elem(spec, 1)
     g_array = elem(spec, 2)
     endpoint_module = "" <> app_name <> "Web.Endpoint"
@@ -47,22 +47,22 @@ defmodule TypeSafeChildSpecTools do
     else
       nil
     end
-    temp_result = endpoint_module
+    temp_result = %{type: :worker, start: {%{"module" => endpoint_module, "func" => "start_link", "args" => _args}, :start_link, []}, restart: :permanent, id: :endpoint_module}
       {3, config} -> g_array = elem(spec, 1)
     telemetry_module = "" <> app_name <> "Web.Telemetry"
     if ((config != nil)), do: temp_array1 = [config], else: temp_array1 = []
     _args = temp_array1
-    temp_result = telemetry_module
+    temp_result = %{type: :worker, start: {%{"module" => telemetry_module, "func" => "start_link", "args" => _args}, :start_link, []}, restart: :permanent, id: :telemetry_module}
       {4, config} -> g_array = elem(spec, 1)
     presence_module = "" <> app_name <> ".Presence"
-    temp_result = presence_module
+    temp_result = %{type: :worker, start: {%{"module" => presence_module, "func" => "start_link", "args" => [config]}, :start_link, []}, restart: :permanent, id: :presence_module}
       {5, module, args, restart, shutdown} -> g_array = elem(spec, 1)
     g_array = elem(spec, 2)
     g_array = elem(spec, 3)
     g_array = elem(spec, 4)
     module_class = module
     module_name = Type.get_class_name(module_class)
-    temp_result = %{id: module_name, start: {module_name, :start_link, [args]}, restart: restart, shutdown: shutdown}
+    temp_result = %{type: :worker, start: {%{"module" => module_name, "func" => "start_link", "args" => [args]}, :start_link, []}, shutdown: shutdown, restart: restart, id: :module_name}
       {6, spec} -> g_array = elem(spec, 1)
     temp_result = spec
     end
@@ -112,21 +112,21 @@ defmodule TypeSafeChildSpecTools do
 
     case (elem(spec, 0)) do
       {0, name} -> g_array = elem(spec, 1)
-    if (((name == nil) || (name == ""))), do: errors = errors ++ ["PubSub name cannot be empty"], else: nil
-    if (((name != nil) && (name.index_of(".") == -1))), do: errors = errors ++ ["PubSub name should follow 'AppName.PubSub' convention"], else: nil
+    errors = if (((name == nil) || (name == ""))), do: errors ++ ["PubSub name cannot be empty"], else: errors
+    errors = if (((name != nil) && (name.index_of(".") == -1))), do: errors ++ ["PubSub name should follow 'AppName.PubSub' convention"], else: errors
       1 -> nil
       {2, port} -> g_array = elem(spec, 1)
-    if (((port != nil) && (((port < 1) || (port > 65535))))), do: errors = errors ++ ["Endpoint port must be between 1 and 65535"], else: nil
+    errors = if (((port != nil) && (((port < 1) || (port > 65535))))), do: errors ++ ["Endpoint port must be between 1 and 65535"], else: errors
       3 -> nil
       {4, config} -> g_array = elem(spec, 1)
-    if (((config.name == nil) || (config.name == ""))), do: errors = errors ++ ["Presence name is required"], else: nil
+    errors = if (((config.name == nil) || (config.name == ""))), do: errors ++ ["Presence name is required"], else: errors
       {5, module, __args, __restart, __shutdown} -> g_array = elem(spec, 1)
     g_array = elem(spec, 2)
     g_array = elem(spec, 3)
     g_array = elem(spec, 4)
-    if ((module == nil)), do: errors = errors ++ ["Custom child spec module cannot be null"], else: nil
+    errors = if ((module == nil)), do: errors ++ ["Custom child spec module cannot be null"], else: errors
       {6, spec} -> g_array = elem(spec, 1)
-    if (((spec.id == nil) || (spec.id == ""))), do: errors = errors ++ ["Legacy child spec id cannot be empty"], else: nil
+    errors = if (((spec.id == nil) || (spec.id == ""))), do: errors ++ ["Legacy child spec id cannot be empty"], else: errors
     end
 
     errors

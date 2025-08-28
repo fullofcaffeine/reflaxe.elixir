@@ -8,7 +8,7 @@ defmodule SupervisorOptionsBuilder do
   # Static functions
   @doc "Generated from Haxe defaults"
   def defaults() do
-    [strategy: :one_for_one, name: TodoApp.Supervisor]
+    [strategy: :one_for_one, name: TodoApp.Supervisor, max_restarts: 3, max_seconds: 5]
   end
 
   @doc "Generated from Haxe withStrategy"

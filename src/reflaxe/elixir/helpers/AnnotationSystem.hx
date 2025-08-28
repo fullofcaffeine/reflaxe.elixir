@@ -213,12 +213,8 @@ class AnnotationSystem {
         
         return switch (annotationInfo.primaryAnnotation) {
             case ":genserver":
-                if (reflaxe.elixir.helpers.OTPCompiler.isGenServerClassType(classType)) {
-                    compileGenServerClass(classType, varFields, funcFields);
-                } else {
-                    trace("ERROR: @:genserver annotation detected but OTPCompiler validation failed");
-                    null;
-                }
+                // TODO: OTPCompiler extraction pending - GenServer is handled by GenServerCompiler
+                null; // GenServer compilation is handled elsewhere
                 
             case ":controller":
                 if (reflaxe.elixir.helpers.RouterCompiler.isControllerClassType(classType)) {
@@ -441,17 +437,6 @@ class AnnotationSystem {
     }
     
     // Forward declarations for compiler methods (these should be implemented in ElixirCompiler)
-    static function compileGenServerClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        var className = classType.name;
-        var config = reflaxe.elixir.helpers.OTPCompiler.getGenServerConfig(classType);
-        return reflaxe.elixir.helpers.OTPCompiler.compileFullGenServer({
-            className: className,
-            initialState: "%{}",
-            callMethods: [],
-            castMethods: []
-        });
-    }
-    
     static function compileControllerClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
         return reflaxe.elixir.helpers.RouterCompiler.compileController(classType);
     }
