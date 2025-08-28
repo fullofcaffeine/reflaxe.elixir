@@ -18,6 +18,9 @@ haxe_libraries/
 test/*/out/
 test-output/
 test-temp/
+test_output/
+test-generator-output/
+test_atom_output/
 
 # IDE and Editor files
 .vscode/
@@ -77,3 +80,20 @@ logs/
 /cleanup_*.sh
 /fix_*.sh
 /update_*.sh
+
+# Backup files
+*.backup
+*.bak
+*.old
+
+# Temporary compilation outputs
+compilation_output.txt
+compilation_output*.txt
+
+# Ad-hoc test files in examples
+examples/*/test_*.hx
+examples/*/test_*.exs
+examples/*/*.test.exs
+
+# Deprecated templates (no longer used)
+/templates/
