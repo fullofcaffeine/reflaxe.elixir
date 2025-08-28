@@ -1,4 +1,0 @@
--cp test
--D reflaxe_runtime
--main test.TestASTTypes
---interp

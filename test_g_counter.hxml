@@ -1,8 +1,0 @@
--cp .
--cp src
--main TestGCounter
---macro reflaxe.elixir.ElixirCompiler.use()
--D reflaxe-output=test_output
--D haxe-output=test_output
--D debug_variable_compiler
--D debug_pattern_matching

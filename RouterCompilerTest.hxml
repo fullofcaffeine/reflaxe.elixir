@@ -1,6 +1,0 @@
-# Phoenix Router DSL Integration Test Configuration
--cp src
--cp test
--D reflaxe_runtime
--main RouterCompilerTest
---interp

@@ -1,7 +1,0 @@
--cp src
--main TestLoop
-
-# Reflaxe Configuration
---macro reflaxe.ReflaxeRunner.compileAlternativeOutputFolder("test_output")
---library reflaxe
--D reflaxe-elixir

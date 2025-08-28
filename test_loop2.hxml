@@ -1,5 +1,0 @@
--cp src
--cp test_output
--main TestLoop
---macro reflaxe.ReflaxeRunner.compileAlternativeOutputFolder("test_output")
--lib reflaxe
