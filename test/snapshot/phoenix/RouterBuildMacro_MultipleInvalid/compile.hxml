@@ -2,8 +2,8 @@
 # Should produce multiple warnings for both invalid controller and invalid action
 
 # Include Reflaxe.Elixir source
--cp ../../../src
--cp ../../../std  
+-cp ../../../../src
+-cp ../../../../std  
 -lib reflaxe
 
 # Source files to compile

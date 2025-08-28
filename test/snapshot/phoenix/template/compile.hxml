@@ -1,6 +1,6 @@
 # Compilation configuration for template test
--cp ../../../std
--cp ../../../src
+-cp ../../../../std
+-cp ../../../../src
 -cp .
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()

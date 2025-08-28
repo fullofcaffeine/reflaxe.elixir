@@ -1,5 +1,5 @@
--cp ../../../src
--cp ../../../std
+-cp ../../../../src
+-cp ../../../../std
 -main MainMinimal
 -lib reflaxe
 --macro reflaxe.js.Async.init()

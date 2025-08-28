@@ -1,8 +1,8 @@
 # Advanced Pattern Matching Test
 # Tests binary patterns, pin operators, and advanced guards
 
--cp ../../../std
--cp ../../../src
+-cp ../../../../std
+-cp ../../../../src
 -cp .
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
