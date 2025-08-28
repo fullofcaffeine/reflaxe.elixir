@@ -158,6 +158,48 @@ result = ~/\), else: nil\n/g.replace(result, ")\n");
 
 ## ⚠️ Critical Development Rules
 
+### ⚠️ WARNING: String Concatenation Bug in Macro Blocks
+**Avoid string concatenation (`+` operator) and StringBuf in `#if macro` blocks when output will be redirected**
+
+```haxe
+// ❌ PROBLEMATIC - Hangs when output redirected (test runners, CI)
+#if macro
+function build(): String {
+    return 'line1\n' +     // Causes hang with > /dev/null
+           'line2\n' +
+           'line3\n';
+}
+#end
+
+// ✅ PREFERRED - String interpolation (clean and works)
+#if macro  
+function build(): String {
+    var name = "MyModule";
+    return '
+defmodule ${name} do
+  use Ecto.Migration
+  def change do
+    # Operations here
+  end
+end';
+}
+#end
+
+// ✅ ALTERNATIVE - Array join pattern
+#if macro
+function build(): String {
+    var lines = [
+        'line1',
+        'line2', 
+        'line3'
+    ];
+    return lines.join('\n');
+}
+#end
+```
+
+**Context**: Haxe compiler bug causes hang when string concatenation/StringBuf is used in macro blocks AND output is redirected (`> /dev/null 2>&1`). Affects test runners and CI pipelines but works fine in normal development.
+
 ### Never Edit Generated Files
 - ❌ **Don't patch .ex files** - they get overwritten on recompilation
 - ✅ **Fix the compiler source** - make changes in `src/reflaxe/elixir/`

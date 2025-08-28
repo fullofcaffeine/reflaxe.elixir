@@ -1,24 +1,34 @@
 package example_migrations;
 
-// Temporarily simplified to debug compilation hang
-// import reflaxe.elixir.helpers.MigrationDSL;
+import reflaxe.elixir.helpers.MigrationDSL;
 
 /**
  * Example migration using Haxe→Elixir Migration DSL
- * Temporarily simplified to debug compilation hang issue
+ * Tests @:migration annotation with table creation and basic operations
+ * Note: Complex callbacks with many operations may cause compilation hangs with output redirection
  */
 @:migration
 class CreateUsers {
     public static function up(): String {
-        return "create table(:users) do\n  add :id, :serial, primary_key: true\nend";
+        // Temporarily bypass MigrationDSL callback to isolate the issue
+        // The hang occurs when executing callbacks at macro time
+        // TODO: Fix the underlying macro expansion issue
+        return 'create table(:users) do\n' +
+               '      add :name, :string\n' +
+               '      add :email, :string\n' +
+               '      timestamps()\n' +
+               '    end';
     }
     
     public static function down(): String {
-        return "drop table(:users)";
+        // Also bypass MigrationDSL in down() to isolate issue
+        return 'drop table(:users)';
     }
     
     // Main function for compilation testing
     public static function main(): Void {
-        // Empty main for testing
+        // Test the migration functions
+        var upResult = up();
+        var downResult = down();
     }
 }
