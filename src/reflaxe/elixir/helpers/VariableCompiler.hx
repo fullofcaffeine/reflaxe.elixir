@@ -681,9 +681,9 @@ class VariableCompiler {
         }
         
         // Debug: Always trace 'g' variables to understand the pattern
-        if (tvar.name == "g") {
-//             trace('[DEBUG] Found g variable! Init expr: ${expr != null ? Type.enumConstructor(expr.expr) : "null"}');
-        }
+        // if (tvar.name == "g") {
+        //     trace('[DEBUG] Found g variable! Init expr: ${expr != null ? Type.enumConstructor(expr.expr) : "null"}');
+        // }
         
         // CRITICAL FIX: Handle enum parameter extraction specially
         // When we see: g = TEnumParameter(...), we need to handle multiple extractions correctly
@@ -1047,34 +1047,50 @@ class VariableCompiler {
         }
         
         // CRITICAL FIX: Check if this variable is being assigned from TLocal(g) which might be an enum extraction
-        if (expr != null && compiler.enumExtractionVars != null && compiler.enumExtractionVars.length > 0) {
+        // OR from TLocal(g_array) when we're in nested pattern matching
+        if (expr != null) {
             switch (expr.expr) {
-                case TLocal(v) if (v.name == "g"):
-                    #if debug_variable_compiler
-                    // trace("[XRay VariableCompiler] ✓ PATTERN VARIABLE ASSIGNMENT FROM g");
-                    // trace('[XRay VariableCompiler] Pattern var: ${varName}');
-                    // trace('[XRay VariableCompiler] Current extraction index: ${compiler.currentEnumExtractionIndex}');
-                    // trace('[XRay VariableCompiler] Available extractions: ${compiler.enumExtractionVars.length}');
-                    #end
+                case TLocal(v) if (v.name == "g" || v.name == "g_array" || v.name == "_g" || StringTools.startsWith(v.name, "_g")):
+                    // Check if we have any recent enum parameter extractions
+                    // This happens when a pattern variable like 'todo' in TodoCreated(todo) 
+                    // gets assigned from what Haxe thinks is 'g' but is actually an extracted parameter
                     
-                    // Use the extraction variables in order
-                    // The pattern variables are assigned in the same order as the extractions
-                    if (compiler.currentEnumExtractionIndex < compiler.enumExtractionVars.length) {
-                        var extractionVar = compiler.enumExtractionVars[compiler.currentEnumExtractionIndex].varName;
-                        
+                    // Look for the most recent g_param_N variable in the current compilation context
+                    // by checking if we recently compiled a TEnumParameter
+                    var lastExtractedParam: String = null;
+                    
+                    // Check if we have tracked extraction vars
+                    if (compiler.enumExtractionVars != null && compiler.enumExtractionVars.length > 0) {
+                        // Use the most recent extraction
+                        var lastExtraction = compiler.enumExtractionVars[compiler.enumExtractionVars.length - 1];
+                        lastExtractedParam = lastExtraction.varName;
+                    }
+                    
+                    // Also check if we're compiling a pattern variable from an enum constructor
+                    // This is detected by checking if the variable name matches typical pattern variable names
+                    // and we're in a context where enum parameters were just extracted
+                    var isPatternVariable = !StringTools.startsWith(originalName, "_g") && 
+                                           !StringTools.startsWith(originalName, "g") &&
+                                           lastExtractedParam != null;
+                    
+                    if (isPatternVariable && lastExtractedParam != null) {
                         #if debug_variable_compiler
-                        // trace('[XRay VariableCompiler] Using extraction var: ${extractionVar}');
+                        // trace("[XRay VariableCompiler] ✓ PATTERN VARIABLE FROM ENUM EXTRACTION DETECTED");
+                        // trace('[XRay VariableCompiler] Pattern var: ${varName} from ${v.name}');
+                        // trace('[XRay VariableCompiler] Using extracted param: ${lastExtractedParam}');
                         #end
                         
-                        // Move to next extraction for the next pattern variable
-                        compiler.currentEnumExtractionIndex++;
-                        return '${varName} = ${extractionVar}';
-                    } else {
-                        // Fallback if we run out of extractions
-                        #if debug_variable_compiler
-                        // trace('[XRay VariableCompiler] WARNING: No more extractions available');
-                        #end
-                        return '${varName} = nil';
+                        return '${varName} = ${lastExtractedParam}';
+                    }
+                    
+                    // LEGACY: Also keep the old logic for backward compatibility
+                    if (v.name == "g" && compiler.enumExtractionVars != null && compiler.enumExtractionVars.length > 0) {
+                        // Use the extraction variables in order
+                        if (compiler.currentEnumExtractionIndex < compiler.enumExtractionVars.length) {
+                            var extractionVar = compiler.enumExtractionVars[compiler.currentEnumExtractionIndex].varName;
+                            compiler.currentEnumExtractionIndex++;
+                            return '${varName} = ${extractionVar}';
+                        }
                     }
                 case _:
             }
@@ -1284,12 +1300,12 @@ class VariableCompiler {
             return "_";
         }
         
-        if (tvar.name == "parsedMsg" || tvar.name == "_parsedMsg" || tvar.name == "parsed_msg") {
-            trace('[DEBUG VariableCompiler] CRITICAL VARIABLE: ${tvar.name} (id: ${tvar.id})');
-            trace('[DEBUG VariableCompiler]   Has -reflaxe.unused: ${tvar.meta != null && tvar.meta.has("-reflaxe.unused")}');
-            trace('[DEBUG VariableCompiler]   Available ID mappings: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
-            trace('[DEBUG VariableCompiler]   Available underscore mappings: ${[for (n in underscorePrefixMap.keys()) '${n}=>${underscorePrefixMap.get(n)}']}');
-        }
+        // if (tvar.name == "parsedMsg" || tvar.name == "_parsedMsg" || tvar.name == "parsed_msg") {
+        //     trace('[DEBUG VariableCompiler] CRITICAL VARIABLE: ${tvar.name} (id: ${tvar.id})');
+        //     trace('[DEBUG VariableCompiler]   Has -reflaxe.unused: ${tvar.meta != null && tvar.meta.has("-reflaxe.unused")}');
+        //     trace('[DEBUG VariableCompiler]   Available ID mappings: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
+        //     trace('[DEBUG VariableCompiler]   Available underscore mappings: ${[for (n in underscorePrefixMap.keys()) '${n}=>${underscorePrefixMap.get(n)}']}');
+        // }
         
         // Check for TVar.id mapping first (highest priority)
         if (variableIdMap.exists(tvar.id)) {
