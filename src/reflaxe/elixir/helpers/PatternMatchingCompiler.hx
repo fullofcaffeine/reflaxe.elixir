@@ -2044,13 +2044,77 @@ class PatternMatchingCompiler {
                 
                 // Use the passed context if available, otherwise don't pass context
                 // This allows proper state threading transformation when context is provided
+                // OPTIMIZATION: Detect TEnumParameter extraction followed by assignment
+                // Pattern: TVar(_g2, TEnumParameter(...)) followed by TVar(parsedMsg, TLocal(_g2))
+                // This should be compiled as a single extraction to the final variable
+                var optimizedExpressions = [];
+                var skipNext = false;
+                
+                for (i in 0...el.length) {
+                    if (skipNext) {
+                        skipNext = false;
+                        continue;
+                    }
+                    
+                    // Check if this is a TEnumParameter extraction to a temp variable
+                    var isTempExtraction = false;
+                    var tempVarName: String = null;
+                    switch (el[i].expr) {
+                        case TVar(tvar, init) if (init != null && StringTools.startsWith(tvar.name, "_g")):
+                            switch (init.expr) {
+                                case TEnumParameter(_, _, _):
+                                    isTempExtraction = true;
+                                    tempVarName = tvar.name;
+                                case _:
+                            }
+                        case _:
+                    }
+                    
+                    // If it's a temp extraction, look ahead for assignment from this temp
+                    if (isTempExtraction && i + 1 < el.length) {
+                        switch (el[i + 1].expr) {
+                            case TVar(targetVar, init) if (init != null):
+                                switch (init.expr) {
+                                    case TLocal(v) if (v.name == tempVarName):
+                                        // Found the pattern! Compile extraction directly to target variable
+                                        skipNext = true;
+                                        var targetName = NamingHelper.toSnakeCase(targetVar.name);
+                                        if (targetVar.meta != null && targetVar.meta.has("-reflaxe.unused")) {
+                                            targetName = "_" + targetName;
+                                        }
+                                        
+                                        // Get the TEnumParameter expression from the first TVar
+                                        var enumParamExpr = switch (el[i].expr) {
+                                            case TVar(_, init): init;
+                                            case _: null;
+                                        };
+                                        
+                                        if (enumParamExpr != null) {
+                                            // Compile the extraction directly to the target variable
+                                            var extraction = compiler.compileExpression(enumParamExpr);
+                                            optimizedExpressions.push('${targetName} = ${extraction}');
+                                            
+                                            // Register mapping so inner switch finds it
+                                            compiler.variableCompiler.registerVariableMapping(targetVar, targetName);
+                                        }
+                                        continue;
+                                    case _:
+                                }
+                            case _:
+                        }
+                    }
+                    
+                    // Normal compilation for everything else
+                    optimizedExpressions.push(compiler.compileExpression(el[i]));
+                }
+                
                 // Compile block directly
-                var result = if (el.length == 0) {
+                var result = if (optimizedExpressions.length == 0) {
                     "nil";
-                } else if (el.length == 1) {
-                    compiler.compileExpression(el[0]);
+                } else if (optimizedExpressions.length == 1) {
+                    optimizedExpressions[0];
                 } else {
-                    el.map(e -> compiler.compileExpression(e)).join("\n");
+                    optimizedExpressions.join("\n");
                 }
                 
                 #if debug_pattern_matching
