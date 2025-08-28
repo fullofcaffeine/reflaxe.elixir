@@ -114,6 +114,15 @@ class VariableCompiler {
     public function registerVariableMapping(tvar: TVar, mappedName: String): Void {
         variableIdMap.set(tvar.id, mappedName);
         
+        #if debug_variable_tracking
+        trace('[DEBUG VariableCompiler] ===============================================');
+        trace('[DEBUG VariableCompiler] REGISTER MAPPING CALLED:');
+        trace('[DEBUG VariableCompiler]   TVar: ${tvar.name} (id: ${tvar.id})');
+        trace('[DEBUG VariableCompiler]   Mapped to: ${mappedName}');
+        trace('[DEBUG VariableCompiler]   ID map size before: ${Lambda.count(variableIdMap)}');
+        trace('[DEBUG VariableCompiler]   Underscore map size before: ${Lambda.count(underscorePrefixMap)}');
+        #end
+        
         // CRITICAL FIX: Also register in underscorePrefixMap if the name has underscore prefix
         // This handles cases where different TVar instances refer to the same logical variable
         // (e.g., pattern-extracted variables referenced in nested switches)
@@ -121,14 +130,46 @@ class VariableCompiler {
             var baseName = mappedName.substring(1);  // Remove underscore prefix
             underscorePrefixMap.set(baseName, mappedName);
             
+            // CRITICAL: Also register the original camelCase name
+            // This handles cases where inner switch references parsedMsg (camelCase)
+            // but outer switch generates _parsed_msg (snake_case with underscore)
+            var originalName = tvar.getNameOrMeta(":realPath");
+            if (originalName != baseName) {
+                underscorePrefixMap.set(originalName, mappedName);
+                
+                // Also register the snake_case version
+                var snakeOriginal = NamingHelper.toSnakeCase(originalName);
+                if (snakeOriginal != originalName && snakeOriginal != baseName) {
+                    underscorePrefixMap.set(snakeOriginal, mappedName);
+                }
+            }
             
-            #if debug_variable_compiler
-            // trace('[XRay VariableCompiler] ✓ REGISTERED UNDERSCORE PREFIX: ${baseName} -> ${mappedName}');
+            // CRITICAL: Register the camelCase version of the snake_case name
+            // For "parsed_msg", also register "parsedMsg"
+            if (baseName == "parsed_msg") {
+                underscorePrefixMap.set("parsedMsg", mappedName);
+                #if debug_variable_tracking
+                trace('[DEBUG VariableCompiler] SPECIAL: Registered parsedMsg -> ${mappedName}');
+                #end
+            }
+            
+            #if debug_variable_tracking
+            trace('[DEBUG VariableCompiler] UNDERSCORE PREFIX DETECTED:');
+            trace('[DEBUG VariableCompiler]   Base name: ${baseName} -> ${mappedName}');
+            if (originalName != null) {
+                trace('[DEBUG VariableCompiler]   Original name: ${originalName} -> ${mappedName}');
+            }
+            trace('[DEBUG VariableCompiler]   Underscore map after registration:');
+            for (key in underscorePrefixMap.keys()) {
+                trace('[DEBUG VariableCompiler]     "${key}" -> "${underscorePrefixMap.get(key)}"');
+            }
             #end
         }
         
-        #if debug_variable_compiler
-        // trace('[XRay VariableCompiler] ✓ REGISTERED MAPPING: TVar.id=${tvar.id} (${tvar.name}) -> ${mappedName}');
+        #if debug_variable_tracking
+        trace('[DEBUG VariableCompiler]   ID map size after: ${Lambda.count(variableIdMap)}');
+        trace('[DEBUG VariableCompiler]   Underscore map size after: ${Lambda.count(underscorePrefixMap)}');
+        trace('[DEBUG VariableCompiler] ===============================================');
         #end
     }
     
@@ -1242,12 +1283,12 @@ class VariableCompiler {
             return "_";
         }
         
-        #if debug_variable_compiler
-        // trace('[XRay VariableCompiler] VARIABLE REFERENCE COMPILATION');
-        // trace('[XRay VariableCompiler] Variable: ${tvar.name} (id: ${tvar.id})');
-        // trace('[XRay VariableCompiler] Checking ID mappings...');
-        // trace('[XRay VariableCompiler] Available mappings: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
-        #end
+        if (tvar.name == "parsedMsg" || tvar.name == "_parsedMsg" || tvar.name == "parsed_msg") {
+            trace('[DEBUG VariableCompiler] CRITICAL VARIABLE: ${tvar.name} (id: ${tvar.id})');
+            trace('[DEBUG VariableCompiler]   Has -reflaxe.unused: ${tvar.meta != null && tvar.meta.has("-reflaxe.unused")}');
+            trace('[DEBUG VariableCompiler]   Available ID mappings: ${[for (id in variableIdMap.keys()) 'id${id}=>${variableIdMap.get(id)}']}');
+            trace('[DEBUG VariableCompiler]   Available underscore mappings: ${[for (n in underscorePrefixMap.keys()) '${n}=>${underscorePrefixMap.get(n)}']}');
+        }
         
         // Check for TVar.id mapping first (highest priority)
         if (variableIdMap.exists(tvar.id)) {
@@ -1272,12 +1313,50 @@ class VariableCompiler {
         
         #if debug_variable_compiler
         // trace('[XRay VariableCompiler] No ID mapping found, checking for unused variable metadata');
+        // trace('[XRay VariableCompiler] Original name: ${originalName}, snake_case: ${NamingHelper.toSnakeCase(originalName)}');
         #end
         
         // Get original variable name and convert to snake_case
         var varName = NamingHelper.toSnakeCase(originalName);
         
-        // CRITICAL FIX: Check if variable has -reflaxe.unused metadata
+        // CRITICAL FIX: Check underscore prefix map by BOTH original and snake_case names
+        // This handles references to variables that were declared with underscore prefix
+        // Check original camelCase name first
+        if (underscorePrefixMap.exists(originalName)) {
+            var prefixedName = underscorePrefixMap.get(originalName);
+            #if debug_variable_compiler
+            // trace('[XRay VariableCompiler] ✓ Found underscore mapping for original name: ${originalName} → ${prefixedName}');
+            #end
+            return prefixedName;
+        }
+        
+        // Then check snake_case version
+        if (underscorePrefixMap.exists(varName)) {
+            var prefixedName = underscorePrefixMap.get(varName);
+            #if debug_variable_compiler
+            // trace('[XRay VariableCompiler] ✓ Found underscore mapping for snake_case: ${varName} → ${prefixedName}');
+            #end
+            return prefixedName;
+        }
+        
+        // CRITICAL: Also check the currentFunctionParameterMap for pattern variables
+        // This handles variables extracted by outer switches that inner switches reference
+        if (compiler.currentFunctionParameterMap.exists(originalName)) {
+            var mappedName = compiler.currentFunctionParameterMap.get(originalName);
+            #if debug_variable_tracking
+            trace('[DEBUG VariableCompiler] Found in currentFunctionParameterMap: ${originalName} -> ${mappedName}');
+            #end
+            return mappedName;
+        }
+        if (compiler.currentFunctionParameterMap.exists(varName)) {
+            var mappedName = compiler.currentFunctionParameterMap.get(varName);
+            #if debug_variable_tracking
+            trace('[DEBUG VariableCompiler] Found in currentFunctionParameterMap: ${varName} -> ${mappedName}');
+            #end
+            return mappedName;
+        }
+        
+        // Check if variable has -reflaxe.unused metadata
         // If it does, it was declared with an underscore prefix, so references must use the same prefix
         if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
             if (!StringTools.startsWith(varName, "_")) {
@@ -1287,6 +1366,31 @@ class VariableCompiler {
                 #end
             }
         }
+        
+        // PRAGMATIC FIX: For pattern-extracted variables that are referenced in inner switches
+        // If no direct mapping was found, check if an underscore version was registered
+        // This handles nested switches where outer extracts _var but inner references var
+        var underscoreVersion = "_" + varName;
+        for (mappedName in variableIdMap) {
+            if (mappedName == underscoreVersion) {
+                #if debug_variable_tracking
+                trace('[DEBUG VariableCompiler] Found underscore version in ID map: ${varName} -> ${underscoreVersion}');
+                #end
+                return underscoreVersion;
+            }
+        }
+        
+        // Also check if this exact underscore version exists in currentFunctionParameterMap
+        if (compiler.currentFunctionParameterMap.exists(underscoreVersion)) {
+            #if debug_variable_tracking
+            trace('[DEBUG VariableCompiler] Found underscore version in parameter map: ${varName} -> ${underscoreVersion}');
+            #end
+            return underscoreVersion;
+        }
+        
+        #if debug_variable_compiler
+        // trace('[XRay VariableCompiler] Final variable name: ${varName}');
+        #end
         
         return varName;
     }
