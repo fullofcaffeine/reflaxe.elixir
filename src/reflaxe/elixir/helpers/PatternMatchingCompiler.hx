@@ -2937,14 +2937,22 @@ class PatternMatchingCompiler {
                                         #end
                                     }
                                     
-                                    // Store the target name (original name if renamed, actual name otherwise)
-                                    patternVars.set(i, targetName);
+                                    // CRITICAL FIX: Check if variable is marked as unused and needs underscore prefix
+                                    var isUnused = v.meta != null && v.meta.has("-reflaxe.unused");
+                                    var finalName = if (isUnused && !StringTools.startsWith(targetName, "_")) {
+                                        "_" + targetName;
+                                    } else {
+                                        targetName;
+                                    }
+                                    
+                                    // Store the final name (with underscore if unused)
+                                    patternVars.set(i, finalName);
                                     
                                     // Register TVar.id mapping so body references work
                                     if (compiler.variableCompiler != null) {
-                                        compiler.variableCompiler.registerVariableMapping(v, targetName);
+                                        compiler.variableCompiler.registerVariableMapping(v, finalName);
                                         #if debug_pattern_matching
-//                                         trace('[PatternMatchingCompiler] ✓ REGISTERED TVAR MAPPING: ${v.name}(id:${v.id}) -> ${targetName}');
+//                                         trace('[PatternMatchingCompiler] ✓ REGISTERED TVAR MAPPING: ${v.name}(id:${v.id}) -> ${finalName}');
                                         #end
                                     }
                                     
@@ -3036,28 +3044,14 @@ class PatternMatchingCompiler {
                                 if (patternVars.exists(i)) {
                                     var varName = patternVars.get(i);
                                     
-                                    // CRITICAL FIX: Use the original variable name, not the renamed one
-                                    // 
-                                    // WHY HAXE RENAMES: Prevents variable shadowing bugs by ensuring unique names
-                                    // within each scope. If 'spec' exists in outer scope and pattern also uses 'spec',
-                                    // Haxe renames the pattern variable to 'spec2' to maintain clear scoping.
-                                    // 
-                                    // WHY WE MUST UNDO IT: Elixir pattern matching requires the pattern and body
-                                    // to use identical variable names. If pattern binds 'spec2' but body references
-                                    // 'spec', Elixir will throw "undefined variable spec" error at runtime.
-                                    // 
-                                    // TODO: Use -reflaxe.renamed metadata from preprocessor for more reliable detection
-                                    if (~/^(.+?)([0-9]+)$/.match(varName)) {
-                                        // Extract base name without number suffix
-                                        var originalName = ~/^(.+?)([0-9]+)$/.replace(varName, "$1");
-                                        tupleElements.push(originalName);
-                                        
-                                        #if debug_pattern_matching
-//                                         trace('[PatternMatchingCompiler] Using original name "${originalName}" instead of renamed "${varName}" in pattern');
-                                        #end
-                                    } else {
-                                        tupleElements.push(varName);
-                                    }
+                                    // CRITICAL FIX: Use the variable name as registered (includes underscore prefix if unused)
+                                    // The patternVars map already contains the correct name with underscore if needed
+                                    // We should NOT strip suffixes or modify it further here
+                                    tupleElements.push(varName);
+                                    
+                                    #if debug_pattern_matching
+//                                     trace('[PatternMatchingCompiler] Using registered variable name in pattern: ${varName}');
+                                    #end
                                 } else {
                                     // Placeholder for missing pattern variable
                                     tupleElements.push("_");
