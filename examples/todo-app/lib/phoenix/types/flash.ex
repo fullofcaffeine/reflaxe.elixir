@@ -44,6 +44,8 @@ defmodule Flash do
     temp_string1 = nil
     temp_bool = nil
 
+    temp_string = nil
+
     tmp = phoenix_flash.type
     if ((tmp != nil)), do: temp_string = tmp, else: temp_string = "info"
 

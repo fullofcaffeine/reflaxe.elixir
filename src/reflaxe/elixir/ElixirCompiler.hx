@@ -819,6 +819,15 @@ class ElixirCompiler extends DirectToStringCompiler {
             return result;
         }
         
+        // Check for @:migration annotation - use AST-based MigrationCompiler
+        if (classType.meta.has(":migration")) {
+            var result = compileMigrationClass(classType, varFields, funcFields);
+            if (result != null) {
+                trackOutput(result);
+                return result;
+            }
+        }
+        
         // Use unified annotation system for detection, validation, and routing
         var annotationResult = reflaxe.elixir.helpers.AnnotationSystem.routeCompilation(classType, varFields, funcFields);
         if (annotationResult != null) {

@@ -225,13 +225,24 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe update_todo_in_list"
   def update_todo_in_list(updated_todo, socket) do
+    temp_todo = nil
+
     this = socket.assigns.todos
 
     g_array = []
 
     g_counter = 0
 
-    Enum.filter(this, fn item -> item.id == updated_todo.id end)
+    (fn loop ->
+      if ((g_counter < this.length)) do
+            v = Enum.at(this, g_counter)
+        g_counter + 1
+        temp_todo = nil
+        if ((v.id == updated_todo.id)), do: temp_todo = updated_todo, else: temp_todo = v
+        g_array ++ [temp_todo]
+        loop.()
+      end
+    end).()
 
     current_assigns = socket.assigns
 
@@ -249,7 +260,14 @@ defmodule TodoAppWeb.TodoLive do
 
     g_counter = 0
 
-    Enum.filter(this, fn item -> item.id != id end)
+    (fn loop ->
+      if ((g_counter < this.length)) do
+            v = Enum.at(this, g_counter)
+        g_counter + 1
+        if ((v.id != id)), do: g_array ++ [v], else: nil
+        loop.()
+      end
+    end).()
 
     current_assigns = socket.assigns
 
@@ -281,7 +299,18 @@ defmodule TodoAppWeb.TodoLive do
   def find_todo(id, todos) do
     g_counter = 0
 
-    Enum.filter(todos, fn item -> item.id == id end)
+    (fn loop ->
+      if ((g_counter < todos.length)) do
+            todo = Enum.at(todos, g_counter)
+        g_counter + 1
+        if ((todo.id == id)) do
+          todo
+        else
+          nil
+        end
+        loop.()
+      end
+    end).()
 
     nil
   end
@@ -293,7 +322,14 @@ defmodule TodoAppWeb.TodoLive do
 
     g_counter = 0
 
-    Enum.filter(todos, fn item -> item.completed end)
+    (fn loop ->
+      if ((g_counter < todos.length)) do
+            todo = Enum.at(todos, g_counter)
+        g_counter + 1
+        if todo.completed, do: count + 1, else: nil
+        loop.()
+      end
+    end).()
 
     count
   end
@@ -305,7 +341,14 @@ defmodule TodoAppWeb.TodoLive do
 
     g_counter = 0
 
-    Enum.filter(todos, fn item -> not item.completed end)
+    (fn loop ->
+      if ((g_counter < todos.length)) do
+            todo = Enum.at(todos, g_counter)
+        g_counter + 1
+        if (not todo.completed), do: count + 1, else: nil
+        loop.()
+      end
+    end).()
 
     count
   end
@@ -325,7 +368,14 @@ defmodule TodoAppWeb.TodoLive do
 
     g_counter = 0
 
-    Enum.map(this, fn item -> StringTools.trim(item) end)
+    (fn loop ->
+      if ((g_counter < this.length)) do
+            v = Enum.at(this, g_counter)
+        g_counter + 1
+        g_array ++ [StringTools.trim(v)]
+        loop.()
+      end
+    end).()
 
     g_array
   end
@@ -351,20 +401,32 @@ defmodule TodoAppWeb.TodoLive do
 
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn item -> not item.completed end)
+    (fn loop ->
+      if ((g_counter < this.length)) do
+            v = Enum.at(this, g_counter)
+        g_counter + 1
+        if (not v.completed), do: g_array ++ [v], else: nil
+        loop.()
+      end
+    end).()
     temp_array = g_array
 
     g_counter = 0
-    Enum.each(g_array, fn todo -> 
-      updated_changeset = Todo.toggle_completed(todo)
-      g_array = TodoApp.Repo.update(updated_changeset)
-    case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, __updated_todo} -> g_array = elem(g2_array, 1)
-    nil
-      {1, reason} -> g_array = elem(g2_array, 1)
-    Log.trace("Failed to complete todo " <> to_string(todo.id) <> ": " <> Std.string(reason), %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 440, className: "server.live.TodoLive", methodName: "complete_all_todos"})
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < temp_array.length)) do
+            todo = Enum.at(temp_array, g_counter)
+        g_counter + 1
+        updated_changeset = Todo.toggle_completed(todo)
+        g_array = TodoApp.Repo.update(updated_changeset)
+        case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
+          {0, __updated_todo} -> g_array = elem(g2_array, 1)
+        nil
+          {1, reason} -> g_array = elem(g2_array, 1)
+        Log.trace("Failed to complete todo " <> to_string(todo.id) <> ": " <> Std.string(reason), %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 440, className: "server.live.TodoLive", methodName: "complete_all_todos"})
+        end
+        loop.()
+      end
+    end).()
 
     g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.bulk_update(:complete_all))
     case (case g_array do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
@@ -397,20 +459,39 @@ defmodule TodoAppWeb.TodoLive do
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn item -> item.completed end)
+    (fn loop ->
+      if ((g_counter < this.length)) do
+            v = Enum.at(this, g_counter)
+        g_counter + 1
+        if v.completed, do: g_array ++ [v], else: nil
+        loop.()
+      end
+    end).()
     temp_array = g_array
 
     g_counter = 0
-    Enum.each(g_array, fn todo -> 
-      TodoApp.Repo.delete(todo)
-    end)
+    (fn loop ->
+      if ((g_counter < temp_array.length)) do
+            todo = Enum.at(temp_array, g_counter)
+        g_counter + 1
+        TodoApp.Repo.delete(todo)
+        loop.()
+      end
+    end).()
 
     TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.bulk_update(:delete_completed))
 
     this = socket.assigns.todos
     g_array = []
     g_counter = 0
-    Enum.filter(this, fn item -> not item.completed end)
+    (fn loop ->
+      if ((g_counter < this.length)) do
+            v = Enum.at(this, g_counter)
+        g_counter + 1
+        if (not v.completed), do: g_array ++ [v], else: nil
+        loop.()
+      end
+    end).()
     temp_array1 = g_array
 
     current_assigns = socket.assigns
@@ -503,7 +584,14 @@ defmodule TodoAppWeb.TodoLive do
       g_array = []
       g_counter = 0
       g_array = selected_tags
-      Enum.filter(g2, fn item -> item != tag end)
+      (fn loop ->
+        if ((g_counter < g_array.length)) do
+              v = Enum.at(g_array, g_counter)
+          g_counter + 1
+          if ((v != tag)), do: g_array ++ [v], else: nil
+          loop.()
+        end
+      end).()
       temp_array = g_array
     else
       temp_array = selected_tags ++ [tag]

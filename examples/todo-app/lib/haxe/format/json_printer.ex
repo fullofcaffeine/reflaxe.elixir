@@ -96,9 +96,13 @@ defmodule JsonPrinter do
 
     g_array = arr.length
 
-    arr
-    |> Enum.with_index()
-    |> Enum.map(fn {item, i} -> struct.write_value(item, Std.string(i)) end)
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        items ++ [struct.write_value(Enum.at(arr, i), Std.string(i))]
+        loop.()
+      end
+    end).()
 
     if (((struct.space != nil) && (items.length > 0))) do
       "[\n  " <> Enum.join(items, ",\n  ") <> "\n]"
@@ -115,7 +119,17 @@ defmodule JsonPrinter do
 
     g_counter = 0
 
-    Enum.filter(fields, fn item -> struct.space != nil end)
+    (fn loop ->
+      if ((g_counter < fields.length)) do
+            field = Enum.at(fields, g_counter)
+        g_counter + 1
+        _value = Reflect.field(obj, field)
+        _key = struct.quote_string(field)
+        val = struct.write_value(_value, field)
+        if ((struct.space != nil)), do: pairs ++ [_key <> ": " <> val], else: pairs ++ [_key <> ":" <> val]
+        loop.()
+      end
+    end).()
 
     if (((struct.space != nil) && (pairs.length > 0))) do
       "{\n  " <> Enum.join(pairs, ",\n  ") <> "\n}"
@@ -132,57 +146,44 @@ defmodule JsonPrinter do
 
     g_array = s.length
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((g_counter < g_array)) end,
-        fn ->
-          i = g_counter + 1
-          c = s.char_code_at(i)
-          if ((c == nil)) do
-            if ((c < 32)) do
-              hex = StringTools.hex(c, 4)
-              result = result <> "\\u" <> hex
-            else
-              result = result <> s.char_at(i)
-            end
+    (fn loop ->
+      if ((g_counter < g_array)) do
+            i = g_counter + 1
+        c = s.char_code_at(i)
+        if ((c == nil)) do
+          if ((c < 32)) do
+            hex = StringTools.hex(c, 4)
+            result = result <> "\\u" <> hex
           else
-            case (c) do
-              _ ->
-                result = result <> "\\b"
-              _ ->
-                result = result <> "\\t"
-              _ ->
-                result = result <> "\\n"
-              _ ->
-                result = result <> "\\f"
-              _ ->
-                result = result <> "\\r"
-              _ ->
-                result = result <> "\\\""
-              _ ->
-                result = result <> "\\\\"
-              _ -> if ((c < 32)) do
-              hex = StringTools.hex(c, 4)
-              result = result <> "\\u" <> hex
-            else
-              result = result <> s.char_at(i)
-            end
-            end
+            result = result <> s.char_at(i)
           end
-        end,
-        loop_helper
-      )
-    )
+        else
+          case (c) do
+            _ ->
+              result = result <> "\\b"
+            _ ->
+              result = result <> "\\t"
+            _ ->
+              result = result <> "\\n"
+            _ ->
+              result = result <> "\\f"
+            _ ->
+              result = result <> "\\r"
+            _ ->
+              result = result <> "\\\""
+            _ ->
+              result = result <> "\\\\"
+            _ -> if ((c < 32)) do
+            hex = StringTools.hex(c, 4)
+            result = result <> "\\u" <> hex
+          else
+            result = result <> s.char_at(i)
+          end
+          end
+        end
+        loop.()
+      end
+    end).()
 
     result = result <> "\""
 
