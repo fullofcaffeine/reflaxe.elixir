@@ -1,0 +1,8 @@
+-cp src
+-cp std
+-lib reflaxe
+-cp .
+-D elixir_output=test_atom_output
+-D reflaxe_runtime
+--macro reflaxe.elixir.CompilerInit.Start()
+TestAtomGen

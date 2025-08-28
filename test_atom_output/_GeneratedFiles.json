@@ -1,0 +1,10 @@
+{
+  "filesGenerated": [
+  "haxe/stack_item.ex",
+  "value_type.ex",
+  "test_atom_gen.ex"
+],
+  "id": 1,
+  "wasCached": false,
+  "version": 1
+}

@@ -3,6 +3,8 @@ package reflaxe.elixir.helpers;
 import haxe.macro.Type;
 import reflaxe.elixir.helpers.NamingHelper;
 
+using StringTools;
+
 /**
  * Shared utility functions for the Elixir compiler
  * 
@@ -367,6 +369,183 @@ class CompilerUtilities {
             case _: 
                 null;
         };
+    }
+
+    /**
+     * Strip quotes from string literals
+     * 
+     * STRING CLEANUP UTILITY
+     * 
+     * WHY: Need clean strings for atom conversion and other processing.
+     *      Was duplicated in multiple places including OTPCompiler.
+     * 
+     * WHAT: Removes surrounding quotes from strings, handling both
+     *       single and double quoted strings.
+     * 
+     * HOW: Checks for matching quotes at start and end, removes them.
+     * 
+     * EDGE CASES:
+     * - Mixed quotes ("text') are not stripped
+     * - Empty strings return empty
+     * - Non-quoted strings return unchanged
+     * 
+     * @param str String that may have quotes
+     * @return String without surrounding quotes
+     * @since 1.0.0
+     */
+    public static function stripQuotes(str: String): String {
+        #if debug_utilities
+        // trace('[XRay Utilities] STRIP QUOTES START');
+        // trace('[XRay Utilities] Input: "${str}"');
+        #end
+        
+        if ((StringTools.startsWith(str, '"') && StringTools.endsWith(str, '"')) || 
+            (StringTools.startsWith(str, "'") && StringTools.endsWith(str, "'"))) {
+            var result = str.substring(1, str.length - 1);
+            
+            #if debug_utilities
+            // trace('[XRay Utilities] ✓ REMOVED QUOTES: "${result}"');
+            // trace('[XRay Utilities] STRIP QUOTES END');
+            #end
+            
+            return result;
+        }
+        
+        #if debug_utilities
+        // trace('[XRay Utilities] No quotes to strip');
+        // trace('[XRay Utilities] STRIP QUOTES END');
+        #end
+        
+        return str;
+    }
+
+    /**
+     * Strip leading colon from atom strings
+     * 
+     * ATOM CLEANUP UTILITY
+     * 
+     * WHY: Prevent double colons in atom literals when processing
+     *      strings that may already have colon prefix.
+     * 
+     * WHAT: Removes leading colon if present, preserving rest of string.
+     * 
+     * HOW: Checks first character, strips if colon.
+     * 
+     * EDGE CASES:
+     * - Empty strings return empty
+     * - Strings without colon return unchanged
+     * - Only first colon removed ("::" becomes ":")
+     * 
+     * @param str String that may have leading colon
+     * @return String without leading colon
+     * @since 1.0.0
+     */
+    public static function stripColon(str: String): String {
+        #if debug_utilities
+        // trace('[XRay Utilities] STRIP COLON START');
+        // trace('[XRay Utilities] Input: "${str}"');
+        #end
+        
+        if (StringTools.startsWith(str, ":")) {
+            var result = str.substring(1);
+            
+            #if debug_utilities
+            // trace('[XRay Utilities] ✓ REMOVED COLON: "${result}"');
+            // trace('[XRay Utilities] STRIP COLON END');
+            #end
+            
+            return result;
+        }
+        
+        #if debug_utilities
+        // trace('[XRay Utilities] No colon to strip');
+        // trace('[XRay Utilities] STRIP COLON END');
+        #end
+        
+        return str;
+    }
+
+    /**
+     * Format a string as a properly quoted Elixir atom
+     * 
+     * ATOM FORMATTING UTILITY
+     * 
+     * WHY: Atoms with dots, spaces, or other special chars must be quoted
+     *      in Elixir. This was causing invalid syntax like `:Phoenix.PubSub`
+     *      instead of `:"Phoenix.PubSub"`.
+     * 
+     * WHAT: Converts a string to a properly formatted atom literal,
+     *       automatically determining if quotes are needed.
+     * 
+     * HOW: 1. Strip existing quotes and colons
+     *      2. Check for special characters requiring quotes
+     *      3. Return properly formatted atom with or without quotes
+     * 
+     * EDGE CASES:
+     * - Dots (Phoenix.PubSub) → :"Phoenix.PubSub"
+     * - Spaces (my atom) → :"my atom"
+     * - Uppercase start (Module) → :"Module"
+     * - Simple atoms (worker) → :worker
+     * - Reserved words handled by quoting
+     * 
+     * @param str String to convert to atom
+     * @return Properly formatted atom literal
+     * @since 1.0.0
+     */
+    public static function formatAsAtom(str: String): String {
+        #if debug_utilities
+        // trace('[XRay Utilities] FORMAT AS ATOM START');
+        // trace('[XRay Utilities] Input: "${str}"');
+        #end
+        
+        // Strip quotes and existing colons first
+        str = stripQuotes(str);
+        str = stripColon(str);
+        
+        #if debug_utilities
+        // trace('[XRay Utilities] After cleanup: "${str}"');
+        #end
+        
+        // Check if the string needs quoting
+        // Atoms need quoting if they:
+        // - Contain dots (e.g., Phoenix.PubSub)
+        // - Contain spaces or special characters
+        // - Start with uppercase letter (Module names)
+        // - Are reserved words
+        var needsQuoting = false;
+        
+        // Check for dots
+        if (str.indexOf(".") != -1) {
+            needsQuoting = true;
+            #if debug_utilities
+            // trace('[XRay Utilities] → Contains dots, needs quoting');
+            #end
+        }
+        // Check for spaces
+        else if (str.indexOf(" ") != -1) {
+            needsQuoting = true;
+            #if debug_utilities
+            // trace('[XRay Utilities] → Contains spaces, needs quoting');
+            #end
+        }
+        // Check if starts with uppercase (module names)
+        else if (str.length > 0 && str.charAt(0) == str.charAt(0).toUpperCase() && 
+                 str.charAt(0) >= 'A' && str.charAt(0) <= 'Z') {
+            needsQuoting = true;
+            #if debug_utilities
+            // trace('[XRay Utilities] → Starts with uppercase, needs quoting');
+            #end
+        }
+        
+        // Return properly formatted atom
+        var result = needsQuoting ? ':"${str}"' : ':${str}';
+        
+        #if debug_utilities
+        // trace('[XRay Utilities] ✓ FORMATTED ATOM: ${result}');
+        // trace('[XRay Utilities] FORMAT AS ATOM END');
+        #end
+        
+        return result;
     }
 
     /**

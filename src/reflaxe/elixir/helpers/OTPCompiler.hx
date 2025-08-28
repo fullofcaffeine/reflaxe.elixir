@@ -7,6 +7,7 @@ import haxe.macro.Expr;
 import reflaxe.BaseCompiler;
 import reflaxe.elixir.ElixirCompiler;
 import reflaxe.elixir.helpers.AnnotationSystem;
+import reflaxe.elixir.helpers.CompilerUtilities;
 
 using reflaxe.helpers.NullHelper;
 using reflaxe.helpers.NameMetaHelper;
@@ -95,9 +96,9 @@ class OTPCompiler {
                 case "id":
                     // Resolve app name interpolation first
                     compiledValue = resolveAppNameInString(compiledValue, appName);
-                    // Ensure ID is always an atom for OTP compatibility
+                    // Ensure ID is always a properly formatted atom for OTP compatibility
                     if (!compiledValue.startsWith(":")) {
-                        compiledValue = ':${stripQuotes(compiledValue)}';
+                        compiledValue = CompilerUtilities.formatAsAtom(compiledValue);
                     }
                     compiledFields.set("id", compiledValue);
                     
@@ -109,7 +110,7 @@ class OTPCompiler {
                         compiledFields.set("start", compiledValue);
                     } else {
                         // Assume it's a module reference, convert to proper start tuple
-                        var moduleName = stripQuotes(compiledValue);
+                        var moduleName = CompilerUtilities.stripQuotes(compiledValue);
                         compiledFields.set("start", '{${moduleName}, :start_link, []}');
                     }
                     
@@ -137,7 +138,7 @@ class OTPCompiler {
                     
                 case "type":
                     // Type is either :worker or :supervisor
-                    var typeValue = stripQuotes(compiledValue);
+                    var typeValue = CompilerUtilities.stripQuotes(compiledValue);
                     if (typeValue.indexOf("GenServer") != -1 || typeValue.indexOf("Agent") != -1) {
                         compiledFields.set("type", ":worker");
                     } else if (typeValue.indexOf("Supervisor") != -1) {
@@ -168,7 +169,8 @@ class OTPCompiler {
                     var parts = startValue.split(",");
                     if (parts.length > 0) {
                         var moduleName = parts[0].substring(1).trim();
-                        compiledFields.set("id", ':${moduleName}');
+                        // Use formatAsAtom to properly handle module names with dots
+                        compiledFields.set("id", CompilerUtilities.formatAsAtom(moduleName));
                     }
                 } else {
                     compiledFields.set("id", ":worker");
@@ -235,7 +237,7 @@ class OTPCompiler {
         for (field in fields) {
             switch (field.name) {
                 case "strategy":
-                    strategy = stripQuotes(compiler.compileExpression(field.expr));
+                    strategy = CompilerUtilities.stripQuotes(compiler.compileExpression(field.expr));
                 case "max_restarts":
                     maxRestarts = compiler.compileExpression(field.expr);
                 case "max_seconds":  
@@ -257,7 +259,7 @@ class OTPCompiler {
         var options = [];
         
         // Add restart strategy - ensure proper atom formatting
-        options.push('strategy: :${stripColon(strategy)}');
+        options.push('strategy: :${CompilerUtilities.stripColon(strategy)}');
         
         // Add supervisor name
         options.push('name: ${name}');
@@ -334,41 +336,6 @@ class OTPCompiler {
     }
     
     /**
-     * Helper to strip quotes from string literals
-     * 
-     * WHY: Need clean strings for atom conversion
-     * WHAT: Removes surrounding quotes from strings
-     * HOW: Checks for quotes and removes them
-     * 
-     * @param str String that may have quotes
-     * @return String without surrounding quotes
-     */
-    private function stripQuotes(str: String): String {
-        if ((str.startsWith('"') && str.endsWith('"')) || 
-            (str.startsWith("'") && str.endsWith("'"))) {
-            return str.substring(1, str.length - 1);
-        }
-        return str;
-    }
-    
-    /**
-     * Helper to strip leading colon from atom strings
-     * 
-     * WHY: Prevent double colons in atom literals
-     * WHAT: Removes leading colon if present
-     * HOW: Checks for colon and strips it
-     * 
-     * @param str String that may have leading colon
-     * @return String without leading colon
-     */
-    private function stripColon(str: String): String {
-        if (str.startsWith(":")) {
-            return str.substring(1);
-        }
-        return str;
-    }
-    
-    /**
      * Resolve app name interpolation in a string at compile time
      * 
      * WHY: Child specs need proper module names with app prefix
@@ -383,7 +350,7 @@ class OTPCompiler {
         if (str == null) return "";
         
         // Remove outer quotes
-        str = stripQuotes(str);
+        str = CompilerUtilities.stripQuotes(str);
         
         // Handle common interpolation patterns from Haxe string interpolation
         str = StringTools.replace(str, '" <> app_name <> "', appName);

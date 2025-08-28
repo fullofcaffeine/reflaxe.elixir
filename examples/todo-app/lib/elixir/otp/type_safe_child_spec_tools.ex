@@ -16,7 +16,7 @@ defmodule TypeSafeChildSpecTools do
 
     case (elem(spec, 0)) do
       {0, name} -> g_array = elem(spec, 1)
-    temp_result = %{type: :worker, start: {%{"module" => "Phoenix.PubSub", "func" => "start_link", "args" => [%{name: name}]}, :start_link, []}, restart: :permanent, id: :Phoenix.PubSub}
+    temp_result = %{type: :worker, start: {%{"module" => "Phoenix.PubSub", "func" => "start_link", "args" => [%{name: name}]}, :start_link, []}, restart: :permanent, id: :"Phoenix.PubSub"}
       {1, config} -> g_array = elem(spec, 1)
     repo_module = "" <> app_name <> ".Repo"
     if ((config != nil)), do: temp_array = [config], else: temp_array = []
