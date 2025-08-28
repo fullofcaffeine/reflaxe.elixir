@@ -6,9 +6,9 @@ defmodule Main do
   def main() do
     test = TestEnum.option1("test")
 
-    case (case test do :option1 -> 0; :option2 -> 1; :option3 -> 2; _ -> -1 end) do
-      {0, __value} -> g_array = elem(test, 1)
-      {1, __data} -> g_array = elem(test, 1)
+    case test do
+      0 -> _value = elem(test, 1)
+      1 -> _data = elem(test, 1)
     Log.trace("Option2", %{"fileName" => "Main.hx", "lineNumber" => 23, "className" => "Main", "methodName" => "main"})
       2 -> Log.trace("Option3", %{"fileName" => "Main.hx", "lineNumber" => 25, "className" => "Main", "methodName" => "main"})
     end

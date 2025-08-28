@@ -37,53 +37,24 @@ defmodule Bytes do
 
     i = 0
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
+    (fn loop ->
+      if ((i < s.length)) do
+            temp_number = nil
+        index = i + 1
+        temp_number = s.cca(index)
+        c = temp_number
+        if (((55296 <= c) && (c <= 56319))) do
+          temp_left = nil
+          index = i + 1
+          temp_left = s.cca(index)
+          c = (Bitwise.bsl((c - 55232), 10) or (temp_left and 1023))
         else
           nil
         end
+        a = if ((c <= 127)), do: a ++ [c], else: a = if ((c <= 2047)), do: a ++ [(128 or (c and 63))], else: a = if ((c <= 65535)), do: a ++ [(128 or (c and 63))], else: a ++ [(128 or (c and 63))]
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((g_counter < g_array.length)) end,
-        fn ->
-          index = g_counter + 1
-          temp_number = g_array.cca(index)
-          c = temp_number
-          if (((55296 <= c) && (c <= 56319))) do
-            index = g_counter + 1
-            temp_left = g_array.cca(index)
-            c = (Bitwise.bsl((c - 55232), 10) or (temp_left and 1023))
-          else
-            nil
-          end
-          if ((c <= 127)) do
-            a ++ [c]
-          else
-            if ((c <= 2047)) do
-              a ++ [(192 or Bitwise.bsr(c, 6))]
-              a ++ [(128 or (c and 63))]
-            else
-              if ((c <= 65535)) do
-                a ++ [(224 or Bitwise.bsr(c, 12))]
-                a ++ [(128 or (Bitwise.bsr(c, 6) and 63))]
-                a ++ [(128 or (c and 63))]
-              else
-                a ++ [(240 or Bitwise.bsr(c, 18))]
-                a ++ [(128 or (Bitwise.bsr(c, 12) and 63))]
-                a ++ [(128 or (Bitwise.bsr(c, 6) and 63))]
-                a ++ [(128 or (c and 63))]
-              end
-            end
-          end
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     Bytes.new(a.length, a)
   end

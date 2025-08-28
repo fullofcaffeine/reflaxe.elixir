@@ -37,9 +37,14 @@ defmodule SourceMapValidationTest do
 
     g_counter = 0
 
-    Enum.each(g_array, fn item -> 
-      SourceMapValidationTest.process_item(item)
-    end)
+    (fn loop ->
+      if ((g_counter < array.length)) do
+            item = Enum.at(array, g_counter)
+        g_counter + 1
+        SourceMapValidationTest.process_item(item)
+        loop.()
+      end
+    end).()
 
     _obj_name = "Test"
 

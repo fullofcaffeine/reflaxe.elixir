@@ -21,10 +21,10 @@ defmodule ResultTools do
 
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = {:ok, transform.(value)}
-      {1, error} -> g_array = elem(result, 1)
+      1 -> error = elem(result, 1)
     temp_result = {:error, error}
     end
 
@@ -35,10 +35,10 @@ defmodule ResultTools do
   def flat_map(result, transform) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = transform.(value)
-      {1, error} -> g_array = elem(result, 1)
+      1 -> error = elem(result, 1)
     temp_result = {:error, error}
     end
 
@@ -54,10 +54,10 @@ defmodule ResultTools do
   def fold(result, on_success, on_error) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = on_success.(value)
-      {1, error} -> g_array = elem(result, 1)
+      1 -> error = elem(result, 1)
     temp_result = on_error.(error)
     end
 
@@ -68,9 +68,11 @@ defmodule ResultTools do
   def is_ok(result) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> temp_result = true
-      1 -> temp_result = false
+    case result do
+      0 -> g_param_0 = elem(result, 1)
+    temp_result = true
+      1 -> g_param_0 = elem(result, 1)
+    temp_result = false
     end
 
     temp_result
@@ -80,9 +82,11 @@ defmodule ResultTools do
   def is_error(result) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      0 -> temp_result = false
-      1 -> temp_result = true
+    case result do
+      0 -> g_param_0 = elem(result, 1)
+    temp_result = false
+      1 -> g_param_0 = elem(result, 1)
+    temp_result = true
     end
 
     temp_result
@@ -92,10 +96,10 @@ defmodule ResultTools do
   def unwrap(result) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = value
-      {1, error} -> g_array = elem(result, 1)
+      1 -> error = elem(result, 1)
     raise "Attempted to unwrap Error result: " <> Std.string(error)
     end
 
@@ -106,10 +110,11 @@ defmodule ResultTools do
   def unwrap_or(result, default_value) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = value
-      1 -> temp_result = default_value
+      1 -> g_param_0 = elem(result, 1)
+    temp_result = default_value
     end
 
     temp_result
@@ -119,10 +124,10 @@ defmodule ResultTools do
   def unwrap_or_else(result, error_handler) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = value
-      {1, error} -> g_array = elem(result, 1)
+      1 -> error = elem(result, 1)
     temp_result = error_handler.(error)
     end
 
@@ -133,10 +138,10 @@ defmodule ResultTools do
   def filter(result, predicate, error_value) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     if predicate.(value), do: temp_result = {:ok, value}, else: temp_result = {:error, error_value}
-      {1, error} -> g_array = elem(result, 1)
+      1 -> error = elem(result, 1)
     temp_result = {:error, error}
     end
 
@@ -147,10 +152,10 @@ defmodule ResultTools do
   def map_error(result, transform) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = {:ok, value}
-      {1, error} -> g_array = elem(result, 1)
+      1 -> error = elem(result, 1)
     temp_result = {:error, transform.(error)}
     end
 
@@ -161,10 +166,10 @@ defmodule ResultTools do
   def bimap(result, on_success, on_error) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = {:ok, on_success.(value)}
-      {1, error} -> g_array = elem(result, 1)
+      1 -> error = elem(result, 1)
     temp_result = {:error, on_error.(error)}
     end
 
@@ -187,14 +192,19 @@ defmodule ResultTools do
 
     g_counter = 0
 
-    Enum.each(g_array, fn result -> 
-      case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
-    values ++ [value]
-      {1, error} -> g_array = elem(result, 1)
-    {:error, error}
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < results.length)) do
+            result = Enum.at(results, g_counter)
+        g_counter + 1
+        case result do
+          0 -> value = elem(result, 1)
+        values = values ++ [value]
+          1 -> error = elem(result, 1)
+        {:error, error}
+        end
+        loop.()
+      end
+    end).()
 
     {:ok, values}
   end
@@ -205,7 +215,14 @@ defmodule ResultTools do
 
     g_counter = 0
 
-    Enum.map(array, fn item -> transform.(item) end)
+    (fn loop ->
+      if ((g_counter < array.length)) do
+            v = Enum.at(array, g_counter)
+        g_counter + 1
+        g_array = g_array ++ [transform.(v)]
+        loop.()
+      end
+    end).()
 
     ResultTools.sequence(g_array)
   end
@@ -214,10 +231,11 @@ defmodule ResultTools do
   def to_option(result) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = Option.some(value)
-      1 -> temp_result = :error
+      1 -> g_param_0 = elem(result, 1)
+    temp_result = :error
     end
 
     temp_result

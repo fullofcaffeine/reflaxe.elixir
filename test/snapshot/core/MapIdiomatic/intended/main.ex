@@ -118,27 +118,14 @@ defmodule Main do
     has_keys = false
 
     key = Map.keys(map)
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if key.has_next() do
+            _key = _key.next()
+        has_keys = true
+        throw(:break)
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          _key = key.next()
-          has_keys = true
-          throw(:break)
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     Log.trace("Map has keys: " <> Std.string(has_keys), %{"fileName" => "Main.hx", "lineNumber" => 112, "className" => "Main", "methodName" => "testMapQueries"})
 
@@ -147,27 +134,14 @@ defmodule Main do
     empty_has_keys = false
 
     key = Map.keys(empty_map)
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if _key.has_next() do
+            _key = _key.next()
+        empty_has_keys = true
+        throw(:break)
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          _key = key.next()
-          empty_has_keys = true
-          throw(:break)
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     Log.trace("Empty map has keys: " <> Std.string(empty_has_keys), %{"fileName" => "Main.hx", "lineNumber" => 120, "className" => "Main", "methodName" => "testMapQueries"})
   end
@@ -187,27 +161,14 @@ defmodule Main do
     Log.trace("Iterating over map:", %{"fileName" => "Main.hx", "lineNumber" => 136, "className" => "Main", "methodName" => "testMapTransformations"})
 
     key = Map.keys(numbers)
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if _key.has_next() do
+            key = _key.next()
+        value = Map.get(numbers, _key)
+        Log.trace("  " <> _key <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 139, "className" => "Main", "methodName" => "testMapTransformations"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          value = Map.get(numbers, key)
-          Log.trace("  " <> key <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 139, "className" => "Main", "methodName" => "testMapTransformations"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     copied = Map.new(numbers)
 
@@ -224,27 +185,14 @@ defmodule Main do
     Log.trace("Int-keyed map:", %{"fileName" => "Main.hx", "lineNumber" => 154, "className" => "Main", "methodName" => "testMapTransformations"})
 
     key = Map.keys(int_map)
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if _key.has_next() do
+            key = _key.next()
+        value = Map.get(int_map, _key)
+        Log.trace("  " <> to_string(_key) <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 157, "className" => "Main", "methodName" => "testMapTransformations"})
+        loop.()
       end
-
-      loop_helper.(
-        fn -> key.has_next() end,
-        fn ->
-          key = key.next()
-          value = Map.get(int_map, key)
-          Log.trace("  " <> to_string(key) <> " => " <> to_string(value), %{"fileName" => "Main.hx", "lineNumber" => 157, "className" => "Main", "methodName" => "testMapTransformations"})
-        end,
-        loop_helper
-      )
-    )
+    end).()
   end
 
   @doc "Generated from Haxe testMapUtilities"

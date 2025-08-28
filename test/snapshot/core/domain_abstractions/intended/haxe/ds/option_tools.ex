@@ -41,8 +41,8 @@ defmodule OptionTools do
   def map(option, transform) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     temp_result = Option.some(transform.(value))
       1 -> temp_result = :error
     end
@@ -54,8 +54,8 @@ defmodule OptionTools do
   def then(option, transform) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     temp_result = transform.(value)
       1 -> temp_result = :error
     end
@@ -72,8 +72,8 @@ defmodule OptionTools do
   def flatten(option) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, inner} -> g_array = elem(option, 1)
+    case option do
+      0 -> inner = elem(option, 1)
     temp_result = inner
       1 -> temp_result = :error
     end
@@ -85,8 +85,8 @@ defmodule OptionTools do
   def filter(option, predicate) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     if predicate.(value), do: temp_result = Option.some(value), else: temp_result = :error
       1 -> temp_result = :error
     end
@@ -98,8 +98,8 @@ defmodule OptionTools do
   def unwrap(option, default_value) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     temp_result = value
       1 -> temp_result = default_value
     end
@@ -111,8 +111,8 @@ defmodule OptionTools do
   def lazy_unwrap(option, fn_) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     temp_result = value
       1 -> temp_result = fn_.()
     end
@@ -124,8 +124,9 @@ defmodule OptionTools do
   def or_(first, second) do
     temp_result = nil
 
-    case (case first do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 -> temp_result = first
+    case first do
+      0 -> g_param_0 = elem(first, 1)
+    temp_result = first
       1 -> temp_result = second
     end
 
@@ -136,8 +137,9 @@ defmodule OptionTools do
   def lazy_or(first, fn_) do
     temp_result = nil
 
-    case (case first do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 -> temp_result = first
+    case first do
+      0 -> g_param_0 = elem(first, 1)
+    temp_result = first
       1 -> temp_result = fn_.()
     end
 
@@ -148,8 +150,9 @@ defmodule OptionTools do
   def is_some(option) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 -> temp_result = true
+    case option do
+      0 -> g_param_0 = elem(option, 1)
+    temp_result = true
       1 -> temp_result = false
     end
 
@@ -160,8 +163,9 @@ defmodule OptionTools do
   def is_none(option) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      0 -> temp_result = false
+    case option do
+      0 -> g_param_0 = elem(option, 1)
+    temp_result = false
       1 -> temp_result = true
     end
 
@@ -174,13 +178,18 @@ defmodule OptionTools do
 
     g_counter = 0
 
-    Enum.each(g_array, fn option -> 
-      case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
-    values ++ [value]
-      1 -> :error
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < options.length)) do
+            option = Enum.at(options, g_counter)
+        g_counter + 1
+        case option do
+          0 -> value = elem(option, 1)
+        values = values ++ [value]
+          1 -> :error
+        end
+        loop.()
+      end
+    end).()
 
     Option.some(values)
   end
@@ -191,13 +200,18 @@ defmodule OptionTools do
 
     g_counter = 0
 
-    Enum.each(g_array, fn option -> 
-      case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
-    result ++ [value]
-      1 -> nil
-    end
-    end)
+    (fn loop ->
+      if ((g_counter < options.length)) do
+            option = Enum.at(options, g_counter)
+        g_counter + 1
+        case option do
+          0 -> value = elem(option, 1)
+        result = result ++ [value]
+          1 -> nil
+        end
+        loop.()
+      end
+    end).()
 
     result
   end
@@ -206,8 +220,8 @@ defmodule OptionTools do
   def to_result(option, error) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     temp_result = {:ok, value}
       1 -> temp_result = {:error, error}
     end
@@ -219,10 +233,11 @@ defmodule OptionTools do
   def from_result(result) do
     temp_result = nil
 
-    case (case result do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(result, 1)
+    case result do
+      0 -> value = elem(result, 1)
     temp_result = Option.some(value)
-      1 -> temp_result = :error
+      1 -> g_param_0 = elem(result, 1)
+    temp_result = :error
     end
 
     temp_result
@@ -241,8 +256,8 @@ defmodule OptionTools do
   def to_nullable(option) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     temp_result = value
       1 -> temp_result = nil
     end
@@ -254,8 +269,8 @@ defmodule OptionTools do
   def to_reply(option) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     temp_result = %{"reply" => value, "status" => "ok"}
       1 -> temp_result = %{"reply" => nil, "status" => "none"}
     end
@@ -267,8 +282,8 @@ defmodule OptionTools do
   def expect(option, message) do
     temp_result = nil
 
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     temp_result = value
       1 -> raise "Expected Some value but got None: " <> message
     end
@@ -288,8 +303,8 @@ defmodule OptionTools do
 
   @doc "Generated from Haxe apply"
   def apply(option, fn_) do
-    case (case option do {:ok, _} -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(option, 1)
+    case option do
+      0 -> value = elem(option, 1)
     fn_.(value)
       1 -> nil
     end

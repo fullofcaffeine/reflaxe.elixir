@@ -8,13 +8,10 @@ defmodule Main do
 
     temp_result = nil
 
-    case (value) do
-      _ ->
-        "zero"
-      _ ->
-        "one"
-      _ ->
-        "two"
+    case value do
+      0 -> "zero"
+      1 -> "one"
+      2 -> "two"
       _ -> n = value
     if ((n < 0)) do
       temp_result = "negative"
@@ -31,29 +28,24 @@ defmodule Main do
   def process_array(arr) do
     temp_result = nil
 
-    case (arr.length) do
-      _ ->
-        temp_result = "empty"
-      _ ->
-        g_array = Enum.at(arr, 0)
+    case arr.length do
+      0 -> temp_result = "empty"
+      1 -> g_array = Enum.at(arr, 0)
     x = g_array
     temp_result = "single: " <> to_string(x)
-      _ ->
-        g_array = Enum.at(arr, 0)
+      2 -> g_array = Enum.at(arr, 0)
     g_array = Enum.at(arr, 1)
     x = g_array
     y = g_array
     temp_result = "pair: " <> to_string(x) <> "," <> to_string(y)
-      _ ->
-        g_array = Enum.at(arr, 0)
+      3 -> g_array = Enum.at(arr, 0)
     g_array = Enum.at(arr, 1)
     g_array = Enum.at(arr, 2)
     x = g_array
     y = g_array
     z = g_array
     temp_result = "triple: " <> to_string(x) <> "," <> to_string(y) <> "," <> to_string(z)
-      _ ->
-        g_array = Enum.at(arr, 0)
+      4 -> g_array = Enum.at(arr, 0)
     g_array = Enum.at(arr, 1)
     g_array = Enum.at(arr, 2)
     g_array = Enum.at(arr, 3)
@@ -73,7 +65,10 @@ defmodule Main do
   def classify_string(str) do
     temp_result = nil
 
-    case (str) do
+    case str do
+      "" -> "empty"
+      "goodbye" -> "farewell"
+      "hello" -> "greeting"
       _ -> s = str
     if ((s.length == 1)) do
       temp_result = "single char"
@@ -156,11 +151,9 @@ defmodule Main do
   def match_matrix(matrix) do
     temp_result = nil
 
-    case (matrix.length) do
-      _ ->
-        temp_result = "empty matrix"
-      _ ->
-        g_array = Enum.at(matrix, 0)
+    case matrix.length do
+      0 -> temp_result = "empty matrix"
+      1 -> g_array = Enum.at(matrix, 0)
     if ((g_array.length == 1)) do
       g_array = Enum.at(g_array, 0)
       x = g_array
@@ -169,8 +162,7 @@ defmodule Main do
       m = matrix
       if ((m.length == Enum.at(m, 0).length)), do: temp_result = "square matrix " <> to_string(m.length) <> "x" <> to_string(m.length), else: temp_result = "non-square matrix"
     end
-      _ ->
-        g_array = Enum.at(matrix, 0)
+      2 -> g_array = Enum.at(matrix, 0)
     g_array = Enum.at(matrix, 1)
     if ((g_array.length == 2)) do
       g_array = Enum.at(g_array, 0)
@@ -191,8 +183,7 @@ defmodule Main do
       m = matrix
       if ((m.length == Enum.at(m, 0).length)), do: temp_result = "square matrix " <> to_string(m.length) <> "x" <> to_string(m.length), else: temp_result = "non-square matrix"
     end
-      _ ->
-        g_array = Enum.at(matrix, 0)
+      3 -> g_array = Enum.at(matrix, 0)
     g_array = Enum.at(matrix, 1)
     g_array = Enum.at(matrix, 2)
     if ((g_array.length == 3)) do
@@ -241,24 +232,58 @@ defmodule Main do
     temp_result = nil
 
     a = age
-    if ((a < 0)) do
+    if ((_a < 0)) do
       temp_result = "invalid age"
     else
       a = age
-      if (((a >= 0) && (a < 13))) do
+      if (((_a >= 0) && (_a < 13))) do
         temp_result = "child"
       else
-        case (has_permission) do
+        case has_permission do
+          false -> a = age
+        if (((_a >= 13) && (_a < 18))) do
+          temp_result = "teen without permission"
+        else
+          a = age
+          if (((_a >= 18) && (_a < 21))) do
+            temp_result = "young adult"
+          else
+            a = age
+            if (((_a >= 21) && (_a < 65))) do
+              temp_result = "adult"
+            else
+              a = age
+              if ((_a >= 65)), do: temp_result = "senior", else: temp_result = "unknown"
+            end
+          end
+        end
+          true -> a = age
+        if (((_a >= 13) && (_a < 18))) do
+          temp_result = "teen with permission"
+        else
+          a = age
+          if (((_a >= 18) && (_a < 21))) do
+            temp_result = "young adult"
+          else
+            a = age
+            if (((_a >= 21) && (_a < 65))) do
+              temp_result = "adult"
+            else
+              a = age
+              if ((_a >= 65)), do: temp_result = "senior", else: temp_result = "unknown"
+            end
+          end
+        end
           _ -> a = age
-        if (((a >= 18) && (a < 21))) do
+        if (((_a >= 18) && (_a < 21))) do
           temp_result = "young adult"
         else
           a = age
-          if (((a >= 21) && (a < 65))) do
+          if (((_a >= 21) && (_a < 65))) do
             temp_result = "adult"
           else
             a = age
-            if ((a >= 65)), do: temp_result = "senior", else: temp_result = "unknown"
+            if ((_a >= 65)), do: temp_result = "senior", else: temp_result = "unknown"
           end
         end
         end
@@ -311,14 +336,17 @@ defmodule Main do
     secondary_colors = ["orange", "purple", "yellow"]
 
     c = color
-    if ((primary_colors.index_of(c) >= 0)) do
+    if ((primary_colors.index_of(_c) >= 0)) do
       temp_result = "primary color"
     else
       c = color
-      if ((secondary_colors.index_of(c) >= 0)) do
+      if ((secondary_colors.index_of(_c) >= 0)) do
         temp_result = "secondary color"
       else
-        case (color) do
+        case color do
+          "black" -> "monochrome"
+          "gray" -> "monochrome"
+          "white" -> "monochrome"
           _ -> "unknown color"
         end
       end
@@ -331,7 +359,19 @@ defmodule Main do
   def match_status(status) do
     temp_result = nil
 
-    case (status) do
+    case status do
+      "crashed" -> "error state"
+      "error" -> "error state"
+      "failed" -> "error state"
+      "disabled" -> "not operational"
+      "offline" -> "not operational"
+      "stopped" -> "not operational"
+      "active" -> "operational"
+      "online" -> "operational"
+      "running" -> "operational"
+      "paused" -> "temporarily stopped"
+      "suspended" -> "temporarily stopped"
+      "waiting" -> "temporarily stopped"
       _ -> "unknown status"
     end
 

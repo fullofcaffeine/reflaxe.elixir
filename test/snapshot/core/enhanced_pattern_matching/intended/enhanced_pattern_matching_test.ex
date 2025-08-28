@@ -8,15 +8,19 @@ defmodule EnhancedPatternMatchingTest do
 
     temp_result = nil
 
-    case (case status do :idle -> 0; :working -> 1; :completed -> 2; :failed -> 3; _ -> -1 end) do
+    case status do
       0 -> temp_result = "Currently idle"
-      {1, task} -> g_array = elem(status, 1)
+      1 -> task = elem(status, 1)
     temp_result = "Working on: " <> task
-      {2, result, duration} -> g_array = elem(status, 1)
-    g_array = elem(status, 2)
+      2 -> g_param_0 = elem(status, 1)
+    g_param_1 = elem(status, 2)
+    result = g_param_1
+    duration = g_param_1
     temp_result = "Completed \"" <> result <> "\" in " <> to_string(duration) <> "ms"
-      {3, error, retries} -> g_array = elem(status, 1)
-    g_array = elem(status, 2)
+      3 -> g_param_0 = elem(status, 1)
+    g_param_1 = elem(status, 2)
+    error = g_param_1
+    retries = g_param_1
     temp_result = "Failed with \"" <> error <> "\" after " <> to_string(retries) <> " retries"
     end
 
@@ -27,9 +31,9 @@ defmodule EnhancedPatternMatchingTest do
   def incomplete_match(status) do
     temp_result = nil
 
-    case (case status do :idle -> 0; :working -> 1; :completed -> 2; :failed -> 3; _ -> -1 end) do
+    case status do
       0 -> temp_result = "idle"
-      {1, task} -> g_array = elem(status, 1)
+      1 -> task = elem(status, 1)
     temp_result = "working: " <> task
       _ -> temp_result = "unknown"
     end
@@ -41,21 +45,18 @@ defmodule EnhancedPatternMatchingTest do
   def match_nested_result(result) do
     temp_result = nil
 
-    case ((case result do _ -> -1 end)) do
-      _ ->
-        g_array = elem(result, 1)
-    case (case g_array do :success -> 0; :error -> 1; _ -> -1 end) do
-      {0, value} -> g_array = elem(g_array, 1)
+    case (case result do _ -> -1 end) do
+      0 -> case g_array do
+      0 -> value = elem(g_array, 1)
     temp_result = "Double success: " <> Std.string(value)
-      {1, _inner_error, _inner_context} -> g_array = elem(g_array, 1)
-    g_array = elem(g_array, 2)
+      1 -> g_param_0 = elem(g_array, 1)
+    g_param_1 = elem(g_array, 2)
+    inner_error = g_param_1
+    inner_context = g_param_1
     temp_result = "Outer success, inner error: " <> inner_error <> " (context: " <> inner_context <> ")"
     end
-      _ ->
-        g_array = elem(result, 1)
-    g_array = elem(result, 2)
-    outer_error = g_array
-    outer_context = g_array
+      1 -> g_param_0 = elem(result, 1)
+    g_param_1 = elem(result, 2)
     temp_result = "Outer error: " <> outer_error <> " (context: " <> outer_context <> ")"
     end
 
@@ -66,38 +67,51 @@ defmodule EnhancedPatternMatchingTest do
   def match_with_complex_guards(status, priority, is_urgent) do
     temp_result = nil
 
-    case (case status do :idle -> 0; :working -> 1; :completed -> 2; :failed -> 3; _ -> -1 end) do
+    case status do
       0 -> temp_result = "idle"
-      {1, task} -> g_array = elem(status, 1)
+      1 -> task = elem(status, 1)
     if (((priority > 5) && is_urgent)) do
       temp_result = "High priority urgent task: " <> task
     else
+      task = g_param_1
       if (((priority > 3) && not is_urgent)) do
         temp_result = "High priority normal task: " <> task
       else
+        task = g_param_1
         if (((priority <= 3) && is_urgent)) do
           temp_result = "Low priority urgent task: " <> task
         else
+          task = g_param_1
           temp_result = "Normal task: " <> task
         end
       end
     end
-      {2, result, _duration} -> g_array = elem(status, 1)
-    g_array = elem(status, 2)
+      2 -> g_param_0 = elem(status, 1)
+    g_param_1 = elem(status, 2)
+    result = g_param_1
+    duration = g_param_1
     if ((duration < 1000)) do
       temp_result = "Fast completion: " <> result
     else
+      result = g_param_1
+      duration = g_param_1
       if (((duration >= 1000) && (duration < 5000))) do
         temp_result = "Normal completion: " <> result
       else
+        result = g_param_1
+        _duration = g_param_1
         temp_result = "Slow completion: " <> result
       end
     end
-      {3, error, _retries} -> g_array = elem(status, 1)
-    g_array = elem(status, 2)
+      3 -> g_param_0 = elem(status, 1)
+    g_param_1 = elem(status, 2)
+    error = g_param_1
+    retries = g_param_1
     if ((retries < 3)) do
       temp_result = "Recoverable failure: " <> error
     else
+      error = g_param_1
+      _retries = g_param_1
       temp_result = "Permanent failure: " <> error
     end
     end
@@ -109,7 +123,53 @@ defmodule EnhancedPatternMatchingTest do
   def match_with_range_guards(value, category) do
     temp_result = nil
 
-    case (category) do
+    case category do
+      "score" -> n = value
+    if ((n >= 90)) do
+      temp_result = "Excellent score"
+    else
+      n = value
+      if (((n >= 70) && (n < 90))) do
+        temp_result = "Good score"
+      else
+        n = value
+        if (((n >= 50) && (n < 70))) do
+          temp_result = "Average score"
+        else
+          n = value
+          if ((n < 50)) do
+            temp_result = "Poor score"
+          else
+            cat = category
+            n = value
+            temp_result = "Unknown category \"" <> cat <> "\" with value " <> to_string(n)
+          end
+        end
+      end
+    end
+      "temperature" -> n = value
+    if ((n >= 30)) do
+      temp_result = "Hot"
+    else
+      n = value
+      if (((n >= 20) && (n < 30))) do
+        temp_result = "Warm"
+      else
+        n = value
+        if (((n >= 10) && (n < 20))) do
+          temp_result = "Cool"
+        else
+          n = value
+          if ((n < 10)) do
+            temp_result = "Cold"
+          else
+            cat = category
+            n = value
+            temp_result = "Unknown category \"" <> cat <> "\" with value " <> to_string(n)
+          end
+        end
+      end
+    end
       _ -> cat = category
     n = value
     temp_result = "Unknown category \"" <> cat <> "\" with value " <> to_string(n)
@@ -125,16 +185,11 @@ defmodule EnhancedPatternMatchingTest do
 
     step1 = EnhancedPatternMatchingTest.validate_input(input)
 
-    case ((case step1 do _ -> -1 end)) do
-      _ ->
-        g_array = elem(step1, 1)
-    validated = g_array
+    case (case step1 do _ -> -1 end) do
+      0 -> g_param_0 = elem(step1, 1)
     temp_result = EnhancedPatternMatchingTest.process_data(validated)
-      _ ->
-        g_array = elem(step1, 1)
-    g_array = elem(step1, 2)
-    error = g_array
-    context = g_array
+      1 -> g_param_0 = elem(step1, 1)
+    g_param_1 = elem(step1, 2)
     context = context
     if ((context == nil)), do: context = "", else: nil
     result = DataResult.error(error, context)
@@ -145,16 +200,11 @@ defmodule EnhancedPatternMatchingTest do
 
     temp_result1 = nil
 
-    case ((case temp_result do _ -> -1 end)) do
-      _ ->
-        g_array = elem(temp_result, 1)
-    processed = g_array
+    case (case temp_result do _ -> -1 end) do
+      0 -> g_param_0 = elem(temp_result, 1)
     temp_result1 = EnhancedPatternMatchingTest.format_output(processed)
-      _ ->
-        g_array = elem(temp_result, 1)
-    g_array = elem(temp_result, 2)
-    error = g_array
-    context = g_array
+      1 -> g_param_0 = elem(temp_result, 1)
+    g_param_1 = elem(temp_result, 2)
     context = context
     if ((context == nil)), do: context = "", else: nil
     result = DataResult.error(error, context)
@@ -170,21 +220,17 @@ defmodule EnhancedPatternMatchingTest do
   def match_array_patterns(arr) do
     temp_result = nil
 
-    case (arr.length) do
-      _ ->
-        temp_result = "empty array"
-      _ ->
-        g_array = Enum.at(arr, 0)
+    case arr.length do
+      0 -> temp_result = "empty array"
+      1 -> g_array = Enum.at(arr, 0)
     x = g_array
     temp_result = "single element: " <> to_string(x)
-      _ ->
-        g_array = Enum.at(arr, 0)
+      2 -> g_array = Enum.at(arr, 0)
     g_array = Enum.at(arr, 1)
     x = g_array
     y = g_array
     temp_result = "pair: [" <> to_string(x) <> ", " <> to_string(y) <> "]"
-      _ ->
-        g_array = Enum.at(arr, 0)
+      3 -> g_array = Enum.at(arr, 0)
     g_array = Enum.at(arr, 1)
     g_array = Enum.at(arr, 2)
     x = g_array
@@ -244,7 +290,19 @@ defmodule EnhancedPatternMatchingTest do
     g_array = data.name
     g_array = data.age
     g_array = data.active
-    case (g_array) do
+    case g_array do
+      false -> age = g_array
+    name = g_array
+    temp_result = "Inactive user: " <> name <> " (" <> to_string(age) <> ")"
+      true -> age = g_array
+    name = g_array
+    if ((age >= 18)) do
+      temp_result = "Active adult: " <> name <> " (" <> to_string(age) <> ")"
+    else
+      age = g_array
+      name = g_array
+      if ((age < 18)), do: temp_result = "Active minor: " <> name <> " (" <> to_string(age) <> ")", else: temp_result = "unknown pattern"
+    end
       _ -> temp_result = "unknown pattern"
     end
 
@@ -255,19 +313,21 @@ defmodule EnhancedPatternMatchingTest do
   def match_validation_state(state) do
     temp_result = nil
 
-    case (case state do :valid -> 0; :invalid -> 1; :pending -> 2; _ -> -1 end) do
+    case state do
       0 -> temp_result = "Data is valid"
-      {1, _errors} -> g_array = elem(state, 1)
+      1 -> errors = elem(state, 1)
     if ((errors.length == 1)) do
       temp_result = "Single error: " <> Enum.at(errors, 0)
     else
+      errors = g_array
       if ((errors.length > 1)) do
         temp_result = "Multiple errors: " <> to_string(errors.length) <> " issues"
       else
+        _errors = g_array
         temp_result = "No specific errors"
       end
     end
-      {2, validator} -> g_array = elem(state, 1)
+      2 -> validator = elem(state, 1)
     temp_result = "Validation pending by: " <> validator
     end
 
@@ -281,11 +341,9 @@ defmodule EnhancedPatternMatchingTest do
     bytes = Bytes.of_string(data)
 
     g_array = bytes.length
-    case (g_array) do
-      _ ->
-        "empty"
-      _ ->
-        "single byte: " <> to_string(Enum.at(bytes.b, 0))
+    case g_array do
+      0 -> "empty"
+      1 -> "single byte: " <> to_string(Enum.at(bytes.b, 0))
       _ -> n = g_array
     if ((n <= 4)) do
       temp_result = "small data: " <> to_string(n) <> " bytes"

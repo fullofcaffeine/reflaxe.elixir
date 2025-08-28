@@ -39,20 +39,21 @@ defmodule Input do
 
     _b = s.b
 
-    if ((((pos < 0) || (len < 0)) || ((pos + len) > s.length))) do
+    if ((((_pos < 0) || (len < 0)) || ((_pos + len) > s.length))) do
       raise :outside_bounds
     else
       nil
     end
 
     try do
-      _b
-      |> Enum.with_index()
-      |> Enum.each(fn {item, pos} ->
-        item = struct.read_byte()
-        pos + 1
-        k - 1
-      end)
+      (fn loop ->
+        if ((k > 0)) do
+              Enum.at(_b, _pos) = struct.read_byte()
+          _pos + 1
+          k - 1
+          loop.()
+        end
+      end).()
     rescue
       %Eof{} = eof -> nil
     end
@@ -67,9 +68,9 @@ defmodule Input do
 
   @doc "Generated from Haxe set_bigEndian"
   def set_big_endian(%__MODULE__{} = struct, b) do
-    %{struct | big_endian: b}
+    %{struct | big_endian: _b}
 
-    b
+    _b
   end
 
   @doc "Generated from Haxe readAll"
@@ -81,42 +82,33 @@ defmodule Input do
     total = BytesBuffer.new()
 
     try do
-      (
-        # Simple module-level pattern (inline for now)
-        loop_helper = fn condition_fn, body_fn, loop_fn ->
-          if condition_fn.() do
-            body_fn.()
-            loop_fn.(condition_fn, body_fn, loop_fn)
+      (fn loop ->
+        if true do
+              len = struct.read_bytes(buf, 0, bufsize)
+          if ((len == 0)) do
+            raise :blocked
           else
             nil
           end
+          if (((len < 0) || (len > buf.length))) do
+            raise :outside_bounds
+          else
+            nil
+          end
+          _b1 = total.b
+          b2 = buf.b
+          g_counter = 0
+          g_array = len
+          (fn loop ->
+            if ((g_counter < g_array)) do
+                  i = g_counter + 1
+              total.b ++ [Enum.at(b2, _i)]
+              loop.()
+            end
+          end).()
+          loop.()
         end
-      
-        loop_helper.(
-          fn -> true end,
-          fn ->
-            len = struct.read_bytes(buf, 0, bufsize)
-            if ((len == 0)) do
-              raise :blocked
-            else
-              nil
-            end
-            if (((len < 0) || (len > buf.length))) do
-              raise :outside_bounds
-            else
-              nil
-            end
-            _b1 = total.b
-            b2 = buf.b
-            g_counter = 0
-            g_array = len
-            b2
-            |> Enum.with_index()
-            |> Enum.map(fn {item, i} -> item end)
-          end,
-          loop_helper
-        )
-      )
+      end).()
     rescue
       %Eof{} = e -> nil
     end
@@ -126,66 +118,40 @@ defmodule Input do
 
   @doc "Generated from Haxe readFullBytes"
   def read_full_bytes(%__MODULE__{} = struct, s, pos, len) do
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
+    (fn loop ->
+      if ((len > 0)) do
+            k = struct.read_bytes(s, _pos, len)
+        if ((k == 0)) do
+          raise :blocked
         else
           nil
         end
+        _pos = _pos + k
+        len = len - k
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((len > 0)) end,
-        fn ->
-          k = struct.read_bytes(s, pos, len)
-          if ((k == 0)) do
-            raise :blocked
-          else
-            nil
-          end
-          pos = pos + k
-          len = len - k
-        end,
-        loop_helper
-      )
-    )
+    end).()
   end
 
   @doc "Generated from Haxe read"
   def read(%__MODULE__{} = struct, nbytes) do
-    s = Bytes.alloc(nbytes)
+    s = Bytes.alloc(_nbytes)
 
     p = 0
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
+    (fn loop ->
+      if ((_nbytes > 0)) do
+            k = struct.read_bytes(s, p, _nbytes)
+        if ((k == 0)) do
+          raise :blocked
         else
           nil
         end
+        p = p + k
+        _nbytes = _nbytes - k
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((nbytes > 0)) end,
-        fn ->
-          k = struct.read_bytes(s, p, nbytes)
-          if ((k == 0)) do
-            raise :blocked
-          else
-            nil
-          end
-          p = p + k
-          nbytes = nbytes - k
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     s
   end
@@ -196,31 +162,18 @@ defmodule Input do
 
     last = nil
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
+    (fn loop ->
+      if true do
+            last = struct.read_byte()
+        if not ((last != end_)) do
+          throw(:break)
         else
           nil
         end
+        buf.b ++ [last]
+        loop.()
       end
-
-      loop_helper.(
-        fn -> true end,
-        fn ->
-          last = struct.read_byte()
-          if not ((last != end_)) do
-            throw(:break)
-          else
-            nil
-          end
-          buf.b ++ [last]
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     buf.get_bytes().to_string()
   end
@@ -234,31 +187,18 @@ defmodule Input do
     s = nil
 
     try do
-      (
-        # Simple module-level pattern (inline for now)
-        loop_helper = fn condition_fn, body_fn, loop_fn ->
-          if condition_fn.() do
-            body_fn.()
-            loop_fn.(condition_fn, body_fn, loop_fn)
+      (fn loop ->
+        if true do
+              last = struct.read_byte()
+          if not ((last != 10)) do
+            throw(:break)
           else
             nil
           end
+          buf.b ++ [last]
+          loop.()
         end
-      
-        loop_helper.(
-          fn -> true end,
-          fn ->
-            last = struct.read_byte()
-            if not ((last != 10)) do
-              throw(:break)
-            else
-              nil
-            end
-            buf.b ++ [last]
-          end,
-          loop_helper
-        )
-      )
+      end).()
       s = buf.get_bytes().to_string()
       if ((s.char_code_at((s.length - 1)) == 13)), do: s = s.substr(0, -1), else: nil
     rescue
@@ -399,7 +339,7 @@ defmodule Input do
 
     struct.read_full_bytes(_b, 0, len)
 
-    _b.get_string(0, len, encoding)
+    _b.get_string(0, len, _encoding)
   end
 
 

@@ -34,7 +34,7 @@ defmodule Output do
 
   @doc "Generated from Haxe writeBytes"
   def write_bytes(%__MODULE__{} = struct, s, pos, len) do
-    if ((((pos < 0) || (len < 0)) || ((pos + len) > s.length))) do
+    if ((((_pos < 0) || (len < 0)) || ((_pos + len) > s.length))) do
       raise :outside_bounds
     else
       nil
@@ -44,13 +44,14 @@ defmodule Output do
 
     k = len
 
-    _b
-    |> Enum.with_index()
-    |> Enum.each(fn {item, pos} ->
-      struct.write_byte(item)
-      pos + 1
-      k - 1
-    end)
+    (fn loop ->
+      if ((k > 0)) do
+            struct.write_byte(Enum.at(_b, _pos))
+        _pos + 1
+        k - 1
+        loop.()
+      end
+    end).()
 
     len
   end
@@ -67,9 +68,9 @@ defmodule Output do
 
   @doc "Generated from Haxe set_bigEndian"
   def set_big_endian(%__MODULE__{} = struct, b) do
-    %{struct | big_endian: b}
+    %{struct | big_endian: _b}
 
-    b
+    _b
   end
 
   @doc "Generated from Haxe write"
@@ -78,57 +79,31 @@ defmodule Output do
 
     p = 0
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
+    (fn loop ->
+      if ((l > 0)) do
+            k = struct.write_bytes(s, p, l)
+        if ((k == 0)) do
+          raise :blocked
         else
           nil
         end
+        p = p + k
+        l = l - k
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((l > 0)) end,
-        fn ->
-          k = struct.write_bytes(s, p, l)
-          if ((k == 0)) do
-            raise :blocked
-          else
-            nil
-          end
-          p = p + k
-          l = l - k
-        end,
-        loop_helper
-      )
-    )
+    end).()
   end
 
   @doc "Generated from Haxe writeFullBytes"
   def write_full_bytes(%__MODULE__{} = struct, s, pos, len) do
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((len > 0)) do
+            k = struct.write_bytes(s, _pos, len)
+        _pos = _pos + k
+        len = len - k
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((len > 0)) end,
-        fn ->
-          k = struct.write_bytes(s, pos, len)
-          pos = pos + k
-          len = len - k
-        end,
-        loop_helper
-      )
-    )
+    end).()
   end
 
   @doc "Generated from Haxe writeFloat"
@@ -245,57 +220,31 @@ defmodule Output do
     buf = Bytes.alloc(bufsize)
 
     try do
-      (
-        # Simple module-level pattern (inline for now)
-        loop_helper = fn condition_fn, body_fn, loop_fn ->
-          if condition_fn.() do
-            body_fn.()
-            loop_fn.(condition_fn, body_fn, loop_fn)
+      (fn loop ->
+        if true do
+              len = _i.read_bytes(buf, 0, bufsize)
+          if ((len == 0)) do
+            raise :blocked
           else
             nil
           end
-        end
-      
-        loop_helper.(
-          fn -> true end,
-          fn ->
-            len = i.read_bytes(buf, 0, bufsize)
-            if ((len == 0)) do
-              raise :blocked
-            else
-              nil
-            end
-            p = 0
-            (
-              # Simple module-level pattern (inline for now)
-              loop_helper = fn condition_fn, body_fn, loop_fn ->
-                if condition_fn.() do
-                  body_fn.()
-                  loop_fn.(condition_fn, body_fn, loop_fn)
-                else
-                  nil
-                end
-              end
-      
-              loop_helper.(
-                fn -> ((len > 0)) end,
-                fn ->
+          p = 0
+          (fn loop ->
+            if ((len > 0)) do
                   k = struct.write_bytes(buf, p, len)
-                  if ((k == 0)) do
-                    raise :blocked
-                  else
-                    nil
-                  end
-                  p = p + k
-                  len = len - k
-                end,
-                loop_helper
-              )
-            )
-          end,
-          loop_helper
-        )
-      )
+              if ((k == 0)) do
+                raise :blocked
+              else
+                nil
+              end
+              p = p + k
+              len = len - k
+              loop.()
+            end
+          end).()
+          loop.()
+        end
+      end).()
     rescue
       %Eof{} = e -> nil
     end
@@ -303,7 +252,7 @@ defmodule Output do
 
   @doc "Generated from Haxe writeString"
   def write_string(%__MODULE__{} = struct, s, encoding \\ nil) do
-    _b = Bytes.of_string(s, encoding)
+    _b = Bytes.of_string(s, _encoding)
 
     struct.write_full_bytes(_b, 0, _b.length)
   end

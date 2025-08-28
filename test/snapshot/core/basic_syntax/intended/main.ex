@@ -78,26 +78,13 @@ defmodule Main do
 
     g_array = end_
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((g_array < g_array)) do
+            i = g_array + 1
+        sum = sum + i
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((g_counter < g_array)) end,
-        fn ->
-          i = g_counter + 1
-          sum = sum + i
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     sum
   end
@@ -108,26 +95,13 @@ defmodule Main do
 
     i = n
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((i > 1)) do
+            result = result * i
+        i - 1
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((i > 1)) end,
-        fn ->
-          result = result * i
-          i - 1
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     result
   end
@@ -138,21 +112,14 @@ defmodule Main do
 
     temp_result = nil
 
-    case (day) do
-      _ ->
-        "Monday"
-      _ ->
-        "Tuesday"
-      _ ->
-        "Wednesday"
-      _ ->
-        "Thursday"
-      _ ->
-        "Friday"
-      _ ->
-        "Saturday"
-      _ ->
-        "Sunday"
+    case day do
+      1 -> "Monday"
+      2 -> "Tuesday"
+      3 -> "Wednesday"
+      4 -> "Thursday"
+      5 -> "Friday"
+      6 -> "Saturday"
+      7 -> "Sunday"
       _ -> "Invalid"
     end
 

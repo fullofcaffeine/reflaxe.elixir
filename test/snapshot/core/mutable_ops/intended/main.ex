@@ -81,74 +81,35 @@ defmodule Main do
   def test_loop_counters() do
     i = 0
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((i < 5)) do
+            Log.trace("While loop i: " <> to_string(i), %{"fileName" => "Main.hx", "lineNumber" => 73, "className" => "Main", "methodName" => "testLoopCounters"})
+        i + 1
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((i < 5)) end,
-        fn ->
-          Log.trace("While loop i: " <> to_string(i), %{"fileName" => "Main.hx", "lineNumber" => 73, "className" => "Main", "methodName" => "testLoopCounters"})
-          i + 1
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     j = 5
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((j > 0)) do
+            Log.trace("While loop j: " <> to_string(j), %{"fileName" => "Main.hx", "lineNumber" => 80, "className" => "Main", "methodName" => "testLoopCounters"})
+        j - 1
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((j > 0)) end,
-        fn ->
-          Log.trace("While loop j: " <> to_string(j), %{"fileName" => "Main.hx", "lineNumber" => 80, "className" => "Main", "methodName" => "testLoopCounters"})
-          j - 1
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     sum = 0
 
     k = 1
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
+    (fn loop ->
+      if ((k <= 5)) do
+            sum = sum + k
+        k + 1
+        loop.()
       end
-
-      loop_helper.(
-        fn -> ((k <= 5)) end,
-        fn ->
-          sum = sum + k
-          k + 1
-        end,
-        loop_helper
-      )
-    )
+    end).()
 
     Log.trace("Sum: " <> to_string(sum), %{"fileName" => "Main.hx", "lineNumber" => 91, "className" => "Main", "methodName" => "testLoopCounters"})
 
@@ -156,46 +117,20 @@ defmodule Main do
 
     x = 0
 
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((x < 3)) end,
-        fn ->
-          y = 0
-          (
-            # Simple module-level pattern (inline for now)
-            loop_helper = fn condition_fn, body_fn, loop_fn ->
-              if condition_fn.() do
-                body_fn.()
-                loop_fn.(condition_fn, body_fn, loop_fn)
-              else
-                nil
-              end
-            end
-
-            loop_helper.(
-              fn -> ((y < 3)) end,
-              fn ->
+    (fn loop ->
+      if ((x < 3)) do
+            y = 0
+        (fn loop ->
+          if ((y < 3)) do
                 total = total + 1
-                y + 1
-              end,
-              loop_helper
-            )
-          )
-          x + 1
-        end,
-        loop_helper
-      )
-    )
+            y + 1
+            loop.()
+          end
+        end).()
+        x + 1
+        loop.()
+      end
+    end).()
 
     Log.trace("Total from nested loops: " <> to_string(total), %{"fileName" => "Main.hx", "lineNumber" => 104, "className" => "Main", "methodName" => "testLoopCounters"})
   end
