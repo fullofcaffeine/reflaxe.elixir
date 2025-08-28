@@ -121,6 +121,7 @@ class VariableCompiler {
             var baseName = mappedName.substring(1);  // Remove underscore prefix
             underscorePrefixMap.set(baseName, mappedName);
             
+            
             #if debug_variable_compiler
             // trace('[XRay VariableCompiler] ✓ REGISTERED UNDERSCORE PREFIX: ${baseName} -> ${mappedName}');
             #end
@@ -169,11 +170,13 @@ class VariableCompiler {
         // This handles cases where TVar IDs differ between declaration and reference
         var prefixedName = underscorePrefixMap.get(snakeName);
         if (prefixedName != null) {
+            
             #if debug_variable_compiler
             // trace('[XRay VariableCompiler] ✓ FOUND UNDERSCORE PREFIX MAPPING BY NAME: ${snakeName} -> ${prefixedName}');
             #end
             return prefixedName;
         }
+        
         
         // FALLBACK: If no mapping found, check if variable is unused and add underscore
         // This shouldn't normally happen since we track all variables
