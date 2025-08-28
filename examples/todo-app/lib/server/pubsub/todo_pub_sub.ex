@@ -47,24 +47,24 @@ defmodule TodoPubSub do
 
     case message do
       0 -> g_param_0 = elem(message, 1)
-    todo = g_param_0
+    todo = g_array
     temp_struct = %{"type" => "todo_created", "todo" => todo}
       1 -> g_param_0 = elem(message, 1)
-    todo = g_param_0
+    todo = g_array
     temp_struct = %{"type" => "todo_updated", "todo" => todo}
       2 -> id = elem(message, 1)
     temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
       3 -> action = elem(message, 1)
     temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
       4 -> g_param_0 = elem(message, 1)
-    user_id = g_param_0
-    temp_struct = %{"type" => "user_online", "user_id" => _user_id}
+    user_id = g_array
+    temp_struct = %{"type" => "user_online", "user_id" => user_id}
       5 -> g_param_0 = elem(message, 1)
-    user_id = g_param_0
-    temp_struct = %{"type" => "user_offline", "user_id" => _user_id}
+    user_id = g_array
+    temp_struct = %{"type" => "user_offline", "user_id" => user_id}
       6 -> g_param_0 = elem(message, 1)
     g_param_1 = elem(message, 2)
-    message = g_param_1
+    message = g_array
     level = g_param_1
     temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
     end
@@ -127,10 +127,10 @@ defmodule TodoPubSub do
       2 -> _priority = elem(action, 1)
     temp_result = "set_priority"
       3 -> g_param_0 = elem(action, 1)
-    _tag = g_param_0
+    tag = g_array
     temp_result = "add_tag"
       4 -> g_param_0 = elem(action, 1)
-    _tag = g_param_0
+    tag = g_array
     temp_result = "remove_tag"
     end
 

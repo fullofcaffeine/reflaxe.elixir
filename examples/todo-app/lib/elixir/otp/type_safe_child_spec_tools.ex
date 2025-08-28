@@ -18,17 +18,17 @@ defmodule TypeSafeChildSpecTools do
       0 -> name = elem(spec, 1)
     temp_result = %{type: :worker, start: {%{"module" => "Phoenix.PubSub", "func" => "start_link", "args" => [%{name: name}]}, :start_link, []}, restart: :permanent, id: :"Phoenix.PubSub"}
       1 -> g_param_0 = elem(spec, 1)
-    config = g_param_0
-    repo_module = "" <> _app_name <> ".Repo"
+    config = g_array
+    repo_module = "" <> app_name <> ".Repo"
     if ((config != nil)), do: temp_array = [config], else: temp_array = []
-    _args = temp_array
-    temp_result = %{type: :worker, start: {%{"module" => repo_module, "func" => "start_link", "args" => _args}, :start_link, []}, restart: :permanent, id: :repo_module}
+    args = temp_array
+    temp_result = %{type: :worker, start: {%{"module" => repo_module, "func" => "start_link", "args" => args}, :start_link, []}, restart: :permanent, id: :repo_module}
       2 -> g_param_0 = elem(spec, 1)
     g_param_1 = elem(spec, 2)
-    port = g_param_1
-    config = g_param_1
-    endpoint_module = "" <> _app_name <> "Web.Endpoint"
-    _args = []
+    port = g_array
+    config = g_array
+    endpoint_module = "" <> app_name <> "Web.Endpoint"
+    args = []
     if (((port != nil) || (config != nil))) do
       endpoint_config = %{}
       if ((port != nil)), do: %{endpoint_config | port: port}, else: nil
@@ -46,32 +46,32 @@ defmodule TypeSafeChildSpecTools do
       else
         nil
       end
-      _args = [endpoint_config]
+      args = [endpoint_config]
     else
       nil
     end
-    temp_result = %{type: :worker, start: {%{"module" => endpoint_module, "func" => "start_link", "args" => _args}, :start_link, []}, restart: :permanent, id: :endpoint_module}
+    temp_result = %{type: :worker, start: {%{"module" => endpoint_module, "func" => "start_link", "args" => args}, :start_link, []}, restart: :permanent, id: :endpoint_module}
       3 -> g_param_0 = elem(spec, 1)
-    config = g_param_0
-    telemetry_module = "" <> _app_name <> "Web.Telemetry"
+    config = g_array
+    telemetry_module = "" <> app_name <> "Web.Telemetry"
     if ((config != nil)), do: temp_array1 = [config], else: temp_array1 = []
-    _args = temp_array1
-    temp_result = %{type: :worker, start: {%{"module" => telemetry_module, "func" => "start_link", "args" => _args}, :start_link, []}, restart: :permanent, id: :telemetry_module}
+    args = temp_array1
+    temp_result = %{type: :worker, start: {%{"module" => telemetry_module, "func" => "start_link", "args" => args}, :start_link, []}, restart: :permanent, id: :telemetry_module}
       4 -> g_param_0 = elem(spec, 1)
-    config = g_param_0
-    presence_module = "" <> _app_name <> ".Presence"
+    config = g_array
+    presence_module = "" <> app_name <> ".Presence"
     temp_result = %{type: :worker, start: {%{"module" => presence_module, "func" => "start_link", "args" => [config]}, :start_link, []}, restart: :permanent, id: :presence_module}
       5 -> g_param_0 = elem(spec, 1)
     g_param_1 = elem(spec, 2)
     g_param_2 = elem(spec, 3)
     g_param_3 = elem(spec, 4)
-    module = g_param_3
-    _args = g_array
+    module = g_array
+    args = g_array
     restart = g_param_3
     shutdown = g_param_3
     module_class = module
     module_name = Type.get_class_name(module_class)
-    temp_result = %{type: :worker, start: {%{"module" => module_name, "func" => "start_link", "args" => [_args]}, :start_link, []}, shutdown: shutdown, restart: restart, id: :module_name}
+    temp_result = %{type: :worker, start: {%{"module" => module_name, "func" => "start_link", "args" => [args]}, :start_link, []}, shutdown: shutdown, restart: restart, id: :module_name}
       6 -> spec2 = elem(spec, 1)
     temp_result = spec2
     end
@@ -87,19 +87,19 @@ defmodule TypeSafeChildSpecTools do
       0 -> g_param_0 = elem(spec, 1)
     temp_result = "Phoenix.PubSub"
       1 -> g_param_0 = elem(spec, 1)
-    temp_result = "" <> _app_name <> ".Repo"
+    temp_result = "" <> app_name <> ".Repo"
       2 -> g_param_0 = elem(spec, 1)
     g_param_1 = elem(spec, 2)
-    temp_result = "" <> _app_name <> "Web.Endpoint"
+    temp_result = "" <> app_name <> "Web.Endpoint"
       3 -> g_param_0 = elem(spec, 1)
-    temp_result = "" <> _app_name <> "Web.Telemetry"
+    temp_result = "" <> app_name <> "Web.Telemetry"
       4 -> g_param_0 = elem(spec, 1)
-    temp_result = "" <> _app_name <> ".Presence"
+    temp_result = "" <> app_name <> ".Presence"
       5 -> g_param_0 = elem(spec, 1)
     g_param_1 = elem(spec, 2)
     g_param_2 = elem(spec, 3)
     g_param_3 = elem(spec, 4)
-    module = g_param_3
+    module = g_array
     temp_result = Type.get_class_name(module)
       6 -> spec2 = elem(spec, 1)
     temp_result = spec2.id
@@ -147,7 +147,7 @@ defmodule TypeSafeChildSpecTools do
       1 -> g_param_0 = elem(spec, 1)
       2 -> g_param_0 = elem(spec, 1)
     g_param_1 = elem(spec, 2)
-    port = g_param_1
+    port = g_array
     errors = if (((port != nil) && (((port < 1) || (port > 65535))))), do: errors ++ ["Endpoint port must be between 1 and 65535"], else: errors
       3 -> g_param_0 = elem(spec, 1)
       4 -> config = elem(spec, 1)
@@ -156,8 +156,8 @@ defmodule TypeSafeChildSpecTools do
     g_param_1 = elem(spec, 2)
     g_param_2 = elem(spec, 3)
     g_param_3 = elem(spec, 4)
-    module = g_param_3
-    _args = g_array
+    module = g_array
+    args = g_array
     _restart = g_param_3
     _shutdown = g_param_3
     errors = if ((module == nil)), do: errors ++ ["Custom child spec module cannot be null"], else: errors
