@@ -1,9 +1,0 @@
--cp src
--cp std
--D reflaxe_runtime
--lib reflaxe
--main TestDebug
---macro reflaxe.ReflectCompiler.AddCompiler("reflaxe.elixir.ElixirCompiler")
--D debug_y_combinator
--D debug_if_expressions
--D debug_inline_if

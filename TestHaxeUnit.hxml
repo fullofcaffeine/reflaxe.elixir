@@ -1,7 +1,0 @@
--cp src
--cp test
--cp std
--lib reflaxe
--D reflaxe_runtime
---main test.TestHaxeUnit
---interp
