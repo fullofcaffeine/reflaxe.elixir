@@ -1,5 +1,0 @@
--cp src
--cp test
--main regression.RegressionTest
--D reflaxe_runtime
---no-output
