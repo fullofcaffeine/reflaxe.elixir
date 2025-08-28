@@ -1,1 +1,0 @@
-class DebugTest { static function main() { var dirs = []; for (item in sys.FileSystem.readDirectory("test/tests")) { final path = haxe.io.Path.join(["test/tests", item]); if (sys.FileSystem.isDirectory(path) && sys.FileSystem.exists(haxe.io.Path.join([path, "compile.hxml"]))) { dirs.push(item); } } Sys.println("Found " + dirs.length + " test directories"); }}
