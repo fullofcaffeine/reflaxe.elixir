@@ -560,12 +560,19 @@ class PatternMatchingCompiler {
                 var isUnused = v.meta != null && v.meta.has("-reflaxe.unused");
                 var varName = NamingHelper.toSnakeCase(v.name);
                 
-                // Prefix with underscore if unused to avoid compilation warnings
-                if (isUnused && !StringTools.startsWith(varName, "_")) {
+                // CRITICAL FIX: Register variable name with VariableCompiler for consistency
+                // This ensures nested switch expressions use the same variable name
+                var finalName = if (isUnused && !StringTools.startsWith(varName, "_")) {
                     "_" + varName;
                 } else {
                     varName;
                 }
+                
+                // Register the final name with VariableCompiler to ensure consistency
+                // This prevents mismatches like _parsed_msg vs parsed_msg in nested contexts
+                compiler.variableCompiler.registerVariableMapping(v, finalName);
+                
+                finalName;
                 
             case TConst(c):
                 // WHY: TConstant vs Constant Type Distinction in Haxe Macro System
