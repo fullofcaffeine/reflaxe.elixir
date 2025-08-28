@@ -3,6 +3,7 @@ package reflaxe.elixir.helpers;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Expr;
+import reflaxe.elixir.helpers.TableBuilder;
 
 using StringTools;
 
@@ -141,49 +142,54 @@ class MigrationDSL {
             columnDefs.push('      add :${name}, :${type}');
         }
         
-        return 'create table(:${tableName}) do\n' +
-               columnDefs.join('\n') + '\n' +
-               '      timestamps()\n' +
-               '    end';
+        // Using string interpolation to avoid compiler hang
+        var columns = columnDefs.join('\n');
+        return 'create table(:${tableName}) do
+${columns}
+      timestamps()
+    end';
     }
     
     /**
      * Generate basic migration module structure
+     * Uses string interpolation to avoid Haxe compiler bug with string concatenation
      */
     public static function generateMigrationModule(className: String): String {
         var moduleName = className;
         
-        return 'defmodule ${moduleName} do\n' +
-               '  @moduledoc """\n' +
-               '  Generated from Haxe @:migration class: ${className}\n' +
-               '  \n' +
-               '  This migration module was automatically generated from a Haxe source file\n' +
-               '  as part of the Reflaxe.Elixir compilation pipeline.\n' +
-               '  """\n' +
-               '  \n' +
-               '  use Ecto.Migration\n' +
-               '  \n' +
-               '  @doc """\n' +
-               '  Run the migration\n' +
-               '  """\n' +
-               '  def change do\n' +
-               '    # Migration operations go here\n' +
-               '  end\n' +
-               '  \n' +
-               '  @doc """\n' +
-               '  Run the migration up\n' +
-               '  """\n' +
-               '  def up do\n' +
-               '    # Up migration operations\n' +
-               '  end\n' +
-               '  \n' +
-               '  @doc """\n' +
-               '  Run the migration down (rollback)\n' +
-               '  """\n' +
-               '  def down do\n' +
-               '    # Down migration operations\n' +
-               '  end\n' +
-               'end';
+        // Using string interpolation instead of concatenation to avoid compiler hang
+        return '
+defmodule ${moduleName} do
+  @moduledoc """
+  Generated from Haxe @:migration class: ${className}
+  
+  This migration module was automatically generated from a Haxe source file
+  as part of the Reflaxe.Elixir compilation pipeline.
+  """
+  
+  use Ecto.Migration
+  
+  @doc """
+  Run the migration
+  """
+  def change do
+    # Migration operations go here
+  end
+  
+  @doc """
+  Run the migration up
+  """
+  def up do
+    # Up migration operations
+  end
+  
+  @doc """
+  Run the migration down (rollback)
+  """
+  def down do
+    # Down migration operations
+  end
+end';
     }
     
     /**
@@ -549,141 +555,8 @@ class MigrationDSL {
     }
 }
 
-/**
- * Table builder class for DSL-style migration creation
- * Provides fluent interface for defining table structure
- */
-class TableBuilder {
-    public var tableName(default, null): String;
-    public var hasIdColumn(default, null): Bool = false;
-    public var hasTimestamps(default, null): Bool = false;
-    
-    private var columns: Array<String> = [];
-    private var indexes: Array<String> = [];
-    private var constraints: Array<String> = [];
-    
-    public function new(tableName: String) {
-        this.tableName = tableName;
-    }
-    
-    /**
-     * Add a column to the table
-     */
-    public function addColumn(name: String, dataType: String, ?options: Dynamic): TableBuilder {
-        // Check for special columns
-        if (name == "id") {
-            hasIdColumn = true;
-        }
-        
-        if (name == "inserted_at" || name == "updated_at") {
-            hasTimestamps = true;
-        }
-        
-        var optionsStr = "";
-        
-        if (options != null) {
-            var opts = [];
-            var fields = Reflect.fields(options);
-            
-            for (field in fields) {
-                var value = Reflect.field(options, field);
-                
-                // Handle special option names
-                var optName = switch (field) {
-                    case "null": "null";
-                    case "default": "default";
-                    case "primaryKey": "primary_key";
-                    default: field;
-                };
-                
-                if (Std.isOfType(value, String)) {
-                    opts.push('${optName}: "${value}"');
-                } else if (Std.isOfType(value, Bool)) {
-                    opts.push('${optName}: ${value}');
-                } else {
-                    opts.push('${optName}: ${value}');
-                }
-            }
-            
-            if (opts.length > 0) {
-                optionsStr = ', ${opts.join(", ")}';
-            }
-        }
-        
-        columns.push('add :${name}, :${dataType}${optionsStr}');
-        return this;
-    }
-    
-    /**
-     * Add an index to the table
-     */
-    public function addIndex(columnNames: Array<String>, ?options: Dynamic): TableBuilder {
-        var columnList = columnNames.map(col -> ':${col}').join(', ');
-        
-        if (options != null && Reflect.hasField(options, "unique") && Reflect.field(options, "unique") == true) {
-            indexes.push('create unique_index(:${tableName}, [${columnList}])');
-        } else {
-            indexes.push('create index(:${tableName}, [${columnList}])');
-        }
-        
-        return this;
-    }
-    
-    /**
-     * Add a foreign key constraint
-     */
-    public function addForeignKey(columnName: String, referencedTable: String, referencedColumn: String = "id"): TableBuilder {
-        // Replace the column definition to include the reference
-        var newColumns = [];
-        var found = false;
-        
-        for (column in columns) {
-            if (column.indexOf(':${columnName},') != -1) {
-                // Replace the column with foreign key reference
-                newColumns.push('add :${columnName}, references(:${referencedTable}, column: :${referencedColumn})');
-                found = true;
-            } else {
-                newColumns.push(column);
-            }
-        }
-        
-        // If column wasn't found, add it as a new foreign key column
-        if (!found) {
-            newColumns.push('add :${columnName}, references(:${referencedTable}, column: :${referencedColumn})');
-        }
-        
-        columns = newColumns;
-        return this;
-    }
-    
-    /**
-     * Add a check constraint
-     */
-    public function addCheckConstraint(condition: String, constraintName: String): TableBuilder {
-        constraints.push('create constraint(:${tableName}, :${constraintName}, check: "${condition}")');
-        return this;
-    }
-    
-    /**
-     * Get all column definitions
-     */
-    public function getColumnDefinitions(): Array<String> {
-        return columns.copy();
-    }
-    
-    /**
-     * Get all index definitions
-     */
-    public function getIndexDefinitions(): Array<String> {
-        return indexes.copy();
-    }
-    
-    /**
-     * Get all constraint definitions
-     */
-    public function getConstraintDefinitions(): Array<String> {
-        return constraints.copy();
-    }
-}
+
+// TableBuilder moved to its own file to prevent compilation hang
+// See TableBuilder.hx
 
 #end

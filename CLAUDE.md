@@ -377,6 +377,62 @@ A file MUST be refactored when:
 - [ ] Debugging requires scrolling through thousands of lines
 - [ ] New developers struggle to understand the file
 
+### ⚠️ CRITICAL: Avoid String Concatenation in Macro Blocks (Compiler Bug)
+
+**CONTEXT**: When compilation output is redirected (`> /dev/null 2>&1`), such as in test runners and CI pipelines
+
+**PROBLEMATIC PATTERNS**: String concatenation (`+` operator) and StringBuf operations in `#if (macro || reflaxe_runtime)` blocks cause Haxe compiler to hang
+
+**SAFE ALTERNATIVES**:
+- ✅ **String interpolation** (PREFERRED): Works without issues
+- ✅ **Array join pattern**: Also safe
+- ✅ **Single string literals**: No concatenation needed
+
+**CHECK BEFORE COMMITTING**:
+- If your macro code will run in CI/test contexts with output redirection
+- Search for `+` concatenation with strings in `#if macro` blocks
+- Search for `new StringBuf()` in `#if macro` blocks  
+- Replace with string interpolation or array join
+
+**Symptoms**:
+- Compilation hangs indefinitely with redirected output  
+- Works fine without output redirection
+- Even 5 string concatenations trigger the hang
+- Affects Make-based test runner and CI pipelines
+
+**Problematic Patterns** (in contexts with output redirection):
+```haxe
+// ❌ CAUSES HANG when output is redirected
+return 'line1\n' +
+       'line2\n' +
+       'line3\n';
+
+// ❌ StringBuf ALSO CAUSES HANG  
+var sb = new StringBuf();
+sb.add("line1\n");
+sb.add("line2\n");
+```
+
+**Safe Solutions**:
+```haxe
+// ✅ BEST: String interpolation (clean and safe)
+return '
+defmodule ${name} do
+  use Ecto.Migration
+  def change do
+    # ${comment}
+  end
+end';
+
+// ✅ ALSO SAFE: Array join pattern
+var lines = [
+    'defmodule ${name} do',
+    '  use Ecto.Migration',
+    'end'
+];
+return lines.join('\n');
+```
+
 ### Single Responsibility Principle
 
 Each file should have **one clear reason to change**:

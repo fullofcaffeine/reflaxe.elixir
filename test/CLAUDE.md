@@ -289,6 +289,7 @@ cd examples/todo-app && mix compile  # Must compile
 3. **Update baselines only when output improves** - Don't hide problems
 4. **Fix root causes, not symptoms** - Resolve compilation errors at source
 5. **Document test purposes** - Future maintainers need context
+6. **NO BAND-AID SOLUTIONS IN COMMITS** - Never commit workaround or band-aid solutions. Temporary files for debugging are fine but must be cleaned up before committing. Always fix the root cause, not symptoms.
 
 ---
 
