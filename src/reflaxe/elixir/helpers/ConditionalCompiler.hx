@@ -73,6 +73,10 @@ class ConditionalCompiler {
      * WHAT: Transforms Haxe if expressions to idiomatic Elixir conditionals
      * HOW: Handles scoping and generates proper Elixir syntax
      * 
+     * CRITICAL FIX: Detects array mutations in if branches and transforms them
+     * to return values for reassignment, fixing the issue where array.push()
+     * in if expressions doesn't update the outer array due to Elixir's immutability.
+     * 
      * @param econd Condition expression to evaluate
      * @param eif Expression to execute if condition is true
      * @param eelse Optional expression to execute if condition is false
@@ -85,13 +89,37 @@ class ConditionalCompiler {
 //         trace('[ConditionalCompiler] Has else: ${eelse != null}');
         #end
         
-        // Compile the condition
+        // CRITICAL: Check for array mutations that need special handling
+        var arrayMutation = detectArrayMutation(eif);
+        if (arrayMutation != null) {
+            #if debug_conditional_compilation
+//             trace("[ConditionalCompiler] Detected array mutation in if branch");
+//             trace('[ConditionalCompiler] Array variable: ${arrayMutation.variable}');
+            #end
+            
+            // Compile the condition
+            var condStr = compiler.compileExpression(econd);
+            
+            // Extract just the mutation expression (e.g., "arr ++ [item]")
+            var mutationExpr = extractMutationExpression(eif);
+            
+            // Handle else branch - if mutation in else, extract it too
+            var elseMutation = if (eelse != null) detectArrayMutation(eelse) else null;
+            var elseStr = if (elseMutation != null) {
+                extractMutationExpression(eelse);
+            } else if (eelse != null) {
+                compiler.compileExpression(eelse);
+            } else {
+                arrayMutation.variable; // Return unchanged array
+            };
+            
+            // Transform to: array = if cond, do: mutation, else: array_or_else_mutation
+            return '${arrayMutation.variable} = if ${condStr}, do: ${mutationExpr}, else: ${elseStr}';
+        }
+        
+        // Standard compilation for non-mutation cases
         var condStr = compiler.compileExpression(econd);
-        
-        // Compile the if branch
         var ifStr = compiler.compileExpression(eif);
-        
-        // Handle else branch
         var elseStr = if (eelse != null) {
             compiler.compileExpression(eelse);
         } else {
@@ -259,6 +287,166 @@ class ConditionalCompiler {
         var spaces = [for (i in 0...level) " "].join("");
         return code.split("\n").map(line -> spaces + line).join("\n");
     }
+    
+    /**
+     * Detects array mutation operations in an expression
+     * 
+     * WHY: Array mutations in if expressions need special handling in Elixir
+     * WHAT: Identifies push(), concat(), or ++ operations on arrays
+     * HOW: Pattern matches AST for specific mutation patterns
+     * 
+     * @param expr Expression to check for array mutations
+     * @return Mutation info if detected, null otherwise
+     */
+    function detectArrayMutation(expr: TypedExpr): Null<ArrayMutationInfo> {
+        if (expr == null) return null;
+        
+        #if debug_conditional_compilation
+//         trace("[ConditionalCompiler] Checking for array mutation in expr: " + expr.expr);
+        #end
+        
+        return switch(expr.expr) {
+            // Direct call: array.push(item)
+            case TCall({expr: TField(arrayExpr, FInstance(_, _, cf))}, args) 
+                if (cf.get().name == "push" || cf.get().name == "concat"):
+                {
+                    variable: extractArrayVariableName(arrayExpr),
+                    type: cf.get().name,
+                    arrayExpr: arrayExpr,
+                    args: args
+                };
+            
+            // Binary operation: array = array ++ [item]
+            case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, arr1, arr2)}):
+                // Check if this is an array concatenation
+                if (isArrayExpression(arr1)) {
+                    {
+                        variable: extractArrayVariableName(arr1),
+                        type: "concat",
+                        arrayExpr: arr1,
+                        args: [arr2]
+                    };
+                } else {
+                    null;
+                }
+                
+            // Binary operation without assignment: array ++ [item]
+            case TBinop(OpAdd, arr1, arr2):
+                // Check if this is an array concatenation
+                if (isArrayExpression(arr1)) {
+                    {
+                        variable: extractArrayVariableName(arr1),
+                        type: "concat",
+                        arrayExpr: arr1,
+                        args: [arr2]
+                    };
+                } else {
+                    null;
+                }
+                
+            // Check nested blocks
+            case TBlock(exprs) if (exprs.length > 0):
+                // Check last expression in block
+                detectArrayMutation(exprs[exprs.length - 1]);
+                
+            default:
+                null;
+        }
+    }
+    
+    /**
+     * Extracts the array variable name from an expression
+     * 
+     * WHY: Need to identify which array is being mutated
+     * WHAT: Gets the variable name from various expression types
+     * HOW: Pattern matches common array reference patterns
+     * 
+     * @param expr Array expression
+     * @return Variable name as string
+     */
+    function extractArrayVariableName(expr: TypedExpr): String {
+        return switch(expr.expr) {
+            case TLocal(v):
+                compiler.variableCompiler.compileLocalVariable(v);
+            case TField(e, _):
+                compiler.compileExpression(expr);
+            default:
+                compiler.compileExpression(expr);
+        }
+    }
+    
+    /**
+     * Checks if an expression represents an array
+     * 
+     * WHY: Need to distinguish array operations from other operations
+     * WHAT: Determines if expression is array-typed
+     * HOW: Checks type information
+     * 
+     * @param expr Expression to check
+     * @return True if array expression
+     */
+    function isArrayExpression(expr: TypedExpr): Bool {
+        return switch(expr.t) {
+            case TInst(_.get() => {name: "Array"}, _): true;
+            default: 
+                // Also check for local variables that might be arrays
+                switch(expr.expr) {
+                    case TLocal(_): true; // Assume locals could be arrays
+                    default: false;
+                }
+        }
+    }
+    
+    /**
+     * Extracts just the mutation expression without assignment
+     * 
+     * WHY: Need the pure mutation expression for the transformed if
+     * WHAT: Gets "arr ++ [item]" from "arr = arr ++ [item]"
+     * HOW: Compiles the mutation part of the expression
+     * 
+     * @param expr Expression containing mutation
+     * @return Mutation expression string
+     */
+    function extractMutationExpression(expr: TypedExpr): String {
+        var mutation = detectArrayMutation(expr);
+        if (mutation == null) {
+            return compiler.compileExpression(expr);
+        }
+        
+        // Compile based on mutation type
+        return switch(mutation.type) {
+            case "push":
+                var arrayStr = extractArrayVariableName(mutation.arrayExpr);
+                var argStr = if (mutation.args.length > 0) {
+                    compiler.compileExpression(mutation.args[0]);
+                } else {
+                    "nil";
+                };
+                '${arrayStr} ++ [${argStr}]';
+                
+            case "concat":
+                var arrayStr = extractArrayVariableName(mutation.arrayExpr);
+                var argStr = if (mutation.args.length > 0) {
+                    compiler.compileExpression(mutation.args[0]);
+                } else {
+                    "[]";
+                };
+                '${arrayStr} ++ ${argStr}';
+                
+            default:
+                compiler.compileExpression(expr);
+        }
+    }
+}
+
+/**
+ * Information about detected array mutation
+ */
+private typedef ArrayMutationInfo = {
+    variable: String,
+    type: String,
+    arrayExpr: TypedExpr,
+    args: Array<TypedExpr>
 }
 
 #end

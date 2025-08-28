@@ -1,0 +1,8 @@
+# Array push in if expressions test
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+Main
