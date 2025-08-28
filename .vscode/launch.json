@@ -2,45 +2,76 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Integration Tests",
+      "name": "Haxe Interpreter",
+      "type": "haxe-eval",
+      "request": "launch"
+    },
+    {
+      "name": "Eval: Snapshot Test (choose)",
       "type": "haxe-eval",
       "request": "launch",
-      "program": "test/integration/CompilationPipelineTest.hx",
+      "cwd": "${workspaceFolder}/test/tests/${input:snapshotName}",
+      "args": [
+        "compile.hxml"
+      ],
+      "presentation": {
+        "group": "Snapshots"
+      }
+    },
+    {
+      "name": "Eval: Integration Tests (interp)",
+      "type": "haxe-eval",
+      "request": "launch",
       "cwd": "${workspaceFolder}",
       "args": [
-        "-cp", "src",
-        "-cp", "test", 
-        "-main", "integration.CompilationPipelineTest",
-        "-D", "reflaxe_runtime",
+        "test/integration/CompilationPipelineTest.hxml",
         "--interp"
       ]
     },
     {
-      "name": "Run Performance Benchmarks",
-      "type": "haxe-eval", 
+      "name": "Eval: Performance Benchmarks (interp)",
+      "type": "haxe-eval",
       "request": "launch",
-      "program": "test/performance/PerformanceBenchmarks.hx",
       "cwd": "${workspaceFolder}",
       "args": [
-        "-cp", "src",
-        "-cp", "test",
-        "-main", "performance.PerformanceBenchmarks", 
-        "-D", "reflaxe_runtime",
+        "test/performance/PerformanceBenchmarks.hxml",
         "--interp"
       ]
     },
     {
-      "name": "Debug Haxe Compilation",
+      "name": "Eval: DevEnv (compiler + macros)",
       "type": "haxe-eval",
       "request": "launch",
-      "program": "src/reflaxe/elixir/ElixirCompiler.hx",
       "cwd": "${workspaceFolder}",
       "args": [
-        "-cp", "src",
-        "-D", "reflaxe_runtime",
-        "--macro", "CompilerInit.init()",
-        "-v"
+        "DevEnv.hxml"
       ]
+    },
+    {
+      "name": "Eval: Macro-Time Compiler Tests",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "MacroTimeTest.hxml"
+      ]
+    },
+    {
+      "name": "Eval: HaxeUnit (runtime tests)",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "TestHaxeUnit.hxml"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "snapshotName",
+      "type": "promptString",
+      "description": "Enter snapshot test folder name under test/tests (e.g. liveview_basic)",
+      "default": "liveview_basic"
     }
   ]
 }
