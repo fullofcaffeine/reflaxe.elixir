@@ -56,7 +56,7 @@ defmodule BytesBuffer do
 
   @doc "Generated from Haxe addString"
   def add_string(%__MODULE__{} = struct, v, encoding \\ nil) do
-    src = Bytes.of_string(v, _encoding)
+    src = Bytes.of_string(v, encoding)
 
     _b1 = struct.b
 
@@ -105,7 +105,7 @@ defmodule BytesBuffer do
 
   @doc "Generated from Haxe addBytes"
   def add_bytes(%__MODULE__{} = struct, src, pos, len) do
-    if ((((_pos < 0) || (len < 0)) || ((_pos + len) > src.length))) do
+    if ((((pos < 0) || (len < 0)) || ((pos + len) > src.length))) do
       raise :outside_bounds
     else
       nil
@@ -115,9 +115,9 @@ defmodule BytesBuffer do
 
     b2 = src.b
 
-    g_array = _pos
+    g_array = pos
 
-    g_array = (_pos + len)
+    g_array = (pos + len)
 
     (fn loop ->
       if ((g_array < g_array)) do

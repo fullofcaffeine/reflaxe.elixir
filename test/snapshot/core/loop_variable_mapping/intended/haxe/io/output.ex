@@ -34,7 +34,7 @@ defmodule Output do
 
   @doc "Generated from Haxe writeBytes"
   def write_bytes(%__MODULE__{} = struct, s, pos, len) do
-    if ((((_pos < 0) || (len < 0)) || ((_pos + len) > s.length))) do
+    if ((((pos < 0) || (len < 0)) || ((pos + len) > s.length))) do
       raise :outside_bounds
     else
       nil
@@ -46,8 +46,8 @@ defmodule Output do
 
     (fn loop ->
       if ((k > 0)) do
-            struct.write_byte(Enum.at(_b, _pos))
-        _pos + 1
+            struct.write_byte(Enum.at(_b, pos))
+        pos + 1
         k - 1
         loop.()
       end
@@ -68,9 +68,9 @@ defmodule Output do
 
   @doc "Generated from Haxe set_bigEndian"
   def set_big_endian(%__MODULE__{} = struct, b) do
-    %{struct | big_endian: _b}
+    %{struct | big_endian: b}
 
-    _b
+    b
   end
 
   @doc "Generated from Haxe write"
@@ -98,8 +98,8 @@ defmodule Output do
   def write_full_bytes(%__MODULE__{} = struct, s, pos, len) do
     (fn loop ->
       if ((len > 0)) do
-            k = struct.write_bytes(s, _pos, len)
-        _pos = _pos + k
+            k = struct.write_bytes(s, pos, len)
+        pos = pos + k
         len = len - k
         loop.()
       end
@@ -222,7 +222,7 @@ defmodule Output do
     try do
       (fn loop ->
         if true do
-              len = _i.read_bytes(buf, 0, bufsize)
+              len = i.read_bytes(buf, 0, bufsize)
           if ((len == 0)) do
             raise :blocked
           else
@@ -252,9 +252,9 @@ defmodule Output do
 
   @doc "Generated from Haxe writeString"
   def write_string(%__MODULE__{} = struct, s, encoding \\ nil) do
-    _b = Bytes.of_string(s, _encoding)
+    b = Bytes.of_string(s, encoding)
 
-    struct.write_full_bytes(_b, 0, _b.length)
+    struct.write_full_bytes(b, 0, b.length)
   end
 
 

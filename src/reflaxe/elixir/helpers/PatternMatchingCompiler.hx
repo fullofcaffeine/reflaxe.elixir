@@ -829,10 +829,10 @@ class PatternMatchingCompiler {
             // trace('[XRay PatternMatchingCompiler] Generated patterns: ${patterns}');
             #end
             
-            // CRITICAL: Clear enum extraction tracking for each case
-            // Each case may have different enum patterns with different parameter counts
-            compiler.enumExtractionVars = null;
-            compiler.currentEnumExtractionIndex = 0;
+            // MOVED: Don't clear enumExtractionVars here - they need to be available
+            // when the case body is compiled so pattern variables can reference them
+            // compiler.enumExtractionVars = null;
+            // compiler.currentEnumExtractionIndex = 0;
             
             /**
              * PATTERN USAGE ANALYSIS: Analyze case body to find which variables are actually used
@@ -958,6 +958,11 @@ class PatternMatchingCompiler {
              */
             compiler.currentSwitchCaseBody = null;
             compiler.patternUsageContext = null;
+            
+            // CRITICAL: Clear enum extraction tracking AFTER the case body is compiled
+            // Each case may have different enum patterns with different parameter counts
+            compiler.enumExtractionVars = null;
+            compiler.currentEnumExtractionIndex = 0;
             #if debug_pattern_matching
             // trace('[XRay PatternMatchingCompiler] ✓ CLEARED switch case body context');
             // trace('[XRay PatternMatchingCompiler] ✓ CLEARED pattern usage context');
