@@ -2,8 +2,8 @@ package reflaxe.elixir;
 
 #if (macro || reflaxe_runtime)
 
-import reflaxe.elixir.helpers.NamingHelper;
-import reflaxe.elixir.helpers.FormatHelper;
+// Using centralized NameUtils for name conversion
+import reflaxe.elixir.ast.NameUtils;
 
 using StringTools;
 
@@ -24,6 +24,7 @@ typedef TypeContext = {
  * Provides comprehensive type system integration for Phoenix applications
  */
 class ElixirTyper {
+    
     
     /**
      * Cache for complex type mappings to improve performance
@@ -142,7 +143,7 @@ class ElixirTyper {
      */
     public function generateFunctionSpec(funcName: String, paramTypes: Array<String>, returnType: String, 
                                        ?context: TypeContext, indentLevel: Int = 1): String {
-        var elixirFuncName = NamingHelper.getElixirFunctionName(funcName);
+        var elixirFuncName = NameUtils.toSnakeCase(funcName);
         var elixirParamTypes = paramTypes.map(type -> compileType(type, context));
         var elixirReturnType = compileType(returnType, context);
         
@@ -185,7 +186,7 @@ class ElixirTyper {
         
         for (i in 0...fields.length) {
             var field = fields[i];
-            var fieldName = NamingHelper.toSnakeCase(field.name);
+            var fieldName = NameUtils.toSnakeCase(field.name);
             var fieldType = compileType(field.type, context);
             var comma = (i < fields.length - 1) ? "," : "";
             result += fieldIndent + '${fieldName}: ${fieldType}${comma}\n';
@@ -341,7 +342,7 @@ class ElixirTyper {
         
         // Handle custom types - convert to module reference
         if (~/^[A-Z]/.match(haxeType)) {
-            var moduleName = NamingHelper.getElixirModuleName(haxeType);
+            var moduleName = NameUtils.getElixirModuleName(haxeType);
             return '${moduleName}.t()';
         }
         
@@ -407,7 +408,7 @@ class ElixirTyper {
         var typeParams = extractGenericType(genericType);
         
         // For custom generics, convert to module reference with parameters
-        var moduleName = NamingHelper.getElixirModuleName(baseType);
+        var moduleName = NameUtils.getElixirModuleName(baseType);
         var paramTypes = typeParams.split(",").map(t -> compileType(t.trim(), context));
         
         // Return parameterized type - this could be enhanced based on specific generic patterns
