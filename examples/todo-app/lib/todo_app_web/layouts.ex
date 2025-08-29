@@ -11,12 +11,12 @@ defmodule TodoAppWeb.Layouts do
   # Static functions
   @doc "Generated from Haxe root"
   def root(assigns) do
-    RootLayout.render(assigns)
+    :RootLayout.render(assigns)
   end
 
   @doc "Generated from Haxe app"
   def app(assigns) do
-    AppLayout.render(assigns)
+    :AppLayout.render(assigns)
   end
 
 end

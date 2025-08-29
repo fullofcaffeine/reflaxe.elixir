@@ -570,7 +570,7 @@ class ElixirASTPrinter {
         var specs = [];
         if (segment.size != null) specs.push('size(' + print(segment.size, 0) + ')');
         if (segment.type != null) specs.push(segment.type);
-        if (segment.modifiers != null) specs.append(segment.modifiers);
+        if (segment.modifiers != null) specs = specs.concat(segment.modifiers);
         if (specs.length > 0) {
             result += '::' + specs.join('-');
         }
@@ -585,7 +585,7 @@ class ElixirASTPrinter {
         var specs = [];
         if (segment.size != null) specs.push('size(' + print(segment.size, 0) + ')');
         if (segment.type != null) specs.push(segment.type);
-        if (segment.modifiers != null) specs.append(segment.modifiers);
+        if (segment.modifiers != null) specs = specs.concat(segment.modifiers);
         if (specs.length > 0) {
             result += '::' + specs.join('-');
         }
@@ -621,6 +621,7 @@ class ElixirASTPrinter {
             case ShiftLeft: '<<<';
             case ShiftRight: '>>>';
             case Concat: '++';
+            case ListSubtract: '--';
             case In: 'in';
             case StringConcat: '<>';
             case Match: '=';

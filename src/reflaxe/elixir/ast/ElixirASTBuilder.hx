@@ -189,46 +189,64 @@ class ElixirASTBuilder {
             // Function Calls
             // ================================================================
             case TCall(e, el):
-                var target = e != null ? buildFromTypedExpr(e) : null;
-                var args = [for (arg in el) buildFromTypedExpr(arg)];
-                
-                // Detect special call patterns
-                switch(e.expr) {
-                    case TField(obj, fa):
-                        var fieldName = extractFieldName(fa);
-                        var objAst = buildFromTypedExpr(obj);
-                        
-                        // Check for module calls
-                        if (isModuleCall(obj)) {
-                            ERemoteCall(objAst, fieldName, args);
-                        } else {
-                            // Instance method call
-                            ECall(objAst, fieldName, args);
-                        }
-                    case TLocal(v):
-                        ECall(null, toElixirVarName(v.name), args);
-                    default:
-                        if (target != null) {
-                            // Complex target expression
-                            ECall(target, "call", args);
-                        } else {
-                            // Should not happen
-                            ECall(null, "unknown_call", args);
-                        }
+                // Check if this is an enum constructor call first
+                if (e != null && isEnumConstructor(e)) {
+                    // Enum constructor call - generate tuple syntax {:tag, arg1, arg2, ...}
+                    var tag = extractEnumTag(e);
+                    var args = [for (arg in el) buildFromTypedExpr(arg)];
+                    ETuple([makeAST(EAtom(tag))].concat(args));
+                } else {
+                    // Regular function call
+                    var target = e != null ? buildFromTypedExpr(e) : null;
+                    var args = [for (arg in el) buildFromTypedExpr(arg)];
+                    
+                    // Detect special call patterns
+                    switch(e.expr) {
+                        case TField(obj, fa):
+                            var fieldName = extractFieldName(fa);
+                            var objAst = buildFromTypedExpr(obj);
+                            
+                            // Check for module calls
+                            if (isModuleCall(obj)) {
+                                ERemoteCall(objAst, fieldName, args);
+                            } else {
+                                // Instance method call
+                                ECall(objAst, fieldName, args);
+                            }
+                        case TLocal(v):
+                            ECall(null, toElixirVarName(v.name), args);
+                        default:
+                            if (target != null) {
+                                // Complex target expression
+                                ECall(target, "call", args);
+                            } else {
+                                // Should not happen
+                                ECall(null, "unknown_call", args);
+                            }
+                    }
                 }
                 
             // ================================================================
             // Field Access
             // ================================================================
             case TField(e, fa):
-                var target = buildFromTypedExpr(e);
-                var fieldName = extractFieldName(fa);
-                
-                // Detect map/struct access patterns
-                if (isMapAccess(e.t)) {
-                    EAccess(target, makeAST(EAtom(fieldName)));
-                } else {
-                    EField(target, fieldName);
+                // Check for enum constructor references
+                switch(fa) {
+                    case FEnum(_, ef):
+                        // Enum constructor reference (no arguments)
+                        // Just return the atom tag
+                        EAtom(ef.name);
+                    default:
+                        // Regular field access
+                        var target = buildFromTypedExpr(e);
+                        var fieldName = extractFieldName(fa);
+                        
+                        // Detect map/struct access patterns
+                        if (isMapAccess(e.t)) {
+                            EAccess(target, makeAST(EAtom(fieldName)));
+                        } else {
+                            EField(target, fieldName);
+                        }
                 }
                 
             // ================================================================

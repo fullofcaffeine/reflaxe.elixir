@@ -11,173 +11,43 @@ defmodule AppLayout do
   # Static functions
   @doc "Generated from Haxe render"
   def render(assigns) do
-    ~H"""
-      <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
-      <!-- Header Navigation -->
-      <header class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-      <!-- Logo and App Name -->
-      <div class="flex items-center space-x-4">
-      <div class="flex-shrink-0">
-      <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-      <span class="text-white font-bold text-sm">📝</span>
-      </div>
-      </div>
-      <div>
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">
-      Todo App
-      </h1>
-      <p class="text-xs text-gray-500 dark:text-gray-400">
-      Haxe ❤️ Phoenix LiveView
-      </p>
-      </div>
-      </div>
-      <!-- Navigation Links -->
-      <nav class="hidden md:flex space-x-8">
-      <a href="/" class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
-      Dashboard
-      </a>
-      <a href="/todos" class="text-blue-600 dark:text-blue-400 font-medium">
-      Todos
-      </a>
-      <a href="/profile" class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
-      Profile
-      </a>
-      </nav>
-      <!-- User Menu -->
-      <div class="flex items-center space-x-4">
-      <div class="text-sm text-gray-700 dark:text-gray-300">
-      Welcome, <span class="font-semibold"><%= get_user_display_name(assigns.current_user) %></span>
-      </div>
-      <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-      <span class="text-white text-sm font-medium">
-      <%= get_initials(get_user_display_name(assigns.current_user)) %>
-      </span>
-      </div>
-      </div>
-      </div>
-      </div>
-      </header>
-      <!-- Breadcrumbs -->
-      <nav class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-b border-gray-100 dark:border-gray-700" aria-label="Breadcrumb">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center space-x-4 h-12 text-sm">
-      <a href="/" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-      🏠 Home
-      </a>
-      <span class="text-gray-400 dark:text-gray-500">/</span>
-      <span class="text-gray-900 dark:text-white font-medium">
-      <%= get_page_title(assigns.page_title) %>
-      </span>
-      </div>
-      </div>
-      </nav>
-      <!-- Main Content Area -->
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Page Header -->
-      <div class="mb-8">
-      <div class="md:flex md:items-center md:justify-between">
-      <div class="flex-1 min-w-0">
-      <h2 class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
-      <%= get_page_title(assigns.page_title) %>
-      </h2>
-      <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
-      <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-      <span class="mr-2">🕒</span>
-      Last updated: <%= format_timestamp(get_last_updated(assigns.last_updated)) %>
-      </div>
-      <div class="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-      <span class="mr-2">⚡</span>
-      Real-time sync enabled
-      </div>
-      </div>
-      </div>
-      <!-- Quick Actions -->
-      <div class="mt-4 flex md:mt-0 md:ml-4 space-x-2">
-      <button type="button" class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-      📊 Stats
-      </button>
-      <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-      ➕ New Todo
-      </button>
-      </div>
-      </div>
-      </div>
-      <!-- Content -->
-      <div class="space-y-6">
-      <%= @inner_content %>
-      </div>
-      </main>
-      <!-- Footer -->
-      <footer class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 mt-auto">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div class="flex justify-between items-center">
-      <div class="text-sm text-gray-500 dark:text-gray-400">
-      Built with ❤️ using Haxe and Phoenix LiveView
-      </div>
-      <div class="flex space-x-6 text-sm text-gray-500 dark:text-gray-400">
-      <a href="/about" class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">About</a>
-      <a href="/help" class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Help</a>
-      <a href="https://github.com/reflaxe/elixir" class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">GitHub</a>
-      </div>
-      </div>
-      </div>
-      </footer>
-      </div>
-      """
+    :HXX.hxx("\n            <div class=\"min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900\">\n                \n                <!-- Header Navigation -->\n                <header class=\"bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40\">\n                    <div class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8\">\n                        <div class=\"flex justify-between items-center h-16\">\n                            \n                            <!-- Logo and App Name -->\n                            <div class=\"flex items-center space-x-4\">\n                                <div class=\"flex-shrink-0\">\n                                    <div class=\"w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center\">\n                                        <span class=\"text-white font-bold text-sm\">📝</span>\n                                    </div>\n                                </div>\n                                <div>\n                                    <h1 class=\"text-xl font-bold text-gray-900 dark:text-white\">\n                                        Todo App\n                                    </h1>\n                                    <p class=\"text-xs text-gray-500 dark:text-gray-400\">\n                                        Haxe ❤️ Phoenix LiveView\n                                    </p>\n                                </div>\n                            </div>\n                            \n                            <!-- Navigation Links -->\n                            <nav class=\"hidden md:flex space-x-8\">\n                                <a href=\"/\" class=\"text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium\">\n                                    Dashboard\n                                </a>\n                                <a href=\"/todos\" class=\"text-blue-600 dark:text-blue-400 font-medium\">\n                                    Todos\n                                </a>\n                                <a href=\"/profile\" class=\"text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium\">\n                                    Profile\n                                </a>\n                            </nav>\n                            \n                            <!-- User Menu -->\n                            <div class=\"flex items-center space-x-4\">\n                                <div class=\"text-sm text-gray-700 dark:text-gray-300\">\n                                    Welcome, <span class=\"font-semibold\">" + :AppLayout.getUserDisplayName(assigns.current_user) + "</span>\n                                </div>\n                                <div class=\"w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center\">\n                                    <span class=\"text-white text-sm font-medium\">\n                                        " + :AppLayout.getInitials(:AppLayout.getUserDisplayName(assigns.current_user)) + "\n                                    </span>\n                                </div>\n                            </div>\n                            \n                        </div>\n                    </div>\n                </header>\n                \n                <!-- Breadcrumbs -->\n                <nav class=\"bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border-b border-gray-100 dark:border-gray-700\" aria-label=\"Breadcrumb\">\n                    <div class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8\">\n                        <div class=\"flex items-center space-x-4 h-12 text-sm\">\n                            <a href=\"/\" class=\"text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300\">\n                                🏠 Home\n                            </a>\n                            <span class=\"text-gray-400 dark:text-gray-500\">/</span>\n                            <span class=\"text-gray-900 dark:text-white font-medium\">\n                                " + :AppLayout.getPageTitle(assigns.page_title) + "\n                            </span>\n                        </div>\n                    </div>\n                </nav>\n                \n                <!-- Main Content Area -->\n                <main class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8\">\n                    \n                    <!-- Page Header -->\n                    <div class=\"mb-8\">\n                        <div class=\"md:flex md:items-center md:justify-between\">\n                            <div class=\"flex-1 min-w-0\">\n                                <h2 class=\"text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate\">\n                                    " + :AppLayout.getPageTitle(assigns.page_title) + "\n                                </h2>\n                                <div class=\"mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6\">\n                                    <div class=\"mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400\">\n                                        <span class=\"mr-2\">🕒</span>\n                                        Last updated: " + :AppLayout.formatTimestamp(:AppLayout.getLastUpdated(assigns.last_updated)) + "\n                                    </div>\n                                    <div class=\"mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400\">\n                                        <span class=\"mr-2\">⚡</span>\n                                        Real-time sync enabled\n                                    </div>\n                                </div>\n                            </div>\n                            \n                            <!-- Quick Actions -->\n                            <div class=\"mt-4 flex md:mt-0 md:ml-4 space-x-2\">\n                                <button type=\"button\" class=\"inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors\">\n                                    📊 Stats\n                                </button>\n                                <button type=\"button\" class=\"inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors\">\n                                    ➕ New Todo\n                                </button>\n                            </div>\n                        </div>\n                    </div>\n                    \n                    <!-- Content -->\n                    <div class=\"space-y-6\">\n                        " + :Std.string(assigns.inner_content) + "\n                    </div>\n                    \n                </main>\n                \n                <!-- Footer -->\n                <footer class=\"bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 mt-auto\">\n                    <div class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6\">\n                        <div class=\"flex justify-between items-center\">\n                            <div class=\"text-sm text-gray-500 dark:text-gray-400\">\n                                Built with ❤️ using Haxe and Phoenix LiveView\n                            </div>\n                            <div class=\"flex space-x-6 text-sm text-gray-500 dark:text-gray-400\">\n                                <a href=\"/about\" class=\"hover:text-gray-700 dark:hover:text-gray-300 transition-colors\">About</a>\n                                <a href=\"/help\" class=\"hover:text-gray-700 dark:hover:text-gray-300 transition-colors\">Help</a>\n                                <a href=\"https://github.com/reflaxe/elixir\" class=\"hover:text-gray-700 dark:hover:text-gray-300 transition-colors\">GitHub</a>\n                            </div>\n                        </div>\n                    </div>\n                </footer>\n                \n            </div>\n        ")
   end
 
   @doc "Generated from Haxe getUserDisplayName"
   def get_user_display_name(user) do
-    if (((user != nil) && (user.name != nil))) do
+    if (user != nil && user.name != nil) do
       user.name
-    else
-      nil
     end
-
     "User"
   end
 
   @doc "Generated from Haxe getPageTitle"
   def get_page_title(title) do
-    if ((title != nil)) do
+    if (title != nil) do
       title
-    else
-      nil
     end
-
     "Todo Dashboard"
   end
 
   @doc "Generated from Haxe getLastUpdated"
   def get_last_updated(timestamp) do
-    if ((timestamp != nil)) do
+    if (timestamp != nil) do
       timestamp
-    else
-      nil
     end
-
     "now"
   end
 
   @doc "Generated from Haxe getInitials"
   def get_initials(name) do
-    if (((name == nil) || (name == ""))) do
+    if (name == nil || name == "") do
       "U"
-    else
-      nil
     end
-
     parts = name.split(" ")
-
-    if ((parts.length >= 2)) do
-      Enum.at(parts, 0).char_at(0).to_upper_case() <> Enum.at(parts, 1).char_at(0).to_upper_case()
-    else
-      nil
+    if (parts.length >= 2) do
+      parts[0].charAt(0).toUpperCase() + parts[1].charAt(0).toUpperCase()
     end
-
-    name.char_at(0).to_upper_case()
+    name.charAt(0).toUpperCase()
   end
 
   @doc "Generated from Haxe formatTimestamp"

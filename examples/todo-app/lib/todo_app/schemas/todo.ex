@@ -37,73 +37,50 @@ defmodule Todo do
   # Static functions
   @doc "Generated from Haxe changeset"
   def changeset(todo, params) do
-    _changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
-
-    _changeset = Ecto.Changeset.validate_required(_changeset, ["title", "user_id"])
-
-    _changeset = Ecto.Changeset.validate_length(_changeset, "title", %{min: 3, max: 200})
-
-    _changeset = Ecto.Changeset.validate_length(_changeset, "description", %{max: 1000})
-
-    priority_values = [ChangesetValue.string_value("low"), ChangesetValue.string_value("medium"), ChangesetValue.string_value("high")]
-
-    _changeset = Ecto.Changeset.validate_inclusion(_changeset, "priority", priority_values)
-
-    _changeset = Ecto.Changeset.foreign_key_constraint(_changeset, "user_id")
-
-    _changeset
+    changeset = :Changeset.castChangeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
+    changeset = :Changeset.validate_required(changeset, ["title", "user_id"])
+    changeset = :Changeset.validate_length(changeset, "title", %{:min => 3, :max => 200})
+    changeset = :Changeset.validate_length(changeset, "description", %{:max => 1000})
+    priority_values = [{:StringValue, "low"}, {:StringValue, "medium"}, {:StringValue, "high"}]
+    changeset = :Changeset.validate_inclusion(changeset, "priority", priority_values)
+    changeset = :Changeset.foreign_key_constraint(changeset, "user_id")
+    changeset
   end
 
   @doc "Generated from Haxe toggle_completed"
   def toggle_completed(todo) do
-    params = StringMap.new()
-
-    _value = ChangesetValue.bool_value(not todo.completed)
-
-    params = Map.put(params, "completed", _value)
-
-    Todo.changeset(todo, params)
+    params = %StringMap{}
+    value = {:BoolValue, not todo.completed}
+    params.set("completed", value)
+    :Todo.changeset(todo, params)
   end
 
   @doc "Generated from Haxe update_priority"
   def update_priority(todo, priority) do
-    params = StringMap.new()
-
-    _value = ChangesetValue.string_value(priority)
-
-    params = Map.put(params, "priority", _value)
-
-    Todo.changeset(todo, params)
+    params = %StringMap{}
+    value = {:StringValue, priority_2}
+    params.set("priority", value)
+    :Todo.changeset(todo, params)
   end
 
   @doc "Generated from Haxe add_tag"
   def add_tag(todo, tag) do
     temp_array = nil
 
-    if ((todo.tags != nil)), do: temp_array = todo.tags, else: temp_array = []
-
-    temp_array = temp_array ++ [tag]
-
-    params = StringMap.new()
-
-    g_array = []
-
-    g_counter = 0
-
-    (fn loop ->
-      if ((g_counter < temp_array.length)) do
-            v = Enum.at(temp_array, g_counter)
-        g_counter + 1
-        g_array = g_array ++ [ChangesetValue.string_value(v)]
-        loop.()
-      end
-    end).()
-
-    _value = ChangesetValue.array_value(g_array)
-
-    params = Map.put(params, "tags", _value)
-
-    Todo.changeset(todo, params)
+    temp_array = nil
+    if (todo.tags != nil) do
+      temp_array = todo.tags
+    else
+      temp_array = []
+    end
+    temp_array ++ [tag]
+    params = %StringMap{}
+    _g = []
+    _g_1 = 0
+    loop_8()
+    value = {:ArrayValue, _g}
+    params.set("tags", value)
+    :Todo.changeset(todo, params)
   end
 
 
