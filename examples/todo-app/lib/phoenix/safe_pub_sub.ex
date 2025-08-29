@@ -35,13 +35,13 @@ defmodule SafePubSub do
     if (payload == nil) do
       payload = %{}
     end
-    :Reflect.setField(payload, "timestamp", :Date.now().getTime())
+    Reflect.set_field(payload, "timestamp", Date.now().getTime())
     payload
   end
 
   @doc "Generated from Haxe isValidMessage"
   def is_valid_message(msg) do
-    msg != nil && :Reflect.hasField(msg, "type") && :Reflect.field(msg, "type") != nil
+    msg != nil && Reflect.has_field(msg, "type") && Reflect.field(msg, "type") != nil
   end
 
   @doc "Generated from Haxe createUnknownMessageError"
@@ -57,7 +57,7 @@ defmodule SafePubSub do
     try do
       replacer = nil
       space = nil
-      temp_string = :JsonPrinter.print(msg, replacer, space)
+      temp_string = JsonPrinter.print(msg, replacer, space)
     rescue
       e ->
         temp_string = "unparseable message"

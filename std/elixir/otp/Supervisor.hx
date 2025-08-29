@@ -17,6 +17,45 @@ package elixir.otp;
  */
 
 /**
+ * Child specification formats accepted by Supervisor.start_link
+ * 
+ * Elixir supervisors accept multiple formats:
+ * - Module reference: `MyWorker`
+ * - Tuple with args: `{MyWorker, [arg1, arg2]}`
+ * - Full map specification
+ * 
+ * @:elixirIdiomatic - This annotation tells the compiler to generate
+ * proper OTP child spec formats instead of generic tagged tuples.
+ * This is necessary because OTP expects specific formats like
+ * {Phoenix.PubSub, [name: "MyApp"]} rather than {:module_with_config, ...}
+ */
+@:elixirIdiomatic
+enum ChildSpecFormat {
+    /**
+     * Simple module reference
+     * Compiles to: MyModule
+     */
+    ModuleRef(module: String);
+    
+    /**
+     * Module with arguments
+     * Compiles to: {MyModule, args}
+     */
+    ModuleWithArgs(module: String, args: Array<Dynamic>);
+    
+    /**
+     * Module with keyword list config
+     * Compiles to: {MyModule, [name: "foo", pool_size: 10]}
+     */
+    ModuleWithConfig(module: String, config: Array<{key: String, value: Dynamic}>);
+    
+    /**
+     * Full child specification map
+     */
+    FullSpec(spec: ChildSpec);
+}
+
+/**
  * Supervisor child specification
  */
 typedef ChildSpec = {
@@ -157,8 +196,11 @@ class SupervisorOptionsBuilder {
 extern class SupervisorExtern {
     /**
      * Start a supervisor
+     * 
+     * @param children Array of child specifications in any accepted format
+     * @param options Supervisor options
      */
-    static function start_link(children: Array<ChildSpec>, options: SupervisorOptions): Dynamic;
+    static function start_link(children: Array<ChildSpecFormat>, options: SupervisorOptions): Dynamic;
     
     /**
      * Start a child dynamically

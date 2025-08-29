@@ -320,6 +320,7 @@ if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
 - ❌ **Constructor-specific switches** like `switch(ef.name) { case "Repo": ...; case "Telemetry": ...; }`
 - ❌ **Parameter index hardcoding** for specific enum constructors
 - ❌ **Type-specific workarounds** that only work for particular enum definitions
+- ❌ **Field-specific transformations** like `if (key == "strategy")` for supervisor options
 - ❌ **Maintenance nightmares** that require updating compiler code when enums change
 
 **The correct approach:**
@@ -684,6 +685,48 @@ class StringBuf {
 **See**: [docs/03-compiler-development/testing-infrastructure.md](docs/03-compiler-development/testing-infrastructure.md) - Complete testing guide
 
 ## Development Principles
+
+### ⚠️ CRITICAL: Detect Patterns by Structure, Not by Name
+**FUNDAMENTAL RULE: Never detect patterns by checking for specific hardcoded names. Detect by structural patterns or usage context.**
+
+**What counts as name-based detection (WRONG):**
+- ❌ **Hardcoded component lists** like `["PubSub", "Endpoint", "Telemetry", "Repo"]`
+- ❌ **String matching** like `if (name == "SupervisorStrategy")`
+- ❌ **Suffix checking** like `name.endsWith("Server")`
+- ❌ **Type name lists** that need updating when new types are added
+
+**The correct approach:**
+- ✅ **Structural detection**: Check the AST structure (e.g., "tuple with atom and config")
+- ✅ **Usage context**: Where/how the value is used determines its treatment
+- ✅ **Metadata/annotations**: Use explicit markers like `@:childSpec` 
+- ✅ **Type system**: Let the type itself define how it compiles
+
+**Why this matters**: Hardcoded name lists create maintenance burden and break when users define their own types with similar patterns.
+
+### ⚠️ CRITICAL: Apply Systematic Naming Conventions, Not Ad-Hoc Fixes
+**FUNDAMENTAL RULE: When converting between Haxe and Elixir naming conventions, apply consistent transformations systematically.**
+
+**General Principles:**
+- **Haxe identifiers → Elixir atoms**: Always apply snake_case transformation
+- **CamelCase → snake_case**: Apply consistently for all atom generation
+- **No special cases**: Don't check for specific enum names or types
+- **Idiomatic output**: Generated Elixir should follow Elixir conventions naturally
+
+**Example of the right approach:**
+```haxe
+// ✅ CORRECT: General transformation rule
+static function toElixirAtomName(name: String): String {
+    // Convert ANY CamelCase to snake_case
+    return camelToSnake(name);
+}
+
+// ❌ WRONG: Ad-hoc special cases
+if (enumTypeName == "SupervisorStrategy") {
+    atomName = toSnakeCase(atomName);  // Only for specific types
+}
+```
+
+**Why this matters**: Consistent naming transformations ensure all generated code looks idiomatic, not just specific cases we've thought of.
 
 ### ⚠️ CRITICAL: Trust Your Own Compiler's Decisions
 **FUNDAMENTAL RULE: When one compiler phase makes a decision, other phases must trust it completely.**

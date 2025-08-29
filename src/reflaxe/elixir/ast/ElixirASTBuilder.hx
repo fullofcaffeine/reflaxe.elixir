@@ -63,6 +63,17 @@ class ElixirASTBuilder {
         var metadata = createMetadata(expr);
         var astDef = convertExpression(expr);
         
+        // Check if this is an enum constructor that needs idiomatic transformation
+        switch(expr.expr) {
+            case TCall(e, _) if (e != null && isEnumConstructor(e) && hasIdiomaticMetadata(e)):
+                metadata.requiresIdiomaticTransform = true;
+                metadata.idiomaticEnumType = getEnumTypeName(e);
+                #if debug_ast_builder
+                trace('[AST Builder] Marked AST for idiomatic transform: ${getEnumTypeName(e)}');
+                #end
+            default:
+        }
+        
         var result = makeASTWithMeta(astDef, metadata, expr.pos);
         
         #if debug_ast_builder
@@ -291,6 +302,8 @@ class ElixirASTBuilder {
                     // Enum constructor call - generate tuple syntax {:tag, arg1, arg2, ...}
                     var tag = extractEnumTag(e);
                     var args = [for (arg in el) buildFromTypedExpr(arg)];
+                    
+                    // Create the tuple - metadata will be added at buildFromTypedExpr level
                     ETuple([makeAST(EAtom(tag))].concat(args));
                 } else {
                     // Regular function call
@@ -305,7 +318,9 @@ class ElixirASTBuilder {
                             
                             // Check for module calls
                             if (isModuleCall(obj)) {
-                                ERemoteCall(objAst, fieldName, args);
+                                // Convert method name to snake_case for Elixir
+                                var elixirFuncName = toSnakeCase(fieldName);
+                                ERemoteCall(objAst, elixirFuncName, args);
                             } else {
                                 // Check for array/list concatenation
                                 if (fieldName == "concat" && isArrayType(obj.t)) {
@@ -384,9 +399,9 @@ class ElixirASTBuilder {
             case TField(e, fa):
                 // Check for enum constructor references
                 switch(fa) {
-                    case FEnum(_, ef):
+                    case FEnum(enumType, ef):
                         // Enum constructor reference (no arguments)
-                        // Just return the atom tag
+                        // Keep original Haxe name - snake_case conversion happens at print time
                         EAtom(ef.name);
                     default:
                         // Regular field access
@@ -567,13 +582,9 @@ class ElixirASTBuilder {
                         false;
                 };
                 
-                // If it's a native Elixir module, use it as a module reference (no colon prefix)
-                // Otherwise, use as atom for backwards compatibility
-                if (isNativeModule) {
-                    EVar(moduleName);  // Module references are just capitalized identifiers
-                } else {
-                    EAtom(moduleName);
-                }
+                // Module references should always be EVar (no colon prefix)
+                // This applies to both native Elixir modules and compiled Haxe classes
+                EVar(moduleName);  // Module references are just capitalized identifiers
                 
             case TCast(e, m):
                 // Casts are mostly compile-time in Haxe
@@ -714,6 +725,7 @@ class ElixirASTBuilder {
                 var tag = extractEnumTag(e);
                 var args = [for (arg in el) convertPattern(arg)];
                 // Create tuple pattern {:tag, arg1, arg2, ...}
+                // Keep original name - conversion happens at print time
                 PTuple([PLiteral(makeAST(EAtom(tag)))].concat(args));
                 
             // Field access (for enum constructors)
@@ -721,11 +733,13 @@ class ElixirASTBuilder {
                 // Direct enum constructor reference
                 if (ef.params.length == 0) {
                     // No-argument constructor
+                    // Keep original name - conversion happens at print time
                     PLiteral(makeAST(EAtom(ef.name)));
                 } else {
                     // Constructor with arguments - needs to be a tuple pattern
                     // This will be {:Constructor, _, _, ...} with wildcards for args
                     var wildcards = [for (i in 0...ef.params.length) PWildcard];
+                    // Keep original name - conversion happens at print time
                     PTuple([PLiteral(makeAST(EAtom(ef.name)))].concat(wildcards));
                 }
                 
@@ -743,6 +757,60 @@ class ElixirASTBuilder {
             case TField(_, FEnum(_, _)): true;
             default: false;
         }
+    }
+    
+    /**
+     * Check if an enum has @:elixirIdiomatic metadata
+     */
+    static function hasIdiomaticMetadata(expr: TypedExpr): Bool {
+        return switch(expr.expr) {
+            case TField(_, FEnum(enumRef, _)):
+                var enumType = enumRef.get();
+                var hasIt = enumType.meta.has(":elixirIdiomatic");
+                #if debug_ast_builder
+                trace('[AST Builder] Checking @:elixirIdiomatic for ${enumType.name}: $hasIt');
+                #end
+                hasIt;
+            default: false;
+        }
+    }
+    
+    /**
+     * Get the enum type name for pattern detection
+     */
+    static function getEnumTypeName(expr: TypedExpr): String {
+        return switch(expr.expr) {
+            case TField(_, FEnum(enumRef, _)):
+                var enumType = enumRef.get();
+                enumType.name;
+            default: "";
+        }
+    }
+    
+    /**
+     * Convert Haxe identifier to Elixir atom name
+     * 
+     * GENERAL RULE: When Haxe identifiers become Elixir atoms,
+     * they should follow Elixir naming conventions (snake_case).
+     * This ensures generated code looks idiomatic.
+     * 
+     * Examples:
+     * - OneForOne → one_for_one
+     * - RestForOne → rest_for_one
+     * - SimpleOneForOne → simple_one_for_one
+     */
+    static function toElixirAtomName(name: String): String {
+        var result = [];
+        for (i in 0...name.length) {
+            var c = name.charAt(i);
+            if (i > 0 && c == c.toUpperCase() && c != c.toLowerCase()) {
+                result.push("_");
+                result.push(c.toLowerCase());
+            } else {
+                result.push(c.toLowerCase());
+            }
+        }
+        return result.join("");
     }
     
     /**
@@ -854,6 +922,27 @@ class ElixirASTBuilder {
             case FEnum(_, ef):
                 ef.name;
         }
+    }
+    
+    /**
+     * Convert camelCase to snake_case
+     */
+    static function toSnakeCase(s: String): String {
+        // Handle empty string
+        if (s.length == 0) return s;
+        
+        var result = new StringBuf();
+        for (i in 0...s.length) {
+            var char = s.charAt(i);
+            if (i > 0 && char == char.toUpperCase() && char != char.toLowerCase()) {
+                // Insert underscore before uppercase letter (except at start)
+                result.add("_");
+                result.add(char.toLowerCase());
+            } else {
+                result.add(char.toLowerCase());
+            }
+        }
+        return result.toString();
     }
     
     /**

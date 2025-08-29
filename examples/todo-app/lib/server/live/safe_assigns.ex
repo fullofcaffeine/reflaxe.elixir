@@ -57,8 +57,8 @@ defmodule SafeAssigns do
 
   @doc "Generated from Haxe updateTodosAndStats"
   def update_todos_and_stats(socket, todos) do
-    completed = :SafeAssigns.countCompleted(todos)
-    pending = :SafeAssigns.countPending(todos)
+    completed = SafeAssigns.count_completed(todos)
+    pending = SafeAssigns.count_pending(todos)
     Phoenix.LiveView.assign(socket, %{:todos => todos, :total_todos => todos.length, :completed_todos => completed, :pending_todos => pending})
   end
 
@@ -72,19 +72,19 @@ defmodule SafeAssigns do
     count = 0
     g = 0
     (fn ->
-      loop_6 = fn loop_6 ->
+      loop_5 = fn loop_5 ->
         if (g < todos.length) do
           todo = todos[g]
           g + 1
           if (todo.completed) do
             count + 1
           end
-          loop_6.(loop_6)
+          loop_5.(loop_5)
         else
           :ok
         end
       end
-      loop_6.(loop_6)
+      loop_5.(loop_5)
     end).()
     count
   end
@@ -94,19 +94,19 @@ defmodule SafeAssigns do
     count = 0
     g = 0
     (fn ->
-      loop_7 = fn loop_7 ->
+      loop_6 = fn loop_6 ->
         if (g < todos.length) do
           todo = todos[g]
           g + 1
           if (not todo.completed) do
             count + 1
           end
-          loop_7.(loop_7)
+          loop_6.(loop_6)
         else
           :ok
         end
       end
-      loop_7.(loop_7)
+      loop_6.(loop_6)
     end).()
     count
   end
