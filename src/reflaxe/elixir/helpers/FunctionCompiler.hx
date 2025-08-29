@@ -306,9 +306,82 @@ class FunctionCompiler {
                 #end
             }
             
+            // CRITICAL: Detect if this function has a temp_result pattern
+            // This happens when Haxe desugars return switch expressions
+            
+            // DEBUG: Visualize the actual function body structure
+            trace('[DEBUG FunctionCompiler] Compiling function: ${isStatic ? "static" : "instance"} ${funcName}');
+            trace('[DEBUG FunctionCompiler] Function body type: ${Type.enumConstructor(funcField.expr.expr)}');
+            
+            var hasTempResultPattern = false;
+            switch (funcField.expr.expr) {
+                case TBlock(exprs):
+                    trace('[DEBUG FunctionCompiler] TBlock with ${exprs.length} expressions');
+                    for (i in 0...exprs.length) {
+                        var exprType = Type.enumConstructor(exprs[i].expr);
+                        trace('[DEBUG FunctionCompiler]   Expr[$i]: $exprType');
+                        switch (exprs[i].expr) {
+                            case TVar(v, init):
+                                trace('[DEBUG FunctionCompiler]     Variable: ${v.name}, init: ${init != null}');
+                                if (v.name.indexOf("temp") == 0 && i == 0) {
+                                    // First expression is temp variable
+                                    // Check if last expression returns it
+                                    var last = exprs[exprs.length - 1];
+                                    switch (last.expr) {
+                                        case TLocal(v2) if (v2.name == v.name):
+                                            trace('[DEBUG FunctionCompiler]     ✓ TEMP PATTERN DETECTED: ${v.name}');
+                                            hasTempResultPattern = true;
+                                        case TReturn(e):
+                                            switch (e.expr) {
+                                                case TLocal(v2) if (v2.name == v.name):
+                                                    trace('[DEBUG FunctionCompiler]     ✓ TEMP PATTERN WITH RETURN DETECTED: ${v.name}');
+                                                    hasTempResultPattern = true;
+                                                case _:
+                                            }
+                                        case _:
+                                            trace('[DEBUG FunctionCompiler]     Last expr type: ${Type.enumConstructor(last.expr)}');
+                                    }
+                                }
+                            case TSwitch(_, _, _):
+                                trace('[DEBUG FunctionCompiler]     Switch expression at position $i');
+                            case TReturn(e):
+                                trace('[DEBUG FunctionCompiler]     Return expression at position $i');
+                                if (e != null) {
+                                    trace('[DEBUG FunctionCompiler]       Return type: ${Type.enumConstructor(e.expr)}');
+                                }
+                            case _:
+                        }
+                    }
+                case TReturn(e):
+                    trace('[DEBUG FunctionCompiler] Direct TReturn');
+                    if (e != null) {
+                        trace('[DEBUG FunctionCompiler]   Return expr type: ${Type.enumConstructor(e.expr)}');
+                        switch (e.expr) {
+                            case TSwitch(_, _, _):
+                                trace('[DEBUG FunctionCompiler]   ✓ DIRECT RETURN SWITCH DETECTED');
+                                hasTempResultPattern = true;
+                            case _:
+                        }
+                    }
+                case _:
+                    trace('[DEBUG FunctionCompiler] Other body type');
+            }
+            
+            // Set return context if we have the temp_result pattern
+            if (hasTempResultPattern) {
+                compiler.returnContext = true;
+                trace('[DEBUG FunctionCompiler] Setting returnContext = true');
+            }
+            
             // Compile function body with topLevel = true for function bodies
             // NOTE: Reflaxe framework handles preprocessor application automatically in compileClass()
             var compiledBody = compiler.compileExpressionImpl(funcField.expr, true);
+            
+            // Clear return context after compilation
+            if (hasTempResultPattern) {
+                compiler.returnContext = false;
+                trace('[DEBUG FunctionCompiler] Clearing returnContext');
+            }
             
             // CRITICAL FIX: Generate pre-declarations AFTER body compilation
             // WHY: Variables are only tracked DURING compilation, so we need to analyze

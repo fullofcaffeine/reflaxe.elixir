@@ -16,7 +16,7 @@ defmodule TodoAppWeb.UserLive do
 
     temp_result = nil
 
-    case event do
+    temp_result = case event do
       "cancel" -> __MODULE__.handle_cancel(socket)
       "delete_user" -> __MODULE__.handle_delete_user(params, socket)
       "edit_user" -> __MODULE__.handle_edit_user(params, socket)

@@ -72,7 +72,7 @@ defmodule JsonPrinter do
     temp_result
       4 -> struct.write_object(v)
       5 -> "null"
-      6 -> c = elem(g_array, 1)
+      6 -> c = 
     class_name = Type.get_class_name(c)
     if ((class_name == "String")) do
       struct.quote_string(v)
@@ -83,7 +83,7 @@ defmodule JsonPrinter do
         struct.write_object(v)
       end
     end
-      7 -> g_param_0 = elem(g_array, 1)
+      7 -> g_param_0 = 
     "null"
       8 -> "null"
     end

@@ -5,8 +5,8 @@ defmodule TodoAppWeb.TodoLive do
   def mount(params, session, socket) do
     g_array = TodoPubSub.subscribe(:todo_updates)
     case g_array do
-      0 -> g_param_0 = elem(g_array, 1)
-      1 -> reason = elem(g_array, 1)
+      0 -> g_param_0 = 
+      1 -> reason = 
     MountResult.error("Failed to subscribe to updates: " <> reason)
     end
 
@@ -59,26 +59,26 @@ defmodule TodoAppWeb.TodoLive do
 
     g_array = TodoPubSub.parse_message(msg)
     case g_array do
-      0 -> parsed_msg = elem(g_array, 1)
+      0 -> parsed_msg = 
     case parsed_msg do
-      0 -> g_param_0 = elem(parsed_msg, 1)
+      0 -> g_param_0 = 
     todo = g_param_0
     temp_socket = TodoAppWeb.TodoLive.add_todo_to_list(todo, socket)
-      1 -> g_param_0 = elem(parsed_msg, 1)
+      1 -> g_param_0 = 
     todo = g_param_0
     temp_socket = TodoAppWeb.TodoLive.update_todo_in_list(todo, socket)
-      2 -> id = elem(parsed_msg, 1)
+      2 -> id = 
     temp_socket = TodoAppWeb.TodoLive.remove_todo_from_list(id, socket)
-      3 -> action = elem(parsed_msg, 1)
+      3 -> action = 
     temp_socket = TodoAppWeb.TodoLive.handle_bulk_update(action, socket)
-      4 -> g_param_0 = elem(parsed_msg, 1)
+      4 -> g_param_0 = 
     user_id = g_param_0
     temp_socket = socket
-      5 -> g_param_0 = elem(parsed_msg, 1)
+      5 -> g_param_0 = 
     user_id = g_param_0
     temp_socket = socket
-      6 -> g_param_0 = elem(parsed_msg, 1)
-    g_param_1 = elem(parsed_msg, 2)
+      6 -> g_param_0 = 
+    g_param_1 = 
     message = g_param_0
     level = g_param_1
     temp_flash_type = nil
@@ -125,11 +125,11 @@ defmodule TodoAppWeb.TodoLive do
 
     g_array = TodoApp.Repo.insert(_changeset)
     case g_array do
-      0 -> todo = elem(g_array, 1)
+      0 -> todo = 
     g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_created(todo))
     case g_array do
-      0 -> g_param_0 = elem(g_array, 1)
-      1 -> g_param_0 = elem(g_array, 1)
+      0 -> g_param_0 = 
+      1 -> g_param_0 = 
     reason = g_param_0
     Log.trace("Failed to broadcast todo creation: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 228, className: "server.live.TodoLive", methodName: "create_new_todo"})
     end
@@ -159,11 +159,11 @@ defmodule TodoAppWeb.TodoLive do
 
     g_array = TodoApp.Repo.update(updated_changeset)
     case g_array do
-      0 -> updated_todo = elem(g_array, 1)
+      0 -> updated_todo = 
     g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
     case g_array do
-      0 -> g_param_0 = elem(g_array, 1)
-      1 -> g_param_0 = elem(g_array, 1)
+      0 -> g_param_0 = 
+      1 -> g_param_0 = 
     reason = g_param_0
     Log.trace("Failed to broadcast todo update: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 267, className: "server.live.TodoLive", methodName: "toggle_todo_status"})
     end
@@ -187,11 +187,11 @@ defmodule TodoAppWeb.TodoLive do
 
     g_array = TodoApp.Repo.delete(todo)
     case g_array do
-      0 -> _deleted_todo = elem(g_array, 1)
+      0 -> _deleted_todo = 
     g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_deleted(id))
     case g_array do
-      0 -> g_param_0 = elem(g_array, 1)
-      1 -> g_param_0 = elem(g_array, 1)
+      0 -> g_param_0 = 
+      1 -> g_param_0 = 
     reason = g_param_0
     Log.trace("Failed to broadcast todo deletion: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 289, className: "server.live.TodoLive", methodName: "delete_todo"})
     end
@@ -217,11 +217,11 @@ defmodule TodoAppWeb.TodoLive do
 
     g_array = TodoApp.Repo.update(updated_changeset)
     case g_array do
-      0 -> updated_todo = elem(g_array, 1)
+      0 -> updated_todo = 
     g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
     case g_array do
-      0 -> g_param_0 = elem(g_array, 1)
-      1 -> g_param_0 = elem(g_array, 1)
+      0 -> g_param_0 = 
+      1 -> g_param_0 = 
     reason = g_param_0
     Log.trace("Failed to broadcast todo priority update: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 313, className: "server.live.TodoLive", methodName: "update_todo_priority"})
     end
@@ -447,10 +447,10 @@ defmodule TodoAppWeb.TodoLive do
         updated_changeset = Todo.toggle_completed(todo)
         g_array = TodoApp.Repo.update(updated_changeset)
         case g_array do
-          0 -> g_param_0 = elem(g_array, 1)
+          0 -> g_param_0 = 
         updated_todo = g_param_0
         nil
-          1 -> g_param_0 = elem(g_array, 1)
+          1 -> g_param_0 = 
         reason = g_param_0
         Log.trace("Failed to complete todo " <> to_string(todo.id) <> ": " <> Std.string(reason), %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 440, className: "server.live.TodoLive", methodName: "complete_all_todos"})
         end
@@ -460,8 +460,8 @@ defmodule TodoAppWeb.TodoLive do
 
     g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.bulk_update(:complete_all))
     case g_array do
-      0 -> g_param_0 = elem(g_array, 1)
-      1 -> g_param_0 = elem(g_array, 1)
+      0 -> g_param_0 = 
+      1 -> g_param_0 = 
     reason = g_param_0
     Log.trace("Failed to broadcast bulk complete: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 449, className: "server.live.TodoLive", methodName: "complete_all_todos"})
     end
@@ -563,11 +563,11 @@ defmodule TodoAppWeb.TodoLive do
 
     g_array = TodoApp.Repo.update(_changeset)
     case g_array do
-      0 -> updated_todo = elem(g_array, 1)
+      0 -> updated_todo = 
     g_array = TodoPubSub.broadcast(:todo_updates, TodoPubSubMessage.todo_updated(updated_todo))
     case g_array do
-      0 -> g_param_0 = elem(g_array, 1)
-      1 -> g_param_0 = elem(g_array, 1)
+      0 -> g_param_0 = 
+      1 -> g_param_0 = 
     reason = g_param_0
     Log.trace("Failed to broadcast todo save: " <> reason, %{fileName: "src_haxe/server/live/TodoLive.hx", lineNumber: 514, className: "server.live.TodoLive", methodName: "save_edited_todo"})
     end
@@ -595,12 +595,12 @@ defmodule TodoAppWeb.TodoLive do
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
     temp_result = Phoenix.LiveView.assign(socket, complete_assigns)
-      2 -> _priority = elem(action, 1)
+      2 -> _priority = 
     temp_result = socket
-      3 -> g_param_0 = elem(action, 1)
+      3 -> g_param_0 = 
     tag = g_param_0
     temp_result = socket
-      4 -> g_param_0 = elem(action, 1)
+      4 -> g_param_0 = 
     tag = g_param_0
     temp_result = socket
     end
