@@ -62,24 +62,24 @@ defmodule TodoAppWeb.TodoLive do
       0 -> parsed_msg = elem(g_array, 1)
     case parsed_msg do
       0 -> g_param_0 = elem(parsed_msg, 1)
-    todo = g_array
+    todo = g_param_0
     temp_socket = TodoAppWeb.TodoLive.add_todo_to_list(todo, socket)
       1 -> g_param_0 = elem(parsed_msg, 1)
-    todo = g_array
+    todo = g_param_0
     temp_socket = TodoAppWeb.TodoLive.update_todo_in_list(todo, socket)
       2 -> id = elem(parsed_msg, 1)
     temp_socket = TodoAppWeb.TodoLive.remove_todo_from_list(id, socket)
       3 -> action = elem(parsed_msg, 1)
     temp_socket = TodoAppWeb.TodoLive.handle_bulk_update(action, socket)
       4 -> g_param_0 = elem(parsed_msg, 1)
-    user_id = g_array
+    user_id = g_param_0
     temp_socket = socket
       5 -> g_param_0 = elem(parsed_msg, 1)
-    user_id = g_array
+    user_id = g_param_0
     temp_socket = socket
       6 -> g_param_0 = elem(parsed_msg, 1)
     g_param_1 = elem(parsed_msg, 2)
-    message = g_array
+    message = g_param_0
     level = g_param_1
     temp_flash_type = nil
     case level do
@@ -448,7 +448,7 @@ defmodule TodoAppWeb.TodoLive do
         g_array = TodoApp.Repo.update(updated_changeset)
         case g_array do
           0 -> g_param_0 = elem(g_array, 1)
-        updated_todo = g_array
+        updated_todo = g_param_0
         nil
           1 -> g_param_0 = elem(g_array, 1)
         reason = g_param_0
