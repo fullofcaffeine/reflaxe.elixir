@@ -71,6 +71,14 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **ALL NEW DEVELOPMENT USES THIS PIPELINE**
 - **Files**: ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
 
+**⚠️ CRITICAL ARCHITECTURAL NOTE: Helper Compilers and the AST Pipeline**
+- The helper compilers (OTPCompiler, SchemaCompiler, LiveViewCompiler, etc.) are ONLY used by the legacy string pipeline
+- The AST pipeline does NOT use these helpers - this is intentional but creates feature gaps
+- **DO NOT FIX BUGS IN HELPER COMPILERS** - They will be deprecated with the string pipeline
+- **DO NOT PORT HELPERS AS STRING GENERATORS** - This would pollute the AST architecture
+- **CORRECT APPROACH**: Reimplement helper logic as AST transformation passes in ElixirASTTransformer
+- Example: OTPCompiler's supervisor options logic → SupervisorOptionsTransformPass working with AST nodes
+
 **WHY AST-BASED IS CRITICAL**: The AST architecture enables sophisticated transformations impossible with strings:
 - **Inheritance → Delegation**: Transform `super.method()` to Elixir module delegation (no inheritance in Elixir!)
 - **Self → Struct Parameter**: Convert `this/self` references to proper struct parameters

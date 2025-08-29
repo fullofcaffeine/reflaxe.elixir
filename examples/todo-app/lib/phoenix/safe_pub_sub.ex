@@ -12,17 +12,17 @@ defmodule SafePubSub do
   # Static functions
   @doc "Generated from Haxe subscribeWithConverter"
   def subscribe_with_converter(topic, topic_converter) do
-    pubsub_module = :Module.concat([:Application.get_application(__MODULE__), "PubSub"])
+    pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
     topic_string = topic_converter.(topic)
-    :PubSub.subscribe(pubsub_module, topic_string)
+    Phoenix.PubSub.subscribe(pubsub_module, topic_string)
   end
 
   @doc "Generated from Haxe broadcastWithConverters"
   def broadcast_with_converters(topic, message, topic_converter, message_converter) do
-    pubsub_module = :Module.concat([:Application.get_application(__MODULE__), "PubSub"])
+    pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
     topic_string = topic_converter.(topic)
     message_payload = message_converter.(message)
-    :PubSub.broadcast(pubsub_module, topic_string, message_payload)
+    Phoenix.PubSub.broadcast(pubsub_module, topic_string, message_payload)
   end
 
   @doc "Generated from Haxe parseWithConverter"
