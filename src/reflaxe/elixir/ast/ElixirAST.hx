@@ -665,4 +665,136 @@ inline function makeASTWithMeta(def: ElixirASTDef, meta: ElixirMetadata, ?pos: P
     };
 }
 
+// ============================================================================
+// Shared Transformation Utilities
+// ============================================================================
+
+/**
+ * Applies idiomatic Elixir transformations to enum constructor calls
+ * 
+ * WHY: Haxe enums naturally compile to tuples {:constructor, args...} but many
+ * Elixir patterns expect different forms (bare atoms, unwrapped values, OTP tuples).
+ * This shared utility ensures consistent transformation across the AST pipeline.
+ * 
+ * WHAT: Detects patterns by structure and arity, transforming enum constructors to:
+ * - 0 args: Bare atom (e.g., :telemetry for standalone markers)
+ * - 1 arg: Unwrapped value (e.g., "MyModule" for module references)
+ * - 2 args with keyword list: OTP tuple {Module, config} for child specs
+ * 
+ * HOW: Convention-based detection using argument count and type inspection.
+ * No hardcoded enum names - works for any enum marked with @:elixirIdiomatic.
+ * 
+ * @param node The AST node to potentially transform
+ * @return Transformed node or original if no transformation applies
+ */
+function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
+    // Only transform tuples that are enum constructors
+    var elements = switch(node.def) {
+        case ETuple(els): els;
+        default: return node; // Not a tuple, no transformation
+    };
+    
+    if (elements.length == 0) return node;
+    
+    // First element should be the constructor tag (atom)
+    var tag = switch(elements[0].def) {
+        case EAtom(name): name;
+        default: return node; // Not an enum constructor pattern
+    };
+    
+    // Extract constructor arguments (everything after the tag)
+    var args = elements.slice(1);
+    var argCount = args.length;
+    
+    // Convention-based transformation based on arity
+    switch(argCount) {
+        case 0:
+            // Zero arguments → bare atom
+            // Example: Telemetry() → :telemetry
+            return makeASTWithMeta(EAtom(tag), node.metadata, node.pos);
+            
+        case 1:
+            // Single argument → unwrap the value
+            // Special handling for module names (strings that look like modules)
+            var unwrapped = switch(args[0].def) {
+                case EString(s) if (isModuleName(s)):
+                    // Module names should be bare identifiers, not strings
+                    makeAST(EVar(s), args[0].pos);
+                default: 
+                    args[0];
+            };
+            return makeASTWithMeta(unwrapped.def, node.metadata, node.pos);
+            
+        case 2:
+            // Two arguments with keyword list → OTP tuple pattern
+            // Check if second arg is a keyword list for config
+            var isKeywordConfig = switch(args[1].def) {
+                case EKeywordList(_): true;
+                case EList(elements) if (elements.length > 0):
+                    // Check if it's a list of keyword pairs
+                    switch(elements[0].def) {
+                        case ETuple([{def: EAtom(_)}, _]): true;
+                        default: false;
+                    }
+                default: false;
+            };
+            
+            if (isKeywordConfig) {
+                // Transform to OTP child spec tuple: {Module, config}
+                // First arg should be the module (unwrap if string)
+                var moduleArg = switch(args[0].def) {
+                    case EString(s) if (isModuleName(s)):
+                        makeAST(EVar(s), args[0].pos);
+                    default:
+                        args[0];
+                };
+                
+                return makeASTWithMeta(
+                    ETuple([moduleArg, args[1]]),
+                    node.metadata,
+                    node.pos
+                );
+            }
+    }
+    
+    // No convention matched, return original
+    return node;
+}
+
+/**
+ * Checks if a string looks like an Elixir module name
+ * 
+ * @param s String to check
+ * @return True if it matches module naming pattern
+ */
+function isModuleName(s: String): Bool {
+    // Module names start with uppercase and can contain dots
+    // Examples: "Phoenix.PubSub", "MyApp.Repo", "Task.Supervisor"
+    if (s.length == 0) return false;
+    
+    var firstChar = s.charAt(0);
+    if (firstChar != firstChar.toUpperCase()) return false;
+    
+    // Check if it's a valid module name pattern
+    // Allow dots for nested modules, alphanumeric and underscores
+    for (i in 0...s.length) {
+        var char = s.charAt(i);
+        if (!isAlphaNumeric(char) && char != "." && char != "_") {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+/**
+ * Helper to check if a character is alphanumeric
+ */
+function isAlphaNumeric(char: String): Bool {
+    var code = char.charCodeAt(0);
+    return (code >= 48 && code <= 57) ||  // 0-9
+           (code >= 65 && code <= 90) ||  // A-Z
+           (code >= 97 && code <= 122);   // a-z
+}
+
 #end
