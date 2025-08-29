@@ -12,13 +12,7 @@ import contexts.Users.User;
 @:native("TodoAppWeb.UserLive")
 @:liveview
 class UserLive {
-    var users: Array<User> = [];
-    var selectedUser: Null<User> = null;
-    var changeset: Dynamic = null;
-    var searchTerm: String = "";
-    var showForm: Bool = false;
-    
-    function mount(_params: Dynamic, _session: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function mount(_params: Dynamic, _session: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         var users = Users.list_users(null);
         
         return {
@@ -33,7 +27,7 @@ class UserLive {
         };
     }
     
-    function handle_event(event: String, params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handle_event(event: String, params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         return switch(event) {
             case "new_user":
                 handleNewUser(params, socket);
@@ -58,7 +52,7 @@ class UserLive {
         }
     }
     
-    function handleNewUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleNewUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         var changeset = Users.change_user(null);
         var selectedUser = null;
         var showForm = true;
@@ -73,7 +67,7 @@ class UserLive {
         };
     }
     
-    function handleEditUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleEditUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         var userId = params.id;
         var selectedUser = Users.get_user(userId);
         var changeset = Users.change_user(selectedUser);
@@ -89,8 +83,9 @@ class UserLive {
         };
     }
     
-    function handleSaveUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleSaveUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         var userParams = params.user;
+        var selectedUser = Reflect.field(socket.assigns, "selectedUser");
         var result = selectedUser == null 
             ? Users.create_user(userParams)
             : Users.update_user(selectedUser, userParams);
@@ -121,7 +116,7 @@ class UserLive {
         }
     }
     
-    function handleDeleteUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleDeleteUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         var userId = params.id;
         var user = Users.get_user(userId);
         var result = Users.delete_user(user);
@@ -138,7 +133,7 @@ class UserLive {
         return {status: "noreply", socket: socket};
     }
     
-    function handleSearch(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleSearch(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         var searchTerm = params.search;
         
         var users = searchTerm.length > 0 
@@ -154,7 +149,7 @@ class UserLive {
         };
     }
     
-    function handleCancel(socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleCancel(socket: Dynamic): {status: String, socket: Dynamic} {
         return {
             status: "noreply",
             socket: assign_multiple(socket, {
@@ -165,7 +160,7 @@ class UserLive {
         };
     }
     
-    function render(assigns: Dynamic): String {
+    static function render(assigns: Dynamic): String {
         return HXX.hxx('
         <div class="user-management">
             <div class="header">
@@ -192,7 +187,7 @@ class UserLive {
         ');
     }
     
-    function renderUserList(assigns: Dynamic): String {
+    static function renderUserList(assigns: Dynamic): String {
         return HXX.hxx('
         <div class="users-list">
             <table class="table">
@@ -215,7 +210,7 @@ class UserLive {
         ');
     }
     
-    function renderUserRow(assigns: Dynamic): String {
+    static function renderUserRow(assigns: Dynamic): String {
         var user = assigns.user;
         return HXX.hxx('
         <tr>
@@ -259,7 +254,7 @@ class UserLive {
         return active ? "Active" : "Inactive";
     }
     
-    function renderUserForm(assigns: Dynamic): String {
+    static function renderUserForm(assigns: Dynamic): String {
         if (!assigns.showForm) return "";
         
         return HXX.hxx('

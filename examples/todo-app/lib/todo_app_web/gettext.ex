@@ -48,7 +48,7 @@ defmodule TodoAppWeb.Gettext do
 
   @doc "Generated from Haxe get_locale"
   def get_locale() do
-    :Gettext.DEFAULT_LOCALE
+    "en"
   end
 
   @doc "Generated from Haxe put_locale"

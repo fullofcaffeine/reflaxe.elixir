@@ -15,9 +15,21 @@ defmodule Log do
     end
     pstr = infos.fileName + ":" + infos.lineNumber
     if (infos.customParams != nil) do
-      _g = 0
-      _g_1 = infos.customParams
-      loop_1()
+      g = 0
+      g_1 = infos.customParams
+      (fn ->
+        loop_1 = fn loop_1 ->
+          if (g < g_1.length) do
+            v_2 = g_1[g]
+          g + 1
+          str = str + ", " + :Std.string(v)
+            loop_1.(loop_1)
+          else
+            :ok
+          end
+        end
+        loop_1.(loop_1)
+      end).()
     end
     pstr + ": " + str
   end

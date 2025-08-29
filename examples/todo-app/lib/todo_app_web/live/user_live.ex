@@ -1,11 +1,10 @@
 defmodule TodoAppWeb.UserLive do
   use TodoAppWeb, :live_view
 
-
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
-    users_2 = :Users.list_users(nil)
-    %{:status => "ok", :socket => :UserLive.assign_multiple(socket, %{:users => users_2, :selectedUser => nil, :changeset => :Users.change_user(nil), :searchTerm => "", :showForm => false})}
+    users = :Users.list_users(nil)
+    %{:status => "ok", :socket => :UserLive.assign_multiple(socket, %{:users => users, :selectedUser => nil, :changeset => :Users.change_user(nil), :searchTerm => "", :showForm => false})}
   end
 
 
@@ -16,17 +15,17 @@ defmodule TodoAppWeb.UserLive do
     temp_result = nil
     case (event) do
       "cancel" ->
-        temp_result = self.handleCancel(socket)
+        temp_result = :UserLive.handleCancel(socket)
       "delete_user" ->
-        temp_result = self.handleDeleteUser(params, socket)
+        temp_result = :UserLive.handleDeleteUser(params, socket)
       "edit_user" ->
-        temp_result = self.handleEditUser(params, socket)
+        temp_result = :UserLive.handleEditUser(params, socket)
       "new_user" ->
-        temp_result = self.handleNewUser(params, socket)
+        temp_result = :UserLive.handleNewUser(params, socket)
       "save_user" ->
-        temp_result = self.handleSaveUser(params, socket)
+        temp_result = :UserLive.handleSaveUser(params, socket)
       "search" ->
-        temp_result = self.handleSearch(params, socket)
+        temp_result = :UserLive.handleSearch(params, socket)
       _ ->
         temp_result = %{:status => "noreply", :socket => socket}
     end
@@ -36,20 +35,20 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe handleNewUser"
   def handle_new_user(_params, socket) do
-    changeset_2 = :Users.change_user(nil)
-    selected_user_2 = nil
-    show_form_2 = true
-    %{:status => "noreply", :socket => :UserLive.assign_multiple(socket, %{:changeset => changeset_2, :selectedUser => selected_user_2, :showForm => show_form_2})}
+    changeset = :Users.change_user(nil)
+    selected_user = nil
+    show_form = true
+    %{:status => "noreply", :socket => :UserLive.assign_multiple(socket, %{:changeset => changeset, :selectedUser => selected_user, :showForm => show_form})}
   end
 
 
   @doc "Generated from Haxe handleEditUser"
   def handle_edit_user(params, socket) do
     user_id = params.id
-    selected_user_2 = :Users.get_user(user_id)
-    changeset_2 = :Users.change_user(selected_user_2)
-    show_form_2 = true
-    %{:status => "noreply", :socket => :UserLive.assign_multiple(socket, %{:selectedUser => selected_user_2, :changeset => changeset_2, :showForm => show_form_2})}
+    selected_user = :Users.get_user(user_id)
+    changeset = :Users.change_user(selected_user)
+    show_form = true
+    %{:status => "noreply", :socket => :UserLive.assign_multiple(socket, %{:selectedUser => selected_user, :changeset => changeset, :showForm => show_form})}
   end
 
 
@@ -59,21 +58,22 @@ defmodule TodoAppWeb.UserLive do
     temp_result = nil
 
     user_params = params.user
+    selected_user = :Reflect.field(socket.assigns, "selectedUser")
     temp_struct = nil
-    if (self.selectedUser == nil) do
+    if (selected_user == nil) do
       temp_struct = :Users.create_user(user_params)
     else
-      temp_struct = :Users.update_user(self.selectedUser, user_params)
+      temp_struct = :Users.update_user(selected_user, user_params)
     end
     temp_result = nil
-    _g = temp_struct[:status]
-    case (_g) do
+    g = temp_struct[:status]
+    case (g) do
       "error" ->
         temp_result = %{:status => "noreply", :socket => :UserLive.assign(socket, "changeset", temp_struct[:changeset])}
       "ok" ->
-        users_2 = :Users.list_users(nil)
-        show_form_2 = false
-        temp_result = %{:status => "noreply", :socket => :UserLive.assign_multiple(socket, %{:users => users_2, :showForm => show_form_2, :selectedUser => nil, :changeset => :Users.change_user(nil)})}
+        users = :Users.list_users(nil)
+        show_form = false
+        temp_result = %{:status => "noreply", :socket => :UserLive.assign_multiple(socket, %{:users => users, :showForm => show_form, :selectedUser => nil, :changeset => :Users.change_user(nil)})}
       _ ->
         temp_result = %{:status => "noreply", :socket => socket}
     end
@@ -87,8 +87,8 @@ defmodule TodoAppWeb.UserLive do
     user = :Users.get_user(user_id)
     result = :Users.delete_user(user)
     if (result[:status] == "ok") do
-      users_2 = :Users.list_users(nil)
-      %{:status => "noreply", :socket => :UserLive.assign(socket, "users", users_2)}
+      users = :Users.list_users(nil)
+      %{:status => "noreply", :socket => :UserLive.assign(socket, "users", users)}
     end
     %{:status => "noreply", :socket => socket}
   end
@@ -98,14 +98,14 @@ defmodule TodoAppWeb.UserLive do
   def handle_search(params, socket) do
     temp_array = nil
 
-    search_term_2 = params.search
+    search_term = params.search
     temp_array = nil
-    if (search_term_2.length > 0) do
-      temp_array = :Users.search_users(search_term_2)
+    if (search_term.length > 0) do
+      temp_array = :Users.search_users(search_term)
     else
       temp_array = :Users.list_users(nil)
     end
-    %{:status => "noreply", :socket => :UserLive.assign_multiple(socket, %{:users => temp_array, :searchTerm => search_term_2})}
+    %{:status => "noreply", :socket => :UserLive.assign_multiple(socket, %{:users => temp_array, :searchTerm => search_term})}
   end
 
 
@@ -117,7 +117,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe render"
   def render(assigns) do
-    :HXX.hxx("\n        <div class=\"user-management\">\n            <div class=\"header\">\n                <h1>User Management</h1>\n                <.button phx-click=\"new_user\" class=\"btn-primary\">\n                    <.icon name=\"plus\" /> New User\n                </.button>\n            </div>\n            \n            <div class=\"search-bar\">\n                <.form phx-change=\"search\">\n                    <.input \n                        name=\"search\" \n                        value={@searchTerm}\n                        placeholder=\"Search users...\"\n                        type=\"search\"\n                    />\n                </.form>\n            </div>\n            \n            " + self.renderUserList(assigns) + "\n            " + self.renderUserForm(assigns) + "\n        </div>\n        ")
+    :HXX.hxx("\n        <div class=\"user-management\">\n            <div class=\"header\">\n                <h1>User Management</h1>\n                <.button phx-click=\"new_user\" class=\"btn-primary\">\n                    <.icon name=\"plus\" /> New User\n                </.button>\n            </div>\n            \n            <div class=\"search-bar\">\n                <.form phx-change=\"search\">\n                    <.input \n                        name=\"search\" \n                        value={@searchTerm}\n                        placeholder=\"Search users...\"\n                        type=\"search\"\n                    />\n                </.form>\n            </div>\n            \n            " + :UserLive.renderUserList(assigns) + "\n            " + :UserLive.renderUserForm(assigns) + "\n        </div>\n        ")
   end
 
 
@@ -131,15 +131,6 @@ defmodule TodoAppWeb.UserLive do
   def render_user_row(assigns) do
     user = assigns.user
     :HXX.hxx("\n        <tr>\n            <td>" + user[:name] + "</td>\n            <td>" + user[:email] + "</td>\n            <td>" + user[:age] + "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " + :UserLive.getStatusText(user[:active]) + "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        ")
-  end
-
-
-  @doc "Generated from Haxe renderUserForm"
-  def render_user_form(assigns) do
-    if (not assigns.showForm) do
-      ""
-    end
-    :HXX.hxx("\n        <div class=\"modal\">\n            <div class=\"modal-content\">\n                <div class=\"modal-header\">\n                    <h2><%= if @selectedUser, do: \"Edit User\", else: \"New User\" %></h2>\n                    <button phx-click=\"cancel\" class=\"close\">&times;</button>\n                </div>\n                \n                <.form for={@changeset} phx-submit=\"save_user\">\n                    <div class=\"form-group\">\n                        <.label htmlFor=\"name\">Name</.label>\n                        <.input field={@changeset[:name]} type=\"text\" required />\n                        <.error field={@changeset[:name]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label htmlFor=\"email\">Email</.label>\n                        <.input field={@changeset[:email]} type=\"email\" required />\n                        <.error field={@changeset[:email]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label htmlFor=\"age\">Age</.label>\n                        <.input field={@changeset[:age]} type=\"number\" />\n                        <.error field={@changeset[:age]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.input \n                            field={@changeset[:active]} \n                            type=\"checkbox\" \n                            label=\"Active\"\n                        />\n                    </div>\n                    \n                    <div class=\"form-actions\">\n                        <.button type=\"submit\">\n                            <%= if @selectedUser, do: \"Update\", else: \"Create\" %> User\n                        </.button>\n                        <.button type=\"button\" phx-click=\"cancel\" variant=\"secondary\">\n                            Cancel\n                        </.button>\n                    </div>\n                </.form>\n            </div>\n        </div>\n        ")
   end
 
 
@@ -171,6 +162,15 @@ defmodule TodoAppWeb.UserLive do
   end
 
 
+  @doc "Generated from Haxe renderUserForm"
+  def render_user_form(assigns) do
+    if (not assigns.showForm) do
+      ""
+    end
+    :HXX.hxx("\n        <div class=\"modal\">\n            <div class=\"modal-content\">\n                <div class=\"modal-header\">\n                    <h2><%= if @selectedUser, do: \"Edit User\", else: \"New User\" %></h2>\n                    <button phx-click=\"cancel\" class=\"close\">&times;</button>\n                </div>\n                \n                <.form for={@changeset} phx-submit=\"save_user\">\n                    <div class=\"form-group\">\n                        <.label htmlFor=\"name\">Name</.label>\n                        <.input field={@changeset[:name]} type=\"text\" required />\n                        <.error field={@changeset[:name]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label htmlFor=\"email\">Email</.label>\n                        <.input field={@changeset[:email]} type=\"email\" required />\n                        <.error field={@changeset[:email]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label htmlFor=\"age\">Age</.label>\n                        <.input field={@changeset[:age]} type=\"number\" />\n                        <.error field={@changeset[:age]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.input \n                            field={@changeset[:active]} \n                            type=\"checkbox\" \n                            label=\"Active\"\n                        />\n                    </div>\n                    \n                    <div class=\"form-actions\">\n                        <.button type=\"submit\">\n                            <%= if @selectedUser, do: \"Update\", else: \"Create\" %> User\n                        </.button>\n                        <.button type=\"button\" phx-click=\"cancel\" variant=\"secondary\">\n                            Cancel\n                        </.button>\n                    </div>\n                </.form>\n            </div>\n        </div>\n        ")
+  end
+
+
   @doc "Generated from Haxe assign"
   def assign(socket, _key, _value) do
     socket
@@ -185,7 +185,7 @@ defmodule TodoAppWeb.UserLive do
 
   @doc "Generated from Haxe main"
   def main() do
-    :Log.trace("UserLive with @:liveview annotation compiled successfully!", %{:fileName => "src_haxe/server/live/UserLive.hx", :lineNumber => 320, :className => "server.live.UserLive", :methodName => "main"})
+    :Log.trace("UserLive with @:liveview annotation compiled successfully!", %{:fileName => "src_haxe/server/live/UserLive.hx", :lineNumber => 315, :className => "server.live.UserLive", :methodName => "main"})
   end
 
 

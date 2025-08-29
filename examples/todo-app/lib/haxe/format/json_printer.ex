@@ -47,14 +47,14 @@ defmodule JsonPrinter do
   def write_value(%__MODULE__{} = struct, v, key) do
     temp_result = nil
 
-    if (self.replacer != nil) do
-      v = self.replacer(key, v)
+    if (struct.replacer != nil) do
+      v = struct.replacer(key, v)
     end
     if (v == nil) do
       "null"
     end
-    _g = :Type.typeof(v)
-    case (_g.elem(0)) do
+    g = :Type.typeof(v)
+    case (g.elem(0)) do
       0 ->
         "null"
       1 ->
@@ -74,24 +74,24 @@ defmodule JsonPrinter do
         end
         temp_result
       4 ->
-        self.writeObject(v)
+        struct.writeObject(v)
       5 ->
         "null"
       6 ->
-        _g_2 = _g.elem(1)
-        c = _g_2
+        g_2 = g.elem(1)
+        c = g_2
         class_name = :Type.getClassName(c)
         if (class_name == "String") do
-          self.quoteString(v)
+          struct.quoteString(v)
         else
           if (class_name == "Array") do
-            self.writeArray(v)
+            struct.writeArray(v)
           else
-            self.writeObject(v)
+            struct.writeObject(v)
           end
         end
       7 ->
-        _g_2 = _g.elem(1)
+        g_2 = g.elem(1)
         "null"
       8 ->
         "null"
@@ -101,10 +101,21 @@ defmodule JsonPrinter do
   @doc "Generated from Haxe writeArray"
   def write_array(%__MODULE__{} = struct, arr) do
     items = []
-    _g = 0
-    _g_1 = arr.length
-    loop_3()
-    if (self.space != nil && items.length > 0) do
+    g = 0
+    g_1 = arr.length
+    (fn ->
+      loop_3 = fn loop_3 ->
+        if (g < g_1) do
+          i = g + 1
+          items ++ [struct.writeValue(arr[i], :Std.string(i))]
+          loop_3.(loop_3)
+        else
+          :ok
+        end
+      end
+      loop_3.(loop_3)
+    end).()
+    if (struct.space != nil && items.length > 0) do
       "[\n  " + items.join(",\n  ") + "\n]"
     else
       "[" + items.join(",") + "]"
@@ -115,9 +126,28 @@ defmodule JsonPrinter do
   def write_object(%__MODULE__{} = struct, obj) do
     fields = :Reflect.fields(obj)
     pairs = []
-    _g = 0
-    loop_4()
-    if (self.space != nil && pairs.length > 0) do
+    g = 0
+    (fn ->
+      loop_4 = fn loop_4 ->
+        if (g < fields.length) do
+          field = fields[g]
+          g + 1
+          value = :Reflect.field(obj, field)
+          key = struct.quoteString(field)
+          val = struct.writeValue(value, field)
+          if (struct.space != nil) do
+            pairs ++ [key + ": " + val]
+          else
+            pairs ++ [key + ":" + val]
+          end
+          loop_4.(loop_4)
+        else
+          :ok
+        end
+      end
+      loop_4.(loop_4)
+    end).()
+    if (struct.space != nil && pairs.length > 0) do
       "{\n  " + pairs.join(",\n  ") + "\n}"
     else
       "{" + pairs.join(",") + "}"
@@ -127,16 +157,59 @@ defmodule JsonPrinter do
   @doc "Generated from Haxe quoteString"
   def quote_string(%__MODULE__{} = struct, s) do
     result = "\""
-    _g = 0
-    _g_1 = s.length
-    loop_5()
+    g = 0
+    g_1 = s.length
+    (fn ->
+      loop_5 = fn loop_5 ->
+        if (g < g_1) do
+          i = g + 1
+          c = s.charCodeAt(i)
+          if (c == nil) do
+            if (c < 32) do
+              hex = :StringTools.hex(c, 4)
+              result = result + "\\u" + hex
+            else
+              result = result + s.charAt(i)
+            end
+          else
+            case (c) do
+              8 ->
+                result = result + "\\b"
+              9 ->
+                result = result + "\\t"
+              10 ->
+                result = result + "\\n"
+              12 ->
+                result = result + "\\f"
+              13 ->
+                result = result + "\\r"
+              34 ->
+                result = result + "\\\""
+              92 ->
+                result = result + "\\\\"
+              _ ->
+                if (c < 32) do
+                  hex = :StringTools.hex(c, 4)
+                  result = result + "\\u" + hex
+                else
+                  result = result + s.charAt(i)
+                end
+            end
+          end
+          loop_5.(loop_5)
+        else
+          :ok
+        end
+      end
+      loop_5.(loop_5)
+    end).()
     result = result + "\""
     result
   end
 
   @doc "Generated from Haxe write"
   def write(%__MODULE__{} = struct, k, v) do
-    self.writeValue(v, k)
+    struct.writeValue(v, k)
   end
 
 

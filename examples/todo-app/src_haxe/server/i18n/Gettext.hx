@@ -75,7 +75,7 @@ class Gettext {
      */
     @:extern
     public static function getLocale(): String {
-        return DEFAULT_LOCALE;
+        return "en";
     }
     
     /**

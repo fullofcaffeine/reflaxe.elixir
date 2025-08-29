@@ -77,7 +77,7 @@ class Gettext {
      * @return The current locale string (e.g., "en", "es", "fr")
      */
     public static function get_locale(): String {
-        return DEFAULT_LOCALE;
+        return "en";
     }
     
     /**
