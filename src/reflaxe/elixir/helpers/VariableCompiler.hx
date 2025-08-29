@@ -1134,12 +1134,19 @@ class VariableCompiler {
                         return '${varName} = ${lastExtractedParam}';
                     }
                     
-                    // LEGACY: Also keep the old logic for backward compatibility
-                    if (v.name == "g" && compiler.enumExtractionVars != null && compiler.enumExtractionVars.length > 0) {
-                        // Use the extraction variables in order
-                        if (compiler.currentEnumExtractionIndex < compiler.enumExtractionVars.length) {
-                            var extractionVar = compiler.enumExtractionVars[compiler.currentEnumExtractionIndex].varName;
-                            compiler.currentEnumExtractionIndex++;
+                    // CRITICAL FIX: Check if this is a "g" variable reference in enum pattern context
+                    // In switch cases with enum patterns, "g" references should use extracted parameters
+                    if ((v.name == "g" || v.name == "g_array") && 
+                        compiler.currentSwitchCaseBody != null &&
+                        compiler.enumExtractionVars != null && 
+                        compiler.enumExtractionVars.length > 0) {
+                        // Find the appropriate extraction variable
+                        // For single parameter enums, use the first (and only) extraction
+                        if (compiler.enumExtractionVars.length > 0) {
+                            var extractionVar = compiler.enumExtractionVars[0].varName;
+                            #if debug_variable_compiler
+                            // trace('[XRay VariableCompiler] ✓ ENUM PATTERN VARIABLE: ${varName} = ${extractionVar} (not g_array)');
+                            #end
                             return '${varName} = ${extractionVar}';
                         }
                     }
@@ -1368,13 +1375,26 @@ class VariableCompiler {
             return mappedName;
         }
         
-        // SIMPLE FIX: If this is a 'g' variable and we have a mapping for it, use it
+        // CRITICAL FIX: Check if we're in enum pattern context BEFORE applying g_array mapping
         var originalName = getOriginalVarName(tvar);
         if (originalName == "g" || originalName == "_g") {
+            // Check if we're in a switch case with enum extractions - use those instead of g_array
+            if (compiler.currentSwitchCaseBody != null && 
+                compiler.enumExtractionVars != null && 
+                compiler.enumExtractionVars.length > 0) {
+                // Use the first extracted parameter (for single-param enums like Repo(config))
+                var extraction = compiler.enumExtractionVars[0];
+                #if debug_variable_compiler
+                // trace('[XRay VariableCompiler] ✓ ENUM PATTERN CONTEXT: Using ${extraction.varName} instead of g_array for ${originalName}');
+                #end
+                return extraction.varName;
+            }
+            
+            // Otherwise check for loop desugaring mapping
             var nameMapping = compiler.currentFunctionParameterMap.get(originalName);
             if (nameMapping == "g_array") {
                 #if debug_variable_compiler
-                // trace('[XRay VariableCompiler] ✓ Found name mapping for g: ${originalName} → g_array');
+                // trace('[XRay VariableCompiler] ✓ Found loop desugaring mapping for g: ${originalName} → g_array');
                 #end
                 return "g_array";
             }
@@ -1388,80 +1408,34 @@ class VariableCompiler {
         // Get original variable name and convert to snake_case
         var varName = NamingHelper.toSnakeCase(originalName);
         
-        // TARGETED FIX: For function parameters, check if they have a mapping that doesn't 
-        // involve underscores. This prevents incorrect underscore prefixing of used parameters.
+        // ARCHITECTURE: Clear hierarchy of authority for variable mappings
+        // Each system has exclusive authority over its domain
+        
+        // 1. Function parameter map - AUTHORITATIVE for function parameters
+        // Trust it completely, whether it has underscore or not
         if (compiler.currentFunctionParameterMap.exists(originalName)) {
-            var mappedName = compiler.currentFunctionParameterMap.get(originalName);
-            // If the mapped name doesn't start with underscore, use it directly
-            // This prevents app_name from becoming _app_name when it's used in function body
-            if (!StringTools.startsWith(mappedName, "_")) {
-                return mappedName;
-            }
+            return compiler.currentFunctionParameterMap.get(originalName);
         }
         if (compiler.currentFunctionParameterMap.exists(varName)) {
-            var mappedName = compiler.currentFunctionParameterMap.get(varName);
-            // Same check for snake_case version
-            if (!StringTools.startsWith(mappedName, "_")) {
-                return mappedName;
-            }
+            return compiler.currentFunctionParameterMap.get(varName);
         }
         
-        // Check underscore prefix map (for variables declared with underscore)
-        // Check original camelCase name first
+        // 2. Underscore prefix map - for LOCAL variables (not parameters)
         if (underscorePrefixMap.exists(originalName)) {
-            var prefixedName = underscorePrefixMap.get(originalName);
-            #if debug_variable_compiler
-            // trace('[XRay VariableCompiler] ✓ Found underscore mapping for original name: ${originalName} → ${prefixedName}');
-            #end
-            return prefixedName;
+            return underscorePrefixMap.get(originalName);
         }
-        
-        // Then check snake_case version
         if (underscorePrefixMap.exists(varName)) {
-            var prefixedName = underscorePrefixMap.get(varName);
-            #if debug_variable_compiler
-            // trace('[XRay VariableCompiler] ✓ Found underscore mapping for snake_case: ${varName} → ${prefixedName}');
-            #end
-            return prefixedName;
+            return underscorePrefixMap.get(varName);
         }
         
-        // Check if variable has -reflaxe.unused metadata
-        // If it does, it was declared with an underscore prefix, so references must use the same prefix
+        // 3. Metadata fallback - for edge cases
         if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
             if (!StringTools.startsWith(varName, "_")) {
-                varName = "_" + varName;
-                #if debug_variable_compiler
-                // trace('[XRay VariableCompiler] ✓ Variable has -reflaxe.unused metadata, adding underscore prefix: ${varName}');
-                #end
+                return "_" + varName;
             }
         }
         
-        // PRAGMATIC FIX: For pattern-extracted variables that are referenced in inner switches
-        // If no direct mapping was found, check if an underscore version was registered
-        // This handles nested switches where outer extracts _var but inner references var
-        var underscoreVersion = "_" + varName;
-        for (mappedName in variableIdMap) {
-            if (mappedName == underscoreVersion) {
-                #if debug_variable_tracking
-                trace('[DEBUG VariableCompiler] Found underscore version in ID map: ${varName} -> ${underscoreVersion}');
-                #end
-                return underscoreVersion;
-            }
-        }
-        
-        // Also check if this exact underscore version exists in currentFunctionParameterMap
-        if (compiler.currentFunctionParameterMap.exists(underscoreVersion)) {
-            #if debug_variable_tracking
-            trace('[DEBUG VariableCompiler] Found underscore version in parameter map: ${varName} -> ${underscoreVersion}');
-            #end
-            return underscoreVersion;
-        }
-        
-        #if debug_variable_compiler
-        // trace('[XRay VariableCompiler] Final variable name: ${varName}');
-        #end
-        
-        
+        // 4. Default - standard snake_case conversion
         return varName;
     }
     

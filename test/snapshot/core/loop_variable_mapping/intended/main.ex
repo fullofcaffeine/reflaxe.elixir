@@ -28,7 +28,7 @@ defmodule Main do
         (fn loop ->
           if ((g_counter < g_array)) do
                 j = g_counter + 1
-            result = if ((Enum.at(array, _i) < Enum.at(array, j))), do: result ++ [(Enum.at(array, _i) + Enum.at(array, j))], else: result
+            result = if ((Enum.at(array, i) < Enum.at(array, j))), do: result ++ [(Enum.at(array, i) + Enum.at(array, j))], else: result
             loop.()
           end
         end).()
@@ -64,7 +64,7 @@ defmodule Main do
 
     result = result ++ [2]
 
-    result = result ++ [_i]
+    result = result ++ [i]
 
     sum = 0
 

@@ -118,6 +118,13 @@ This validates the entire compilation pipeline with a real Phoenix application.
 
 ## ⚠️ Critical Rules for Test Management
 
+### CRITICAL: Validate Intended Output Correctness
+- **BEFORE accepting test failures**: Examine if the intended output itself is correct
+- **If intended output is wrong**: Update it to the correct expected behavior
+- **Verify consistency**: If a variable is declared as `i`, it should be referenced as `i`, not `_i`
+- **Update immediately**: When fixing compiler bugs, update incorrect intended outputs FIRST
+- **This ensures tests actually validate correct behavior**, not perpetuate bugs
+
 ### NEVER Commit Generated Files
 - ❌ Never commit `out/` directories
 - ❌ Never commit `dump/` directories  

@@ -132,7 +132,7 @@ defmodule Bytes do
 
   @doc "Generated from Haxe blit"
   def blit(%__MODULE__{} = struct, pos, src, srcpos, len) do
-    if ((((((_pos < 0) || (srcpos < 0)) || (len < 0)) || ((_pos + len) > struct.length)) || ((srcpos + len) > src.length))) do
+    if ((((((pos < 0) || (srcpos < 0)) || (len < 0)) || ((pos + len) > struct.length)) || ((srcpos + len) > src.length))) do
       raise :outside_bounds
     else
       nil
@@ -142,12 +142,12 @@ defmodule Bytes do
 
     b2 = src.b
 
-    if (((b1 == b2) && (_pos > srcpos))) do
+    if (((b1 == b2) && (pos > srcpos))) do
       i = len
       (fn loop ->
         if ((_i > 0)) do
               _i - 1
-          Enum.at(b1, (_i + _pos)) = Enum.at(b2, (_i + srcpos))
+          Enum.at(b1, (_i + pos)) = Enum.at(b2, (_i + srcpos))
           loop.()
         end
       end).()
@@ -163,7 +163,7 @@ defmodule Bytes do
     (fn loop ->
       if ((g_counter < g_array)) do
             i = g_counter + 1
-        Enum.at(b1, (_i + _pos)) = Enum.at(b2, (_i + srcpos))
+        Enum.at(b1, (_i + pos)) = Enum.at(b2, (_i + srcpos))
         loop.()
       end
     end).()
@@ -178,8 +178,8 @@ defmodule Bytes do
     (fn loop ->
       if ((g_counter < g_array)) do
             _i = g_counter + 1
-        _pos = _pos + 1
-        Enum.at(struct.b, _pos) = (value and 255)
+        pos = pos + 1
+        Enum.at(struct.b, pos) = (value and 255)
         loop.()
       end
     end).()
@@ -187,13 +187,13 @@ defmodule Bytes do
 
   @doc "Generated from Haxe sub"
   def sub(%__MODULE__{} = struct, pos, len) do
-    if ((((_pos < 0) || (len < 0)) || ((_pos + len) > struct.length))) do
+    if ((((pos < 0) || (len < 0)) || ((pos + len) > struct.length))) do
       raise :outside_bounds
     else
       nil
     end
 
-    Bytes.new(len, struct.b.slice(_pos, (_pos + len)))
+    Bytes.new(len, struct.b.slice(pos, (pos + len)))
   end
 
   @doc "Generated from Haxe compare"
@@ -231,11 +231,11 @@ defmodule Bytes do
   def get_double(%__MODULE__{} = struct, pos) do
     temp_number = nil
 
-    _pos = (_pos + 4)
+    pos = (pos + 4)
 
-    temp_number = (((Enum.at(struct.b, _pos) or Bitwise.bsl(Enum.at(struct.b, (_pos + 1)), 8)) or Bitwise.bsl(Enum.at(struct.b, (_pos + 2)), 16)) or Bitwise.bsl(Enum.at(struct.b, (_pos + 3)), 24))
+    temp_number = (((Enum.at(struct.b, pos) or Bitwise.bsl(Enum.at(struct.b, (pos + 1)), 8)) or Bitwise.bsl(Enum.at(struct.b, (pos + 2)), 16)) or Bitwise.bsl(Enum.at(struct.b, (pos + 3)), 24))
 
-    FPHelper.i64_to_double((((Enum.at(struct.b, _pos) or Bitwise.bsl(Enum.at(struct.b, (_pos + 1)), 8)) or Bitwise.bsl(Enum.at(struct.b, (_pos + 2)), 16)) or Bitwise.bsl(Enum.at(struct.b, (_pos + 3)), 24)), temp_number)
+    FPHelper.i64_to_double((((Enum.at(struct.b, pos) or Bitwise.bsl(Enum.at(struct.b, (pos + 1)), 8)) or Bitwise.bsl(Enum.at(struct.b, (pos + 2)), 16)) or Bitwise.bsl(Enum.at(struct.b, (pos + 3)), 24)), temp_number)
   end
 
   @doc "Generated from Haxe getFloat"
@@ -248,17 +248,17 @@ defmodule Bytes do
     i = FPHelper.double_to_i64(v)
 
     v = _i.low
-    Enum.at(struct.b, _pos) = (v and 255)
-    Enum.at(struct.b, (_pos + 1)) = (Bitwise.bsr(v, 8) and 255)
-    Enum.at(struct.b, (_pos + 2)) = (Bitwise.bsr(v, 16) and 255)
-    Enum.at(struct.b, (_pos + 3)) = (Bitwise.bsr(v, 24) and 255)
+    Enum.at(struct.b, pos) = (v and 255)
+    Enum.at(struct.b, (pos + 1)) = (Bitwise.bsr(v, 8) and 255)
+    Enum.at(struct.b, (pos + 2)) = (Bitwise.bsr(v, 16) and 255)
+    Enum.at(struct.b, (pos + 3)) = (Bitwise.bsr(v, 24) and 255)
 
-    _pos = (_pos + 4)
+    pos = (pos + 4)
     v = _i.high
-    Enum.at(struct.b, _pos) = (v and 255)
-    Enum.at(struct.b, (_pos + 1)) = (Bitwise.bsr(v, 8) and 255)
-    Enum.at(struct.b, (_pos + 2)) = (Bitwise.bsr(v, 16) and 255)
-    Enum.at(struct.b, (_pos + 3)) = (Bitwise.bsr(v, 24) and 255)
+    Enum.at(struct.b, pos) = (v and 255)
+    Enum.at(struct.b, (pos + 1)) = (Bitwise.bsr(v, 8) and 255)
+    Enum.at(struct.b, (pos + 2)) = (Bitwise.bsr(v, 16) and 255)
+    Enum.at(struct.b, (pos + 3)) = (Bitwise.bsr(v, 24) and 255)
   end
 
   @doc "Generated from Haxe setFloat"
@@ -296,13 +296,13 @@ defmodule Bytes do
     temp_number = nil
     temp_result = nil
 
-    _pos = (_pos + 4)
+    pos = (pos + 4)
 
-    temp_number = (((Enum.at(struct.b, _pos) or Bitwise.bsl(Enum.at(struct.b, (_pos + 1)), 8)) or Bitwise.bsl(Enum.at(struct.b, (_pos + 2)), 16)) or Bitwise.bsl(Enum.at(struct.b, (_pos + 3)), 24))
+    temp_number = (((Enum.at(struct.b, pos) or Bitwise.bsl(Enum.at(struct.b, (pos + 1)), 8)) or Bitwise.bsl(Enum.at(struct.b, (pos + 2)), 16)) or Bitwise.bsl(Enum.at(struct.b, (pos + 3)), 24))
 
     high = temp_number
 
-    low = (((Enum.at(struct.b, _pos) or Bitwise.bsl(Enum.at(struct.b, (_pos + 1)), 8)) or Bitwise.bsl(Enum.at(struct.b, (_pos + 2)), 16)) or Bitwise.bsl(Enum.at(struct.b, (_pos + 3)), 24))
+    low = (((Enum.at(struct.b, pos) or Bitwise.bsl(Enum.at(struct.b, (pos + 1)), 8)) or Bitwise.bsl(Enum.at(struct.b, (pos + 2)), 16)) or Bitwise.bsl(Enum.at(struct.b, (pos + 3)), 24))
 
     x = Int64.new(high, low)
 
@@ -326,32 +326,32 @@ defmodule Bytes do
   def set_int64(%__MODULE__{} = struct, pos, v) do
     v = v.low
 
-    Enum.at(struct.b, _pos) = (v and 255)
+    Enum.at(struct.b, pos) = (v and 255)
 
-    Enum.at(struct.b, (_pos + 1)) = (Bitwise.bsr(v, 8) and 255)
+    Enum.at(struct.b, (pos + 1)) = (Bitwise.bsr(v, 8) and 255)
 
-    Enum.at(struct.b, (_pos + 2)) = (Bitwise.bsr(v, 16) and 255)
+    Enum.at(struct.b, (pos + 2)) = (Bitwise.bsr(v, 16) and 255)
 
-    Enum.at(struct.b, (_pos + 3)) = (Bitwise.bsr(v, 24) and 255)
+    Enum.at(struct.b, (pos + 3)) = (Bitwise.bsr(v, 24) and 255)
 
-    _pos = (_pos + 4)
+    pos = (pos + 4)
 
     v = v.high
 
-    Enum.at(struct.b, _pos) = (v and 255)
+    Enum.at(struct.b, pos) = (v and 255)
 
-    Enum.at(struct.b, (_pos + 1)) = (Bitwise.bsr(v, 8) and 255)
+    Enum.at(struct.b, (pos + 1)) = (Bitwise.bsr(v, 8) and 255)
 
-    Enum.at(struct.b, (_pos + 2)) = (Bitwise.bsr(v, 16) and 255)
+    Enum.at(struct.b, (pos + 2)) = (Bitwise.bsr(v, 16) and 255)
 
-    Enum.at(struct.b, (_pos + 3)) = (Bitwise.bsr(v, 24) and 255)
+    Enum.at(struct.b, (pos + 3)) = (Bitwise.bsr(v, 24) and 255)
   end
 
   @doc "Generated from Haxe getString"
   def get_string(%__MODULE__{} = struct, pos, len, encoding \\ nil) do
-    if ((_encoding == nil)), do: (_encoding == :u_t_f8), else: nil
+    if ((encoding == nil)), do: (encoding == :u_t_f8), else: nil
 
-    if ((((_pos < 0) || (len < 0)) || ((_pos + len) > struct.length))) do
+    if ((((pos < 0) || (len < 0)) || ((pos + len) > struct.length))) do
       raise :outside_bounds
     else
       nil
@@ -363,9 +363,9 @@ defmodule Bytes do
 
     fcc = fn code -> &String.from_char_code/1(code) end
 
-    i = _pos
+    i = pos
 
-    max = (_pos + len)
+    max = (pos + len)
 
     (fn loop ->
       if ((_i < max)) do
@@ -402,7 +402,7 @@ defmodule Bytes do
 
   @doc "Generated from Haxe readString"
   def read_string(%__MODULE__{} = struct, pos, len) do
-    struct.get_string(_pos, len)
+    struct.get_string(pos, len)
   end
 
   @doc "Generated from Haxe toString"
