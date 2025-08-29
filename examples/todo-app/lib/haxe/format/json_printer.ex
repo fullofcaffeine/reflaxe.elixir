@@ -53,7 +53,7 @@ defmodule JsonPrinter do
     if (v == nil) do
       "null"
     end
-    g = Type.typeof(v)
+    g = {:unknown, v}
     case (g.elem(0)) do
       0 ->
         "null"

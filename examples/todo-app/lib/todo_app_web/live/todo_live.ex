@@ -3,7 +3,7 @@ defmodule TodoAppWeb.TodoLive do
 
   @doc "Generated from Haxe mount"
   def mount(params, session, socket) do
-    g = TodoPubSub.subscribe(:TodoUpdates)
+    g = {:unknown, :TodoUpdates}
     case (g.elem(0)) do
       0 ->
         g_2 = g.elem(1)
@@ -67,7 +67,7 @@ defmodule TodoAppWeb.TodoLive do
     temp_flash_type = nil
 
     temp_socket = nil
-    g = TodoPubSub.parse_message(msg)
+    g = {:unknown, msg}
     case (g.elem(0)) do
       0 ->
         g_2 = g.elem(1)
@@ -142,12 +142,12 @@ defmodule TodoAppWeb.TodoLive do
     todo_params_user_id = socket.assigns.current_user.id
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(%Todo{}, changeset_params)
-    g = Repo.insert(changeset)
+    g = {:unknown, changeset}
     case (g.elem(0)) do
       0 ->
         g_2 = g.elem(1)
         todo = g_2
-        g_3 = TodoPubSub.broadcast(:TodoUpdates, {:TodoCreated, todo})
+        g_3 = {:unknown, :TodoUpdates, {:TodoCreated, todo}}
         case (g_3.elem(0)) do
           0 ->
             g_4 = g_3.elem(1)
@@ -176,12 +176,12 @@ defmodule TodoAppWeb.TodoLive do
       socket
     end
     updated_changeset = Todo.toggle_completed(todo)
-    g = Repo.update(updated_changeset)
+    g = {:unknown, updated_changeset}
     case (g.elem(0)) do
       0 ->
         g_2 = g.elem(1)
         updated_todo = g_2
-        g_3 = TodoPubSub.broadcast(:TodoUpdates, {:TodoUpdated, updated_todo})
+        g_3 = {:unknown, :TodoUpdates, {:TodoUpdated, updated_todo}}
         case (g_3.elem(0)) do
           0 ->
             g_4 = g_3.elem(1)
@@ -205,12 +205,12 @@ defmodule TodoAppWeb.TodoLive do
     if (todo == nil) do
       socket
     end
-    g = Repo.delete(todo)
+    g = {:unknown, todo}
     case (g.elem(0)) do
       0 ->
         g_2 = g.elem(1)
         deleted_todo = g_2
-        g_3 = TodoPubSub.broadcast(:TodoUpdates, {:TodoDeleted, id})
+        g_3 = {:unknown, :TodoUpdates, {:TodoDeleted, id}}
         case (g_3.elem(0)) do
           0 ->
             g_4 = g_3.elem(1)
@@ -235,12 +235,12 @@ defmodule TodoAppWeb.TodoLive do
       socket
     end
     updated_changeset = Todo.update_priority(todo, priority)
-    g = Repo.update(updated_changeset)
+    g = {:unknown, updated_changeset}
     case (g.elem(0)) do
       0 ->
         g_2 = g.elem(1)
         updated_todo = g_2
-        g_3 = TodoPubSub.broadcast(:TodoUpdates, {:TodoUpdated, updated_todo})
+        g_3 = {:unknown, :TodoUpdates, {:TodoUpdated, updated_todo}}
         case (g_3.elem(0)) do
           0 ->
             g_4 = g_3.elem(1)
@@ -478,7 +478,7 @@ defmodule TodoAppWeb.TodoLive do
           todo = temp_array[g]
           g + 1
           updated_changeset = Todo.toggle_completed(todo)
-          g_2 = Repo.update(updated_changeset)
+          g_2 = {:unknown, updated_changeset}
           case (g_2.elem(0)) do
             0 ->
               g_3 = g_2.elem(1)
@@ -496,7 +496,7 @@ defmodule TodoAppWeb.TodoLive do
       end
       loop_15.(loop_15)
     end).()
-    g = TodoPubSub.broadcast(:TodoUpdates, {:BulkUpdate, :CompleteAll})
+    g = {:unknown, :TodoUpdates, {:BulkUpdate, :CompleteAll}}
     case (g.elem(0)) do
       0 ->
         g_2 = g.elem(1)
@@ -546,7 +546,7 @@ defmodule TodoAppWeb.TodoLive do
         if (g < temp_array.length) do
           todo = temp_array[g]
           g + 1
-          Repo.delete(todo)
+          {:unknown, todo}
           loop_17.(loop_17)
         else
           :ok
@@ -554,7 +554,7 @@ defmodule TodoAppWeb.TodoLive do
       end
       loop_17.(loop_17)
     end).()
-    TodoPubSub.broadcast(:TodoUpdates, {:BulkUpdate, :DeleteCompleted})
+    {:unknown, :TodoUpdates, {:BulkUpdate, :DeleteCompleted}}
     temp_array_1 = nil
     _this = socket.assigns.todos
     g = []
@@ -599,12 +599,12 @@ defmodule TodoAppWeb.TodoLive do
     end
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(todo, changeset_params)
-    g = Repo.update(changeset)
+    g = {:unknown, changeset}
     case (g.elem(0)) do
       0 ->
         g_2 = g.elem(1)
         updated_todo = g_2
-        g_3 = TodoPubSub.broadcast(:TodoUpdates, {:TodoUpdated, updated_todo})
+        g_3 = {:unknown, :TodoUpdates, {:TodoUpdated, updated_todo}}
         case (g_3.elem(0)) do
           0 ->
             g_4 = g_3.elem(1)

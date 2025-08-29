@@ -273,6 +273,84 @@ return result;
 
 **Remember**: If you're adding a "cleanup" step, you're probably doing it wrong. Fix the generator, not the output.
 
+## ⚠️ CRITICAL: Predictable Pipeline Architecture - No Logic Bypassing Logic
+
+**FUNDAMENTAL RULE: THE COMPILER MUST HAVE A PREDICTABLE, LINEAR PIPELINE WITH SINGLE RESPONSIBILITY PER PHASE.**
+
+**What counts as unpredictable architecture:**
+- ❌ **Multiple detection paths** for the same pattern (builder detecting AND transformer detecting)
+- ❌ **Transformations in builder phase** - Builder should ONLY build AST nodes
+- ❌ **Building in transformer phase** - Transformer should ONLY transform existing nodes  
+- ❌ **Bypass routes** where some code paths skip transformation entirely
+- ❌ **Conditional transformation** based on where/when code is compiled
+- ❌ **Logic bypassing logic** - Adding more detection layers to fix missed transformations
+
+**The correct pipeline architecture:**
+- ✅ **Linear phases**: TypedExpr → Builder → Transformer → Printer (no shortcuts)
+- ✅ **Single responsibility**: Each phase does ONE thing well
+- ✅ **Metadata-driven**: Builder marks nodes with metadata, transformer reads metadata
+- ✅ **No bypasses**: ALL code goes through ALL phases, no exceptions
+- ✅ **Predictable behavior**: Same input ALWAYS produces same output regardless of context
+
+**Example of wrong vs right architecture:**
+```haxe
+// ❌ WRONG: Multiple detection and transformation in wrong phase
+// In ElixirASTBuilder.hx:
+case TCall(e, el):
+    if (isEnumConstructor(e)) {
+        var transformed = applyTransformation(...); // Transformation in builder!
+        return transformed;
+    }
+
+// In ElixirASTTransformer.hx:
+if (detectEnumPattern(node)) { // Second detection path!
+    return transform(node);
+}
+
+// ✅ RIGHT: Single responsibility, metadata-driven
+// In ElixirASTBuilder.hx:
+case TCall(e, el):
+    if (isEnumConstructor(e)) {
+        var node = buildEnumNode(e, el);
+        node.metadata.isIdiomaticEnum = true; // ONLY mark metadata
+        return node;
+    }
+
+// In ElixirASTTransformer.hx:
+if (node.metadata?.isIdiomaticEnum == true) { // ONLY check metadata
+    return applyIdiomaticTransformation(node);
+}
+```
+
+**Why predictable pipeline matters:**
+- **Debugging**: Can trace exactly where transformations happen
+- **Maintenance**: Clear separation of concerns makes changes safer
+- **Performance**: No redundant detection or missed optimizations
+- **Correctness**: No edge cases where transformations are skipped
+- **Testing**: Can test each phase independently
+
+**Pipeline Phase Responsibilities:**
+
+1. **Builder Phase (ElixirASTBuilder)**:
+   - ONLY builds AST nodes from TypedExpr
+   - ONLY sets metadata flags for semantic meaning
+   - NEVER transforms or modifies structure
+   - NEVER makes decisions about final output format
+
+2. **Transformer Phase (ElixirASTTransformer)**:
+   - ONLY transforms existing AST nodes
+   - ONLY reads metadata to make decisions
+   - NEVER creates new detection logic
+   - NEVER builds nodes from scratch
+
+3. **Printer Phase (ElixirASTPrinter)**:
+   - ONLY converts AST to strings
+   - NEVER transforms structure
+   - NEVER makes semantic decisions
+   - ONLY handles formatting and syntax
+
+**Remember**: When you find yourself adding another detection layer to catch missed cases, you're creating unpredictable architecture. Step back and fix the pipeline structure instead.
+
 ## ⚠️ CRITICAL: Use Reflaxe's Established Architecture Patterns
 
 **FUNDAMENTAL RULE: NEVER INVENT AD-HOC DETECTION SYSTEMS. USE REFLAXE'S ESTABLISHED PATTERNS.**

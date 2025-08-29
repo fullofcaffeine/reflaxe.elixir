@@ -50,7 +50,7 @@ defmodule Flash do
     else
       temp_string = "info"
     end
-    flash_type = FlashTypeTools.from_string(temp_string)
+    flash_type = {:unknown, temp_string}
     temp_string_1 = nil
     tmp = phoenix_flash.message
     if (tmp != nil) do
