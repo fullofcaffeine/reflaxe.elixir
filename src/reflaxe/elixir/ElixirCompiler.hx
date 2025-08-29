@@ -21,6 +21,8 @@ import reflaxe.data.EnumOptionData;
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
+import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
+import reflaxe.elixir.ast.ElixirAST.EPattern;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -136,7 +138,6 @@ class ElixirCompiler extends DirectToStringCompiler {
     public var currentClassType: Null<ClassType> = null;
     
     // Track instance variable names for LiveView classes to generate socket.assigns references
-    public var liveViewInstanceVars: Null<Map<String, Bool>> = null;
     
     /**
      * STATE THREADING MODE
@@ -197,41 +198,6 @@ class ElixirCompiler extends DirectToStringCompiler {
      * 
      * Usage: @:appName("MyApp") - generates MyApp.PubSub, MyAppWeb.Telemetry, etc.
      */
-    /**
-     * Fix malformed conditional expressions that can occur in complex Y combinator bodies
-     * 
-     * Pattern to fix: "}, else: expression" without proper "if condition, do:" prefix
-     * These occur when if-else expressions are incorrectly split during compilation
-     */
-    private function fixMalformedConditionals(code: String): String {
-        return codeFixupCompiler.fixMalformedConditionals(code);
-    }
-
-    public function getCurrentAppName(): String {
-        return codeFixupCompiler.getCurrentAppName();
-    }
-    
-    /**
-     * Replace getAppName() calls with the actual app name from the annotation
-     * This post-processing step enables dynamic app name injection in generated code
-     */
-    private function replaceAppNameCalls(code: String, classType: ClassType): String {
-        return codeFixupCompiler.replaceAppNameCalls(code, classType);
-    }
-    
-    /**
-     * Initialize source map writer for a specific output file
-     */
-    private function initSourceMapWriter(outputPath: String): Void {
-        codeFixupCompiler.initSourceMapWriter(outputPath);
-    }
-    
-    /**
-     * Finalize source map writer and generate .ex.map file
-     */
-    private function finalizeSourceMapWriter(): Null<String> {
-        return codeFixupCompiler.finalizeSourceMapWriter();
-    }
     
     /**
      * Get the original variable name before Haxe's renaming.
@@ -314,10 +280,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Convert Haxe names to Elixir naming conventions
-     * Delegates to NamingHelper for consistency
+     * Uses NameUtils for consistency
      */
     public function toElixirName(haxeName: String): String {
-        return namingConventionCompiler.toElixirName(haxeName);
+        return reflaxe.elixir.ast.NameUtils.toElixirName(haxeName);
     }
     
     /**
@@ -328,45 +294,13 @@ class ElixirCompiler extends DirectToStringCompiler {
      * - my.nested.Module → my/nested/module
      */
     private function convertPackageToDirectoryPath(classType: ClassType): String {
-        return namingConventionCompiler.convertPackageToDirectoryPath(classType);
-    }
-    
-    /**
-     * Set framework-aware output path using Reflaxe's built-in file placement system.
-     * 
-     * This method detects framework annotations and uses setOutputFileDir() and setOutputFileName()
-     * to place files in Phoenix-expected locations BEFORE compilation occurs.
-     * 
-     * COMPREHENSIVE: Now handles packages, @:native annotations, and universal snake_case conversion.
-     */
-    private function setFrameworkAwareOutputPath(classType: ClassType): Void {
-        namingConventionCompiler.setFrameworkAwareOutputPath(classType);
-    }
-    
-    /**
-     * Universal naming system for ALL module types (classes, enums, abstracts, typedefs).
-     * 
-     * This is the SINGLE SOURCE OF TRUTH for file naming across the entire compiler.
-     * It handles dot notation (haxe.CallStack → haxe/call_stack), ensures snake_case
-     * for all parts, and works with any module type.
-     * 
-     * @param moduleName Full module name including dots (e.g., "haxe.CallStack", "Any")
-     * @param pack Package array (can be empty)
-     * @return Naming rule with snake_case fileName and dirPath
-     */
-    /**
-     * Universal naming rule system - delegates to NamingHelper for centralized logic
-     * 
-     * WHY: Delegates to NamingHelper for centralized naming rule management
-     * WHAT: Wrapper function that maintains backward compatibility while delegating
-     * HOW: Simply forwards the call to NamingHelper.getUniversalNamingRule()
-     * 
-     * @param moduleName The Haxe module name (can contain dots)
-     * @param pack Optional package array for directory structure
-     * @return Object with fileName and dirPath for consistent naming
-     */
-    private function getUniversalNamingRule(moduleName: String, pack: Array<String> = null): {fileName: String, dirPath: String} {
-        return namingConventionCompiler.getUniversalNamingRule(moduleName, pack);
+        if (classType.pack.length == 0) return "";
+        
+        var segments = classType.pack.map(function(segment) {
+            return reflaxe.elixir.ast.NameUtils.toSnakeCase(segment);
+        });
+        
+        return segments.join("/");
     }
     
     /**
@@ -374,192 +308,34 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This ensures consistent snake_case naming for all generated files.
      */
     private function setUniversalOutputPath(moduleName: String, pack: Array<String> = null): Void {
-        namingConventionCompiler.setUniversalOutputPath(moduleName, pack);
+        // Convert module name to snake_case
+        var fileName = reflaxe.elixir.ast.NameUtils.toSnakeCase(moduleName);
+        
+        // Set the output file name
+        setOutputFileName(fileName);
+        
+        // Convert package to directory path if provided
+        if (pack != null && pack.length > 0) {
+            var dirPath = pack.map(function(segment) {
+                return reflaxe.elixir.ast.NameUtils.toSnakeCase(segment);
+            }).join("/");
+            
+            setOutputFileDir(dirPath);
+        }
     }
     
-    /**
-     * Comprehensive naming rule system - handles ALL naming scenarios.
-     * 
-     * This centralizes ALL naming logic including:
-     * - Package-to-directory conversion (my.package.Class → my/package/)
-     * - Framework annotations (@:router, @:liveview, etc.)
-     * - Universal snake_case conversion
-     * - @:native annotation handling
-     * 
-     * Every file gets proper Elixir naming conventions applied.
-     */
-    /**
-     * DELEGATION: Comprehensive naming rule extraction (moved to PhoenixPathGenerator.hx)
-     * 
-     * ARCHITECTURAL DECISION: This function was moved to PhoenixPathGenerator.hx as part of 
-     * naming/path utilities consolidation. Framework-specific path generation logic belongs 
-     * with other Phoenix path generation functionality, not in the main compiler.
-     * 
-     * @param classType The Haxe ClassType containing metadata and package information
-     * @return Object with fileName and dirPath following Phoenix conventions
-     */
-    private function getComprehensiveNamingRule(classType: ClassType): {fileName: String, dirPath: String} {
-        return namingConventionCompiler.getComprehensiveNamingRule(classType);
-    }
     
-    /**
-     * STATE THREADING METHOD SUITE
-     * 
-     * WHY: Enable transformation of mutable Haxe code to immutable Elixir patterns
-     * WHAT: Manage compiler state for mutable-to-immutable transformations
-     * HOW: Track mutability info and enable appropriate transformations
-     */
     
-    /**
-     * Enable state threading mode for mutating methods
-     * 
-     * WHY: Mutating methods need special handling to return updated structs
-     * WHAT: Activates transformation of field assignments to struct updates
-     * HOW: Sets flags that OperatorCompiler and other helpers check
-     * 
-     * @param info Mutability analysis results from MutabilityAnalyzer
-     */
-    public function enableStateThreadingMode(info: reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo): Void {
-        stateManagementCompiler.enableStateThreadingMode(info);
-    }
     
-    /**
-     * Disable state threading mode after method compilation
-     * 
-     * WHY: State threading should only apply to specific mutating methods
-     * WHAT: Resets transformation flags to normal compilation mode
-     * HOW: Clears flags and mutability info
-     */
-    public function disableStateThreadingMode(): Void {
-        stateManagementCompiler.disableStateThreadingMode();
-    }
     
-    /**
-     * Check if state threading is currently enabled
-     * 
-     * WHY: Other compilers need to know if they should transform assignments
-     * WHAT: Returns current state threading status
-     * HOW: Simple flag check
-     * 
-     * @return True if state threading transformations should be applied
-     */
-    public function isStateThreadingEnabled(): Bool {
-        return stateManagementCompiler.isStateThreadingEnabled();
-    }
     
-    /**
-     * Get current mutability information
-     * 
-     * WHY: Helpers need to know which fields are being mutated
-     * WHAT: Returns analysis results from MutabilityAnalyzer
-     * HOW: Returns stored mutability info
-     * 
-     * @return Mutability analysis results or null
-     */
-    public function getStateThreadingInfo(): Null<reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo> {
-        return stateManagementCompiler.getStateThreadingInfo();
-    }
     
-    /**
-     * Set parameter mapping for 'this' references
-     * 
-     * WHY: Haxe uses 'this' but Elixir structs use explicit parameter names
-     * WHAT: Maps 'this' and '_this' to the struct parameter name
-     * HOW: Updates the parameter map used during expression compilation
-     * 
-     * @param structParamName The parameter name to use (typically "struct")
-     */
-    public function setThisParameterMapping(structParamName: String): Void {
-        stateManagementCompiler.setParameterMapping(structParamName);
-    }
     
-    /**
-     * Clear parameter mapping after method compilation
-     * 
-     * WHY: Parameter mappings should be function-scoped
-     * WHAT: Removes 'this' mappings from the parameter map
-     * HOW: Clears specific keys from the map
-     */
-    public function clearThisParameterMapping(): Void {
-        stateManagementCompiler.clearParameterMapping();
-    }
     
-    /**
-     * Start compiling a struct method globally
-     * 
-     * WHY: JsonPrinter _this issue - ensure _this mapping persists through ALL nested contexts
-     * WHAT: Set global flag and global parameter mapping that survives context switches
-     * HOW: Store mapping in separate global map that compileExpressionImpl always checks
-     * 
-     * @param structParamName The parameter name to use for _this mapping (typically "struct")
-     */
-    public function startCompilingStructMethod(structParamName: String): Void {
-        stateManagementCompiler.startGlobalStructMethodCompilation(structParamName);
-    }
     
-    /**
-     * Stop compiling struct method globally
-     * 
-     * WHY: Global state should be cleaned up after struct method compilation
-     * WHAT: Clear global flag and global parameter mapping
-     * HOW: Reset global state variables
-     */
-    public function stopCompilingStructMethod(): Void {
-        stateManagementCompiler.stopGlobalStructMethodCompilation();
-    }
     
-    /**
-     * Set inline context for variable replacement
-     * 
-     * WHY: Some variables need to be replaced during compilation
-     * WHAT: Maps variable names to replacement values
-     * HOW: Updates the inline context map
-     * 
-     * @param varName The variable name to replace
-     * @param replacement The replacement value
-     */
-    public function setInlineContext(varName: String, replacement: String): Void {
-        stateManagementCompiler.setInlineContext(varName, replacement);
-    }
     
-    /**
-     * Check if inline context exists for a variable
-     * 
-     * WHY: Need to determine if a variable has an inline replacement
-     * WHAT: Checks if the variable exists in the inline context map
-     * HOW: Returns true if the variable has been mapped
-     * 
-     * @param varName The variable name to check
-     * @return True if the variable has an inline context mapping
-     */
-    public function hasInlineContext(varName: String): Bool {
-        return stateManagementCompiler.hasInlineContext(varName);
-    }
     
-    /**
-     * Get inline context value for a variable
-     * 
-     * WHY: Need to retrieve replacement values for inline context
-     * WHAT: Gets the replacement value for a variable
-     * HOW: Returns the mapped value or null if not found
-     * 
-     * @param varName The variable name to look up
-     * @return The replacement value or null
-     */
-    private function getInlineContext(varName: String): Null<String> {
-        return stateManagementCompiler.getInlineContext(varName);
-    }
-    
-    /**
-     * Clear inline context after use
-     * 
-     * WHY: Inline context should be scoped to specific compilations
-     * WHAT: Clears the inline context map
-     * HOW: Removes all entries from the map
-     */
-    public function clearInlineContext(): Void {
-        stateManagementCompiler.clearInlineContext();
-    }
     
     /**
      * Required implementation for DirectToStringCompiler - implements class compilation
@@ -571,9 +347,6 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
         if (classType == null) return null;
         
-        // Track position of class definition for source mapping
-        trackPosition(classType.pos);
-        
         // Skip standard library classes that shouldn't generate Elixir modules
         if (isStandardLibraryClass(classType.name)) {
             return null;
@@ -582,131 +355,17 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Store current class context for use in expression compilation
         this.currentClassType = classType;
         
-        // Reset import optimizer for this module
-        importOptimizer.reset();
+        // Use AST pipeline for class compilation
+        var moduleAST = buildClassAST(classType, varFields, funcFields);
+        if (moduleAST == null) return null;
         
-        // Set framework-aware file path BEFORE compilation using Reflaxe's built-in system
-        setFrameworkAwareOutputPath(classType);
-        // Initialize source mapping for this class
-        if (sourceMapOutputEnabled) {
-            var className = classType.name;
-            var actualOutputDir = this.output.outputDir != null ? this.output.outputDir : outputDirectory;
-            
-            // Annotation-aware file path generation for framework convention adherence
-            var outputPath = PhoenixPathGenerator.generateAnnotationAwareOutputPath(classType, actualOutputDir, fileExtension);
-            initSourceMapWriter(outputPath);
-        }
+        // Transform the AST
+        var transformedAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(moduleAST);
         
-        // Check for ExUnit test classes first (before other annotations)
-        if (ExUnitCompiler.isExUnitTest(classType)) {
-            var result = ExUnitCompiler.compile(classType, this);
-            if (result != null) {
-                trackOutput(result);
-            }
-            return result;
-        }
-        
-        // Check for @:migration annotation - use AST-based MigrationCompiler
-        if (classType.meta.has(":migration")) {
-            var result = compileMigrationClass(classType, varFields, funcFields);
-            if (result != null) {
-                trackOutput(result);
-                return result;
-            }
-        }
-        
-        // Use unified annotation system for detection, validation, and routing
-        var annotationResult = reflaxe.elixir.helpers.AnnotationSystem.routeCompilation(classType, varFields, funcFields);
-        if (annotationResult != null) {
-            trackOutput(annotationResult);
-            return annotationResult;
-        }
-        
-        // Check if this is a LiveView class that should use special compilation
-        var annotationInfo = reflaxe.elixir.helpers.AnnotationSystem.detectAnnotations(classType);
-        if (annotationInfo.primaryAnnotation == ":liveview") {
-            var result = compileLiveViewClass(classType, varFields, funcFields);
-            if (result != null) {
-                trackOutput(result);
-            }
-            return result;
-        }
-        
-        // Use the existing ClassCompiler instance for proper state consistency
-        this.classCompiler.setImportOptimizer(importOptimizer);
-        
-        // Handle inheritance tracking
-        if (classType.superClass != null) {
-            addModuleTypeForCompilation(TClassDecl(classType.superClass.t));
-        }
-        
-        // Handle interface tracking
-        for (iface in classType.interfaces) {
-            addModuleTypeForCompilation(TClassDecl(iface.t));
-        };
-        var result = this.classCompiler.compileClass(classType, varFields, funcFields);
-        
-        // Post-process to replace getAppName() calls with actual app name
-        if (result != null) {
-            result = replaceAppNameCalls(result, classType);
-            // Track the generated output for source mapping
-            trackOutput(result);
-        }
-        
-        return result;
+        // Generate string from AST
+        return reflaxe.elixir.ast.ElixirASTPrinter.print(transformedAST, 0);
     }
     
-    /**
-     * Compile @:migration annotated class to Ecto migration module
-     */
-    private function compileMigrationClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        // Delegate to specialized migration compiler
-        return migrationCompiler.compileMigrationClass(classType, varFields, funcFields);
-    }
-    
-    
-    /**
-     * Compile @:template annotated class to Phoenix template module
-     */
-    private function compileTemplateClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        var className = classType.name;
-        var config = reflaxe.elixir.helpers.TemplateCompiler.getTemplateConfig(classType);
-        
-        // Generate comprehensive template module with Phoenix.Component integration
-        return reflaxe.elixir.helpers.TemplateCompiler.compileFullTemplate(className, config);
-    }
-    
-    /**
-     * Compile @:schema annotated class to Ecto.Schema module with enhanced error reporting
-     */
-    private function compileSchemaClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        // Delegate to specialized schema compiler
-        return schemaCompiler.compileSchemaClass(classType, varFields, funcFields);
-    }
-    
-    /**
-     * Compile @:changeset annotated class to Ecto changeset module with enhanced error reporting
-     */
-    private function compileChangesetClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        // Delegate to specialized schema compiler (handles both @:schema and @:changeset)
-        return schemaCompiler.compileChangesetClass(classType, varFields, funcFields);
-    }
-    
-    /**
-     * Compile @:genserver annotated class to OTP GenServer module
-     */
-    private function compileGenServerClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        // Delegate to specialized GenServer compiler
-        return genServerCompiler.compileGenServerClass(classType, varFields, funcFields);
-    }
-    
-    /**
-     * Compile @:liveview annotated class to Phoenix LiveView module  
-     */
-    private function compileLiveViewClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): String {
-        // Delegate to specialized LiveView compiler
-        return liveViewCompiler.compileLiveViewClass(classType, varFields, funcFields);
-    }
     
     /**
      * Required implementation for DirectToStringCompiler - implements enum compilation
@@ -714,21 +373,15 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function compileEnumImpl(enumType: EnumType, options: Array<EnumOptionData>): Null<String> {
         if (enumType == null) return null;
         
-        // Track position of enum definition for source mapping
-        trackPosition(enumType.pos);
+        // Use AST pipeline for enum compilation
+        var enumAST = buildEnumAST(enumType, options);
+        if (enumAST == null) return null;
         
-        // Set universal output path for consistent snake_case naming
-        setUniversalOutputPath(enumType.name, enumType.pack);
+        // Transform the AST
+        var transformedAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(enumAST);
         
-        // Use the existing EnumCompiler instance for proper state consistency
-        var result = this.enumCompiler.compileEnum(enumType, options);
-        
-        // Track the generated output for source mapping
-        if (result != null) {
-            trackOutput(result);
-        }
-        
-        return result;
+        // Generate string from AST
+        return reflaxe.elixir.ast.ElixirASTPrinter.print(transformedAST, 0);
     }
     
     /**
@@ -849,6 +502,100 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
         // AST pipeline is the ONLY path
         return compileExpressionViaAST(expr, topLevel);
+    }
+    
+    /**
+     * Build AST for a class (generates Elixir module)
+     */
+    function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
+        
+        // Get module name
+        var moduleName = classType.name;
+        
+        // Build function definitions
+        var functions = [];
+        for (func in funcFields) {
+            if (func.field.expr() == null) continue;
+            
+            // Build function AST
+            var funcName = func.field.name;
+            var args = []; // Simple for now - can be enhanced
+            var body = buildFromTypedExpr(func.field.expr());
+            
+            var funcDef = func.field.isPublic 
+                ? ElixirASTDef.EDef(funcName, args, null, body)
+                : ElixirASTDef.EDefp(funcName, args, null, body);
+                
+            functions.push(reflaxe.elixir.ast.ElixirAST.makeAST(funcDef));
+        }
+        
+        // Create module AST
+        var moduleBody = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EBlock(functions));
+        return reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EDefmodule(moduleName, moduleBody));
+    }
+    
+    /**
+     * Helper to build AST from TypedExpr (delegates to builder)
+     */
+    function buildFromTypedExpr(expr: TypedExpr): reflaxe.elixir.ast.ElixirAST {
+        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr);
+    }
+    
+    /**
+     * Build AST for an enum (generates tagged tuples in Elixir)
+     */
+    function buildEnumAST(enumType: EnumType, options: Array<EnumOptionData>): Null<reflaxe.elixir.ast.ElixirAST> {
+        var NameUtils = reflaxe.elixir.ast.NameUtils;
+        
+        // Check if this enum has @:elixirIdiomatic metadata
+        var isIdiomatic = enumType.meta.has(":elixirIdiomatic");
+        
+        // In Elixir, enums become modules with functions that return tagged tuples
+        var moduleName = enumType.name;
+        var functions = [];
+        
+        for (option in options) {
+            // Each enum constructor becomes a function
+            var funcName = NameUtils.toSnakeCase(option.name);
+            
+            // Build parameter patterns from the option data
+            var args = [];
+            for (i in 0...option.data.args.length) {
+                args.push(EPattern.PVar('arg$i'));
+            }
+            
+            // Create the tagged tuple return value
+            var atomTag = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(option.name));
+            var tupleElements = [atomTag];
+            
+            // Add constructor arguments to tuple
+            for (i in 0...option.data.args.length) {
+                tupleElements.push(reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EVar('arg$i')));
+            }
+            
+            var returnValue = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.ETuple(tupleElements));
+            
+            // If idiomatic, mark the return value with metadata
+            if (isIdiomatic) {
+                returnValue.metadata.requiresIdiomaticTransform = true;
+                returnValue.metadata.idiomaticEnumType = enumType.name;
+            }
+            
+            var funcDef = ElixirASTDef.EDef(funcName, args, null, returnValue);
+            functions.push(reflaxe.elixir.ast.ElixirAST.makeAST(funcDef));
+        }
+        
+        // Create module AST
+        var moduleBody = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EBlock(functions));
+        var moduleAST = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EDefmodule(moduleName, moduleBody));
+        
+        // Mark the module itself if idiomatic
+        if (isIdiomatic) {
+            moduleAST.metadata.requiresIdiomaticTransform = true;
+            moduleAST.metadata.idiomaticEnumType = enumType.name;
+        }
+        
+        return moduleAST;
     }
     
     /**
@@ -1540,26 +1287,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
     
-    
-    /**
-     * Get the effective variable name for 'this' references, considering inline context and LiveView
-     */
-    private function resolveThisReference(): String {
-        // First check if we're in an inline context where struct is active
-        if (stateManagementCompiler.hasInlineContext("struct")) {
-            return "struct";
-        }
-        
-        // Check if we're in a LiveView class - in this case, 'this' references are invalid
-        // because LiveView instance variables should be accessed through socket.assigns
-        if (liveViewInstanceVars != null) {
-            // Return a special marker that indicates this should not be used directly
-            return "__LIVEVIEW_THIS__";
-        }
-        
-        // Fall back to StateManagementCompiler for general 'this' resolution
-        return stateManagementCompiler.resolveThisReference();
-    }
     
     /**
      * Check if a TLocal variable represents a function being passed as a reference
