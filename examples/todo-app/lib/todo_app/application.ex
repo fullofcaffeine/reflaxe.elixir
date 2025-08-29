@@ -17,7 +17,7 @@ defmodule TodoApp.Application do
   @doc "Generated from Haxe start"
   def start(_type, _args) do
     app_name = "TodoApp"
-    children = [TypeSafeChildSpec.pub_sub("TodoApp.PubSub"), TypeSafeChildSpec.telemetry("TodoAppWeb.Telemetry"), TypeSafeChildSpec.endpoint("TodoAppWeb.Endpoint")]
+    children = [TodoApp.PubSub, TodoAppWeb.Telemetry, TodoAppWeb.Endpoint]
     opts = [strategy: :OneForOne, max_restarts: 3, max_seconds: 5]
     supervisor_result = Supervisor.start_link(children, opts)
     supervisor_result

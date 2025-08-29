@@ -27,7 +27,7 @@ defmodule SafePubSub do
 
   @doc "Generated from Haxe parseWithConverter"
   def parse_with_converter(msg, message_parser) do
-    message_parser.(msg)
+    {:unknown, msg}
   end
 
   @doc "Generated from Haxe addTimestamp"

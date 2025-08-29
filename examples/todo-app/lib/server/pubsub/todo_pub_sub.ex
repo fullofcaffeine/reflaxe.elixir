@@ -11,17 +11,17 @@ defmodule TodoPubSub do
   # Static functions
   @doc "Generated from Haxe subscribe"
   def subscribe(topic) do
-    SafePubSub.subscribe_with_converter(topic, TodoPubSub.topicToString)
+    {:unknown, topic, TodoPubSub.topicToString}
   end
 
   @doc "Generated from Haxe broadcast"
   def broadcast(topic, message) do
-    SafePubSub.broadcast_with_converters(topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir)
+    {:unknown, topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir}
   end
 
   @doc "Generated from Haxe parseMessage"
   def parse_message(msg) do
-    SafePubSub.parse_with_converter(msg, TodoPubSub.parseMessageImpl)
+    {:unknown, msg, TodoPubSub.parseMessageImpl}
   end
 
   @doc "Generated from Haxe topicToString"
@@ -93,7 +93,7 @@ defmodule TodoPubSub do
     case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
-          bulk_action = TodoPubSub.parse_bulk_action(msg.action)
+          bulk_action = {:unknown, msg.action}
           case (bulk_action.elem(0)) do
             0 ->
               g_2 = bulk_action.elem(1)
@@ -107,7 +107,7 @@ defmodule TodoPubSub do
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
-          alert_level = TodoPubSub.parse_alert_level(msg.level)
+          alert_level = {:unknown, msg.level}
           case (alert_level.elem(0)) do
             0 ->
               g_2 = alert_level.elem(1)
