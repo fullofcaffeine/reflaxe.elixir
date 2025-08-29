@@ -5,7 +5,8 @@ package reflaxe.elixir;
 import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr;
-import reflaxe.elixir.helpers.NamingHelper;
+// Using centralized NameUtils for name conversion
+import reflaxe.elixir.ast.NameUtils;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -17,6 +18,7 @@ using reflaxe.helpers.TypeHelper;
  */
 @:nullSafety(Off)
 class PhoenixMapper {
+    
     
     /**
      * Check if a class has @:context annotation for Phoenix context generation
@@ -48,7 +50,7 @@ class PhoenixMapper {
      * Contexts organize related functionality and follow Phoenix conventions
      */
     public static function generatePhoenixContext(classType: ClassType): String {
-        var moduleName = NamingHelper.getElixirModuleName(classType.getNameOrNative());
+        var moduleName = NameUtils.getElixirModuleName(classType.getNameOrNative());
         var contextName = getPhoenixContextName(classType);
         
         var result = new StringBuf();
@@ -68,7 +70,7 @@ class PhoenixMapper {
      * Generate Phoenix controller module structure
      */
     public static function generatePhoenixController(classType: ClassType): String {
-        var moduleName = NamingHelper.getElixirModuleName(classType.getNameOrNative());
+        var moduleName = NameUtils.getElixirModuleName(classType.getNameOrNative());
         
         var result = new StringBuf();
         result.add('defmodule ${moduleName} do\n');
@@ -84,7 +86,7 @@ class PhoenixMapper {
      * Generate Phoenix LiveView module structure
      */
     public static function generatePhoenixLiveView(classType: ClassType): String {
-        var moduleName = NamingHelper.getElixirModuleName(classType.getNameOrNative());
+        var moduleName = NameUtils.getElixirModuleName(classType.getNameOrNative());
         
         var result = new StringBuf();
         result.add('defmodule ${moduleName} do\n');
@@ -167,7 +169,7 @@ class PhoenixMapper {
         }
         
         // Pluralize and convert to snake_case
-        var snakeName = NamingHelper.toSnakeCase(name);
+        var snakeName = NameUtils.toSnakeCase(name);
         return pluralize(snakeName);
     }
     
