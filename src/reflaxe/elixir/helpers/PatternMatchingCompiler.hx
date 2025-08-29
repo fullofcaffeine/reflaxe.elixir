@@ -794,8 +794,29 @@ class PatternMatchingCompiler {
          *           The alternative would be to bypass the mapping system
          *           entirely, which would reintroduce collision bugs.
          */
+        // Debug: Check what type of expression we're dealing with
+        trace('[DEBUG PatternMatchingCompiler] Switch expr type: ${Type.enumConstructor(switchExpr.expr)}');
+        
         var compiledExpr = compiler.compileExpression(switchExpr);
         var exprStr = compiledExpr;
+        
+        trace('[DEBUG PatternMatchingCompiler] Compiled switch expr: ${exprStr}');
+        
+        // CRITICAL FIX: Handle assignment expressions in switch statements
+        // When the switch expression compiles to an assignment (e.g., "g_array = Type.typeof(v)"),
+        // we need to extract just the variable name for the case statement
+        // This happens when Haxe generates temporary variables for complex switch expressions
+        var assignmentPattern = ~/^([a-z_][a-z0-9_]*)\s*=\s*/;
+        if (assignmentPattern.match(exprStr)) {
+            var varName = assignmentPattern.matched(1);
+            trace('[DEBUG PatternMatchingCompiler] ✓ DETECTED ASSIGNMENT IN SWITCH: ${exprStr}');
+            trace('[DEBUG PatternMatchingCompiler]   Extracted variable: ${varName}');
+            // Use just the variable name for the case statement, not the full assignment
+            exprStr = varName;
+        } else {
+            trace('[DEBUG PatternMatchingCompiler] No assignment detected in: ${exprStr}');
+        }
+        
         var caseStrings: Array<String> = [];
         
         for (caseData in cases) {
@@ -808,8 +829,29 @@ class PatternMatchingCompiler {
             // trace('[XRay PatternMatchingCompiler] Case body type: ${caseData.expr.expr}');
             #end
             
-            // Extract pattern variables from the case body first
+            // CRITICAL FIX: For enum pattern matching, we need to extract pattern variables
+            // from BOTH the case values (for direct enum patterns) AND the case body
+            // (for integer-based enum matching where patterns are in the body)
             var patternVars = extractPatternVariables(caseData.expr);
+            
+            // ADDITIONAL FIX: When we have integer-based enum matching (case 1:),
+            // look for pattern variables in the case body that correspond to enum parameters
+            if (patternVars.keys().hasNext() == false) {
+                // No pattern variables found in body extraction, try to find them differently
+                // This happens with integer-based enum matching where Haxe generates:
+                // case 1: _g = TEnumParameter(...); config = TLocal(_g); ...
+                #if debug_pattern_matching
+                trace('[XRay PatternMatchingCompiler] No pattern vars found via extractPatternVariables, trying integer-based extraction...');
+                trace('[XRay PatternMatchingCompiler] Case values: ${caseData.values.map(v -> Type.enumConstructor(v.expr))}');
+                #end
+                patternVars = extractPatternVariablesFromIntegerCase(caseData);
+                #if debug_pattern_matching
+                trace('[XRay PatternMatchingCompiler] Integer-based extraction returned ${Lambda.count(patternVars)} variables');
+                for (idx => name in patternVars) {
+                    trace('[XRay PatternMatchingCompiler]   Found: Index $idx -> Variable "$name"');
+                }
+                #end
+            }
             
             #if debug_pattern_matching
             // trace('[XRay PatternMatchingCompiler] Pattern variables extracted: ${Lambda.count(patternVars)} vars');
@@ -899,14 +941,56 @@ class PatternMatchingCompiler {
                     // Filter out the TVar expressions used for pattern extraction
                     // Pass the pattern variables to the filter so it knows which extractions to keep
                     var filteredEl = filterPatternExtractionVars(el, patternVars);
+                    
+                    // CRITICAL FIX: Generate correct pattern variable assignments
+                    // When we have pattern variables that need to be assigned from enum extractions,
+                    // generate the correct assignments explicitly
+                    var patternAssignments = [];
+                    
+                    #if debug_pattern_matching
+                    trace('[XRay PatternMatchingCompiler] CHECKING FOR PATTERN VARIABLE INJECTIONS');
+                    trace('[XRay PatternMatchingCompiler]   patternVars: ${[for (k in patternVars.keys()) '${k}=>${patternVars.get(k)}']}');
+                    trace('[XRay PatternMatchingCompiler]   enumExtractionVars: ${compiler.enumExtractionVars != null ? compiler.enumExtractionVars.length + " vars" : "null"}');
+                    if (compiler.enumExtractionVars != null) {
+                        for (e in compiler.enumExtractionVars) {
+                            trace('[XRay PatternMatchingCompiler]     Extraction: index=${e.index}, varName=${e.varName}');
+                        }
+                    }
+                    #end
+                    
+                    if (compiler.enumExtractionVars != null && compiler.enumExtractionVars.length > 0) {
+                        // Generate assignments for pattern variables from extracted parameters
+                        for (idx in patternVars.keys()) {
+                            var varName = patternVars.get(idx);
+                            // Find the corresponding extraction variable
+                            for (extraction in compiler.enumExtractionVars) {
+                                if (extraction.index == idx) {
+                                    patternAssignments.push('${varName} = ${extraction.varName}');
+                                    #if debug_pattern_matching
+                                    trace('[XRay PatternMatchingCompiler] ✓ INJECTING PATTERN VARIABLE ASSIGNMENT');
+                                    trace('[XRay PatternMatchingCompiler]   ${varName} = ${extraction.varName}');
+                                    #end
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
                     // Pass context to ControlFlowCompiler for _this replacement
                     // Compile block directly
-                    if (filteredEl.length == 0) {
+                    var compiledBody = if (filteredEl.length == 0) {
                         "nil";
                     } else if (filteredEl.length == 1) {
                         compiler.compileExpression(filteredEl[0]);
                     } else {
                         filteredEl.map(e -> compiler.compileExpression(e)).join("\n");
+                    };
+                    
+                    // Prepend pattern assignments if we have any
+                    if (patternAssignments.length > 0) {
+                        patternAssignments.join("\n") + "\n" + compiledBody;
+                    } else {
+                        compiledBody;
                     }
                 default:
                     #if debug_state_threading
@@ -1277,7 +1361,7 @@ class PatternMatchingCompiler {
         // Phase 3: Filter expressions recursively, but be smart about what to remove
         var filtered = [];
         for (expr in el) {
-            var processedExpr = filterExpressionRecursive(expr, allExtractionVars, usedExtractionVars);
+            var processedExpr = filterExpressionRecursive(expr, allExtractionVars, usedExtractionVars, patternVarsByName);
             if (processedExpr != null) {
                 filtered.push(processedExpr);
             }
@@ -1354,9 +1438,10 @@ class PatternMatchingCompiler {
      * @param expr The expression to filter
      * @param allExtractionVars All extraction variables found in the tree
      * @param usedExtractionVars Extraction variables that are actually used for patterns (should be kept)
+     * @param patternVarsByName Maps pattern variable names to their parameter indices
      * @return The filtered expression, or null if it should be removed entirely
      */
-    private function filterExpressionRecursive(expr: TypedExpr, allExtractionVars: Map<String, Bool>, usedExtractionVars: Map<String, Int>): Null<TypedExpr> {
+    private function filterExpressionRecursive(expr: TypedExpr, allExtractionVars: Map<String, Bool>, usedExtractionVars: Map<String, Int>, patternVarsByName: Map<String, Int>): Null<TypedExpr> {
         switch (expr.expr) {
             case TVar(tvar, e):
                 // Check if this should be filtered out - but be smart about it!
@@ -1381,6 +1466,45 @@ class PatternMatchingCompiler {
                     // Check if this is a redundant pattern variable assignment
                     switch (e.expr) {
                         case TLocal(v):
+                            // CRITICAL FIX: Handle pattern variable assignments from 'g' variable
+                            // Pattern variables like 'config' in 'case Repo(config):' are assigned from TLocal(g)
+                            // We need to replace these with the correct enum parameter extraction
+                            if (v.name == "g" || v.name == "_g") {
+                                // This is a pattern variable assignment from the generic 'g' variable
+                                // Find which parameter index this pattern variable corresponds to
+                                var paramIndex = -1;
+                                for (idx in patternVarsByName.keys()) {
+                                    if (idx == NamingHelper.toSnakeCase(tvar.name)) {
+                                        paramIndex = patternVarsByName.get(idx);
+                                        break;
+                                    }
+                                }
+                                
+                                // Generate the correct assignment using the extracted parameter
+                                if (paramIndex >= 0) {
+                                    // Find the extraction variable for this index
+                                    var extractionVarName: String = null;
+                                    for (name in usedExtractionVars.keys()) {
+                                        if (usedExtractionVars.get(name) == paramIndex) {
+                                            extractionVarName = "g_param_" + paramIndex; // Use g_param_N format
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if (extractionVarName != null) {
+                                        #if debug_pattern_matching
+                                        trace('[XRay filterExpression] ✓ FOUND PATTERN VARIABLE NEEDING FIX');
+                                        trace('[XRay filterExpression]   Pattern var: ${tvar.name} = TLocal(${v.name})');
+                                        trace('[XRay filterExpression]   Should use: ${tvar.name} = ${extractionVarName}');
+                                        trace('[XRay filterExpression]   Filtering out for later injection');
+                                        #end
+                                        
+                                        // Filter out this incorrect assignment - we'll inject the correct one later
+                                        return null;
+                                    }
+                                }
+                            }
+                            
                             if (allExtractionVars.exists(v.name)) {
                                 #if debug_pattern_matching
                                 // trace('[XRay filterExpression] Filtering out pattern var assignment: ${tvar.name} = ${v.name}');
@@ -1396,7 +1520,7 @@ class PatternMatchingCompiler {
                 // Recursively filter block contents
                 var filtered = [];
                 for (e in el) {
-                    var processedExpr = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars);
+                    var processedExpr = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars, patternVarsByName);
                     if (processedExpr != null) {
                         filtered.push(processedExpr);
                     }
@@ -1414,8 +1538,8 @@ class PatternMatchingCompiler {
                 // trace("[XRay filterExpression] Processing TIf - filtering branches");
                 #end
                 
-                var filteredIf = filterExpressionRecursive(eif, allExtractionVars, usedExtractionVars);
-                var filteredElse = eelse != null ? filterExpressionRecursive(eelse, allExtractionVars, usedExtractionVars) : null;
+                var filteredIf = filterExpressionRecursive(eif, allExtractionVars, usedExtractionVars, patternVarsByName);
+                var filteredElse = eelse != null ? filterExpressionRecursive(eelse, allExtractionVars, usedExtractionVars, patternVarsByName) : null;
                 
                 // Create new TIf with filtered branches
                 return {
@@ -1426,7 +1550,7 @@ class PatternMatchingCompiler {
                 
             case TParenthesis(e):
                 // Recursively filter parenthesis content
-                var filtered = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars);
+                var filtered = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars, patternVarsByName);
                 if (filtered != null) {
                     return {
                         expr: TParenthesis(filtered),
@@ -1438,7 +1562,7 @@ class PatternMatchingCompiler {
                 
             case TWhile(cond, e, normalWhile):
                 // Recursively filter while body
-                var filtered = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars);
+                var filtered = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars, patternVarsByName);
                 if (filtered != null) {
                     return {
                         expr: TWhile(cond, filtered, normalWhile),
@@ -1450,7 +1574,7 @@ class PatternMatchingCompiler {
                 
             case TFor(v, iter, e):
                 // Recursively filter for body
-                var filtered = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars);
+                var filtered = filterExpressionRecursive(e, allExtractionVars, usedExtractionVars, patternVarsByName);
                 if (filtered != null) {
                     return {
                         expr: TFor(v, iter, filtered),
@@ -1525,6 +1649,165 @@ class PatternMatchingCompiler {
                     // Other expressions types don't typically contain nested variable assignments
             }
         }
+    }
+    
+    /**
+     * Extract pattern variables from integer-based enum case
+     * 
+     * WHY: When enum matching is compiled to integer matching (case 1:), 
+     *      pattern variables are in the case body as TVar with TLocal assignments
+     * WHAT: Finds pattern variables like 'config' that are assigned from TLocal(g)
+     * HOW: Looks for the pattern: TVar(config, TLocal(g)) following TVar(_g, TEnumParameter)
+     * 
+     * @param caseData The case data containing values and expression
+     * @return Map of parameter index to variable name
+     */
+    private function extractPatternVariablesFromIntegerCase(caseData: {values: Array<TypedExpr>, expr: TypedExpr}): Map<Int, String> {
+        var patternVars = new Map<Int, String>();
+        
+        #if debug_pattern_matching
+        trace('[XRay extractPatternVariablesFromIntegerCase] ENTRY');
+        trace('[XRay extractPatternVariablesFromIntegerCase] Case values count: ${caseData.values.length}');
+        #end
+        
+        // Check if this is an integer case (from enum index)
+        var isIntegerCase = false;
+        for (value in caseData.values) {
+            #if debug_pattern_matching
+            trace('[XRay extractPatternVariablesFromIntegerCase] Value type: ${Type.enumConstructor(value.expr)}');
+            #end
+            switch (value.expr) {
+                case TConst(TInt(i)):
+                    isIntegerCase = true;
+                    #if debug_pattern_matching
+                    trace('[XRay extractPatternVariablesFromIntegerCase] Found integer case: $i');
+                    #end
+                    break;
+                case TConst(c):
+                    #if debug_pattern_matching
+                    trace('[XRay extractPatternVariablesFromIntegerCase] TConst type: ${Type.enumConstructor(c)}');
+                    #end
+                case _:
+            }
+        }
+        
+        if (!isIntegerCase) {
+            #if debug_pattern_matching
+            trace('[XRay extractPatternVariablesFromIntegerCase] Not an integer case, returning empty');
+            #end
+            return patternVars;
+        }
+        
+        // Look in the case body for the pattern:
+        // TVar(_g, TEnumParameter(...)) followed by TVar(config, TLocal(_g))
+        // Note: Can be in either TBlock or TBinop(OpComma, ...) structures
+        #if debug_pattern_matching
+        trace('[XRay extractPatternVariablesFromIntegerCase] Case body type: ${Type.enumConstructor(caseData.expr.expr)}');
+        #end
+        
+        // Variables to track extraction state
+        var currentIndex = -1;
+        var gVarName: String = null;
+        
+        // Helper function to extract from any expression structure
+        function extractFromExpr(expr: TypedExpr): Void {
+            switch (expr.expr) {
+                case TBinop(op, e1, e2):
+                    // Binary operator - might be sequencing expressions
+                    #if debug_pattern_matching
+                    trace('[XRay extractPatternVariablesFromIntegerCase] Found TBinop(${Type.enumConstructor(op)})');
+                    trace('[XRay extractPatternVariablesFromIntegerCase]   Left: ${Type.enumConstructor(e1.expr)}');
+                    trace('[XRay extractPatternVariablesFromIntegerCase]   Right: ${Type.enumConstructor(e2.expr)}');
+                    #end
+                    extractFromExpr(e1);
+                    extractFromExpr(e2);
+                    
+                case TBlock(el):
+                    #if debug_pattern_matching
+                    trace('[XRay extractPatternVariablesFromIntegerCase] Found TBlock with ${el.length} expressions');
+                    #end
+                    for (e in el) {
+                        extractFromExpr(e);
+                    }
+                    
+                case TVar(tvar, init):
+                            if (init != null) {
+                                #if debug_pattern_matching
+                                trace('[XRay extractPatternVariablesFromIntegerCase]   TVar: name="${tvar.name}", init type=${Type.enumConstructor(init.expr)}');
+                                #end
+                                
+                                // Check for TEnumParameter extraction
+                                if (StringTools.startsWith(tvar.name, "_g") || tvar.name == "g") {
+                                    #if debug_pattern_matching
+                                    trace('[XRay extractPatternVariablesFromIntegerCase]   Checking if ${tvar.name} is TEnumParameter...');
+                                    #end
+                                    switch (init.expr) {
+                                        case TEnumParameter(_, _, index):
+                                            currentIndex = index;
+                                            gVarName = tvar.name;
+                                            #if debug_pattern_matching
+                                            trace('[XRay extractPatternVariablesFromIntegerCase]   ✓ Found TEnumParameter extraction: ${gVarName} at index ${index}');
+                                            #end
+                                        case _:
+                                            #if debug_pattern_matching
+                                            trace('[XRay extractPatternVariablesFromIntegerCase]   Not TEnumParameter, type is: ${Type.enumConstructor(init.expr)}');
+                                            #end
+                                    }
+                                }
+                                // Check for pattern variable assignment from TLocal
+                                else if (gVarName != null && currentIndex >= 0) {
+                                    #if debug_pattern_matching
+                                    trace('[XRay extractPatternVariablesFromIntegerCase]   Checking if ${tvar.name} is pattern var from ${gVarName}...');
+                                    #end
+                                    switch (init.expr) {
+                                        case TLocal(v):
+                                            #if debug_pattern_matching
+                                            trace('[XRay extractPatternVariablesFromIntegerCase]   TLocal: v.name="${v.name}", gVarName="${gVarName}"');
+                                            #end
+                                            if (v.name == gVarName || v.name == "g" || v.name == "_g") {
+                                                // This is a pattern variable!
+                                                var varName = NamingHelper.toSnakeCase(tvar.name);
+                                                patternVars.set(currentIndex, varName);
+                                                #if debug_pattern_matching
+                                                trace('[XRay extractPatternVariablesFromIntegerCase]   ✓✓ FOUND PATTERN VARIABLE: ${varName} for index ${currentIndex}');
+                                                #end
+                                                // Reset for next pattern
+                                                currentIndex = -1;
+                                                gVarName = null;
+                                            }
+                                        case _:
+                                            #if debug_pattern_matching
+                                            trace('[XRay extractPatternVariablesFromIntegerCase]   Not TLocal, type is: ${Type.enumConstructor(init.expr)}');
+                                            #end
+                                    }
+                                }
+                                else {
+                                    #if debug_pattern_matching
+                                    trace('[XRay extractPatternVariablesFromIntegerCase]   Skipping ${tvar.name} (gVarName=${gVarName}, currentIndex=${currentIndex})');
+                                    #end
+                                }
+                            } else {
+                                #if debug_pattern_matching
+                                trace('[XRay extractPatternVariablesFromIntegerCase]   TVar without init: ${tvar.name}');
+                                #end
+                            }
+                            
+                case _:
+                    // We've checked all the relevant cases for pattern variable extraction
+            }
+        }
+        
+        // Start extraction from the case body
+        extractFromExpr(caseData.expr);
+        
+        #if debug_pattern_matching
+        trace('[XRay extractPatternVariablesFromIntegerCase] EXIT - Returning ${Lambda.count(patternVars)} pattern variables');
+        for (idx => name in patternVars) {
+            trace('[XRay extractPatternVariablesFromIntegerCase]   Result: Index $idx -> "$name"');
+        }
+        #end
+        
+        return patternVars;
     }
     
     /**

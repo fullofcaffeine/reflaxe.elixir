@@ -3,9 +3,11 @@ package reflaxe.elixir.helpers;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
-import reflaxe.elixir.ElixirCompiler;import haxe.macro.Expr;
-import reflaxe.elixir.ElixirCompiler;import reflaxe.BaseCompiler;
+import haxe.macro.Expr;
+import reflaxe.BaseCompiler;
 import reflaxe.elixir.ElixirCompiler;
+import reflaxe.elixir.helpers.EnumPatternContext;
+import reflaxe.elixir.helpers.EnumPatternContext.EnumPatternInfo;
 using reflaxe.helpers.NullHelper;
 using reflaxe.helpers.NameMetaHelper;
 using reflaxe.helpers.SyntaxHelper;
@@ -751,6 +753,26 @@ class VariableCompiler {
                     // This prevents overwriting when there are multiple parameters
                     var uniqueVarName = 'g_param_${index}';
                     
+                    // CRITICAL: Mark the TVar with metadata for persistent context tracking
+                    // This allows VariableCompiler to find the extraction variable later
+                    // even when runtime context is lost
+                    if (tvar != null) {
+                        var info: EnumPatternInfo = {
+                            enumField: enumField.name,
+                            paramIndex: index,
+                            extractionVar: uniqueVarName,
+                            originalVar: tvar.name
+                        };
+                        EnumPatternContext.markEnumPatternVar(tvar, info, expr.pos);
+                        
+                        #if debug_enum_pattern_context
+                        trace('[XRay VariableCompiler] ✓ MARKED TVAR WITH ENUM PATTERN METADATA');
+                        trace('[XRay VariableCompiler]   TVar: ${tvar.name} (id: ${tvar.id})');
+                        trace('[XRay VariableCompiler]   Extraction: ${uniqueVarName}');
+                        trace('[XRay VariableCompiler]   Enum field: ${enumField.name}, Index: ${index}');
+                        #end
+                    }
+                    
                     // Track this extraction in a list (there can be multiple)
                     if (compiler.enumExtractionVars == null) {
                         compiler.enumExtractionVars = [];
@@ -1102,6 +1124,23 @@ class VariableCompiler {
         if (expr != null) {
             switch (expr.expr) {
                 case TLocal(v) if (v.name == "g" || v.name == "g_array" || v.name == "_g" || StringTools.startsWith(v.name, "_g")):
+                    // CRITICAL: Check metadata FIRST for enum pattern context
+                    // This provides the AUTHORITATIVE solution that persists across compilation phases
+                    var enumExtractionVar = EnumPatternContext.getExtractionVar(v);
+                    if (enumExtractionVar != null) {
+                        #if debug_variable_compiler
+                        trace('[XRay VariableCompiler] ✓ ENUM PATTERN METADATA DETECTED IN DECLARATION');
+                        trace('[XRay VariableCompiler]   Pattern variable: ${varName}');
+                        trace('[XRay VariableCompiler]   Original source: TLocal(${v.name})');
+                        trace('[XRay VariableCompiler]   Using extraction from metadata: ${enumExtractionVar}');
+                        trace('[XRay VariableCompiler]   NOTE: Metadata is authoritative - no fallback needed');
+                        #end
+                        
+                        // TRUST THE METADATA COMPLETELY
+                        return '${varName} = ${enumExtractionVar}';
+                    }
+                    
+                    // DEPRECATED FALLBACK: Only used if metadata system isn't working yet
                     // Check if we have any recent enum parameter extractions
                     // This happens when a pattern variable like 'todo' in TodoCreated(todo) 
                     // gets assigned from what Haxe thinks is 'g' but is actually an extracted parameter
@@ -1366,7 +1405,22 @@ class VariableCompiler {
         //     trace('[DEBUG VariableCompiler]   Available underscore mappings: ${[for (n in underscorePrefixMap.keys()) '${n}=>${underscorePrefixMap.get(n)}']}');
         // }
         
-        // Check for TVar.id mapping first (highest priority)
+        // CRITICAL: Check metadata FIRST for enum pattern context (HIGHEST PRIORITY)
+        // This provides the AUTHORITATIVE solution that persists across compilation phases
+        var enumExtractionVar = EnumPatternContext.getExtractionVar(tvar);
+        if (enumExtractionVar != null) {
+            #if debug_variable_compiler
+            trace('[XRay VariableCompiler] ✓ ENUM PATTERN METADATA DETECTED IN REFERENCE');
+            trace('[XRay VariableCompiler]   Variable: ${tvar.name} (id: ${tvar.id})');
+            trace('[XRay VariableCompiler]   Using extraction from metadata: ${enumExtractionVar}');
+            trace('[XRay VariableCompiler]   NOTE: Metadata is authoritative - bypassing all other mappings');
+            #end
+            
+            // TRUST THE METADATA COMPLETELY - return immediately
+            return enumExtractionVar;
+        }
+        
+        // Check for TVar.id mapping next (second priority after metadata)
         if (variableIdMap.exists(tvar.id)) {
             var mappedName = variableIdMap.get(tvar.id);
             #if debug_variable_compiler
