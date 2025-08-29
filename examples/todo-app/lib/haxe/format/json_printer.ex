@@ -53,14 +53,14 @@ defmodule JsonPrinter do
     if (v == nil) do
       "null"
     end
-    g = :Type.typeof(v)
+    g = Type.typeof(v)
     case (g.elem(0)) do
       0 ->
         "null"
       1 ->
-        :Std.string(v)
+        Std.string(v)
       2 ->
-        s = :Std.string(v)
+        s = Std.string(v)
         if (s == "NaN" || s == "Infinity" || s == "-Infinity") do
           "null"
         end
@@ -80,7 +80,7 @@ defmodule JsonPrinter do
       6 ->
         g_2 = g.elem(1)
         c = g_2
-        class_name = :Type.getClassName(c)
+        class_name = Type.get_class_name(c)
         if (class_name == "String") do
           struct.quoteString(v)
         else
@@ -104,16 +104,16 @@ defmodule JsonPrinter do
     g = 0
     g_1 = arr.length
     (fn ->
-      loop_3 = fn loop_3 ->
+      loop_2 = fn loop_2 ->
         if (g < g_1) do
           i = g + 1
-          items ++ [struct.writeValue(arr[i], :Std.string(i))]
-          loop_3.(loop_3)
+          items ++ [struct.writeValue(arr[i], Std.string(i))]
+          loop_2.(loop_2)
         else
           :ok
         end
       end
-      loop_3.(loop_3)
+      loop_2.(loop_2)
     end).()
     if (struct.space != nil && items.length > 0) do
       "[\n  " + items.join(",\n  ") + "\n]"
@@ -124,15 +124,15 @@ defmodule JsonPrinter do
 
   @doc "Generated from Haxe writeObject"
   def write_object(%__MODULE__{} = struct, obj) do
-    fields = :Reflect.fields(obj)
+    fields = Reflect.fields(obj)
     pairs = []
     g = 0
     (fn ->
-      loop_4 = fn loop_4 ->
+      loop_3 = fn loop_3 ->
         if (g < fields.length) do
           field = fields[g]
           g + 1
-          value = :Reflect.field(obj, field)
+          value = Reflect.field(obj, field)
           key = struct.quoteString(field)
           val = struct.writeValue(value, field)
           if (struct.space != nil) do
@@ -140,12 +140,12 @@ defmodule JsonPrinter do
           else
             pairs ++ [key + ":" + val]
           end
-          loop_4.(loop_4)
+          loop_3.(loop_3)
         else
           :ok
         end
       end
-      loop_4.(loop_4)
+      loop_3.(loop_3)
     end).()
     if (struct.space != nil && pairs.length > 0) do
       "{\n  " + pairs.join(",\n  ") + "\n}"
@@ -160,13 +160,13 @@ defmodule JsonPrinter do
     g = 0
     g_1 = s.length
     (fn ->
-      loop_5 = fn loop_5 ->
+      loop_4 = fn loop_4 ->
         if (g < g_1) do
           i = g + 1
           c = s.charCodeAt(i)
           if (c == nil) do
             if (c < 32) do
-              hex = :StringTools.hex(c, 4)
+              hex = StringTools.hex(c, 4)
               result = result + "\\u" + hex
             else
               result = result + s.charAt(i)
@@ -189,19 +189,19 @@ defmodule JsonPrinter do
                 result = result + "\\\\"
               _ ->
                 if (c < 32) do
-                  hex = :StringTools.hex(c, 4)
+                  hex = StringTools.hex(c, 4)
                   result = result + "\\u" + hex
                 else
                   result = result + s.charAt(i)
                 end
             end
           end
-          loop_5.(loop_5)
+          loop_4.(loop_4)
         else
           :ok
         end
       end
-      loop_5.(loop_5)
+      loop_4.(loop_4)
     end).()
     result = result + "\""
     result

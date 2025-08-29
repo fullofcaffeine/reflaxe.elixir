@@ -165,6 +165,26 @@ class ElixirASTTransformer {
         });
         #end
         
+        // Supervisor options transformation pass (convert maps to keyword lists)
+        #if !disable_supervisor_options_transform
+        passes.push({
+            name: "SupervisorOptionsTransform",
+            description: "Convert supervisor option maps to keyword lists",
+            enabled: true,
+            pass: supervisorOptionsTransformPass
+        });
+        #end
+        
+        // OTP child spec transformation pass (convert tuples to proper child specs)
+        #if !disable_otp_child_spec_transform
+        passes.push({
+            name: "OTPChildSpecTransform",
+            description: "Convert enum-based child specs to proper OTP child specifications",
+            enabled: true,
+            pass: otpChildSpecTransformPass
+        });
+        #end
+        
         // Return only enabled passes
         return passes.filter(p -> p.enabled);
     }
@@ -928,7 +948,7 @@ class ElixirASTTransformer {
     /**
      * Helper function to transform AST nodes recursively
      */
-    static function transformAST(node: ElixirAST, transformer: ElixirAST -> ElixirAST): ElixirAST {
+    public static function transformAST(node: ElixirAST, transformer: ElixirAST -> ElixirAST): ElixirAST {
         var transformed = switch(node.def) {
             case EBlock(expressions):
                 makeASTWithMeta(EBlock(expressions.map(transformer)), node.metadata, node.pos);
@@ -1029,6 +1049,321 @@ class ElixirASTTransformer {
      * 1. Analysis phase: Collect all underscore variables and track usage
      * 2. Transformation phase: Rename used variables consistently
      */
+    /**
+     * Supervisor options transformation pass
+     * 
+     * WHY: Supervisor.start_link expects keyword lists but TObjectDecl generates maps
+     * WHAT: Converts supervisor option maps to keyword lists
+     * HOW: Delegates to SupervisorOptionsTransformPass
+     */
+    static function supervisorOptionsTransformPass(ast: ElixirAST): ElixirAST {
+        return SupervisorOptionsTransformPass.transform(ast);
+    }
+    
+    /**
+     * OTP Child Spec Transformation Pass
+     * 
+     * WHY: Enum-based child specs generate tuples like {:PubSub, "TodoApp.PubSub"}
+     * which are not valid OTP child specifications. Supervisor.start_link expects
+     * either module names or proper child spec maps.
+     * 
+     * WHAT: Detects patterns that look like child specifications and transforms them:
+     * - Simple tuples {:Atom, "String"} → proper module references or child spec maps
+     * - Lists of such tuples → lists of proper child specs
+     * - Works for any enum-based child spec pattern, not just TypeSafeChildSpec
+     * 
+     * HOW: Pattern matches on common OTP child spec contexts:
+     * - Supervisor.start_link calls
+     * - Children lists in application modules
+     * - Any list containing tuple patterns that match child spec signatures
+     * 
+     * PATTERNS DETECTED:
+     * - {:PubSub, "name"} → {Phoenix.PubSub, name: "name"}
+     * - {:Endpoint} → MyAppWeb.Endpoint
+     * - {:Telemetry} → MyAppWeb.Telemetry
+     * - {:Repo, config} → {MyApp.Repo, config}
+     */
+    static function otpChildSpecTransformPass(ast: ElixirAST): ElixirAST {
+        #if debug_ast_transformer
+        trace("[XRay OTPChildSpec] Starting OTP child spec transformation pass");
+        #end
+        
+        function transformNode(node: ElixirAST): ElixirAST {
+            // Check for ChildSpecFormat enum patterns directly
+            switch (node.def) {
+                case ETuple(elements) if (elements.length >= 1):
+                    var firstElem = elements[0];
+                    switch (firstElem.def) {
+                        case EAtom(tag):
+                            // Detect ChildSpecFormat enum constructors by their tags
+                            switch (tag) {
+                                case "ModuleWithConfig" | "ModuleRef" | "ModuleWithArgs":
+                                    #if debug_ast_transformer
+                                    trace('[XRay OTPChildSpec] Found ChildSpecFormat enum: $tag');
+                                    #end
+                                    // Apply idiomatic transformation for these OTP patterns
+                                    return transformIdiomaticEnum(elements, node);
+                                default:
+                                    // Not an OTP pattern, continue normal processing
+                            }
+                        default:
+                    }
+                default:
+            }
+            
+            // First check if this node has idiomatic transform metadata (backup check)
+            if (node.metadata != null && node.metadata.requiresIdiomaticTransform == true) {
+                #if debug_ast_transformer
+                trace('[XRay OTPChildSpec] Found node requiring idiomatic transform via metadata');
+                #end
+                
+                // Transform based on the tuple structure
+                switch (node.def) {
+                    case ETuple(elements) if (elements.length >= 1):
+                        // Apply pattern-based transformation for idiomatic enums
+                        return transformIdiomaticEnum(elements, node);
+                    default:
+                }
+            }
+            
+            // For all node types, recursively transform children
+            return transformAST(node, transformNode);
+        }
+        
+        return transformNode(ast);
+    }
+    
+    /**
+     * Transform idiomatic enum constructors using convention-based patterns
+     * 
+     * WHY: Enums marked with @:elixirIdiomatic need special compilation
+     * to match Elixir/OTP conventions. Instead of hardcoding specific patterns,
+     * we detect structural conventions that indicate idiomatic Elixir usage.
+     * 
+     * WHAT: Convention-based transformations based on constructor structure:
+     * 
+     * 1. ZERO ARGUMENTS → Bare atom
+     *    MyConstructor() → :my_constructor
+     * 
+     * 2. SINGLE ARGUMENT → Unwrap the value
+     *    ModuleRef("Phoenix.PubSub") → Phoenix.PubSub
+     *    This is common for module references in OTP
+     * 
+     * 3. TWO ARGUMENTS where second is keyword list → {first, keyword_list}
+     *    ModuleWithConfig("Phoenix.PubSub", [name: "MyApp"]) → {Phoenix.PubSub, [name: "MyApp"]}
+     *    This is the standard OTP child spec format
+     * 
+     * 4. TWO ARGUMENTS (general) → Keep as tuple but simplified
+     *    SomeConstructor(a, b) → {a, b} (without constructor tag)
+     * 
+     * 5. THREE+ ARGUMENTS → Keep standard tuple format
+     *    Complex(a, b, c) → {:complex, a, b, c}
+     * 
+     * HOW: Analyzes the AST structure to detect patterns:
+     * - Counts arguments
+     * - Detects keyword lists (EKeywordList nodes)
+     * - Checks for string literals that should become atoms (module names)
+     * 
+     * CONVENTIONS DETECTED:
+     * - Module name patterns (strings that look like Elixir modules)
+     * - Keyword list patterns (for configuration)
+     * - Arity patterns (zero, one, two, many)
+     * 
+     * @param elements The tuple elements [constructor_tag, arg1, arg2, ...]
+     * @param node The original AST node with metadata
+     * @return Transformed AST following Elixir idioms
+     */
+    static function transformIdiomaticEnum(elements: Array<ElixirAST>, node: ElixirAST): ElixirAST {
+        if (elements.length == 0) return node;
+        
+        // Extract the constructor tag (first element is the atom tag)
+        var tag = switch(elements[0].def) {
+            case EAtom(name): name;
+            default: null;
+        };
+        
+        if (tag == null) return node;
+        
+        // Get the arguments (everything after the tag)
+        var args = elements.slice(1);
+        var argCount = args.length;
+        
+        #if debug_ast_transformer
+        trace('[XRay IdiomaticEnum] Constructor: $tag with $argCount arguments');
+        #end
+        
+        // Convention-based transformation based on argument count and types
+        switch(argCount) {
+            case 0:
+                // CONVENTION: Zero arguments → bare atom
+                // Example: None → :none, Permanent → :permanent
+                #if debug_ast_transformer
+                trace('[XRay IdiomaticEnum] Zero args → bare atom :$tag');
+                #end
+                return makeASTWithMeta(EAtom(tag), node.metadata, node.pos);
+                
+            case 1:
+                // CONVENTION: Single argument → unwrap the value
+                // Example: ModuleRef("MyWorker") → MyWorker
+                #if debug_ast_transformer
+                trace('[XRay IdiomaticEnum] Single arg → unwrap value');
+                #end
+                
+                // Special handling for string module names → convert to module references
+                var unwrapped = switch(args[0].def) {
+                    case EString(s) if (isModuleName(s)):
+                        // String that looks like a module name → bare module name
+                        // Phoenix.PubSub not :Phoenix.PubSub
+                        // Use EVar to represent module names as bare identifiers
+                        makeAST(EVar(s));
+                    default:
+                        // Keep as-is
+                        args[0];
+                };
+                
+                return makeASTWithMeta(unwrapped.def, node.metadata, node.pos);
+                
+            case 2:
+                // CONVENTION: Two arguments → check for special patterns
+                
+                // Check if second argument is a keyword list
+                var isKeywordConfig = switch(args[1].def) {
+                    case EKeywordList(_): true;
+                    case EList(items):
+                        // Check if it's a list that looks like keyword pairs
+                        items.length > 0 && switch(items[0].def) {
+                            case ETuple([_, _]): true;
+                            default: false;
+                        };
+                    default: false;
+                };
+                
+                if (isKeywordConfig) {
+                    // CONVENTION: Module + keyword list → {Module, [config]}
+                    // Example: ModuleWithConfig("Phoenix.PubSub", [name: "MyApp"]) 
+                    //          → {Phoenix.PubSub, [name: "MyApp"]}
+                    #if debug_ast_transformer
+                    trace('[XRay IdiomaticEnum] Two args with keyword list → {module, config}');
+                    #end
+                    
+                    var moduleArg = switch(args[0].def) {
+                        case EString(s) if (isModuleName(s)):
+                            // Module names become bare module references, not atoms
+                            // Use EVar to represent module names as bare identifiers
+                            #if debug_ast_transformer
+                            trace('[XRay IdiomaticEnum] Converting string "$s" to EVar (module reference)');
+                            #end
+                            makeAST(EVar(s));
+                        default:
+                            #if debug_ast_transformer
+                            trace('[XRay IdiomaticEnum] Keeping arg as-is: ${args[0].def}');
+                            #end
+                            args[0];
+                    };
+                    
+                    #if debug_ast_transformer
+                    trace('[XRay IdiomaticEnum] Final tuple: {${moduleArg.def}, keyword_list}');
+                    #end
+                    
+                    return makeASTWithMeta(
+                        ETuple([moduleArg, args[1]]),
+                        node.metadata,
+                        node.pos
+                    );
+                } else {
+                    // CONVENTION: Two general arguments → simplified tuple
+                    // Example: Result.Ok(value) → {:ok, value}
+                    //          Error(reason) → {:error, reason}
+                    #if debug_ast_transformer
+                    trace('[XRay IdiomaticEnum] Two args → keep as tuple with tag');
+                    #end
+                    
+                    // For Result/Option patterns, keep the tag but lowercase
+                    var idiomaticTag = toIdiomaticAtom(tag);
+                    return makeASTWithMeta(
+                        ETuple([makeAST(EAtom(idiomaticTag))].concat(args)),
+                        node.metadata,
+                        node.pos
+                    );
+                }
+                
+            default:
+                // CONVENTION: Three or more arguments → standard tagged tuple
+                // Example: GenServerReply(response, state, timeout) 
+                //          → {:gen_server_reply, response, state, timeout}
+                #if debug_ast_transformer
+                trace('[XRay IdiomaticEnum] Many args → standard tagged tuple');
+                #end
+                
+                var idiomaticTag = toIdiomaticAtom(tag);
+                return makeASTWithMeta(
+                    ETuple([makeAST(EAtom(idiomaticTag))].concat(args)),
+                    node.metadata,
+                    node.pos
+                );
+        }
+    }
+    
+    /**
+     * Check if a string looks like an Elixir module name
+     * 
+     * WHY: Module names in strings should be converted to atoms in idiomatic Elixir
+     * WHAT: Detects patterns like "Phoenix.PubSub", "MyApp.Repo", "Elixir.MyModule"
+     * HOW: Checks for capitalized segments separated by dots
+     * 
+     * @param s The string to check
+     * @return True if it looks like a module name
+     */
+    static function isModuleName(s: String): Bool {
+        if (s == null || s.length == 0) return false;
+        
+        // Module names start with uppercase or "Elixir."
+        var firstChar = s.charAt(0);
+        if (firstChar != firstChar.toUpperCase()) return false;
+        
+        // Check for module path pattern (e.g., "Phoenix.PubSub")
+        var segments = s.split(".");
+        for (segment in segments) {
+            if (segment.length == 0) return false;
+            var first = segment.charAt(0);
+            // Each segment should start with uppercase
+            if (first != first.toUpperCase() || first == first.toLowerCase()) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Convert a constructor name to idiomatic Elixir atom
+     * 
+     * WHY: Elixir atoms use snake_case, but some patterns need special handling
+     * WHAT: Converts CamelCase to snake_case with special cases for common patterns
+     * HOW: 
+     * - "Ok" → "ok" (common Result pattern)
+     * - "Error" → "error" (common Result pattern)  
+     * - "Some" → "ok" (Option pattern mapped to Elixir convention)
+     * - "None" → "error" (Option pattern mapped to Elixir convention)
+     * - Others → snake_case
+     * 
+     * @param tag The constructor tag name
+     * @return Idiomatic atom name
+     */
+    static function toIdiomaticAtom(tag: String): String {
+        // Special cases for common patterns
+        switch(tag.toLowerCase()) {
+            case "ok": return "ok";
+            case "error": return "error";
+            case "some": return "ok";  // Option.Some maps to {:ok, _} in Elixir
+            case "none": return "error";  // Option.None maps to :error in Elixir
+            default:
+                // Convert to snake_case
+                return toSnakeCase(tag);
+        }
+    }
+    
+    
     static function underscoreVariableCleanupPass(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
         trace('[XRay UnderscoreCleanup] Starting underscore variable cleanup pass');
@@ -1223,6 +1558,169 @@ class ElixirASTTransformer {
         }
         
         return renameInAST(ast);
+    }
+}
+
+/**
+ * SupervisorOptionsTransformPass: Convert supervisor options from map to keyword list
+ * 
+ * WHY: Supervisor.start_link expects options as a keyword list [strategy: :one_for_one, ...]
+ *      but TObjectDecl generates EMap %{strategy: :one_for_one, ...}
+ * 
+ * WHAT: Detects supervisor option patterns and converts EMap to EKeywordList
+ * 
+ * HOW: Looks for maps with supervisor option keys (strategy, max_restarts, max_seconds)
+ *      being passed to Supervisor.start_link and converts them to keyword lists
+ */
+class SupervisorOptionsTransformPass {
+    
+    /**
+     * Transform supervisor options from maps to keyword lists
+     */
+    public static function transform(ast: ElixirAST): ElixirAST {
+        #if debug_ast_transformer
+        trace("[XRay SupervisorOptions] Starting supervisor options transformation");
+        #end
+        
+        return transformSupervisorCalls(ast);
+    }
+    
+    /**
+     * Find and transform Supervisor.start_link calls
+     */
+    static function transformSupervisorCalls(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case ERemoteCall(module, "start_link", args) if (args.length == 2):
+                    // Check if this is Supervisor.start_link(children, opts)
+                    var isSupervisor = switch(module.def) {
+                        case EVar("Supervisor"): true;
+                        case _: false;
+                    };
+                    
+                    if (isSupervisor) {
+                        #if debug_ast_transformer
+                        trace("[XRay SupervisorOptions] Found Supervisor.start_link call");
+                        #end
+                        
+                        // Transform the second argument (options) if it's a map
+                        var children = args[0];
+                        var opts = transformSupervisorOptions(args[1]);
+                        
+                        return makeASTWithMeta(
+                            ERemoteCall(module, "start_link", [children, opts]),
+                            node.metadata,
+                            node.pos
+                        );
+                    }
+                    
+                case EMatch(pattern, expr):
+                    // Check if we're assigning to a variable named "opts" or similar
+                    var varName = switch(pattern) {
+                        case PVar(name): name;
+                        case _: null;
+                    };
+                    
+                    if (varName != null && (varName == "opts" || varName.indexOf("option") != -1 || varName.indexOf("config") != -1)) {
+                        // This might be supervisor options
+                        var transformedExpr = transformSupervisorOptions(expr);
+                        if (transformedExpr != expr) {
+                            #if debug_ast_transformer
+                            trace('[XRay SupervisorOptions] Transformed options assignment for variable: $varName');
+                            #end
+                            return makeASTWithMeta(
+                                EMatch(pattern, transformedExpr),
+                                node.metadata,
+                                node.pos
+                            );
+                        }
+                    }
+                    
+                case _:
+                    // Not a supervisor call
+            }
+            
+            return node;
+        });
+    }
+    
+    /**
+     * Transform supervisor options from map to keyword list if needed
+     */
+    static function transformSupervisorOptions(expr: ElixirAST): ElixirAST {
+        return switch(expr.def) {
+            case EMap(pairs):
+                // Check if this looks like supervisor options
+                var hasStrategy = false;
+                var hasMaxRestarts = false;
+                var hasMaxSeconds = false;
+                var hasName = false;
+                
+                for (pair in pairs) {
+                    var keyName = switch(pair.key.def) {
+                        case EAtom(name): name;
+                        case _: null;
+                    };
+                    
+                    if (keyName != null) {
+                        switch(keyName) {
+                            case "strategy": hasStrategy = true;
+                            case "max_restarts": hasMaxRestarts = true;
+                            case "max_seconds": hasMaxSeconds = true;
+                            case "name": hasName = true;
+                        }
+                    }
+                }
+                
+                // If it has at least strategy (required) and one other supervisor field, convert it
+                if (hasStrategy && (hasMaxRestarts || hasMaxSeconds || hasName)) {
+                    #if debug_ast_transformer
+                    trace("[XRay SupervisorOptions] Converting map to keyword list for supervisor options");
+                    #end
+                    
+                    // Convert EMapPair to EKeywordPair
+                    var keywordPairs: Array<EKeywordPair> = [];
+                    for (pair in pairs) {
+                        var key = switch(pair.key.def) {
+                            case EAtom(name): name;
+                            case _: continue; // Skip non-atom keys
+                        };
+                        
+                        // Note: Snake_case conversion for atoms is handled systematically
+                        // in ElixirASTBuilder.toElixirAtomName(), not here
+                        keywordPairs.push({key: key, value: pair.value});
+                    }
+                    
+                    return makeASTWithMeta(
+                        EKeywordList(keywordPairs),
+                        expr.metadata,
+                        expr.pos
+                    );
+                }
+                
+                expr; // Not supervisor options
+                
+            case _:
+                expr; // Not a map
+        };
+    }
+    
+    /**
+     * Helper to create AST node with metadata
+     */
+    static function makeASTWithMeta(def: ElixirASTDef, ?metadata: ElixirMetadata, ?pos: haxe.macro.Expr.Position): ElixirAST {
+        return {
+            def: def,
+            metadata: metadata != null ? metadata : {},
+            pos: pos
+        };
+    }
+    
+    /**
+     * Helper to create simple AST node
+     */
+    static function makeAST(def: ElixirASTDef): ElixirAST {
+        return makeASTWithMeta(def);
     }
 }
 

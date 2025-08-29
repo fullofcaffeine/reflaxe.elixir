@@ -129,7 +129,7 @@ defmodule TypeSafeConversions do
       if (base != nil) do
         temp_user = base.current_user
       else
-        temp_user = :TypeSafeConversions.createDefaultUser()
+        temp_user = TypeSafeConversions.create_default_user()
       end
     end
     temp_maybe_todo = nil
@@ -174,7 +174,7 @@ defmodule TypeSafeConversions do
     end
     assigns = %{:todos => temp_array, :filter => temp_string, :sort_by => temp_string, :current_user => temp_user, :editing_todo => temp_maybe_todo, :show_form => temp_bool, :search_query => temp_string, :selected_tags => temp_array, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
     total_todos = assigns.todos.length
-    completed_todos = :TypeSafeConversions.countCompleted(assigns.todos)
+    completed_todos = TypeSafeConversions.count_completed(assigns.todos)
     pending_todos = assigns.total_todos - assigns.completed_todos
     assigns
   end

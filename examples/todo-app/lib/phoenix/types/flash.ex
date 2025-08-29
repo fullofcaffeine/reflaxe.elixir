@@ -28,13 +28,13 @@ defmodule Flash do
 
   @doc "Generated from Haxe validationError"
   def validation_error(message, changeset) do
-    errors = :Flash.extractChangesetErrors(changeset)
+    errors = Flash.extract_changeset_errors(changeset)
     %{:type => :Error, :message => message, :details => errors, :title => "Validation Failed", :dismissible => true}
   end
 
   @doc "Generated from Haxe toPhoenixFlash"
   def to_phoenix_flash(flash) do
-    %{:type => :FlashTypeTools.toString(flash.type), :message => flash.message, :title => flash.title, :details => flash.details, :dismissible => flash.dismissible, :timeout => flash.timeout, :action => flash.action}
+    %{:type => FlashTypeTools.to_string(flash.type), :message => flash.message, :title => flash.title, :details => flash.details, :dismissible => flash.dismissible, :timeout => flash.timeout, :action => flash.action}
   end
 
   @doc "Generated from Haxe fromPhoenixFlash"
@@ -50,7 +50,7 @@ defmodule Flash do
     else
       temp_string = "info"
     end
-    flash_type = :FlashTypeTools.fromString(temp_string)
+    flash_type = FlashTypeTools.from_string(temp_string)
     temp_string_1 = nil
     tmp = phoenix_flash.message
     if (tmp != nil) do

@@ -11,17 +11,17 @@ defmodule TodoPubSub do
   # Static functions
   @doc "Generated from Haxe subscribe"
   def subscribe(topic) do
-    :SafePubSub.subscribeWithConverter(topic, :TodoPubSub.topicToString)
+    SafePubSub.subscribe_with_converter(topic, TodoPubSub.topicToString)
   end
 
   @doc "Generated from Haxe broadcast"
   def broadcast(topic, message) do
-    :SafePubSub.broadcastWithConverters(topic, message, :TodoPubSub.topicToString, :TodoPubSub.messageToElixir)
+    SafePubSub.broadcast_with_converters(topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir)
   end
 
   @doc "Generated from Haxe parseMessage"
   def parse_message(msg) do
-    :SafePubSub.parseWithConverter(msg, :TodoPubSub.parseMessageImpl)
+    SafePubSub.parse_with_converter(msg, TodoPubSub.parseMessageImpl)
   end
 
   @doc "Generated from Haxe topicToString"
@@ -61,7 +61,7 @@ defmodule TodoPubSub do
       3 ->
         g = message.elem(1)
         action = g
-        temp_struct = %{:type => "bulk_update", :action => :TodoPubSub.bulkActionToString(action)}
+        temp_struct = %{:type => "bulk_update", :action => TodoPubSub.bulk_action_to_string(action)}
       4 ->
         g = message.elem(1)
         user_id = g
@@ -75,17 +75,17 @@ defmodule TodoPubSub do
         g_1 = message.elem(2)
         message_2 = g
         level = g_1
-        temp_struct = %{:type => "system_alert", :message => message, :level => :TodoPubSub.alertLevelToString(level)}
+        temp_struct = %{:type => "system_alert", :message => message, :level => TodoPubSub.alert_level_to_string(level)}
     end
-    :SafePubSub.addTimestamp(temp_struct)
+    SafePubSub.add_timestamp(temp_struct)
   end
 
   @doc "Generated from Haxe parseMessageImpl"
   def parse_message_impl(msg) do
     temp_result = nil
 
-    if (not :SafePubSub.isValidMessage(msg)) do
-      :Log.trace(:SafePubSub.createMalformedMessageError(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 188, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+    if (not SafePubSub.is_valid_message(msg)) do
+      Log.trace(SafePubSub.create_malformed_message_error(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 188, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
       :None
     end
     temp_result = nil
@@ -93,7 +93,7 @@ defmodule TodoPubSub do
     case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
-          bulk_action = :TodoPubSub.parseBulkAction(msg.action)
+          bulk_action = TodoPubSub.parse_bulk_action(msg.action)
           case (bulk_action.elem(0)) do
             0 ->
               g_2 = bulk_action.elem(1)
@@ -107,7 +107,7 @@ defmodule TodoPubSub do
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
-          alert_level = :TodoPubSub.parseAlertLevel(msg.level)
+          alert_level = TodoPubSub.parse_alert_level(msg.level)
           case (alert_level.elem(0)) do
             0 ->
               g_2 = alert_level.elem(1)
@@ -150,7 +150,7 @@ defmodule TodoPubSub do
           temp_result = :None
         end
       _ ->
-        :Log.trace(:SafePubSub.createUnknownMessageError(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 220, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+        Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 220, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
         temp_result = :None
     end
     temp_result

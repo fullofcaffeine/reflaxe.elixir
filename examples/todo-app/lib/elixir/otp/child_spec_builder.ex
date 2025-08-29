@@ -34,7 +34,7 @@ defmodule ChildSpecBuilder do
 
   @doc "Generated from Haxe tempWorker"
   def temp_worker(module, args, id \\ nil) do
-    spec = :ChildSpecBuilder.worker(module, args, id)
+    spec = ChildSpecBuilder.worker(module, args, id)
     restart = :Temporary
     spec
   end

@@ -89,14 +89,13 @@
   "haxe/exceptions/not_implemented_exception.ex",
   "haxe/ds/option.ex",
   "haxe/ds/enum_value_map.ex",
-  "elixir/otp/type_safe_child_spec_tools.ex",
-  "elixir/otp/type_safe_child_spec_builder.ex",
   "elixir/otp/type_safe_child_spec.ex",
   "elixir/otp/supervisor_strategy.ex",
   "elixir/otp/supervisor_options_builder.ex",
   "elixir/otp/shutdown_type.ex",
   "elixir/otp/restart_type.ex",
   "elixir/otp/child_type.ex",
+  "elixir/otp/child_spec_format.ex",
   "elixir/otp/child_spec_builder.ex",
   "elixir/otp/application_start_type.ex",
   "elixir/otp/application_result_tools.ex",
@@ -107,7 +106,7 @@
   "value_type.ex",
   "todo_app_web.ex"
 ],
-  "id": 87,
+  "id": 121,
   "wasCached": false,
   "version": 1
 }

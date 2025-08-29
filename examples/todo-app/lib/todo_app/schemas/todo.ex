@@ -37,7 +37,7 @@ defmodule Todo do
   # Static functions
   @doc "Generated from Haxe changeset"
   def changeset(todo, params) do
-    changeset = Ecto.Changeset.castChangeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
+    changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
     changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
     changeset = Ecto.Changeset.validate_length(changeset, "title", %{:min => 3, :max => 200})
     changeset = Ecto.Changeset.validate_length(changeset, "description", %{:max => 1000})
@@ -52,7 +52,7 @@ defmodule Todo do
     params = %{}
     value = {:BoolValue, not todo.completed}
     params = Map.put(params, "completed", value)
-    :Todo.changeset(todo, params)
+    Todo.changeset(todo, params)
   end
 
   @doc "Generated from Haxe update_priority"
@@ -60,7 +60,7 @@ defmodule Todo do
     params = %{}
     value = {:StringValue, priority}
     params = Map.put(params, "priority", value)
-    :Todo.changeset(todo, params)
+    Todo.changeset(todo, params)
   end
 
   @doc "Generated from Haxe add_tag"
@@ -78,21 +78,21 @@ defmodule Todo do
     g = []
     g_1 = 0
     (fn ->
-      loop_8 = fn loop_8 ->
+      loop_7 = fn loop_7 ->
         if (g_1 < temp_array.length) do
           v = temp_array[g_1]
           g_1 + 1
           g ++ [{:StringValue, v}]
-          loop_8.(loop_8)
+          loop_7.(loop_7)
         else
           :ok
         end
       end
-      loop_8.(loop_8)
+      loop_7.(loop_7)
     end).()
     value = {:ArrayValue, g}
     params = Map.put(params, "tags", value)
-    :Todo.changeset(todo, params)
+    Todo.changeset(todo, params)
   end
 
 
