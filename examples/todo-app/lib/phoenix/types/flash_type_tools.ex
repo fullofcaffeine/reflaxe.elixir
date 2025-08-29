@@ -29,8 +29,8 @@ defmodule FlashTypeTools do
     temp_result = nil
 
     temp_result = nil
-    _g = str.toLowerCase()
-    case (_g) do
+    g = str.toLowerCase()
+    case (g) do
       "error" ->
         temp_result = :Error
       "info" ->

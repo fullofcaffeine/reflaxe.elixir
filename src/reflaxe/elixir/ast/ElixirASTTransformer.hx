@@ -137,6 +137,34 @@ class ElixirASTTransformer {
         });
         #end
         
+        // Statement context transformation pass (MUST run after immutability)
+        #if !disable_statement_context_transform
+        passes.push({
+            name: "StatementContextTransform",
+            description: "Add reassignments for immutable operations in statement context",
+            enabled: true,
+            pass: statementContextTransformPass
+        });
+        #end
+        
+        // Self reference transformation pass (should run early)
+        passes.unshift({
+            name: "SelfReferenceTransform",
+            description: "Convert self/this references to struct parameter",
+            enabled: true,
+            pass: selfReferenceTransformPass
+        });
+        
+        // Underscore variable cleanup pass (should run late to catch all generated vars)
+        #if !disable_underscore_cleanup
+        passes.push({
+            name: "UnderscoreVariableCleanup",
+            description: "Remove underscore prefix from used temporary variables",
+            enabled: true,
+            pass: underscoreVariableCleanupPass
+        });
+        #end
+        
         // Return only enabled passes
         return passes.filter(p -> p.enabled);
     }
@@ -151,6 +179,72 @@ class ElixirASTTransformer {
      */
     static function identityPass(ast: ElixirAST): ElixirAST {
         return ast;
+    }
+    
+    /**
+     * Self reference transformation pass - converts self/this references to struct parameter
+     * In Elixir, instance methods receive the struct as their first parameter
+     * 
+     * For inheritance: Haxe's super.method() becomes delegation to parent module
+     * Example: super.toString() -> ParentModule.to_string(struct)
+     */
+    static function selfReferenceTransformPass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                // Transform self.field and super.field  
+                case EField(target, fieldName):
+                    switch(target.def) {
+                        case EVar("self"):
+                            // Replace 'self' with 'struct' (the conventional first parameter)
+                            makeAST(EField(makeAST(EVar("struct")), fieldName));
+                        case EVar("super"):
+                            // Transform super.method() to Elixir delegation pattern
+                            // Extract parent module from metadata if available
+                            var parentModule = extractParentModule(node);
+                            if (parentModule != null) {
+                                // Generate: ParentModule.method_name(struct, ...args)
+                                var elixirMethodName = toSnakeCase(fieldName);
+                                makeAST(ECall(
+                                    makeAST(EVar(parentModule)),
+                                    elixirMethodName,
+                                    [makeAST(EVar("struct"))]
+                                ));
+                            } else {
+                                // Fallback: generate a placeholder that indicates inheritance is needed
+                                // The compiler should handle this at a higher level
+                                // For now, just call the method on struct directly
+                                makeAST(ECall(
+                                    null,
+                                    toSnakeCase(fieldName),
+                                    [makeAST(EVar("struct"))]
+                                ));
+                            }
+                        default:
+                            node;
+                    }
+                    
+                // Transform standalone 'self' references
+                case EVar("self"):
+                    makeAST(EVar("struct"));
+                    
+                // Transform standalone 'super' references
+                case EVar("super"):
+                    makeAST(ENil);
+                    
+                // Handle super calls - Elixir doesn't have super
+                case ECall(target, funcName, args):
+                    if (funcName == "__super__") {
+                        // Generate error or warning - super is not supported in Elixir
+                        // For now, just return nil
+                        makeAST(ENil);
+                    } else {
+                        node;
+                    }
+                    
+                default:
+                    node;
+            }
+        });
     }
     
     /**
@@ -240,25 +334,37 @@ class ElixirASTTransformer {
     
     /**
      * Comprehension conversion pass - convert loops to comprehensions
+     * This pass needs to handle module-level transformation to add generated functions
      */
     static function comprehensionConversionPass(ast: ElixirAST): ElixirAST {
-        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+        // Collection for generated loop functions
+        var generatedFunctions: Array<ElixirAST> = [];
+        var loopCounter = 0;
+        
+        // First pass: transform loops and collect generated functions
+        function transformLoops(node: ElixirAST): ElixirAST {
             return switch(node.def) {
                 // Convert for loops that build lists
                 case EFor(generators, filters, body, into, uniq):
-                    // Already a comprehension, check if it can be optimized
+                    // Already a comprehension, keep as-is
                     node;
                     
                 // Convert while loops to recursive functions
                 case ECall(null, "while_loop", [condition, body]):
-                    // Transform to recursive function pattern
-                    var funcName = "loop_" + generateUniqueId();
+                    // Generate unique function name
+                    var funcName = "loop_" + (loopCounter++);
+                    
+                    // Transform condition and body recursively
+                    var transformedCondition = transformNode(condition, transformLoops);
+                    var transformedBody = transformNode(body, transformLoops);
+                    
+                    // Create recursive function definition
                     var recursiveFunc = makeAST(
                         EDefp(funcName, [], null, 
                             makeAST(EIf(
-                                condition,
+                                transformedCondition,
                                 makeAST(EBlock([
-                                    body,
+                                    transformedBody,
                                     makeAST(ECall(null, funcName, []))
                                 ])),
                                 makeAST(EAtom("ok"))
@@ -266,13 +372,198 @@ class ElixirASTTransformer {
                         )
                     );
                     
+                    // Add to generated functions collection
+                    generatedFunctions.push(recursiveFunc);
+                    
                     // Replace with function call
                     makeAST(ECall(null, funcName, []));
                     
                 default:
+                    // Return node unchanged - base case to prevent infinite recursion
                     node;
             }
-        });
+        }
+        
+        // Apply transformation
+        var transformed = transformLoops(ast);
+        
+        // If we're at module level and have generated functions, insert them
+        if (generatedFunctions.length > 0) {
+            switch(transformed.def) {
+                case EModule(name, attributes, body):
+                    // Insert generated functions at the end of the module body
+                    var newBody = body.concat(generatedFunctions);
+                    return makeAST(EModule(name, attributes, newBody));
+                default:
+                    // For non-module nodes, we need to wrap or handle differently
+                    // This shouldn't happen in normal compilation
+                    return transformed;
+            }
+        }
+        
+        return transformed;
+    }
+    
+    /**
+     * Statement context transformation pass - add reassignments for immutable operations
+     * 
+     * WHY: Elixir is immutable, so operations like Map.put() return new values
+     * WHAT: Detects when these operations are used as statements (value discarded)
+     * HOW: Wraps them in reassignment to the original variable
+     * 
+     * Example transformation:
+     * Map.put(params, "key", value) → params = Map.put(params, "key", value)
+     */
+    static function statementContextTransformPass(ast: ElixirAST): ElixirAST {
+        // Transform with context tracking
+        function transformWithContext(node: ElixirAST, isStatementContext: Bool): ElixirAST {
+            #if debug_ast_transformer
+            trace('[XRay StatementContext] Processing node: ${node.def}, context: ${isStatementContext ? "statement" : "expression"}');
+            #end
+            
+            // First, recursively transform children with appropriate context
+            var transformed = switch(node.def) {
+                case EBlock(expressions):
+                    // In a block, all but the last expression are in statement context
+                    var newExpressions = [];
+                    for (i in 0...expressions.length) {
+                        var isLast = (i == expressions.length - 1);
+                        var childContext = isLast ? isStatementContext : true;
+                        newExpressions.push(transformWithContext(expressions[i], childContext));
+                    }
+                    makeASTWithMeta(EBlock(newExpressions), node.metadata, node.pos);
+                    
+                case EDef(name, args, guards, body):
+                    // Function body is in expression context (returns value)
+                    makeASTWithMeta(
+                        EDef(name, args, guards, transformWithContext(body, false)),
+                        node.metadata, node.pos
+                    );
+                    
+                case EDefp(name, args, guards, body):
+                    // Private function body is in expression context
+                    makeASTWithMeta(
+                        EDefp(name, args, guards, transformWithContext(body, false)),
+                        node.metadata, node.pos
+                    );
+                    
+                case EIf(condition, thenBranch, elseBranch):
+                    // Both branches inherit parent context
+                    makeASTWithMeta(
+                        EIf(transformWithContext(condition, false),
+                            transformWithContext(thenBranch, isStatementContext),
+                            elseBranch != null ? transformWithContext(elseBranch, isStatementContext) : null),
+                        node.metadata, node.pos
+                    );
+                    
+                case ECase(expr, clauses):
+                    // All clauses inherit parent context
+                    makeASTWithMeta(
+                        ECase(transformWithContext(expr, false),
+                              clauses.map(c -> {
+                                  pattern: c.pattern,
+                                  guard: c.guard != null ? transformWithContext(c.guard, false) : null,
+                                  body: transformWithContext(c.body, isStatementContext)
+                              })),
+                        node.metadata, node.pos
+                    );
+                    
+                // For other nodes, recursively transform children based on node type
+                default:
+                    // Manually handle child transformation for other node types
+                    switch(node.def) {
+                        case EModule(name, attributes, body):
+                            makeASTWithMeta(
+                                EModule(name, attributes, body.map(e -> transformWithContext(e, true))),
+                                node.metadata, node.pos
+                            );
+                            
+                        case ECall(target, funcName, args):
+                            makeASTWithMeta(
+                                ECall(target != null ? transformWithContext(target, false) : null,
+                                      funcName,
+                                      args.map(a -> transformWithContext(a, false))),
+                                node.metadata, node.pos
+                            );
+                            
+                        case ERemoteCall(module, funcName, args):
+                            makeASTWithMeta(
+                                ERemoteCall(transformWithContext(module, false),
+                                           funcName,
+                                           args.map(a -> transformWithContext(a, false))),
+                                node.metadata, node.pos
+                            );
+                            
+                        case EBinary(op, left, right):
+                            makeASTWithMeta(
+                                EBinary(op,
+                                       transformWithContext(left, false),
+                                       transformWithContext(right, false)),
+                                node.metadata, node.pos
+                            );
+                            
+                        case EMatch(pattern, expr):
+                            makeASTWithMeta(
+                                EMatch(pattern, transformWithContext(expr, false)),
+                                node.metadata, node.pos
+                            );
+                            
+                        // For literals and simple nodes, return unchanged
+                        default:
+                            node;
+                    }
+            };
+            
+            // Now check if this node needs reassignment wrapping
+            if (isStatementContext) {
+                switch(transformed.def) {
+                    case ERemoteCall(module, funcName, args):
+                        // Check for Map.put() in statement context
+                        switch(module.def) {
+                            case EAtom("Map") | EVar("Map"):
+                                if (funcName == "put" && args.length >= 1) {
+                                    // First arg should be the map variable
+                                    switch(args[0].def) {
+                                        case EVar(varName):
+                                            #if debug_ast_transformer
+                                            trace('[XRay StatementContext] Wrapping Map.put with reassignment to: $varName');
+                                            #end
+                                            // Transform to: varName = Map.put(varName, ...)
+                                            return makeASTWithMeta(
+                                                EMatch(PVar(varName), transformed),
+                                                node.metadata, node.pos
+                                            );
+                                        default:
+                                            // Not a simple variable, can't reassign
+                                    }
+                                }
+                            default:
+                        }
+                        
+                    case EBinary(Concat, left, right):
+                        // Check for list concatenation in statement context
+                        switch(left.def) {
+                            case EVar(varName):
+                                #if debug_ast_transformer
+                                trace('[XRay StatementContext] Wrapping ++ with reassignment to: $varName');
+                                #end
+                                // Transform to: varName = varName ++ right
+                                return makeASTWithMeta(
+                                    EMatch(PVar(varName), transformed),
+                                    node.metadata, node.pos
+                                );
+                            default:
+                        }
+                        
+                    default:
+                }
+            }
+            
+            return transformed;
+        }
+        
+        // Start transformation with top-level as statement context
+        return transformWithContext(ast, true);
     }
     
     /**
@@ -328,6 +619,37 @@ class ElixirASTTransformer {
     // ========================================================================
     // Helper Functions
     // ========================================================================
+    
+    /**
+     * Extract parent module name from AST metadata
+     * This should be set during the AST building phase when we know inheritance relationships
+     * For now, we return null since metadata doesn't have a parentModule field yet
+     * In the future, we should add this field to ElixirMetadata typedef
+     */
+    static function extractParentModule(node: ElixirAST): Null<String> {
+        // TODO: Add parentModule field to ElixirMetadata typedef
+        // For now, we can try to extract from sourceExpr if available
+        if (node.metadata != null && node.metadata.sourceExpr != null) {
+            // Could analyze the TypedExpr to find parent class info
+            // For now, return null and use the fallback mechanism
+        }
+        return null;
+    }
+    
+    /**
+     * Convert camelCase to snake_case for Elixir method names
+     */
+    static function toSnakeCase(name: String): String {
+        var result = "";
+        for (i in 0...name.length) {
+            var char = name.charAt(i);
+            if (i > 0 && char == char.toUpperCase() && char != char.toLowerCase()) {
+                result += "_";
+            }
+            result += char.toLowerCase();
+        }
+        return result;
+    }
     
     /**
      * Recursively transform AST nodes
@@ -531,6 +853,376 @@ class ElixirASTTransformer {
     static var uniqueCounter = 0;
     static function generateUniqueId(): String {
         return Std.string(uniqueCounter++);
+    }
+    
+    /**
+     * Helper function to iterate over AST nodes without transformation
+     */
+    static function iterateAST(node: ElixirAST, visitor: ElixirAST -> Void): Void {
+        switch(node.def) {
+            case EBlock(expressions):
+                for (expr in expressions) visitor(expr);
+            case EModule(name, attributes, body):
+                for (b in body) visitor(b);
+            case EDef(name, args, guards, body):
+                visitor(body);
+            case EDefp(name, args, guards, body):
+                visitor(body);
+            case EIf(condition, thenBranch, elseBranch):
+                visitor(condition);
+                visitor(thenBranch);
+                if (elseBranch != null) visitor(elseBranch);
+            case ECase(expr, clauses):
+                visitor(expr);
+                for (clause in clauses) {
+                    if (clause.guard != null) visitor(clause.guard);
+                    visitor(clause.body);
+                }
+            case EMatch(pattern, expr):
+                visitor(expr);
+            case EBinary(op, left, right):
+                visitor(left);
+                visitor(right);
+            case EUnary(op, expr):
+                visitor(expr);
+            case ECall(target, funcName, args):
+                if (target != null) visitor(target);
+                for (arg in args) visitor(arg);
+            case ETuple(elements):
+                for (elem in elements) visitor(elem);
+            case EList(elements):
+                for (elem in elements) visitor(elem);
+            case EMap(pairs):
+                for (pair in pairs) {
+                    visitor(pair.key);
+                    visitor(pair.value);
+                }
+            case EStruct(name, fields):
+                for (field in fields) visitor(field.value);
+            case EFor(generators, filters, body, into, uniq):
+                for (gen in generators) {
+                    visitor(gen.expr);
+                }
+                for (filter in filters) visitor(filter);
+                visitor(body);
+                if (into != null) visitor(into);
+            case EFn(clauses):
+                for (clause in clauses) {
+                    if (clause.guard != null) visitor(clause.guard);
+                    visitor(clause.body);
+                }
+            case EReceive(clauses, after):
+                for (clause in clauses) {
+                    if (clause.guard != null) visitor(clause.guard);
+                    visitor(clause.body);
+                }
+                if (after != null) {
+                    visitor(after.timeout);
+                    visitor(after.body);
+                }
+            case _:
+                // Leaf nodes - nothing to iterate
+        }
+    }
+    
+    /**
+     * Helper function to transform AST nodes recursively
+     */
+    static function transformAST(node: ElixirAST, transformer: ElixirAST -> ElixirAST): ElixirAST {
+        var transformed = switch(node.def) {
+            case EBlock(expressions):
+                makeASTWithMeta(EBlock(expressions.map(transformer)), node.metadata, node.pos);
+            case EModule(name, attributes, body):
+                makeASTWithMeta(EModule(name, attributes, body.map(transformer)), node.metadata, node.pos);
+            case EDef(name, args, guards, body):
+                makeASTWithMeta(EDef(name, args, guards, transformer(body)), node.metadata, node.pos);
+            case EDefp(name, args, guards, body):
+                makeASTWithMeta(EDefp(name, args, guards, transformer(body)), node.metadata, node.pos);
+            case EIf(condition, thenBranch, elseBranch):
+                makeASTWithMeta(
+                    EIf(transformer(condition), transformer(thenBranch),
+                        elseBranch != null ? transformer(elseBranch) : null),
+                    node.metadata, node.pos
+                );
+            case ECase(expr, clauses):
+                makeASTWithMeta(
+                    ECase(transformer(expr),
+                          clauses.map(c -> {
+                              pattern: c.pattern,
+                              guard: c.guard != null ? transformer(c.guard) : null,
+                              body: transformer(c.body)
+                          })),
+                    node.metadata, node.pos
+                );
+            case EMatch(pattern, expr):
+                makeASTWithMeta(EMatch(pattern, transformer(expr)), node.metadata, node.pos);
+            case EBinary(op, left, right):
+                makeASTWithMeta(EBinary(op, transformer(left), transformer(right)), node.metadata, node.pos);
+            case EUnary(op, expr):
+                makeASTWithMeta(EUnary(op, transformer(expr)), node.metadata, node.pos);
+            case ECall(target, funcName, args):
+                makeASTWithMeta(ECall(target != null ? transformer(target) : null, funcName, args.map(transformer)), node.metadata, node.pos);
+            case ETuple(elements):
+                makeASTWithMeta(ETuple(elements.map(transformer)), node.metadata, node.pos);
+            case EList(elements):
+                makeASTWithMeta(EList(elements.map(transformer)), node.metadata, node.pos);
+            case EMap(pairs):
+                makeASTWithMeta(
+                    EMap(pairs.map(p -> {key: transformer(p.key), value: transformer(p.value)})),
+                    node.metadata, node.pos
+                );
+            case EStruct(name, fields):
+                makeASTWithMeta(
+                    EStruct(name, fields.map(f -> {key: f.key, value: transformer(f.value)})),
+                    node.metadata, node.pos
+                );
+            case EFor(generators, filters, body, into, uniq):
+                makeASTWithMeta(
+                    EFor(generators.map(g -> {pattern: g.pattern, expr: transformer(g.expr)}),
+                         filters.map(transformer),
+                         transformer(body),
+                         into != null ? transformer(into) : null,
+                         uniq),
+                    node.metadata, node.pos
+                );
+            case EFn(clauses):
+                makeASTWithMeta(
+                    EFn(clauses.map(c -> {
+                        args: c.args,
+                        guard: c.guard != null ? transformer(c.guard) : null,
+                        body: transformer(c.body)
+                    })),
+                    node.metadata, node.pos
+                );
+            case EReceive(clauses, after):
+                makeASTWithMeta(
+                    EReceive(clauses.map(c -> {
+                                 pattern: c.pattern,
+                                 guard: c.guard != null ? transformer(c.guard) : null,
+                                 body: transformer(c.body)
+                             }),
+                             after != null ? {timeout: transformer(after.timeout), body: transformer(after.body)} : null),
+                    node.metadata, node.pos
+                );
+            case _:
+                // Leaf nodes - return unchanged
+                node;
+        };
+        return transformed;
+    }
+    
+    /**
+     * Underscore Variable Cleanup Pass
+     * 
+     * WHY: Haxe generates temporary variables with underscore prefixes (_g, _g_1, etc.) during
+     * desugaring of switches, loops, and other complex expressions. These are actually USED
+     * variables, but in Elixir, underscore-prefixed variables should not be referenced after
+     * assignment, causing warnings and violating Elixir conventions.
+     * 
+     * WHAT: Detects and renames underscore-prefixed temporary variables that are actually used
+     * - Identifies Haxe-generated temp variables (_g, _g_1, _g1, etc.)
+     * - Tracks which ones are referenced after declaration
+     * - Renames them consistently throughout the AST
+     * - Preserves truly unused underscore variables (single underscore or unused prefixed)
+     * 
+     * HOW: Two-phase transformation
+     * 1. Analysis phase: Collect all underscore variables and track usage
+     * 2. Transformation phase: Rename used variables consistently
+     */
+    static function underscoreVariableCleanupPass(ast: ElixirAST): ElixirAST {
+        #if debug_ast_transformer
+        trace('[XRay UnderscoreCleanup] Starting underscore variable cleanup pass');
+        #end
+        
+        // Phase 1: Collect underscore variables and track usage
+        var underscoreVars = new Map<String, Bool>(); // var name -> is used
+        var varDeclarations = new Map<String, Bool>(); // track all declarations
+        var allUnderscoreVars = new Map<String, Bool>(); // track ALL underscore vars
+        
+        function collectPatternVars(pattern: EPattern, vars: Map<String, Bool>): Void {
+            switch(pattern) {
+                case PVar(name):
+                    vars.set(name, true);
+                    if (name.charAt(0) == "_" && name.length > 1) {
+                        // Track all underscore variables (including _g_1, _g_2, etc.)
+                        allUnderscoreVars.set(name, true);
+                        // Initialize as unused
+                        if (!underscoreVars.exists(name)) {
+                            underscoreVars.set(name, false);
+                        }
+                    }
+                case PTuple(patterns):
+                    for (p in patterns) collectPatternVars(p, vars);
+                case PList(patterns):
+                    for (p in patterns) collectPatternVars(p, vars);
+                case PCons(head, tail):
+                    collectPatternVars(head, vars);
+                    collectPatternVars(tail, vars);
+                case PMap(pairs):
+                    for (pair in pairs) collectPatternVars(pair.value, vars);
+                case PStruct(name, fields):
+                    for (field in fields) collectPatternVars(field.value, vars);
+                case _:
+                    // Other patterns don't declare variables
+            }
+        }
+        
+        function collectVariables(node: ElixirAST): Void {
+            switch(node.def) {
+                case EMatch(pattern, expr):
+                    // Track variable declarations in patterns
+                    collectPatternVars(pattern, varDeclarations);
+                    // Continue collecting in expression
+                    collectVariables(expr);
+                    
+                case EVar(name):
+                    // Track variable usage (not in pattern context)
+                    if (name.charAt(0) == "_" && name.length > 1) {
+                        // Mark this underscore variable as used
+                        underscoreVars.set(name, true);
+                        allUnderscoreVars.set(name, true);
+                        #if debug_ast_transformer
+                        trace('[XRay UnderscoreCleanup] Found used underscore variable: $name');
+                        #end
+                    }
+                    
+                case _:
+                    // Recursively collect from all children
+                    iterateAST(node, collectVariables);
+            }
+        }
+        
+        // Run collection phase
+        collectVariables(ast);
+        
+        // Phase 2: Build renaming map for ALL underscore variables that are referenced
+        var renameMap = new Map<String, String>();
+        
+        // Process all underscore variables we found
+        for (varName in allUnderscoreVars.keys()) {
+            // Check if this variable is actually used (referenced after declaration)
+            var isUsed = underscoreVars.exists(varName) && underscoreVars.get(varName);
+            
+            if (isUsed) {
+                // This underscore variable is used, so rename it
+                // Check if it's a Haxe-generated temp pattern
+                if (~/^_g(_?\d*)?$/.match(varName)) {
+                    // _g, _g_1, _g1 -> g, g_1, g1
+                    var newName = varName.substr(1);
+                    renameMap.set(varName, newName);
+                    #if debug_ast_transformer
+                    trace('[XRay UnderscoreCleanup] Renaming used variable: $varName -> $newName');
+                    #end
+                } else if (~/^_\d+$/.match(varName)) {
+                    // _1, _2 -> temp_1, temp_2 (avoid pure numeric)
+                    var newName = "temp" + varName.substr(1);
+                    renameMap.set(varName, newName);
+                    #if debug_ast_transformer
+                    trace('[XRay UnderscoreCleanup] Renaming used numeric: $varName -> $newName');
+                    #end
+                }
+                // Other underscore variables are left as-is (might be intentional)
+            } else {
+                #if debug_ast_transformer
+                if (varName.charAt(0) == "_" && varName.length > 1) {
+                    trace('[XRay UnderscoreCleanup] Keeping unused underscore variable: $varName');
+                }
+                #end
+            }
+        }
+        
+        // Phase 3: Apply renaming throughout the AST
+        if (renameMap.keys().hasNext()) {
+            #if debug_ast_transformer
+            trace('[XRay UnderscoreCleanup] Applying ${Lambda.count(renameMap)} variable renamings');
+            #end
+            return applyVariableRenaming(ast, renameMap);
+        }
+        
+        #if debug_ast_transformer
+        trace('[XRay UnderscoreCleanup] No underscore variables need renaming');
+        #end
+        return ast;
+    }
+    
+    /**
+     * Apply variable renaming throughout the AST
+     */
+    static function applyVariableRenaming(ast: ElixirAST, renameMap: Map<String, String>): ElixirAST {
+        function renameInPattern(pattern: EPattern): EPattern {
+            return switch(pattern) {
+                case PVar(name):
+                    renameMap.exists(name) ? PVar(renameMap.get(name)) : pattern;
+                case PTuple(patterns):
+                    PTuple(patterns.map(renameInPattern));
+                case PList(patterns):
+                    PList(patterns.map(renameInPattern));
+                case PCons(head, tail):
+                    PCons(renameInPattern(head), renameInPattern(tail));
+                case PMap(pairs):
+                    PMap(pairs.map(p -> {key: p.key, value: renameInPattern(p.value)}));
+                case PStruct(name, fields):
+                    PStruct(name, fields.map(f -> {key: f.key, value: renameInPattern(f.value)}));
+                case _:
+                    pattern;
+            }
+        }
+        
+        function renameInAST(node: ElixirAST): ElixirAST {
+            var transformed = switch(node.def) {
+                case EVar(name):
+                    if (renameMap.exists(name)) {
+                        makeASTWithMeta(EVar(renameMap.get(name)), node.metadata, node.pos);
+                    } else {
+                        node;
+                    }
+                    
+                case EMatch(pattern, expr):
+                    makeASTWithMeta(
+                        EMatch(renameInPattern(pattern), renameInAST(expr)),
+                        node.metadata, node.pos
+                    );
+                    
+                case ECase(expr, clauses):
+                    makeASTWithMeta(
+                        ECase(renameInAST(expr),
+                              clauses.map(c -> {
+                                  pattern: renameInPattern(c.pattern),
+                                  guard: c.guard != null ? renameInAST(c.guard) : null,
+                                  body: renameInAST(c.body)
+                              })),
+                        node.metadata, node.pos
+                    );
+                    
+                case EReceive(clauses, after):
+                    makeASTWithMeta(
+                        EReceive(clauses.map(c -> {
+                                     pattern: renameInPattern(c.pattern),
+                                     guard: c.guard != null ? renameInAST(c.guard) : null,
+                                     body: renameInAST(c.body)
+                                 }),
+                                 after != null ? {timeout: renameInAST(after.timeout), body: renameInAST(after.body)} : null),
+                        node.metadata, node.pos
+                    );
+                    
+                case EFn(clauses):
+                    makeASTWithMeta(
+                        EFn(clauses.map(c -> {
+                            args: c.args.map(renameInPattern),
+                            guard: c.guard != null ? renameInAST(c.guard) : null,
+                            body: renameInAST(c.body)
+                        })),
+                        node.metadata, node.pos
+                    );
+                    
+                case _:
+                    // For all other node types, recursively transform children
+                    transformAST(node, renameInAST);
+            };
+            return transformed;
+        }
+        
+        return renameInAST(ast);
     }
 }
 

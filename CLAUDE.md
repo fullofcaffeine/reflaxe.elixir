@@ -71,6 +71,13 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **ALL NEW DEVELOPMENT USES THIS PIPELINE**
 - **Files**: ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
 
+**WHY AST-BASED IS CRITICAL**: The AST architecture enables sophisticated transformations impossible with strings:
+- **Inheritance → Delegation**: Transform `super.method()` to Elixir module delegation (no inheritance in Elixir!)
+- **Self → Struct Parameter**: Convert `this/self` references to proper struct parameters
+- **Pattern Optimization**: Detect and optimize complex patterns (loops → comprehensions)
+- **Context-Aware Transforms**: Use metadata for intelligent decisions (parent class info, etc.)
+- **Multi-Pass Optimization**: Sequential transformation passes that build on each other
+
 ### 2. Legacy String-Based Pipeline (COMPARISON ONLY ⚠️)
 - Direct TypedExpr → String generation
 - Available via flag for regression testing

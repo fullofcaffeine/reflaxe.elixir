@@ -36,6 +36,9 @@ using StringTools;
  */
 class ElixirASTPrinter {
     
+    // Counter for generating unique loop function names
+    static var loopIdCounter: Int = 0;
+    
     /**
      * Main entry point: Convert ElixirAST to formatted string
      * 
@@ -252,11 +255,43 @@ class ElixirASTPrinter {
             // Expressions
             // ================================================================
             case ECall(target, funcName, args):
-                var argStr = [for (a in args) print(a, 0)].join(', ');
-                if (target != null) {
-                    print(target, 0) + '.' + funcName + '(' + argStr + ')';
+                // Special handling for while loop placeholders
+                if (funcName == "while_loop" && target == null && args.length == 2) {
+                    // Generate an immediately invoked recursive function for while loops
+                    // This creates a local recursive function that implements the loop
+                    var condition = args[0];
+                    var body = args[1];
+                    var loopFuncName = "loop_" + (loopIdCounter++);
+                    
+                    // Generate: (fn -> loop_x = fn -> if condition do body; loop_x.() else :ok end end; loop_x.() end).()
+                    var lines = [];
+                    lines.push('(fn ->');
+                    lines.push('  ' + loopFuncName + ' = fn ' + loopFuncName + ' ->');
+                    lines.push('    if ' + print(condition, 0) + ' do');
+                    lines.push('      ' + print(body, 3));
+                    lines.push('      ' + loopFuncName + '.(' + loopFuncName + ')');
+                    lines.push('    else');
+                    lines.push('      :ok');
+                    lines.push('    end');
+                    lines.push('  end');
+                    lines.push('  ' + loopFuncName + '.(' + loopFuncName + ')');
+                    lines.push('end).()');
+                    lines.join('\n' + indentStr(indent));
                 } else {
-                    funcName + '(' + argStr + ')';
+                    // Normal function call
+                    var argStr = [for (a in args) print(a, 0)].join(', ');
+                    if (target != null) {
+                        // Check if this is a function variable call (marked with empty funcName)
+                        if (funcName == "") {
+                            // Function variable call - use .() syntax
+                            print(target, 0) + '.(' + argStr + ')';
+                        } else {
+                            // Method call on object
+                            print(target, 0) + '.' + funcName + '(' + argStr + ')';
+                        }
+                    } else {
+                        funcName + '(' + argStr + ')';
+                    }
                 }
                 
             case ERemoteCall(module, funcName, args):
@@ -312,6 +347,11 @@ class ElixirASTPrinter {
             // Variables and Binding
             // ================================================================
             case EVar(name):
+                #if debug_ast_pipeline
+                if (name.indexOf("priority") >= 0) {
+                    trace('[AST Printer] Printing EVar: ${name}');
+                }
+                #end
                 name;
                 
             case EPin(expr):

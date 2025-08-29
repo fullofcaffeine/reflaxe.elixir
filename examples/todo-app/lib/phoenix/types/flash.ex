@@ -65,7 +65,7 @@ defmodule Flash do
     else
       temp_bool = true
     end
-    %{:type => flash_type, :message => temp_string_1, :title => phoenix_flash.title, :details => phoenix_flash.details, :dismissible => temp_bool, :timeout => phoenix_flash.timeout, :action => phoenix_flash.action}
+    %{:type => flash_type, :message => temp_string, :title => phoenix_flash.title, :details => phoenix_flash.details, :dismissible => temp_bool, :timeout => phoenix_flash.timeout, :action => phoenix_flash.action}
   end
 
   @doc "Generated from Haxe extractChangesetErrors"
