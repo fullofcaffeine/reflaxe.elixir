@@ -64,138 +64,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Context tracking for variable substitution
     public var isInLoopContext: Bool = false;
     
-    // NOTE: Parent expression tracking removed - orphan detection moved to TBlock level
-    
-    // Pattern matching and guard compilation helpers
-    private var patternMatcher: reflaxe.elixir.helpers.PatternMatcher;
-    private var guardCompiler: reflaxe.elixir.helpers.GuardCompiler;
-    
-    // Pipeline optimization for idiomatic Elixir code generation
-    private var pipelineOptimizer: reflaxe.elixir.helpers.PipelineOptimizer;
-    
-    // Removed: loopCompiler - functionality moved to UnifiedLoopCompiler
-    
-    // Unified loop compiler - single source of truth for all loop compilation
-    public var unifiedLoopCompiler: reflaxe.elixir.helpers.UnifiedLoopCompiler;
-    
-    // Pattern matching compilation helper
-    public var patternMatchingCompiler: reflaxe.elixir.helpers.PatternMatchingCompiler;
-    
-    // Conditional expression compilation helper (if/else)
-    public var conditionalCompiler: reflaxe.elixir.helpers.ConditionalCompiler;
-    
-    // Exception handling compilation helper (try/catch)
-    public var exceptionCompiler: reflaxe.elixir.helpers.ExceptionCompiler;
-    
-    // Literal compilation helper (constants)
-    public var literalCompiler: reflaxe.elixir.helpers.LiteralCompiler;
-    
-    // Operator compilation helper (binary/unary operations)
-    public var operatorCompiler: reflaxe.elixir.helpers.OperatorCompiler;
-    
-    // Data structure compilation helper (arrays, objects)
-    public var dataStructureCompiler: reflaxe.elixir.helpers.DataStructureCompiler;
-    
-    // Field access compilation helper
-    public var fieldAccessCompiler: reflaxe.elixir.helpers.FieldAccessCompiler;
-    
-    // Miscellaneous expression compilation helper
-    public var miscExpressionCompiler: reflaxe.elixir.helpers.MiscExpressionCompiler;
-    
-    // Enum introspection compilation helper
-    public var enumIntrospectionCompiler: reflaxe.elixir.helpers.EnumIntrospectionCompiler;
-    
-    // Schema and changeset compilation helper
-    private var schemaCompiler: reflaxe.elixir.helpers.SchemaCompiler;
-    
-    // Migration compilation helper
-    private var migrationCompiler: reflaxe.elixir.helpers.MigrationCompiler;
-    
-    // LiveView compilation helper
-    private var liveViewCompiler: reflaxe.elixir.helpers.LiveViewCompiler;
-    
-    // GenServer compilation helper
-    private var genServerCompiler: reflaxe.elixir.helpers.GenServerCompiler;
-    
-    // String method compilation helper
-    private var stringMethodCompiler: reflaxe.elixir.helpers.StringMethodCompiler;
-    
-    // Method call compilation (public for ExpressionDispatcher access)
-    public var methodCallCompiler: reflaxe.elixir.helpers.MethodCallCompiler;
-    
-    // OTP compilation for supervisor and child spec patterns
-    public var otpCompiler: reflaxe.elixir.helpers.OTPCompiler;
-    
-    // Reflection compilation
-    private var reflectionCompiler: reflaxe.elixir.helpers.ReflectionCompiler;
-    
-    
-    // Variable substitution and renaming compiler for centralized variable handling
-    public var substitutionCompiler: reflaxe.elixir.helpers.SubstitutionCompiler;
-    
-    // Variable compilation helper for TLocal and TVar expressions
-    public var variableCompiler: reflaxe.elixir.helpers.VariableCompiler;
-    
-    // Variable mapping manager for consistent Haxe compiler-generated variable handling
-    public var variableMappingManager: VariableMappingManager;
-    
-    // COORDINATION: Track declared temp variables to avoid duplicate nil declarations
-    // between ControlFlowCompiler and TempVariableOptimizer
-    public var declaredTempVariables: Map<String, Bool> = null;
-    
-    // Temporary variable pattern optimization
-    public var tempVariableOptimizer: reflaxe.elixir.helpers.TempVariableOptimizer;
-    
-    // Naming convention and file path management
-    private var namingConventionCompiler: reflaxe.elixir.helpers.NamingConventionCompiler;
-    
-    // State threading and parameter mapping management
-    private var stateManagementCompiler: reflaxe.elixir.helpers.StateManagementCompiler;
-    
-    // Function compilation - Public for ClassCompiler delegation (architectural fix)
-    public var functionCompiler: reflaxe.elixir.helpers.FunctionCompiler;
-    
-    // Array method compilation
-    private var arrayMethodCompiler: reflaxe.elixir.helpers.ArrayMethodCompiler;
-    
-    // MapTools extension method compilation
-    private var mapToolsCompiler: reflaxe.elixir.helpers.MapToolsCompiler;
-    
-    // ADT (Option/Result) static extension method compilation
-    private var adtMethodCompiler: reflaxe.elixir.helpers.ADTMethodCompiler;
-    
-    
-    /** Pattern detection and analysis utilities */
-    private var patternDetectionCompiler: reflaxe.elixir.helpers.PatternDetectionCompiler;
-    
-    /** Pattern analysis for structural and framework pattern detection */
-    private var patternAnalysisCompiler: reflaxe.elixir.helpers.PatternAnalysisCompiler;
-    
-    /** Type resolution and mapping between Haxe and Elixir type systems */
-    private var typeResolutionCompiler: reflaxe.elixir.helpers.TypeResolutionCompiler;
-    
-    /** Code fixup and post-processing operations for generated Elixir code */
-    private var codeFixupCompiler: reflaxe.elixir.helpers.CodeFixupCompiler;
-    
-    /** Pipeline pattern detection and variable analysis for optimization compilation */
-    private var pipelineAnalyzer: reflaxe.elixir.helpers.PipelineAnalyzer;
-    
-    /** While loop compilation with Y combinator pattern generation */
-    // whileLoopCompiler removed - functionality moved to unifiedLoopCompiler
-    
-    /** Expression variant compilation for specialized expression handling patterns */
-    public var expressionVariantCompiler: reflaxe.elixir.helpers.ExpressionVariantCompiler;
-    
-    public var expressionDispatcher: reflaxe.elixir.helpers.ExpressionDispatcher;
-    
-    /** Class compilation helper - reused to maintain state consistency */
-    private var classCompiler: reflaxe.elixir.helpers.ClassCompiler;
-    
-    /** Enum compilation helper - reused to maintain state consistency */
-    private var enumCompiler: reflaxe.elixir.helpers.EnumCompiler;
-    
-    // Import optimization for clean import statements
-    private var importOptimizer: reflaxe.elixir.helpers.ImportOptimizer;
+    // NOTE: All helper compilers removed - using AST pipeline exclusively
     
     // Source mapping support for debugging and LLM workflows
     public var currentSourceMapWriter: Null<SourceMapWriter> = null;
@@ -277,7 +146,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * HOW: When enabled, field assignments generate struct updates that are threaded through
      */
     public var stateThreadingEnabled: Bool = false;
-    public var stateThreadingInfo: Null<reflaxe.elixir.helpers.MutabilityAnalyzer.MutabilityInfo> = null;
+    // State threading info removed - handled by AST transformer
     
     /**
      * GLOBAL STRUCT METHOD COMPILATION
@@ -299,56 +168,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function new() {
         super();
         this.typer = new reflaxe.elixir.ElixirTyper();
-        this.patternMatcher = new reflaxe.elixir.helpers.PatternMatcher();
-        this.patternMatcher.setCompiler(this);
-        this.guardCompiler = new reflaxe.elixir.helpers.GuardCompiler();
-        this.pipelineOptimizer = new reflaxe.elixir.helpers.PipelineOptimizer(this);
-        this.importOptimizer = new reflaxe.elixir.helpers.ImportOptimizer(this);
-        // Removed: loopCompiler instantiation - using only unifiedLoopCompiler
-        this.unifiedLoopCompiler = new reflaxe.elixir.helpers.UnifiedLoopCompiler(this);
-        this.patternMatchingCompiler = new reflaxe.elixir.helpers.PatternMatchingCompiler(this);
-        this.conditionalCompiler = new reflaxe.elixir.helpers.ConditionalCompiler(this);
-        this.exceptionCompiler = new reflaxe.elixir.helpers.ExceptionCompiler(this);
-        this.literalCompiler = new reflaxe.elixir.helpers.LiteralCompiler(this);
-        this.operatorCompiler = new reflaxe.elixir.helpers.OperatorCompiler(this, this.literalCompiler);
-        this.dataStructureCompiler = new reflaxe.elixir.helpers.DataStructureCompiler(this);
-        this.fieldAccessCompiler = new reflaxe.elixir.helpers.FieldAccessCompiler(this);
-        this.miscExpressionCompiler = new reflaxe.elixir.helpers.MiscExpressionCompiler(this);
-        this.enumIntrospectionCompiler = new reflaxe.elixir.helpers.EnumIntrospectionCompiler(this);
-        this.schemaCompiler = new reflaxe.elixir.helpers.SchemaCompiler(this);
-        this.migrationCompiler = new reflaxe.elixir.helpers.MigrationCompiler(this);
-        this.liveViewCompiler = new reflaxe.elixir.helpers.LiveViewCompiler(this);
-        this.genServerCompiler = new reflaxe.elixir.helpers.GenServerCompiler(this);
-        this.stringMethodCompiler = new reflaxe.elixir.helpers.StringMethodCompiler(this);
-        this.methodCallCompiler = new reflaxe.elixir.helpers.MethodCallCompiler(this);
-        this.otpCompiler = new reflaxe.elixir.helpers.OTPCompiler(this);
-        this.reflectionCompiler = new reflaxe.elixir.helpers.ReflectionCompiler(this);
-        this.substitutionCompiler = new reflaxe.elixir.helpers.SubstitutionCompiler(this);
-        this.variableMappingManager = new VariableMappingManager(this);
-        this.variableCompiler = new reflaxe.elixir.helpers.VariableCompiler(this);
-        this.tempVariableOptimizer = new reflaxe.elixir.helpers.TempVariableOptimizer(this);
-        this.namingConventionCompiler = new reflaxe.elixir.helpers.NamingConventionCompiler(this);
-        this.stateManagementCompiler = new reflaxe.elixir.helpers.StateManagementCompiler(this);
-        this.functionCompiler = new reflaxe.elixir.helpers.FunctionCompiler(this);
-        this.arrayMethodCompiler = new reflaxe.elixir.helpers.ArrayMethodCompiler(this);
-        this.mapToolsCompiler = new reflaxe.elixir.helpers.MapToolsCompiler(this);
-        this.adtMethodCompiler = new reflaxe.elixir.helpers.ADTMethodCompiler(this);
-        this.patternDetectionCompiler = new reflaxe.elixir.helpers.PatternDetectionCompiler(this);
-        this.patternAnalysisCompiler = new reflaxe.elixir.helpers.PatternAnalysisCompiler(this);
-        this.typeResolutionCompiler = new reflaxe.elixir.helpers.TypeResolutionCompiler(this);
-        this.codeFixupCompiler = new reflaxe.elixir.helpers.CodeFixupCompiler(this);
-        this.pipelineAnalyzer = new reflaxe.elixir.helpers.PipelineAnalyzer(this);
-        // WhileLoopCompiler removed - using UnifiedLoopCompiler components
-        this.expressionVariantCompiler = new reflaxe.elixir.helpers.ExpressionVariantCompiler(this);
-        this.expressionDispatcher = new reflaxe.elixir.helpers.ExpressionDispatcher(this);
-        
-        // Initialize class and enum compilers (reused to maintain state consistency)
-        this.classCompiler = new reflaxe.elixir.helpers.ClassCompiler(this.typer);
-        this.enumCompiler = new reflaxe.elixir.helpers.EnumCompiler(this.typer);
-        
-        // Set compiler reference for delegation
-        this.patternMatcher.setCompiler(this);
-        this.classCompiler.setCompiler(this);
+        // All helper initializations removed - using AST pipeline exclusively
         
         // Enable source mapping if requested
         this.sourceMapOutputEnabled = Context.defined("source_map_enabled") || Context.defined("source-map") || Context.defined("debug");
@@ -444,45 +264,9 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param variableName The variable name to search for
      * @return True if the expression contains a reference to the variable
      */
-    public function containsVariableReference(expr: TypedExpr, variableName: String): Bool {
-        return pipelineAnalyzer.containsVariableReference(expr, variableName);
-    }
+    // Pipeline analysis removed - handled by AST transformer
     
-    /**
-     * Determine which statement indices were processed as part of a pipeline pattern.
-     * This prevents double-compilation of statements that were already included in the pipeline.
-     */
-    private function getProcessedStatementIndices(statements: Array<TypedExpr>, pattern: PipelinePattern): Array<Int> {
-        return pipelineAnalyzer.getProcessedStatementIndices(statements, pattern);
-    }
-    
-    // statementTargetsVariable temporarily reverted for debugging
-    private function statementTargetsVariable(stmt: TypedExpr, variableName: String): Bool {
-        return pipelineAnalyzer.statementTargetsVariable(stmt, variableName);
-    }
-    
-    // isTerminalOperation temporarily reverted for debugging
-    private function isTerminalOperation(stmt: TypedExpr, variableName: String): Bool {
-        return pipelineAnalyzer.isTerminalOperation(stmt, variableName);
-    }
-    
-    // isTerminalOperationOnVariable temporarily reverted for debugging
-    private function isTerminalOperationOnVariable(expr: TypedExpr, variableName: String): Bool {
-        return pipelineAnalyzer.isTerminalOperationOnVariable(expr, variableName);
-    }
-    
-    /**
-     * Extract the terminal function call from an expression, removing the pipeline variable reference
-     * For example: Repo.all(query) becomes "Repo.all()"
-     */
-    private function extractTerminalCall(expr: TypedExpr, variableName: String): Null<String> {
-        return pipelineAnalyzer.extractTerminalCall(expr, variableName);
-    }
-    
-    // extractFunctionNameFromCall temporarily reverted for debugging
-    private function extractFunctionNameFromCall(funcExpr: TypedExpr): String {
-        return pipelineAnalyzer.extractFunctionNameFromCall(funcExpr);
-    }
+    // Pipeline analysis methods removed - functionality moved to AST transformer
 
     // containsVariableReference moved to VariableCompiler.hx
     
@@ -1063,12 +847,8 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
-        // Default to new AST pipeline, use legacy only when explicitly requested
-        #if use_legacy_string_pipeline
-        return expressionVariantCompiler.compileExpressionImpl(expr, topLevel);
-        #else
+        // AST pipeline is the ONLY path
         return compileExpressionViaAST(expr, topLevel);
-        #end
     }
     
     /**
