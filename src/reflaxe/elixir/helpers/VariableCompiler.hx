@@ -765,11 +765,16 @@ class VariableCompiler {
                         };
                         EnumPatternContext.markEnumPatternVar(tvar, info, expr.pos);
                         
+                        // CRITICAL FIX: Also register in variableIdMap for global tracking
+                        // This ensures ANY TVar with the same ID will resolve correctly
+                        registerVariableMapping(tvar, uniqueVarName);
+                        
                         #if debug_enum_pattern_context
                         trace('[XRay VariableCompiler] ✓ MARKED TVAR WITH ENUM PATTERN METADATA');
                         trace('[XRay VariableCompiler]   TVar: ${tvar.name} (id: ${tvar.id})');
                         trace('[XRay VariableCompiler]   Extraction: ${uniqueVarName}');
                         trace('[XRay VariableCompiler]   Enum field: ${enumField.name}, Index: ${index}');
+                        trace('[XRay VariableCompiler]   Also registered in variableIdMap for global tracking');
                         #end
                     }
                     
