@@ -38,15 +38,36 @@ class MyApplication {
 
 **Key Insight**: You cannot instantiate `ElixirCompiler` in tests - it doesn't exist at runtime. Test the generated `.ex` files instead.
 
+## ⚠️ CRITICAL ARCHITECTURAL UPDATE (August 2025)
+
+### Complete Migration to AST Pipeline
+- **ALL 75 helper files have been REMOVED** - No more string manipulation
+- **AST pipeline is the ONLY path** - Everything goes through Builder → Transformer → Printer
+- **NO MORE HELPER CLASSES** - All functionality as transformation passes
+- **See**: [`docs/05-architecture/AST_PIPELINE_MIGRATION.md`](/docs/05-architecture/AST_PIPELINE_MIGRATION.md) - Complete migration documentation
+
+### Adding New Features
+```haxe
+// ❌ WRONG: Creating a helper file
+class MyFeatureCompiler { ... }  // DON'T DO THIS
+
+// ✅ RIGHT: Add a transformation pass
+// In ElixirASTTransformer.hx:
+static function myFeatureTransformPass(ast: ElixirAST): ElixirAST {
+    // Transform specific patterns
+    return transformAST(ast, ...);
+}
+```
+
 ## 🏗️ Compiler Architecture Overview
 
-### Primary Components
-- **ElixirCompiler.hx**: Main transpiler with statement concatenation logic
-- **helpers/**: Specialized compilers (EndpointCompiler, LiveViewCompiler, etc.)
+### Primary Components (UPDATED August 2025)
+- **ElixirCompiler.hx**: Main transpiler (reduced from 10,000+ to ~2,000 lines)
+- **ast/**: AST pipeline components (ElixirAST, Builder, Transformer, Printer)
 - **ElixirTyper.hx**: Type mapping from Haxe → Elixir
-- **ElixirPrinter.hx**: AST node compilation and string generation
+- **~~helpers/~~**: **REMOVED** - All 75 helper files deleted, functionality in AST transformer
 
-### Compilation Flow
+### Compilation Flow (AST Pipeline Only)
 ```
 Haxe Source (.hx) 
     ↓ Haxe Parser
@@ -55,7 +76,9 @@ Untyped AST
 TypedExpr (ModuleType)
     ↓ onAfterTyping callback
 ElixirCompiler.compile()
-    ↓ AST Processing
+    ↓ ElixirASTBuilder (Build AST nodes)
+    ↓ ElixirASTTransformer (Apply transformation passes)
+    ↓ ElixirASTPrinter (Generate strings)
 Elixir Code Strings
     ↓ File Writing
 Generated .ex Files
@@ -140,16 +163,17 @@ result = ~/\), else: nil\n/g.replace(result, ")\n");
 
 ## 📁 File Organization
 
-### Core Compiler Files
-- **ElixirCompiler.hx**: Main compilation logic at `src/reflaxe/elixir/ElixirCompiler.hx`
-- **ElixirTyper.hx**: Type system mapping
-- **ElixirPrinter.hx**: String generation utilities
-
-### Helper Modules
-- **helpers/EndpointCompiler.hx**: Phoenix endpoint generation
-- **helpers/LiveViewCompiler.hx**: LiveView component compilation
-- **helpers/DebugHelper.hx**: Professional debugging infrastructure
-- **helpers/NamingHelper.hx**: File naming and snake_case conversion
+### Core Compiler Files (Post-Migration Structure)
+```
+src/reflaxe/elixir/
+├── ElixirCompiler.hx        # Main compiler (~2,000 lines, down from 10,000+)
+├── ElixirTyper.hx           # Type system mapping
+├── ast/
+│   ├── ElixirAST.hx         # AST node definitions
+│   ├── ElixirASTBuilder.hx  # TypedExpr → AST (build only)
+│   ├── ElixirASTTransformer.hx # AST → AST (transform only)
+│   └── ElixirASTPrinter.hx  # AST → String (print only)
+└── helpers/                  # EMPTY - All 75 files removed
 
 ### Test Infrastructure
 - **test/Test.hxml**: Main test runner
