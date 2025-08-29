@@ -303,8 +303,19 @@ class ElixirASTBuilder {
                     var tag = extractEnumTag(e);
                     var args = [for (arg in el) buildFromTypedExpr(arg)];
                     
-                    // Create the tuple - metadata will be added at buildFromTypedExpr level
-                    ETuple([makeAST(EAtom(tag))].concat(args));
+                    // Create the basic tuple
+                    var tupleAST = makeAST(ETuple([makeAST(EAtom(tag))].concat(args)), expr.pos);
+                    
+                    // Apply idiomatic transformation if the enum has @:elixirIdiomatic
+                    if (hasIdiomaticMetadata(e)) {
+                        #if debug_ast_builder
+                        trace('[AST Builder] Applying idiomatic transformation to enum constructor: $tag');
+                        #end
+                        var transformed = reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(tupleAST);
+                        transformed.def;
+                    } else {
+                        ETuple([makeAST(EAtom(tag))].concat(args));
+                    }
                 } else {
                     // Regular function call
                     var target = e != null ? buildFromTypedExpr(e) : null;
