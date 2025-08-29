@@ -4,6 +4,22 @@
 
 This PRD outlines the refactoring of Reflaxe.Elixir from its current direct-to-string compilation approach to a three-phase semantic compilation pipeline using an Elixir-specific intermediate AST. This architectural change will dramatically improve maintainability, debuggability, and extensibility while preserving all existing functionality.
 
+### Core Mission
+
+**Create an easy-to-develop and debug Haxe→Elixir compiler that generates beautiful, idiomatic Elixir code.** The compiler should:
+
+1. **Transform imperative Haxe to functional Elixir** when appropriate
+2. **Provide flexible abstractions** allowing developers to write:
+   - Imperative-style code that compiles to functional Elixir
+   - Functional-style code that maps naturally to Elixir
+   - Mixed paradigm code that leverages the best of both
+3. **Implement Haxe stdlib idiomatically** using Elixir's native capabilities (via externs, @:coreApi, @:native)
+4. **Generate code that Elixir developers would write** - not mechanical translations
+
+### Immediate Goal
+
+**Make the todo-app compile and work flawlessly** with all tests passing, generating idiomatic and beautiful Elixir code that showcases the compiler's ability to bridge paradigms elegantly.
+
 ## 1. Problem Statement
 
 ### Current Architecture Limitations
@@ -55,9 +71,208 @@ Phase 3: Generation (Elixir AST → String)
 5. **Extensible**: New transformations plug in without affecting others
 6. **Debuggable**: Inspect and visualize intermediate AST
 
-## 3. Technical Architecture
+## 3. Paradigm Transformation Philosophy
 
-### 3.1 ElixirAST Data Structure
+### 3.1 Imperative to Functional Transformation
+
+The compiler should intelligently recognize imperative patterns and transform them to idiomatic functional Elixir:
+
+#### Example Transformations
+
+**Imperative Loop → Functional Enumeration**
+```haxe
+// Haxe input (imperative)
+var result = [];
+for (item in items) {
+    if (item.isValid()) {
+        result.push(item.transform());
+    }
+}
+
+// Generated Elixir (functional)
+result = items
+  |> Enum.filter(&valid?/1)
+  |> Enum.map(&transform/1)
+```
+
+**Mutable State → Immutable Transformation**
+```haxe
+// Haxe input (mutable)
+var total = 0;
+for (num in numbers) {
+    total += num;
+}
+
+// Generated Elixir (immutable)
+total = Enum.reduce(numbers, 0, &+/2)
+```
+
+**Object Methods → Module Functions**
+```haxe
+// Haxe input (OOP)
+user.getName().toUpperCase().trim()
+
+// Generated Elixir (functional)
+user
+|> User.get_name()
+|> String.upcase()
+|> String.trim()
+```
+
+### 3.2 Flexible Programming Styles
+
+The compiler should support multiple programming styles, all generating idiomatic Elixir:
+
+#### Imperative-Friendly APIs
+```haxe
+// Developer writes familiar imperative code
+var users = Database.query("SELECT * FROM users");
+for (user in users) {
+    if (user.age > 18) {
+        EmailService.send(user.email, "Welcome!");
+    }
+}
+
+// Generates idiomatic Elixir
+Database.query("SELECT * FROM users")
+|> Enum.filter(fn user -> user.age > 18 end)
+|> Enum.each(fn user -> 
+    EmailService.send(user.email, "Welcome!")
+end)
+```
+
+#### Functional-First APIs
+```haxe
+// Developer can also write functional style
+users
+    .filter(u -> u.age > 18)
+    .map(u -> {email: u.email, message: "Welcome!"})
+    .forEach(EmailService.send);
+
+// Generates nearly identical Elixir
+```
+
+### 3.3 Haxe Standard Library Implementation
+
+The Haxe stdlib should be implemented using Elixir's native capabilities for maximum performance and idiomatic output:
+
+#### Implementation Strategies
+
+1. **@:coreApi for Native Mappings**
+```haxe
+@:coreApi
+class StringTools {
+    public static function trim(s: String): String {
+        return untyped __elixir__('String.trim($s)');
+    }
+}
+```
+
+2. **@:native for Direct Module Mapping**
+```haxe
+@:native("Enum")
+extern class Enum {
+    static function map<T,R>(enumerable: Array<T>, fun: T->R): Array<R>;
+    static function filter<T>(enumerable: Array<T>, fun: T->Bool): Array<T>;
+}
+```
+
+3. **Extern Classes for Elixir Modules**
+```haxe
+@:native("File")
+extern class File {
+    @:native("read!")
+    static function read(path: String): String;
+    
+    @:native("write!")
+    static function write(path: String, content: String): Void;
+}
+```
+
+4. **Abstract Types for Idiomatic APIs**
+```haxe
+abstract Process(Dynamic) {
+    @:native("Process.sleep")
+    public static function sleep(ms: Int): Void;
+    
+    @:native("Process.send")
+    public static function send(pid: ProcessId, message: Dynamic): Void;
+}
+```
+
+## 4. Type Safety and Code Quality Principles
+
+### 4.1 Zero Dynamic Policy
+
+**FUNDAMENTAL RULE: Never use Dynamic or untyped unless absolutely justified and documented.**
+
+- **NO Dynamic types**: Replace all Dynamic with proper typed abstracts or enums
+- **NO string manipulation**: Use AST operations, not string concatenation
+- **NO untyped field access**: Define proper interfaces and types
+- **Document exceptions**: Any use of Dynamic must have a comment explaining why
+
+### 4.2 Type-First Design
+
+All compiler components should be strongly typed:
+
+```haxe
+// ❌ BAD: String-based, error-prone
+function compileExpr(expr: Dynamic): String {
+    return switch(Reflect.field(expr, "type")) {
+        case "call": "#{" + expr.target + "}.#{" + expr.method + "}";
+        default: "";
+    }
+}
+
+// ✅ GOOD: Type-safe, compiler-verified
+function compileExpr(expr: ElixirAST): String {
+    return switch(expr.def) {
+        case ECall(target, method, args): 
+            '${print(target)}.${method}(${args.map(print).join(", ")})';
+        default: "";
+    }
+}
+```
+
+### 4.3 String Usage Guidelines
+
+Strings should only be used for:
+- **Final output generation** in the printer phase
+- **Atom/identifier names** where they represent Elixir symbols
+- **Documentation and comments**
+
+Never for:
+- **AST manipulation** - Use typed nodes
+- **Pattern detection** - Use enum matching
+- **Code structure** - Use AST composition
+
+## 5. Developer Experience Goals
+
+### 5.1 Easy Development
+
+- **Clear Error Messages**: Precise source location with helpful suggestions
+- **Fast Compilation**: Sub-second incremental compilation
+- **IDE Support**: Full autocomplete and type information
+- **Documentation**: Comprehensive guides and examples
+
+### 5.2 Easy Debugging
+
+- **AST Visualization**: Inspect intermediate representations
+- **Transformation Tracing**: See how code transforms step-by-step
+- **Source Mapping**: Map generated Elixir back to Haxe source
+- **Debug Output**: Conditional compilation flags for verbose output
+
+### 5.3 Beautiful Output
+
+The generated Elixir should be:
+- **Readable**: Clear variable names, proper indentation
+- **Idiomatic**: Following Elixir community conventions
+- **Efficient**: No unnecessary intermediate variables or operations
+- **Maintainable**: Could be handed to an Elixir team if needed
+
+## 6. Technical Architecture
+
+### 6.1 ElixirAST Data Structure
 
 ```haxe
 // Core AST Definition
@@ -173,7 +388,7 @@ typedef ElixirMetadata = {
 }
 ```
 
-### 3.2 Phase 1: ElixirASTBuilder
+### 6.2 Phase 1: ElixirASTBuilder
 
 ```haxe
 class ElixirASTBuilder {
@@ -209,7 +424,7 @@ class ElixirASTBuilder {
 }
 ```
 
-### 3.3 Phase 2: ElixirASTTransformer
+### 6.3 Phase 2: ElixirASTTransformer
 
 ```haxe
 class ElixirASTTransformer {
@@ -255,7 +470,7 @@ class ElixirASTTransformer {
 }
 ```
 
-### 3.4 Phase 3: ElixirPrinter
+### 6.4 Phase 3: ElixirPrinter
 
 ```haxe
 class ElixirPrinter {
@@ -284,7 +499,7 @@ class ElixirPrinter {
 }
 ```
 
-## 4. Migration Strategy
+## 7. Migration Strategy
 
 ### Phase 1: Foundation (Week 1-2)
 - [ ] Create ElixirAST data structures
@@ -321,7 +536,7 @@ class ElixirPrinter {
 - [ ] Clean deprecated code
 - [ ] Final validation
 
-## 5. Testing Strategy
+## 8. Testing Strategy
 
 ### Unit Testing
 - Test each phase independently
@@ -338,7 +553,7 @@ class ElixirPrinter {
 - Todo-app must compile identically
 - No functionality loss
 
-## 6. Success Criteria
+## 9. Success Criteria
 
 ### Functional Requirements
 - [ ] All existing tests pass
@@ -360,7 +575,7 @@ class ElixirPrinter {
 - [ ] No files over 1000 lines
 - [ ] All patterns documented
 
-## 7. Risks and Mitigation
+## 10. Risks and Mitigation
 
 ### Risk: Breaking Changes
 **Mitigation**: Feature flag allows parallel development and gradual migration
@@ -374,7 +589,7 @@ class ElixirPrinter {
 ### Risk: Migration Effort
 **Mitigation**: Incremental approach, maintain backward compatibility during transition
 
-## 8. Future Opportunities
+## 11. Future Opportunities
 
 Once the intermediate AST is in place:
 - **Visual AST Inspector**: Debug compilation visually
@@ -384,7 +599,7 @@ Once the intermediate AST is in place:
 - **Incremental Compilation**: Cache unchanged AST subtrees
 - **Language Server Protocol**: IDE integration with semantic understanding
 
-## 9. Documentation Requirements
+## 12. Documentation Requirements
 
 ### Architecture Documentation
 - [ ] Complete AST specification
@@ -402,7 +617,7 @@ Once the intermediate AST is in place:
 - [ ] No change needed - interface remains the same
 - [ ] Release notes explaining improvements
 
-## 10. Implementation Checklist
+## 13. Implementation Checklist
 
 ### Immediate Actions
 - [x] Commit current work
