@@ -1110,8 +1110,43 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
+        // Check if we should use the new intermediate AST pipeline
+        #if use_intermediate_ast
+        return compileExpressionViaAST(expr, topLevel);
+        #else
         return expressionVariantCompiler.compileExpressionImpl(expr, topLevel);
+        #end
     }
+    
+    /**
+     * Compile expression using the new three-phase AST pipeline
+     * 
+     * WHY: Enables gradual migration to intermediate AST architecture
+     * WHAT: Routes expression through AST builder → transformer → printer
+     * HOW: Converts TypedExpr to ElixirAST, applies transformations, generates string
+     */
+    #if use_intermediate_ast
+    function compileExpressionViaAST(expr: TypedExpr, topLevel: Bool): Null<String> {
+        #if debug_ast_pipeline
+        trace('[XRay AST Pipeline] Processing expression via AST: ${expr.expr}');
+        #end
+        
+        // Phase 1: Build AST from TypedExpr
+        var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr);
+        
+        // Phase 2: Transform AST (placeholder - will be implemented later)
+        // var transformedAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast);
+        
+        // Phase 3: Generate string from AST
+        var result = reflaxe.elixir.ast.ElixirASTPrinter.print(ast, topLevel ? 0 : 1);
+        
+        #if debug_ast_pipeline
+        trace('[XRay AST Pipeline] Generated result: ${result.substring(0, 100)}...');
+        #end
+        
+        return result;
+    }
+    #end
     
     /**
      * Compile abstract types - generates proper Elixir type aliases and implementation modules

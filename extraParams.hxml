@@ -25,5 +25,10 @@
 # Target code injection support
 -D reflaxe-target-code-injection=elixir
 
+# AST Pipeline Feature Flag (experimental)
+# Uncomment to enable the new three-phase AST compilation pipeline
+# -D use_intermediate_ast
+# -D debug_ast_pipeline
+
 # Macro context
 -D macro-times

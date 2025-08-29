@@ -314,7 +314,6 @@ class ElixirASTBuilder {
                     
                     rescueClauses.push({
                         pattern: pattern,
-                        var: toElixirVarName(c.v.name),
                         body: catchBody
                     });
                 }

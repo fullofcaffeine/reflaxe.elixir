@@ -55,6 +55,32 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 @docs/claude-includes/code-style.md
 @docs/claude-includes/framework-integration.md
 
+## 🏗️ Compilation Pipeline Architecture (DUAL PIPELINE TRANSITION)
+
+**IMPORTANT**: We are transitioning from string-based to AST-based compilation. Two pipelines currently coexist:
+
+### 1. Legacy String-Based Pipeline (DEFAULT - TO BE DEPRECATED)
+- Direct TypedExpr → String generation
+- Current production pipeline
+- Will be removed once AST pipeline is complete
+
+### 2. New AST-Based Pipeline (EXPERIMENTAL - FUTURE DEFAULT) 
+- Three-phase: TypedExpr → ElixirAST → String
+- Strongly-typed intermediate representation
+- **THIS IS THE PREFERRED APPROACH** - All new features target this pipeline
+
+### Switching Between Pipelines
+```bash
+# Use LEGACY pipeline (default)
+npx haxe build.hxml
+
+# Use NEW AST pipeline
+npx haxe build.hxml -D use_intermediate_ast
+
+# Debug AST pipeline
+npx haxe build.hxml -D use_intermediate_ast -D debug_ast_pipeline
+```
+
 ## 🚀 Essential Commands
 
 ### Development Workflow
