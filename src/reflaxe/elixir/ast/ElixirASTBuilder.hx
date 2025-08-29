@@ -538,8 +538,42 @@ class ElixirASTBuilder {
             // Type Operations
             // ================================================================
             case TTypeExpr(m):
-                // Type reference becomes atom
-                EAtom(moduleTypeToString(m));
+                // Check if this is an extern class with @:native annotation
+                var moduleName = moduleTypeToString(m);
+                
+                // Check if this module has @:native metadata indicating it's an Elixir module
+                var isNativeModule = switch(m) {
+                    case TClassDecl(c):
+                        var cl = c.get();
+                        // Check if it's an extern class with @:native
+                        if (cl.isExtern && cl.meta.has(":native")) {
+                            // Get the native name from metadata
+                            var nativeMeta = cl.meta.extract(":native");
+                            if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                                switch(nativeMeta[0].params[0].expr) {
+                                    case EConst(CString(s, _)):
+                                        moduleName = s;
+                                        true;
+                                    default:
+                                        false;
+                                }
+                            } else {
+                                false;
+                            }
+                        } else {
+                            false;
+                        }
+                    default:
+                        false;
+                };
+                
+                // If it's a native Elixir module, use it as a module reference (no colon prefix)
+                // Otherwise, use as atom for backwards compatibility
+                if (isNativeModule) {
+                    EVar(moduleName);  // Module references are just capitalized identifiers
+                } else {
+                    EAtom(moduleName);
+                }
                 
             case TCast(e, m):
                 // Casts are mostly compile-time in Haxe
