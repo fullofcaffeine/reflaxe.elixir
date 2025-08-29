@@ -1173,135 +1173,23 @@ class ElixirASTTransformer {
      * @param node The original AST node with metadata
      * @return Transformed AST following Elixir idioms
      */
+    /**
+     * Transform idiomatic enum constructors using shared utility
+     * 
+     * WHY: This wrapper delegates to the shared transformation utility in ElixirAST.hx
+     * to ensure consistent transformation logic across the AST pipeline.
+     * 
+     * WHAT: Applies convention-based transformations for enums marked with @:elixirIdiomatic.
+     * 
+     * HOW: Simply delegates to the shared utility function.
+     * 
+     * @param elements The tuple elements to transform (unused - kept for compatibility)
+     * @param node The original AST node for metadata preservation
+     * @return Transformed AST following Elixir idioms
+     */
     static function transformIdiomaticEnum(elements: Array<ElixirAST>, node: ElixirAST): ElixirAST {
-        if (elements.length == 0) return node;
-        
-        // Extract the constructor tag (first element is the atom tag)
-        var tag = switch(elements[0].def) {
-            case EAtom(name): name;
-            default: null;
-        };
-        
-        if (tag == null) return node;
-        
-        // Get the arguments (everything after the tag)
-        var args = elements.slice(1);
-        var argCount = args.length;
-        
-        #if debug_ast_transformer
-        trace('[XRay IdiomaticEnum] Constructor: $tag with $argCount arguments');
-        #end
-        
-        // Convention-based transformation based on argument count and types
-        switch(argCount) {
-            case 0:
-                // CONVENTION: Zero arguments → bare atom
-                // Example: None → :none, Permanent → :permanent
-                #if debug_ast_transformer
-                trace('[XRay IdiomaticEnum] Zero args → bare atom :$tag');
-                #end
-                return makeASTWithMeta(EAtom(tag), node.metadata, node.pos);
-                
-            case 1:
-                // CONVENTION: Single argument → unwrap the value
-                // Example: ModuleRef("MyWorker") → MyWorker
-                #if debug_ast_transformer
-                trace('[XRay IdiomaticEnum] Single arg → unwrap value');
-                #end
-                
-                // Special handling for string module names → convert to module references
-                var unwrapped = switch(args[0].def) {
-                    case EString(s) if (isModuleName(s)):
-                        // String that looks like a module name → bare module name
-                        // Phoenix.PubSub not :Phoenix.PubSub
-                        // Use EVar to represent module names as bare identifiers
-                        makeAST(EVar(s));
-                    default:
-                        // Keep as-is
-                        args[0];
-                };
-                
-                return makeASTWithMeta(unwrapped.def, node.metadata, node.pos);
-                
-            case 2:
-                // CONVENTION: Two arguments → check for special patterns
-                
-                // Check if second argument is a keyword list
-                var isKeywordConfig = switch(args[1].def) {
-                    case EKeywordList(_): true;
-                    case EList(items):
-                        // Check if it's a list that looks like keyword pairs
-                        items.length > 0 && switch(items[0].def) {
-                            case ETuple([_, _]): true;
-                            default: false;
-                        };
-                    default: false;
-                };
-                
-                if (isKeywordConfig) {
-                    // CONVENTION: Module + keyword list → {Module, [config]}
-                    // Example: ModuleWithConfig("Phoenix.PubSub", [name: "MyApp"]) 
-                    //          → {Phoenix.PubSub, [name: "MyApp"]}
-                    #if debug_ast_transformer
-                    trace('[XRay IdiomaticEnum] Two args with keyword list → {module, config}');
-                    #end
-                    
-                    var moduleArg = switch(args[0].def) {
-                        case EString(s) if (isModuleName(s)):
-                            // Module names become bare module references, not atoms
-                            // Use EVar to represent module names as bare identifiers
-                            #if debug_ast_transformer
-                            trace('[XRay IdiomaticEnum] Converting string "$s" to EVar (module reference)');
-                            #end
-                            makeAST(EVar(s));
-                        default:
-                            #if debug_ast_transformer
-                            trace('[XRay IdiomaticEnum] Keeping arg as-is: ${args[0].def}');
-                            #end
-                            args[0];
-                    };
-                    
-                    #if debug_ast_transformer
-                    trace('[XRay IdiomaticEnum] Final tuple: {${moduleArg.def}, keyword_list}');
-                    #end
-                    
-                    return makeASTWithMeta(
-                        ETuple([moduleArg, args[1]]),
-                        node.metadata,
-                        node.pos
-                    );
-                } else {
-                    // CONVENTION: Two general arguments → simplified tuple
-                    // Example: Result.Ok(value) → {:ok, value}
-                    //          Error(reason) → {:error, reason}
-                    #if debug_ast_transformer
-                    trace('[XRay IdiomaticEnum] Two args → keep as tuple with tag');
-                    #end
-                    
-                    // For Result/Option patterns, keep the tag but lowercase
-                    var idiomaticTag = toIdiomaticAtom(tag);
-                    return makeASTWithMeta(
-                        ETuple([makeAST(EAtom(idiomaticTag))].concat(args)),
-                        node.metadata,
-                        node.pos
-                    );
-                }
-                
-            default:
-                // CONVENTION: Three or more arguments → standard tagged tuple
-                // Example: GenServerReply(response, state, timeout) 
-                //          → {:gen_server_reply, response, state, timeout}
-                #if debug_ast_transformer
-                trace('[XRay IdiomaticEnum] Many args → standard tagged tuple');
-                #end
-                
-                var idiomaticTag = toIdiomaticAtom(tag);
-                return makeASTWithMeta(
-                    ETuple([makeAST(EAtom(idiomaticTag))].concat(args)),
-                    node.metadata,
-                    node.pos
-                );
-        }
+        // Delegate to shared utility function
+        return reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(node);
     }
     
     /**

@@ -35,13 +35,13 @@ defmodule TypeSafeChildSpec do
   # Static functions
   @doc "Generated from Haxe pubSub"
   def pub_sub(name) do
-    {:module_with_config, "Phoenix.PubSub", [%{:key => "name", :value => name}]}
+    {:ModuleWithConfig, "Phoenix.PubSub", [%{:key => "name", :value => name}]}
   end
 
   @doc "Generated from Haxe repo"
   def repo(module, config \\ nil) do
     if (config != nil) do
-      {:module_with_config, module, config}
+      {:ModuleWithConfig, module, config}
     else
       module
     end
@@ -60,7 +60,7 @@ defmodule TypeSafeChildSpec do
   @doc "Generated from Haxe worker"
   def worker(module, args \\ nil) do
     if (args != nil && args.length > 0) do
-      {:module_with_args, module, args}
+      {:ModuleWithArgs, module, args}
     else
       module
     end
@@ -83,10 +83,10 @@ defmodule TypeSafeChildSpec do
       if (spec.type == nil) do
         type = :Supervisor
       end
-      {:FullSpec, spec}
+      spec
     else
       if (args != nil && args.length > 0) do
-        {:module_with_args, module, args}
+        {:ModuleWithArgs, module, args}
       else
         module
       end
@@ -95,7 +95,7 @@ defmodule TypeSafeChildSpec do
 
   @doc "Generated from Haxe taskSupervisor"
   def task_supervisor(name) do
-    {:module_with_config, "Task.Supervisor", [%{:key => "name", :value => name}]}
+    {:ModuleWithConfig, "Task.Supervisor", [%{:key => "name", :value => name}]}
   end
 
   @doc "Generated from Haxe registry"
@@ -104,18 +104,18 @@ defmodule TypeSafeChildSpec do
     if (opts != nil) do
       config = config ++ opts
     end
-    {:module_with_config, "Registry", config}
+    {:ModuleWithConfig, "Registry", config}
   end
 
   @doc "Generated from Haxe fromMap"
   def from_map(spec) do
-    {:FullSpec, spec}
+    spec
   end
 
   @doc "Generated from Haxe simple"
   def simple(module, args \\ nil) do
     if (args != nil && args.length > 0) do
-      {:module_with_args, module, args}
+      {:ModuleWithArgs, module, args}
     else
       module
     end
