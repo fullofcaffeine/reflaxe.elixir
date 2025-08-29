@@ -115,6 +115,9 @@ enum ElixirASTDef {
     /** Struct literal %Module{} */
     EStruct(module: String, fields: Array<EStructField>);
     
+    /** Struct update %{struct | field: value} */
+    EStructUpdate(struct: ElixirAST, fields: Array<EStructField>);
+    
     /** Keyword list [key: value] */
     EKeywordList(pairs: Array<EKeywordPair>);
     
