@@ -25,9 +25,11 @@ defmodule TodoAppWeb.Gettext do
     temp_result = nil
 
     temp_result = nil
-
-    if ((count == 1)), do: temp_result = msgid, else: temp_result = msgid_plural
-
+    if (count == 1) do
+      temp_result = msgid
+    else
+      temp_result = msgid_plural
+    end
     temp_result
   end
 
@@ -35,14 +37,18 @@ defmodule TodoAppWeb.Gettext do
   def dngettext(_domain, msgid, msgid_plural, count, _bindings \\ nil) do
     temp_result = nil
 
-    if ((count == 1)), do: temp_result = msgid, else: temp_result = msgid_plural
-
+    temp_result = nil
+    if (count == 1) do
+      temp_result = msgid
+    else
+      temp_result = msgid_plural
+    end
     temp_result
   end
 
   @doc "Generated from Haxe get_locale"
   def get_locale() do
-    TodoAppWeb.Gettext.d_e_f_a_u_l_t__l_o_c_a_l_e
+    :Gettext.DEFAULT_LOCALE
   end
 
   @doc "Generated from Haxe put_locale"

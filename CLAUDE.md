@@ -57,18 +57,25 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 
 ## 🏗️ Compilation Pipeline Architecture (AST-BASED DEFAULT)
 
-**IMPORTANT**: The new AST-based pipeline is now the DEFAULT. Legacy string pipeline available for comparison only.
+**⚠️ CRITICAL REMINDER: AST PIPELINE IS DEFAULT - DO NOT LOOK AT OLD STRING CODE**
+
+**The AST-based pipeline (src/reflaxe/elixir/ast/) is the DEFAULT compilation path.**
+- When debugging issues, ALWAYS check ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
+- The old ElixirCompiler.hx string-based code is LEGACY and will be removed
+- Do NOT waste time looking at compileExpression() in ElixirCompiler.hx for current issues
 
 ### 1. Primary AST-Based Pipeline (DEFAULT ✅)
 - Three-phase: TypedExpr → ElixirAST → Transformations → String
 - Strongly-typed intermediate representation
 - Enables powerful optimizations and idiomatic code generation
 - **ALL NEW DEVELOPMENT USES THIS PIPELINE**
+- **Files**: ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
 
 ### 2. Legacy String-Based Pipeline (COMPARISON ONLY ⚠️)
 - Direct TypedExpr → String generation
 - Available via flag for regression testing
 - **WILL BE REMOVED SOON** - Do not add new features here
+- Only accessible with `-D use_legacy_string_pipeline`
 
 ### Switching Between Pipelines
 ```bash

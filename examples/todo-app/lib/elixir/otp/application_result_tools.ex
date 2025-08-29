@@ -8,17 +8,17 @@ defmodule ApplicationResultTools do
   # Static functions
   @doc "Generated from Haxe ok"
   def ok(state) do
-    ApplicationResult.ok(state)
+    {:Ok, state}
   end
 
   @doc "Generated from Haxe error"
   def error(reason) do
-    ApplicationResult.error(reason)
+    {:Error, reason}
   end
 
   @doc "Generated from Haxe ignore"
   def ignore() do
-    :ignore
+    :Ignore
   end
 
 end

@@ -11,17 +11,17 @@ defmodule TodoPubSub do
   # Static functions
   @doc "Generated from Haxe subscribe"
   def subscribe(topic) do
-    SafePubSub.subscribe_with_converter(topic, &TodoPubSub.topic_to_string/1)
+    :SafePubSub.subscribeWithConverter(topic, :TodoPubSub.topicToString)
   end
 
   @doc "Generated from Haxe broadcast"
   def broadcast(topic, message) do
-    SafePubSub.broadcast_with_converters(topic, message, &TodoPubSub.topic_to_string/1, &TodoPubSub.message_to_elixir/1)
+    :SafePubSub.broadcastWithConverters(topic, message, :TodoPubSub.topicToString, :TodoPubSub.messageToElixir)
   end
 
   @doc "Generated from Haxe parseMessage"
   def parse_message(msg) do
-    SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
+    :SafePubSub.parseWithConverter(msg, :TodoPubSub.parseMessageImpl)
   end
 
   @doc "Generated from Haxe topicToString"
@@ -29,13 +29,14 @@ defmodule TodoPubSub do
     temp_result = nil
 
     temp_result = nil
-
-    case topic do
-      :todo_updates -> "todo:updates"
-      :user_activity -> "user:activity"
-      :system_notifications -> "system:notifications"
+    case (topic.elem(0)) do
+      0 ->
+        temp_result = "todo:updates"
+      1 ->
+        temp_result = "user:activity"
+      2 ->
+        temp_result = "system:notifications"
     end
-
     temp_result
   end
 
@@ -44,76 +45,114 @@ defmodule TodoPubSub do
     temp_struct = nil
 
     temp_struct = nil
-
-    case message do
-      0 -> g_param_0 = 
-    todo = g_param_0
-    temp_struct = %{"type" => "todo_created", "todo" => todo}
-      1 -> g_param_0 = 
-    todo = g_param_0
-    temp_struct = %{"type" => "todo_updated", "todo" => todo}
-      2 -> id = 
-    temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
-      3 -> action = 
-    temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
-      4 -> g_param_0 = 
-    user_id = g_param_0
-    temp_struct = %{"type" => "user_online", "user_id" => user_id}
-      5 -> g_param_0 = 
-    user_id = g_param_0
-    temp_struct = %{"type" => "user_offline", "user_id" => user_id}
-      6 -> g_param_0 = 
-    g_param_1 = 
-    message = g_param_0
-    level = g_param_1
-    temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
+    case (message.elem(0)) do
+      0 ->
+        _g = message.elem(1)
+        todo = _g
+        temp_struct = %{:type => "todo_created", :todo => todo}
+      1 ->
+        _g = message.elem(1)
+        todo = _g
+        temp_struct = %{:type => "todo_updated", :todo => todo}
+      2 ->
+        _g = message.elem(1)
+        id = _g
+        temp_struct = %{:type => "todo_deleted", :todo_id => id}
+      3 ->
+        _g = message.elem(1)
+        action = _g
+        temp_struct = %{:type => "bulk_update", :action => :TodoPubSub.bulkActionToString(action)}
+      4 ->
+        _g = message.elem(1)
+        user_id = _g
+        temp_struct = %{:type => "user_online", :user_id => user_id}
+      5 ->
+        _g = message.elem(1)
+        user_id = _g
+        temp_struct = %{:type => "user_offline", :user_id => user_id}
+      6 ->
+        _g = message.elem(1)
+        _g_1 = message.elem(2)
+        message_2 = _g
+        level = _g_1
+        temp_struct = %{:type => "system_alert", :message => message_2, :level => :TodoPubSub.alertLevelToString(level)}
     end
-
-    SafePubSub.add_timestamp(temp_struct)
+    :SafePubSub.addTimestamp(temp_struct)
   end
 
   @doc "Generated from Haxe parseMessageImpl"
   def parse_message_impl(msg) do
     temp_result = nil
 
-    if (not SafePubSub.is_valid_message(msg)) do
-      Log.trace(SafePubSub.create_malformed_message_error(msg), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 188, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
-      :error
-    else
-      nil
+    if (not :SafePubSub.isValidMessage(msg)) do
+      :Log.trace(:SafePubSub.createMalformedMessageError(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 188, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+      :None
     end
-
-    g_array = msg.type
-    case g_array do
-      "bulk_update" -> if ((msg.action != nil)) do
-      bulk_action = TodoPubSub.parse_bulk_action(msg.action)
-      case bulk_action do
-        0 -> action = elem(bulk_action, 1)
-      temp_result = Option.some(TodoPubSubMessage.bulk_update(action))
-        1 -> temp_result = :error
-      end
-    else
-      temp_result = :error
+    temp_result = nil
+    _g = msg.type
+    case (_g) do
+      "bulk_update" ->
+        if (msg.action != nil) do
+          bulk_action = :TodoPubSub.parseBulkAction(msg.action)
+          case (bulk_action.elem(0)) do
+            0 ->
+              _g_2 = bulk_action.elem(1)
+              action = _g_2
+              temp_result = {:Some, {:BulkUpdate, action}}
+            1 ->
+              temp_result = :None
+          end
+        else
+          temp_result = :None
+        end
+      "system_alert" ->
+        if (msg.message != nil && msg.level != nil) do
+          alert_level = :TodoPubSub.parseAlertLevel(msg.level)
+          case (alert_level.elem(0)) do
+            0 ->
+              _g_2 = alert_level.elem(1)
+              level = _g_2
+              temp_result = {:Some, {:SystemAlert, msg.message, level}}
+            1 ->
+              temp_result = :None
+          end
+        else
+          temp_result = :None
+        end
+      "todo_created" ->
+        if (msg.todo != nil) do
+          temp_result = {:Some, {:TodoCreated, msg.todo}}
+        else
+          temp_result = :None
+        end
+      "todo_deleted" ->
+        if (msg.todo_id != nil) do
+          temp_result = {:Some, {:TodoDeleted, msg.todo_id}}
+        else
+          temp_result = :None
+        end
+      "todo_updated" ->
+        if (msg.todo != nil) do
+          temp_result = {:Some, {:TodoUpdated, msg.todo}}
+        else
+          temp_result = :None
+        end
+      "user_offline" ->
+        if (msg.user_id != nil) do
+          temp_result = {:Some, {:UserOffline, msg.user_id}}
+        else
+          temp_result = :None
+        end
+      "user_online" ->
+        if (msg.user_id != nil) do
+          temp_result = {:Some, {:UserOnline, msg.user_id}}
+        else
+          temp_result = :None
+        end
+      _ ->
+        :Log.trace(:SafePubSub.createUnknownMessageError(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 220, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+        temp_result = :None
     end
-      "system_alert" -> if (((msg.message != nil) && (msg.level != nil))) do
-      alert_level = TodoPubSub.parse_alert_level(msg.level)
-      case alert_level do
-        0 -> level = elem(alert_level, 1)
-      temp_result = Option.some(TodoPubSubMessage.system_alert(msg.message, level))
-        1 -> temp_result = :error
-      end
-    else
-      temp_result = :error
-    end
-      "todo_created" -> if ((msg.todo != nil)), do: temp_result = Option.some(TodoPubSubMessage.todo_created(msg.todo)), else: temp_result = :error
-      "todo_deleted" -> if ((msg.todo_id != nil)), do: temp_result = Option.some(TodoPubSubMessage.todo_deleted(msg.todo_id)), else: temp_result = :error
-      "todo_updated" -> if ((msg.todo != nil)), do: temp_result = Option.some(TodoPubSubMessage.todo_updated(msg.todo)), else: temp_result = :error
-      "user_offline" -> if ((msg.user_id != nil)), do: temp_result = Option.some(TodoPubSubMessage.user_offline(msg.user_id)), else: temp_result = :error
-      "user_online" -> if ((msg.user_id != nil)), do: temp_result = Option.some(TodoPubSubMessage.user_online(msg.user_id)), else: temp_result = :error
-      _ -> Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{"fileName" => "src_haxe/server/pubsub/TodoPubSub.hx", "lineNumber" => 220, "className" => "server.pubsub.TodoPubSub", "methodName" => "parseMessageImpl"})
-    temp_result = :error
-    end
-
     temp_result
   end
 
@@ -121,19 +160,25 @@ defmodule TodoPubSub do
   def bulk_action_to_string(action) do
     temp_result = nil
 
-    case action do
-      0 -> temp_result = "complete_all"
-      1 -> temp_result = "delete_completed"
-      2 -> _priority = 
-    temp_result = "set_priority"
-      3 -> g_param_0 = 
-    tag = g_param_0
-    temp_result = "add_tag"
-      4 -> g_param_0 = 
-    tag = g_param_0
-    temp_result = "remove_tag"
+    temp_result = nil
+    case (action.elem(0)) do
+      0 ->
+        temp_result = "complete_all"
+      1 ->
+        temp_result = "delete_completed"
+      2 ->
+        _g = action.elem(1)
+        priority = _g
+        temp_result = "set_priority"
+      3 ->
+        _g = action.elem(1)
+        tag = _g
+        temp_result = "add_tag"
+      4 ->
+        _g = action.elem(1)
+        tag = _g
+        temp_result = "remove_tag"
     end
-
     temp_result
   end
 
@@ -141,15 +186,21 @@ defmodule TodoPubSub do
   def parse_bulk_action(action) do
     temp_result = nil
 
-    temp_result = case action do
-      "add_tag" -> Option.some(BulkOperationType.add_tag(""))
-      "complete_all" -> Option.some(:complete_all)
-      "delete_completed" -> Option.some(:delete_completed)
-      "remove_tag" -> Option.some(BulkOperationType.remove_tag(""))
-      "set_priority" -> Option.some(BulkOperationType.set_priority(:medium))
-      _ -> :error
+    temp_result = nil
+    case (action) do
+      "add_tag" ->
+        temp_result = {:Some, {:AddTag, ""}}
+      "complete_all" ->
+        temp_result = {:Some, :CompleteAll}
+      "delete_completed" ->
+        temp_result = {:Some, :DeleteCompleted}
+      "remove_tag" ->
+        temp_result = {:Some, {:RemoveTag, ""}}
+      "set_priority" ->
+        temp_result = {:Some, {:SetPriority, :Medium}}
+      _ ->
+        temp_result = :None
     end
-
     temp_result
   end
 
@@ -157,13 +208,17 @@ defmodule TodoPubSub do
   def alert_level_to_string(level) do
     temp_result = nil
 
-    case level do
-      :info -> "info"
-      :warning -> "warning"
-      :error -> "error"
-      :critical -> "critical"
+    temp_result = nil
+    case (level.elem(0)) do
+      0 ->
+        temp_result = "info"
+      1 ->
+        temp_result = "warning"
+      2 ->
+        temp_result = "error"
+      3 ->
+        temp_result = "critical"
     end
-
     temp_result
   end
 
@@ -171,14 +226,19 @@ defmodule TodoPubSub do
   def parse_alert_level(level) do
     temp_result = nil
 
-    temp_result = case level do
-      "critical" -> Option.some(:critical)
-      "error" -> Option.some(:error)
-      "info" -> Option.some(:info)
-      "warning" -> Option.some(:warning)
-      _ -> :error
+    temp_result = nil
+    case (level) do
+      "critical" ->
+        temp_result = {:Some, :Critical}
+      "error" ->
+        temp_result = {:Some, :Error}
+      "info" ->
+        temp_result = {:Some, :Info}
+      "warning" ->
+        temp_result = {:Some, :Warning}
+      _ ->
+        temp_result = :None
     end
-
     temp_result
   end
 

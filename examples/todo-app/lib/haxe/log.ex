@@ -9,39 +9,23 @@ defmodule Log do
   # Static functions
   @doc "Generated from Haxe formatOutput"
   def format_output(v, infos) do
-    str = Std.string(v)
-
-    if ((infos == nil)) do
+    str = :Std.string(v)
+    if (infos == nil) do
       str
-    else
-      nil
     end
-
-    pstr = infos.file_name <> ":" <> to_string(infos.line_number)
-
-    if ((infos.custom_params != nil)) do
-      g_counter = 0
-      g_array = infos.custom_params
-      (fn loop ->
-        if ((g_counter < g_array.length)) do
-              v = Enum.at(g_array, g_counter)
-          g_counter + 1
-          str = str <> ", " <> Std.string(v)
-          loop.()
-        end
-      end).()
-    else
-      nil
+    pstr = infos.fileName + ":" + infos.lineNumber
+    if (infos.customParams != nil) do
+      _g = 0
+      _g_1 = infos.customParams
+      loop_1()
     end
-
-    pstr <> ": " <> str
+    pstr + ": " + str
   end
 
   @doc "Generated from Haxe trace"
   def trace(v, infos \\ nil) do
-    str = Log.format_output(v, infos)
-
-    Sys.println(str)
+    str = :Log.formatOutput(v, infos)
+    :Sys.println(str)
   end
 
 
