@@ -1110,11 +1110,11 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
-        // Check if we should use the new intermediate AST pipeline
-        #if use_intermediate_ast
-        return compileExpressionViaAST(expr, topLevel);
-        #else
+        // Default to new AST pipeline, use legacy only when explicitly requested
+        #if use_legacy_string_pipeline
         return expressionVariantCompiler.compileExpressionImpl(expr, topLevel);
+        #else
+        return compileExpressionViaAST(expr, topLevel);
         #end
     }
     
@@ -1134,11 +1134,11 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Phase 1: Build AST from TypedExpr
         var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr);
         
-        // Phase 2: Transform AST (placeholder - will be implemented later)
-        // var transformedAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast);
+        // Phase 2: Transform AST
+        var transformedAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast);
         
         // Phase 3: Generate string from AST
-        var result = reflaxe.elixir.ast.ElixirASTPrinter.print(ast, topLevel ? 0 : 1);
+        var result = reflaxe.elixir.ast.ElixirASTPrinter.print(transformedAST, topLevel ? 0 : 1);
         
         #if debug_ast_pipeline
         trace('[XRay AST Pipeline] Generated result: ${result.substring(0, 100)}...');
