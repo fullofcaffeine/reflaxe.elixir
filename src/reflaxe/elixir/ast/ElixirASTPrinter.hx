@@ -245,23 +245,23 @@ class ElixirASTPrinter {
             case EKeywordList(pairs):
                 '[' + [for (p in pairs) p.key + ': ' + print(p.value, 0)].join(', ') + ']';
                 
-            case EBinary(segments):
+            case EBitstring(segments):
                 '<<' + [for (s in segments) printBinarySegment(s)].join(', ') + '>>';
                 
             // ================================================================
             // Expressions
             // ================================================================
-            case ECall(target, function, args):
+            case ECall(target, funcName, args):
                 var argStr = [for (a in args) print(a, 0)].join(', ');
                 if (target != null) {
-                    print(target, 0) + '.' + function + '(' + argStr + ')';
+                    print(target, 0) + '.' + funcName + '(' + argStr + ')';
                 } else {
-                    function + '(' + argStr + ')';
+                    funcName + '(' + argStr + ')';
                 }
                 
-            case ERemoteCall(module, function, args):
+            case ERemoteCall(module, funcName, args):
                 var argStr = [for (a in args) print(a, 0)].join(', ');
-                print(module, 0) + '.' + function + '(' + argStr + ')';
+                print(module, 0) + '.' + funcName + '(' + argStr + ')';
                 
             case EPipe(left, right):
                 print(left, 0) + ' |> ' + print(right, 0);
@@ -497,7 +497,7 @@ class ElixirASTPrinter {
                 '%' + module + '{' + [for (f in fields) f.key + ': ' + printPattern(f.value)].join(', ') + '}';
             case PPin(pattern): '^' + printPattern(pattern);
             case PWildcard: '_';
-            case PAlias(var, pattern): printPattern(pattern) + ' = ' + var;
+            case PAlias(varName, pattern): printPattern(pattern) + ' = ' + varName;
             case PBinary(segments): '<<' + [for (s in segments) printPatternBinarySegment(s)].join(', ') + '>>';
         }
     }
@@ -526,8 +526,8 @@ class ElixirASTPrinter {
      */
     static function printRescueClause(clause: ERescueClause, indent: Int): String {
         var result = printPattern(clause.pattern);
-        if (clause.var != null) {
-            result += ' -> ' + clause.var;
+        if (clause.varName != null) {
+            result += ' -> ' + clause.varName;
         }
         result += ' ->\n' + indentStr(indent + 1) + print(clause.body, indent + 1);
         return result;

@@ -3,6 +3,7 @@ package reflaxe.elixir.ast;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
+import haxe.macro.Type.TypedExpr;
 import haxe.macro.Expr.Position;
 
 /**
@@ -118,17 +119,17 @@ enum ElixirASTDef {
     EKeywordList(pairs: Array<EKeywordPair>);
     
     /** Binary/Bitstring <<>> */
-    EBinary(segments: Array<EBinarySegment>);
+    EBitstring(segments: Array<EBinarySegment>);
     
     // ========================================================================
     // Expressions
     // ========================================================================
     
     /** Function call */
-    ECall(target: Null<ElixirAST>, function: String, args: Array<ElixirAST>);
+    ECall(target: Null<ElixirAST>, funcName: String, args: Array<ElixirAST>);
     
     /** Remote call Module.function() */
-    ERemoteCall(module: ElixirAST, function: String, args: Array<ElixirAST>);
+    ERemoteCall(module: ElixirAST, funcName: String, args: Array<ElixirAST>);
     
     /** Pipe operator |> */
     EPipe(left: ElixirAST, right: ElixirAST);
@@ -318,7 +319,7 @@ enum EPattern {
     PWildcard;
     
     /** Alias pattern (var = pattern) */
-    PAlias(var: String, pattern: EPattern);
+    PAlias(varName: String, pattern: EPattern);
     
     /** Binary pattern */
     PBinary(segments: Array<PBinarySegment>);
@@ -363,7 +364,7 @@ typedef EFnClause = {
  */
 typedef ERescueClause = {
     pattern: EPattern,
-    ?var: String,
+    ?varName: String,
     body: ElixirAST
 }
 
@@ -489,7 +490,7 @@ enum EBinaryOp {
     
     // List
     Concat;     // ++
-    Subtract;   // --
+    ListSubtract;   // --
     In;         // in
     
     // String
@@ -586,47 +587,47 @@ typedef ElixirAST = {
  */
 typedef ElixirMetadata = {
     // Source Information
-    ?sourceExpr: TypedExpr;        // Original Haxe expression
-    ?sourceLine: Int;               // Line number in Haxe source
-    ?sourceFile: String;            // Source file path
+    ?sourceExpr: haxe.macro.Type.TypedExpr,        // Original Haxe expression
+    ?sourceLine: Int,               // Line number in Haxe source
+    ?sourceFile: String,            // Source file path
     
     // Type Information
-    ?type: Type;                   // Haxe type information
-    ?elixirType: String;           // Inferred Elixir type
+    ?type: Type,                   // Haxe type information
+    ?elixirType: String,           // Inferred Elixir type
     
     // Semantic Information
-    ?purity: Bool;                 // Is expression pure?
-    ?tailPosition: Bool;           // Is in tail position?
-    ?async: Bool;                  // Is async operation?
+    ?purity: Bool,                 // Is expression pure?
+    ?tailPosition: Bool,           // Is in tail position?
+    ?async: Bool,                  // Is async operation?
     
     // Transformation Hints
-    ?requiresReturn: Bool;         // Needs explicit return value
-    ?requiresTempVar: Bool;        // Needs temporary variable
-    ?inPipeline: Bool;            // Part of pipe chain
-    ?inComprehension: Bool;       // Inside for comprehension
-    ?inGuard: Bool;               // Inside guard clause
+    ?requiresReturn: Bool,         // Needs explicit return value
+    ?requiresTempVar: Bool,        // Needs temporary variable
+    ?inPipeline: Bool,            // Part of pipe chain
+    ?inComprehension: Bool,       // Inside for comprehension
+    ?inGuard: Bool,               // Inside guard clause
     
     // Phoenix/Framework Specific
-    ?phoenixContext: PhoenixContext;  // LiveView, Router, etc.
-    ?ectoContext: EctoContext;        // Schema, Query, etc.
+    ?phoenixContext: PhoenixContext,  // LiveView, Router, etc.
+    ?ectoContext: EctoContext,        // Schema, Query, etc.
     
     // Optimization Hints
-    ?canInline: Bool;             // Can be inlined
-    ?isConstant: Bool;            // Compile-time constant
-    ?accessPattern: AccessPattern; // How value is accessed
-    ?sideEffects: Bool;           // Has side effects
+    ?canInline: Bool,             // Can be inlined
+    ?isConstant: Bool,            // Compile-time constant
+    ?accessPattern: AccessPattern, // How value is accessed
+    ?sideEffects: Bool,           // Has side effects
     
     // User Annotations
-    ?annotations: Array<String>;   // @:native, @:inline, etc.
-    ?documentation: String;        // Doc comments
+    ?annotations: Array<String>,   // @:native, @:inline, etc.
+    ?documentation: String,        // Doc comments
     
     // Variable Context
-    ?variableScope: String;        // Current scope identifier
-    ?capturedVars: Array<String>; // Variables captured by closure
+    ?variableScope: String,        // Current scope identifier
+    ?capturedVars: Array<String>, // Variables captured by closure
     
     // Error Handling
-    ?canRaise: Bool;              // Can raise exceptions
-    ?errorContext: String;        // Error handling context
+    ?canRaise: Bool,              // Can raise exceptions
+    ?errorContext: String        // Error handling context
 }
 
 // ============================================================================

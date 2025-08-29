@@ -1125,7 +1125,6 @@ class ElixirCompiler extends DirectToStringCompiler {
      * WHAT: Routes expression through AST builder → transformer → printer
      * HOW: Converts TypedExpr to ElixirAST, applies transformations, generates string
      */
-    #if use_intermediate_ast
     function compileExpressionViaAST(expr: TypedExpr, topLevel: Bool): Null<String> {
         #if debug_ast_pipeline
         trace('[XRay AST Pipeline] Processing expression via AST: ${expr.expr}');
@@ -1146,7 +1145,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         return result;
     }
-    #end
     
     /**
      * Compile abstract types - generates proper Elixir type aliases and implementation modules

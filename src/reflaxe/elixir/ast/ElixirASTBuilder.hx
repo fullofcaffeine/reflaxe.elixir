@@ -170,19 +170,19 @@ class ElixirASTBuilder {
             // Unary Operations
             // ================================================================
             case TUnop(op, postFix, e):
-                var expr = buildFromTypedExpr(e);
+                var expr = buildFromTypedExpr(e).def;
                 
                 switch(op) {
-                    case OpNot: EUnary(Not, expr);
-                    case OpNeg: EUnary(Negate, expr);
-                    case OpNegBits: EUnary(BitwiseNot, expr);
+                    case OpNot: EUnary(Not, makeAST(expr));
+                    case OpNeg: EUnary(Negate, makeAST(expr));
+                    case OpNegBits: EUnary(BitwiseNot, makeAST(expr));
                     case OpIncrement, OpDecrement:
                         // Elixir is immutable, these need special handling
                         // Will be transformed in the transformation phase
-                        ECall(null, postFix ? "post_" + (op == OpIncrement ? "inc" : "dec") : "pre_" + (op == OpIncrement ? "inc" : "dec"), [expr]);
+                        ECall(null, postFix ? "post_" + (op == OpIncrement ? "inc" : "dec") : "pre_" + (op == OpIncrement ? "inc" : "dec"), [makeAST(expr)]);
                     case OpSpread:
                         // Spread operator for destructuring
-                        EUnquoteSplicing(expr);
+                        EUnquoteSplicing(makeAST(expr));
                 }
                 
             // ================================================================
@@ -258,7 +258,7 @@ class ElixirASTBuilder {
                 
             case TReturn(e):
                 if (e != null) {
-                    buildFromTypedExpr(e); // Return value is implicit in Elixir
+                    buildFromTypedExpr(e).def; // Return value is implicit in Elixir
                 } else {
                     ENil; // Explicit nil return
                 }
@@ -273,8 +273,16 @@ class ElixirASTBuilder {
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
-                var expr = buildFromTypedExpr(e);
+                var expr = buildFromTypedExpr(e).def;
                 var clauses = [];
+                
+                // Check if this is a topic_to_string-style temp variable switch
+                // These need special handling for return context
+                var needsTempVar = false;
+                var tempVarName = "temp_result";
+                
+                // Detect if switch is in return context
+                var isReturnContext = false; // TODO: Will be set via metadata
                 
                 for (c in cases) {
                     var patterns = [for (v in c.values) convertPattern(v)];
@@ -299,7 +307,18 @@ class ElixirASTBuilder {
                     });
                 }
                 
-                ECase(expr, clauses);
+                // Create the case expression
+                var caseASTDef = ECase(makeAST(expr), clauses);
+                
+                // If in return context and needs temp var, wrap in assignment
+                if (isReturnContext && needsTempVar) {
+                    EBlock([
+                        makeAST(EMatch(PVar(tempVarName), makeAST(caseASTDef))),
+                        makeAST(EVar(tempVarName))
+                    ]);
+                } else {
+                    caseASTDef;
+                }
                 
             // ================================================================
             // Try/Catch
@@ -354,14 +373,14 @@ class ElixirASTBuilder {
                 
             case TCast(e, m):
                 // Casts are mostly compile-time in Haxe
-                buildFromTypedExpr(e);
+                buildFromTypedExpr(e).def;
                 
             case TParenthesis(e):
                 EParen(buildFromTypedExpr(e));
                 
             case TMeta(m, e):
                 // Metadata wrapping - preserve the expression
-                buildFromTypedExpr(e);
+                buildFromTypedExpr(e).def;
                 
             // ================================================================
             // Special Cases
@@ -395,16 +414,16 @@ class ElixirASTBuilder {
                 
             case TEnumParameter(e, ef, index):
                 // Enum field access
-                var expr = buildFromTypedExpr(e);
+                var exprAST = buildFromTypedExpr(e);
                 var field = ef.name;
                 
                 // Will be transformed to proper pattern extraction
-                ECall(expr, "elem", [makeAST(EInteger(index + 1))]); // +1 for tag
+                ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]); // +1 for tag
                 
             case TEnumIndex(e):
                 // Get enum tag index
-                var expr = buildFromTypedExpr(e);
-                ECall(expr, "elem", [makeAST(EInteger(0))]);
+                var exprAST = buildFromTypedExpr(e);
+                ECall(exprAST, "elem", [makeAST(EInteger(0))]);
                 
             case TIdent(s):
                 // Identifier reference
@@ -438,10 +457,88 @@ class ElixirASTBuilder {
     
     /**
      * Convert Haxe values to patterns
+     * 
+     * WHY: Switch case values need to be converted to Elixir patterns
+     * WHAT: Handles literals, enum constructors, variables, and complex patterns
+     * HOW: Analyzes the TypedExpr structure and generates appropriate pattern
      */
-    static function convertPattern(value: Dynamic): EPattern {
-        // This is simplified - real implementation would handle all cases
-        return PLiteral(makeAST(EString(Std.string(value))));
+    static function convertPattern(value: TypedExpr): EPattern {
+        return switch(value.expr) {
+            // Literals
+            case TConst(TInt(i)): 
+                PLiteral(makeAST(EInteger(i)));
+            case TConst(TFloat(f)): 
+                PLiteral(makeAST(EFloat(Std.parseFloat(f))));
+            case TConst(TString(s)): 
+                PLiteral(makeAST(EString(s)));
+            case TConst(TBool(b)): 
+                PLiteral(makeAST(EBoolean(b)));
+            case TConst(TNull): 
+                PLiteral(makeAST(ENil));
+                
+            // Variables (for pattern matching)
+            case TLocal(v):
+                PVar(toElixirVarName(v.name));
+                
+            // Enum constructors
+            case TEnumParameter(e, ef, index):
+                // This represents matching against enum constructor arguments
+                // We'll need to handle this in the context of the full pattern
+                PVar("_enum_param_" + index);
+                
+            case TEnumIndex(e):
+                // Matching against enum index (for switch on elem(tuple, 0))
+                PLiteral(makeAST(EInteger(0))); // Will be refined based on actual enum
+                
+            // Array patterns
+            case TArrayDecl(el):
+                PList([for (e in el) convertPattern(e)]);
+                
+            // Tuple patterns (for enum matching)
+            case TCall(e, el) if (isEnumConstructor(e)):
+                // Enum constructor pattern
+                var tag = extractEnumTag(e);
+                var args = [for (arg in el) convertPattern(arg)];
+                // Create tuple pattern {:tag, arg1, arg2, ...}
+                PTuple([PLiteral(makeAST(EAtom(tag)))].concat(args));
+                
+            // Field access (for enum constructors)
+            case TField(e, FEnum(_, ef)):
+                // Direct enum constructor reference
+                if (ef.params.length == 0) {
+                    // No-argument constructor
+                    PLiteral(makeAST(EAtom(ef.name)));
+                } else {
+                    // Constructor with arguments - needs to be a tuple pattern
+                    // This will be {:Constructor, _, _, ...} with wildcards for args
+                    var wildcards = [for (i in 0...ef.params.length) PWildcard];
+                    PTuple([PLiteral(makeAST(EAtom(ef.name)))].concat(wildcards));
+                }
+                
+            // Default/wildcard
+            default: 
+                PWildcard;
+        }
+    }
+    
+    /**
+     * Check if an expression is an enum constructor call
+     */
+    static function isEnumConstructor(expr: TypedExpr): Bool {
+        return switch(expr.expr) {
+            case TField(_, FEnum(_, _)): true;
+            default: false;
+        }
+    }
+    
+    /**
+     * Extract enum constructor tag name
+     */
+    static function extractEnumTag(expr: TypedExpr): String {
+        return switch(expr.expr) {
+            case TField(_, FEnum(_, ef)): ef.name;
+            default: "unknown";
+        }
     }
     
     /**
