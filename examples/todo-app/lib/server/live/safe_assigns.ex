@@ -27,81 +27,59 @@ defmodule SafeAssigns do
   # Static functions
   @doc "Generated from Haxe setEditingTodo"
   def set_editing_todo(socket, todo) do
-    Phoenix.LiveView.assign(socket, %{"editing_todo" => todo})
+    :LiveView.assign(socket, %{:editing_todo => todo})
   end
 
   @doc "Generated from Haxe setSelectedTags"
   def set_selected_tags(socket, tags) do
-    Phoenix.LiveView.assign(socket, %{"selected_tags" => tags})
+    :LiveView.assign(socket, %{:selected_tags => tags})
   end
 
   @doc "Generated from Haxe setFilter"
   def set_filter(socket, filter) do
-    Phoenix.LiveView.assign(socket, %{"filter" => filter})
+    :LiveView.assign(socket, %{:filter => filter})
   end
 
   @doc "Generated from Haxe setSortBy"
   def set_sort_by(socket, sort_by) do
-    Phoenix.LiveView.assign(socket, %{"sort_by" => sort_by})
+    :LiveView.assign(socket, %{:sort_by => sort_by})
   end
 
   @doc "Generated from Haxe setSearchQuery"
   def set_search_query(socket, query) do
-    Phoenix.LiveView.assign(socket, %{"search_query" => query})
+    :LiveView.assign(socket, %{:search_query => query})
   end
 
   @doc "Generated from Haxe setShowForm"
   def set_show_form(socket, show_form) do
-    Phoenix.LiveView.assign(socket, %{"show_form" => show_form})
+    :LiveView.assign(socket, %{:show_form => show_form})
   end
 
   @doc "Generated from Haxe updateTodosAndStats"
   def update_todos_and_stats(socket, todos) do
-    completed = SafeAssigns.count_completed(todos)
-
-    pending = SafeAssigns.count_pending(todos)
-
-    Phoenix.LiveView.assign(socket, %{"todos" => todos, "total_todos" => todos.length, "completed_todos" => completed, "pending_todos" => pending})
+    completed = :SafeAssigns.countCompleted(todos)
+    pending = :SafeAssigns.countPending(todos)
+    :LiveView.assign(socket, %{:todos => todos, :total_todos => todos.length, :completed_todos => completed, :pending_todos => pending})
   end
 
   @doc "Generated from Haxe setTodos"
   def set_todos(socket, todos) do
-    Phoenix.LiveView.assign(socket, %{"todos" => todos})
+    :LiveView.assign(socket, %{:todos => todos})
   end
 
   @doc "Generated from Haxe countCompleted"
   def count_completed(todos) do
     count = 0
-
-    g_counter = 0
-
-    (fn loop ->
-      if ((g_counter < todos.length)) do
-            todo = Enum.at(todos, g_counter)
-        g_counter + 1
-        if todo.completed, do: count + 1, else: nil
-        loop.()
-      end
-    end).()
-
+    _g = 0
+    loop_6()
     count
   end
 
   @doc "Generated from Haxe countPending"
   def count_pending(todos) do
     count = 0
-
-    g_counter = 0
-
-    (fn loop ->
-      if ((g_counter < todos.length)) do
-            todo = Enum.at(todos, g_counter)
-        g_counter + 1
-        if (not todo.completed), do: count + 1, else: nil
-        loop.()
-      end
-    end).()
-
+    _g = 0
+    loop_7()
     count
   end
 

@@ -10,72 +10,80 @@ defmodule TypeSafeChildSpecTools do
   def to_legacy(spec, app_name) do
     temp_result = nil
     temp_array = nil
-    temp_array1 = nil
+    temp_array_1 = nil
 
     temp_result = nil
-
-    case spec do
-      0 -> name = 
-    temp_result = %{type: :worker, start: {%{"module" => "Phoenix.PubSub", "func" => "start_link", "args" => [%{name: name}]}, :start_link, []}, restart: :permanent, id: :"Phoenix.PubSub"}
-      1 -> g_param_0 = 
-    config = g_param_0
-    repo_module = "" <> app_name <> ".Repo"
-    if ((config != nil)), do: temp_array = [config], else: temp_array = []
-    args = temp_array
-    temp_result = %{type: :worker, start: {%{"module" => repo_module, "func" => "start_link", "args" => args}, :start_link, []}, restart: :permanent, id: :repo_module}
-      2 -> g_param_0 = 
-    g_param_1 = 
-    port = g_param_0
-    config = g_param_1
-    endpoint_module = "" <> app_name <> "Web.Endpoint"
-    args = []
-    if (((port != nil) || (config != nil))) do
-      endpoint_config = %{}
-      if ((port != nil)), do: %{endpoint_config | port: port}, else: nil
-      if ((config != nil)) do
-        g_counter = 0
-        g_array = Reflect.fields(config)
-        (fn loop ->
-          if ((g_counter < g_array.length)) do
-                field = Enum.at(g_array, g_counter)
-            g_counter + 1
-            Reflect.set_field(endpoint_config, field, Reflect.field(config, field))
-            loop.()
+    case (spec.elem(0)) do
+      0 ->
+        _g = spec.elem(1)
+        name = _g
+        temp_result = %{:id => "Phoenix.PubSub", :start => %{:module => "Phoenix.PubSub", :func => "start_link", :args => [%{:name => name}]}}
+      1 ->
+        _g = spec.elem(1)
+        config = _g
+        repo_module = "" + app_name + ".Repo"
+        temp_array = nil
+        if (config != nil) do
+          temp_array = [config]
+        else
+          temp_array = []
+        end
+        args = temp_array
+        temp_result = %{:id => repo_module, :start => %{:module => repo_module, :func => "start_link", :args => args}}
+      2 ->
+        _g = spec.elem(1)
+        _g_1 = spec.elem(2)
+        port = _g
+        config = _g_1
+        endpoint_module = "" + app_name + "Web.Endpoint"
+        args = []
+        if (port != nil || config != nil) do
+          endpoint_config = %{}
+          if (port != nil) do
+            port = port
           end
-        end).()
-      else
-        nil
-      end
-      args = [endpoint_config]
-    else
-      nil
+          if (config != nil) do
+            _g_2 = 0
+            _g_3 = :Reflect.fields(config)
+            loop_2()
+          end
+          args = [endpoint_config]
+        end
+        temp_result = %{:id => endpoint_module, :start => %{:module => endpoint_module, :func => "start_link", :args => args}}
+      3 ->
+        _g = spec.elem(1)
+        config = _g
+        telemetry_module = "" + app_name + "Web.Telemetry"
+        temp_array_1 = nil
+        if (config != nil) do
+          temp_array_1 = [config]
+        else
+          temp_array_1 = []
+        end
+        args = temp_array_1
+        temp_result = %{:id => telemetry_module, :start => %{:module => telemetry_module, :func => "start_link", :args => args}}
+      4 ->
+        _g = spec.elem(1)
+        config = _g
+        presence_module = "" + app_name + ".Presence"
+        temp_result = %{:id => presence_module, :start => %{:module => presence_module, :func => "start_link", :args => [config]}}
+      5 ->
+        _g = spec.elem(1)
+        _g_1 = spec.elem(2)
+        _g_2 = spec.elem(3)
+        _g_3 = spec.elem(4)
+        module = _g
+        args = _g_1
+        restart = _g_2
+        shutdown = _g_3
+        module_class = module
+        module_name = :Type.getClassName(module_class)
+        temp_result = %{:id => module_name, :start => %{:module => module_name, :func => "start_link", :args => [args]}, :restart => restart, :shutdown => shutdown}
+      6 ->
+        _g = spec.elem(1)
+        spec_2 = _g
+        temp_result = spec_2
     end
-    temp_result = %{type: :worker, start: {%{"module" => endpoint_module, "func" => "start_link", "args" => args}, :start_link, []}, restart: :permanent, id: :endpoint_module}
-      3 -> g_param_0 = 
-    config = g_param_0
-    telemetry_module = "" <> app_name <> "Web.Telemetry"
-    if ((config != nil)), do: temp_array1 = [config], else: temp_array1 = []
-    args = temp_array1
-    temp_result = %{type: :worker, start: {%{"module" => telemetry_module, "func" => "start_link", "args" => args}, :start_link, []}, restart: :permanent, id: :telemetry_module}
-      4 -> g_param_0 = 
-    config = g_param_0
-    presence_module = "" <> app_name <> ".Presence"
-    temp_result = %{type: :worker, start: {%{"module" => presence_module, "func" => "start_link", "args" => [config]}, :start_link, []}, restart: :permanent, id: :presence_module}
-      5 -> g_param_0 = 
-    g_param_1 = 
-    g_param_2 = 
-    g_param_3 = 
-    module = g_param_0
-    args = g_param_1
-    restart = g_param_3
-    shutdown = g_param_3
-    module_class = module
-    module_name = Type.get_class_name(module_class)
-    temp_result = %{type: :worker, start: {%{"module" => module_name, "func" => "start_link", "args" => [args]}, :start_link, []}, shutdown: shutdown, restart: restart, id: :module_name}
-      6 -> spec2 = 
-    temp_result = spec2
-    end
-
     temp_result
   end
 
@@ -83,28 +91,36 @@ defmodule TypeSafeChildSpecTools do
   def get_module_name(spec, app_name) do
     temp_result = nil
 
-    case spec do
-      0 -> g_param_0 = 
-    temp_result = "Phoenix.PubSub"
-      1 -> g_param_0 = 
-    temp_result = "" <> app_name <> ".Repo"
-      2 -> g_param_0 = 
-    g_param_1 = 
-    temp_result = "" <> app_name <> "Web.Endpoint"
-      3 -> g_param_0 = 
-    temp_result = "" <> app_name <> "Web.Telemetry"
-      4 -> g_param_0 = 
-    temp_result = "" <> app_name <> ".Presence"
-      5 -> g_param_0 = 
-    g_param_1 = 
-    g_param_2 = 
-    g_param_3 = 
-    module = g_param_0
-    temp_result = Type.get_class_name(module)
-      6 -> spec2 = 
-    temp_result = spec2.id
+    temp_result = nil
+    case (spec.elem(0)) do
+      0 ->
+        _g = spec.elem(1)
+        temp_result = "Phoenix.PubSub"
+      1 ->
+        _g = spec.elem(1)
+        temp_result = "" + app_name + ".Repo"
+      2 ->
+        _g = spec.elem(1)
+        _g_2 = spec.elem(2)
+        temp_result = "" + app_name + "Web.Endpoint"
+      3 ->
+        _g = spec.elem(1)
+        temp_result = "" + app_name + "Web.Telemetry"
+      4 ->
+        _g = spec.elem(1)
+        temp_result = "" + app_name + ".Presence"
+      5 ->
+        _g = spec.elem(1)
+        _g_1 = spec.elem(2)
+        _g_2 = spec.elem(3)
+        _g_3 = spec.elem(4)
+        module = _g
+        temp_result = :Type.getClassName(module)
+      6 ->
+        _g = spec.elem(1)
+        spec_2 = _g
+        temp_result = spec_2.id
     end
-
     temp_result
   end
 
@@ -112,59 +128,86 @@ defmodule TypeSafeChildSpecTools do
   def uses_tuple_format(spec) do
     temp_result = nil
 
-    case spec do
-      0 -> g_param_0 = 
-    temp_result = true
-      1 -> g_param_0 = 
-    temp_result = true
-      2 -> g_param_0 = 
-    g_param_1 = 
-    temp_result = true
-      3 -> g_param_0 = 
-    temp_result = true
-      4 -> g_param_0 = 
-    temp_result = true
-      5 -> g_param_0 = 
-    g_param_1 = 
-    g_param_2 = 
-    g_param_3 = 
-    temp_result = false
-      6 -> g_param_0 = 
-    temp_result = false
+    temp_result = nil
+    case (spec.elem(0)) do
+      0 ->
+        _g = spec.elem(1)
+        temp_result = true
+      1 ->
+        _g = spec.elem(1)
+        temp_result = true
+      2 ->
+        _g = spec.elem(1)
+        _g_2 = spec.elem(2)
+        temp_result = true
+      3 ->
+        _g = spec.elem(1)
+        temp_result = true
+      4 ->
+        _g = spec.elem(1)
+        temp_result = true
+      5 ->
+        _g = spec.elem(1)
+        _g_2 = spec.elem(2)
+        _g_3 = spec.elem(3)
+        _g_4 = spec.elem(4)
+        temp_result = false
+      6 ->
+        _g = spec.elem(1)
+        temp_result = false
     end
-
     temp_result
   end
 
   @doc "Generated from Haxe validate"
   def validate(spec) do
     errors = []
-
-    case spec do
-      0 -> name = 
-    errors = if (((name == nil) || (name == ""))), do: errors ++ ["PubSub name cannot be empty"], else: errors
-    errors = if (((name != nil) && (name.index_of(".") == -1))), do: errors ++ ["PubSub name should follow 'AppName.PubSub' convention"], else: errors
-      1 -> g_param_0 = 
-      2 -> g_param_0 = 
-    g_param_1 = 
-    port = g_param_0
-    errors = if (((port != nil) && (((port < 1) || (port > 65535))))), do: errors ++ ["Endpoint port must be between 1 and 65535"], else: errors
-      3 -> g_param_0 = 
-      4 -> config = 
-    errors = if (((config.name == nil) || (config.name == ""))), do: errors ++ ["Presence name is required"], else: errors
-      5 -> g_param_0 = 
-    g_param_1 = 
-    g_param_2 = 
-    g_param_3 = 
-    module = g_param_0
-    args = g_param_1
-    _restart = g_param_3
-    _shutdown = g_param_3
-    errors = if ((module == nil)), do: errors ++ ["Custom child spec module cannot be null"], else: errors
-      6 -> spec2 = 
-    errors = if (((spec2.id == nil) || (spec2.id == ""))), do: errors ++ ["Legacy child spec id cannot be empty"], else: errors
+    case (spec.elem(0)) do
+      0 ->
+        _g = spec.elem(1)
+        name = _g
+        if (name == nil || name == "") do
+          errors ++ ["PubSub name cannot be empty"]
+        end
+        if (name != nil && name.indexOf(".") == -1) do
+          errors ++ ["PubSub name should follow 'AppName.PubSub' convention"]
+        end
+      1 ->
+        _g = spec.elem(1)
+      2 ->
+        _g = spec.elem(1)
+        _g_1 = spec.elem(2)
+        port = _g
+        if (port != nil && (port < 1 || port > 65535)) do
+          errors ++ ["Endpoint port must be between 1 and 65535"]
+        end
+      3 ->
+        _g = spec.elem(1)
+      4 ->
+        _g = spec.elem(1)
+        config = _g
+        if (config.name == nil || config.name == "") do
+          errors ++ ["Presence name is required"]
+        end
+      5 ->
+        _g = spec.elem(1)
+        _g_1 = spec.elem(2)
+        _g_2 = spec.elem(3)
+        _g_3 = spec.elem(4)
+        module = _g
+        args = _g_1
+        restart = _g_2
+        shutdown = _g_3
+        if (module == nil) do
+          errors ++ ["Custom child spec module cannot be null"]
+        end
+      6 ->
+        _g = spec.elem(1)
+        spec_2 = _g
+        if (spec_2.id == nil || spec_2.id == "") do
+          errors ++ ["Legacy child spec id cannot be empty"]
+        end
     end
-
     errors
   end
 
