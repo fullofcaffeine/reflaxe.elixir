@@ -636,6 +636,42 @@ class StringBuf {
 
 ## Development Principles
 
+### ⚠️ CRITICAL: Trust Your Own Compiler's Decisions
+**FUNDAMENTAL RULE: When one compiler phase makes a decision, other phases must trust it completely.**
+
+When FunctionCompiler determines a parameter name mapping, VariableCompiler must use it exactly as-is:
+- **No filtering** based on underscore presence
+- **No second-guessing** whether a name "looks right"
+- **No validation** of the mapping - trust it completely
+- **Clear authority boundaries** - each phase owns its decisions
+
+**Example**: If FunctionCompiler maps "index" → "_index" (unused parameter), VariableCompiler must use "_index". If it maps "appName" → "app_name" (used parameter), use "app_name".
+
+### ⚠️ CRITICAL: Todo-App First Testing Strategy
+**FUNDAMENTAL RULE: Use the todo-app as the primary testing feedback loop. Once it works, update all snapshot tests to match.**
+
+Testing workflow for compiler changes:
+1. **Make compiler changes** based on architectural principles
+2. **Test with todo-app FIRST** - It's the real-world integration test
+3. **Get todo-app working** - This validates the compiler actually works
+4. **THEN update snapshot tests** - Create a snapshot of the "good state"
+5. **Don't let failing snapshot tests block progress** - They might have wrong intended outputs
+
+**Why this works**:
+- **Real-world validation** - Todo-app exercises actual Phoenix patterns
+- **Practical focus** - If todo-app works, the compiler works for real apps
+- **Snapshot tests can be wrong** - They often contain bugs from previous compiler states
+- **Forward progress** - Don't get stuck fixing tests that expect wrong behavior
+
+### ⚠️ CRITICAL: Validate Test Intended Outputs
+**FUNDAMENTAL RULE: Before accepting test failures, verify the intended output itself is correct.**
+
+When tests fail after compiler fixes:
+1. **Check consistency** - If a variable is declared as `i`, it should be referenced as `i`, not `_i`
+2. **Update intended outputs** when they contain bugs from previous compiler behavior
+3. **Intended outputs are not sacred** - they can be wrong and perpetuate bugs
+4. **This ensures tests validate correct behavior**, not historical bugs
+
 ### ⚠️ CRITICAL: Create Focused Regression Tests for Every Bug Fix
 **FUNDAMENTAL RULE: Every bug fix MUST have a dedicated regression test to prevent reoccurrence.**
 

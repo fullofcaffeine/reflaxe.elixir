@@ -56,7 +56,7 @@ defmodule Int64Helper do
     (fn loop ->
       if ((g_counter < g_array)) do
             i = g_counter + 1
-        digit_int = (s.char_code_at(((len - 1) - _i)) - 48)
+        digit_int = (s.char_code_at(((len - 1) - i)) - 48)
         if (((digit_int < 0) || (digit_int > 9))) do
           raise "NumberFormatError"
         else
@@ -289,9 +289,9 @@ defmodule Int64Helper do
           a_high = nil
           a_high = 0
           a_low = 1
-          _b = _i
-          _b = _b and 63
-          if ((_b == 0)) do
+          b = i
+          b = b and 63
+          if ((b == 0)) do
             high = a_high
             low = a_low
             x = Int64.new(high, low)
@@ -299,24 +299,24 @@ defmodule Int64Helper do
             this = x
             temp_int641 = this
           else
-            if ((_b < 32)) do
-              high = (Bitwise.bsl(a_high, _b) or Bitwise.bsr(a_low, (32 - _b)))
-              low = Bitwise.bsl(a_low, _b)
+            if ((b < 32)) do
+              high = (Bitwise.bsl(a_high, b) or Bitwise.bsr(a_low, (32 - b)))
+              low = Bitwise.bsl(a_low, b)
               x = Int64.new(high, low)
               this = nil
               this = x
               temp_int641 = this
             else
-              high = Bitwise.bsl(a_low, (_b - 32))
+              high = Bitwise.bsl(a_low, (b - 32))
               x = Int64.new(high, 0)
               this = nil
               this = x
               temp_int641 = this
             end
           end
-          _b = temp_int641
-          high = (temp_int64.high + _b.high)
-          low = (temp_int64.low + _b.low)
+          b = temp_int641
+          high = (temp_int64.high + b.high)
+          low = (temp_int64.low + b.low)
           if ((Int32_Impl_.ucompare(low, temp_int64.low) < 0)) do
             ret = high + 1
             high = high
@@ -333,7 +333,7 @@ defmodule Int64Helper do
         else
           nil
         end
-        _i + 1
+        i + 1
         loop.()
       end
     end).()

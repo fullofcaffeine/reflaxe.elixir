@@ -12,12 +12,12 @@ defmodule FPHelper do
     temp_result = nil
     temp_number = nil
 
-    sign = (1 - (Bitwise.bsl(Bitwise.bsr(_i, 31), 1)))
+    sign = (1 - (Bitwise.bsl(Bitwise.bsr(i, 31), 1)))
 
-    e = (Bitwise.bsr(_i, 23) and 255)
+    e = (Bitwise.bsr(i, 23) and 255)
 
     if ((e == 255)) do
-      if ((((_i and 8388607)) == 0)) do
+      if ((((i and 8388607)) == 0)) do
         if ((sign > 0)), do: temp_result = Math.p_o_s_i_t_i_v_e__i_n_f_i_n_i_t_y, else: temp_result = Math.n_e_g_a_t_i_v_e__i_n_f_i_n_i_t_y
       else
         temp_result = Math.na_n
@@ -27,7 +27,7 @@ defmodule FPHelper do
       nil
     end
 
-    if ((e == 0)), do: temp_number = Bitwise.bsl(((_i and 8388607)), 1), else: temp_number = ((_i and 8388607) or 8388608)
+    if ((e == 0)), do: temp_number = Bitwise.bsl(((i and 8388607)), 1), else: temp_number = ((i and 8388607) or 8388608)
 
     m = temp_number
 
@@ -142,18 +142,18 @@ defmodule FPHelper do
     temp_result = nil
     temp_number = nil
 
-    sign = (1 - (Bitwise.bsl(Bitwise.bsr(_i, 31), 1)))
+    sign = (1 - (Bitwise.bsl(Bitwise.bsr(i, 31), 1)))
 
-    e = (Bitwise.bsr(_i, 23) and 255)
+    e = (Bitwise.bsr(i, 23) and 255)
 
     if ((e == 255)) do
-      if ((((_i and 8388607)) == 0)) do
+      if ((((i and 8388607)) == 0)) do
         if ((sign > 0)), do: temp_result = Math.p_o_s_i_t_i_v_e__i_n_f_i_n_i_t_y, else: temp_result = Math.n_e_g_a_t_i_v_e__i_n_f_i_n_i_t_y
       else
         temp_result = Math.na_n
       end
     else
-      if ((e == 0)), do: temp_number = Bitwise.bsl(((_i and 8388607)), 1), else: temp_number = ((_i and 8388607) or 8388608)
+      if ((e == 0)), do: temp_number = Bitwise.bsl(((i and 8388607)), 1), else: temp_number = ((i and 8388607) or 8388608)
       m = temp_number
       temp_result = ((sign * m) * Math.pow(2, (e - 150)))
     end

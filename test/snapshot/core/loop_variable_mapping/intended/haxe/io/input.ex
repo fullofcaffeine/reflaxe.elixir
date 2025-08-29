@@ -37,9 +37,9 @@ defmodule Input do
   def read_bytes(%__MODULE__{} = struct, s, pos, len) do
     k = len
 
-    _b = s.b
+    b = s.b
 
-    if ((((_pos < 0) || (len < 0)) || ((_pos + len) > s.length))) do
+    if ((((pos < 0) || (len < 0)) || ((pos + len) > s.length))) do
       raise :outside_bounds
     else
       nil
@@ -48,8 +48,8 @@ defmodule Input do
     try do
       (fn loop ->
         if ((k > 0)) do
-              Enum.at(_b, _pos) = struct.read_byte()
-          _pos + 1
+              Enum.at(b, pos) = struct.read_byte()
+          pos + 1
           k - 1
           loop.()
         end
@@ -68,9 +68,9 @@ defmodule Input do
 
   @doc "Generated from Haxe set_bigEndian"
   def set_big_endian(%__MODULE__{} = struct, b) do
-    %{struct | big_endian: _b}
+    %{struct | big_endian: b}
 
-    _b
+    b
   end
 
   @doc "Generated from Haxe readAll"
@@ -102,7 +102,7 @@ defmodule Input do
           (fn loop ->
             if ((g_counter < g_array)) do
                   i = g_counter + 1
-              total.b ++ [Enum.at(b2, _i)]
+              total.b ++ [Enum.at(b2, i)]
               loop.()
             end
           end).()
@@ -120,13 +120,13 @@ defmodule Input do
   def read_full_bytes(%__MODULE__{} = struct, s, pos, len) do
     (fn loop ->
       if ((len > 0)) do
-            k = struct.read_bytes(s, _pos, len)
+            k = struct.read_bytes(s, pos, len)
         if ((k == 0)) do
           raise :blocked
         else
           nil
         end
-        _pos = _pos + k
+        pos = pos + k
         len = len - k
         loop.()
       end
@@ -135,20 +135,20 @@ defmodule Input do
 
   @doc "Generated from Haxe read"
   def read(%__MODULE__{} = struct, nbytes) do
-    s = Bytes.alloc(_nbytes)
+    s = Bytes.alloc(nbytes)
 
     p = 0
 
     (fn loop ->
-      if ((_nbytes > 0)) do
-            k = struct.read_bytes(s, p, _nbytes)
+      if ((nbytes > 0)) do
+            k = struct.read_bytes(s, p, nbytes)
         if ((k == 0)) do
           raise :blocked
         else
           nil
         end
         p = p + k
-        _nbytes = _nbytes - k
+        nbytes = nbytes - k
         loop.()
       end
     end).()
@@ -184,7 +184,7 @@ defmodule Input do
 
     last = nil
 
-    s = nil
+    s
 
     try do
       (fn loop ->
@@ -335,11 +335,11 @@ defmodule Input do
 
   @doc "Generated from Haxe readString"
   def read_string(%__MODULE__{} = struct, len, encoding \\ nil) do
-    _b = Bytes.alloc(len)
+    b = Bytes.alloc(len)
 
-    struct.read_full_bytes(_b, 0, len)
+    struct.read_full_bytes(b, 0, len)
 
-    _b.get_string(0, len, _encoding)
+    b.get_string(0, len, encoding)
   end
 
 
