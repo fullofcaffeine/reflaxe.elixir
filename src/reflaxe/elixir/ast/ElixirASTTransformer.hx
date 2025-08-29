@@ -6,6 +6,22 @@ import reflaxe.elixir.ast.ElixirAST;
 using StringTools;
 
 /**
+ * Transformation pass function type
+ * Takes an AST node and returns a transformed node
+ */
+typedef TransformPass = (ast: ElixirAST) -> ElixirAST;
+
+/**
+ * Pass configuration
+ */
+typedef PassConfig = {
+    name: String,
+    description: String,
+    enabled: Bool,
+    pass: TransformPass
+};
+
+/**
  * ElixirASTTransformer: AST-to-AST Transformation Engine (Transformation Phase)
  * 
  * WHY: Central transformation phase for converting Haxe patterns to idiomatic Elixir
@@ -36,22 +52,6 @@ using StringTools;
  * @see docs/03-compiler-development/INTERMEDIATE_AST_REFACTORING_PRD.md
  */
 class ElixirASTTransformer {
-    
-    /**
-     * Transformation pass function type
-     * Takes an AST node and returns a transformed node
-     */
-    typedef TransformPass = (ast: ElixirAST) -> ElixirAST;
-    
-    /**
-     * Pass configuration
-     */
-    typedef PassConfig = {
-        name: String,
-        description: String,
-        enabled: Bool,
-        pass: TransformPass
-    };
     
     /**
      * Main entry point: Apply all transformation passes
@@ -404,10 +404,10 @@ class ElixirASTTransformer {
                     ast.pos
                 );
                 
-            case ECall(target, function, args):
+            case ECall(target, funcName, args):
                 makeASTWithMeta(
                     ECall(target != null ? transformNode(target, transformer) : null,
-                          function,
+                          funcName,
                           args.map(a -> transformNode(a, transformer))),
                     ast.metadata,
                     ast.pos
