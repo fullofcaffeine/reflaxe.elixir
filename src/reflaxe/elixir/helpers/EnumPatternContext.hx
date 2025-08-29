@@ -130,29 +130,43 @@ class EnumPatternContext {
 	 * @return The extraction variable name (e.g., g_param_0) or null
 	 */
 	public static function getExtractionVar(tvar: TVar): Null<String> {
-		if (tvar.meta == null) return null;
+		if (tvar.meta == null) {
+			#if debug_enum_pattern_context
+			trace('[EnumPatternContext] No metadata on TVar: ${tvar.name} (id: ${tvar.id})');
+			#end
+			return null;
+		}
 		
-		// Get the metadata entry
-		var metaEntries = tvar.meta.extract(ENUM_PATTERN_META);
-		if (metaEntries.length == 0) return null;
-		
-		// Get the first entry's parameters
-		var params = metaEntries[0].params;
-		if (params == null || params.length < 3) return null;
-		
-		// Extract the extraction variable name (3rd parameter)
-		var extractionVar = switch(params[2].expr) {
-			case EConst(CString(s)): s;
-			case _: null;
+		// CRITICAL: Use non-destructive metadata access
+		// extract() REMOVES metadata, causing subsequent calls to fail
+		// Instead, use get() to access metadata without removing it
+		var metadataArray = tvar.meta.get();
+		for (meta in metadataArray) {
+			if (meta.name == ENUM_PATTERN_META) {
+				var params = meta.params;
+				if (params != null && params.length >= 3) {
+					// Extract the extraction variable name (3rd parameter)
+					var extractionVar = switch(params[2].expr) {
+						case EConst(CString(s)): s;
+						case _: null;
+					}
+					
+					#if debug_enum_pattern_context
+					if (extractionVar != null) {
+						trace('[EnumPatternContext] Found extraction var: ${extractionVar} for ${tvar.name} (id: ${tvar.id})');
+					}
+					#end
+					
+					return extractionVar;
+				}
+			}
 		}
 		
 		#if debug_enum_pattern_context
-		if (extractionVar != null) {
-			trace('[EnumPatternContext] Found extraction var: ${extractionVar} for ${tvar.name}');
-		}
+		trace('[EnumPatternContext] No enum pattern metadata found on ${tvar.name} (id: ${tvar.id})');
 		#end
 		
-		return extractionVar;
+		return null;
 	}
 	
 	/**
@@ -164,43 +178,47 @@ class EnumPatternContext {
 	public static function getEnumPatternInfo(tvar: TVar): Null<reflaxe.elixir.helpers.EnumPatternInfo> {
 		if (tvar.meta == null) return null;
 		
-		// Get the metadata entry
-		var metaEntries = tvar.meta.extract(ENUM_PATTERN_META);
-		if (metaEntries.length == 0) return null;
+		// CRITICAL: Use non-destructive metadata access
+		// Don't use extract() which removes the metadata
+		var metadataArray = tvar.meta.get();
+		for (meta in metadataArray) {
+			if (meta.name == ENUM_PATTERN_META) {
+				var params = meta.params;
+				if (params != null && params.length >= 3) {
+					// Extract information from metadata
+					var info: reflaxe.elixir.helpers.EnumPatternInfo = {
+						enumField: switch(params[0].expr) {
+							case EConst(CString(s)): s;
+							case _: "";
+						},
+						paramIndex: switch(params[1].expr) {
+							case EConst(CInt(i)): Std.parseInt(i);
+							case _: -1;
+						},
+						extractionVar: switch(params[2].expr) {
+							case EConst(CString(s)): s;
+							case _: "";
+						},
+						originalVar: params.length > 3 ? switch(params[3].expr) {
+							case EConst(CString(s)): s;
+							case _: null;
+						} : null
+					};
+					
+					#if debug_enum_pattern_context
+					trace('[EnumPatternContext] Retrieved info for ${tvar.name}:');
+					trace('  - enumField: ${info.enumField}');
+					trace('  - paramIndex: ${info.paramIndex}');
+					trace('  - extractionVar: ${info.extractionVar}');
+					trace('  - originalVar: ${info.originalVar}');
+					#end
+					
+					return info;
+				}
+			}
+		}
 		
-		// Parse parameters
-		var params = metaEntries[0].params;
-		if (params == null || params.length < 3) return null;
-		
-		// Extract information from metadata
-		var info: reflaxe.elixir.helpers.EnumPatternInfo = {
-			enumField: switch(params[0].expr) {
-				case EConst(CString(s)): s;
-				case _: "";
-			},
-			paramIndex: switch(params[1].expr) {
-				case EConst(CInt(i)): Std.parseInt(i);
-				case _: -1;
-			},
-			extractionVar: switch(params[2].expr) {
-				case EConst(CString(s)): s;
-				case _: "";
-			},
-			originalVar: params.length > 3 ? switch(params[3].expr) {
-				case EConst(CString(s)): s;
-				case _: null;
-			} : null
-		};
-		
-		#if debug_enum_pattern_context
-		trace('[EnumPatternContext] Retrieved info for ${tvar.name}:');
-		trace('  - enumField: ${info.enumField}');
-		trace('  - paramIndex: ${info.paramIndex}');
-		trace('  - extractionVar: ${info.extractionVar}');
-		trace('  - originalVar: ${info.originalVar}');
-		#end
-		
-		return info;
+		return null;
 	}
 	
 	/**

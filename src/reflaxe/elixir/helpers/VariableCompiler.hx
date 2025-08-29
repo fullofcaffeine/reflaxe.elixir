@@ -1119,19 +1119,19 @@ class VariableCompiler {
             }
         }
         
-        // CRITICAL FIX: Check if this variable is being assigned from TLocal(g) which might be an enum extraction
-        // OR from TLocal(g_array) when we're in nested pattern matching
+        // CRITICAL FIX: Check if this variable is being assigned from TLocal which might be an enum extraction
+        // Pattern variables like 'config' are assigned from TLocal(_g) where _g has metadata
         if (expr != null) {
             switch (expr.expr) {
-                case TLocal(v) if (v.name == "g" || v.name == "g_array" || v.name == "_g" || StringTools.startsWith(v.name, "_g")):
-                    // CRITICAL: Check metadata FIRST for enum pattern context
-                    // This provides the AUTHORITATIVE solution that persists across compilation phases
+                case TLocal(v):
+                    // CRITICAL: Check metadata FIRST for ALL TLocal variables
+                    // This catches pattern variables like 'config = TLocal(_g)' where _g has enum metadata
                     var enumExtractionVar = EnumPatternContext.getExtractionVar(v);
                     if (enumExtractionVar != null) {
                         #if debug_variable_compiler
                         trace('[XRay VariableCompiler] ✓ ENUM PATTERN METADATA DETECTED IN DECLARATION');
                         trace('[XRay VariableCompiler]   Pattern variable: ${varName}');
-                        trace('[XRay VariableCompiler]   Original source: TLocal(${v.name})');
+                        trace('[XRay VariableCompiler]   Original source: TLocal(${v.name}) id=${v.id}');
                         trace('[XRay VariableCompiler]   Using extraction from metadata: ${enumExtractionVar}');
                         trace('[XRay VariableCompiler]   NOTE: Metadata is authoritative - no fallback needed');
                         #end
@@ -1140,53 +1140,65 @@ class VariableCompiler {
                         return '${varName} = ${enumExtractionVar}';
                     }
                     
-                    // DEPRECATED FALLBACK: Only used if metadata system isn't working yet
-                    // Check if we have any recent enum parameter extractions
-                    // This happens when a pattern variable like 'todo' in TodoCreated(todo) 
-                    // gets assigned from what Haxe thinks is 'g' but is actually an extracted parameter
-                    
-                    // Look for the most recent g_param_N variable in the current compilation context
-                    // by checking if we recently compiled a TEnumParameter
-                    var lastExtractedParam: String = null;
-                    
-                    // Check if we have tracked extraction vars
-                    if (compiler.enumExtractionVars != null && compiler.enumExtractionVars.length > 0) {
-                        // Use the most recent extraction
-                        var lastExtraction = compiler.enumExtractionVars[compiler.enumExtractionVars.length - 1];
-                        lastExtractedParam = lastExtraction.varName;
+                    #if debug_variable_compiler
+                    // Debug: Log when metadata is NOT found
+                    if (varName == "port" || varName == "config" || varName == "module" || varName == "args") {
+                        trace('[XRay VariableCompiler] ⚠️ NO METADATA for pattern variable: ${varName} from TLocal(${v.name}) id=${v.id}');
+                        trace('[XRay VariableCompiler]   This will fall back to default compilation');
                     }
+                    #end
                     
-                    // Also check if we're compiling a pattern variable from an enum constructor
-                    // This is detected by checking if the variable name matches typical pattern variable names
-                    // and we're in a context where enum parameters were just extracted
-                    var isPatternVariable = !StringTools.startsWith(originalName, "_g") && 
-                                           !StringTools.startsWith(originalName, "g") &&
-                                           lastExtractedParam != null;
-                    
-                    if (isPatternVariable && lastExtractedParam != null) {
-                        #if debug_variable_compiler
-                        // trace("[XRay VariableCompiler] ✓ PATTERN VARIABLE FROM ENUM EXTRACTION DETECTED");
-                        // trace('[XRay VariableCompiler] Pattern var: ${varName} from ${v.name}');
-                        // trace('[XRay VariableCompiler] Using extracted param: ${lastExtractedParam}');
-                        #end
+                    // DEPRECATED FALLBACK: Only for g-like variables without metadata
+                    if (v.name == "g" || v.name == "g_array" || v.name == "_g" || StringTools.startsWith(v.name, "_g")) {
                         
-                        return '${varName} = ${lastExtractedParam}';
-                    }
-                    
-                    // CRITICAL FIX: Check if this is a "g" variable reference in enum pattern context
-                    // In switch cases with enum patterns, "g" references should use extracted parameters
-                    if ((v.name == "g" || v.name == "g_array") && 
-                        compiler.currentSwitchCaseBody != null &&
-                        compiler.enumExtractionVars != null && 
-                        compiler.enumExtractionVars.length > 0) {
-                        // Find the appropriate extraction variable
-                        // For single parameter enums, use the first (and only) extraction
-                        if (compiler.enumExtractionVars.length > 0) {
-                            var extractionVar = compiler.enumExtractionVars[0].varName;
+                        // DEPRECATED FALLBACK: Only used if metadata system isn't working yet
+                        // Check if we have any recent enum parameter extractions
+                        // This happens when a pattern variable like 'todo' in TodoCreated(todo) 
+                        // gets assigned from what Haxe thinks is 'g' but is actually an extracted parameter
+                        
+                        // Look for the most recent g_param_N variable in the current compilation context
+                        // by checking if we recently compiled a TEnumParameter
+                        var lastExtractedParam: String = null;
+                        
+                        // Check if we have tracked extraction vars
+                        if (compiler.enumExtractionVars != null && compiler.enumExtractionVars.length > 0) {
+                            // Use the most recent extraction
+                            var lastExtraction = compiler.enumExtractionVars[compiler.enumExtractionVars.length - 1];
+                            lastExtractedParam = lastExtraction.varName;
+                        }
+                        
+                        // Also check if we're compiling a pattern variable from an enum constructor
+                        // This is detected by checking if the variable name matches typical pattern variable names
+                        // and we're in a context where enum parameters were just extracted
+                        var isPatternVariable = !StringTools.startsWith(originalName, "_g") && 
+                                               !StringTools.startsWith(originalName, "g") &&
+                                               lastExtractedParam != null;
+                        
+                        if (isPatternVariable && lastExtractedParam != null) {
                             #if debug_variable_compiler
-                            // trace('[XRay VariableCompiler] ✓ ENUM PATTERN VARIABLE: ${varName} = ${extractionVar} (not g_array)');
+                            // trace("[XRay VariableCompiler] ✓ PATTERN VARIABLE FROM ENUM EXTRACTION DETECTED");
+                            // trace('[XRay VariableCompiler] Pattern var: ${varName} from ${v.name}');
+                            // trace('[XRay VariableCompiler] Using extracted param: ${lastExtractedParam}');
                             #end
-                            return '${varName} = ${extractionVar}';
+                            
+                            return '${varName} = ${lastExtractedParam}';
+                        }
+                        
+                        // CRITICAL FIX: Check if this is a "g" variable reference in enum pattern context
+                        // In switch cases with enum patterns, "g" references should use extracted parameters
+                        if ((v.name == "g" || v.name == "g_array") && 
+                            compiler.currentSwitchCaseBody != null &&
+                            compiler.enumExtractionVars != null && 
+                            compiler.enumExtractionVars.length > 0) {
+                            // Find the appropriate extraction variable
+                            // For single parameter enums, use the first (and only) extraction
+                            if (compiler.enumExtractionVars.length > 0) {
+                                var extractionVar = compiler.enumExtractionVars[0].varName;
+                                #if debug_variable_compiler
+                                // trace('[XRay VariableCompiler] ✓ ENUM PATTERN VARIABLE: ${varName} = ${extractionVar} (not g_array)');
+                                #end
+                                return '${varName} = ${extractionVar}';
+                            }
                         }
                     }
                 case _:
