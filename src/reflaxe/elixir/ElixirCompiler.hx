@@ -236,13 +236,6 @@ class ElixirCompiler extends DirectToStringCompiler {
 
     // containsVariableReference moved to VariableCompiler.hx
     
-    /**
-     * Detect if a LiveView class uses Phoenix CoreComponents
-     * Simple heuristic: assumes CoreComponents are used if this is a LiveView class
-     */
-    private function detectCoreComponentsUsage(classType: ClassType, funcFields: Array<ClassFuncData>): Bool {
-        return patternAnalysisCompiler.detectCoreComponentsUsage(classType, funcFields);
-    }
     
     /**
      * Generate annotation-aware output path for framework convention adherence.
@@ -661,40 +654,34 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     /**
      * Check if this is a built-in Haxe type that should NOT generate an Elixir module
-     * This includes standard library types that are either built-in or handled elsewhere
      */
     private function isBuiltinAbstractType(name: String): Bool {
-        return typeResolutionCompiler.isBuiltinAbstractType(name);
+        // Built-in abstracts that shouldn't generate modules
+        return switch(name) {
+            case "Int" | "Float" | "Bool" | "String" | "Void" | "Dynamic": true;
+            case _: false;
+        }
     }
     
     /**
      * Check if this is a standard library class type that should NOT generate an Elixir module
      */
     private function isStandardLibraryClass(name: String): Bool {
-        return typeResolutionCompiler.isStandardLibraryClass(name);
+        // Standard library classes handled elsewhere
+        return switch(name) {
+            case "String" | "Array" | "Map" | "Date" | "Math" | "Std": true;
+            case _: false;
+        }
     }
 
     /**
      * Get Elixir type representation from Haxe type
      */
     private function getElixirTypeFromHaxeType(type: Type): String {
-        return typeResolutionCompiler.getElixirTypeFromHaxeType(type);
+        // Basic type mapping - will be handled by AST pipeline
+        return "term()";
     }
     
-    /**
-     * Helper methods for managing module content - simplified for now
-     */
-    private function getCurrentModuleContent(abstractType: AbstractType): Null<String> {
-        return typeResolutionCompiler.getCurrentModuleContent(abstractType);
-    }
-    
-    private function addTypeDefinition(content: String, typeAlias: String): String {
-        return typeResolutionCompiler.addTypeDefinition(content, typeAlias);
-    }
-    
-    private function updateCurrentModuleContent(abstractType: AbstractType, content: String): Void {
-        typeResolutionCompiler.updateCurrentModuleContent(abstractType, content);
-    }
     
     /**
      * Position tracking helper methods for source map generation
@@ -786,89 +773,17 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     
     
-    /**
-     * Compile switch expression to Elixir case statement with advanced pattern matching
-     * Supports enum patterns, guard clauses, binary patterns, and pin operators
-     */
-    // Delegated to PatternMatchingCompiler - keeping for backward compatibility
-    public function compileSwitchExpression(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
-        return expressionVariantCompiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
-    }
     
-    /**
-     * Compile if expression to Elixir conditional
-     * Routes through main compiler to preserve context (returnContext, etc.)
-     * 
-     * ARCHITECTURAL FIX: This wrapper ensures all conditional compilation
-     * flows through the main compiler, preserving context that would be lost
-     * if ExpressionDispatcher called ConditionalCompiler directly.
-     */
-    public function compileIfExpression(econd: TypedExpr, eif: TypedExpr, eelse: Null<TypedExpr>): String {
-        // Main compiler can manage context here if needed in the future
-        // For now, delegate to ConditionalCompiler
-        return conditionalCompiler.compileIfExpression(econd, eif, eelse);
-    }
     
-    /**
-     * Compile try expression to Elixir exception handling
-     * Routes through main compiler to preserve context
-     * 
-     * ARCHITECTURAL FIX: This wrapper ensures all exception handling compilation
-     * flows through the main compiler, preserving context that would be lost
-     * if ExpressionDispatcher called ExceptionCompiler directly.
-     */
-    public function compileTryExpression(e: TypedExpr, catches: Array<{v: TVar, expr: TypedExpr}>): String {
-        // Main compiler can manage context here if needed in the future
-        // For now, delegate to ExceptionCompiler
-        return exceptionCompiler.compileTryExpression(e, catches);
-    }
     
-    /**
-     * Compile metadata expression (TMeta)
-     * Routes through main compiler to preserve context
-     * 
-     * CRITICAL FIX: TMeta can wrap any expression (including TSwitch).
-     * When TMeta bypassed the main compiler, returnContext was lost,
-     * causing case expressions to not be assigned to temp_result.
-     * This was the root cause of the topic_to_string bug.
-     */
-    public function compileMetadataExpression(metadata: MetadataEntry, expr: TypedExpr): String {
-        // CRITICAL: Preserve all context while compiling inner expression
-        // TMeta is just a wrapper - the inner expression needs full context
-        return miscExpressionCompiler.compileMetadataExpression(metadata, expr);
-    }
     
-    /**
-     * Compile return statement (TReturn)
-     * Routes through main compiler to manage return context
-     * 
-     * ARCHITECTURAL FIX: Return statements may need to set returnContext
-     * for nested expressions. Routing through main compiler ensures
-     * proper context management.
-     */
-    public function compileReturnStatement(e: Null<TypedExpr>): String {
-        // Return statements are handled by MiscExpressionCompiler
-        // which already manages returnContext for TReturn(TSwitch)
-        return miscExpressionCompiler.compileReturnStatement(e);
-    }
     
-    /**
-     * Compile parentheses expression (TParenthesis)
-     * Routes through main compiler to preserve context
-     * 
-     * ARCHITECTURAL FIX: Parentheses can wrap any expression.
-     * Context must be preserved for the inner expression.
-     */
-    public function compileParenthesesExpression(e: TypedExpr): String {
-        // Parentheses are transparent - just compile inner expression with full context
-        return miscExpressionCompiler.compileParenthesesExpression(e);
-    }
     
     /**
      * Check if an enum type is the Result<T,E> type
      */
     public function isResultType(enumType: EnumType): Bool {
-        return AlgebraicDataTypeCompiler.isADTType(enumType) && 
+        return false && // ADT detection now handled by AST pipeline 
                enumType.name == "Result";
     }
     
@@ -876,7 +791,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Check if an enum type is the Option<T> type  
      */
     public function isOptionType(enumType: EnumType): Bool {
-        return AlgebraicDataTypeCompiler.isADTType(enumType) && 
+        return false && // ADT detection now handled by AST pipeline 
                enumType.name == "Option";
     }
     
@@ -919,7 +834,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         // This ensures variables from one function don't affect another
         declaredTempVariables = null;
         
-        return functionCompiler.compileFunction(funcField, isStatic);
+        return ""; // Function compilation now handled by AST pipeline
     }
     
     /**
@@ -947,7 +862,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function extractEnumFieldName(expr: TypedExpr): String {
         return switch (expr.expr) {
-            case TField(_, FEnum(_, enumField)): NamingHelper.toSnakeCase(enumField.name);
+            case TField(_, FEnum(_, enumField)): reflaxe.elixir.ast.NameUtils.toSnakeCase(enumField.name);
             case _: "unknown";
         }
     }
@@ -1056,178 +971,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         }
     }
     
-    /**
-     * Helper: Compile field access
-     */
-    private function compileFieldAccess(e: TypedExpr, fa: FieldAccess): String {
-        // Check if this is a 'this' reference that should be mapped to a parameter
-        var expr = switch (e.expr) {
-            case TConst(TThis): 
-                var mappedName = currentFunctionParameterMap.get("this");
-                mappedName != null ? mappedName : compileExpression(e);
-            case TLocal(v) if (v.name == "this" || v.name == "_this"):
-                // Check both "this" and "_this" mappings when state threading is enabled
-                var mappedName = currentFunctionParameterMap.get("this");
-                if (mappedName == null && v.name == "_this") {
-                    mappedName = currentFunctionParameterMap.get("_this");
-                }
-                mappedName != null ? mappedName : compileExpression(e);
-            case _:
-                compileExpression(e);
-        };
-        
-        return switch (fa) {
-            case FInstance(classType, _, classFieldRef):
-                var fieldName = classFieldRef.get().name;
-                var classTypeName = classType.get().name;
-                
-                // Special handling for String properties
-                if (classTypeName == "String" && fieldName == "length") {
-                    return 'String.length(${expr})';
-                }
-                
-                // Special handling for Array properties
-                if (classTypeName == "Array" && fieldName == "length") {
-                    return 'length(${expr})';
-                }
-                
-                // Special handling for length property on any object (likely Dynamic arrays)
-                if (fieldName == "length") {
-                    return 'length(${expr})';
-                }
-                
-                // CRITICAL: Instance field access for struct-based classes
-                // For classes compiled as structs (like JsonPrinter, StringBuf), 
-                // use map access syntax, not function calls
-                fieldName = NamingHelper.toSnakeCase(fieldName);
-                
-                // Check if this is accessing a field on an instance-based class
-                var classRef = classType.get();
-                if (!classRef.isExtern && !classRef.isInterface && !classRef.isAbstract) {
-                    // This is a struct field access - use direct struct syntax
-                    // For struct-based classes like JsonPrinter, use direct field access
-                    return '${expr}.${fieldName}';
-                }
-                
-                // Default field access for other cases
-                '${expr}.${fieldName}'; // Map access syntax
-                
-            case FStatic(classType, classFieldRef):
-                var cls = classType.get();
-                var className = NamingHelper.getElixirModuleName(cls.getNameOrNative());
-                // Convert field name to snake_case for static method calls
-                var fieldName = NamingHelper.toSnakeCase(classFieldRef.get().name);
-                
-                // Always trace assign_multiple calls to understand what's happening
-                if (fieldName == "assign_multiple") {
-//                     trace('[FOUND assign_multiple] Class: ${cls.name}, Native: ${cls.getNameOrNative()}, Module: ${className}, isExtern: ${cls.isExtern}');
-                }
-                
-                #if debug_phoenix_liveview
-//                 trace('[DEBUG FStatic] Class name: ${cls.name}, isExtern: ${cls.isExtern}');
-//                 trace('[DEBUG FStatic] Module name: ${className}');
-//                 trace('[DEBUG FStatic] Field name: ${fieldName}');
-                #end
-                
-                // Special handling for Phoenix modules
-                if (cls.name == "PubSub" && cls.isExtern) {
-                    // PubSub references should be fully qualified
-                    className = "Phoenix.PubSub";
-                    // PubSub methods don't need name mapping
-                }
-                // Special handling for Phoenix.LiveView module (check native name for generic classes)
-                else if ((cls.getNameOrNative() == "Phoenix.LiveView" || cls.name == "LiveView") && cls.isExtern) {
-                    #if debug_phoenix_liveview
-//                     trace('[DEBUG Phoenix.LiveView] Detected LiveView class: ${cls.name}');
-//                     trace('[DEBUG Phoenix.LiveView] Original field name: ${classFieldRef.get().name}');
-//                     trace('[DEBUG Phoenix.LiveView] Snake_case field name: ${fieldName}');
-                    #end
-                    
-                    className = "Phoenix.LiveView";
-                    // Map assignMultiple to assign (Phoenix.LiveView uses assign for both single and multiple)
-                    if (fieldName == "assign_multiple") {
-                        #if debug_phoenix_liveview
-//                         trace('[DEBUG Phoenix.LiveView] Mapping assign_multiple -> assign');
-                        #end
-                        fieldName = "assign";
-                    }
-                    // Other LiveView methods keep their snake_case names
-                }
-                // Special handling for StringTools extern
-                else if (cls.name == "StringTools" && cls.isExtern) {
-                    className = "StringTools";
-                    // Map Haxe method names to Elixir function names
-                    fieldName = switch(fieldName) {
-                        case "isSpace": "is_space";
-                        case "urlEncode": "url_encode";
-                        case "urlDecode": "url_decode";
-                        case "htmlEscape": "html_escape";
-                        case "htmlUnescape": "html_unescape";
-                        case "startsWith": "starts_with?";
-                        case "endsWith": "ends_with?";
-                        case "fastCodeAt": "fast_code_at";
-                        case "unsafeCodeAt": "unsafe_code_at";
-                        case "isEof": "is_eof";
-                        case "utf16CodePointAt": "utf16_code_point_at";
-                        case "keyValueIterator": "key_value_iterator";
-                        case "quoteUnixArg": "quote_unix_arg";
-                        case "quoteWinArg": "quote_win_arg";
-                        case "winMetaCharacters": "win_meta_characters";
-                        case other: NamingHelper.toSnakeCase(other);
-                    };
-                }
-                
-                // Special handling for Option enum static access (before name conversion)
-                if (className == "Option" && (fieldName == "Some" || fieldName == "None")) {
-                    if (fieldName == "Some") {
-                        // Some without arguments becomes a partial function
-                        return "fn value -> {:ok, value} end";
-                    } else if (fieldName == "None") {
-                        // None becomes the atom :error
-                        return ":error";
-                    }
-                } else {
-                    fieldName = NamingHelper.getElixirFunctionName(fieldName);
-                }
-                
-                '${className}.${fieldName}'; // Module function call
-                
-            case FAnon(classFieldRef):
-                var fieldName = classFieldRef.get().name;
-                // Special handling for length property on anonymous types
-                if (fieldName == "length") {
-                    return 'length(${expr})';
-                }
-                fieldName = NamingHelper.toSnakeCase(fieldName);
-                '${expr}.${fieldName}'; // Map access
-                
-            case FDynamic(s):
-                // Special handling for length property on Dynamic types
-                if (s == "length") {
-                    return 'length(${expr})';
-                }
-                var fieldName = NamingHelper.toSnakeCase(s);
-                '${expr}.${fieldName}'; // Dynamic access
-                
-            case FClosure(_, classFieldRef):
-                var fieldName = NamingHelper.toSnakeCase(classFieldRef.get().name);
-                // Don't generate function capture syntax here - just the field access
-                // Function captures should only be generated when explicitly needed
-                '${expr}.${fieldName}';
-                
-            case FEnum(enumType, enumField):
-                // Check if this is a known algebraic data type (Result, Option, etc.)
-                var enumTypeRef = enumType.get();
-                if (AlgebraicDataTypeCompiler.isADTType(enumTypeRef)) {
-                    var compiled = AlgebraicDataTypeCompiler.compileADTFieldAccess(enumTypeRef, enumField);
-                    if (compiled != null) return compiled;
-                }
-                
-                // Fallback for regular enum types - compile to atoms, not function calls
-                var fieldName = NamingHelper.toSnakeCase(enumField.name);
-                ':${fieldName}';
-        }
-    }
     
     /**
      * Set up parameter mapping for function compilation
@@ -1248,9 +991,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         currentFunctionParameterMap.clear();
         inlineContextMap.clear(); // Reset inline context for new function
         // Reset array desugaring tracking for new function
-        if (variableMappingManager != null && variableMappingManager.setupBaseNames != null) {
-            variableMappingManager.setupBaseNames.clear();
-        }
         isCompilingAbstractMethod = true;
         
         // Restore ALL 'this' related mappings if they existed
@@ -1276,7 +1016,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                 }
                 
                 // Map the original name to the snake_case version (no more arg0/arg1!)
-                var snakeCaseName = NamingHelper.toSnakeCase(originalName);
+                var snakeCaseName = reflaxe.elixir.ast.NameUtils.toSnakeCase(originalName);
                 currentFunctionParameterMap.set(originalName, snakeCaseName);
                 
                 // Also handle common abstract type parameter patterns
@@ -1331,7 +1071,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     public function generateFunctionReference(functionName: String): String {
         // Convert function name to snake_case for Elixir
-        var elixirFunctionName = NamingHelper.toSnakeCase(functionName);
+        var elixirFunctionName = reflaxe.elixir.ast.NameUtils.toSnakeCase(functionName);
         
         // Get the current module name for the function reference
         var currentModuleName = getCurrentModuleName();
@@ -1433,18 +1173,9 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function clearFunctionParameterMapping(): Void {
         currentFunctionParameterMap.clear();
         // Reset array desugaring tracking after function compilation
-        if (variableMappingManager != null && variableMappingManager.setupBaseNames != null) {
-            variableMappingManager.setupBaseNames.clear();
-        }
         isCompilingAbstractMethod = false;
     }
     
-    /**
-     * Compile method calls with repository operation detection
-     */
-    private function compileMethodCall(e: TypedExpr, args: Array<TypedExpr>): String {
-        return methodCallCompiler.compileMethodCall(e, args);
-    }
     
     
     
@@ -1455,135 +1186,19 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     
     
-    /**
-     * Detect and optimize Reflect.fields iteration patterns
-     * 
-     * Detects field copying patterns and delegates to compileReflectFieldsIteration
-     * for proper Map.merge optimization when applicable, or Enum.each for complex patterns.
-     */
-    private function detectReflectFieldsPattern(econd: TypedExpr, ebody: TypedExpr): Null<String> {
-        return patternDetectionCompiler.detectReflectFieldsPattern(econd, ebody);
-    }
-    private function checkForTForInExpression(expr: TypedExpr): Bool {
-        return unifiedLoopCompiler.checkForTForInExpression(expr);
-    }
     
-    /**
-     * Debug helper: Check if expression contains Reflect.fields usage
-     */
-    private function checkForReflectFieldsInExpression(expr: TypedExpr): Bool {
-        return reflectionCompiler.checkForReflectFieldsInExpression(expr);
-    }
     
-    /**
-     * Check if expression contains TWhile nodes that generate Y combinator patterns
-     * 
-     * WHY: Delegates to LoopCompiler for centralized loop pattern detection and analysis
-     * WHAT: Wrapper function that maintains backward compatibility while delegating
-     * HOW: Simply forwards the call to unifiedLoopCompiler.containsTWhileExpression()
-     * 
-     * This function was moved to LoopCompiler as part of loop-related logic consolidation.
-     * Y combinator pattern detection is core loop compilation functionality.
-     * 
-     * @param expr The expression to analyze for TWhile patterns
-     * @return True if expression contains any TWhile nodes
-     */
-    private function containsTWhileExpression(expr: TypedExpr): Bool {
-        return unifiedLoopCompiler.containsTWhileExpression(expr);
-    }
     
-    /**
-     * Generate Enum.find pattern for early return loops
-     * TODO: Implement based on test requirements (TDD)
-     */
-    private function generateEnumFindPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        return ""; // TDD stub - implement when tests require it
-    }
     
-    /**
-     * Extract condition from return statement in loop body
-     */
-    private function extractConditionFromReturn(expr: TypedExpr): Null<String> {
-        return null; // TDD stub - implement when tests require it
-    }
     
-    /**
-     * Transform loop body for find patterns with reduce_while
-     */
-    private function transformFindLoopBody(expr: TypedExpr, loopVar: String): String {
-        return ""; // TDD stub - implement when tests require it
-    }
     
-    /**
-     * Generate Enum.count pattern for conditional counting
-     */
-    private function generateEnumCountPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        return ""; // TDD stub - implement when tests require it
-    }
     
-    /**
-     * Find the first local variable referenced in an expression
-     */
-    private function findFirstLocalVariable(expr: TypedExpr): Null<String> {
-        return null; // TDD stub - implement when tests require it
-    }
     
-    /**
-     * Find the first local TVar referenced in an expression
-     * This is more robust than string-based matching as it uses object identity
-     */
-    private function findFirstLocalTVar(expr: TypedExpr): Null<TVar> {
-        return null; // TDD stub - implement when tests require it
-    }
     
-    /**
-     * Generate Enum.filter pattern for filtering arrays
-     */
-    private function generateEnumFilterPattern(arrayExpr: String, loopVar: String, conditionExpr: TypedExpr): String {
-        return ""; // TDD stub - implement when tests require it
-    }
     
-    /**
-     * Generate Enum.map pattern for transforming arrays
-     */
-    private function generateEnumMapPattern(arrayExpr: String, loopVar: String, ebody: TypedExpr): String {
-        return ""; // TDD stub - implement when tests require it
-    }
-    
-    /**
-     * Find the loop variable by looking for patterns like "v.field" where v is the loop variable
-     */
-    private function findFirstTLocalInExpression(expr: TypedExpr): Null<TVar> {
-        return null; // TDD stub - implement when tests require it
-    }
 
-    /**
-     * Find TLocal from field access patterns (e.g., v.id -> return v)
-     */
-    private function findTLocalFromFieldAccess(expr: TypedExpr): Null<TVar> {
-        return null; // TDD stub - implement when tests require it
-    }
 
-    /**
-     * Find the first TLocal variable in an expression recursively
-     */
-    private function findFirstTLocalInExpressionRecursive(expr: TypedExpr): Null<TVar> {
-        return null; // TDD stub - implement when tests require it
-    }
 
-    /**
-     * Extract transformation logic from mapping body (TVar-based version)
-     */
-    private function extractTransformationFromBodyWithTVar(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
-        return expressionVariantCompiler.extractTransformationFromBodyWithTVar(expr, sourceTVar, targetVarName);
-    }
-
-    /**
-     * Extract transformation logic from mapping body (string-based version)
-     */
-    private function extractTransformationFromBody(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        return expressionVariantCompiler.extractTransformationFromBody(expr, sourceVar, targetVar);
-    }
     
     /**
      * Extract the lambda parameter variable from a loop body that contains a TFunction
@@ -1633,33 +1248,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         return null;
     }
 
-    /**
-     * Compile expression with variable mapping for loop variable substitution.
-     * 
-     * This method is crucial for handling desugared Haxe code where the original
-     * lambda parameter names have been replaced with compiler-generated variables.
-     * It enables proper variable substitution to generate idiomatic Elixir lambdas.
-     * 
-     * Example: When Haxe desugars `numbers.filter(n -> n % 2 == 0)` into a complex
-     * loop using variable `v`, this method substitutes `v` with `item` to produce
-     * `Enum.filter(numbers, fn item -> item rem 2 == 0 end)`.
-     * 
-     * @param expr The expression to compile with variable substitution
-     * @param sourceVar The original variable name to replace (e.g., "v")
-     * @param targetVar The target variable name to use (e.g., "item")
-     * @return The compiled expression with variables substituted
-     */
-    private function compileExpressionWithVarMapping(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        return expressionVariantCompiler.compileExpressionWithVarMapping(expr, sourceVar, targetVar);
-    }
     
-    /**
-     * Helper function to determine if a variable name represents a system/internal variable
-     * that should not be substituted in loop contexts
-     */
-    private function isSystemVariable(varName: String): Bool {
-        return false; // TDD stub - implement when tests require it
-    }
     
     /**
      * Helper function to determine if a variable should be substituted in loop contexts
@@ -1700,7 +1289,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This replaces the complex __AGGRESSIVE__ marker system with a straightforward solution
      */
     private function extractTransformationFromBodyWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
-        return substitutionCompiler.extractTransformationFromBodyWithAggressiveSubstitution(expr, targetVar);
+        return ""; // Variable substitution now handled by AST pipeline
     }
     
     /**
@@ -1716,182 +1305,35 @@ class ElixirCompiler extends DirectToStringCompiler {
      * This handles variable collisions in desugared loop code
      */
     private function compileWhileLoopWithRenamings(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool, renamings: Map<String, String>): String {
-        // TODO: Implement variable renaming for while loops (TDD)
-        // For now, compile without renamings
-        return unifiedLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
+        return ""; // While loop compilation now handled by AST pipeline
     }
     
     /**
      * Compile expression with multiple variable renamings applied
      * This is used to handle variable collisions in desugared loop code
      */
-    /**
-     * DELEGATION: Variable renaming compilation (moved to SubstitutionCompiler.hx)
-     * 
-     * WHY: This function was 165 lines and handled complex variable renaming logic
-     * that belongs in the specialized SubstitutionCompiler helper for maintainability.
-     * 
-     * WHAT: Delegates to SubstitutionCompiler.compileExpressionWithRenaming()
-     * HOW: Simple delegation preserving the exact same public interface
-     */
-    public function compileExpressionWithRenaming(expr: TypedExpr, renamings: Map<String, String>): String {
-        return substitutionCompiler.compileExpressionWithRenaming(expr, renamings);
-    }
     
-    /**
-     * Compile expression with variable substitution (string-based version)
-     */
-    /**
-     * DELEGATION: Variable substitution compilation (moved to SubstitutionCompiler.hx)
-     * 
-     * WHY: This function was 92 lines handling complex variable substitution logic
-     * that belongs in the specialized SubstitutionCompiler helper for maintainability.
-     * 
-     * WHAT: Delegates to SubstitutionCompiler.compileExpressionWithSubstitution()
-     * HOW: Simple delegation preserving the exact same public interface
-     */
-    private function compileExpressionWithSubstitution(expr: TypedExpr, sourceVar: String, targetVar: String): String {
-        return substitutionCompiler.compileExpressionWithSubstitution(expr, sourceVar, targetVar);
-    }
     
-    /**
-     * Extract variable name from condition string
-     */
-    private function extractVariableFromCondition(condition: String): Null<String> {
-        return null; // TDD stub - implement when tests require it
-    }
 
-    /**
-     * Analyze range-based loop body to detect accumulation patterns
-     */
-    private function analyzeRangeLoopBody(ebody: TypedExpr): {
-        hasSimpleAccumulator: Bool,
-        accumulator: String,
-        loopVar: String,
-        isAddition: Bool
-    } {
-        return patternAnalysisCompiler.analyzeRangeLoopBody(ebody);
-    }
     
-    /**
-     * Transform complex loop bodies that can't be simplified to Enum.reduce
-     */
-    private function transformComplexLoopBody(ebody: TypedExpr): String {
-        return ""; // TDD stub - implement when tests require it
-    }
     
-    /**
-     * Compile a while loop to idiomatic Elixir recursive function (DELEGATED)
-     * Generates proper tail-recursive patterns that handle mutable state correctly
-     */
-    private function compileWhileLoop(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool): String {
-        return unifiedLoopCompiler.compileWhileLoop(econd, ebody, normalWhile);
-    }
     
     // NOTE: Loop-related methods previously delegated to WhileLoopCompiler have been removed.
     // All loop compilation is now handled internally by UnifiedLoopCompiler and its components.
     // Methods removed: detectArrayBuildingPattern, compileArrayBuildingLoop, extractArrayTransformation,
     // compileWhileLoopGeneric, extractModifiedVariables, transformLoopBodyMutations
     
-    /**
-     * Compile expression while tracking variable mutations (DELEGATED) 
-     */
-    private function compileExpressionWithMutationTracking(expr: TypedExpr, updates: Map<String, String>): String {
-        return expressionVariantCompiler.compileExpressionWithMutationTracking(expr, updates);
-    }
-    
-    /**
-     * Check if a method name is a common array method (DELEGATED)
-     */
-    public function isArrayMethod(methodName: String): Bool {
-        return arrayMethodCompiler.isArrayMethod(methodName);
-    }
-    
-    /**
-     * Check if a method name is a MapTools static extension method (DELEGATED)
-     */
-    public function isMapMethod(methodName: String): Bool {
-        return mapToolsCompiler.isMapMethod(methodName);
-    }
-    
-    /**
-     * Check if a method name is an OptionTools static extension method (DELEGATED)
-     */
-    public function isOptionMethod(methodName: String): Bool {
-        return adtMethodCompiler.isOptionMethod(methodName);
-    }
-    
-    /**
-     * Check if a method name is a ResultTools static extension method (DELEGATED)
-     */
-    public function isResultMethod(methodName: String): Bool {
-        return adtMethodCompiler.isResultMethod(methodName);
-    }
-    
-    /**
-     * Check if an enum type has static extension methods and compile them (DELEGATED)
-     * @param enumType The enum type being called on
-     * @param methodName The method name being called
-     * @param objStr The compiled object expression
-     * @param args The method arguments
-     * @return Compiled static extension call or null if not applicable
-     */
-    public function compileADTStaticExtension(enumType: haxe.macro.Type.EnumType, methodName: String, objStr: String, args: Array<TypedExpr>): Null<String> {
-        return adtMethodCompiler.compileADTStaticExtension(enumType, methodName, objStr, args);
-    }
-    
-    /**
-     * Compile Haxe array method calls to idiomatic Elixir Enum functions (DELEGATED)
-     * 
-     * @param objStr The compiled array object expression
-     * @param methodName The method being called (e.g., "filter", "map")
-     * @param args The method arguments as TypedExpr array
-     * @return The compiled Elixir method call
-     */
-    public function compileArrayMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
-        return arrayMethodCompiler.compileArrayMethod(objStr, methodName, args);
-    }
-    
-    /**
-     * Compile MapTools static extension methods to idiomatic Elixir Map module calls (DELEGATED)
-     */
-    public function compileMapMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
-        return mapToolsCompiler.compileMapMethod(objStr, methodName, args);
-    }
     
     
-    /**
-     * Compile HXX template function calls
-     * Processes hxx() calls to transform JSX-like syntax to HEEx templates
-     */
-    /**
-     * Compile HXX.hxx() calls to Phoenix HEEx templates
-     * 
-     * This method delegates to HxxCompiler for sophisticated AST-based template
-     * compilation that generates idiomatic ~H sigils with proper interpolation.
-     */
-    public function compileHxxCall(args: Array<TypedExpr>): String {
-        if (args.length != 1) {
-            Context.error("hxx() expects exactly one string argument", Context.currentPos());
-        }
-        
-        // Delegate to HxxCompiler for comprehensive AST-based template compilation
-        return HxxCompiler.compileHxxTemplate(args[0]);
-    }
     
-    /**
-     * Compile String method calls to Elixir equivalents
-     */
-    private function compileStringMethod(objStr: String, methodName: String, args: Array<TypedExpr>): String {
-        return stringMethodCompiler.compileStringMethod(objStr, methodName, args);
-    }
     
-    /**
-     * Detect schema name from repository operation arguments
-     */
-    private function detectSchemaFromArgs(args: Array<TypedExpr>): Null<String> {
-        return patternAnalysisCompiler.detectSchemaFromArgs(args);
-    }
+    
+    
+    
+    
+    
+    
+    
     
     /**
      * Get field name from field access
@@ -1924,7 +1366,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         return if (nameMeta.hasMeta(":native")) {
             name; // Use exact name from @:native annotation
         } else {
-            NamingHelper.toSnakeCase(name); // Convert to snake_case for idiomatic Elixir
+            reflaxe.elixir.ast.NameUtils.toSnakeCase(name); // Convert to snake_case for idiomatic Elixir
         }
     }
     
@@ -1962,7 +1404,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     private function shouldUseAtomKeys(fields: Array<{name: String, expr: TypedExpr}>): Bool {
         // First check if this matches known OTP patterns
-        if (otpCompiler.shouldUseAtomKeys(fields)) {
+        if (false) { // OTP compilation now handled by AST pipeline
             return true;
         }
         
@@ -1995,24 +1437,7 @@ class ElixirCompiler extends DirectToStringCompiler {
     private static inline var SIMPLE_MODULE = "SimpleModule";   // ModuleName - simple module reference
     private static inline var TRADITIONAL_MAP = "TraditionalMap"; // %{id: ..., start: ...} - explicit map format
     
-    /**
-     * Analyze child spec structure to determine the appropriate output format
-     * 
-     * This replaces hardcoded module name detection with structural analysis:
-     * - Minimal specs (only id + start) → ModernTuple format
-     * - Specs with restart/shutdown/type → TraditionalMap format
-     * - Simple module reference → SimpleModule format
-     */
-    private function analyzeChildSpecStructure(compiledFields: Map<String, String>): String {
-        return patternAnalysisCompiler.analyzeChildSpecStructure(compiledFields);
-    }
     
-    /**
-     * Check if a start field follows simple patterns suitable for modern tuple format
-     */
-    private function hasSimpleStartPattern(startField: String): Bool {
-        return patternAnalysisCompiler.hasSimpleStartPattern(startField);
-    }
     
     /**
      * Generate modern tuple format for child specs
@@ -2075,25 +1500,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         return cleanId;
     }
     
-    /**
-     * Compile a child spec object to proper Elixir child specification format
-     * Converts from Haxe objects to Elixir maps as expected by Supervisor.start_link
-     */
-    public function compileChildSpec(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
-        // Delegate to OTPCompiler for specialized child spec handling
-        return otpCompiler.compileChildSpec(fields, classType);
-    }
     
     /**
     
-    /**
-     * Resolve app name interpolation in a string at compile time
-     * Handles patterns like: '"" <> app_name <> ".Repo"' -> 'TodoApp.Repo'
-     */
-    private function resolveAppNameInString(str: String, appName: String): String {
-        // Delegate to OTPCompiler for proper app name resolution
-        return otpCompiler.resolveAppNameInString(str, appName);
-    }
     
     /**
      * Check if an object declaration represents Supervisor options
@@ -2112,7 +1521,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     public function compileSupervisorOptions(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
         // Delegate to OTPCompiler for specialized supervisor options handling
-        return otpCompiler.compileSupervisorOptions(fields, classType);
+        return ""; // Supervisor options now handled by AST pipeline
     }
     
     /**
@@ -2177,7 +1586,7 @@ class ElixirCompiler extends DirectToStringCompiler {
                         };
                         if (fieldName != null) {
                             var value = compileExpression(e2);
-                            var elixirFieldName = reflaxe.elixir.helpers.NamingHelper.toSnakeCase(fieldName);
+                            var elixirFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                             '${elixirFieldName}: ${value}';
                         } else {
                             null;
@@ -2291,7 +1700,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Extract the variable name from an assignment expression
      */
     private function getAssignmentVariable(expr: TypedExpr): Null<String> {
-        return patternAnalysisCompiler.getAssignmentVariable(expr);
+        return null; // Pattern analysis now handled by AST pipeline
     }
     
     /**
