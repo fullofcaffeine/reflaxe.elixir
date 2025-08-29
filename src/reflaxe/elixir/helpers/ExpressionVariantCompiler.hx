@@ -556,6 +556,21 @@ class ExpressionVariantCompiler {
                 // CRITICAL FIX: Check for temp variable patterns that need scoping fixes
                 // This fixes undefined variables in if-else blocks (temp_array, temp_array1, etc.)
                 // trace('[XRay ExpressionVariantCompiler] Checking for temp variable patterns in ${exprs.length} expressions...');
+                
+                // DEBUG: Let's see what the actual TBlock structure is
+                if (exprs.length >= 2) {
+                    for (i in 0...exprs.length) {
+                        var exprType = Type.enumConstructor(exprs[i].expr);
+                        trace('[DEBUG TBlock] Expression $i: $exprType');
+                        // Check for TVar with temp_result
+                        switch (exprs[i].expr) {
+                            case TVar(v, _):
+                                trace('[DEBUG TBlock] Variable: ${v.name}');
+                            case _:
+                        }
+                    }
+                }
+                
                 var tempVarName = compiler.tempVariableOptimizer.detectTempVariablePattern(exprs);
                 if (tempVarName != null) {
                     // trace('[XRay ExpressionVariantCompiler] ✓ TEMP VAR PATTERN DETECTED: ${tempVarName}');

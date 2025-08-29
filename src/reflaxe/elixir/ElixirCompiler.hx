@@ -128,6 +128,30 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Pattern matching compilation helper
     public var patternMatchingCompiler: reflaxe.elixir.helpers.PatternMatchingCompiler;
     
+    // Conditional expression compilation helper (if/else)
+    public var conditionalCompiler: reflaxe.elixir.helpers.ConditionalCompiler;
+    
+    // Exception handling compilation helper (try/catch)
+    public var exceptionCompiler: reflaxe.elixir.helpers.ExceptionCompiler;
+    
+    // Literal compilation helper (constants)
+    public var literalCompiler: reflaxe.elixir.helpers.LiteralCompiler;
+    
+    // Operator compilation helper (binary/unary operations)
+    public var operatorCompiler: reflaxe.elixir.helpers.OperatorCompiler;
+    
+    // Data structure compilation helper (arrays, objects)
+    public var dataStructureCompiler: reflaxe.elixir.helpers.DataStructureCompiler;
+    
+    // Field access compilation helper
+    public var fieldAccessCompiler: reflaxe.elixir.helpers.FieldAccessCompiler;
+    
+    // Miscellaneous expression compilation helper
+    public var miscExpressionCompiler: reflaxe.elixir.helpers.MiscExpressionCompiler;
+    
+    // Enum introspection compilation helper
+    public var enumIntrospectionCompiler: reflaxe.elixir.helpers.EnumIntrospectionCompiler;
+    
     // Schema and changeset compilation helper
     private var schemaCompiler: reflaxe.elixir.helpers.SchemaCompiler;
     
@@ -233,6 +257,11 @@ class ElixirCompiler extends DirectToStringCompiler {
     // to prevent generating orphaned enum parameter extractions
     public var patternUsageContext: Null<Map<String, Bool>> = null;
     
+    // Return context tracking for case expression assignment
+    // When true, indicates we're compiling a return expression and case results
+    // need to be assigned to temp_result for proper value capture in Elixir
+    public var returnContext: Bool = false;
+    
     // Map for tracking variable renames to ensure consistency between declaration and usage
     
     // Track whether we're compiling in a statement context (for mutable operations)
@@ -325,6 +354,14 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Removed: loopCompiler instantiation - using only unifiedLoopCompiler
         this.unifiedLoopCompiler = new reflaxe.elixir.helpers.UnifiedLoopCompiler(this);
         this.patternMatchingCompiler = new reflaxe.elixir.helpers.PatternMatchingCompiler(this);
+        this.conditionalCompiler = new reflaxe.elixir.helpers.ConditionalCompiler(this);
+        this.exceptionCompiler = new reflaxe.elixir.helpers.ExceptionCompiler(this);
+        this.literalCompiler = new reflaxe.elixir.helpers.LiteralCompiler(this);
+        this.operatorCompiler = new reflaxe.elixir.helpers.OperatorCompiler(this, this.literalCompiler);
+        this.dataStructureCompiler = new reflaxe.elixir.helpers.DataStructureCompiler(this);
+        this.fieldAccessCompiler = new reflaxe.elixir.helpers.FieldAccessCompiler(this);
+        this.miscExpressionCompiler = new reflaxe.elixir.helpers.MiscExpressionCompiler(this);
+        this.enumIntrospectionCompiler = new reflaxe.elixir.helpers.EnumIntrospectionCompiler(this);
         this.schemaCompiler = new reflaxe.elixir.helpers.SchemaCompiler(this);
         this.migrationCompiler = new reflaxe.elixir.helpers.MigrationCompiler(this);
         this.liveViewCompiler = new reflaxe.elixir.helpers.LiveViewCompiler(this);
@@ -1243,6 +1280,75 @@ class ElixirCompiler extends DirectToStringCompiler {
     // Delegated to PatternMatchingCompiler - keeping for backward compatibility
     public function compileSwitchExpression(switchExpr: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, defaultExpr: Null<TypedExpr>): String {
         return expressionVariantCompiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
+    }
+    
+    /**
+     * Compile if expression to Elixir conditional
+     * Routes through main compiler to preserve context (returnContext, etc.)
+     * 
+     * ARCHITECTURAL FIX: This wrapper ensures all conditional compilation
+     * flows through the main compiler, preserving context that would be lost
+     * if ExpressionDispatcher called ConditionalCompiler directly.
+     */
+    public function compileIfExpression(econd: TypedExpr, eif: TypedExpr, eelse: Null<TypedExpr>): String {
+        // Main compiler can manage context here if needed in the future
+        // For now, delegate to ConditionalCompiler
+        return conditionalCompiler.compileIfExpression(econd, eif, eelse);
+    }
+    
+    /**
+     * Compile try expression to Elixir exception handling
+     * Routes through main compiler to preserve context
+     * 
+     * ARCHITECTURAL FIX: This wrapper ensures all exception handling compilation
+     * flows through the main compiler, preserving context that would be lost
+     * if ExpressionDispatcher called ExceptionCompiler directly.
+     */
+    public function compileTryExpression(e: TypedExpr, catches: Array<{v: TVar, expr: TypedExpr}>): String {
+        // Main compiler can manage context here if needed in the future
+        // For now, delegate to ExceptionCompiler
+        return exceptionCompiler.compileTryExpression(e, catches);
+    }
+    
+    /**
+     * Compile metadata expression (TMeta)
+     * Routes through main compiler to preserve context
+     * 
+     * CRITICAL FIX: TMeta can wrap any expression (including TSwitch).
+     * When TMeta bypassed the main compiler, returnContext was lost,
+     * causing case expressions to not be assigned to temp_result.
+     * This was the root cause of the topic_to_string bug.
+     */
+    public function compileMetadataExpression(metadata: MetadataEntry, expr: TypedExpr): String {
+        // CRITICAL: Preserve all context while compiling inner expression
+        // TMeta is just a wrapper - the inner expression needs full context
+        return miscExpressionCompiler.compileMetadataExpression(metadata, expr);
+    }
+    
+    /**
+     * Compile return statement (TReturn)
+     * Routes through main compiler to manage return context
+     * 
+     * ARCHITECTURAL FIX: Return statements may need to set returnContext
+     * for nested expressions. Routing through main compiler ensures
+     * proper context management.
+     */
+    public function compileReturnStatement(e: Null<TypedExpr>): String {
+        // Return statements are handled by MiscExpressionCompiler
+        // which already manages returnContext for TReturn(TSwitch)
+        return miscExpressionCompiler.compileReturnStatement(e);
+    }
+    
+    /**
+     * Compile parentheses expression (TParenthesis)
+     * Routes through main compiler to preserve context
+     * 
+     * ARCHITECTURAL FIX: Parentheses can wrap any expression.
+     * Context must be preserved for the inner expression.
+     */
+    public function compileParenthesesExpression(e: TypedExpr): String {
+        // Parentheses are transparent - just compile inner expression with full context
+        return miscExpressionCompiler.compileParenthesesExpression(e);
     }
     
     /**

@@ -1075,7 +1075,23 @@ class PatternMatchingCompiler {
             caseStrings.push('  _ -> ${defaultBody}');
         }
         
-        return 'case ${exprStr} do\n${caseStrings.join("\n")}\nend';
+        var caseExpr = 'case ${exprStr} do\n${caseStrings.join("\n")}\nend';
+        
+        // DEBUG: Check return context
+        trace('[DEBUG PatternMatchingCompiler] Return context: ${compiler.returnContext}');
+        
+        // RETURN CONTEXT CHECK: Generate assignment if in return context
+        // Following the context tracking pattern established for enum patterns
+        if (compiler.returnContext) {
+            // We're in a return context - the case result needs to be captured
+            // This handles the Elixir requirement for explicit case assignment
+            trace('[DEBUG PatternMatchingCompiler] ✓ GENERATING temp_result ASSIGNMENT');
+            return 'temp_result = ${caseExpr}';
+        } else {
+            // Normal case expression without assignment
+            trace('[DEBUG PatternMatchingCompiler] Normal case without assignment');
+            return caseExpr;
+        }
     }
     
     /**
@@ -1124,7 +1140,23 @@ class PatternMatchingCompiler {
             caseStrings.push('  _ -> ${defaultBody}');
         }
         
-        return 'case ${exprStr} do\n${caseStrings.join("\n")}\nend';
+        var caseExpr = 'case ${exprStr} do\n${caseStrings.join("\n")}\nend';
+        
+        // DEBUG: Check return context
+        trace('[DEBUG PatternMatchingCompiler] Return context: ${compiler.returnContext}');
+        
+        // RETURN CONTEXT CHECK: Generate assignment if in return context
+        // Following the context tracking pattern established for enum patterns
+        if (compiler.returnContext) {
+            // We're in a return context - the case result needs to be captured
+            // This handles the Elixir requirement for explicit case assignment
+            trace('[DEBUG PatternMatchingCompiler] ✓ GENERATING temp_result ASSIGNMENT');
+            return 'temp_result = ${caseExpr}';
+        } else {
+            // Normal case expression without assignment
+            trace('[DEBUG PatternMatchingCompiler] Normal case without assignment');
+            return caseExpr;
+        }
     }
     
     /**

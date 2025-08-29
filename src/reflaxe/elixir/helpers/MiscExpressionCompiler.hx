@@ -87,26 +87,58 @@ class MiscExpressionCompiler {
         }
         #end
         
+        // ADD COMPREHENSIVE DEBUG TRACE TO UNDERSTAND ACTUAL AST
         if (expr != null) {
-            // CRITICAL FIX: Handle TReturn(TSwitch) pattern to generate direct value-returning case
-            // This prevents temp variable shadowing in Elixir's scoped case expressions
+            trace("[DEBUG MiscExpressionCompiler] Return expr actual type: " + Type.enumConstructor(expr.expr));
+        }
+        
+        if (expr != null) {
+            // ARCHITECTURAL FIX: Use return context tracking pattern for case assignment
+            // Following the established pattern from enum pattern context tracking
             switch (expr.expr) {
                 case TSwitch(switchExpr, cases, defaultExpr):
+                    trace("[DEBUG MiscExpressionCompiler] ✓ DETECTED TReturn(TSwitch) - setting return context");
                     #if debug_misc_expression_compiler
-                    // trace("[XRay MiscExpressionCompiler] ✓ DETECTED TReturn(TSwitch) - compiling as value-returning case");
+                    // trace("[XRay MiscExpressionCompiler] ✓ DETECTED TReturn(TSwitch) - setting return context");
                     #end
                     
-                    // Mark that we're compiling a switch as a value expression
-                    var wasCompilingCaseArm = compiler.isCompilingCaseArm;
-                    compiler.isCompilingCaseArm = true;
+                    // RETURN CONTEXT TRACKING: Set → Use → Clear Pattern
+                    // 
+                    // WHY: Elixir case expressions don't implicitly return their values.
+                    //      When a function returns a switch directly, the case result
+                    //      must be explicitly assigned to temp_result.
+                    //
+                    // WHAT: Set returnContext before compilation so PatternMatchingCompiler
+                    //       knows to generate assignment. This follows the same pattern
+                    //       as patternUsageContext for enum patterns.
+                    //
+                    // HOW: 1. Set returnContext = true
+                    //      2. Compile switch (PatternMatchingCompiler checks context)
+                    //      3. Clear returnContext = false
+                    //
+                    // EXAMPLE:
+                    //   Haxe:   return switch(topic) { case A: "a"; case B: "b"; }
+                    //   Elixir: temp_result = case topic do :a -> "a" :b -> "b" end
                     
-                    // Compile the switch directly as a value-returning expression
-                    var result = compiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
+                    // ARCHITECTURAL FIX: Manage returnContext for direct TReturn(TSwitch)
+                    // This handles cases where a function directly returns a switch expression,
+                    // which doesn't match FunctionCompiler's temp_result pattern detection.
+                    // Now that TMeta routing is fixed, this context management works properly.
+                    //
+                    // FunctionCompiler handles: TVar(temp_result) ... TReturn(TLocal(temp_result))
+                    // This handles: TReturn(TSwitch(...))
                     
-                    // Restore context
-                    compiler.isCompilingCaseArm = wasCompilingCaseArm;
+                    // SET context for direct switch returns
+                    compiler.returnContext = true;
                     
-                    return result;
+                    // USE context (PatternMatchingCompiler will check and generate assignment)
+                    var switchResult = compiler.compileSwitchExpression(switchExpr, cases, defaultExpr);
+                    
+                    // CLEAR context
+                    compiler.returnContext = false;
+                    
+                    // Return the result (assignment is handled by PatternMatchingCompiler)
+                    return switchResult;
                     
                 case _:
                     // Normal return statement compilation

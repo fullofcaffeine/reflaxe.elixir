@@ -2,11 +2,29 @@
 
 ## Overview
 
-This document comprehensively traces the data flow of the Haxe→Elixir compiler to understand why certain functions bypass proper parameter handling, leading to the "unused parameter" compilation errors.
+This document comprehensively traces the data flow of the Haxe→Elixir compiler, including the single-instance architecture that enables context tracking for features like return context and pattern usage.
 
 ## Complete Compilation Flow
 
-### 1. Entry Point: ElixirCompiler.hx
+### 1. Single Instance Architecture
+
+**CRITICAL: ElixirCompiler is a SINGLE INSTANCE that processes the entire AST recursively.**
+
+```haxe
+// CompilerInit.hx - ONE instance created for entire compilation
+ReflectCompiler.AddCompiler(new ElixirCompiler(), {
+    fileOutputExtension: ".ex",
+    // ... configuration
+});
+```
+
+This single-instance architecture enables:
+- **Context tracking**: Instance variables persist across AST traversal
+- **State management**: Maintain compilation state throughout session
+- **Pattern detection**: Track patterns across multiple nodes
+- **Recursive processing**: Depth-first traversal with context preservation
+
+### 2. Entry Point: ElixirCompiler.hx
 
 ```
 Context.onAfterTyping() → ElixirCompiler.compile(module: ModuleType)
@@ -183,5 +201,42 @@ grep "def to_legacy" lib/elixir/otp/type_safe_child_spec_tools.ex
 ### Remaining Work:
 - **Parameter usage detection** in FunctionCompiler still needs enhancement for complex expressions like `elem(param, 0)`
 - This is a detection logic issue, not an architectural problem
+
+## Context Tracking Pattern
+
+The single-instance architecture enables powerful context tracking through instance variables:
+
+### Pattern: Set → Use → Clear
+
+```haxe
+// 1. Define context variable in ElixirCompiler
+public var returnContext: Bool = false;
+public var patternUsageContext: Map<String, Bool> = null;
+
+// 2. SET context before compiling sub-expressions  
+compiler.returnContext = true;
+
+// 3. Sub-expressions USE the context
+var result = compiler.compileExpression(expr);
+// PatternMatchingCompiler checks: if (compiler.returnContext) ...
+
+// 4. CLEAR context after compilation
+compiler.returnContext = false;
+```
+
+### Examples of Context Variables
+
+- **`patternUsageContext`**: Tracks which enum pattern variables are used
+- **`returnContext`**: Indicates when compiling return expressions
+- **`currentSwitchCaseBody`**: Current switch case being compiled
+- **`currentFunctionParameterMap`**: Parameter name mappings
+- **`isStateThreadingEnabled`**: Tracks mutable struct compilation
+
+### Why Context Tracking Works
+
+1. **Single-threaded compilation**: No race conditions
+2. **Depth-first traversal**: Context flows parent → child naturally
+3. **Explicit lifecycle**: Prevents context pollution
+4. **Proven pattern**: Successfully used for enum patterns, return contexts, etc
 
 The architectural refactoring ensures ALL functions go through the same compilation pipeline with consistent parameter handling, making the compiler more maintainable and reliable.
