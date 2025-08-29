@@ -43,18 +43,18 @@ defmodule TypeSafeChildSpec do
     if (config != nil) do
       {:ModuleWithConfig, module, config}
     else
-      module
+      {:ModuleRef, module}
     end
   end
 
   @doc "Generated from Haxe endpoint"
   def endpoint(module) do
-    module
+    {:ModuleRef, module}
   end
 
   @doc "Generated from Haxe telemetry"
   def telemetry(module) do
-    module
+    {:ModuleRef, module}
   end
 
   @doc "Generated from Haxe worker"
@@ -62,7 +62,7 @@ defmodule TypeSafeChildSpec do
     if (args != nil && args.length > 0) do
       {:ModuleWithArgs, module, args}
     else
-      module
+      {:ModuleRef, module}
     end
   end
 
@@ -83,12 +83,12 @@ defmodule TypeSafeChildSpec do
       if (spec.type == nil) do
         type = :Supervisor
       end
-      spec
+      {:FullSpec, spec}
     else
       if (args != nil && args.length > 0) do
         {:ModuleWithArgs, module, args}
       else
-        module
+        {:ModuleRef, module}
       end
     end
   end
@@ -109,7 +109,7 @@ defmodule TypeSafeChildSpec do
 
   @doc "Generated from Haxe fromMap"
   def from_map(spec) do
-    spec
+    {:FullSpec, spec}
   end
 
   @doc "Generated from Haxe simple"
@@ -117,7 +117,7 @@ defmodule TypeSafeChildSpec do
     if (args != nil && args.length > 0) do
       {:ModuleWithArgs, module, args}
     else
-      module
+      {:ModuleRef, module}
     end
   end
 

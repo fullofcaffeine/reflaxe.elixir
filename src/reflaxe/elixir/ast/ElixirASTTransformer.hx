@@ -1085,48 +1085,22 @@ class ElixirASTTransformer {
      */
     static function otpChildSpecTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
-        trace("[XRay OTPChildSpec] Starting OTP child spec transformation pass");
+        trace("[XRay OTPChildSpec] Starting idiomatic enum transformation pass");
         #end
         
         function transformNode(node: ElixirAST): ElixirAST {
-            // Check for ChildSpecFormat enum patterns directly
-            switch (node.def) {
-                case ETuple(elements) if (elements.length >= 1):
-                    var firstElem = elements[0];
-                    switch (firstElem.def) {
-                        case EAtom(tag):
-                            // Detect ChildSpecFormat enum constructors by their tags
-                            switch (tag) {
-                                case "ModuleWithConfig" | "ModuleRef" | "ModuleWithArgs":
-                                    #if debug_ast_transformer
-                                    trace('[XRay OTPChildSpec] Found ChildSpecFormat enum: $tag');
-                                    #end
-                                    // Apply idiomatic transformation for these OTP patterns
-                                    return transformIdiomaticEnum(elements, node);
-                                default:
-                                    // Not an OTP pattern, continue normal processing
-                            }
-                        default:
-                    }
-                default:
-            }
-            
-            // First check if this node has idiomatic transform metadata (backup check)
+            // SINGLE detection: Check metadata flag set by builder
             if (node.metadata != null && node.metadata.requiresIdiomaticTransform == true) {
                 #if debug_ast_transformer
-                trace('[XRay OTPChildSpec] Found node requiring idiomatic transform via metadata');
+                trace('[XRay OTPChildSpec] Transforming idiomatic enum: ${node.metadata.enumTypeName}');
                 #end
-                
-                // Transform based on the tuple structure
-                switch (node.def) {
-                    case ETuple(elements) if (elements.length >= 1):
-                        // Apply pattern-based transformation for idiomatic enums
-                        return transformIdiomaticEnum(elements, node);
-                    default:
-                }
+                // Apply transformation using shared utility
+                var transformed = reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(node);
+                // Continue recursion on transformed node
+                return transformAST(transformed, transformNode);
             }
             
-            // For all node types, recursively transform children
+            // Recursively transform children
             return transformAST(node, transformNode);
         }
         

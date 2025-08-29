@@ -63,13 +63,13 @@ class ElixirASTBuilder {
         var metadata = createMetadata(expr);
         var astDef = convertExpression(expr);
         
-        // Check if this is an enum constructor that needs idiomatic transformation
+        // ONLY mark metadata - NO transformation in builder!
         switch(expr.expr) {
             case TCall(e, _) if (e != null && isEnumConstructor(e) && hasIdiomaticMetadata(e)):
                 metadata.requiresIdiomaticTransform = true;
                 metadata.idiomaticEnumType = getEnumTypeName(e);
                 #if debug_ast_builder
-                trace('[AST Builder] Marked AST for idiomatic transform: ${getEnumTypeName(e)}');
+                trace('[AST Builder] Marked enum tuple for transformer: ${getEnumTypeName(e)}');
                 #end
             default:
         }
@@ -299,23 +299,12 @@ class ElixirASTBuilder {
             case TCall(e, el):
                 // Check if this is an enum constructor call first
                 if (e != null && isEnumConstructor(e)) {
-                    // Enum constructor call - generate tuple syntax {:tag, arg1, arg2, ...}
+                    // ONLY BUILD - NO TRANSFORMATION!
                     var tag = extractEnumTag(e);
                     var args = [for (arg in el) buildFromTypedExpr(arg)];
                     
-                    // Create the basic tuple
-                    var tupleAST = makeAST(ETuple([makeAST(EAtom(tag))].concat(args)), expr.pos);
-                    
-                    // Apply idiomatic transformation if the enum has @:elixirIdiomatic
-                    if (hasIdiomaticMetadata(e)) {
-                        #if debug_ast_builder
-                        trace('[AST Builder] Applying idiomatic transformation to enum constructor: $tag');
-                        #end
-                        var transformed = reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(tupleAST);
-                        transformed.def;
-                    } else {
-                        ETuple([makeAST(EAtom(tag))].concat(args));
-                    }
+                    // Just create the raw tuple - transformer will handle it
+                    ETuple([makeAST(EAtom(tag))].concat(args));
                 } else {
                     // Regular function call
                     var target = e != null ? buildFromTypedExpr(e) : null;
@@ -762,11 +751,31 @@ class ElixirASTBuilder {
     
     /**
      * Check if an expression is an enum constructor call
+     * 
+     * Handles both:
+     * - TField access: ChildSpecFormat.ModuleWithConfig
+     * - Direct constructors: ModuleWithConfig (when imported/in scope)
+     * - TTypeExpr references to enum constructors
      */
     static function isEnumConstructor(expr: TypedExpr): Bool {
         return switch(expr.expr) {
             case TField(_, FEnum(_, _)): true;
-            default: false;
+            case TTypeExpr(TEnumDecl(_)): true;  // Direct enum type reference
+            case TConst(TString(s)) if (s.charAt(0) >= 'A' && s.charAt(0) <= 'Z'): 
+                // Heuristic: capitalized identifiers might be enum constructors
+                // This is a fallback for cases where Haxe doesn't provide clear type info
+                true;
+            default: 
+                // Check the type - if it's an enum function type, it's a constructor
+                switch(expr.t) {
+                    case TFun(_, ret):
+                        switch(ret) {
+                            case TEnum(_, _): true;
+                            default: false;
+                        }
+                    case TEnum(_, _): true;
+                    default: false;
+                }
         }
     }
     
@@ -774,17 +783,52 @@ class ElixirASTBuilder {
      * Check if an enum has @:elixirIdiomatic metadata
      */
     static function hasIdiomaticMetadata(expr: TypedExpr): Bool {
-        return switch(expr.expr) {
+        // First try the direct field access case
+        switch(expr.expr) {
             case TField(_, FEnum(enumRef, _)):
                 var enumType = enumRef.get();
                 var hasIt = enumType.meta.has(":elixirIdiomatic");
                 #if debug_ast_builder
                 trace('[AST Builder] Checking @:elixirIdiomatic for ${enumType.name}: $hasIt');
                 #end
-                hasIt;
-            default: false;
+                return hasIt;
+            case TTypeExpr(TEnumDecl(enumRef)):
+                var enumType = enumRef.get();
+                var hasIt = enumType.meta.has(":elixirIdiomatic");
+                #if debug_ast_builder
+                trace('[AST Builder] Checking @:elixirIdiomatic for enum type expr: $hasIt');
+                #end
+                return hasIt;
+            default:
         }
+        
+        // Check the return type if this is a function that returns an enum
+        switch(expr.t) {
+            case TFun(_, ret):
+                switch(ret) {
+                    case TEnum(enumRef, _):
+                        var enumType = enumRef.get();
+                        var hasIt = enumType.meta.has(":elixirIdiomatic");
+                        #if debug_ast_builder
+                        trace('[AST Builder] Checking @:elixirIdiomatic via return type: $hasIt');
+                        #end
+                        return hasIt;
+                    default:
+                }
+            case TEnum(enumRef, _):
+                var enumType = enumRef.get();
+                var hasIt = enumType.meta.has(":elixirIdiomatic");
+                #if debug_ast_builder
+                trace('[AST Builder] Checking @:elixirIdiomatic via direct enum type: $hasIt');
+                #end
+                return hasIt;
+            default:
+        }
+        
+        return false;
     }
+    
+    // REMOVED buildEnumConstructor - Builder should NOT transform, only build!
     
     /**
      * Get the enum type name for pattern detection
