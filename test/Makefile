@@ -17,6 +17,16 @@ TEST_DIR := $(MAKEFILE_DIR)snapshot
 TIMEOUT := 120s
 OUTPUT_DIR := out
 
+# Pipeline Selection
+# By default uses AST pipeline. Set USE_LEGACY=1 to use old string pipeline for comparison
+ifdef USE_LEGACY
+HAXE_FLAGS := -D use_legacy_string_pipeline
+PIPELINE_MODE := (Legacy String Pipeline)
+else
+HAXE_FLAGS :=
+PIPELINE_MODE := (AST Pipeline)
+endif
+
 # Colors for output
 GREEN := \033[0;32m
 RED := \033[0;31m
@@ -40,7 +50,7 @@ summary: $(TEST_TARGETS)
 	@passed=$$(grep -c "✅" test-results.tmp 2>/dev/null || echo 0); \
 	failed=$$(grep -c "❌" test-results.tmp 2>/dev/null || echo 0); \
 	total=$$((passed + failed)); \
-	echo "Test Results: $$passed/$$total passed"; \
+	echo "Test Results $(PIPELINE_MODE): $$passed/$$total passed"; \
 	if [ $$failed -gt 0 ]; then \
 		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
 		grep "❌" test-results.tmp | sed 's/^/  /'; \
@@ -63,7 +73,7 @@ test-%:
 	start=$$(date +%s); \
 	if [ "$$testname" = "example_04_ecto" ]; then \
 		echo "⚠️ example_04_ecto - Special handling due to output redirection issue"; \
-		if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml" 2>&1 | tail -n 1 > /dev/null; then \
+		if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" 2>&1 | tail -n 1 > /dev/null; then \
 			end=$$(date +%s); \
 			duration=$$((end - start)); \
 			echo "✅ $$testname (special handling) ($${duration}s)" | tee -a test-results.tmp; \
@@ -72,7 +82,7 @@ test-%:
 			duration=$$((end - start)); \
 			echo "❌ $$testname - Compilation failed (special handling) ($${duration}s)" | tee -a test-results.tmp; \
 		fi; \
-	elif timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id compile.hxml" > /dev/null 2>&1; then \
+	elif timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 		end=$$(date +%s); \
 		duration=$$((end - start)); \
 		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
@@ -183,6 +193,11 @@ help:
 	@echo "  make update-intended          # Update all intended outputs"
 	@echo "  make clean                    # Clean output directories"
 	@echo "  make list                     # List all available tests"
+	@echo ""
+	@echo "Pipeline Testing:"
+	@echo "  make                          # Run tests with AST pipeline (default)"
+	@echo "  make USE_LEGACY=1             # Run tests with legacy string pipeline"
+	@echo "  make USE_LEGACY=1 test-NAME   # Run specific test with legacy pipeline"
 	@echo ""
 	@echo "Options:"
 	@echo "  -j N    Run N tests in parallel (default: 4)"

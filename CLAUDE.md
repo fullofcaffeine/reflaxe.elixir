@@ -55,30 +55,31 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 @docs/claude-includes/code-style.md
 @docs/claude-includes/framework-integration.md
 
-## 🏗️ Compilation Pipeline Architecture (DUAL PIPELINE TRANSITION)
+## 🏗️ Compilation Pipeline Architecture (AST-BASED DEFAULT)
 
-**IMPORTANT**: We are transitioning from string-based to AST-based compilation. Two pipelines currently coexist:
+**IMPORTANT**: The new AST-based pipeline is now the DEFAULT. Legacy string pipeline available for comparison only.
 
-### 1. Legacy String-Based Pipeline (DEFAULT - TO BE DEPRECATED)
-- Direct TypedExpr → String generation
-- Current production pipeline
-- Will be removed once AST pipeline is complete
-
-### 2. New AST-Based Pipeline (EXPERIMENTAL - FUTURE DEFAULT) 
-- Three-phase: TypedExpr → ElixirAST → String
+### 1. Primary AST-Based Pipeline (DEFAULT ✅)
+- Three-phase: TypedExpr → ElixirAST → Transformations → String
 - Strongly-typed intermediate representation
-- **THIS IS THE PREFERRED APPROACH** - All new features target this pipeline
+- Enables powerful optimizations and idiomatic code generation
+- **ALL NEW DEVELOPMENT USES THIS PIPELINE**
+
+### 2. Legacy String-Based Pipeline (COMPARISON ONLY ⚠️)
+- Direct TypedExpr → String generation
+- Available via flag for regression testing
+- **WILL BE REMOVED SOON** - Do not add new features here
 
 ### Switching Between Pipelines
 ```bash
-# Use LEGACY pipeline (default)
+# Use DEFAULT AST pipeline
 npx haxe build.hxml
 
-# Use NEW AST pipeline
-npx haxe build.hxml -D use_intermediate_ast
+# Use LEGACY pipeline (for comparison/debugging only)
+npx haxe build.hxml -D use_legacy_string_pipeline
 
-# Debug AST pipeline
-npx haxe build.hxml -D use_intermediate_ast -D debug_ast_pipeline
+# Debug AST pipeline transformations
+npx haxe build.hxml -D debug_ast_pipeline -D debug_ast_transformer
 ```
 
 ## 🚀 Essential Commands

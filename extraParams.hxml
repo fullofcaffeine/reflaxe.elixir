@@ -25,10 +25,13 @@
 # Target code injection support
 -D reflaxe-target-code-injection=elixir
 
-# AST Pipeline Feature Flag (experimental)
-# Uncomment to enable the new three-phase AST compilation pipeline
-# -D use_intermediate_ast
+# Pipeline Selection (AST is now DEFAULT)
+# To use legacy string-based pipeline (for comparison only):
+# -D use_legacy_string_pipeline
+
+# Debug flags for AST pipeline
 # -D debug_ast_pipeline
+# -D debug_ast_transformer
 
 # Macro context
 -D macro-times
