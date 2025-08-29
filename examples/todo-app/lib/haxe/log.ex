@@ -9,7 +9,7 @@ defmodule Log do
   # Static functions
   @doc "Generated from Haxe formatOutput"
   def format_output(v, infos) do
-    str = :Std.string(v)
+    str = Std.string(v)
     if (infos == nil) do
       str
     end
@@ -22,7 +22,7 @@ defmodule Log do
           if (g < g_1.length) do
             v_2 = g_1[g]
           g + 1
-          str = str + ", " + :Std.string(v)
+          str = str + ", " + Std.string(v)
             loop_1.(loop_1)
           else
             :ok
@@ -36,8 +36,8 @@ defmodule Log do
 
   @doc "Generated from Haxe trace"
   def trace(v, infos \\ nil) do
-    str = :Log.formatOutput(v, infos)
-    :Sys.println(str)
+    str = Log.format_output(v, infos)
+    Sys.println(str)
   end
 
 

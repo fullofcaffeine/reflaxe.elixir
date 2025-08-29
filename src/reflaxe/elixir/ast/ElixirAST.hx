@@ -606,6 +606,8 @@ typedef ElixirMetadata = {
     ?inPipeline: Bool,            // Part of pipe chain
     ?inComprehension: Bool,       // Inside for comprehension
     ?inGuard: Bool,               // Inside guard clause
+    ?requiresIdiomaticTransform: Bool,  // Enum needs idiomatic compilation
+    ?idiomaticEnumType: String,   // Name of the idiomatic enum type
     
     // Phoenix/Framework Specific
     ?phoenixContext: PhoenixContext,  // LiveView, Router, etc.

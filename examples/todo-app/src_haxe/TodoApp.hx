@@ -6,7 +6,7 @@ import elixir.otp.Supervisor.SupervisorExtern;
 import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.otp.Supervisor.SupervisorOptions;
 import elixir.otp.TypeSafeChildSpec;
-import elixir.otp.Supervisor.ChildSpec;
+import elixir.otp.Supervisor.ChildSpecFormat;
 
 /**
  * Main TodoApp application module
@@ -31,23 +31,19 @@ class TodoApp {
         var appName = getAppName();
         
         // Define children for the supervision tree using type-safe child specs
-        var typeSafeChildren: Array<TypeSafeChildSpec> = [
+        var children: Array<ChildSpecFormat> = [
             // Database repository - temporarily disabled due to PostgreSQL TypeManager issues
-            // TypeSafeChildSpec.Repo(),
+            // TypeSafeChildSpec.repo("TodoApp.Repo"),
             
-            // PubSub system - using type-safe enum pattern
-            TypeSafeChildSpec.PubSub("TodoApp.PubSub"),
+            // PubSub system with proper child spec
+            TypeSafeChildSpec.pubSub("TodoApp.PubSub"),
             
             // Telemetry supervisor
-            TypeSafeChildSpec.Telemetry(),
+            TypeSafeChildSpec.telemetry("TodoAppWeb.Telemetry"),
             
             // Web endpoint
-            TypeSafeChildSpec.Endpoint()
+            TypeSafeChildSpec.endpoint("TodoAppWeb.Endpoint")
         ];
-
-        // Use the TypeSafeChildSpec directly - they compile to proper child spec format
-        // Avoiding .map() due to compiler bug with variable naming in loops
-        var children: Dynamic = typeSafeChildren;
 
         // Start supervisor with children
         var opts: SupervisorOptions = {
