@@ -46,24 +46,24 @@ defmodule TodoPubSub do
     temp_struct = nil
 
     case message do
-      0 -> g_param_0 = elem(message, 1)
+      0 -> g_param_0 = 
     todo = g_param_0
     temp_struct = %{"type" => "todo_created", "todo" => todo}
-      1 -> g_param_0 = elem(message, 1)
+      1 -> g_param_0 = 
     todo = g_param_0
     temp_struct = %{"type" => "todo_updated", "todo" => todo}
-      2 -> id = elem(message, 1)
+      2 -> id = 
     temp_struct = %{"type" => "todo_deleted", "todo_id" => id}
-      3 -> action = elem(message, 1)
+      3 -> action = 
     temp_struct = %{"type" => "bulk_update", "action" => TodoPubSub.bulk_action_to_string(action)}
-      4 -> g_param_0 = elem(message, 1)
+      4 -> g_param_0 = 
     user_id = g_param_0
     temp_struct = %{"type" => "user_online", "user_id" => user_id}
-      5 -> g_param_0 = elem(message, 1)
+      5 -> g_param_0 = 
     user_id = g_param_0
     temp_struct = %{"type" => "user_offline", "user_id" => user_id}
-      6 -> g_param_0 = elem(message, 1)
-    g_param_1 = elem(message, 2)
+      6 -> g_param_0 = 
+    g_param_1 = 
     message = g_param_0
     level = g_param_1
     temp_struct = %{"type" => "system_alert", "message" => message, "level" => TodoPubSub.alert_level_to_string(level)}
@@ -124,12 +124,12 @@ defmodule TodoPubSub do
     case action do
       0 -> temp_result = "complete_all"
       1 -> temp_result = "delete_completed"
-      2 -> _priority = elem(action, 1)
+      2 -> _priority = 
     temp_result = "set_priority"
-      3 -> g_param_0 = elem(action, 1)
+      3 -> g_param_0 = 
     tag = g_param_0
     temp_result = "add_tag"
-      4 -> g_param_0 = elem(action, 1)
+      4 -> g_param_0 = 
     tag = g_param_0
     temp_result = "remove_tag"
     end
@@ -141,7 +141,7 @@ defmodule TodoPubSub do
   def parse_bulk_action(action) do
     temp_result = nil
 
-    case action do
+    temp_result = case action do
       "add_tag" -> Option.some(BulkOperationType.add_tag(""))
       "complete_all" -> Option.some(:complete_all)
       "delete_completed" -> Option.some(:delete_completed)
@@ -171,7 +171,7 @@ defmodule TodoPubSub do
   def parse_alert_level(level) do
     temp_result = nil
 
-    case level do
+    temp_result = case level do
       "critical" -> Option.some(:critical)
       "error" -> Option.some(:error)
       "info" -> Option.some(:info)

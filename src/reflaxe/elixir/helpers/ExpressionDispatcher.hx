@@ -184,13 +184,16 @@ class ExpressionDispatcher {
                     // trace("[XRay ExpressionDispatcher] TIf else branch: null");
                 }
                 #end
-                conditionalCompiler.compileIfExpression(econd, eif, eelse);
+                // ARCHITECTURAL FIX: Route through main compiler for context preservation
+                compiler.compileIfExpression(econd, eif, eelse);
                 
             case TSwitch(e, cases, edef):
                 #if debug_expression_dispatcher
                 // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to PatternMatchingCompiler (TSwitch)");
                 #end
-                patternMatchingCompiler.compileSwitchExpression(e, cases, edef);
+                // CRITICAL FIX: Route through main compiler to preserve returnContext
+                // Previously called patternMatchingCompiler directly which bypassed context tracking
+                compiler.compileSwitchExpression(e, cases, edef);
                 
             case TWhile(econd, ebody, normalWhile):
                 #if debug_expression_dispatcher
@@ -208,7 +211,8 @@ class ExpressionDispatcher {
                 #if debug_expression_dispatcher
                 // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to ExceptionCompiler (TTry)");
                 #end
-                exceptionCompiler.compileTryExpression(e, catches);
+                // ARCHITECTURAL FIX: Route through main compiler for context preservation
+                compiler.compileTryExpression(e, catches);
                 
             case TBinop(op, e1, e2):
                 #if debug_expression_dispatcher
@@ -296,13 +300,15 @@ class ExpressionDispatcher {
                 #if debug_expression_dispatcher
                 // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TReturn)");
                 #end
-                miscExpressionCompiler.compileReturnStatement(e);
+                // ARCHITECTURAL FIX: Route through main compiler for context management
+                compiler.compileReturnStatement(e);
                 
             case TParenthesis(e):
                 #if debug_expression_dispatcher
                 // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TParenthesis)");
                 #end
-                miscExpressionCompiler.compileParenthesesExpression(e);
+                // ARCHITECTURAL FIX: Route through main compiler to preserve context
+                compiler.compileParenthesesExpression(e);
                 
             case TNew(c, params, el):
                 #if debug_expression_dispatcher
@@ -320,7 +326,9 @@ class ExpressionDispatcher {
                 #if debug_expression_dispatcher
                 // trace("[XRay ExpressionDispatcher] ✓ DISPATCHING to MiscExpressionCompiler (TMeta)");
                 #end
-                miscExpressionCompiler.compileMetadataExpression(metadata, expr);
+                // CRITICAL ARCHITECTURAL FIX: Route through main compiler to preserve context
+                // TMeta was bypassing and losing returnContext, causing topic_to_string bug
+                compiler.compileMetadataExpression(metadata, expr);
                 
             case TThrow(e):
                 #if debug_expression_dispatcher
