@@ -70,16 +70,44 @@ defmodule SafeAssigns do
   @doc "Generated from Haxe countCompleted"
   def count_completed(todos) do
     count = 0
-    _g = 0
-    loop_6()
+    g = 0
+    (fn ->
+      loop_6 = fn loop_6 ->
+        if (g < todos.length) do
+          todo = todos[g]
+          g + 1
+          if (todo.completed) do
+            count + 1
+          end
+          loop_6.(loop_6)
+        else
+          :ok
+        end
+      end
+      loop_6.(loop_6)
+    end).()
     count
   end
 
   @doc "Generated from Haxe countPending"
   def count_pending(todos) do
     count = 0
-    _g = 0
-    loop_7()
+    g = 0
+    (fn ->
+      loop_7 = fn loop_7 ->
+        if (g < todos.length) do
+          todo = todos[g]
+          g + 1
+          if (not todo.completed) do
+            count + 1
+          end
+          loop_7.(loop_7)
+        else
+          :ok
+        end
+      end
+      loop_7.(loop_7)
+    end).()
     count
   end
 

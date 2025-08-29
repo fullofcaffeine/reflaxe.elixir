@@ -22,56 +22,56 @@ defmodule TypeSafeConversions do
   # Static functions
   @doc "Generated from Haxe eventParamsToChangesetParams"
   def event_params_to_changeset_params(params) do
-    changeset_params = %StringMap{}
+    changeset_params = %{}
     if (params.title != nil) do
       value = {:StringValue, params.title}
-      changeset_params.set("title", value)
+      changeset_params = Map.put(changeset_params, "title", value)
     end
     if (params.description != nil) do
       value = {:StringValue, params.description}
-      changeset_params.set("description", value)
+      changeset_params = Map.put(changeset_params, "description", value)
     end
     if (params.priority != nil) do
       value = {:StringValue, params.priority}
-      changeset_params.set("priority", value)
+      changeset_params = Map.put(changeset_params, "priority", value)
     end
     if (params.due_date != nil) do
       value = {:StringValue, params.due_date}
-      changeset_params.set("due_date", value)
+      changeset_params = Map.put(changeset_params, "due_date", value)
     end
     if (params.tags != nil) do
       value = {:StringValue, params.tags}
-      changeset_params.set("tags", value)
+      changeset_params = Map.put(changeset_params, "tags", value)
     end
     if (params.completed != nil) do
       value = {:BoolValue, params.completed}
-      changeset_params.set("completed", value)
+      changeset_params = Map.put(changeset_params, "completed", value)
     end
     changeset_params
   end
 
   @doc "Generated from Haxe createTodoParams"
   def create_todo_params(title, description, priority, due_date, tags, user_id) do
-    changeset_params = %StringMap{}
+    changeset_params = %{}
     value = {:StringValue, title}
-    changeset_params.set("title", value)
+    changeset_params = Map.put(changeset_params, "title", value)
     value = {:StringValue, priority}
-    changeset_params.set("priority", value)
+    changeset_params = Map.put(changeset_params, "priority", value)
     value = {:IntValue, user_id}
-    changeset_params.set("user_id", value)
+    changeset_params = Map.put(changeset_params, "user_id", value)
     value = {:BoolValue, false}
-    changeset_params.set("completed", value)
+    changeset_params = Map.put(changeset_params, "completed", value)
     if (description != nil) do
       value = {:StringValue, description}
-      changeset_params.set("description", value)
+      changeset_params = Map.put(changeset_params, "description", value)
     end
     if (due_date != nil) do
       value = {:StringValue, due_date}
-      changeset_params.set("due_date", value)
+      changeset_params = Map.put(changeset_params, "due_date", value)
     end
     if (tags != nil) do
       value = {:StringValue, tags}
-      changeset_params.set("tags", value)
+      changeset_params = Map.put(changeset_params, "tags", value)
     end
     changeset_params
   end
@@ -172,7 +172,7 @@ defmodule TypeSafeConversions do
         temp_array_1 = []
       end
     end
-    assigns = %{:todos => temp_array, :filter => temp_string, :sort_by => temp_string_1, :current_user => temp_user, :editing_todo => temp_maybe_todo, :show_form => temp_bool, :search_query => temp_string_2, :selected_tags => temp_array_1, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
+    assigns = %{:todos => temp_array, :filter => temp_string, :sort_by => temp_string, :current_user => temp_user, :editing_todo => temp_maybe_todo, :show_form => temp_bool, :search_query => temp_string, :selected_tags => temp_array, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
     total_todos = assigns.todos.length
     completed_todos = :TypeSafeConversions.countCompleted(assigns.todos)
     pending_todos = assigns.total_todos - assigns.completed_todos
@@ -187,8 +187,22 @@ defmodule TypeSafeConversions do
   @doc "Generated from Haxe countCompleted"
   def count_completed(todos) do
     count = 0
-    _g = 0
-    loop_0()
+    g = 0
+    (fn ->
+      loop_0 = fn loop_0 ->
+        if (g < todos.length) do
+          todo = todos[g]
+          g + 1
+          if (todo.completed) do
+            count + 1
+          end
+          loop_0.(loop_0)
+        else
+          :ok
+        end
+      end
+      loop_0.(loop_0)
+    end).()
     count
   end
 

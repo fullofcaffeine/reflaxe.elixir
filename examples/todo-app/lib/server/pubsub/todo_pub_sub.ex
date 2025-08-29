@@ -47,35 +47,35 @@ defmodule TodoPubSub do
     temp_struct = nil
     case (message.elem(0)) do
       0 ->
-        _g = message.elem(1)
-        todo = _g
+        g = message.elem(1)
+        todo = g
         temp_struct = %{:type => "todo_created", :todo => todo}
       1 ->
-        _g = message.elem(1)
-        todo = _g
+        g = message.elem(1)
+        todo = g
         temp_struct = %{:type => "todo_updated", :todo => todo}
       2 ->
-        _g = message.elem(1)
-        id = _g
+        g = message.elem(1)
+        id = g
         temp_struct = %{:type => "todo_deleted", :todo_id => id}
       3 ->
-        _g = message.elem(1)
-        action = _g
+        g = message.elem(1)
+        action = g
         temp_struct = %{:type => "bulk_update", :action => :TodoPubSub.bulkActionToString(action)}
       4 ->
-        _g = message.elem(1)
-        user_id = _g
+        g = message.elem(1)
+        user_id = g
         temp_struct = %{:type => "user_online", :user_id => user_id}
       5 ->
-        _g = message.elem(1)
-        user_id = _g
+        g = message.elem(1)
+        user_id = g
         temp_struct = %{:type => "user_offline", :user_id => user_id}
       6 ->
-        _g = message.elem(1)
-        _g_1 = message.elem(2)
-        message_2 = _g
-        level = _g_1
-        temp_struct = %{:type => "system_alert", :message => message_2, :level => :TodoPubSub.alertLevelToString(level)}
+        g = message.elem(1)
+        g_1 = message.elem(2)
+        message_2 = g
+        level = g_1
+        temp_struct = %{:type => "system_alert", :message => message, :level => :TodoPubSub.alertLevelToString(level)}
     end
     :SafePubSub.addTimestamp(temp_struct)
   end
@@ -89,15 +89,15 @@ defmodule TodoPubSub do
       :None
     end
     temp_result = nil
-    _g = msg.type
-    case (_g) do
+    g = msg.type
+    case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
           bulk_action = :TodoPubSub.parseBulkAction(msg.action)
           case (bulk_action.elem(0)) do
             0 ->
-              _g_2 = bulk_action.elem(1)
-              action = _g_2
+              g_2 = bulk_action.elem(1)
+              action = g_2
               temp_result = {:Some, {:BulkUpdate, action}}
             1 ->
               temp_result = :None
@@ -110,8 +110,8 @@ defmodule TodoPubSub do
           alert_level = :TodoPubSub.parseAlertLevel(msg.level)
           case (alert_level.elem(0)) do
             0 ->
-              _g_2 = alert_level.elem(1)
-              level = _g_2
+              g_2 = alert_level.elem(1)
+              level = g_2
               temp_result = {:Some, {:SystemAlert, msg.message, level}}
             1 ->
               temp_result = :None
@@ -167,16 +167,16 @@ defmodule TodoPubSub do
       1 ->
         temp_result = "delete_completed"
       2 ->
-        _g = action.elem(1)
-        priority = _g
+        g = action.elem(1)
+        priority = g
         temp_result = "set_priority"
       3 ->
-        _g = action.elem(1)
-        tag = _g
+        g = action.elem(1)
+        tag = g
         temp_result = "add_tag"
       4 ->
-        _g = action.elem(1)
-        tag = _g
+        g = action.elem(1)
+        tag = g
         temp_result = "remove_tag"
     end
     temp_result

@@ -49,17 +49,17 @@ defmodule Todo do
 
   @doc "Generated from Haxe toggle_completed"
   def toggle_completed(todo) do
-    params = %StringMap{}
+    params = %{}
     value = {:BoolValue, not todo.completed}
-    params.set("completed", value)
+    params = Map.put(params, "completed", value)
     :Todo.changeset(todo, params)
   end
 
   @doc "Generated from Haxe update_priority"
   def update_priority(todo, priority) do
-    params = %StringMap{}
-    value = {:StringValue, priority_2}
-    params.set("priority", value)
+    params = %{}
+    value = {:StringValue, priority}
+    params = Map.put(params, "priority", value)
     :Todo.changeset(todo, params)
   end
 
@@ -73,13 +73,25 @@ defmodule Todo do
     else
       temp_array = []
     end
-    temp_array ++ [tag]
-    params = %StringMap{}
-    _g = []
-    _g_1 = 0
-    loop_8()
-    value = {:ArrayValue, _g}
-    params.set("tags", value)
+    temp_array = temp_array ++ [tag]
+    params = %{}
+    g = []
+    g_1 = 0
+    (fn ->
+      loop_8 = fn loop_8 ->
+        if (g_1 < temp_array.length) do
+          v = temp_array[g_1]
+          g_1 + 1
+          g ++ [{:StringValue, v}]
+          loop_8.(loop_8)
+        else
+          :ok
+        end
+      end
+      loop_8.(loop_8)
+    end).()
+    value = {:ArrayValue, g}
+    params = Map.put(params, "tags", value)
     :Todo.changeset(todo, params)
   end
 
