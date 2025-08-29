@@ -15,7 +15,7 @@ defmodule TodoAppWeb.TodoLive do
     current_user = :TodoLive.get_user_from_session(session)
     todos = :TodoLive.load_todos(current_user.id)
     assigns = %{:todos => todos, :filter => "all", :sort_by => "created", :current_user => current_user, :editing_todo => nil, :show_form => false, :search_query => "", :selected_tags => [], :total_todos => todos.length, :completed_todos => :TodoLive.count_completed(todos), :pending_todos => :TodoLive.count_pending(todos)}
-    updated_socket = :LiveView.assign(socket, assigns)
+    updated_socket = Phoenix.LiveView.assign(socket, assigns)
     {:Ok, updated_socket}
   end
 
@@ -114,7 +114,7 @@ defmodule TodoAppWeb.TodoLive do
                 temp_flash_type = :Error
             end
             flash_type = temp_flash_type
-            temp_socket = :LiveView.put_flash(socket, flash_type, message)
+            temp_socket = Phoenix.LiveView.put_flash(socket, flash_type, message)
         end
       1 ->
         :Log.trace("Received unknown PubSub message: " + :Std.string(msg), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 197, :className => "server.live.TodoLive", :methodName => "handle_info"})
@@ -159,12 +159,12 @@ defmodule TodoAppWeb.TodoLive do
         todos = [todo] ++ socket.assigns.todos
         current_assigns = socket.assigns
         complete_assigns = :TypeSafeConversions.createCompleteAssigns(current_assigns, todos, nil, nil, nil, nil, false, nil, nil)
-        updated_socket = :LiveView.assign(socket, complete_assigns)
-        :LiveView.put_flash(updated_socket, :Success, "Todo created successfully!")
+        updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
+        Phoenix.LiveView.put_flash(updated_socket, :Success, "Todo created successfully!")
       1 ->
         g_2 = g.elem(1)
         reason = g_2
-        :LiveView.put_flash(socket, :Error, "Failed to create todo: " + :Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, :Error, "Failed to create todo: " + :Std.string(reason))
     end
   end
 
@@ -194,7 +194,7 @@ defmodule TodoAppWeb.TodoLive do
       1 ->
         g_2 = g.elem(1)
         reason = g_2
-        :LiveView.put_flash(socket, :Error, "Failed to update todo: " + :Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, :Error, "Failed to update todo: " + :Std.string(reason))
     end
   end
 
@@ -223,7 +223,7 @@ defmodule TodoAppWeb.TodoLive do
       1 ->
         g_2 = g.elem(1)
         reason = g_2
-        :LiveView.put_flash(socket, :Error, "Failed to delete todo: " + :Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, :Error, "Failed to delete todo: " + :Std.string(reason))
     end
   end
 
@@ -253,7 +253,7 @@ defmodule TodoAppWeb.TodoLive do
       1 ->
         g_2 = g.elem(1)
         reason = g_2
-        :LiveView.put_flash(socket, :Error, "Failed to update priority: " + :Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, :Error, "Failed to update priority: " + :Std.string(reason))
     end
   end
 
@@ -266,7 +266,7 @@ defmodule TodoAppWeb.TodoLive do
     todos = [todo] ++ socket.assigns.todos
     current_assigns = socket.assigns
     complete_assigns = :TypeSafeConversions.createCompleteAssigns(current_assigns, todos)
-    :LiveView.assign(socket, complete_assigns)
+    Phoenix.LiveView.assign(socket, complete_assigns)
   end
 
 
@@ -298,7 +298,7 @@ defmodule TodoAppWeb.TodoLive do
     end).()
     current_assigns = socket.assigns
     complete_assigns = :TypeSafeConversions.createCompleteAssigns(current_assigns, g)
-    :LiveView.assign(socket, complete_assigns)
+    Phoenix.LiveView.assign(socket, complete_assigns)
   end
 
 
@@ -324,18 +324,18 @@ defmodule TodoAppWeb.TodoLive do
     end).()
     current_assigns = socket.assigns
     complete_assigns = :TypeSafeConversions.createCompleteAssigns(current_assigns, g)
-    :LiveView.assign(socket, complete_assigns)
+    Phoenix.LiveView.assign(socket, complete_assigns)
   end
 
 
   @doc "Generated from Haxe load_todos"
   def load_todos(user_id) do
-    query = :Query.from(:Todo, "t")
+    query = Ecto.Query.from(:Todo, "t")
     where_conditions = %{}
     value = {:Integer, user_id}
     where_conditions = Map.put(where_conditions, "user_id", value)
     conditions = %{:where => where_conditions}
-    query = :Query.where(query, conditions)
+    query = Ecto.Query.where(query, conditions)
     :Repo.all(query)
   end
 
@@ -510,8 +510,8 @@ defmodule TodoAppWeb.TodoLive do
     complete_assigns = :TypeSafeConversions.createCompleteAssigns(current_assigns, updated_todos)
     completed_todos = complete_assigns.total_todos
     pending_todos = 0
-    updated_socket = :LiveView.assign(socket, complete_assigns)
-    :LiveView.put_flash(updated_socket, :Info, "All todos marked as completed!")
+    updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
+    Phoenix.LiveView.put_flash(updated_socket, :Info, "All todos marked as completed!")
   end
 
 
@@ -579,8 +579,8 @@ defmodule TodoAppWeb.TodoLive do
     complete_assigns = :TypeSafeConversions.createCompleteAssigns(current_assigns, temp_array)
     completed_todos = 0
     pending_todos = temp_array.length
-    updated_socket = :LiveView.assign(socket, complete_assigns)
-    :LiveView.put_flash(updated_socket, :Info, "Completed todos deleted!")
+    updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
+    Phoenix.LiveView.put_flash(updated_socket, :Info, "Completed todos deleted!")
   end
 
 
@@ -614,11 +614,11 @@ defmodule TodoAppWeb.TodoLive do
             :Log.trace("Failed to broadcast todo save: " + reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 514, :className => "server.live.TodoLive", :methodName => "save_edited_todo"})
         end
         updated_socket = :TodoLive.update_todo_in_list(updated_todo, socket)
-        :LiveView.assign(updated_socket, "editing_todo", nil)
+        Phoenix.LiveView.assign(updated_socket, "editing_todo", nil)
       1 ->
         g_2 = g.elem(1)
         reason = g_2
-        :LiveView.put_flash(socket, :Error, "Failed to save todo: " + :Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, :Error, "Failed to save todo: " + :Std.string(reason))
     end
   end
 
@@ -633,12 +633,12 @@ defmodule TodoAppWeb.TodoLive do
         updated_todos = :TodoLive.load_todos(socket.assigns.current_user.id)
         current_assigns = socket.assigns
         complete_assigns = :TypeSafeConversions.createCompleteAssigns(current_assigns, updated_todos)
-        temp_result = :LiveView.assign(socket, complete_assigns)
+        temp_result = Phoenix.LiveView.assign(socket, complete_assigns)
       1 ->
         updated_todos = :TodoLive.load_todos(socket.assigns.current_user.id)
         current_assigns = socket.assigns
         complete_assigns = :TypeSafeConversions.createCompleteAssigns(current_assigns, updated_todos)
-        temp_result = :LiveView.assign(socket, complete_assigns)
+        temp_result = Phoenix.LiveView.assign(socket, complete_assigns)
       2 ->
         g = action.elem(1)
         priority = g

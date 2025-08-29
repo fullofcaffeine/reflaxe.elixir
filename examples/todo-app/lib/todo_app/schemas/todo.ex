@@ -37,13 +37,13 @@ defmodule Todo do
   # Static functions
   @doc "Generated from Haxe changeset"
   def changeset(todo, params) do
-    changeset = :Changeset.castChangeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
-    changeset = :Changeset.validate_required(changeset, ["title", "user_id"])
-    changeset = :Changeset.validate_length(changeset, "title", %{:min => 3, :max => 200})
-    changeset = :Changeset.validate_length(changeset, "description", %{:max => 1000})
+    changeset = Ecto.Changeset.castChangeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
+    changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
+    changeset = Ecto.Changeset.validate_length(changeset, "title", %{:min => 3, :max => 200})
+    changeset = Ecto.Changeset.validate_length(changeset, "description", %{:max => 1000})
     priority_values = [{:StringValue, "low"}, {:StringValue, "medium"}, {:StringValue, "high"}]
-    changeset = :Changeset.validate_inclusion(changeset, "priority", priority_values)
-    changeset = :Changeset.foreign_key_constraint(changeset, "user_id")
+    changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_values)
+    changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")
     changeset
   end
 

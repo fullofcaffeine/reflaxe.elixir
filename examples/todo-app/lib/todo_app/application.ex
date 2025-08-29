@@ -20,7 +20,7 @@ defmodule TodoApp.Application do
     type_safe_children = [{:PubSub, "TodoApp.PubSub"}, {:Telemetry}, {:Endpoint}]
     children = type_safe_children
     opts = %{:strategy => :OneForOne, :max_restarts => 3, :max_seconds => 5}
-    supervisor_result = :Supervisor.start_link(children, opts)
+    supervisor_result = Supervisor.start_link(children, opts)
     supervisor_result
   end
 
