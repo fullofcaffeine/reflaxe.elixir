@@ -6,6 +6,22 @@
 
 This directory contains the Reflaxe.Elixir compiler test suite, validating that Haxe code correctly transpiles to idiomatic Elixir.
 
+### Testing Philosophy for AST and Internal Components
+
+**IMPORTANT PRINCIPLE**: We follow the Reflaxe framework standard - test the OUTPUT, not internal implementation details.
+
+- **NO unit tests for AST structures** - The AST is an internal implementation detail
+- **NO direct testing of compiler classes** - They only exist at macro-time
+- **ONLY snapshot testing** - Compile Haxe → validate generated Elixir output
+- **This matches Reflaxe.CSharp approach** - They also don't unit test their AST
+- **Focus on end-to-end validation** - What matters is correct Elixir generation
+
+**Why this approach:**
+1. AST structures can change without affecting output correctness
+2. Internal refactoring shouldn't break tests if output remains correct
+3. Users care about generated Elixir, not how we build it internally
+4. Snapshot tests catch real bugs that affect actual usage
+
 ### Test Statistics (as of 2025-08-28)
 - **84 snapshot tests** validating compiler output
 - **8 integration tests** for Mix tasks and tooling
