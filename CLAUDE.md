@@ -71,13 +71,13 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **ALL NEW DEVELOPMENT USES THIS PIPELINE**
 - **Files**: ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
 
-**⚠️ CRITICAL ARCHITECTURAL NOTE: Helper Compilers and the AST Pipeline**
-- The helper compilers (OTPCompiler, SchemaCompiler, LiveViewCompiler, etc.) are ONLY used by the legacy string pipeline
-- The AST pipeline does NOT use these helpers - this is intentional but creates feature gaps
-- **DO NOT FIX BUGS IN HELPER COMPILERS** - They will be deprecated with the string pipeline
-- **DO NOT PORT HELPERS AS STRING GENERATORS** - This would pollute the AST architecture
-- **CORRECT APPROACH**: Reimplement helper logic as AST transformation passes in ElixirASTTransformer
-- Example: OTPCompiler's supervisor options logic → SupervisorOptionsTransformPass working with AST nodes
+**⚠️ ARCHITECTURAL UPDATE: Complete Migration to AST Pipeline (August 2025)**
+- **ALL 75 helper compilers have been REMOVED** - No more string-based compilation
+- **The AST pipeline is now the ONLY compilation path** - Everything goes through it
+- **NO MORE HELPER FILES** - All functionality implemented as transformation passes
+- **ADDING NEW FEATURES**: Create a transformation pass in ElixirASTTransformer, NOT a helper file
+- **See**: [`docs/05-architecture/AST_PIPELINE_MIGRATION.md`](docs/05-architecture/AST_PIPELINE_MIGRATION.md) - Complete migration documentation
+- Example: Schema compilation → schemaTransformPass in ElixirASTTransformer
 
 **WHY AST-BASED IS CRITICAL**: The AST architecture enables sophisticated transformations impossible with strings:
 - **Inheritance → Delegation**: Transform `super.method()` to Elixir module delegation (no inheritance in Elixir!)
@@ -86,22 +86,18 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **Context-Aware Transforms**: Use metadata for intelligent decisions (parent class info, etc.)
 - **Multi-Pass Optimization**: Sequential transformation passes that build on each other
 
-### 2. Legacy String-Based Pipeline (COMPARISON ONLY ⚠️)
-- Direct TypedExpr → String generation
-- Available via flag for regression testing
-- **WILL BE REMOVED SOON** - Do not add new features here
-- Only accessible with `-D use_legacy_string_pipeline`
+### 2. ~~Legacy String-Based Pipeline~~ (REMOVED August 2025)
+- ~~Direct TypedExpr → String generation~~ - COMPLETELY REMOVED
+- ~~75 helper files~~ - ALL DELETED
+- No longer accessible - AST pipeline is the ONLY path
 
-### Switching Between Pipelines
+### Debug Flags for AST Pipeline
 ```bash
-# Use DEFAULT AST pipeline
-npx haxe build.hxml
-
-# Use LEGACY pipeline (for comparison/debugging only)
-npx haxe build.hxml -D use_legacy_string_pipeline
-
 # Debug AST pipeline transformations
 npx haxe build.hxml -D debug_ast_pipeline -D debug_ast_transformer
+
+# Debug specific transformation passes
+npx haxe build.hxml -D debug_otp_child_spec -D debug_pattern_matching
 ```
 
 ## 🚀 Essential Commands
