@@ -559,17 +559,16 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Extract additional parameters from the function expression
             switch(funcExpr.expr) {
                 case TFunction(tfunc):
-                    // Add the function's actual parameters and register them
-                    // to prevent snake_case conversion in the body
+                    // Add the function's actual parameters
+                    // AND register them to prevent snake_case conversion in the body
                     for (arg in tfunc.args) {
                         // Use the parameter name as-is (camelCase)
                         args.push(EPattern.PVar(arg.v.name));
                         
-                        // Register this parameter ID to prevent conversion to snake_case
-                        // when referenced in the function body
+                        // Register to prevent conversion when referenced in body
+                        // This registration will be used during buildFromTypedExpr
                         var idKey = Std.string(arg.v.id);
                         reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, arg.v.name);
-                        reflaxe.elixir.ast.ElixirASTBuilder.functionParameterIds.set(idKey, true);
                     }
                     
                     // Special handling for constructor body
@@ -708,6 +707,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                         }
                         
                         if (!needsSpecialHandling) {
+                            // Re-register parameters RIGHT before building body
+                            // to ensure they're not converted to snake_case
+                            for (arg in tfunc.args) {
+                                var idKey = Std.string(arg.v.id);
+                                reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, arg.v.name);
+                            }
                             body = buildFromTypedExpr(tfunc.expr);
                         }
                     }
