@@ -237,7 +237,7 @@ end
 g = []
 g1 = 0
 g2 = _this
-Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
   v = g2[g1]
   g1 + 1
   g.push((if (v.id == updated_todo.id), do: updated_todo, else: v))
@@ -255,7 +255,7 @@ g
 g = []
 g1 = 0
 g2 = _this
-Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
   v = g2[g1]
   g1 + 1
   if (v.id != id), do: g.push(v)
@@ -279,7 +279,7 @@ g
   end
   defp find_todo(id, todos) do
     g = 0
-    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < todos.length) do
   todo = todos[g]
   g + 1
   if (todo.id == id), do: todo
@@ -292,7 +292,7 @@ end end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < todos.length) do
   todo = todos[g]
   g + 1
   if (todo.completed), do: count + 1
@@ -305,7 +305,7 @@ end end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < todos.length) do
   todo = todos[g]
   g + 1
   if (not todo.completed), do: count + 1
@@ -321,7 +321,7 @@ end end)
     g = []
     g1 = 0
     g2 = _this
-    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
   v = g2[g1]
   g1 + 1
   g.push(StringTools.trim(v))
@@ -339,7 +339,7 @@ end end)
 g = []
 g1 = 0
 g2 = _this
-Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
   v = g2[g1]
   g1 + 1
   if (not v.completed), do: g.push(v)
@@ -349,7 +349,7 @@ else
 end end)
 g
     g = 0
-    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < pending.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < pending.length) do
   todo = pending[g]
   g + 1
   updated_changeset = Todo.toggle_completed(todo)
@@ -391,7 +391,7 @@ end end)
 g = []
 g1 = 0
 g2 = _this
-Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
   v = g2[g1]
   g1 + 1
   if (v.completed), do: g.push(v)
@@ -401,7 +401,7 @@ else
 end end)
 g
     g = 0
-    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < completed.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < completed.length) do
   todo = completed[g]
   g + 1
   {:unknown, todo}
@@ -414,7 +414,7 @@ end end)
 g = []
 g1 = 0
 g2 = _this
-Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
   v = g2[g1]
   g1 + 1
   if (not v.completed), do: g.push(v)
@@ -494,7 +494,7 @@ g
   g = []
   g1 = 0
   g2 = selected_tags
-  Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
   v = g2[g1]
   g1 + 1
   if (v != tag), do: g.push(v)

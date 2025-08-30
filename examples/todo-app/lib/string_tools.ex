@@ -6,7 +6,7 @@ defmodule StringTools do
   def ltrim(s) do
     l = s.length
     r = 0
-    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (r < l && StringTools.is_space(s, r)) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (r < l && StringTools.is_space(s, r)) do
   r + 1
   {:cont, acc}
 else
@@ -17,7 +17,7 @@ end end)
   def rtrim(s) do
     l = s.length
     r = 0
-    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (r < l && StringTools.is_space(s, l - r - 1)) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (r < l && StringTools.is_space(s, l - r - 1)) do
   r + 1
   {:cont, acc}
 else
@@ -31,7 +31,7 @@ end end)
   def hex(n, digits) do
     s = ""
     hex_chars = "0123456789ABCDEF"
-    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (n > 0) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (n > 0) do
   s = hex_chars.charAt(n &&& 15) + s
   n = n + 4
   {:cont, acc}
@@ -39,7 +39,7 @@ else
   {:halt, acc}
 end end)
     if (digits != nil) do
-      Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (s.length < digits) do
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (s.length < digits) do
   s = "0" + s
   {:cont, acc}
 else
