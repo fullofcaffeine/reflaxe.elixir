@@ -51,7 +51,7 @@ defmodule TodoPubSub do
     level = g1
     %{:type => "system_alert", :message => message, :level => TodoPubSub.alert_level_to_string(level)}
 end
-    SafePubSub.add_timestamp(base_payload)
+    SafePubSub.add_timestamp(basePayload)
   end
   defp parseMessageImpl(msg) do
     if (not SafePubSub.is_valid_message(msg)) do
@@ -63,9 +63,9 @@ end
       "bulk_update" ->
         if (msg.action != nil) do
           bulk_action = {:unknown, msg.action}
-          case (bulk_action.elem(0)) do
+          case (bulkAction.elem(0)) do
             0 ->
-              g = bulk_action.elem(1)
+              g = bulkAction.elem(1)
               action = g
               {:Some, {:BulkUpdate, action}}
             1 ->
@@ -77,9 +77,9 @@ end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
           alert_level = {:unknown, msg.level}
-          case (alert_level.elem(0)) do
+          case (alertLevel.elem(0)) do
             0 ->
-              g = alert_level.elem(1)
+              g = alertLevel.elem(1)
               level = g
               {:Some, {:SystemAlert, msg.message, level}}
             1 ->
