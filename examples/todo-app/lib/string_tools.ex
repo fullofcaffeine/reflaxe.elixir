@@ -17,11 +17,7 @@ defmodule StringTools do
       end
       loop_0.(loop_0)
     end).()
-    if (r > 0) do
-      s.substr(r, l - r)
-    else
-      s
-    end
+    if (r > 0), do: s.substr(r, l - r), else: s
   end
   def rtrim(s) do
     l = s.length
@@ -37,11 +33,7 @@ defmodule StringTools do
       end
       loop_1.(loop_1)
     end).()
-    if (r > 0) do
-      s.substr(0, l - r)
-    else
-      s
-    end
+    if (r > 0), do: s.substr(0, l - r), else: s
   end
   def trim(s) do
     StringTools.ltrim(StringTools.rtrim(s))
@@ -61,19 +53,17 @@ defmodule StringTools do
       end
       loop_2.(loop_2)
     end).()
-    if (digits != nil) do
-      (fn ->
-        loop_3 = fn loop_3 ->
-          if (s.length < digits) do
-            s = "0" + s
-            loop_3.(loop_3)
-          else
-            :ok
-          end
-        end
-        loop_3.(loop_3)
-      end).()
+    if (digits != nil), do: (fn ->
+  loop_3 = fn loop_3 ->
+    if (s.length < digits) do
+      s = "0" + s
+      loop_3.(loop_3)
+    else
+      :ok
     end
+  end
+  loop_3.(loop_3)
+end).()
     s
   end
 end
