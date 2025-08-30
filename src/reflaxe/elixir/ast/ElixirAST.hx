@@ -279,6 +279,9 @@ enum ElixirASTDef {
     /** Sigil (like ~H for HEEx templates) */
     ESigil(type: String, content: String, modifiers: String);
     
+    /** Raw Elixir code injection (for __elixir__ calls) */
+    ERaw(code: String);
+    
     /** Attribute @ (for assigns in templates) */
     EAssign(name: String);
     
