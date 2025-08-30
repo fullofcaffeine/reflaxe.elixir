@@ -503,6 +503,11 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
         
+        // Skip built-in types that shouldn't generate modules
+        if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name)) {
+            return null;
+        }
+        
         // Get module name - check for @:native annotation first
         var moduleName = classType.name;
         
@@ -517,6 +522,12 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // Keep original name if annotation is malformed
                 }
             }
+        }
+        
+        // Skip module generation for invalid Elixir module names (e.g., starting with underscores)
+        // Module names in Elixir cannot start with underscores
+        if (moduleName.startsWith("_")) {
+            return null;
         }
         
         // Build function definitions
@@ -738,7 +749,8 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         for (option in options) {
             // Each enum constructor becomes a function
-            var funcName = NameUtils.toSnakeCase(option.name);
+            // Use safe function name to handle reserved keywords
+            var funcName = NameUtils.toSafeElixirFunctionName(option.name);
             
             // Build parameter patterns from the option data
             var args = [];
@@ -848,6 +860,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Built-in abstracts that shouldn't generate modules
         return switch(name) {
             case "Int" | "Float" | "Bool" | "String" | "Void" | "Dynamic": true;
+            case "__Int64" | "Int64": true; // Haxe Int64 types
             case _: false;
         }
     }
@@ -859,6 +872,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Standard library classes handled elsewhere
         return switch(name) {
             case "String" | "Array" | "Map" | "Date" | "Math" | "Std": true;
+            case "__Int64" | "Int64" | "Int64_Impl_": true; // Haxe Int64 internal types
             case _: false;
         }
     }
