@@ -237,19 +237,14 @@ end
 g = []
 g1 = 0
 g2 = _this
-(fn ->
-  loop_15 = fn loop_15 ->
-    if (g1 < g2.length) do
-      v = g2[g1]
-      g1 + 1
-      g.push((if (v.id == updated_todo.id), do: updated_todo, else: v))
-      loop_15.(loop_15)
-    else
-      :ok
-    end
-  end
-  loop_15.(loop_15)
-end).()
+Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+  v = g2[g1]
+  g1 + 1
+  g.push((if (v.id == updated_todo.id), do: updated_todo, else: v))
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
 g
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
@@ -260,19 +255,14 @@ g
 g = []
 g1 = 0
 g2 = _this
-(fn ->
-  loop_16 = fn loop_16 ->
-    if (g1 < g2.length) do
-      v = g2[g1]
-      g1 + 1
-      if (v.id != id), do: g.push(v)
-      loop_16.(loop_16)
-    else
-      :ok
-    end
-  end
-  loop_16.(loop_16)
-end).()
+Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+  v = g2[g1]
+  g1 + 1
+  if (v.id != id), do: g.push(v)
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
 g
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
@@ -289,55 +279,40 @@ g
   end
   defp find_todo(id, todos) do
     g = 0
-    (fn ->
-      loop_17 = fn loop_17 ->
-        if (g < todos.length) do
-          todo = todos[g]
-      g + 1
-      if (todo.id == id), do: todo
-          loop_17.(loop_17)
-        else
-          :ok
-        end
-      end
-      loop_17.(loop_17)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < todos.length) do
+  todo = todos[g]
+  g + 1
+  if (todo.id == id), do: todo
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     nil
   end
   defp count_completed(todos) do
     count = 0
     g = 0
-    (fn ->
-      loop_18 = fn loop_18 ->
-        if (g < todos.length) do
-          todo = todos[g]
-      g + 1
-      if (todo.completed), do: count + 1
-          loop_18.(loop_18)
-        else
-          :ok
-        end
-      end
-      loop_18.(loop_18)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < todos.length) do
+  todo = todos[g]
+  g + 1
+  if (todo.completed), do: count + 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     count
   end
   defp count_pending(todos) do
     count = 0
     g = 0
-    (fn ->
-      loop_19 = fn loop_19 ->
-        if (g < todos.length) do
-          todo = todos[g]
-      g + 1
-      if (not todo.completed), do: count + 1
-          loop_19.(loop_19)
-        else
-          :ok
-        end
-      end
-      loop_19.(loop_19)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < todos.length) do
+  todo = todos[g]
+  g + 1
+  if (not todo.completed), do: count + 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     count
   end
   defp parse_tags(tags_string) do
@@ -346,19 +321,14 @@ g
     g = []
     g1 = 0
     g2 = _this
-    (fn ->
-      loop_20 = fn loop_20 ->
-        if (g1 < g2.length) do
-          v = g2[g1]
-      g1 + 1
-      g.push(StringTools.trim(v))
-          loop_20.(loop_20)
-        else
-          :ok
-        end
-      end
-      loop_20.(loop_20)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+  v = g2[g1]
+  g1 + 1
+  g.push(StringTools.trim(v))
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     g
   end
   defp get_user_from_session(session) do
@@ -369,45 +339,35 @@ g
 g = []
 g1 = 0
 g2 = _this
-(fn ->
-  loop_21 = fn loop_21 ->
-    if (g1 < g2.length) do
-      v = g2[g1]
-      g1 + 1
-      if (not v.completed), do: g.push(v)
-      loop_21.(loop_21)
-    else
-      :ok
-    end
-  end
-  loop_21.(loop_21)
-end).()
+Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+  v = g2[g1]
+  g1 + 1
+  if (not v.completed), do: g.push(v)
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
 g
     g = 0
-    (fn ->
-      loop_22 = fn loop_22 ->
-        if (g < pending.length) do
-          todo = pending[g]
-      g + 1
-      updated_changeset = Todo.toggle_completed(todo)
-      g = {:unknown, updated_changeset}
-      case (g.elem(0)) do
-        0 ->
-          g = g.elem(1)
-          updated_todo = g
-          nil
-        1 ->
-          g = g.elem(1)
-          reason = g
-          Log.trace("Failed to complete todo " + todo.id + ": " + Std.string(reason), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 440, :className => "server.live.TodoLive", :methodName => "complete_all_todos"})
-      end
-          loop_22.(loop_22)
-        else
-          :ok
-        end
-      end
-      loop_22.(loop_22)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < pending.length) do
+  todo = pending[g]
+  g + 1
+  updated_changeset = Todo.toggle_completed(todo)
+  g = {:unknown, updated_changeset}
+  case (g.elem(0)) do
+    0 ->
+      g = g.elem(1)
+      updated_todo = g
+      nil
+    1 ->
+      g = g.elem(1)
+      reason = g
+      Log.trace("Failed to complete todo " + todo.id + ": " + Std.string(reason), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 440, :className => "server.live.TodoLive", :methodName => "complete_all_todos"})
+  end
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     g = {:unknown, :TodoUpdates, {:BulkUpdate, :CompleteAll}}
     case (g.elem(0)) do
       0 ->
@@ -431,52 +391,37 @@ g
 g = []
 g1 = 0
 g2 = _this
-(fn ->
-  loop_23 = fn loop_23 ->
-    if (g1 < g2.length) do
-      v = g2[g1]
-      g1 + 1
-      if (v.completed), do: g.push(v)
-      loop_23.(loop_23)
-    else
-      :ok
-    end
-  end
-  loop_23.(loop_23)
-end).()
+Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+  v = g2[g1]
+  g1 + 1
+  if (v.completed), do: g.push(v)
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
 g
     g = 0
-    (fn ->
-      loop_24 = fn loop_24 ->
-        if (g < completed.length) do
-          todo = completed[g]
-      g + 1
-      {:unknown, todo}
-          loop_24.(loop_24)
-        else
-          :ok
-        end
-      end
-      loop_24.(loop_24)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < completed.length) do
+  todo = completed[g]
+  g + 1
+  {:unknown, todo}
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     {:unknown, :TodoUpdates, {:BulkUpdate, :DeleteCompleted}}
     remaining = _this = socket.assigns.todos
 g = []
 g1 = 0
 g2 = _this
-(fn ->
-  loop_25 = fn loop_25 ->
-    if (g1 < g2.length) do
-      v = g2[g1]
-      g1 + 1
-      if (not v.completed), do: g.push(v)
-      loop_25.(loop_25)
-    else
-      :ok
-    end
-  end
-  loop_25.(loop_25)
-end).()
+Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+  v = g2[g1]
+  g1 + 1
+  if (not v.completed), do: g.push(v)
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
 g
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, remaining)
@@ -549,19 +494,14 @@ g
   g = []
   g1 = 0
   g2 = selected_tags
-  (fn ->
-    loop_26 = fn loop_26 ->
-      if (g1 < g2.length) do
-        v = g2[g1]
-      g1 + 1
-      if (v != tag), do: g.push(v)
-        loop_26.(loop_26)
-      else
-        :ok
-      end
-    end
-    loop_26.(loop_26)
-  end).()
+  Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+  v = g2[g1]
+  g1 + 1
+  if (v != tag), do: g.push(v)
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
   g
 else
   selected_tags ++ [tag]

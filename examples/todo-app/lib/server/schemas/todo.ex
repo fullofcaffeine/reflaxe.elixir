@@ -31,19 +31,14 @@ defmodule Todo do
     value = {:ArrayValue, g = []
 g1 = 0
 g2 = tags
-(fn ->
-  loop_14 = fn loop_14 ->
-    if (g1 < g2.length) do
-      v = g2[g1]
-      g1 + 1
-      g.push({:StringValue, v})
-      loop_14.(loop_14)
-    else
-      :ok
-    end
-  end
-  loop_14.(loop_14)
-end).()
+Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g1 < g2.length) do
+  v = g2[g1]
+  g1 + 1
+  g.push({:StringValue, v})
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
 g}
     Map.put(params, "tags", value)
     Todo.changeset(todo, params)

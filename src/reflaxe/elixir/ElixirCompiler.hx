@@ -386,113 +386,15 @@ class ElixirCompiler extends DirectToStringCompiler {
      * HOW: Uses the dispatcher pattern to maintain clean separation of concerns
      */
     /**
-     * Override compileExpression to provide target code injection and state threading
+     * Implement the required abstract method for expression compilation
      * 
-     * WHY: DirectToStringCompiler handles __elixir__() target code injection in its compileExpression method.
-     * We must call the parent implementation first to enable __elixir__() functionality, then apply our
-     * state threading transformations for expressions that aren't injections.
+     * WHY: Reflaxe's DirectToStringCompiler calls this after checking for injections.
+     * This is the correct integration point for our AST pipeline.
      * 
-     * WHAT: First checks for target code injection via parent, then routes remaining expressions through 
-     * our state threading logic before delegating to the expression dispatcher.
+     * WHAT: Routes all expression compilation through our AST pipeline
      * 
-     * HOW: 
-     * 1. Call parent compileExpression to handle __elixir__() injections
-     * 2. If parent returns a result (injection found), return it immediately
-     * 3. Otherwise, proceed with our custom expression compilation logic
+     * HOW: Delegates to compileExpressionViaAST for all processing
      */
-    public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
-        #if debug_state_threading
-        // trace('[XRay ElixirCompiler] ✓ compileExpression override called');
-        #end
-        
-        // CRITICAL: Must call parent to handle __elixir__() target code injection
-        // The DirectToStringCompiler.compileExpression checks for targetCodeInjectionName
-        // and processes untyped __elixir__("code") calls before our custom logic
-        
-        // Debug: Check what we're receiving for potential injections
-        #if debug_elixir_injection
-        // First, check if this is being called at the top level of a function body
-        if (topLevel) {
-            var exprName = Type.enumConstructor(expr.expr);
-            // trace('[XRay Injection] Processing top-level expression: $exprName at pos ${expr.pos}');
-        }
-        switch(expr.expr) {
-            case TCall(e, el): {
-                switch(e.expr) {
-                    case TIdent(id) if (id == "__elixir__"):
-                        // trace('[XRay Injection] Found direct __elixir__ call with ${el.length} args');
-                        if (el.length > 0) {
-                            switch(el[0].expr) {
-                                case TConst(TString(s)):
-                                    trace('  First arg is string: "${s.substr(0, 30)}..."');
-                                case _:
-                                    trace('  First arg is not a string constant');
-                            }
-                        }
-                    case TField(_, fa):
-                        // trace('[XRay Injection] TCall with TField, not TIdent');
-                    case _:
-                        // trace('[XRay Injection] TCall with other expression type');
-                }
-            }
-            case TIdent(id) if (id == "__elixir__"):
-                // trace('[XRay Injection] Found bare __elixir__ identifier (not in a call!)');
-            case _: // Other expressions
-        }
-        #end
-        
-        #if debug_elixir_injection
-        // Pre-check what expression we're about to send to parent
-        switch(expr.expr) {
-            case TCall(e, args):
-                switch(e.expr) {
-                    case TIdent(id) if (id == "__elixir__"):
-                        // trace('[XRay ElixirCompiler PRE-CHECK] Found TCall(TIdent("__elixir__"), args)');
-                        // trace('[XRay ElixirCompiler PRE-CHECK] Args length: ${args.length}');
-                        if (args.length > 0) {
-                            switch(args[0].expr) {
-                                case TConst(TString(s)):
-                                    // trace('[XRay ElixirCompiler PRE-CHECK] First arg is string: ${s.substr(0, 50)}...');
-                                case _:
-                                    // trace('[XRay ElixirCompiler PRE-CHECK] First arg is not a string constant');
-                            }
-                        }
-                    case _:
-                }
-            case TIdent(id) if (id == "__elixir__"):
-                // trace('[XRay ElixirCompiler PRE-CHECK] ⚠️ Found bare TIdent("__elixir__") - void context issue!');
-            case _:
-        }
-        #end
-        
-        var parentResult = super.compileExpression(expr, topLevel);
-        
-        #if debug_elixir_injection
-        if (parentResult != null) {
-            // trace('[XRay ElixirCompiler] ✓ Parent returned injection result: ${parentResult.substr(0, Std.int(Math.min(parentResult.length, 100)))}...');
-        } else {
-            switch(expr.expr) {
-                case TCall(e, _):
-                    switch(e.expr) {
-                        case TIdent(id) if (id == "__elixir__"):
-                            // trace('[XRay ElixirCompiler] ⚠️ Parent returned null for __elixir__ call!');
-                        case _:
-                    }
-                case TIdent(id) if (id == "__elixir__"):
-                    // trace('[XRay ElixirCompiler] ⚠️ Parent returned null for bare __elixir__ identifier!');
-                case _:
-            }
-        }
-        #end
-        
-        if (parentResult != null) {
-            return parentResult;
-        }
-        
-        // No injection found, proceed with our custom expression compilation
-        return compileExpressionImpl(expr, topLevel);
-    }
-    
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
         // AST pipeline is the ONLY path
         return compileExpressionViaAST(expr, topLevel);

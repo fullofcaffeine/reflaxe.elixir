@@ -28,37 +28,27 @@ defmodule SafeAssigns do
   defp countCompleted(todos) do
     count = 0
     g = 0
-    (fn ->
-      loop_12 = fn loop_12 ->
-        if (g < todos.length) do
-          todo = todos[g]
-      g + 1
-      if (todo.completed), do: count + 1
-          loop_12.(loop_12)
-        else
-          :ok
-        end
-      end
-      loop_12.(loop_12)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < todos.length) do
+  todo = todos[g]
+  g + 1
+  if (todo.completed), do: count + 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     count
   end
   defp countPending(todos) do
     count = 0
     g = 0
-    (fn ->
-      loop_13 = fn loop_13 ->
-        if (g < todos.length) do
-          todo = todos[g]
-      g + 1
-      if (not todo.completed), do: count + 1
-          loop_13.(loop_13)
-        else
-          :ok
-        end
-      end
-      loop_13.(loop_13)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < todos.length) do
+  todo = todos[g]
+  g + 1
+  if (not todo.completed), do: count + 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     count
   end
 end

@@ -32,53 +32,38 @@ defmodule Assigns_Impl_ do
     result = %{}
     g = 0
     g1 = Reflect.fields(this1)
-    (fn ->
-      loop_6 = fn loop_6 ->
-        if (g < g1.length) do
-          field = g1[g]
-      g + 1
-      Reflect.set_field(result, field, Reflect.field(this1, field))
-          loop_6.(loop_6)
-        else
-          :ok
-        end
-      end
-      loop_6.(loop_6)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < g1.length) do
+  field = g1[g]
+  g + 1
+  Reflect.set_field(result, field, Reflect.field(this1, field))
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     g = 0
     g1 = Reflect.fields(Assigns_Impl_.to_dynamic(other))
-    (fn ->
-      loop_7 = fn loop_7 ->
-        if (g < g1.length) do
-          field = g1[g]
-      g + 1
-      Reflect.set_field(result, field, Reflect.field(Assigns_Impl_.to_dynamic(other), field))
-          loop_7.(loop_7)
-        else
-          :ok
-        end
-      end
-      loop_7.(loop_7)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < g1.length) do
+  field = g1[g]
+  g + 1
+  Reflect.set_field(result, field, Reflect.field(Assigns_Impl_.to_dynamic(other), field))
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     Assigns_Impl_.from_dynamic(result)
   end
   def withField(this1, field, value) do
     result = %{}
     g = 0
     g1 = Reflect.fields(this1)
-    (fn ->
-      loop_8 = fn loop_8 ->
-        if (g < g1.length) do
-          existing_field = g1[g]
-      g + 1
-      Reflect.set_field(result, existing_field, Reflect.field(this1, existing_field))
-          loop_8.(loop_8)
-        else
-          :ok
-        end
-      end
-      loop_8.(loop_8)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < g1.length) do
+  existing_field = g1[g]
+  g + 1
+  Reflect.set_field(result, existing_field, Reflect.field(this1, existing_field))
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     Reflect.set_field(result, field, value)
     Assigns_Impl_.from_dynamic(result)
   end
