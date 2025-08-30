@@ -116,11 +116,7 @@ end
     todo_params_title = params.title
     todo_params_description = params.description
     todo_params_completed = false
-    todo_params_priority = if (params.priority != nil) do
-  params.priority
-else
-  "medium"
-end
+    todo_params_priority = if (params.priority != nil), do: params.priority, else: "medium"
     todo_params_due_date = params.due_date
     todo_params_tags = TodoLive.parse_tags(params.tags)
     todo_params_user_id = socket.assigns.current_user.id
@@ -154,9 +150,7 @@ end
   end
   defp toggle_todo_status(id, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    if (todo == nil) do
-      socket
-    end
+    if (todo == nil), do: socket
     updated_changeset = Todo.toggle_completed(todo)
     g = {:unknown, updated_changeset}
     case (g.elem(0)) do
@@ -182,9 +176,7 @@ end
   end
   defp delete_todo(id, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    if (todo == nil) do
-      socket
-    end
+    if (todo == nil), do: socket
     g = {:unknown, todo}
     case (g.elem(0)) do
       0 ->
@@ -209,9 +201,7 @@ end
   end
   defp update_todo_priority(id, priority, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
-    if (todo == nil) do
-      socket
-    end
+    if (todo == nil), do: socket
     updated_changeset = Todo.update_priority(todo, priority)
     g = {:unknown, updated_changeset}
     case (g.elem(0)) do
@@ -236,9 +226,7 @@ end
     end
   end
   defp add_todo_to_list(todo, socket) do
-    if (todo.user_id == socket.assigns.current_user.id) do
-      socket
-    end
+    if (todo.user_id == socket.assigns.current_user.id), do: socket
     todos = [todo] ++ socket.assigns.todos
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
@@ -254,11 +242,7 @@ g2 = _this
     if (g1 < g2.length) do
       v = g2[g1]
       g1 + 1
-      g.push(if (v.id == updated_todo.id) do
-  updated_todo
-else
-  v
-end)
+      g.push(if (v.id == updated_todo.id), do: updated_todo, else: v)
       loop_15.(loop_15)
     else
       :ok
@@ -281,9 +265,7 @@ g2 = _this
     if (g1 < g2.length) do
       v = g2[g1]
       g1 + 1
-      if (v.id != id) do
-        g.push(v)
-      end
+      if (v.id != id), do: g.push(v)
       loop_16.(loop_16)
     else
       :ok
@@ -312,9 +294,7 @@ g
         if (g < todos.length) do
           todo = todos[g]
       g + 1
-      if (todo.id == id) do
-        todo
-      end
+      if (todo.id == id), do: todo
           loop_17.(loop_17)
         else
           :ok
@@ -332,9 +312,7 @@ g
         if (g < todos.length) do
           todo = todos[g]
       g + 1
-      if (todo.completed) do
-        count + 1
-      end
+      if (todo.completed), do: count + 1
           loop_18.(loop_18)
         else
           :ok
@@ -352,9 +330,7 @@ g
         if (g < todos.length) do
           todo = todos[g]
       g + 1
-      if (not todo.completed) do
-        count + 1
-      end
+      if (not todo.completed), do: count + 1
           loop_19.(loop_19)
         else
           :ok
@@ -365,9 +341,7 @@ g
     count
   end
   defp parse_tags(tags_string) do
-    if (tags_string == nil || tags_string == "") do
-      []
-    end
+    if (tags_string == nil || tags_string == ""), do: []
     _this = tags_string.split(",")
     g = []
     g1 = 0
@@ -388,11 +362,7 @@ g
     g
   end
   defp get_user_from_session(session) do
-    %{:id => if (session.user_id != nil) do
-  session.user_id
-else
-  1
-end, :name => "Demo User", :email => "demo@example.com", :password_hash => "hashed_password", :confirmed_at => nil, :last_login_at => nil, :active => true}
+    %{:id => if (session.user_id != nil), do: session.user_id, else: 1, :name => "Demo User", :email => "demo@example.com", :password_hash => "hashed_password", :confirmed_at => nil, :last_login_at => nil, :active => true}
   end
   defp complete_all_todos(socket) do
     pending = _this = socket.assigns.todos
@@ -404,9 +374,7 @@ g2 = _this
     if (g1 < g2.length) do
       v = g2[g1]
       g1 + 1
-      if (not v.completed) do
-        g.push(v)
-      end
+      if (not v.completed), do: g.push(v)
       loop_21.(loop_21)
     else
       :ok
@@ -468,9 +436,7 @@ g2 = _this
     if (g1 < g2.length) do
       v = g2[g1]
       g1 + 1
-      if (v.completed) do
-        g.push(v)
-      end
+      if (v.completed), do: g.push(v)
       loop_23.(loop_23)
     else
       :ok
@@ -503,9 +469,7 @@ g2 = _this
     if (g1 < g2.length) do
       v = g2[g1]
       g1 + 1
-      if (not v.completed) do
-        g.push(v)
-      end
+      if (not v.completed), do: g.push(v)
       loop_25.(loop_25)
     else
       :ok
@@ -527,9 +491,7 @@ g
   end
   defp save_edited_todo(params, socket) do
     todo = socket.assigns.editing_todo
-    if (todo == nil) do
-      socket
-    end
+    if (todo == nil), do: socket
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(todo, changeset_params)
     g = {:unknown, changeset}
@@ -592,9 +554,7 @@ g
       if (g1 < g2.length) do
         v = g2[g1]
       g1 + 1
-      if (v != tag) do
-        g.push(v)
-      end
+      if (v != tag), do: g.push(v)
         loop_26.(loop_26)
       else
         :ok

@@ -6,9 +6,7 @@ defmodule JsonPrinter do
     if (struct.replacer != nil) do
       v = struct.replacer(key, v)
     end
-    if (v == nil) do
-      "null"
-    end
+    if (v == nil), do: "null"
     g = {:unknown, v}
     case (g.elem(0)) do
       0 ->
@@ -17,16 +15,10 @@ defmodule JsonPrinter do
         Std.string(v)
       2 ->
         s = Std.string(v)
-        if (s == "NaN" || s == "Infinity" || s == "-Infinity") do
-          "null"
-        end
+        if (s == "NaN" || s == "Infinity" || s == "-Infinity"), do: "null"
         s
       3 ->
-        if (v) do
-          "true"
-        else
-          "false"
-        end
+        if (v), do: "true", else: "false"
       4 ->
         struct.writeObject(v)
       5 ->
@@ -38,11 +30,7 @@ defmodule JsonPrinter do
         if (class_name == "String") do
           struct.quoteString(v)
         else
-          if (class_name == "Array") do
-            struct.writeArray(v)
-          else
-            struct.writeObject(v)
-          end
+          if (class_name == "Array"), do: struct.writeArray(v), else: struct.writeObject(v)
         end
       7 ->
         g = g.elem(1)
@@ -67,11 +55,7 @@ defmodule JsonPrinter do
       end
       loop_9.(loop_9)
     end).()
-    if (struct.space != nil && items.length > 0) do
-      "[\n  " + items.join(",\n  ") + "\n]"
-    else
-      "[" + items.join(",") + "]"
-    end
+    if (struct.space != nil && items.length > 0), do: "[\n  " + items.join(",\n  ") + "\n]", else: "[" + items.join(",") + "]"
   end
   defp writeObject(struct, obj) do
     fields = Reflect.fields(obj)
@@ -85,11 +69,7 @@ defmodule JsonPrinter do
       value = Reflect.field(obj, field)
       key = struct.quoteString(field)
       val = struct.writeValue(value, field)
-      if (struct.space != nil) do
-        pairs.push(key + ": " + val)
-      else
-        pairs.push(key + ":" + val)
-      end
+      if (struct.space != nil), do: pairs.push(key + ": " + val), else: pairs.push(key + ":" + val)
           loop_10.(loop_10)
         else
           :ok
@@ -97,11 +77,7 @@ defmodule JsonPrinter do
       end
       loop_10.(loop_10)
     end).()
-    if (struct.space != nil && pairs.length > 0) do
-      "{\n  " + pairs.join(",\n  ") + "\n}"
-    else
-      "{" + pairs.join(",") + "}"
-    end
+    if (struct.space != nil && pairs.length > 0), do: "{\n  " + pairs.join(",\n  ") + "\n}", else: "{" + pairs.join(",") + "}"
   end
   defp quoteString(struct, s) do
     result = "\""

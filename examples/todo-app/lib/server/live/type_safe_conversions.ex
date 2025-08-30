@@ -58,27 +58,15 @@ defmodule TypeSafeConversions do
     assigns = %{:todos => if (todos != nil) do
   todos
 else
-  if (base != nil) do
-    base.todos
-  else
-    []
-  end
+  if (base != nil), do: base.todos, else: []
 end, :filter => if (filter != nil) do
   filter
 else
-  if (base != nil) do
-    base.filter
-  else
-    "all"
-  end
+  if (base != nil), do: base.filter, else: "all"
 end, :sort_by => if (sort_by != nil) do
   sort_by
 else
-  if (base != nil) do
-    base.sort_by
-  else
-    "created"
-  end
+  if (base != nil), do: base.sort_by, else: "created"
 end, :current_user => if (current_user != nil) do
   current_user
 else
@@ -90,35 +78,19 @@ else
 end, :editing_todo => if (editing_todo != nil) do
   editing_todo
 else
-  if (base != nil) do
-    base.editing_todo
-  else
-    nil
-  end
+  if (base != nil), do: base.editing_todo, else: nil
 end, :show_form => if (show_form != nil) do
   show_form
 else
-  if (base != nil) do
-    base.show_form
-  else
-    false
-  end
+  if (base != nil), do: base.show_form, else: false
 end, :search_query => if (search_query != nil) do
   search_query
 else
-  if (base != nil) do
-    base.search_query
-  else
-    ""
-  end
+  if (base != nil), do: base.search_query, else: ""
 end, :selected_tags => if (selected_tags != nil) do
   selected_tags
 else
-  if (base != nil) do
-    base.selected_tags
-  else
-    []
-  end
+  if (base != nil), do: base.selected_tags, else: []
 end, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
     total_todos = assigns.todos.length
     completed_todos = TypeSafeConversions.count_completed(assigns.todos)
@@ -136,9 +108,7 @@ end, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
         if (g < todos.length) do
           todo = todos[g]
       g + 1
-      if (todo.completed) do
-        count + 1
-      end
+      if (todo.completed), do: count + 1
           loop_4.(loop_4)
         else
           :ok

@@ -742,7 +742,7 @@ class ElixirASTPrinter {
         
         return switch(ast.def) {
             case EVar(_) | EAtom(_) | ENil | EString(_) | 
-                 EInteger(_) | EFloat(_) | EBool(_) | 
+                 EInteger(_) | EFloat(_) | EBoolean(_) | 
                  EField(_, _) | ETuple(_) | EList(_) | EMap(_):
                 true;
             case ECall(_, _, args):

@@ -25,11 +25,7 @@ defmodule Todo do
     Todo.changeset(todo, params)
   end
   def add_tag(todo, tag) do
-    tags = if (todo.tags != nil) do
-  todo.tags
-else
-  []
-end
+    tags = if (todo.tags != nil), do: todo.tags, else: []
     tags.push(tag)
     params = %{}
     value = {:ArrayValue, g = []
