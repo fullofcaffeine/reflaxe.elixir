@@ -1,9 +1,9 @@
 defmodule StringTools do
-  def isSpace() do
+  def isSpace(s, pos) do
     fn s, pos -> c = s.charCodeAt(pos)
 c > 8 && c < 14 || c == 32 end
   end
-  def ltrim() do
+  def ltrim(s) do
     fn s -> l = s.length
 r = 0
 (fn ->
@@ -23,7 +23,7 @@ else
   s
 end end
   end
-  def rtrim() do
+  def rtrim(s) do
     fn s -> l = s.length
 r = 0
 (fn ->
@@ -43,10 +43,10 @@ else
   s
 end end
   end
-  def trim() do
+  def trim(s) do
     fn s -> StringTools.ltrim(StringTools.rtrim(s)) end
   end
-  def hex() do
+  def hex(n, digits) do
     fn n, digits -> s = ""
 hex_chars = "0123456789ABCDEF"
 (fn ->

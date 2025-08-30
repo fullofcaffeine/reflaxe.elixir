@@ -1,34 +1,34 @@
 defmodule Assigns_Impl_ do
-  def fromDynamic() do
+  def fromDynamic(value) do
     fn value -> value end
   end
-  def fromObject() do
+  def fromObject(obj) do
     fn obj -> obj end
   end
-  def toDynamic() do
+  def toDynamic(this1) do
     fn this_1 -> this_1 end
   end
-  def get() do
+  def get(this1, key) do
     fn this_1, key -> Reflect.field(this_1, key) end
   end
-  def set() do
+  def set(this1, key, value) do
     fn this_1, key, value -> Reflect.set_field(this_1, key, value)
 value end
   end
-  def getField() do
+  def getField(this1, field) do
     fn this_1, field -> Reflect.field(this_1, field) end
   end
-  def setField() do
+  def setField(this1, field, value) do
     fn this_1, field, value -> Reflect.set_field(this_1, field, value)
 value end
   end
-  def hasField() do
+  def hasField(this1, field) do
     fn this_1, field -> Reflect.has_field(this_1, field) end
   end
-  def getFields() do
+  def getFields(this1) do
     fn this_1 -> Reflect.fields(this_1) end
   end
-  def merge() do
+  def merge(this1, other) do
     fn this_1, other -> result = %{}
 g = 0
 g_1 = Reflect.fields(this_1)
@@ -62,7 +62,7 @@ g_1 = Reflect.fields(Assigns_Impl_.to_dynamic(other))
 end).()
 Assigns_Impl_.from_dynamic(result) end
   end
-  def withField() do
+  def withField(this1, field, value) do
     fn this_1, field, value -> result = %{}
 g = 0
 g_1 = Reflect.fields(this_1)
@@ -82,16 +82,16 @@ end).()
 Reflect.set_field(result, field, value)
 Assigns_Impl_.from_dynamic(result) end
   end
-  def getInnerContent() do
+  def getInnerContent(this1) do
     fn this_1 -> Reflect.field(this_1, "inner_content") end
   end
-  def getFlash() do
+  def getFlash(this1) do
     fn this_1 -> Reflect.field(this_1, "flash") end
   end
-  def getCurrentUser() do
+  def getCurrentUser(this1) do
     fn this_1 -> Reflect.field(this_1, "current_user") end
   end
-  def getCsrfToken() do
+  def getCsrfToken(this1) do
     fn this_1 -> Reflect.field(this_1, "csrf_token") end
   end
 end

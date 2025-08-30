@@ -1,5 +1,5 @@
 defmodule TypeSafeConversions do
-  def eventParamsToChangesetParams() do
+  def eventParamsToChangesetParams(params) do
     fn params -> changeset_params = %{}
 if (params.title != nil) do
   value = {:StringValue, params.title}
@@ -27,7 +27,7 @@ if (params.completed != nil) do
 end
 changeset_params end
   end
-  def createTodoParams() do
+  def createTodoParams(title, description, priority, due_date, tags, user_id) do
     fn title, description, priority, due_date, tags, user_id -> changeset_params = %{}
 value = {:StringValue, title}
 Map.put(changeset_params, "title", value)
@@ -51,10 +51,10 @@ if (tags != nil) do
 end
 changeset_params end
   end
-  def validateTodoCreationParams() do
+  def validateTodoCreationParams(params) do
     fn params -> params.title != nil && params.title.length > 0 end
   end
-  def createCompleteAssigns() do
+  def createCompleteAssigns(base, todos, filter, sort_by, current_user, editing_todo, show_form, search_query, selected_tags) do
     fn base, todos, filter, sort_by, current_user, editing_todo, show_form, search_query, selected_tags -> assigns = %{:todos => if (todos != nil) do
   todos
 else
@@ -128,7 +128,7 @@ assigns end
   defp createDefaultUser() do
     fn -> %{:id => 1, :name => "Default User", :email => "default@example.com", :password_hash => "default_hash", :confirmed_at => nil, :last_login_at => nil, :active => true} end
   end
-  defp countCompleted() do
+  defp countCompleted(todos) do
     fn todos -> count = 0
 g = 0
 (fn ->

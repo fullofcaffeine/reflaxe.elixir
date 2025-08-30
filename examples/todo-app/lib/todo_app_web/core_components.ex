@@ -1,19 +1,19 @@
 defmodule TodoAppWeb.CoreComponents do
-  def modal() do
+  def modal(assigns) do
     fn assigns -> ~H"""
 <div id={@id} class="modal" phx-show={@show}>
             <%= @inner_content %>
         </div>
 """ end
   end
-  def button() do
+  def button(assigns) do
     fn assigns -> ~H"""
 <button type={@type || "button"} class={@className} disabled={@disabled}>
             <%= @inner_content %>
         </button>
 """ end
   end
-  def input() do
+  def input(assigns) do
     fn assigns -> ~H"""
 <div class="form-group">
             <label for={@field.id}><%= @label %></label>
@@ -32,7 +32,7 @@ defmodule TodoAppWeb.CoreComponents do
         </div>
 """ end
   end
-  def error() do
+  def error(assigns) do
     fn assigns -> ~H"""
 <%= if @field && @field.errors && length(@field.errors) > 0 do %>
             <div class="error-message">
@@ -41,14 +41,14 @@ defmodule TodoAppWeb.CoreComponents do
         <% end %>
 """ end
   end
-  def simple_form() do
+  def simple_form(assigns) do
     fn assigns -> ~H"""
 <.form :let={f} for={@formFor} action={@action} method={@method || "post"}>
             <%= @inner_content %>
         </.form>
 """ end
   end
-  def header() do
+  def header(assigns) do
     fn assigns -> ~H"""
 <header class="header">
             <h1><%= @title %></h1>
@@ -60,7 +60,7 @@ defmodule TodoAppWeb.CoreComponents do
         </header>
 """ end
   end
-  def table() do
+  def table(assigns) do
     fn assigns -> ~H"""
 <table class="table">
             <thead>
@@ -82,7 +82,7 @@ defmodule TodoAppWeb.CoreComponents do
         </table>
 """ end
   end
-  def list() do
+  def list(assigns) do
     fn assigns -> ~H"""
 <ul class="list">
             <%= for item <- @items do %>
@@ -91,7 +91,7 @@ defmodule TodoAppWeb.CoreComponents do
         </ul>
 """ end
   end
-  def back() do
+  def back(assigns) do
     fn assigns -> ~H"""
 <div class="back-link">
             <.link navigate={@navigate}>
@@ -100,7 +100,7 @@ defmodule TodoAppWeb.CoreComponents do
         </div>
 """ end
   end
-  def icon() do
+  def icon(assigns) do
     fn assigns -> ~H"""
 <%= if @className do %>
             <span class={"icon icon-" <> @name <> " " <> @className}></span>
@@ -109,7 +109,7 @@ defmodule TodoAppWeb.CoreComponents do
         <% end %>
 """ end
   end
-  def label() do
+  def label(assigns) do
     fn assigns -> ~H"""
 <%= if @htmlFor do %>
             <label for={@htmlFor} class={@className}><%= @inner_content %></label>

@@ -1,8 +1,8 @@
 defmodule ApplicationResultTools do
-  def ok() do
+  def ok(state) do
     fn state -> {:Ok, state} end
   end
-  def error() do
+  def error(reason) do
     fn reason -> {:Error, reason} end
   end
   def ignore() do

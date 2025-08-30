@@ -1,14 +1,14 @@
 defmodule TodoPubSub do
-  def subscribe() do
+  def subscribe(topic) do
     fn topic -> {:unknown, topic, TodoPubSub.topicToString} end
   end
-  def broadcast() do
+  def broadcast(topic, message) do
     fn topic, message -> {:unknown, topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir} end
   end
-  def parseMessage() do
+  def parseMessage(msg) do
     fn msg -> {:unknown, msg, TodoPubSub.parseMessageImpl} end
   end
-  defp topicToString() do
+  defp topicToString(topic) do
     fn topic -> case (topic.elem(0)) do
   0 ->
     "todo:updates"
@@ -18,7 +18,7 @@ defmodule TodoPubSub do
     "system:notifications"
 end end
   end
-  defp messageToElixir() do
+  defp messageToElixir(message) do
     fn message -> base_payload = case (message.elem(0)) do
   0 ->
     g = message.elem(1)
@@ -53,7 +53,7 @@ end end
 end
 SafePubSub.add_timestamp(base_payload) end
   end
-  defp parseMessageImpl() do
+  defp parseMessageImpl(msg) do
     fn msg -> if (not SafePubSub.is_valid_message(msg)) do
   Log.trace(SafePubSub.create_malformed_message_error(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 188, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
   :None
@@ -123,7 +123,7 @@ case (g) do
     :None
 end end
   end
-  defp bulkActionToString() do
+  defp bulkActionToString(action) do
     fn action -> case (action.elem(0)) do
   0 ->
     "complete_all"
@@ -143,7 +143,7 @@ end end
     "remove_tag"
 end end
   end
-  defp parseBulkAction() do
+  defp parseBulkAction(action) do
     fn action -> case (action) do
   "add_tag" ->
     {:Some, {:AddTag, ""}}
@@ -159,7 +159,7 @@ end end
     :None
 end end
   end
-  defp alertLevelToString() do
+  defp alertLevelToString(level) do
     fn level -> case (level.elem(0)) do
   0 ->
     "info"
@@ -171,7 +171,7 @@ end end
     "critical"
 end end
   end
-  defp parseAlertLevel() do
+  defp parseAlertLevel(level) do
     fn level -> case (level) do
   "critical" ->
     {:Some, :Critical}
