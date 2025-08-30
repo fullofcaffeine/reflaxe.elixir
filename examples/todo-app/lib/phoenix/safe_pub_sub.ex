@@ -2,13 +2,13 @@ defmodule SafePubSub do
   def subscribeWithConverter(topic, topicConverter) do
     pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
     topic_string = topic_converter.(topic)
-    Phoenix.PubSub.subscribe(pubsub_module, topic_string)
+    Phoenix.PubSub.subscribe(pubsubModule, topicString)
   end
   def broadcastWithConverters(topic, message, topicConverter, messageConverter) do
     pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
     topic_string = topic_converter.(topic)
     message_payload = message_converter.(message)
-    Phoenix.PubSub.broadcast(pubsub_module, topic_string, message_payload)
+    Phoenix.PubSub.broadcast(pubsubModule, topicString, messagePayload)
   end
   def parseWithConverter(msg, messageParser) do
     {:unknown, msg}
@@ -35,6 +35,6 @@ rescue
   e ->
     "unparseable message"
 end
-    "Malformed PubSub message: " + msg_str + ". Expected message with \"type\" field."
+    "Malformed PubSub message: " + msgStr + ". Expected message with \"type\" field."
   end
 end

@@ -21,10 +21,10 @@ defmodule Flash do
   def fromPhoenixFlash(phoenixFlash) do
     type_string = tmp = phoenixFlash.type
 if (tmp != nil), do: tmp, else: "info"
-    flash_type = {:unknown, type_string}
+    flash_type = {:unknown, typeString}
     message = tmp = phoenixFlash.message
 if (tmp != nil), do: tmp, else: ""
-    %{:type => flash_type, :message => message, :title => phoenixFlash.title, :details => phoenixFlash.details, :dismissible => tmp = phoenixFlash.dismissible
+    %{:type => flashType, :message => message, :title => phoenixFlash.title, :details => phoenixFlash.details, :dismissible => tmp = phoenixFlash.dismissible
 if (tmp != nil), do: tmp, else: true, :timeout => phoenixFlash.timeout, :action => phoenixFlash.action}
   end
   defp extractChangesetErrors(changeset) do

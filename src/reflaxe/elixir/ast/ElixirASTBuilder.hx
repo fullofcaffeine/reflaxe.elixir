@@ -52,6 +52,10 @@ class ElixirASTBuilder {
     // These are intentional parameter names, not collision-renamed variables
     public static var functionParameterIds: Map<String, Bool> = new Map();
     
+    // Flag to indicate we're building a class method body
+    // When true, don't convert camelCase parameters to snake_case
+    public static var isInClassMethodContext: Bool = false;
+    
     /**
      * Main entry point: Convert TypedExpr to ElixirAST
      * 
@@ -140,10 +144,22 @@ class ElixirASTBuilder {
                 
                 // Check if this variable has been registered as a function parameter
                 // or has an explicit mapping (from TFunction processing)
+                var isClassParam = false;
                 if (tempVarRenameMap.exists(idKey)) {
                     // Use the explicitly mapped name - it's already in Elixir format
-                    varName = tempVarRenameMap.get(idKey);
-                    wasMapped = true;
+                    var mappedName = tempVarRenameMap.get(idKey);
+                    
+                    // Check if this is a class method parameter (marked with CLASS_PARAM: prefix)
+                    if (mappedName.indexOf("CLASS_PARAM:") == 0) {
+                        // Remove the marker and use the camelCase name
+                        varName = mappedName.substr(12); // Remove "CLASS_PARAM:" prefix
+                        wasMapped = true;
+                        isClassParam = true; // Mark as class parameter
+                    } else {
+                        varName = mappedName;
+                        wasMapped = true;
+                    }
+                    
                     #if debug_ast_pipeline
                     trace('[AST Builder] Using mapped name for id=${v.id}: ${v.name} -> ${varName}');
                     #end
@@ -200,7 +216,23 @@ class ElixirASTBuilder {
                 // during TFunction processing instead of converting here. This would eliminate the need
                 // for the wasMapped flag and make the conversion happen at definition time rather than
                 // reference time, following the single responsibility principle.
-                EVar(wasMapped ? varName : toElixirVarName(varName));
+                
+                // In class method context, preserve camelCase for parameters
+                // This ensures function parameters like "topicConverter" stay as-is
+                var finalName = if (isClassParam) {
+                    // This is a class method parameter marked with CLASS_PARAM
+                    // Keep it as camelCase
+                    varName;
+                } else if (wasMapped) {
+                    // Variable was mapped but not a class param
+                    varName; // Use mapped name as-is
+                } else if (isInClassMethodContext && isCamelCaseParameter(varName)) {
+                    // Keep camelCase parameters as-is in class methods
+                    varName;
+                } else {
+                    toElixirVarName(varName);
+                };
+                EVar(finalName);
                 
             case TVar(v, init):
                 // Apply same underscore variable renaming as in TLocal
@@ -593,7 +625,14 @@ class ElixirASTBuilder {
                 // This is crucial for abstract methods where "this1" becomes a parameter
                 for (arg in f.args) {
                     var originalName = arg.v.name;
-                    var elixirName = toElixirVarName(originalName);
+                    
+                    // In class method context, preserve camelCase for parameters
+                    var elixirName = if (isInClassMethodContext && isCamelCaseParameter(originalName)) {
+                        // Keep camelCase parameters as-is in class methods
+                        originalName;
+                    } else {
+                        toElixirVarName(originalName);
+                    };
                     
                     // Track all parameter mappings, especially for abstract "this" parameters
                     if (originalName != elixirName) {
@@ -628,7 +667,27 @@ class ElixirASTBuilder {
                 // Register parameter names to prevent collision renaming
                 for (arg in f.args) {
                     var idKey = Std.string(arg.v.id);
-                    var elixirName = toElixirVarName(arg.v.name);
+                    
+                    // Check if this parameter was already registered with CLASS_PARAM marker
+                    // This happens when ElixirCompiler processes class methods
+                    if (tempVarRenameMap.exists(idKey)) {
+                        var existing = tempVarRenameMap.get(idKey);
+                        if (existing.indexOf("CLASS_PARAM:") == 0) {
+                            // Preserve the CLASS_PARAM marker - don't override it
+                            functionParameterIds.set(idKey, true);
+                            continue;
+                        }
+                    }
+                    
+                    var originalName = arg.v.name;
+                    
+                    // Use same logic as above for consistency
+                    var elixirName = if (isInClassMethodContext && isCamelCaseParameter(originalName)) {
+                        originalName;
+                    } else {
+                        toElixirVarName(originalName);
+                    };
+                    
                     tempVarRenameMap.set(idKey, elixirName);
                     functionParameterIds.set(idKey, true); // Mark as function parameter
                     #if debug_ast_pipeline
@@ -1163,6 +1222,28 @@ class ElixirASTBuilder {
      * Convert variable name to Elixir convention
      * Preserves special Elixir constants like __MODULE__, __FILE__, __ENV__
      */
+    /**
+     * Check if a variable name looks like a camelCase parameter
+     * These are typically function parameters that should remain as-is
+     */
+    static function isCamelCaseParameter(name: String): Bool {
+        if (name.length < 2) return false;
+        
+        // Check if it starts with lowercase and has uppercase letters
+        var firstChar = name.charAt(0);
+        if (firstChar != firstChar.toLowerCase()) return false;
+        
+        // Check if it contains uppercase letters (indicating camelCase)
+        for (i in 1...name.length) {
+            var char = name.charAt(i);
+            if (char == char.toUpperCase() && char != "_" && char != char.toLowerCase()) {
+                return true; // Found uppercase letter, it's camelCase
+            }
+        }
+        
+        return false;
+    }
+    
     static function toElixirVarName(name: String): String {
         // Special Elixir constants should be preserved
         var specialConstants = ["__MODULE__", "__FILE__", "__ENV__", "__DIR__", "__CALLER__"];
