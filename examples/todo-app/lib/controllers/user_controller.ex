@@ -1,34 +1,17 @@
 defmodule UserController do
-  @moduledoc """
-    UserController module generated from Haxe
-
-     * Simple controller class for testing RouterBuildMacro validation
-  """
-
-  # Static functions
-  @doc "Generated from Haxe index"
   def index() do
-    "User index"
+    fn -> "User index" end
   end
-
-  @doc "Generated from Haxe show"
   def show() do
-    "User show"
+    fn -> "User show" end
   end
-
-  @doc "Generated from Haxe create"
   def create() do
-    "User create"
+    fn -> "User create" end
   end
-
-  @doc "Generated from Haxe update"
   def update() do
-    "User update"
+    fn -> "User update" end
   end
-
-  @doc "Generated from Haxe delete"
   def delete() do
-    "User delete"
+    fn -> "User delete" end
   end
-
 end

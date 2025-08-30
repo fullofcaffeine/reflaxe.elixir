@@ -1,84 +1,53 @@
 defmodule FlashTypeTools do
-  @moduledoc """
-    FlashTypeTools module generated from Haxe
-
-     * Helper functions for FlashType enum
-  """
-
-  # Static functions
-  @doc "Generated from Haxe toString"
-  def format(type) do
-    temp_result = nil
-
-    temp_result = nil
-    case (type.elem(0)) do
-      0 ->
-        temp_result = "info"
-      1 ->
-        temp_result = "success"
-      2 ->
-        temp_result = "warning"
-      3 ->
-        temp_result = "error"
-    end
-    temp_result
+  def toString() do
+    fn type -> case (type.elem(0)) do
+  0 ->
+    "info"
+  1 ->
+    "success"
+  2 ->
+    "warning"
+  3 ->
+    "error"
+end end
   end
-
-  @doc "Generated from Haxe fromString"
-  def from_string(str) do
-    temp_result = nil
-
-    temp_result = nil
-    g = str.toLowerCase()
-    case (g) do
-      "error" ->
-        temp_result = :Error
-      "info" ->
-        temp_result = :Info
-      "success" ->
-        temp_result = :Success
-      "warning" ->
-        temp_result = :Warning
-      _ ->
-        temp_result = :Info
-    end
-    temp_result
+  def fromString() do
+    fn str -> g = str.toLowerCase()
+case (g) do
+  "error" ->
+    :Error
+  "info" ->
+    :Info
+  "success" ->
+    :Success
+  "warning" ->
+    :Warning
+  _ ->
+    :Info
+end end
   end
-
-  @doc "Generated from Haxe getCssClass"
-  def get_css_class(type) do
-    temp_result = nil
-
-    temp_result = nil
-    case (type.elem(0)) do
-      0 ->
-        temp_result = "bg-blue-50 border-blue-200 text-blue-800"
-      1 ->
-        temp_result = "bg-green-50 border-green-200 text-green-800"
-      2 ->
-        temp_result = "bg-yellow-50 border-yellow-200 text-yellow-800"
-      3 ->
-        temp_result = "bg-red-50 border-red-200 text-red-800"
-    end
-    temp_result
+  def getCssClass() do
+    fn type -> case (type.elem(0)) do
+  0 ->
+    "bg-blue-50 border-blue-200 text-blue-800"
+  1 ->
+    "bg-green-50 border-green-200 text-green-800"
+  2 ->
+    "bg-yellow-50 border-yellow-200 text-yellow-800"
+  3 ->
+    "bg-red-50 border-red-200 text-red-800"
+end end
   end
-
-  @doc "Generated from Haxe getIconName"
-  def get_icon_name(type) do
-    temp_result = nil
-
-    temp_result = nil
-    case (type.elem(0)) do
-      0 ->
-        temp_result = "information-circle"
-      1 ->
-        temp_result = "check-circle"
-      2 ->
-        temp_result = "exclamation-triangle"
-      3 ->
-        temp_result = "x-circle"
-    end
-    temp_result
+  def getIconName() do
+    fn type -> case (type.elem(0)) do
+  0 ->
+    "information-circle"
+  1 ->
+    "check-circle"
+  2 ->
+    "exclamation-triangle"
+  3 ->
+    "x-circle"
+end end
   end
-
 end

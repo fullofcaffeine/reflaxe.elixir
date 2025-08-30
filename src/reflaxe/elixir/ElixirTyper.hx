@@ -147,8 +147,10 @@ class ElixirTyper {
         var elixirParamTypes = paramTypes.map(type -> compileType(type, context));
         var elixirReturnType = compileType(returnType, context);
         
-        // Use FormatHelper for proper formatting
-        return FormatHelper.formatSpec(elixirFuncName, elixirParamTypes, elixirReturnType, indentLevel);
+        // Format the @spec annotation
+        var indent = [for (i in 0...indentLevel) "  "].join("");
+        var paramsStr = elixirParamTypes.join(", ");
+        return indent + '@spec ${elixirFuncName}(${paramsStr}) :: ${elixirReturnType}';
     }
     
     /**
@@ -179,8 +181,8 @@ class ElixirTyper {
      */
     public function generateTypeDefinition(typeName: String, fields: Array<{name: String, type: String}>, 
                                          ?context: TypeContext, indentLevel: Int = 1): String {
-        var baseIndent = FormatHelper.indent("", indentLevel);
-        var fieldIndent = FormatHelper.indent("", indentLevel + 1);
+        var baseIndent = [for (i in 0...indentLevel) "  "].join("");
+        var fieldIndent = [for (i in 0...(indentLevel + 1)) "  "].join("");
         
         var result = baseIndent + "@type t() :: %__MODULE__{\n";
         
@@ -206,8 +208,8 @@ class ElixirTyper {
      */
     public function generateUnionTypeDefinition(typeName: String, variants: Array<String>, 
                                                ?context: TypeContext, indentLevel: Int = 1): String {
-        var baseIndent = FormatHelper.indent("", indentLevel);
-        var variantIndent = FormatHelper.indent("", indentLevel + 1);
+        var baseIndent = [for (i in 0...indentLevel) "  "].join("");
+        var variantIndent = [for (i in 0...(indentLevel + 1)) "  "].join("");
         
         var result = baseIndent + "@type t() ::\n";
         
@@ -231,7 +233,7 @@ class ElixirTyper {
      */
     public function generateOpaqueTypeDefinition(typeName: String, baseType: String,
                                                 ?context: TypeContext, indentLevel: Int = 1): String {
-        var baseIndent = FormatHelper.indent("", indentLevel);
+        var baseIndent = [for (i in 0...indentLevel) "  "].join("");
         var elixirBaseType = compileType(baseType, context);
         return baseIndent + '@opaque t() :: ${elixirBaseType}';
     }
