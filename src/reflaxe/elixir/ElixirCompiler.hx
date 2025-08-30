@@ -12,11 +12,13 @@ import haxe.macro.Expr.Unop;
 import haxe.macro.Expr;
 import haxe.macro.Expr.Constant;
 
-import reflaxe.DirectToStringCompiler;
+import reflaxe.GenericCompiler;
 import reflaxe.compiler.TargetCodeInjection;
 import reflaxe.data.ClassFuncData;
 import reflaxe.data.ClassVarData;  
 import reflaxe.data.EnumOptionData;
+import reflaxe.output.DataAndFileInfo;
+import reflaxe.output.StringOrBytes;
 // All helper imports removed - using AST pipeline exclusively
 import reflaxe.elixir.ElixirTyper;
 import reflaxe.elixir.PhoenixMapper;
@@ -32,7 +34,7 @@ using reflaxe.helpers.TypeHelper;
 /**
  * Reflaxe.Elixir compiler for generating idiomatic Elixir code from Haxe.
  * 
- * This compiler extends BaseCompiler to provide comprehensive Haxe-to-Elixir transpilation
+ * This compiler extends GenericCompiler to provide comprehensive Haxe-to-Elixir transpilation
  * with support for Phoenix applications, OTP patterns, and gradual typing.
  * 
  * Key Features:
@@ -49,10 +51,21 @@ using reflaxe.helpers.TypeHelper;
  * into idiomatic Elixir code. It handles desugaring reversal - detecting patterns
  * that Haxe has desugared and converting them back to idiomatic target constructs.
  * 
+ * ARCHITECTURE: Uses GenericCompiler<ElixirAST> following C#'s proven pattern.
+ * All compilation methods return AST nodes, which are transformed and printed
+ * to strings via ElixirOutputIterator at the end of compilation.
+ * 
+ * @see docs/05-architecture/GENERICCOMPILER_MIGRATION_PRD.md Migration rationale
  * @see docs/05-architecture/ARCHITECTURE.md Complete architectural overview
  * @see docs/03-compiler-development/TESTING.md Testing methodology and patterns
  */
-class ElixirCompiler extends DirectToStringCompiler {
+class ElixirCompiler extends GenericCompiler<
+    reflaxe.elixir.ast.ElixirAST,  // CompiledClassType
+    reflaxe.elixir.ast.ElixirAST,  // CompiledEnumType
+    reflaxe.elixir.ast.ElixirAST,  // CompiledExpressionType
+    reflaxe.elixir.ast.ElixirAST,  // CompiledTypedefType
+    reflaxe.elixir.ast.ElixirAST   // CompiledAbstractType
+> {
     
     // File extension for generated Elixir files
     public var fileExtension: String = ".ex";
@@ -326,13 +339,13 @@ class ElixirCompiler extends DirectToStringCompiler {
     
     
     /**
-     * Required implementation for DirectToStringCompiler - implements class compilation
+     * Required implementation for GenericCompiler - implements class compilation
      * @param classType The Haxe class type
      * @param varFields Class variables
      * @param funcFields Class functions
-     * @return Generated Elixir module string
+     * @return ElixirAST representing the compiled module
      */
-    public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<String> {
+    public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
         if (classType == null) return null;
         
         // Skip standard library classes that shouldn't generate Elixir modules
@@ -348,20 +361,16 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // Use AST pipeline for class compilation
         var moduleAST = buildClassAST(classType, varFields, funcFields);
-        if (moduleAST == null) return null;
         
-        // Transform the AST
-        var transformedAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(moduleAST);
-        
-        // Generate string from AST
-        return reflaxe.elixir.ast.ElixirASTPrinter.print(transformedAST, 0);
+        // Return AST directly - transformation and printing handled by ElixirOutputIterator
+        return moduleAST;
     }
     
     
     /**
-     * Required implementation for DirectToStringCompiler - implements enum compilation
+     * Required implementation for GenericCompiler - implements enum compilation
      */
-    public function compileEnumImpl(enumType: EnumType, options: Array<EnumOptionData>): Null<String> {
+    public function compileEnumImpl(enumType: EnumType, options: Array<EnumOptionData>): Null<reflaxe.elixir.ast.ElixirAST> {
         if (enumType == null) return null;
         
         // Set output file path with snake_case naming
@@ -369,13 +378,9 @@ class ElixirCompiler extends DirectToStringCompiler {
         
         // Use AST pipeline for enum compilation
         var enumAST = buildEnumAST(enumType, options);
-        if (enumAST == null) return null;
         
-        // Transform the AST
-        var transformedAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(enumAST);
-        
-        // Generate string from AST
-        return reflaxe.elixir.ast.ElixirASTPrinter.print(transformedAST, 0);
+        // Return AST directly - transformation and printing handled by ElixirOutputIterator
+        return enumAST;
     }
     
     /**
@@ -388,16 +393,27 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Implement the required abstract method for expression compilation
      * 
-     * WHY: Reflaxe's DirectToStringCompiler calls this after checking for injections.
+     * WHY: Reflaxe's GenericCompiler calls this to compile individual expressions.
      * This is the correct integration point for our AST pipeline.
      * 
-     * WHAT: Routes all expression compilation through our AST pipeline
+     * WHAT: Builds AST for individual expressions
      * 
-     * HOW: Delegates to compileExpressionViaAST for all processing
+     * HOW: Delegates to ElixirASTBuilder for AST generation
      */
-    public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
-        // AST pipeline is the ONLY path
-        return compileExpressionViaAST(expr, topLevel);
+    public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<reflaxe.elixir.ast.ElixirAST> {
+        // Build AST for the expression
+        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr);
+    }
+    
+    /**
+     * Generate output iterator for converting AST to strings
+     * 
+     * WHY: GenericCompiler produces AST nodes, but Reflaxe needs strings for file output
+     * WHAT: Returns an iterator that processes all compiled AST nodes
+     * HOW: Delegates to ElixirOutputIterator which handles transformation and printing
+     */
+    public function generateOutputIterator(): Iterator<DataAndFileInfo<StringOrBytes>> {
+        return new ElixirOutputIterator(this);
     }
     
     /**
@@ -736,38 +752,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     }
     
     /**
-     * Compile expression using the new three-phase AST pipeline
-     * 
-     * WHY: Enables gradual migration to intermediate AST architecture
-     * WHAT: Routes expression through AST builder → transformer → printer
-     * HOW: Converts TypedExpr to ElixirAST, applies transformations, generates string
-     */
-    function compileExpressionViaAST(expr: TypedExpr, topLevel: Bool): Null<String> {
-        #if debug_ast_pipeline
-        trace('[XRay AST Pipeline] Processing expression via AST: ${expr.expr}');
-        #end
-        
-        // Phase 1: Build AST from TypedExpr
-        var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr);
-        
-        // Phase 2: Transform AST
-        var transformedAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast);
-        
-        // Phase 3: Generate string from AST
-        var result = reflaxe.elixir.ast.ElixirASTPrinter.print(transformedAST, topLevel ? 0 : 1);
-        
-        #if debug_ast_pipeline
-        trace('[XRay AST Pipeline] Generated result: ${result.substring(0, 100)}...');
-        #end
-        
-        return result;
-    }
-    
-    /**
      * Compile abstract types - generates proper Elixir type aliases and implementation modules
      * Abstract types in Haxe become type aliases in Elixir with implementation modules for operators
      */
-    public override function compileAbstractImpl(abstractType: AbstractType): Null<String> {
+    public function compileAbstractImpl(abstractType: AbstractType): Null<reflaxe.elixir.ast.ElixirAST> {
         // Skip core Haxe types that are handled elsewhere
         // Return null (not empty string) to prevent file generation
         if (isBuiltinAbstractType(abstractType.name)) {
@@ -927,7 +915,7 @@ class ElixirCompiler extends DirectToStringCompiler {
      * The typedef just creates an alias - any usage of StringMap in code will be
      * compiled as if Map<String, String> was used directly.
      */
-    public override function compileTypedefImpl(defType: DefType): Null<String> {
+    public function compileTypedefImpl(defType: DefType): Null<reflaxe.elixir.ast.ElixirAST> {
         // Typedefs don't generate runtime code in Elixir
         return null;
     }
