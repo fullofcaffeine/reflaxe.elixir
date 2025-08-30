@@ -618,6 +618,7 @@ typedef ElixirMetadata = {
     
     // Optimization Hints
     ?canInline: Bool,             // Can be inlined
+    ?keepInlineInAssignment: Bool, // Keep inline when assigned (e.g., null coalescing)
     ?isConstant: Bool,            // Compile-time constant
     ?accessPattern: AccessPattern, // How value is accessed
     ?sideEffects: Bool,           // Has side effects

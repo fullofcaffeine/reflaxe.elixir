@@ -143,7 +143,19 @@ class ElixirASTPrinter {
                 indentStr(indent) + 'end';
                 
             case EMatch(pattern, expr):
-                printPattern(pattern) + ' = ' + print(expr, 0);
+                // Check if the expression has metadata indicating it should stay inline
+                // This is used for null coalescing patterns that need to stay on one line
+                var keepInline = expr != null && expr.metadata != null && 
+                                expr.metadata.keepInlineInAssignment == true;
+                
+                if (keepInline) {
+                    // Force inline format for the expression
+                    // This ensures null coalescing stays on one line to avoid syntax errors
+                    printPattern(pattern) + ' = ' + print(expr, 0);
+                } else {
+                    // Regular assignment
+                    printPattern(pattern) + ' = ' + print(expr, 0);
+                }
                 
             case EWith(clauses, doBlock, elseBlock):
                 var withClauses = [for (clause in clauses)

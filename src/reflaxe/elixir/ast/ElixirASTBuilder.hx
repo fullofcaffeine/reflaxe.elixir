@@ -258,7 +258,7 @@ class ElixirASTBuilder {
                 
             case TVar(v, init):
                 #if debug_null_coalescing
-                trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? init.expr : "null"}');
+                trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
                 #end
                 // Apply same underscore variable renaming as in TLocal
                 var varName = v.name;
@@ -303,7 +303,7 @@ class ElixirASTBuilder {
                             var defaultAst = buildFromTypedExpr(defaultExpr);
                             
                             // Generate: if (tmp = init) != nil, do: tmp, else: default
-                            makeAST(EIf(
+                            var ifExpr = makeAST(EIf(
                                 makeAST(EBinary(NotEqual, 
                                     makeAST(EMatch(PVar(tmpVarName), initAst)),
                                     makeAST(ENil)
@@ -311,6 +311,10 @@ class ElixirASTBuilder {
                                 makeAST(EVar(tmpVarName)),
                                 defaultAst
                             ));
+                            // Mark as inline for null coalescing
+                            if (ifExpr.metadata == null) ifExpr.metadata = {};
+                            ifExpr.metadata.keepInlineInAssignment = true;
+                            ifExpr;
                             
                         case _:
                             // Regular init expression
@@ -389,22 +393,31 @@ class ElixirASTBuilder {
                         
                         if (isSimple) {
                             // Simple expression can be used directly
-                            EIf(
+                            var ifExpr = makeAST(EIf(
                                 makeAST(EBinary(NotEqual, left, makeAST(ENil))),
                                 left,
                                 right
-                            );
+                            ));
+                            // Mark as inline for null coalescing
+                            if (ifExpr.metadata == null) ifExpr.metadata = {};
+                            ifExpr.metadata.keepInlineInAssignment = true;
+                            ifExpr.def;
                         } else {
                             // Complex expression needs temp variable to avoid double evaluation
                             // Generate: if (tmp = expr) != nil, do: tmp, else: default
                             var tmpVar = makeAST(EVar("tmp"));
                             var assignment = makeAST(EMatch(PVar("tmp"), left));
                             
-                            EIf(
+                            // Mark this if expression to stay inline when assigned
+                            var ifExpr = makeAST(EIf(
                                 makeAST(EBinary(NotEqual, assignment, makeAST(ENil))),
                                 tmpVar,
                                 right
-                            );
+                            ));
+                            // Set metadata to indicate this should stay inline
+                            if (ifExpr.metadata == null) ifExpr.metadata = {};
+                            ifExpr.metadata.keepInlineInAssignment = true;
+                            ifExpr.def;
                         }
                 }
                 
@@ -600,7 +613,7 @@ class ElixirASTBuilder {
                 #if debug_null_coalescing
                 trace('[AST Builder] TBlock with ${el.length} expressions');
                 for (i in 0...el.length) {
-                    trace('[AST Builder]   Block[$i]: ${el[i].expr}');
+                    trace('[AST Builder]   Block[$i]: ${Type.enumConstructor(el[i].expr)}');
                 }
                 #end
                 
@@ -617,14 +630,18 @@ class ElixirASTBuilder {
                             var tmpVarName = toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
                             
                             // Generate: if (tmp = init) != nil, do: tmp, else: default
-                            return EIf(
+                            var ifExpr = makeAST(EIf(
                                 makeAST(EBinary(NotEqual, 
                                     makeAST(EMatch(PVar(tmpVarName), initAst)),
                                     makeAST(ENil)
                                 )),
                                 makeAST(EVar(tmpVarName)),
                                 defaultAst
-                            );
+                            ));
+                            // Mark as inline for null coalescing
+                            if (ifExpr.metadata == null) ifExpr.metadata = {};
+                            ifExpr.metadata.keepInlineInAssignment = true;
+                            return ifExpr.def;
                         case _:
                             // Not the null coalescing pattern
                     }
@@ -829,7 +846,7 @@ class ElixirASTBuilder {
                             var defaultAst = buildFromTypedExpr(defaultExpr);
                             var tmpVarName = toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
                             
-                            makeAST(EIf(
+                            var ifExpr = makeAST(EIf(
                                 makeAST(EBinary(NotEqual, 
                                     makeAST(EMatch(PVar(tmpVarName), initAst)),
                                     makeAST(ENil)
@@ -837,6 +854,10 @@ class ElixirASTBuilder {
                                 makeAST(EVar(tmpVarName)),
                                 defaultAst
                             ));
+                            // Mark as inline for null coalescing
+                            if (ifExpr.metadata == null) ifExpr.metadata = {};
+                            ifExpr.metadata.keepInlineInAssignment = true;
+                            ifExpr;
                             
                         case _:
                             buildFromTypedExpr(field.expr);
@@ -892,6 +913,46 @@ class ElixirASTBuilder {
                 
             case TMeta(m, e):
                 // Metadata wrapping - preserve the expression
+                // Special handling for :mergeBlock which wraps null coalescing patterns
+                if (m.name == ":mergeBlock") {
+                    // Check if this is a null coalescing pattern
+                    switch(e.expr) {
+                        case TBlock([{expr: TVar(tmpVar, init)}, secondExpr]) if (init != null):
+                            // Check if the second expression uses the temp variable
+                            switch(secondExpr.expr) {
+                                case TIf(condition, thenBranch, elseBranch):
+                                    // Check if this is testing the temp variable for null
+                                    var isNullCheck = switch(condition.expr) {
+                                        case TParenthesis({expr: TBinop(OpNotEq, {expr: TLocal(v)}, {expr: TConst(TNull)})}):
+                                            v.id == tmpVar.id;
+                                        default: false;
+                                    };
+                                    
+                                    if (isNullCheck) {
+                                        // This is null coalescing! Generate inline if expression
+                                        var tmpVarName = toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
+                                        var initAst = buildFromTypedExpr(init);
+                                        var elseAst = buildFromTypedExpr(elseBranch);
+                                        
+                                        // Generate: if (tmp = init) != nil, do: tmp, else: default
+                                        var ifExpr = makeAST(EIf(
+                                            makeAST(EBinary(NotEqual, 
+                                                makeAST(EParen(makeAST(EMatch(PVar(tmpVarName), initAst)))),
+                                                makeAST(ENil)
+                                            )),
+                                            makeAST(EVar(tmpVarName)),
+                                            elseAst
+                                        ));
+                                        // Mark as inline for null coalescing
+                                        if (ifExpr.metadata == null) ifExpr.metadata = {};
+                                        ifExpr.metadata.keepInlineInAssignment = true;
+                                        return ifExpr.def;
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                }
                 buildFromTypedExpr(e).def;
                 
             // ================================================================
