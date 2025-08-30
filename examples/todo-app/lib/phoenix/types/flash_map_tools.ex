@@ -1,13 +1,13 @@
 defmodule FlashMapTools do
   def hasAny(flashMap) do
-    flash_map.info != nil || flash_map.success != nil || flash_map.warning != nil || flash_map.error != nil
+    flashMap.info != nil || flashMap.success != nil || flashMap.warning != nil || flashMap.error != nil
   end
   def getAll(flashMap) do
     messages = []
-    if (flash_map.info != nil), do: messages.push(Flash.info(flash_map.info))
-    if (flash_map.success != nil), do: messages.push(Flash.success(flash_map.success))
-    if (flash_map.warning != nil), do: messages.push(Flash.warning(flash_map.warning))
-    if (flash_map.error != nil), do: messages.push(Flash.error(flash_map.error))
+    if (flashMap.info != nil), do: messages.push(Flash.info(flashMap.info))
+    if (flashMap.success != nil), do: messages.push(Flash.success(flashMap.success))
+    if (flashMap.warning != nil), do: messages.push(Flash.warning(flashMap.warning))
+    if (flashMap.error != nil), do: messages.push(Flash.error(flashMap.error))
     messages
   end
   def clear() do

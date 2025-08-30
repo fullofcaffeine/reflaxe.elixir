@@ -9,35 +9,35 @@ defmodule Assigns_Impl_ do
     this1
   end
   def get(this1, key) do
-    Reflect.field(this_1, key)
+    Reflect.field(this1, key)
   end
   def set(this1, key, value) do
-    Reflect.set_field(this_1, key, value)
+    Reflect.set_field(this1, key, value)
     value
   end
   def getField(this1, field) do
-    Reflect.field(this_1, field)
+    Reflect.field(this1, field)
   end
   def setField(this1, field, value) do
-    Reflect.set_field(this_1, field, value)
+    Reflect.set_field(this1, field, value)
     value
   end
   def hasField(this1, field) do
-    Reflect.has_field(this_1, field)
+    Reflect.has_field(this1, field)
   end
   def getFields(this1) do
-    Reflect.fields(this_1)
+    Reflect.fields(this1)
   end
   def merge(this1, other) do
     result = %{}
     g = 0
-    g1 = Reflect.fields(this_1)
+    g1 = Reflect.fields(this1)
     (fn ->
       loop_6 = fn loop_6 ->
         if (g < g1.length) do
           field = g1[g]
       g + 1
-      Reflect.set_field(result, field, Reflect.field(this_1, field))
+      Reflect.set_field(result, field, Reflect.field(this1, field))
           loop_6.(loop_6)
         else
           :ok
@@ -65,13 +65,13 @@ defmodule Assigns_Impl_ do
   def withField(this1, field, value) do
     result = %{}
     g = 0
-    g1 = Reflect.fields(this_1)
+    g1 = Reflect.fields(this1)
     (fn ->
       loop_8 = fn loop_8 ->
         if (g < g1.length) do
           existing_field = g1[g]
       g + 1
-      Reflect.set_field(result, existing_field, Reflect.field(this_1, existing_field))
+      Reflect.set_field(result, existing_field, Reflect.field(this1, existing_field))
           loop_8.(loop_8)
         else
           :ok
@@ -83,15 +83,15 @@ defmodule Assigns_Impl_ do
     Assigns_Impl_.from_dynamic(result)
   end
   def getInnerContent(this1) do
-    Reflect.field(this_1, "inner_content")
+    Reflect.field(this1, "inner_content")
   end
   def getFlash(this1) do
-    Reflect.field(this_1, "flash")
+    Reflect.field(this1, "flash")
   end
   def getCurrentUser(this1) do
-    Reflect.field(this_1, "current_user")
+    Reflect.field(this1, "current_user")
   end
   def getCsrfToken(this1) do
-    Reflect.field(this_1, "csrf_token")
+    Reflect.field(this1, "csrf_token")
   end
 end
