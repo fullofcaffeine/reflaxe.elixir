@@ -33,9 +33,7 @@ defmodule SafeAssigns do
         if (g < todos.length) do
           todo = todos[g]
       g + 1
-      if (todo.completed) do
-        count + 1
-      end
+      if (todo.completed), do: count + 1
           loop_12.(loop_12)
         else
           :ok
@@ -53,9 +51,7 @@ defmodule SafeAssigns do
         if (g < todos.length) do
           todo = todos[g]
       g + 1
-      if (not todo.completed) do
-        count + 1
-      end
+      if (not todo.completed), do: count + 1
           loop_13.(loop_13)
         else
           :ok

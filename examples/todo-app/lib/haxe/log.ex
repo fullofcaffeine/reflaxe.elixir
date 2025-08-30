@@ -1,9 +1,7 @@
 defmodule Log do
   def formatOutput(v, infos) do
     str = Std.string(v)
-    if (infos == nil) do
-      str
-    end
+    if (infos == nil), do: str
     pstr = infos.fileName + ":" + infos.lineNumber
     if (infos.customParams != nil) do
       g = 0

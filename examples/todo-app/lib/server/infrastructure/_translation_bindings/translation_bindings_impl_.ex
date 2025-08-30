@@ -25,11 +25,7 @@ defmodule TranslationBindings_Impl_ do
     this_1
   end
   def setBool(this1, key, value) do
-    Map.put(this_1, key, if (value) do
-  "true"
-else
-  "false"
-end)
+    Map.put(this_1, key, if (value), do: "true", else: "false")
     this_1
   end
   def toMap(this1) do

@@ -89,35 +89,15 @@ end
           :None
         end
       "todo_created" ->
-        if (msg.todo != nil) do
-          {:Some, {:TodoCreated, msg.todo}}
-        else
-          :None
-        end
+        if (msg.todo != nil), do: {:Some, {:TodoCreated, msg.todo}}, else: :None
       "todo_deleted" ->
-        if (msg.todo_id != nil) do
-          {:Some, {:TodoDeleted, msg.todo_id}}
-        else
-          :None
-        end
+        if (msg.todo_id != nil), do: {:Some, {:TodoDeleted, msg.todo_id}}, else: :None
       "todo_updated" ->
-        if (msg.todo != nil) do
-          {:Some, {:TodoUpdated, msg.todo}}
-        else
-          :None
-        end
+        if (msg.todo != nil), do: {:Some, {:TodoUpdated, msg.todo}}, else: :None
       "user_offline" ->
-        if (msg.user_id != nil) do
-          {:Some, {:UserOffline, msg.user_id}}
-        else
-          :None
-        end
+        if (msg.user_id != nil), do: {:Some, {:UserOffline, msg.user_id}}, else: :None
       "user_online" ->
-        if (msg.user_id != nil) do
-          {:Some, {:UserOnline, msg.user_id}}
-        else
-          :None
-        end
+        if (msg.user_id != nil), do: {:Some, {:UserOnline, msg.user_id}}, else: :None
       _ ->
         Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 220, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
         :None

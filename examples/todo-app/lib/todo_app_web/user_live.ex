@@ -108,23 +108,13 @@ end
     HXX.hxx("\n        <tr>\n            <td>" + user[:name] + "</td>\n            <td>" + user[:email] + "</td>\n            <td>" + user[:age] + "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " + UserLive.get_status_text(user[:active]) + "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        ")
   end
   defp getStatusClass(active) do
-    if (active) do
-      "status active"
-    else
-      "status inactive"
-    end
+    if (active), do: "status active", else: "status inactive"
   end
   defp getStatusText(active) do
-    if (active) do
-      "Active"
-    else
-      "Inactive"
-    end
+    if (active), do: "Active", else: "Inactive"
   end
   defp renderUserForm(assigns) do
-    if (not assigns.showForm) do
-      ""
-    end
+    if (not assigns.showForm), do: ""
     ~H"""
 
         <div class="modal">
