@@ -362,7 +362,7 @@ g
     g
   end
   defp get_user_from_session(session) do
-    %{:id => if (session.user_id != nil), do: session.user_id, else: 1, :name => "Demo User", :email => "demo@example.com", :password_hash => "hashed_password", :confirmed_at => nil, :last_login_at => nil, :active => true}
+    %{:id => (if (session.user_id != nil), do: session.user_id, else: 1), :name => "Demo User", :email => "demo@example.com", :password_hash => "hashed_password", :confirmed_at => nil, :last_login_at => nil, :active => true}
   end
   defp complete_all_todos(socket) do
     pending = _this = socket.assigns.todos

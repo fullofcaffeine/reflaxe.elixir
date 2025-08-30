@@ -18,7 +18,7 @@ defmodule TypeSafeChildSpec do
     if (opts != nil) do
       spec = opts
       id = module
-      start = %{:module => module, :func => "start_link", :args => if (args != nil), do: args, else: []}
+      start = %{:module => module, :func => "start_link", :args => (if (args != nil), do: args, else: [])}
       if (spec.type == nil) do
         type = :Supervisor
       end

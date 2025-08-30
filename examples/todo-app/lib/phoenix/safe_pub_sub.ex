@@ -24,7 +24,7 @@ defmodule SafePubSub do
     msg != nil && Reflect.has_field(msg, "type") && Reflect.field(msg, "type") != nil
   end
   def createUnknownMessageError(messageType) do
-    "Unknown PubSub message type: \"" + message_type + "\". Check your message enum definitions."
+    "Unknown PubSub message type: \"" + messageType + "\". Check your message enum definitions."
   end
   def createMalformedMessageError(msg) do
     msg_str = try do

@@ -559,11 +559,17 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Extract additional parameters from the function expression
             switch(funcExpr.expr) {
                 case TFunction(tfunc):
-                    // Add the function's actual parameters
+                    // Add the function's actual parameters and register them
+                    // to prevent snake_case conversion in the body
                     for (arg in tfunc.args) {
-                        // For now, use the parameter name as-is
-                        // The AST builder will handle proper variable naming
+                        // Use the parameter name as-is (camelCase)
                         args.push(EPattern.PVar(arg.v.name));
+                        
+                        // Register this parameter ID to prevent conversion to snake_case
+                        // when referenced in the function body
+                        var idKey = Std.string(arg.v.id);
+                        reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, arg.v.name);
+                        reflaxe.elixir.ast.ElixirASTBuilder.functionParameterIds.set(idKey, true);
                     }
                     
                     // Special handling for constructor body

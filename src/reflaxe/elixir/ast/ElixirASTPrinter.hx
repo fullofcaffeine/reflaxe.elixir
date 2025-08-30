@@ -252,19 +252,76 @@ class ElixirASTPrinter {
                 '{' + [for (e in elements) print(e, 0)].join(', ') + '}';
                 
             case EMap(pairs):
-                '%{' + [for (p in pairs) print(p.key, 0) + ' => ' + print(p.value, 0)].join(', ') + '}';
+                '%{' + [for (p in pairs) {
+                    var key = print(p.key, 0);
+                    var value = p.value;
+                    
+                    // Check if value is an inline if-else that needs parentheses
+                    var valueStr = switch(value.def) {
+                        case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
+                            isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+                            // Wrap inline if-else in parentheses for map context
+                            '(' + print(value, 0) + ')';
+                        case _:
+                            print(value, 0);
+                    };
+                    
+                    key + ' => ' + valueStr;
+                }].join(', ') + '}';
                 
             case EStruct(module, fields):
                 '%' + module + '{' + 
-                [for (f in fields) f.key + ': ' + print(f.value, 0)].join(', ') + '}';
+                [for (f in fields) {
+                    var value = f.value;
+                    
+                    // Check if value is an inline if-else that needs parentheses
+                    var valueStr = switch(value.def) {
+                        case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
+                            isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+                            // Wrap inline if-else in parentheses for struct context
+                            '(' + print(value, 0) + ')';
+                        case _:
+                            print(value, 0);
+                    };
+                    
+                    f.key + ': ' + valueStr;
+                }].join(', ') + '}';
                 
             case EStructUpdate(struct, fields):
                 // Struct update syntax: %{struct | field: value, ...}
                 '%{' + print(struct, 0) + ' | ' +
-                [for (f in fields) f.key + ': ' + print(f.value, 0)].join(', ') + '}';
+                [for (f in fields) {
+                    var value = f.value;
+                    
+                    // Check if value is an inline if-else that needs parentheses
+                    var valueStr = switch(value.def) {
+                        case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
+                            isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+                            // Wrap inline if-else in parentheses for struct update context
+                            '(' + print(value, 0) + ')';
+                        case _:
+                            print(value, 0);
+                    };
+                    
+                    f.key + ': ' + valueStr;
+                }].join(', ') + '}';
                 
             case EKeywordList(pairs):
-                '[' + [for (p in pairs) p.key + ': ' + print(p.value, 0)].join(', ') + ']';
+                '[' + [for (p in pairs) {
+                    var value = p.value;
+                    
+                    // Check if value is an inline if-else that needs parentheses
+                    var valueStr = switch(value.def) {
+                        case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
+                            isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+                            // Wrap inline if-else in parentheses for keyword list context
+                            '(' + print(value, 0) + ')';
+                        case _:
+                            print(value, 0);
+                    };
+                    
+                    p.key + ': ' + valueStr;
+                }].join(', ') + ']';
                 
             case EBitstring(segments):
                 '<<' + [for (s in segments) printBinarySegment(s)].join(', ') + '>>';
