@@ -196,6 +196,10 @@ class ElixirASTBuilder {
                 
                 // Only apply toElixirVarName if the variable wasn't already mapped
                 // Mapped variables are already in Elixir format (e.g., "this_1")
+                // TODO: Architectural improvement - store the Elixir-formatted name in tempVarRenameMap 
+                // during TFunction processing instead of converting here. This would eliminate the need
+                // for the wasMapped flag and make the conversion happen at definition time rather than
+                // reference time, following the single responsibility principle.
                 EVar(wasMapped ? varName : toElixirVarName(varName));
                 
             case TVar(v, init):
