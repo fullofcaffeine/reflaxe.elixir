@@ -18,14 +18,14 @@ defmodule Flash do
   def toPhoenixFlash(flash) do
     %{:type => FlashTypeTools.to_string(flash.type), :message => flash.message, :title => flash.title, :details => flash.details, :dismissible => flash.dismissible, :timeout => flash.timeout, :action => flash.action}
   end
-  def fromPhoenixFlash(phoenixFlash) do
-    type_string = tmp = phoenixFlash.type
+  def fromPhoenixFlash(phoenix_flash) do
+    type_string = tmp = phoenix_flash.type
 if (tmp != nil), do: tmp, else: "info"
-    flash_type = {:unknown, typeString}
-    message = tmp = phoenixFlash.message
+    flash_type = {:unknown, type_string}
+    message = tmp = phoenix_flash.message
 if (tmp != nil), do: tmp, else: ""
-    %{:type => flashType, :message => message, :title => phoenixFlash.title, :details => phoenixFlash.details, :dismissible => tmp = phoenixFlash.dismissible
-if (tmp != nil), do: tmp, else: true, :timeout => phoenixFlash.timeout, :action => phoenixFlash.action}
+    %{:type => flash_type, :message => message, :title => phoenix_flash.title, :details => phoenix_flash.details, :dismissible => tmp = phoenix_flash.dismissible
+if (tmp != nil), do: tmp, else: true, :timeout => phoenix_flash.timeout, :action => phoenix_flash.action}
   end
   defp extractChangesetErrors(changeset) do
     []
