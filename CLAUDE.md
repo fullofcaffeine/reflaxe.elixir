@@ -385,6 +385,47 @@ if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
 
 **Remember**: Reflaxe is a mature framework. If you're inventing something from scratch, check if Reflaxe already provides it.
 
+## ⚠️ CRITICAL: Favor Composition Over Inheritance in Reflaxe Compilers
+
+**FUNDAMENTAL RULE: IMPLEMENT ONLY REQUIRED ABSTRACT METHODS. LET REFLAXE ORCHESTRATE THE FLOW.**
+
+**What counts as inheritance overuse:**
+- ❌ **Overriding compileExpression** when you only need compileExpressionImpl
+- ❌ **Intercepting parent methods** that manage the compilation pipeline
+- ❌ **Breaking injection mechanisms** by overriding orchestration methods
+- ❌ **Duplicating parent logic** with super calls that add no value
+- ❌ **Fighting the framework** instead of working with it
+
+**The composition approach:**
+- ✅ **Implement compileExpressionImpl** - The abstract method Reflaxe requires
+- ✅ **Trust parent orchestration** - DirectToStringCompiler handles injection, hooks, etc.
+- ✅ **Let Reflaxe manage flow** - Don't intercept unless adding specific value
+- ✅ **Compose behaviors** - Add functionality through delegation, not overriding
+- ✅ **Respect the pipeline** - Each phase has clear responsibilities
+
+**Example of wrong vs right approach:**
+```haxe
+// ❌ WRONG: Overriding orchestration method
+public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<String> {
+    // This breaks parent's injection handling!
+    return compileExpressionViaAST(expr, topLevel);
+}
+
+// ✅ RIGHT: Implement only the required abstract method
+public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<String> {
+    // Let parent handle orchestration, we just provide implementation
+    return compileExpressionViaAST(expr, topLevel);
+}
+```
+
+**Why this matters:**
+- **Framework integration**: Reflaxe features (like injection) work correctly
+- **Maintainability**: Less coupling with parent implementation details
+- **Clarity**: Clear separation between orchestration and implementation
+- **Future-proofing**: Parent class improvements automatically benefit us
+
+**Remember**: DirectToStringCompiler is a mature orchestrator. Trust it to manage the compilation flow while you focus on Elixir-specific implementation.
+
 ## ⚠️ CRITICAL: NO ENUM-SPECIFIC HARDCODING EVER
 
 **FUNDAMENTAL RULE: NEVER HARDCODE SPECIFIC ENUM NAMES OR TYPES IN COMPILER LOGIC. ALWAYS USE GENERAL PATTERNS.**
@@ -1053,6 +1094,11 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix
 - **Quick Patterns**: [docs/07-patterns/quick-start-patterns.md](docs/07-patterns/quick-start-patterns.md)
 - **Troubleshooting**: [docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)
 - **Compiler Development**: [docs/03-compiler-development/CLAUDE.md](docs/03-compiler-development/CLAUDE.md)
+
+**⚡ Critical Standard Library Implementation Guides**:
+- **Stdlib Implementation Guide**: [`docs/03-compiler-development/STDLIB_IMPLEMENTATION_GUIDE.md`](docs/03-compiler-development/STDLIB_IMPLEMENTATION_GUIDE.md) - Definitive guide for implementing stdlib with idiomatic output
+- **Extern Deep Dive**: [`docs/03-compiler-development/EXTERN_DEEP_DIVE.md`](docs/03-compiler-development/EXTERN_DEEP_DIVE.md) - Complete understanding of externs vs code generation
+- **Native & Metadata Guide**: [`docs/03-compiler-development/NATIVE_AND_METADATA_COMPLETE_GUIDE.md`](docs/03-compiler-development/NATIVE_AND_METADATA_COMPLETE_GUIDE.md) - All metadata combinations and effects
 
 ---
 
