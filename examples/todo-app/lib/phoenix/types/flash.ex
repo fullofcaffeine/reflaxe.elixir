@@ -1,76 +1,45 @@
 defmodule Flash do
-  @moduledoc """
-    Flash module generated from Haxe
-
-     * Type-safe flash message builder and utilities
-  """
-
-  # Static functions
-  @doc "Generated from Haxe info"
-  def info(message, title \\ nil) do
-    %{:type => :Info, :message => message, :title => title, :dismissible => true}
+  def info() do
+    fn message, title -> %{:type => :Info, :message => message, :title => title, :dismissible => true} end
   end
-
-  @doc "Generated from Haxe success"
-  def success(message, title \\ nil) do
-    %{:type => :Success, :message => message, :title => title, :dismissible => true, :timeout => 5000}
+  def success() do
+    fn message, title -> %{:type => :Success, :message => message, :title => title, :dismissible => true, :timeout => 5000} end
   end
-
-  @doc "Generated from Haxe warning"
-  def warning(message, title \\ nil) do
-    %{:type => :Warning, :message => message, :title => title, :dismissible => true}
+  def warning() do
+    fn message, title -> %{:type => :Warning, :message => message, :title => title, :dismissible => true} end
   end
-
-  @doc "Generated from Haxe error"
-  def error(message, details \\ nil, title \\ nil) do
-    %{:type => :Error, :message => message, :details => details, :title => title, :dismissible => true}
+  def error() do
+    fn message, details, title -> %{:type => :Error, :message => message, :details => details, :title => title, :dismissible => true} end
   end
-
-  @doc "Generated from Haxe validationError"
-  def validation_error(message, changeset) do
-    errors = Flash.extract_changeset_errors(changeset)
-    %{:type => :Error, :message => message, :details => errors, :title => "Validation Failed", :dismissible => true}
+  def validationError() do
+    fn message, changeset -> errors = Flash.extract_changeset_errors(changeset)
+%{:type => :Error, :message => message, :details => errors, :title => "Validation Failed", :dismissible => true} end
   end
-
-  @doc "Generated from Haxe toPhoenixFlash"
-  def to_phoenix_flash(flash) do
-    %{:type => FlashTypeTools.to_string(flash.type), :message => flash.message, :title => flash.title, :details => flash.details, :dismissible => flash.dismissible, :timeout => flash.timeout, :action => flash.action}
+  def toPhoenixFlash() do
+    fn flash -> %{:type => FlashTypeTools.to_string(flash.type), :message => flash.message, :title => flash.title, :details => flash.details, :dismissible => flash.dismissible, :timeout => flash.timeout, :action => flash.action} end
   end
-
-  @doc "Generated from Haxe fromPhoenixFlash"
-  def from_phoenix_flash(phoenix_flash) do
-    temp_string = nil
-    temp_string_1 = nil
-    temp_bool = nil
-
-    temp_string = nil
-    tmp = phoenix_flash.type
-    if (tmp != nil) do
-      temp_string = tmp
-    else
-      temp_string = "info"
-    end
-    flash_type = {:unknown, temp_string}
-    temp_string_1 = nil
-    tmp = phoenix_flash.message
-    if (tmp != nil) do
-      temp_string_1 = tmp
-    else
-      temp_string_1 = ""
-    end
-    temp_bool = nil
-    tmp = phoenix_flash.dismissible
-    if (tmp != nil) do
-      temp_bool = tmp
-    else
-      temp_bool = true
-    end
-    %{:type => flash_type, :message => temp_string, :title => phoenix_flash.title, :details => phoenix_flash.details, :dismissible => temp_bool, :timeout => phoenix_flash.timeout, :action => phoenix_flash.action}
+  def fromPhoenixFlash() do
+    fn phoenix_flash -> type_string = tmp = phoenix_flash.type
+if (tmp != nil) do
+  tmp
+else
+  "info"
+end
+flash_type = {:unknown, type_string}
+message = tmp = phoenix_flash.message
+if (tmp != nil) do
+  tmp
+else
+  ""
+end
+%{:type => flash_type, :message => message, :title => phoenix_flash.title, :details => phoenix_flash.details, :dismissible => tmp = phoenix_flash.dismissible
+if (tmp != nil) do
+  tmp
+else
+  true
+end, :timeout => phoenix_flash.timeout, :action => phoenix_flash.action} end
   end
-
-  @doc "Generated from Haxe extractChangesetErrors"
-  def extract_changeset_errors(_changeset) do
-    []
+  defp extractChangesetErrors() do
+    fn changeset -> [] end
   end
-
 end

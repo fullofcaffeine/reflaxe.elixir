@@ -1,22 +1,8 @@
 defmodule TodoAppWeb.Layouts do
-  use Phoenix.Component
-
-  @moduledoc """
-    TodoAppWeb.Layouts module generated from Haxe
-
-     * Main layouts module for Phoenix application
-     * Provides the layout functions that Phoenix expects
-  """
-
-  # Static functions
-  @doc "Generated from Haxe root"
-  def root(assigns) do
-    RootLayout.render(assigns)
+  def root() do
+    fn assigns -> RootLayout.render(assigns) end
   end
-
-  @doc "Generated from Haxe app"
-  def app(assigns) do
-    AppLayout.render(assigns)
+  def app() do
+    fn assigns -> AppLayout.render(assigns) end
   end
-
 end

@@ -48,6 +48,10 @@ class ElixirASTBuilder {
     // Key is the TVar.id (as String), value is the renamed variable name
     static var tempVarRenameMap: Map<String, String> = new Map();
     
+    // Set of function parameter IDs to avoid collision detection on them
+    // These are intentional parameter names, not collision-renamed variables
+    static var functionParameterIds: Map<String, Bool> = new Map();
+    
     /**
      * Main entry point: Convert TypedExpr to ElixirAST
      * 
@@ -124,42 +128,56 @@ class ElixirASTBuilder {
             case TLocal(v):
                 // Check if this is a renamed parameter (e.g., priority2 -> priority)
                 var varName = v.name;
+                var idKey = Std.string(v.id);
+                var wasMapped = false;
                 
                 // Always debug variables that might be renamed
                 #if debug_ast_pipeline
-                if (varName.indexOf("priority") >= 0 || varName.indexOf("_") >= 0 || ~/\d$/.match(varName)) {
+                if (varName.indexOf("priority") >= 0 || varName.indexOf("_") >= 0 || ~/\d$/.match(varName) || varName.indexOf("this") >= 0 || varName.indexOf("struct") >= 0) {
                     trace('[AST Builder] TLocal variable: name="${varName}", id=${v.id}, pos=${expr.pos}');
                 }
                 #end
                 
+                // Check if this variable has been registered as a function parameter
+                // or has an explicit mapping (from TFunction processing)
+                if (tempVarRenameMap.exists(idKey)) {
+                    // Use the explicitly mapped name - it's already in Elixir format
+                    varName = tempVarRenameMap.get(idKey);
+                    wasMapped = true;
+                    #if debug_ast_pipeline
+                    trace('[AST Builder] Using mapped name for id=${v.id}: ${v.name} -> ${varName}');
+                    #end
+                }
                 // Handle Haxe-generated temp variables that start with underscore
                 // These are variables like _g, _g1, etc. that Haxe generates during desugaring
                 // In Elixir, underscore-prefixed variables should not be used after assignment
                 // So we create a mapping to rename them consistently
-                if (varName.charAt(0) == "_" && varName.length > 1) {
-                    // Check if we already have a mapping for this variable ID
-                    var idKey = Std.string(v.id);
-                    if (!tempVarRenameMap.exists(idKey)) {
-                        // Create a new non-underscore name for this temp variable
-                        var newName = if (~/^_g\d*$/.match(varName)) {
-                            // _g, _g1, _g2 -> g, g1, g2
-                            varName.substr(1);
-                        } else if (~/^_\d+$/.match(varName)) {
-                            // _1, _2 -> temp1, temp2
-                            "temp" + varName.substr(1);
-                        } else {
-                            // Other underscore variables - keep as is for now
-                            varName;
-                        };
+                else if (varName.charAt(0) == "_" && varName.length > 1) {
+                    // Create a new non-underscore name for this temp variable
+                    var newName = if (~/^_g\d*$/.match(varName)) {
+                        // _g, _g1, _g2 -> g, g1, g2
+                        varName.substr(1);
+                    } else if (~/^_\d+$/.match(varName)) {
+                        // _1, _2 -> temp1, temp2
+                        "temp" + varName.substr(1);
+                    } else {
+                        // Other underscore variables - keep as is for now
+                        varName;
+                    };
+                    
+                    if (newName != varName) {
                         tempVarRenameMap.set(idKey, newName);
+                        varName = newName;
                         #if debug_ast_pipeline
-                        trace('[AST Builder] Registering temp var rename: ${varName} (id=${v.id}) -> ${newName}');
+                        trace('[AST Builder] Registering temp var rename: ${v.name} (id=${v.id}) -> ${newName}');
                         #end
                     }
-                    varName = tempVarRenameMap.get(idKey);
                 }
-                // Handle collision-renamed variables (priority2 -> priority)
-                else if (~/^(.+?)(\d+)$/.match(varName)) {
+                // Handle collision-renamed variables (priority2 -> priority) 
+                // BUT NEVER for function parameters or abstract method parameters (this1, struct1)
+                else if (!functionParameterIds.exists(idKey) && 
+                         varName != "this1" && varName != "struct1" && // Never rename these
+                         ~/^(.+?)(\d+)$/.match(varName)) {
                     var regex = ~/^(.+?)(\d+)$/;
                     if (regex.match(varName)) {
                         var baseName = regex.matched(1);
@@ -167,7 +185,7 @@ class ElixirASTBuilder {
                         
                         // Only strip suffix if it's a small number (1-9) which indicates collision renaming
                         // Don't strip from intentional names like "base64" or "sha256"
-                        if (suffix.length == 1 && baseName != "_g") { // Don't modify _g1 style names here
+                        if (suffix.length == 1 && baseName != "_g") {
                             #if debug_ast_pipeline  
                             trace('[AST Builder] Collision-renamed variable detected: ${varName} -> ${baseName}');
                             #end
@@ -176,7 +194,9 @@ class ElixirASTBuilder {
                     }
                 }
                 
-                EVar(toElixirVarName(varName));
+                // Only apply toElixirVarName if the variable wasn't already mapped
+                // Mapped variables are already in Elixir format (e.g., "this_1")
+                EVar(wasMapped ? varName : toElixirVarName(varName));
                 
             case TVar(v, init):
                 // Apply same underscore variable renaming as in TLocal
@@ -316,8 +336,27 @@ class ElixirASTBuilder {
                             var fieldName = extractFieldName(fa);
                             var objAst = buildFromTypedExpr(obj);
                             
+                            // Check for HXX.hxx() template calls
+                            if (fieldName == "hxx" && isHXXModule(obj)) {
+                                // HXX.hxx() returns a processed template string that needs ~H sigil
+                                // The macro already processed the template, we just need to wrap it
+                                if (args.length == 1) {
+                                    // Extract the processed template string and wrap in ~H sigil
+                                    switch(args[0].def) {
+                                        case EString(content):
+                                            // Wrap the processed template in HEEx sigil
+                                            ESigil("H", content, "");
+                                        default:
+                                            // Non-string argument, compile as regular call
+                                            ECall(objAst, fieldName, args);
+                                    }
+                                } else {
+                                    // Wrong number of arguments, compile as regular call
+                                    ECall(objAst, fieldName, args);
+                                }
+                            }
                             // Check for module calls
-                            if (isModuleCall(obj)) {
+                            else if (isModuleCall(obj)) {
                                 // Convert method name to snake_case for Elixir
                                 var elixirFuncName = toSnakeCase(fieldName);
                                 ERemoteCall(objAst, elixirFuncName, args);
@@ -528,8 +567,78 @@ class ElixirASTBuilder {
             // Lambda/Anonymous Functions
             // ================================================================
             case TFunction(f):
-                var args = [for (arg in f.args) PVar(toElixirVarName(arg.v.name))];
+                // Debug: Check for abstract method "this" parameter issue
+                #if debug_ast_pipeline
+                for (arg in f.args) {
+                    trace('[AST Builder] TFunction arg: ${arg.v.name} (id=${arg.v.id})');
+                }
+                #end
+                
+                var args = [];
+                var paramRenaming = new Map<String, String>();
+                
+                // First, collect all parameter mappings BEFORE building the body
+                // This is crucial for abstract methods where "this1" becomes a parameter
+                for (arg in f.args) {
+                    var originalName = arg.v.name;
+                    var elixirName = toElixirVarName(originalName);
+                    
+                    // Track all parameter mappings, especially for abstract "this" parameters
+                    if (originalName != elixirName) {
+                        paramRenaming.set(originalName, elixirName);
+                        #if debug_ast_pipeline
+                        trace('[AST Builder] Function parameter will be renamed: $originalName -> $elixirName');
+                        #end
+                    }
+                    
+                    // Also need to handle the collision-renamed case
+                    // If the parameter is "this1", we need to ensure the body uses "this_1" not "this"
+                    if (originalName == "this1") {
+                        // The body might try to rename this1 -> this due to collision detection
+                        // We need to prevent that and use the parameter name instead
+                        paramRenaming.set("this", elixirName); // Map "this" to "this_1" as well
+                        #if debug_ast_pipeline
+                        trace('[AST Builder] Abstract this parameter detected, mapping both this1 and this to: $elixirName');
+                        #end
+                    }
+                    
+                    args.push(PVar(elixirName));
+                }
+                
+                // Now build the body with awareness of parameter mappings
+                // We need to temporarily override the collision detection for these parameters
+                var oldTempVarRenameMap = tempVarRenameMap;
+                tempVarRenameMap = new Map();
+                for (key in oldTempVarRenameMap.keys()) {
+                    tempVarRenameMap.set(key, oldTempVarRenameMap.get(key));
+                }
+                
+                // Register parameter names to prevent collision renaming
+                for (arg in f.args) {
+                    var idKey = Std.string(arg.v.id);
+                    var elixirName = toElixirVarName(arg.v.name);
+                    tempVarRenameMap.set(idKey, elixirName);
+                    functionParameterIds.set(idKey, true); // Mark as function parameter
+                    #if debug_ast_pipeline
+                    trace('[AST Builder] Registering parameter in rename map: id=$idKey -> $elixirName');
+                    #end
+                }
+                
                 var body = buildFromTypedExpr(f.expr);
+                
+                // Restore the original map and clean up function parameter tracking
+                tempVarRenameMap = oldTempVarRenameMap;
+                for (arg in f.args) {
+                    functionParameterIds.remove(Std.string(arg.v.id));
+                }
+                
+                // Apply any remaining parameter renaming if needed
+                if (paramRenaming.keys().hasNext()) {
+                    #if debug_ast_pipeline
+                    trace('[AST Builder] Applying parameter renaming to function body');
+                    #end
+                    body = applyParameterRenaming(body, paramRenaming);
+                }
                 
                 EFn([{
                     args: args,
@@ -942,6 +1051,72 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Apply parameter renaming to an AST node
+     * This is used when function parameters are renamed (e.g., "this" -> "this_1")
+     * to ensure the body references the correct parameter names
+     */
+    static function applyParameterRenaming(ast: ElixirAST, renaming: Map<String, String>): ElixirAST {
+        return switch(ast.def) {
+            case EVar(name):
+                if (renaming.exists(name)) {
+                    makeASTWithMeta(EVar(renaming.get(name)), ast.metadata, ast.pos);
+                } else {
+                    ast;
+                }
+            
+            // Recursively apply to all child nodes
+            case EBlock(exprs):
+                makeASTWithMeta(EBlock(exprs.map(e -> applyParameterRenaming(e, renaming))), ast.metadata, ast.pos);
+            
+            case ECall(target, func, args):
+                makeASTWithMeta(
+                    ECall(
+                        target != null ? applyParameterRenaming(target, renaming) : null,
+                        func,
+                        args.map(a -> applyParameterRenaming(a, renaming))
+                    ),
+                    ast.metadata, ast.pos
+                );
+            
+            case EBinary(op, left, right):
+                makeASTWithMeta(
+                    EBinary(op, applyParameterRenaming(left, renaming), applyParameterRenaming(right, renaming)),
+                    ast.metadata, ast.pos
+                );
+            
+            case EUnary(op, expr):
+                makeASTWithMeta(EUnary(op, applyParameterRenaming(expr, renaming)), ast.metadata, ast.pos);
+            
+            case EIf(cond, then, else_):
+                makeASTWithMeta(
+                    EIf(
+                        applyParameterRenaming(cond, renaming),
+                        applyParameterRenaming(then, renaming),
+                        else_ != null ? applyParameterRenaming(else_, renaming) : null
+                    ),
+                    ast.metadata, ast.pos
+                );
+                
+            case ECase(expr, clauses):
+                makeASTWithMeta(
+                    ECase(
+                        applyParameterRenaming(expr, renaming),
+                        clauses.map(c -> {
+                            pattern: c.pattern,  // Don't rename in patterns
+                            guard: c.guard != null ? applyParameterRenaming(c.guard, renaming) : null,
+                            body: applyParameterRenaming(c.body, renaming)
+                        })
+                    ),
+                    ast.metadata, ast.pos
+                );
+            
+            // For other node types, return as-is (can be extended as needed)
+            default:
+                ast;
+        }
+    }
+    
+    /**
      * Convert variable name to Elixir convention
      * Preserves special Elixir constants like __MODULE__, __FILE__, __ENV__
      */
@@ -998,6 +1173,29 @@ class ElixirASTBuilder {
             }
         }
         return result.toString();
+    }
+    
+    /**
+     * Check if expression is the HXX module (for Phoenix HEEx template processing)
+     * 
+     * WHY: HXX.hxx() is a compile-time macro that processes JSX-like template strings
+     *      and converts them to Phoenix HEEx format. After macro expansion, we get a 
+     *      processed string that needs to be wrapped in a ~H sigil for LiveView.
+     * 
+     * WHAT: Detects when a TTypeExpr refers to the HXX module class, which indicates
+     *       we're about to handle an HXX.hxx() template call that needs special treatment.
+     * 
+     * HOW: Checks if the module type expression resolves to "HXX" by name.
+     * 
+     * Example: HXX.hxx("<div>Hello <%= @name %></div>") → ~H"""<div>Hello <%= @name %></div>"""
+     */
+    static function isHXXModule(expr: TypedExpr): Bool {
+        return switch(expr.expr) {
+            case TTypeExpr(m):
+                // Check if this is the HXX module
+                moduleTypeToString(m) == "HXX";
+            default: false;
+        }
     }
     
     /**
