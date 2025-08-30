@@ -148,6 +148,14 @@ class ElixirASTTransformer {
         });
         #end
         
+        // Null coalescing inline transformation pass
+        passes.push({
+            name: "NullCoalescingInline",
+            description: "Convert null coalescing blocks to inline expressions",
+            enabled: true,
+            pass: nullCoalescingInlinePass
+        });
+        
         // Statement context transformation pass (MUST run after immutability)
         #if !disable_statement_context_transform
         passes.push({
@@ -234,6 +242,78 @@ class ElixirASTTransformer {
      */
     static function identityPass(ast: ElixirAST): ElixirAST {
         return ast;
+    }
+    
+    /**
+     * Null Coalescing Inline Pass
+     * 
+     * Transforms null coalescing blocks into inline if expressions.
+     * Detects pattern: var x = {tmp = expr; if (tmp != nil) tmp else default}
+     * Transforms to: var x = if (tmp = expr) != nil, do: tmp, else: default
+     */
+    static function nullCoalescingInlinePass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            #if debug_null_coalescing
+            switch(node.def) {
+                case EMatch(PVar(name), value):
+                    trace('[NullCoalescing] Found EMatch with name: $name');
+                    if (value != null) {
+                        switch(value.def) {
+                            case EBlock(exprs):
+                                trace('[NullCoalescing] Found block with ${exprs.length} expressions');
+                            default:
+                                trace('[NullCoalescing] Value is not a block: ${value.def}');
+                        }
+                    }
+                default:
+            }
+            #end
+            
+            return switch(node.def) {
+                case EMatch(PVar(name), value) if (value != null):
+                    // Check if value is a block with null coalescing pattern
+                    switch(value.def) {
+                        case EBlock([assign, ifExpr]) if (assign != null && ifExpr != null):
+                            // Check if this matches the null coalescing pattern
+                            switch(assign.def) {
+                                case EMatch(PVar(tmpName), expr) if (tmpName != null && tmpName.indexOf("tmp") >= 0):
+                                    // Check if the if expression uses the same tmp variable
+                                    switch(ifExpr.def) {
+                                        case EIf(condition, thenBranch, elseBranch):
+                                            // Check if condition is comparing tmp to nil
+                                            switch(condition.def) {
+                                                case EBinary(NotEqual, tmpVar, nilExpr):
+                                                    switch(tmpVar.def) {
+                                                        case EVar(checkName) if (checkName == tmpName):
+                                                            // This is the null coalescing pattern!
+                                                            // Transform to inline if with assignment in condition
+                                                            // Create: name = if (tmp = expr) != nil, do: tmp, else: default
+                                                            var assignExpr = makeAST(EMatch(PVar(tmpName), expr));
+                                                            var inlineCondition = makeAST(EBinary(
+                                                                NotEqual,
+                                                                makeAST(EParen(assignExpr)),
+                                                                makeAST(ENil)
+                                                            ));
+                                                            makeAST(EMatch(PVar(name), makeAST(EIf(inlineCondition, thenBranch, elseBranch))));
+                                                        default:
+                                                            node; // Not using the same tmp variable
+                                                    }
+                                                default:
+                                                    node; // Not a nil comparison
+                                            }
+                                        default:
+                                            node; // Not an if expression
+                                    }
+                                default:
+                                    node; // Not a temp variable assignment
+                            }
+                        default:
+                            node; // Not a null coalescing block
+                    }
+                default:
+                    node; // Not a variable declaration or no transformation needed
+            };
+        });
     }
     
     /**
