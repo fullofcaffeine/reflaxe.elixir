@@ -40,6 +40,17 @@ class ElixirASTPrinter {
     static var loopIdCounter: Int = 0;
     
     /**
+     * Public API for printing a single AST (used by ElixirASTBuilder for injection)
+     * 
+     * WHY: ElixirASTBuilder needs to convert AST nodes to strings for __elixir__ parameter substitution
+     * WHAT: Converts a single ElixirAST node to string without indentation
+     * HOW: Calls main print function with zero indentation
+     */
+    public static function printAST(ast: ElixirAST): String {
+        return print(ast, 0);
+    }
+    
+    /**
      * Main entry point: Convert ElixirAST to formatted string
      * 
      * WHY: Single public interface for all printing needs
@@ -602,6 +613,10 @@ class ElixirASTPrinter {
             // ================================================================
             case ESigil(type, content, modifiers):
                 '~' + type + '"""' + '\n' + content + '\n' + '"""' + modifiers;
+                
+            case ERaw(code):
+                // Raw code injection - output as-is
+                code;
                 
             case EAssign(name):
                 '@' + name;
