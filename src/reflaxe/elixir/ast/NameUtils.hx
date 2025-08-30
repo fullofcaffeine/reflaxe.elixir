@@ -47,4 +47,35 @@ class NameUtils {
     public static inline function toElixirName(name: String): String {
         return toSnakeCase(name);
     }
+    
+    /**
+     * Check if a name is a reserved keyword in Elixir
+     */
+    public static function isElixirReserved(name: String): Bool {
+        // Elixir reserved keywords
+        var reserved = [
+            "after", "and", "catch", "cond", "do", "else", "end", "false", "fn",
+            "in", "nil", "not", "or", "rescue", "true", "when", "with",
+            // Also include common special forms
+            "alias", "case", "def", "defp", "defmodule", "defmacro", "defmacrop",
+            "defstruct", "defdelegate", "defprotocol", "defimpl", "for", "if",
+            "import", "quote", "receive", "require", "super", "try", "unless",
+            "unquote", "use"
+        ];
+        return reserved.indexOf(name) >= 0;
+    }
+    
+    /**
+     * Convert name to safe Elixir function name, handling reserved keywords
+     */
+    public static function toSafeElixirFunctionName(name: String): String {
+        var snakeName = toSnakeCase(name);
+        
+        // If it's a reserved keyword, prefix with underscore or suffix with _fn
+        if (isElixirReserved(snakeName)) {
+            return snakeName + "_fn";
+        }
+        
+        return snakeName;
+    }
 }
