@@ -572,8 +572,85 @@ class ElixirASTBuilder {
                             }
                         default:
                             if (target != null) {
-                                // Complex target expression
-                                ECall(target, "call", args);
+                                // Check if this is an __elixir__ injection that wasn't caught
+                                var isElixirInjection = switch(target.def) {
+                                    case EVar("__elixir__"): true;
+                                    default: false;
+                                };
+                                
+                                if (isElixirInjection && args.length > 0) {
+                                    // Handle __elixir__ injection at AST level
+                                    // Extract the code string and parameters
+                                    switch(args[0].def) {
+                                        case EString(code):
+                                            // Process parameter substitution
+                                            var processedCode = code;
+                                            var substitutions: Array<String> = [];
+                                            
+                                            #if debug_elixir_injection
+                                            trace('[XRay Injection] Code template: $code');
+                                            trace('[XRay Injection] Number of args: ${args.length - 1}');
+                                            #end
+                                            
+                                            // Build substitutions for each argument
+                                            for (i in 1...args.length) {
+                                                // We need to stringify the ElixirAST node for substitution
+                                                // This requires the printer to convert AST back to string
+                                                var argStr = ElixirASTPrinter.printAST(args[i]);
+                                                substitutions.push(argStr);
+                                                
+                                                #if debug_elixir_injection
+                                                trace('[XRay Injection] Arg $i: ${args[i].def} -> $argStr');
+                                                #end
+                                            }
+                                            
+                                            // Replace placeholders with actual argument values
+                                            for (i in 0...substitutions.length) {
+                                                var placeholder = '{${i}}';
+                                                var replacement = substitutions[i];
+                                                
+                                                // Check if placeholder is inside a string literal
+                                                // If so, we need to use Elixir interpolation syntax #{var}
+                                                var inString = false;
+                                                var idx = processedCode.indexOf(placeholder);
+                                                if (idx >= 0) {
+                                                    // Check if we're inside quotes by counting quotes before the placeholder
+                                                    var beforePlaceholder = processedCode.substring(0, idx);
+                                                    var quoteCount = 0;
+                                                    for (j in 0...beforePlaceholder.length) {
+                                                        if (beforePlaceholder.charAt(j) == '"' && (j == 0 || beforePlaceholder.charAt(j-1) != '\\')) {
+                                                            quoteCount++;
+                                                        }
+                                                    }
+                                                    inString = (quoteCount % 2 == 1);
+                                                }
+                                                
+                                                // Use interpolation syntax if inside string, otherwise use raw replacement
+                                                if (inString) {
+                                                    replacement = '#${replacement}';
+                                                }
+                                                
+                                                #if debug_elixir_injection
+                                                trace('[XRay Injection] Replacing $placeholder with $replacement (inString: $inString)');
+                                                #end
+                                                
+                                                processedCode = StringTools.replace(processedCode, placeholder, replacement);
+                                            }
+                                            
+                                            #if debug_elixir_injection
+                                            trace('[XRay Injection] Final code: $processedCode');
+                                            #end
+                                            
+                                            // Return raw Elixir code with substitutions applied
+                                            ERaw(processedCode);
+                                        default:
+                                            // Not a string constant, can't inject
+                                            ECall(target, "call", args);
+                                    }
+                                } else {
+                                    // Complex target expression
+                                    ECall(target, "call", args);
+                                }
                             } else {
                                 // Should not happen
                                 ECall(null, "unknown_call", args);
