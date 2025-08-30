@@ -164,13 +164,26 @@ class ElixirASTPrinter {
             // Control Flow
             // ================================================================
             case EIf(condition, thenBranch, elseBranch):
-                if (elseBranch != null) {
+                // Check if this should be an inline if expression
+                // Use inline format when the branches are simple expressions
+                var isInline = isSimpleExpression(thenBranch) && 
+                               (elseBranch == null || isSimpleExpression(elseBranch));
+                
+                if (isInline && elseBranch != null) {
+                    // Inline if-else expression: if condition, do: then_val, else: else_val
+                    'if ' + print(condition, 0) + ', do: ' + print(thenBranch, 0) + ', else: ' + print(elseBranch, 0);
+                } else if (elseBranch != null) {
+                    // Multi-line if-else block
                     'if ' + print(condition, 0) + ' do\n' +
                     indentStr(indent + 1) + print(thenBranch, indent + 1) + '\n' +
                     indentStr(indent) + 'else\n' +
                     indentStr(indent + 1) + print(elseBranch, indent + 1) + '\n' +
                     indentStr(indent) + 'end';
+                } else if (isInline) {
+                    // Inline if without else: if condition, do: then_val
+                    'if ' + print(condition, 0) + ', do: ' + print(thenBranch, 0);
                 } else {
+                    // Multi-line if without else
                     'if ' + print(condition, 0) + ' do\n' +
                     indentStr(indent + 1) + print(thenBranch, indent + 1) + '\n' +
                     indentStr(indent) + 'end';
@@ -719,6 +732,28 @@ class ElixirASTPrinter {
             result += '  '; // 2 spaces per level
         }
         return result;
+    }
+    
+    /**
+     * Check if an expression is simple enough to be used inline
+     */
+    static function isSimpleExpression(ast: ElixirAST): Bool {
+        if (ast == null) return false;
+        
+        return switch(ast.def) {
+            case EVar(_) | EAtom(_) | ENil | EString(_) | 
+                 EInteger(_) | EFloat(_) | EBool(_) | 
+                 EField(_, _) | ETuple(_) | EList(_) | EMap(_):
+                true;
+            case ECall(_, _, args):
+                // Simple function calls with few arguments
+                args.length <= 2;
+            case EBinary(_, left, right):
+                // Simple binary operations
+                isSimpleExpression(left) && isSimpleExpression(right);
+            case _:
+                false;
+        };
     }
 }
 
