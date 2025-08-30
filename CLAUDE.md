@@ -966,17 +966,14 @@ When a file approaches 1000 lines, IMMEDIATELY:
 3. **Use delegation pattern** - Main compiler delegates to helpers
 4. **Document with WHY/WHAT/HOW** - Every extracted module needs comprehensive docs
 
-#### Example Structure (FROM OUR REFACTORING)
+#### Example Structure (AFTER AST MIGRATION)
 ```
-ElixirCompiler.hx (main orchestrator, <2000 lines)
-├── helpers/PatternMatchingCompiler.hx  (~400 lines - switch/case compilation)
-├── helpers/SchemaCompiler.hx           (~350 lines - @:schema/@:changeset)
-├── helpers/MigrationCompiler.hx        (~150 lines - @:migration)
-├── helpers/LiveViewCompiler.hx         (~220 lines - @:liveview)
-├── helpers/GenServerCompiler.hx        (~280 lines - @:genserver)
-├── helpers/ExpressionCompiler.hx       (~500 lines - expression utilities)
-├── helpers/ReflectionCompiler.hx       (~450 lines - Reflect.fields)
-└── helpers/LoopCompiler.hx            (~500 lines - for/while optimization)
+src/reflaxe/elixir/
+├── ast/
+│   ├── ElixirASTBuilder.hx     # TypedExpr → ElixirAST conversion
+│   ├── ElixirASTPrinter.hx     # ElixirAST → String generation
+│   └── ElixirASTTransformer.hx # AST transformation passes
+└── ElixirCompiler.hx            # Main compiler (<2000 lines)
 ```
 
 #### Red Flags That Demand Immediate Refactoring
