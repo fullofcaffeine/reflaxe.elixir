@@ -245,6 +245,11 @@ class ElixirASTPrinter {
                 '%' + module + '{' + 
                 [for (f in fields) f.key + ': ' + print(f.value, 0)].join(', ') + '}';
                 
+            case EStructUpdate(struct, fields):
+                // Struct update syntax: %{struct | field: value, ...}
+                '%{' + print(struct, 0) + ' | ' +
+                [for (f in fields) f.key + ': ' + print(f.value, 0)].join(', ') + '}';
+                
             case EKeywordList(pairs):
                 '[' + [for (p in pairs) p.key + ': ' + print(p.value, 0)].join(', ') + ']';
                 
@@ -386,7 +391,9 @@ class ElixirASTPrinter {
                 if (clauses.length == 1 && clauses[0].guard == null) {
                     var clause = clauses[0];
                     var argStr = printPatterns(clause.args);
-                    'fn ' + argStr + ' -> ' + print(clause.body, 0) + ' end';
+                    // Handle empty parameter list properly (no extra space)
+                    var paramPart = clause.args.length == 0 ? '' : ' ' + argStr;
+                    'fn' + paramPart + ' -> ' + print(clause.body, 0) + ' end';
                 } else {
                     'fn\n' +
                     [for (clause in clauses)

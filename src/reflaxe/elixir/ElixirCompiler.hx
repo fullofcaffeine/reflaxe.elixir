@@ -177,11 +177,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         // Preprocessors are now configured in CompilerInit.hx to ensure they aren't overridden
         // The configuration was moved because options passed to ReflectCompiler.AddCompiler
         // override anything set in the constructor
-        
-        // Initialize LLM documentation generator (optional)
-        if (Context.defined("generate-llm-docs")) {
-            LLMDocsGenerator.initialize();
-        }
     }
     
     /**
@@ -345,6 +340,9 @@ class ElixirCompiler extends DirectToStringCompiler {
             return null;
         }
         
+        // Set output file path with snake_case naming
+        setUniversalOutputPath(classType.name, classType.pack);
+        
         // Store current class context for use in expression compilation
         this.currentClassType = classType;
         
@@ -365,6 +363,9 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     public function compileEnumImpl(enumType: EnumType, options: Array<EnumOptionData>): Null<String> {
         if (enumType == null) return null;
+        
+        // Set output file path with snake_case naming
+        setUniversalOutputPath(enumType.name, enumType.pack);
         
         // Use AST pipeline for enum compilation
         var enumAST = buildEnumAST(enumType, options);
@@ -502,8 +503,21 @@ class ElixirCompiler extends DirectToStringCompiler {
      */
     function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
         
-        // Get module name
+        // Get module name - check for @:native annotation first
         var moduleName = classType.name;
+        
+        // Check if there's a @:native annotation that overrides the module name
+        if (classType.meta.has(":native")) {
+            var nativeMeta = classType.meta.extract(":native");
+            if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                switch(nativeMeta[0].params[0].expr) {
+                    case EConst(CString(s, _)):
+                        moduleName = s;
+                    default:
+                        // Keep original name if annotation is malformed
+                }
+            }
+        }
         
         // Build function definitions
         var functions = [];
@@ -553,7 +567,7 @@ class ElixirCompiler extends DirectToStringCompiler {
             
             // Build parameter patterns from the option data
             var args = [];
-            for (i in 0...option.data.args.length) {
+            for (i in 0...option.args.length) {
                 args.push(EPattern.PVar('arg$i'));
             }
             
@@ -562,7 +576,7 @@ class ElixirCompiler extends DirectToStringCompiler {
             var tupleElements = [atomTag];
             
             // Add constructor arguments to tuple
-            for (i in 0...option.data.args.length) {
+            for (i in 0...option.args.length) {
                 tupleElements.push(reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EVar('arg$i')));
             }
             
@@ -766,9 +780,24 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Compile typedef - Returns null to ignore typedefs as BaseCompiler recommends.
      * This prevents generating invalid StdTypes.ex files with @typedoc/@type outside modules.
+     * 
+     * IMPORTANT: Typedefs are compile-time only type aliases in Haxe and don't generate
+     * any runtime code in the target language. They exist purely for type checking
+     * during Haxe compilation. This is why this method returns null and doesn't use
+     * the AST pipeline - there's nothing to generate.
+     * 
+     * The AST pipeline (Builder → Transformer → Printer) only processes classes and enums
+     * which generate actual runtime code. Typedefs are resolved during compilation and
+     * their underlying types are used directly in the generated code.
+     * 
+     * Example: 
+     * typedef StringMap = Map<String, String>; // No .ex file generated
+     * The typedef just creates an alias - any usage of StringMap in code will be
+     * compiled as if Map<String, String> was used directly.
      */
     public override function compileTypedefImpl(defType: DefType): Null<String> {
-        return typeResolutionCompiler.compileTypedefImpl(defType);
+        // Typedefs don't generate runtime code in Elixir
+        return null;
     }
     
     
@@ -832,7 +861,6 @@ class ElixirCompiler extends DirectToStringCompiler {
     public function compileFunction(funcField: ClassFuncData, isStatic: Bool = false): String {
         // COORDINATION: Reset temp variable declarations for each function
         // This ensures variables from one function don't affect another
-        declaredTempVariables = null;
         
         return ""; // Function compilation now handled by AST pipeline
     }
@@ -890,9 +918,6 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile expression with proper type awareness for operators.
      * This ensures string concatenation uses <> and not +.
      */
-    private function compileExpressionWithTypeAwareness(expr: TypedExpr): String {
-        return expressionVariantCompiler.compileExpressionWithTypeAwareness(expr);
-    }
     
     /**
      * Check if a Type is a string type
@@ -1156,9 +1181,6 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile a block of expressions while preserving inline context across all expressions.
      * This is crucial for handling Haxe's inline function expansion correctly.
      */
-    private function compileBlockExpressionsWithContext(expressions: Array<TypedExpr>): Array<String> {
-        return expressionVariantCompiler.compileBlockExpressionsWithContext(expressions);
-    }
     
     /**
      * Set case arm compilation context
@@ -1257,7 +1279,8 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param isAggressiveMode Whether to substitute any non-system variable
      */
     public function shouldSubstituteVariable(varName: String, sourceVar: String = null, isAggressiveMode: Bool = false): Bool {
-        if (isSystemVariable(varName)) {
+        // Don't substitute system variables (starting with g_ or temp_)
+        if (varName.indexOf("g_") == 0 || varName.indexOf("temp_") == 0) {
             return false;
         }
         
@@ -1280,9 +1303,6 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Compile expression with aggressive substitution for all likely loop variables
      * Used when normal loop variable detection fails
      */
-    private function compileExpressionWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
-        return expressionVariantCompiler.compileExpressionWithAggressiveSubstitution(expr, targetVar);
-    }
 
     /**
      * Simple approach: Always substitute all TLocal variables with the target variable
@@ -1295,9 +1315,6 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Compile expression with variable substitution using TVar object comparison
      */
-    public function compileExpressionWithTVarSubstitution(expr: TypedExpr, sourceTVar: TVar, targetVarName: String): String {
-        return expressionVariantCompiler.compileExpressionWithTVarSubstitution(expr, sourceTVar, targetVarName);
-    }
 
 
     /**
@@ -1533,9 +1550,6 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param fieldName The method name being called
      * @return true if this is an elixir.Syntax call
      */
-    public function isElixirSyntaxCall(obj: TypedExpr, fieldName: String): Bool {
-        return methodCallCompiler.isElixirSyntaxCall(obj, fieldName);
-    }
     
     /**
      * Compile elixir.Syntax method calls to __elixir__ injection calls
@@ -1547,9 +1561,6 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param args The arguments to the method call
      * @return Compiled Elixir code
      */
-    public function compileElixirSyntaxCall(methodName: String, args: Array<TypedExpr>): String {
-        return methodCallCompiler.compileElixirSyntaxCall(methodName, args);
-    }
     
     /**
      * Check if a TypedExpr represents a field assignment (this.field = value)
@@ -1601,25 +1612,16 @@ class ElixirCompiler extends DirectToStringCompiler {
      * Detect temp variable patterns: temp_var = nil; case...; temp_var
      * Returns the temp variable name if pattern is detected, null otherwise.
      */
-    private function detectTempVariablePattern(expressions: Array<TypedExpr>): Null<String> {
-        return tempVariableOptimizer.detectTempVariablePattern(expressions);
-    }
     
     /**
      * Optimize temp variable pattern to idiomatic case expression
      */
-    private function optimizeTempVariablePattern(tempVarName: String, expressions: Array<TypedExpr>): String {
-        return tempVariableOptimizer.optimizeTempVariablePattern(tempVarName, expressions);
-    }
     
     /**
      * Fix temp variable scoping issues in compiled Elixir code
      * Transforms: if (cond), do: temp_var = val1, else: temp_var = val2\nvar = temp_var
      * Into: var = if (cond), do: val1, else: val2
      */
-    private function fixTempVariableScoping(code: String, tempVarName: String): String {
-        return tempVariableOptimizer.fixTempVariableScoping(code, tempVarName);
-    }
     
     /**
      * Extract the value being assigned to a temp variable
@@ -1688,13 +1690,6 @@ class ElixirCompiler extends DirectToStringCompiler {
         };
     }
     
-    /**
-     * Detect if both branches of TIf assign to the same temp variable
-     * Returns {varName: String} if pattern detected, null otherwise
-     */
-    private function detectTempVariableAssignmentPattern(ifBranch: TypedExpr, elseBranch: Null<TypedExpr>): Null<{varName: String}> {
-        return tempVariableOptimizer.detectTempVariableAssignmentPattern(ifBranch, elseBranch);
-    }
     
     /**
      * Extract the variable name from an assignment expression
@@ -1715,20 +1710,7 @@ class ElixirCompiler extends DirectToStringCompiler {
         };
     }
     
-    /**
-     * Detect temp variable assignment sequence in a block of expressions
-     * Pattern: TIf with temp assignments in both branches + TBinop assignment using temp var
-     */
-    private function detectTempVariableAssignmentSequence(expressions: Array<TypedExpr>): Null<{ifIndex: Int, assignIndex: Int, tempVar: String, targetVar: String}> {
-        return tempVariableOptimizer.detectTempVariableAssignmentSequence(expressions);
-    }
     
-    /**
-     * Optimize temp variable assignment sequence
-     */
-    private function optimizeTempVariableAssignmentSequence(sequence: {ifIndex: Int, assignIndex: Int, tempVar: String, targetVar: String}, expressions: Array<TypedExpr>): String {
-        return tempVariableOptimizer.optimizeTempVariableAssignmentSequence(sequence, expressions);
-    }
     
     /**
      * Get the target variable from an assignment expression (like v = temp_var)
@@ -1765,16 +1747,10 @@ class ElixirCompiler extends DirectToStringCompiler {
     /**
      * Check if this is a TypeSafeChildSpec enum constructor call
      */
-    public function isTypeSafeChildSpecCall(obj: TypedExpr, fieldName: String): Bool {
-        return methodCallCompiler.isTypeSafeChildSpecCall(obj, fieldName);
-    }
     
     /**
      * Compile TypeSafeChildSpec enum constructor calls directly to ChildSpec format
      */
-    public function compileTypeSafeChildSpecCall(fieldName: String, args: Array<TypedExpr>): String {
-        return methodCallCompiler.compileTypeSafeChildSpecCall(fieldName, args);
-    }
     
     /**
      * Detect if an AST expression will generate a Y combinator pattern.
@@ -1815,9 +1791,6 @@ class ElixirCompiler extends DirectToStringCompiler {
      * @param expressions Array of expressions from a TBlock to analyze
      * @return True if any expression uses Reflect.fields (indicating Y combinator generation)
      */
-    private function hasReflectFieldsIteration(expressions: Array<TypedExpr>): Bool {
-        return reflectionCompiler.hasReflectFieldsIteration(expressions);
-    }
 
     /**
      * Override called after all files have been generated by DirectToStringCompiler.

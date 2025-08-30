@@ -1,0 +1,8 @@
+-cp src_haxe
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=test_out
+--macro reflaxe.elixir.CompilerInit.Start()
+TestMain

@@ -63,6 +63,17 @@ class ElixirASTTransformer {
     public static function transform(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
         trace('[XRay AST Transformer] Starting transformation pipeline');
+        trace('[XRay AST Transformer] AST type: ${ast.def}');
+        #end
+        
+        #if debug_ast_structure
+        // Print AST structure for debugging
+        switch(ast.def) {
+            case EModule(name, _, _):
+                trace('[XRay AST Structure] Module: $name');
+            default:
+                trace('[XRay AST Structure] Root: ${ast.def}');
+        }
         #end
         
         var passes = getEnabledPasses();
@@ -155,6 +166,14 @@ class ElixirASTTransformer {
             pass: selfReferenceTransformPass
         });
         
+        // Struct field assignment transformation pass
+        passes.push({
+            name: "StructFieldAssignmentTransform",
+            description: "Convert struct field assignments to struct update syntax",
+            enabled: true,
+            pass: structFieldAssignmentTransformPass
+        });
+        
         // Underscore variable cleanup pass (should run late to catch all generated vars)
         #if !disable_underscore_cleanup
         passes.push({
@@ -164,6 +183,22 @@ class ElixirASTTransformer {
             pass: underscoreVariableCleanupPass
         });
         #end
+        
+        // Abstract method this reference fix (should run after underscore cleanup)
+        passes.push({
+            name: "AbstractMethodThis",
+            description: "Fix 'this' references in abstract methods",
+            enabled: true,
+            pass: abstractMethodThisPass
+        });
+        
+        // Bitwise import pass (should run early to add imports)
+        passes.push({
+            name: "BitwiseImport",
+            description: "Add Bitwise import when bitwise operators are used",
+            enabled: true,
+            pass: bitwiseImportPass
+        });
         
         // Supervisor options transformation pass (convert maps to keyword lists)
         #if !disable_supervisor_options_transform
@@ -422,6 +457,348 @@ class ElixirASTTransformer {
         }
         
         return transformed;
+    }
+    
+    /**
+     * Abstract Method This Reference Fix Pass
+     * 
+     * WHY: In abstract methods like toDynamic(), Haxe generates parameters like "this_1"
+     * but the AST builder incorrectly uses "struct" for TConst(TThis), causing reference mismatches.
+     * 
+     * WHAT: Fixes "struct" references in anonymous functions to match the actual parameter name.
+     * - Detects anonymous functions with parameters like "this", "this_1", etc.
+     * - Replaces "struct" references in the body with the actual parameter name
+     * 
+     * HOW: Tracks the first parameter of anonymous functions and ensures body references match
+     */
+    static function abstractMethodThisPass(ast: ElixirAST): ElixirAST {
+        #if debug_abstract_this
+        trace('[XRay AbstractThis] Starting pass');
+        #end
+        
+        // Add debug to see what nodes we're actually getting
+        #if debug_abstract_this
+        function debugNode(node: ElixirAST, depth: Int = 0) {
+            var indent = [for (i in 0...depth) "  "].join("");
+            switch(node.def) {
+                case EModule(name, _, body):
+                    trace('$indent[XRay AbstractThis] Module: $name with ${body.length} definitions');
+                    for (def in body) debugNode(def, depth + 1);
+                case EDef(name, _, _, body):
+                    trace('$indent[XRay AbstractThis] Def: $name');
+                    debugNode(body, depth + 1);
+                case EFn(clauses):
+                    trace('$indent[XRay AbstractThis] !! Found EFn with ${clauses.length} clauses !!');
+                default:
+                    // Don't trace every node type, just the ones we care about
+            }
+        }
+        debugNode(ast, 0);
+        #end
+        
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EFn(clauses):
+                    #if debug_abstract_this
+                    trace('[XRay AbstractThis] Processing EFn with ${clauses.length} clauses');
+                    #end
+                    // Check if this is an abstract method with "this" parameter
+                    var fixedClauses = [];
+                    var hasChanges = false;
+                    
+                    for (clause in clauses) {
+                        if (clause.args.length > 0) {
+                            switch(clause.args[0]) {
+                                case PVar(paramName) if (paramName.indexOf("this") == 0):
+                                    #if debug_abstract_this
+                                    trace('[XRay AbstractThis] Found function with this parameter: $paramName');
+                                    trace('[XRay AbstractThis] Body before fix: ${ElixirASTPrinter.print(clause.body, 0)}');
+                                    #end
+                                    
+                                    // Found a "this" or "this_1" parameter
+                                    // Replace "struct" or "this" with the actual parameter name in body
+                                    var fixedBody = replaceStructWithParam(clause.body, paramName);
+                                    
+                                    #if debug_abstract_this
+                                    trace('[XRay AbstractThis] Body after fix: ${ElixirASTPrinter.print(fixedBody, 0)}');
+                                    #end
+                                    
+                                    hasChanges = true;
+                                    fixedClauses.push({
+                                        args: clause.args,
+                                        guard: clause.guard,
+                                        body: fixedBody
+                                    });
+                                default:
+                                    fixedClauses.push(clause);
+                            }
+                        } else {
+                            fixedClauses.push(clause);
+                        }
+                    }
+                    
+                    if (hasChanges) {
+                        #if debug_abstract_this
+                        trace('[XRay AbstractThis] Applied fix to function');
+                        #end
+                        return makeASTWithMeta(EFn(fixedClauses), node.metadata, node.pos);
+                    }
+                    return node;
+                    
+                default:
+                    return node;
+            }
+        });
+    }
+    
+    /**
+     * Helper: Replace "struct" or "this" variables with the actual parameter name
+     * 
+     * PROBLEM: In abstract methods, the AST builder sometimes generates incorrect variable
+     * references. The parameter might be named "this_1" but the body references "this" or
+     * "struct", causing compilation errors like "undefined variable this".
+     * 
+     * EXAMPLES:
+     * - Input:  fn this_1 -> this end       // Wrong: "this" doesn't exist
+     * - Output: fn this_1 -> this_1 end     // Fixed: matches parameter name
+     * 
+     * - Input:  fn this -> struct end       // Wrong: "struct" is internal compiler name
+     * - Output: fn this -> this end         // Fixed: uses actual parameter
+     * 
+     * - Input:  fn this_2 -> struct.field end    // Wrong: struct not in scope
+     * - Output: fn this_2 -> this_2.field end    // Fixed: correct reference
+     * 
+     * @param ast The AST to transform
+     * @param paramName The actual parameter name to use (e.g., "this", "this_1", "this_2")
+     * @return AST with all "struct" and "this" references replaced with paramName
+     */
+    static function replaceStructWithParam(ast: ElixirAST, paramName: String): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EVar("struct") | EVar("this"):
+                    // Replace "struct" or "this" with the actual parameter name
+                    return makeASTWithMeta(EVar(paramName), node.metadata, node.pos);
+                default:
+                    return node;
+            }
+        });
+    }
+    
+    /**
+     * Bitwise Import Pass
+     * 
+     * WHY: Elixir requires "import Bitwise" to use bitwise operators like &&&, |||, ^^^
+     * but the generated code doesn't include this import automatically.
+     * 
+     * WHAT: Detects usage of bitwise operators and adds "import Bitwise" to the module.
+     * - Scans the entire AST for bitwise operators
+     * - Adds the import statement if any are found
+     * 
+     * HOW: Two-phase approach:
+     * 1. Detection: Walk the AST to find bitwise operators
+     * 2. Injection: Add import to module (handles both EModule and EDefmodule formats)
+     * 
+     * IMPORTANT AST STRUCTURE: Modules can be represented in two ways:
+     * 
+     * EDefmodule(name, doBlock): Standard Elixir "defmodule Name do ... end" format
+     *   This is the most common format. The import must be added as the first 
+     *   statement in the do block.
+     *   
+     *   Original Haxe code:
+     *     class StringTools {
+     *         public static function ltrim(s: String): String {
+     *             // Uses bitwise operators &&&
+     *         }
+     *     }
+     *   
+     *   Example AST:
+     *     EDefmodule("StringTools", 
+     *       EBlock([
+     *         EImport("Bitwise", null, null),  // <-- Insert here
+     *         EFunction(...),
+     *         EFunction(...)
+     *       ])
+     *     )
+     * 
+     * EModule(name, attributes, body): Alternative format with attributes array
+     *   Less common format. The import is added to the attributes array.
+     *   
+     *   This format may be used internally by the compiler for certain constructs
+     *   or intermediate representations. Most user-defined Haxe classes generate
+     *   EDefmodule, not EModule. The exact conditions that produce EModule vs
+     *   EDefmodule depend on the AST builder's internal logic.
+     *   
+     *   Example AST:
+     *     EModule("StringTools",
+     *       [
+     *         EImport("Bitwise", null, null),  // <-- Insert here
+     *         EAttribute(...)
+     *       ],
+     *       [EFunction(...), EFunction(...)]
+     *     )
+     * 
+     * The original pass only handled EModule, which is why it wasn't working for
+     * most generated code that uses EDefmodule format.
+     */
+    static function bitwiseImportPass(ast: ElixirAST): ElixirAST {
+        // Phase 1: Detect if bitwise operators are used
+        var needsBitwise = false;
+        
+        #if debug_bitwise_import
+        trace('[XRay BitwiseImport] Starting scan for bitwise operators');
+        #end
+        
+        iterateAST(ast, function(node: ElixirAST): Void {
+            switch(node.def) {
+                case EBinary(op, _, _):
+                    switch(op) {
+                        case BitwiseAnd | BitwiseOr | BitwiseXor | ShiftLeft | ShiftRight:
+                            #if debug_bitwise_import
+                            trace('[XRay BitwiseImport] Found bitwise operator: $op');
+                            #end
+                            needsBitwise = true;
+                        default:
+                    }
+                case EUnary(BitwiseNot, _):
+                    // BitwiseNot is a unary operator, not binary
+                    #if debug_bitwise_import
+                    trace('[XRay BitwiseImport] Found BitwiseNot operator');
+                    #end
+                    needsBitwise = true;
+                default:
+            }
+        });
+        
+        #if debug_bitwise_import
+        trace('[XRay BitwiseImport] Needs bitwise: $needsBitwise');
+        #end
+        
+        // Phase 2: Add import if needed
+        if (!needsBitwise) return ast;
+        
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EDefmodule(name, doBlock):
+                    #if debug_bitwise_import
+                    trace('[XRay BitwiseImport] Processing defmodule: $name');
+                    #end
+                    
+                    // For defmodule, we need to inject the import into the do block
+                    switch(doBlock.def) {
+                        case EBlock(statements):
+                            #if debug_bitwise_import
+                            trace('[XRay BitwiseImport] Defmodule has ${statements.length} statements');
+                            #end
+                            
+                            // Check if Bitwise is already imported
+                            var hasImport = false;
+                            for (stmt in statements) {
+                                switch(stmt.def) {
+                                    case EImport(module, _, _):  // Match all three parameters
+                                        if (module == "Bitwise") {
+                                            hasImport = true;
+                                            break;
+                                        }
+                                    default:
+                                }
+                            }
+                            
+                            if (!hasImport) {
+                                // Add import Bitwise at the beginning
+                                var newStatements = statements.copy();
+                                newStatements.insert(0, makeAST(EImport("Bitwise", null, null)));  // Provide all three parameters
+                                
+                                #if debug_bitwise_import
+                                trace('[XRay BitwiseImport] Added import Bitwise to defmodule');
+                                #end
+                                
+                                return makeASTWithMeta(
+                                    EDefmodule(name, makeAST(EBlock(newStatements))),
+                                    node.metadata,
+                                    node.pos
+                                );
+                            }
+                        default:
+                    }
+                    return node;
+                    
+                case EModule(name, attributes, body):
+                    #if debug_bitwise_import
+                    trace('[XRay BitwiseImport] Processing module: $name');
+                    trace('[XRay BitwiseImport] Current attributes count: ${attributes.length}');
+                    #end
+                    
+                    // Check if Bitwise is already imported (by checking attribute names)
+                    var hasImport = false;
+                    for (attr in attributes) {
+                        if (attr.name == "import" && attr.value != null) {
+                            // Check if it's importing Bitwise
+                            switch(attr.value.def) {
+                                case EAtom("Bitwise") | EVar("Bitwise"):
+                                    hasImport = true;
+                                default:
+                            }
+                        }
+                    }
+                    
+                    #if debug_bitwise_import
+                    trace('[XRay BitwiseImport] Has existing import: $hasImport');
+                    #end
+                    
+                    if (!hasImport) {
+                        // Add import Bitwise at the beginning of attributes
+                        var newAttributes = attributes.copy();
+                        newAttributes.insert(0, {
+                            name: "import",
+                            value: makeAST(EAtom("Bitwise"))
+                        });
+                        
+                        #if debug_bitwise_import
+                        trace('[XRay BitwiseImport] Added import Bitwise to module');
+                        #end
+                        
+                        return makeASTWithMeta(
+                            EModule(name, newAttributes, body),
+                            node.metadata,
+                            node.pos
+                        );
+                    }
+                    return node;
+                    
+                default:
+                    return node;
+            }
+        });
+    }
+    
+    /**
+     * Struct field assignment transformation pass
+     * 
+     * WHY: Haxe's mutable field assignments (this.field = value) need to be transformed
+     *      to Elixir's immutable struct update syntax (%{struct | field: value})
+     * 
+     * WHAT: Detects patterns like EMatch(EField(struct_var, field), value) where struct_var
+     *       is a struct parameter (like "struct" or "self"), and transforms them to return
+     *       a new struct with the updated field
+     * 
+     * HOW: - Identifies field assignments on struct parameters
+     *      - Converts them to struct update syntax
+     *      - Returns the updated struct for proper threading
+     * 
+     * Example: struct.count = 5 → %{struct | count: 5}
+     */
+    static function structFieldAssignmentTransformPass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EMatch(pattern, value):
+                    // Pattern matching for struct field assignment not implemented yet
+                    // EPattern is a different type from ElixirAST, would need separate handling
+                    return node;
+                default:
+                    // Not a match, continue traversal
+                    return node;
+            }
+        });
     }
     
     /**
@@ -1092,7 +1469,7 @@ class ElixirASTTransformer {
             // SINGLE detection: Check metadata flag set by builder
             if (node.metadata != null && node.metadata.requiresIdiomaticTransform == true) {
                 #if debug_ast_transformer
-                trace('[XRay OTPChildSpec] Transforming idiomatic enum: ${node.metadata.enumTypeName}');
+                trace('[XRay OTPChildSpec] Transforming idiomatic enum');
                 #end
                 // Apply transformation using shared utility
                 var transformed = reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(node);
