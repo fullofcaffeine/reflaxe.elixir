@@ -1,0 +1,8 @@
+-cp test/snapshot/core/idiomatic_loops
+-cp src
+-cp std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=test/snapshot/core/idiomatic_loops/out
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

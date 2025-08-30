@@ -103,19 +103,14 @@ end, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
   defp countCompleted(todos) do
     count = 0
     g = 0
-    (fn ->
-      loop_4 = fn loop_4 ->
-        if (g < todos.length) do
-          todo = todos[g]
-      g + 1
-      if (todo.completed), do: count + 1
-          loop_4.(loop_4)
-        else
-          :ok
-        end
-      end
-      loop_4.(loop_4)
-    end).()
+    Enum.reduce_while(1..:infinity, :ok, fn _, acc -> if (g < todos.length) do
+  todo = todos[g]
+  g + 1
+  if (todo.completed), do: count + 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     count
   end
 end
