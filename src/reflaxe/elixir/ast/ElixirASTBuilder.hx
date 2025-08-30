@@ -56,6 +56,9 @@ class ElixirASTBuilder {
     // When true, don't convert camelCase parameters to snake_case
     public static var isInClassMethodContext: Bool = false;
     
+    // Counter for generating unique while loop function names
+    static var whileLoopCounter: Int = 0;
+    
     /**
      * Main entry point: Convert TypedExpr to ElixirAST
      * 
@@ -1132,10 +1135,90 @@ class ElixirASTBuilder {
                     }
                 }
                 
-                // Not an array pattern or couldn't optimize - use regular while loop
+                // Not an array pattern or couldn't optimize
+                // Generate a named recursive function instead of Y-combinator pattern
+                // 
+                // IDIOMATIC ELIXIR LOOP PATTERNS:
+                // 
+                // 1. For collection iteration → Enum.each/map/filter
+                //    Haxe: for (item in array) { process(item); }
+                //    Elixir: Enum.each(array, &process/1)
+                //
+                // 2. For numeric ranges → Enum.each with range
+                //    Haxe: for (i in 0...10) { trace(i); }
+                //    Elixir: Enum.each(0..9, &IO.inspect/1)
+                //
+                // 3. While loops → Stream.unfold or recursive function
+                //    Haxe: while (condition) { body; }
+                //    Elixir: Stream.unfold(initial_state, fn state ->
+                //              if condition(state) do
+                //                {nil, new_state}
+                //              else
+                //                nil
+                //              end
+                //            end) |> Stream.run()
+                //
+                // 4. Complex iterations → for comprehension
+                //    Haxe: nested loops with conditions
+                //    Elixir: for i <- 0..9, j <- 0..9, i != j, do: {i, j}
+                //
+                // CURRENT LIMITATION: We're in the builder phase and don't have
+                // enough context to determine the best idiomatic pattern.
+                // The transformer pass should detect these patterns and convert them.
+                //
+                // Generate idiomatic Elixir patterns directly
                 var condition = buildFromTypedExpr(econd);
                 var body = buildFromTypedExpr(e);
-                ECall(null, "while_loop", [condition, body]);
+                
+                // For now, generate a simple recursive anonymous function
+                // This avoids Y-combinator pattern but needs improvement
+                // to use Enum.reduce_while or Stream.unfold for true idiomaticity
+                //
+                // Generated pattern:
+                //   loop = fn loop ->
+                //     if condition do
+                //       body
+                //       loop.(loop)
+                //     else
+                //       :ok
+                //     end
+                //   end
+                //   loop.(loop)
+                
+                // Generate unique loop name
+                var loopName = "loop_" + (whileLoopCounter++);
+                
+                // Generate a Stream.unfold pattern for idiomatic Elixir
+                // This avoids Y-combinator and generates clean, functional code
+                // Stream.unfold(true, fn
+                //   false -> nil
+                //   true -> if condition do {nil, true} else {nil, false} end
+                // end) |> Stream.run()
+                
+                // For simplicity, generate an Enum.reduce_while pattern
+                // This is more idiomatic than recursive functions in Elixir
+                ERemoteCall(
+                    makeAST(EVar("Enum")),  // Use EVar for module name, not EAtom
+                    "reduce_while",
+                    [
+                        makeAST(ERange(makeAST(EInteger(1)), makeAST(EAtom("infinity")), false)),
+                        makeAST(EAtom("ok")),
+                        makeAST(EFn([
+                            {
+                                args: [PWildcard, PVar("acc")],
+                                guard: null,
+                                body: makeAST(EIf(
+                                    condition,
+                                    makeAST(EBlock([
+                                        body,
+                                        makeAST(ETuple([makeAST(EAtom("cont")), makeAST(EVar("acc"))]))
+                                    ])),
+                                    makeAST(ETuple([makeAST(EAtom("halt")), makeAST(EVar("acc"))]))
+                                ))
+                            }
+                        ]))
+                    ]
+                );
                 
             case TThrow(e):
                 EThrow(buildFromTypedExpr(e));
@@ -2223,6 +2306,9 @@ class ElixirASTBuilder {
      * @param body The loop body containing the transformation logic
      * @return ElixirASTDef for the Enum call
      */
+    // TODO: Future version - Use ElixirAST directly to build Enum calls instead of string manipulation
+    // This would allow us to properly construct ERemoteCall(EAtom("Enum"), "map", [array, lambda])
+    // with proper EFn nodes for the lambda functions, giving us better control over the output
     static function generateIdiomaticEnumCall(arrayRef: TypedExpr, operation: String, body: TypedExpr): ElixirASTDef {
         // Extract the actual array from the reference
         // arrayRef is the _g2 variable that holds the array
