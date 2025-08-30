@@ -1,12 +1,11 @@
 defmodule ArrayIterator do
-  def new(struct, array) do
-    fn array -> current = 0
-array = array end
+  def new(array) do
+    %{:current => 0, :array => array}
   end
   def hasNext(struct) do
-    fn -> struct.current < struct.array.length end
+    struct.current < struct.array.length
   end
   def next(struct) do
-    fn -> struct.array[struct.current + 1] end
+    struct.array[struct.current + 1]
   end
 end

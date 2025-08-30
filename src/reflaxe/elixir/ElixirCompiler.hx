@@ -530,10 +530,15 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Extract the actual function expression to get parameters
             var funcExpr = func.field.expr();
             var args = [];
+            var body = null;
+            
+            // Check if this is a constructor
+            var isConstructor = funcName == "new";
             
             // Check if this is an instance method (non-static)
             // Instance methods in Elixir need the instance as the first parameter
-            if (!func.isStatic) {
+            // Constructors don't need this since they create the instance
+            if (!func.isStatic && !isConstructor) {
                 // Add instance parameter as first argument
                 // Use "struct" as the parameter name for regular classes
                 // This matches the convention in the generated code
@@ -549,11 +554,155 @@ class ElixirCompiler extends DirectToStringCompiler {
                         // The AST builder will handle proper variable naming
                         args.push(EPattern.PVar(arg.v.name));
                     }
+                    
+                    // Special handling for constructor body
+                    if (isConstructor) {
+                        // Constructors need to return a map with instance fields
+                        // Extract field assignments from the constructor body
+                        var fieldAssignments = [];
+                        
+                        // Analyze the constructor body to find field assignments
+                        switch(tfunc.expr.expr) {
+                            case TBlock(exprs):
+                                for (expr in exprs) {
+                                    switch(expr.expr) {
+                                        case TBinop(OpAssign, e1, e2):
+                                            // Check if it's a this.field assignment
+                                            switch(e1.expr) {
+                                                case TField(ethis, fa):
+                                                    switch(ethis.expr) {
+                                                        case TConst(TThis):
+                                                            // This is a this.field assignment
+                                                            var fieldName = reflaxe.elixir.ast.ElixirASTBuilder.extractFieldName(fa);
+                                                            var value = buildFromTypedExpr(e2);
+                                                            fieldAssignments.push({
+                                                                key: reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(fieldName)),
+                                                                value: value
+                                                            });
+                                                        default:
+                                                    }
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                }
+                            default:
+                                // Single expression constructor body
+                                switch(tfunc.expr.expr) {
+                                    case TBinop(OpAssign, e1, e2):
+                                        // Check if it's a this.field assignment
+                                        switch(e1.expr) {
+                                            case TField(ethis, fa):
+                                                switch(ethis.expr) {
+                                                    case TConst(TThis):
+                                                        var fieldName = reflaxe.elixir.ast.ElixirASTBuilder.extractFieldName(fa);
+                                                        var value = buildFromTypedExpr(e2);
+                                                        fieldAssignments.push({
+                                                            key: reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(fieldName)),
+                                                            value: value
+                                                        });
+                                                    default:
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                        }
+                        
+                        // Create a map with the field assignments
+                        body = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EMap(fieldAssignments));
+                    } else {
+                        // For regular functions, extract the body directly
+                        // For regular functions, we need to handle parameter name mapping
+                        // This is especially important for abstract types where parameter names
+                        // may have collision-avoidance suffixes
+                        
+                        // Build a parameter mapping for the function body
+                        var paramMapping = new Map<String, String>();
+                        for (arg in tfunc.args) {
+                            // Map from the original name to the actual parameter name
+                            // This handles cases where Haxe adds suffixes like "1" to avoid collisions
+                            paramMapping.set(arg.v.name, arg.v.name);
+                        }
+                        
+                        // Special handling for abstract type methods
+                        // These often have simple bodies that just return the parameter
+                        var needsSpecialHandling = false;
+                        
+                        // Check if this is likely an abstract type method
+                        var className = classType.name;
+                        if (className.endsWith("_Impl_") || className.contains("_Impl_")) {
+                            // This is an abstract type implementation
+                            #if debug_abstract_compilation
+                            trace('Abstract method ${funcName} in ${className}, expr: ${tfunc.expr.expr}');
+                            #end
+                            // Check for simple return patterns
+                            switch(tfunc.expr.expr) {
+                                case TConst(TThis):
+                                    // Returns 'this' - use the first parameter name
+                                    if (tfunc.args.length > 0) {
+                                        body = reflaxe.elixir.ast.ElixirAST.makeAST(
+                                            ElixirASTDef.EVar(tfunc.args[0].v.name)
+                                        );
+                                        needsSpecialHandling = true;
+                                    }
+                                case TLocal(v):
+                                    // Returns a local variable - check if it's a parameter
+                                    for (arg in tfunc.args) {
+                                        if (v.name == arg.v.name || v.name == "this") {
+                                            body = reflaxe.elixir.ast.ElixirAST.makeAST(
+                                                ElixirASTDef.EVar(arg.v.name)
+                                            );
+                                            needsSpecialHandling = true;
+                                            break;
+                                        }
+                                    }
+                                case TBlock(exprs):
+                                    // Check if it's a single return statement
+                                    if (exprs.length == 1) {
+                                        switch(exprs[0].expr) {
+                                            case TReturn(retExpr):
+                                                // Check what's being returned (if not null)
+                                                if (retExpr != null) switch(retExpr.expr) {
+                                                    case TLocal(v):
+                                                        // Returning a local var - likely the parameter
+                                                        // For abstracts, "this" becomes the first parameter
+                                                        if (tfunc.args.length > 0 && (v.name == "this" || v.name.startsWith("this"))) {
+                                                            body = reflaxe.elixir.ast.ElixirAST.makeAST(
+                                                                ElixirASTDef.EVar(tfunc.args[0].v.name)
+                                                            );
+                                                            needsSpecialHandling = true;
+                                                        }
+                                                    case TConst(TThis):
+                                                        // Direct return of this
+                                                        if (tfunc.args.length > 0) {
+                                                            body = reflaxe.elixir.ast.ElixirAST.makeAST(
+                                                                ElixirASTDef.EVar(tfunc.args[0].v.name)
+                                                            );
+                                                            needsSpecialHandling = true;
+                                                        }
+                                                    default:
+                                                }
+                                            default:
+                                        }
+                                    }
+                                default:
+                            }
+                        }
+                        
+                        if (!needsSpecialHandling) {
+                            body = buildFromTypedExpr(tfunc.expr);
+                        }
+                    }
                 default:
-                    // Not a function expression, keep empty args (beyond instance if needed)
+                    // Not a function expression, use as-is
+                    body = buildFromTypedExpr(funcExpr);
             }
             
-            var body = buildFromTypedExpr(funcExpr);
+            // Use the body we built above
+            if (body == null) {
+                body = buildFromTypedExpr(funcExpr);
+            }
             
             var funcDef = func.field.isPublic 
                 ? ElixirASTDef.EDef(funcName, args, null, body)
