@@ -559,16 +559,24 @@ class ElixirCompiler extends DirectToStringCompiler {
             // Extract additional parameters from the function expression
             switch(funcExpr.expr) {
                 case TFunction(tfunc):
+                    // Set context flag for ALL class methods to preserve camelCase
+                    var previousContext = reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext;
+                    reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = true;
+                    
                     // Add the function's actual parameters
                     // AND register them to prevent snake_case conversion in the body
                     for (arg in tfunc.args) {
+                        // For ALL class methods (static or instance), preserve camelCase parameters
                         // Use the parameter name as-is (camelCase)
                         args.push(EPattern.PVar(arg.v.name));
                         
                         // Register to prevent conversion when referenced in body
                         // This registration will be used during buildFromTypedExpr
+                        // Mark with special prefix to indicate it's a class method parameter
                         var idKey = Std.string(arg.v.id);
-                        reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, arg.v.name);
+                        // Add a marker to indicate this is a class method parameter that should stay camelCase
+                        // This applies to ALL class methods, not just non-static ones
+                        reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, "CLASS_PARAM:" + arg.v.name);
                     }
                     
                     // Special handling for constructor body
@@ -711,11 +719,24 @@ class ElixirCompiler extends DirectToStringCompiler {
                             // to ensure they're not converted to snake_case
                             for (arg in tfunc.args) {
                                 var idKey = Std.string(arg.v.id);
-                                reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, arg.v.name);
+                                // Use the CLASS_PARAM marker to ensure camelCase preservation
+                                reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, "CLASS_PARAM:" + arg.v.name);
                             }
+                            
+                            // Set flag to indicate we're in a class method context
+                            // This prevents camelCase parameters from being converted to snake_case
+                            // This applies to ALL class methods (static and non-static)
+                            var previousContext = reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext;
+                            reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = true;
+                            
                             body = buildFromTypedExpr(tfunc.expr);
+                            
+                            // Restore previous context
+                            reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = previousContext;
                         }
                     }
+                    // Restore context before handling default case
+                    reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = previousContext;
                 default:
                     // Not a function expression, use as-is
                     body = buildFromTypedExpr(funcExpr);

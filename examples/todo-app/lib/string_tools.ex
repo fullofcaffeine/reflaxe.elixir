@@ -44,7 +44,7 @@ defmodule StringTools do
     (fn ->
       loop_2 = fn loop_2 ->
         if (n > 0) do
-          s = hex_chars.charAt(n &&& 15) + s
+          s = hexChars.charAt(n &&& 15) + s
       n = n + 4
           loop_2.(loop_2)
         else

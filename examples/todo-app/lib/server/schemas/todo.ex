@@ -8,7 +8,7 @@ defmodule Todo do
     changeset = Ecto.Changeset.validate_length(changeset, "title", %{:min => 3, :max => 200})
     changeset = Ecto.Changeset.validate_length(changeset, "description", %{:max => 1000})
     priority_values = [{:StringValue, "low"}, {:StringValue, "medium"}, {:StringValue, "high"}]
-    changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_values)
+    changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priorityValues)
     changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")
     changeset
   end
