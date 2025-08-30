@@ -755,7 +755,7 @@ class ElixirCompiler extends GenericCompiler<
      * Compile abstract types - generates proper Elixir type aliases and implementation modules
      * Abstract types in Haxe become type aliases in Elixir with implementation modules for operators
      */
-    public function compileAbstractImpl(abstractType: AbstractType): Null<reflaxe.elixir.ast.ElixirAST> {
+    public override function compileAbstractImpl(abstractType: AbstractType): Null<reflaxe.elixir.ast.ElixirAST> {
         // Skip core Haxe types that are handled elsewhere
         // Return null (not empty string) to prevent file generation
         if (isBuiltinAbstractType(abstractType.name)) {
@@ -915,7 +915,7 @@ class ElixirCompiler extends GenericCompiler<
      * The typedef just creates an alias - any usage of StringMap in code will be
      * compiled as if Map<String, String> was used directly.
      */
-    public function compileTypedefImpl(defType: DefType): Null<reflaxe.elixir.ast.ElixirAST> {
+    public override function compileTypedefImpl(defType: DefType): Null<reflaxe.elixir.ast.ElixirAST> {
         // Typedefs don't generate runtime code in Elixir
         return null;
     }
@@ -1774,94 +1774,11 @@ class ElixirCompiler extends GenericCompiler<
         };
     }
     
-    /**
-     * Extract field update information from a field assignment expression
-     * Returns: "field_name: new_value" for struct update syntax
-     */
-    private function extractFieldUpdate(expr: TypedExpr): Null<String> {
-        return switch (expr.expr) {
-            case TBinop(OpAssign, e1, e2):
-                switch (e1.expr) {
-                    case TField(e, fa):
-                        var fieldName = switch (fa) {
-                            case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf): cf.get().name;
-                            case _: null;
-                        };
-                        if (fieldName != null) {
-                            var value = compileExpression(e2);
-                            var elixirFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
-                            '${elixirFieldName}: ${value}';
-                        } else {
-                            null;
-                        }
-                    case _: null;
-                }
-            case _: null;
-        };
-    }
+    // DEPRECATED: extractFieldUpdate removed - handled by AST pipeline
     
-    /**
-     * Detect temp variable patterns: temp_var = nil; case...; temp_var
-     * Returns the temp variable name if pattern is detected, null otherwise.
-     */
-    
-    /**
-     * Optimize temp variable pattern to idiomatic case expression
-     */
-    
-    /**
-     * Fix temp variable scoping issues in compiled Elixir code
-     * Transforms: if (cond), do: temp_var = val1, else: temp_var = val2\nvar = temp_var
-     * Into: var = if (cond), do: val1, else: val2
-     */
-    
-    /**
-     * Extract the value being assigned to a temp variable
-     * Looks for patterns like: temp_var = actual_value
-     */
-    private function extractValueFromTempAssignment(expr: TypedExpr, tempVarName: String): Null<String> {
-        if (expr == null) return null;
-        return switch (expr.expr) {
-            case TBinop(OpAssign, lhs, rhs):
-                // Check if left side is our temp variable
-                switch (lhs.expr) {
-                    case TLocal(v):
-                        var varName = getOriginalVarName(v);
-                        if (varName == tempVarName) {
-                            // Return the actual value being assigned
-                            return compileExpression(rhs);
-                        }
-                    case _:
-                }
-                
-                // Also check nested blocks and expressions
-                var rhsResult = extractValueFromTempAssignment(rhs, tempVarName);
-                if (rhsResult != null) return rhsResult;
-                
-                var lhsResult = extractValueFromTempAssignment(lhs, tempVarName);
-                if (lhsResult != null) return lhsResult;
-                
-                null;
-            case TBlock(expressions):
-                // Look inside block expressions for the assignment
-                for (e in expressions) {
-                    var result = extractValueFromTempAssignment(e, tempVarName);
-                    if (result != null) return result;
-                }
-                null;
-            case TIf(condition, thenExpr, elseExpr):
-                // Also check inside if expressions
-                var thenResult = extractValueFromTempAssignment(thenExpr, tempVarName);
-                if (thenResult != null) return thenResult;
-                
-                var elseResult = extractValueFromTempAssignment(elseExpr, tempVarName);
-                if (elseResult != null) return elseResult;
-                
-                null;
-            case _:
-                null;
-        };
-    }
+    // DEPRECATED: Temp variable optimization functions removed
+    // These were part of the old string-based compilation approach
+    // The AST-based pipeline handles temp variables more elegantly
     
     /**
      * Check if expression uses a temp variable (like v = temp_var)
@@ -1890,40 +1807,8 @@ class ElixirCompiler extends GenericCompiler<
         return null; // Pattern analysis now handled by AST pipeline
     }
     
-    /**
-     * Extract the value being assigned in an assignment expression
-     */
-    private function extractAssignmentValue(expr: TypedExpr): String {
-        return switch (expr.expr) {
-            case TBinop(OpAssign, lhs, rhs):
-                compileExpression(rhs);
-            case _:
-                compileExpression(expr);
-        };
-    }
-    
-    
-    
-    /**
-     * Get the target variable from an assignment expression (like v = temp_var)
-     */
-    private function getTargetVariableFromAssignment(expr: TypedExpr): Null<String> {
-        return switch (expr.expr) {
-            case TBinop(OpAssign, lhs, rhs):
-                // Get the left-hand side variable
-                switch (lhs.expr) {
-                    case TLocal(v):
-                        return getOriginalVarName(v);
-                    case TField(e, field):
-                        var objCompiled = compileExpression(e);
-                        return objCompiled; // For field access like struct.field
-                    case _:
-                        return null;
-                }
-            case _:
-                return null;
-        };
-    }
+    // DEPRECATED: extractAssignmentValue and getTargetVariableFromAssignment removed
+    // These string-based compilation functions are replaced by AST pipeline
     
     /**
      * Check if expression is nil
