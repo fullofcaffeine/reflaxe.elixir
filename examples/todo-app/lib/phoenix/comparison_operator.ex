@@ -17,7 +17,7 @@ defmodule ComparisonOperator do
   def less_than_or_equal() do
     {:LessThanOrEqual}
   end
-  def in(arg0) do
+  def in_fn(arg0) do
     {:In, arg0}
   end
   def like(arg0) do
