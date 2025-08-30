@@ -1,11 +1,11 @@
 defmodule ApplicationResultTools do
   def ok(state) do
-    fn state -> {:Ok, state} end
+    {:Ok, state}
   end
   def error(reason) do
-    fn reason -> {:Error, reason} end
+    {:Error, reason}
   end
   def ignore() do
-    fn -> :Ignore end
+    :Ignore
   end
 end

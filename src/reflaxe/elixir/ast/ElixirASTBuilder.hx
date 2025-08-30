@@ -227,15 +227,23 @@ class ElixirASTBuilder {
                     varName = tempVarRenameMap.get(idKey);
                 }
                 
+                // For renamed temp variables, use the name directly without further conversion
+                // Otherwise apply toElixirVarName for CamelCase conversion
+                var finalVarName = if (v.name.charAt(0) == "_" && tempVarRenameMap.exists(Std.string(v.id))) {
+                    varName; // Already renamed, use as-is
+                } else {
+                    toElixirVarName(varName); // Apply CamelCase to snake_case conversion
+                };
+                
                 if (init != null) {
                     EMatch(
-                        PVar(toElixirVarName(varName)),
+                        PVar(finalVarName),
                         buildFromTypedExpr(init)
                     );
                 } else {
                     // Uninitialized variable - use nil
                     EMatch(
-                        PVar(toElixirVarName(varName)),
+                        PVar(finalVarName),
                         makeAST(ENil)
                     );
                 }
@@ -714,8 +722,9 @@ class ElixirASTBuilder {
             // Special Cases
             // ================================================================
             case TNew(c, _, el):
-                // Constructor call becomes struct creation
-                var className = c.get().name;
+                // Constructor call - should call ModuleName.new() for classes with instance methods
+                var classType = c.get();
+                var className = classType.name;
                 var args = [for (e in el) buildFromTypedExpr(e)];
                 
                 // Check if this is a Map type (StringMap, IntMap, etc.)
@@ -724,8 +733,38 @@ class ElixirASTBuilder {
                     // Generate empty map for Map constructors
                     EMap([]);
                 } else {
-                    // Will be transformed to proper struct syntax
-                    EStruct(className, []);
+                    // Check if this class has instance methods (not just a data class)
+                    var hasInstanceMethods = false;
+                    for (field in classType.fields.get()) {
+                        // Instance methods are FMethod that are not in the statics list
+                        if (field.kind.match(FMethod(_))) {
+                            // Check if this field is NOT in the statics array
+                            var isStatic = false;
+                            for (staticField in classType.statics.get()) {
+                                if (staticField.name == field.name) {
+                                    isStatic = true;
+                                    break;
+                                }
+                            }
+                            if (!isStatic) {
+                                hasInstanceMethods = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Also check if it has a constructor
+                    var hasConstructor = classType.constructor != null;
+                    
+                    if (hasInstanceMethods || hasConstructor) {
+                        // Call the module's new function: ModuleName.new(args)
+                        // In Elixir, this is a module function call
+                        var moduleRef = makeAST(EVar(className));
+                        ECall(moduleRef, "new", args);
+                    } else {
+                        // Simple data class - create as struct
+                        EStruct(className, []);
+                    }
                 }
                 
             case TFor(v, e1, e2):
@@ -1147,7 +1186,7 @@ class ElixirASTBuilder {
     /**
      * Extract field name from FieldAccess
      */
-    static function extractFieldName(fa: FieldAccess): String {
+    public static function extractFieldName(fa: FieldAccess): String {
         return switch(fa) {
             case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
                 cf.get().name;

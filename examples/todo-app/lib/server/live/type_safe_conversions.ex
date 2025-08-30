@@ -1,61 +1,61 @@
 defmodule TypeSafeConversions do
   def eventParamsToChangesetParams(params) do
-    fn params -> changeset_params = %{}
-if (params.title != nil) do
-  value = {:StringValue, params.title}
-  Map.put(changeset_params, "title", value)
-end
-if (params.description != nil) do
-  value = {:StringValue, params.description}
-  Map.put(changeset_params, "description", value)
-end
-if (params.priority != nil) do
-  value = {:StringValue, params.priority}
-  Map.put(changeset_params, "priority", value)
-end
-if (params.due_date != nil) do
-  value = {:StringValue, params.due_date}
-  Map.put(changeset_params, "due_date", value)
-end
-if (params.tags != nil) do
-  value = {:StringValue, params.tags}
-  Map.put(changeset_params, "tags", value)
-end
-if (params.completed != nil) do
-  value = {:BoolValue, params.completed}
-  Map.put(changeset_params, "completed", value)
-end
-changeset_params end
+    changeset_params = %{}
+    if (params.title != nil) do
+      value = {:StringValue, params.title}
+      Map.put(changeset_params, "title", value)
+    end
+    if (params.description != nil) do
+      value = {:StringValue, params.description}
+      Map.put(changeset_params, "description", value)
+    end
+    if (params.priority != nil) do
+      value = {:StringValue, params.priority}
+      Map.put(changeset_params, "priority", value)
+    end
+    if (params.due_date != nil) do
+      value = {:StringValue, params.due_date}
+      Map.put(changeset_params, "due_date", value)
+    end
+    if (params.tags != nil) do
+      value = {:StringValue, params.tags}
+      Map.put(changeset_params, "tags", value)
+    end
+    if (params.completed != nil) do
+      value = {:BoolValue, params.completed}
+      Map.put(changeset_params, "completed", value)
+    end
+    changeset_params
   end
   def createTodoParams(title, description, priority, due_date, tags, user_id) do
-    fn title, description, priority, due_date, tags, user_id -> changeset_params = %{}
-value = {:StringValue, title}
-Map.put(changeset_params, "title", value)
-value = {:StringValue, priority}
-Map.put(changeset_params, "priority", value)
-value = {:IntValue, user_id}
-Map.put(changeset_params, "user_id", value)
-value = {:BoolValue, false}
-Map.put(changeset_params, "completed", value)
-if (description != nil) do
-  value = {:StringValue, description}
-  Map.put(changeset_params, "description", value)
-end
-if (due_date != nil) do
-  value = {:StringValue, due_date}
-  Map.put(changeset_params, "due_date", value)
-end
-if (tags != nil) do
-  value = {:StringValue, tags}
-  Map.put(changeset_params, "tags", value)
-end
-changeset_params end
+    changeset_params = %{}
+    value = {:StringValue, title}
+    Map.put(changeset_params, "title", value)
+    value = {:StringValue, priority}
+    Map.put(changeset_params, "priority", value)
+    value = {:IntValue, user_id}
+    Map.put(changeset_params, "user_id", value)
+    value = {:BoolValue, false}
+    Map.put(changeset_params, "completed", value)
+    if (description != nil) do
+      value = {:StringValue, description}
+      Map.put(changeset_params, "description", value)
+    end
+    if (due_date != nil) do
+      value = {:StringValue, due_date}
+      Map.put(changeset_params, "due_date", value)
+    end
+    if (tags != nil) do
+      value = {:StringValue, tags}
+      Map.put(changeset_params, "tags", value)
+    end
+    changeset_params
   end
   def validateTodoCreationParams(params) do
-    fn params -> params.title != nil && params.title.length > 0 end
+    params.title != nil && params.title.length > 0
   end
   def createCompleteAssigns(base, todos, filter, sort_by, current_user, editing_todo, show_form, search_query, selected_tags) do
-    fn base, todos, filter, sort_by, current_user, editing_todo, show_form, search_query, selected_tags -> assigns = %{:todos => if (todos != nil) do
+    assigns = %{:todos => if (todos != nil) do
   todos
 else
   if (base != nil) do
@@ -120,32 +120,32 @@ else
     []
   end
 end, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
-total_todos = assigns.todos.length
-completed_todos = TypeSafeConversions.count_completed(assigns.todos)
-pending_todos = assigns.total_todos - assigns.completed_todos
-assigns end
+    total_todos = assigns.todos.length
+    completed_todos = TypeSafeConversions.count_completed(assigns.todos)
+    pending_todos = assigns.total_todos - assigns.completed_todos
+    assigns
   end
   defp createDefaultUser() do
-    fn -> %{:id => 1, :name => "Default User", :email => "default@example.com", :password_hash => "default_hash", :confirmed_at => nil, :last_login_at => nil, :active => true} end
+    %{:id => 1, :name => "Default User", :email => "default@example.com", :password_hash => "default_hash", :confirmed_at => nil, :last_login_at => nil, :active => true}
   end
   defp countCompleted(todos) do
-    fn todos -> count = 0
-g = 0
-(fn ->
-  loop_4 = fn loop_4 ->
-    if (g < todos.length) do
-      todo = todos[g]
+    count = 0
+    g = 0
+    (fn ->
+      loop_4 = fn loop_4 ->
+        if (g < todos.length) do
+          todo = todos[g]
       g + 1
       if (todo.completed) do
         count + 1
       end
+          loop_4.(loop_4)
+        else
+          :ok
+        end
+      end
       loop_4.(loop_4)
-    else
-      :ok
-    end
-  end
-  loop_4.(loop_4)
-end).()
-count end
+    end).()
+    count
   end
 end

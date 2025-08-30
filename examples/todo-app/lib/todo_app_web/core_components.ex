@@ -1,20 +1,20 @@
 defmodule TodoAppWeb.CoreComponents do
   def modal(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <div id={@id} class="modal" phx-show={@show}>
             <%= @inner_content %>
         </div>
-""" end
+"""
   end
   def button(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <button type={@type || "button"} class={@className} disabled={@disabled}>
             <%= @inner_content %>
         </button>
-""" end
+"""
   end
   def input(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <div class="form-group">
             <label for={@field.id}><%= @label %></label>
             <input 
@@ -30,26 +30,26 @@ defmodule TodoAppWeb.CoreComponents do
                 <span class="error"><%= Enum.join(@field.errors, ", ") %></span>
             <% end %>
         </div>
-""" end
+"""
   end
   def error(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <%= if @field && @field.errors && length(@field.errors) > 0 do %>
             <div class="error-message">
                 <%= Enum.join(@field.errors, ", ") %>
             </div>
         <% end %>
-""" end
+"""
   end
   def simple_form(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <.form :let={f} for={@formFor} action={@action} method={@method || "post"}>
             <%= @inner_content %>
         </.form>
-""" end
+"""
   end
   def header(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <header class="header">
             <h1><%= @title %></h1>
             <%= if @actions do %>
@@ -58,10 +58,10 @@ defmodule TodoAppWeb.CoreComponents do
                 </div>
             <% end %>
         </header>
-""" end
+"""
   end
   def table(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <table class="table">
             <thead>
                 <tr>
@@ -80,42 +80,42 @@ defmodule TodoAppWeb.CoreComponents do
                 <% end %>
             </tbody>
         </table>
-""" end
+"""
   end
   def list(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <ul class="list">
             <%= for item <- @items do %>
                 <li><%= item %></li>
             <% end %>
         </ul>
-""" end
+"""
   end
   def back(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <div class="back-link">
             <.link navigate={@navigate}>
                 ← Back
             </.link>
         </div>
-""" end
+"""
   end
   def icon(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <%= if @className do %>
             <span class={"icon icon-" <> @name <> " " <> @className}></span>
         <% else %>
             <span class={"icon icon-" <> @name}></span>
         <% end %>
-""" end
+"""
   end
   def label(assigns) do
-    fn assigns -> ~H"""
+    ~H"""
 <%= if @htmlFor do %>
             <label for={@htmlFor} class={@className}><%= @inner_content %></label>
         <% else %>
             <label class={@className}><%= @inner_content %></label>
         <% end %>
-""" end
+"""
   end
 end

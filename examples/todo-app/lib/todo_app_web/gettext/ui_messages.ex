@@ -1,27 +1,27 @@
 defmodule TodoAppWeb.Gettext.UIMessages do
   def welcome(name) do
-    fn name -> bindings = TranslationBindings_Impl_.set(TranslationBindings_Impl_.create(), "name", name)
-Gettext.gettext("Welcome %{name}!", bindings) end
+    bindings = TranslationBindings_Impl_.set(TranslationBindings_Impl_.create(), "name", name)
+    Gettext.gettext("Welcome %{name}!", bindings)
   end
   def success() do
-    fn -> Gettext.gettext("Operation completed successfully") end
+    Gettext.gettext("Operation completed successfully")
   end
   def loading() do
-    fn -> Gettext.gettext("Loading...") end
+    Gettext.gettext("Loading...")
   end
   def save() do
-    fn -> Gettext.gettext("Save") end
+    Gettext.gettext("Save")
   end
   def cancel() do
-    fn -> Gettext.gettext("Cancel") end
+    Gettext.gettext("Cancel")
   end
   def delete() do
-    fn -> Gettext.gettext("Delete") end
+    Gettext.gettext("Delete")
   end
   def edit() do
-    fn -> Gettext.gettext("Edit") end
+    Gettext.gettext("Edit")
   end
   def confirm_delete() do
-    fn -> Gettext.gettext("Are you sure you want to delete this item?") end
+    Gettext.gettext("Are you sure you want to delete this item?")
   end
 end

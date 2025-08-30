@@ -1,29 +1,29 @@
 defmodule TodoAppRouter do
   def root() do
-    fn -> "/" end
+    "/"
   end
   def todosIndex() do
-    fn -> "/todos" end
+    "/todos"
   end
   def todosShow() do
-    fn -> "/todos/:id" end
+    "/todos/:id"
   end
   def todosEdit() do
-    fn -> "/todos/:id/edit" end
+    "/todos/:id/edit"
   end
   def apiUsers() do
-    fn -> "/api/users" end
+    "/api/users"
   end
   def apiCreateUser() do
-    fn -> "/api/users" end
+    "/api/users"
   end
   def apiUpdateUser() do
-    fn -> "/api/users/:id" end
+    "/api/users/:id"
   end
   def apiDeleteUser() do
-    fn -> "/api/users/:id" end
+    "/api/users/:id"
   end
   def dashboard() do
-    fn -> "/dev/dashboard" end
+    "/dev/dashboard"
   end
 end
