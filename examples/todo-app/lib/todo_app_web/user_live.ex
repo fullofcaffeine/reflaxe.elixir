@@ -25,22 +25,22 @@ defmodule TodoAppWeb.UserLive do
     changeset = Users.change_user(nil)
     selected_user = nil
     show_form = true
-    %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:changeset => changeset, :selectedUser => selectedUser, :showForm => showForm})}
+    %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:changeset => changeset, :selectedUser => selected_user, :showForm => show_form})}
   end
   defp handleEditUser(params, socket) do
     user_id = params.id
-    selected_user = Users.get_user(userId)
-    changeset = Users.change_user(selectedUser)
+    selected_user = Users.get_user(user_id)
+    changeset = Users.change_user(selected_user)
     show_form = true
-    %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:selectedUser => selectedUser, :changeset => changeset, :showForm => showForm})}
+    %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:selectedUser => selected_user, :changeset => changeset, :showForm => show_form})}
   end
   defp handleSaveUser(params, socket) do
     user_params = params.user
     selected_user = Reflect.field(socket.assigns, "selectedUser")
-    result = if (selectedUser == nil) do
-  Users.create_user(userParams)
+    result = if (selected_user == nil) do
+  Users.create_user(user_params)
 else
-  Users.update_user(selectedUser, userParams)
+  Users.update_user(selected_user, user_params)
 end
     g = result[:status]
     case (g) do
@@ -49,14 +49,14 @@ end
       "ok" ->
         users = Users.list_users(nil)
         show_form = false
-        %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:users => users, :showForm => showForm, :selectedUser => nil, :changeset => Users.change_user(nil)})}
+        %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:users => users, :showForm => show_form, :selectedUser => nil, :changeset => Users.change_user(nil)})}
       _ ->
         %{:status => "noreply", :socket => socket}
     end
   end
   defp handleDeleteUser(params, socket) do
     user_id = params.id
-    user = Users.get_user(userId)
+    user = Users.get_user(user_id)
     result = Users.delete_user(user)
     if (result[:status] == "ok") do
       users = Users.list_users(nil)
@@ -66,12 +66,12 @@ end
   end
   defp handleSearch(params, socket) do
     search_term = params.search
-    users = if (searchTerm.length > 0) do
-  Users.search_users(searchTerm)
+    users = if (search_term.length > 0) do
+  Users.search_users(search_term)
 else
   Users.list_users(nil)
 end
-    %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:users => users, :searchTerm => searchTerm})}
+    %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:users => users, :searchTerm => search_term})}
   end
   defp handleCancel(socket) do
     %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:showForm => false, :selectedUser => nil, :changeset => Users.change_user(nil)})}

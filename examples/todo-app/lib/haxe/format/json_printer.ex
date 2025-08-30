@@ -27,10 +27,10 @@ defmodule JsonPrinter do
         g = g.elem(1)
         c = g
         class_name = Type.get_class_name(c)
-        if (className == "String") do
+        if (class_name == "String") do
           struct.quoteString(v)
         else
-          if (className == "Array"), do: struct.writeArray(v), else: struct.writeObject(v)
+          if (class_name == "Array"), do: struct.writeArray(v), else: struct.writeObject(v)
         end
       7 ->
         g = g.elem(1)

@@ -71,7 +71,7 @@ defmodule Assigns_Impl_ do
         if (g < g1.length) do
           existing_field = g1[g]
       g + 1
-      Reflect.set_field(result, existingField, Reflect.field(this1, existingField))
+      Reflect.set_field(result, existing_field, Reflect.field(this1, existing_field))
           loop_8.(loop_8)
         else
           :ok

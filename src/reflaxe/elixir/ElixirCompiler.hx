@@ -566,17 +566,15 @@ class ElixirCompiler extends DirectToStringCompiler {
                     // Add the function's actual parameters
                     // AND register them to prevent snake_case conversion in the body
                     for (arg in tfunc.args) {
-                        // For ALL class methods (static or instance), preserve camelCase parameters
-                        // Use the parameter name as-is (camelCase)
-                        args.push(EPattern.PVar(arg.v.name));
+                        // Convert parameter names to snake_case for Elixir
+                        var elixirParamName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                        args.push(EPattern.PVar(elixirParamName));
                         
-                        // Register to prevent conversion when referenced in body
+                        // Register the mapping from original name to snake_case name
                         // This registration will be used during buildFromTypedExpr
-                        // Mark with special prefix to indicate it's a class method parameter
                         var idKey = Std.string(arg.v.id);
-                        // Add a marker to indicate this is a class method parameter that should stay camelCase
-                        // This applies to ALL class methods, not just non-static ones
-                        reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, "CLASS_PARAM:" + arg.v.name);
+                        // Map the parameter ID to its snake_case name
+                        reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, elixirParamName);
                     }
                     
                     // Special handling for constructor body
@@ -716,11 +714,11 @@ class ElixirCompiler extends DirectToStringCompiler {
                         
                         if (!needsSpecialHandling) {
                             // Re-register parameters RIGHT before building body
-                            // to ensure they're not converted to snake_case
+                            // Map them to their snake_case names
                             for (arg in tfunc.args) {
                                 var idKey = Std.string(arg.v.id);
-                                // Use the CLASS_PARAM marker to ensure camelCase preservation
-                                reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, "CLASS_PARAM:" + arg.v.name);
+                                var elixirParamName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                                reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, elixirParamName);
                             }
                             
                             // Set flag to indicate we're in a class method context

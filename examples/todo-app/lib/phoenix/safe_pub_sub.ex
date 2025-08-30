@@ -1,16 +1,16 @@
 defmodule SafePubSub do
-  def subscribeWithConverter(topic, topicConverter) do
+  def subscribeWithConverter(topic, topic_converter) do
     pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
     topic_string = topic_converter.(topic)
-    Phoenix.PubSub.subscribe(pubsubModule, topicString)
+    Phoenix.PubSub.subscribe(pubsub_module, topic_string)
   end
-  def broadcastWithConverters(topic, message, topicConverter, messageConverter) do
+  def broadcastWithConverters(topic, message, topic_converter, message_converter) do
     pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
     topic_string = topic_converter.(topic)
     message_payload = message_converter.(message)
-    Phoenix.PubSub.broadcast(pubsubModule, topicString, messagePayload)
+    Phoenix.PubSub.broadcast(pubsub_module, topic_string, message_payload)
   end
-  def parseWithConverter(msg, messageParser) do
+  def parseWithConverter(msg, message_parser) do
     {:unknown, msg}
   end
   def addTimestamp(payload) do
@@ -23,8 +23,8 @@ defmodule SafePubSub do
   def isValidMessage(msg) do
     msg != nil && Reflect.has_field(msg, "type") && Reflect.field(msg, "type") != nil
   end
-  def createUnknownMessageError(messageType) do
-    "Unknown PubSub message type: \"" + messageType + "\". Check your message enum definitions."
+  def createUnknownMessageError(message_type) do
+    "Unknown PubSub message type: \"" + message_type + "\". Check your message enum definitions."
   end
   def createMalformedMessageError(msg) do
     msg_str = try do
@@ -35,6 +35,6 @@ rescue
   e ->
     "unparseable message"
 end
-    "Malformed PubSub message: " + msgStr + ". Expected message with \"type\" field."
+    "Malformed PubSub message: " + msg_str + ". Expected message with \"type\" field."
   end
 end

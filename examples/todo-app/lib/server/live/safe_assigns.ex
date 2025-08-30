@@ -8,14 +8,14 @@ defmodule SafeAssigns do
   def setFilter(socket, filter) do
     Phoenix.LiveView.assign(socket, %{:filter => filter})
   end
-  def setSortBy(socket, sortBy) do
-    Phoenix.LiveView.assign(socket, %{:sort_by => sortBy})
+  def setSortBy(socket, sort_by) do
+    Phoenix.LiveView.assign(socket, %{:sort_by => sort_by})
   end
   def setSearchQuery(socket, query) do
     Phoenix.LiveView.assign(socket, %{:search_query => query})
   end
-  def setShowForm(socket, showForm) do
-    Phoenix.LiveView.assign(socket, %{:show_form => showForm})
+  def setShowForm(socket, show_form) do
+    Phoenix.LiveView.assign(socket, %{:show_form => show_form})
   end
   def updateTodosAndStats(socket, todos) do
     completed = SafeAssigns.count_completed(todos)

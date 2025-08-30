@@ -144,21 +144,10 @@ class ElixirASTBuilder {
                 
                 // Check if this variable has been registered as a function parameter
                 // or has an explicit mapping (from TFunction processing)
-                var isClassParam = false;
                 if (tempVarRenameMap.exists(idKey)) {
-                    // Use the explicitly mapped name - it's already in Elixir format
-                    var mappedName = tempVarRenameMap.get(idKey);
-                    
-                    // Check if this is a class method parameter (marked with CLASS_PARAM: prefix)
-                    if (mappedName.indexOf("CLASS_PARAM:") == 0) {
-                        // Remove the marker and use the camelCase name
-                        varName = mappedName.substr(12); // Remove "CLASS_PARAM:" prefix
-                        wasMapped = true;
-                        isClassParam = true; // Mark as class parameter
-                    } else {
-                        varName = mappedName;
-                        wasMapped = true;
-                    }
+                    // Use the explicitly mapped name - it's already in Elixir format (snake_case)
+                    varName = tempVarRenameMap.get(idKey);
+                    wasMapped = true;
                     
                     #if debug_ast_pipeline
                     trace('[AST Builder] Using mapped name for id=${v.id}: ${v.name} -> ${varName}');
@@ -217,19 +206,13 @@ class ElixirASTBuilder {
                 // for the wasMapped flag and make the conversion happen at definition time rather than
                 // reference time, following the single responsibility principle.
                 
-                // In class method context, preserve camelCase for parameters
-                // This ensures function parameters like "topicConverter" stay as-is
-                var finalName = if (isClassParam) {
-                    // This is a class method parameter marked with CLASS_PARAM
-                    // Keep it as camelCase
-                    varName;
-                } else if (wasMapped) {
-                    // Variable was mapped but not a class param
-                    varName; // Use mapped name as-is
-                } else if (isInClassMethodContext && isCamelCaseParameter(varName)) {
-                    // Keep camelCase parameters as-is in class methods
+                // Convert variable names to snake_case for Elixir
+                // Unless they were explicitly mapped (function parameters are pre-mapped)
+                var finalName = if (wasMapped) {
+                    // Use the mapped name (already in snake_case for parameters)
                     varName;
                 } else {
+                    // Convert to snake_case for Elixir conventions
                     toElixirVarName(varName);
                 };
                 EVar(finalName);
@@ -626,13 +609,8 @@ class ElixirASTBuilder {
                 for (arg in f.args) {
                     var originalName = arg.v.name;
                     
-                    // In class method context, preserve camelCase for parameters
-                    var elixirName = if (isInClassMethodContext && isCamelCaseParameter(originalName)) {
-                        // Keep camelCase parameters as-is in class methods
-                        originalName;
-                    } else {
-                        toElixirVarName(originalName);
-                    };
+                    // Convert to snake_case for Elixir conventions
+                    var elixirName = toElixirVarName(originalName);
                     
                     // Track all parameter mappings, especially for abstract "this" parameters
                     if (originalName != elixirName) {
@@ -668,30 +646,20 @@ class ElixirASTBuilder {
                 for (arg in f.args) {
                     var idKey = Std.string(arg.v.id);
                     
-                    // Check if this parameter was already registered with CLASS_PARAM marker
+                    // Check if this parameter was already registered
                     // This happens when ElixirCompiler processes class methods
-                    if (tempVarRenameMap.exists(idKey)) {
-                        var existing = tempVarRenameMap.get(idKey);
-                        if (existing.indexOf("CLASS_PARAM:") == 0) {
-                            // Preserve the CLASS_PARAM marker - don't override it
-                            functionParameterIds.set(idKey, true);
-                            continue;
-                        }
+                    if (!tempVarRenameMap.exists(idKey)) {
+                        var originalName = arg.v.name;
+                        
+                        // Convert to snake_case for Elixir conventions
+                        var elixirName = toElixirVarName(originalName);
+                        
+                        tempVarRenameMap.set(idKey, elixirName);
                     }
                     
-                    var originalName = arg.v.name;
-                    
-                    // Use same logic as above for consistency
-                    var elixirName = if (isInClassMethodContext && isCamelCaseParameter(originalName)) {
-                        originalName;
-                    } else {
-                        toElixirVarName(originalName);
-                    };
-                    
-                    tempVarRenameMap.set(idKey, elixirName);
                     functionParameterIds.set(idKey, true); // Mark as function parameter
                     #if debug_ast_pipeline
-                    trace('[AST Builder] Registering parameter in rename map: id=$idKey -> $elixirName');
+                    trace('[AST Builder] Registering parameter in rename map: id=$idKey');
                     #end
                 }
                 

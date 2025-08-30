@@ -57,34 +57,34 @@ case (g.elem(0)) do
   0 ->
     g = g.elem(1)
     parsed_msg = g
-    case (parsedMsg.elem(0)) do
+    case (parsed_msg.elem(0)) do
       0 ->
-        g = parsedMsg.elem(1)
+        g = parsed_msg.elem(1)
         todo = g
         TodoLive.add_todo_to_list(todo, socket)
       1 ->
-        g = parsedMsg.elem(1)
+        g = parsed_msg.elem(1)
         todo = g
         TodoLive.update_todo_in_list(todo, socket)
       2 ->
-        g = parsedMsg.elem(1)
+        g = parsed_msg.elem(1)
         id = g
         TodoLive.remove_todo_from_list(id, socket)
       3 ->
-        g = parsedMsg.elem(1)
+        g = parsed_msg.elem(1)
         action = g
         TodoLive.handle_bulk_update(action, socket)
       4 ->
-        g = parsedMsg.elem(1)
+        g = parsed_msg.elem(1)
         user_id = g
         socket
       5 ->
-        g = parsedMsg.elem(1)
+        g = parsed_msg.elem(1)
         user_id = g
         socket
       6 ->
-        g = parsedMsg.elem(1)
-        g1 = parsedMsg.elem(2)
+        g = parsed_msg.elem(1)
+        g1 = parsed_msg.elem(2)
         message = g
         level = g1
         flash_type = case (level.elem(0)) do
@@ -121,7 +121,7 @@ end
     todo_params_tags = TodoLive.parse_tags(params.tags)
     todo_params_user_id = socket.assigns.current_user.id
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
-    changeset = Todo.changeset(Todo.new(), changesetParams)
+    changeset = Todo.changeset(Todo.new(), changeset_params)
     g = {:unknown, changeset}
     case (g.elem(0)) do
       0 ->
@@ -139,8 +139,8 @@ end
         end
         todos = [todo] ++ socket.assigns.todos
         current_assigns = socket.assigns
-        complete_assigns = TypeSafeConversions.create_complete_assigns(currentAssigns, todos, nil, nil, nil, nil, false, nil, nil)
-        updated_socket = Phoenix.LiveView.assign(socket, completeAssigns)
+        complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos, nil, nil, nil, nil, false, nil, nil)
+        updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
         Phoenix.LiveView.put_flash(updated_socket, :Success, "Todo created successfully!")
       1 ->
         g = g.elem(1)
@@ -229,8 +229,8 @@ end
     if (todo.user_id == socket.assigns.current_user.id), do: socket
     todos = [todo] ++ socket.assigns.todos
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.create_complete_assigns(currentAssigns, todos)
-    Phoenix.LiveView.assign(socket, completeAssigns)
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
+    Phoenix.LiveView.assign(socket, complete_assigns)
   end
   defp update_todo_in_list(updated_todo, socket) do
     todos = _this = socket.assigns.todos
@@ -252,8 +252,8 @@ g2 = _this
 end).()
 g
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.create_complete_assigns(currentAssigns, todos)
-    Phoenix.LiveView.assign(socket, completeAssigns)
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
+    Phoenix.LiveView.assign(socket, complete_assigns)
   end
   defp remove_todo_from_list(id, socket) do
     todos = _this = socket.assigns.todos
@@ -275,15 +275,15 @@ g2 = _this
 end).()
 g
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.create_complete_assigns(currentAssigns, todos)
-    Phoenix.LiveView.assign(socket, completeAssigns)
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
+    Phoenix.LiveView.assign(socket, complete_assigns)
   end
   defp load_todos(user_id) do
     query = Ecto.Query.from(Todo, "t")
     where_conditions = %{}
     value = {:Integer, user_id}
-    Map.put(whereConditions, "user_id", value)
-    conditions = %{:where => whereConditions}
+    Map.put(where_conditions, "user_id", value)
+    conditions = %{:where => where_conditions}
     query = Ecto.Query.where(query, conditions)
     Repo.all(query)
   end
@@ -420,10 +420,10 @@ g
     end
     updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.create_complete_assigns(currentAssigns, updated_todos)
-    completed_todos = completeAssigns.total_todos
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
+    completed_todos = complete_assigns.total_todos
     pending_todos = 0
-    updated_socket = Phoenix.LiveView.assign(socket, completeAssigns)
+    updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, :Info, "All todos marked as completed!")
   end
   defp delete_completed_todos(socket) do
@@ -479,10 +479,10 @@ g2 = _this
 end).()
 g
     current_assigns = socket.assigns
-    complete_assigns = TypeSafeConversions.create_complete_assigns(currentAssigns, remaining)
+    complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, remaining)
     completed_todos = 0
     pending_todos = remaining.length
-    updated_socket = Phoenix.LiveView.assign(socket, completeAssigns)
+    updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, :Info, "Completed todos deleted!")
   end
   defp start_editing(id, socket) do
@@ -493,7 +493,7 @@ g
     todo = socket.assigns.editing_todo
     if (todo == nil), do: socket
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
-    changeset = Todo.changeset(todo, changesetParams)
+    changeset = Todo.changeset(todo, changeset_params)
     g = {:unknown, changeset}
     case (g.elem(0)) do
       0 ->
@@ -522,13 +522,13 @@ g
       0 ->
         updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
         current_assigns = socket.assigns
-        complete_assigns = TypeSafeConversions.create_complete_assigns(currentAssigns, updated_todos)
-        Phoenix.LiveView.assign(socket, completeAssigns)
+        complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
+        Phoenix.LiveView.assign(socket, complete_assigns)
       1 ->
         updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
         current_assigns = socket.assigns
-        complete_assigns = TypeSafeConversions.create_complete_assigns(currentAssigns, updated_todos)
-        Phoenix.LiveView.assign(socket, completeAssigns)
+        complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, updated_todos)
+        Phoenix.LiveView.assign(socket, complete_assigns)
       2 ->
         g = action.elem(1)
         priority = g
