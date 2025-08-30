@@ -1,8 +1,8 @@
 defmodule ApplicationArgs_Impl_ do
   def fromDynamic(value) do
-    fn value -> value end
+    value
   end
   def toDynamic(this1) do
-    fn this_1 -> this_1 end
+    this1
   end
 end

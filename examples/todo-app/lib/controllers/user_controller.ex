@@ -1,17 +1,17 @@
 defmodule UserController do
   def index() do
-    fn -> "User index" end
+    "User index"
   end
   def show() do
-    fn -> "User show" end
+    "User show"
   end
   def create() do
-    fn -> "User create" end
+    "User create"
   end
   def update() do
-    fn -> "User update" end
+    "User update"
   end
   def delete() do
-    fn -> "User delete" end
+    "User delete"
   end
 end

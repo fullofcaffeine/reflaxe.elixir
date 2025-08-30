@@ -1,45 +1,40 @@
 defmodule Todo do
-  def new(struct) do
-    fn -> tags = []
-priority = "medium"
-completed = false
-tags = []
-completed = false
-priority = "medium" end
+  def new() do
+    %{:tags => [], :priority => "medium", :completed => false, :tags => [], :completed => false, :priority => "medium"}
   end
   def changeset(todo, params) do
-    fn todo, params -> changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
-changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
-changeset = Ecto.Changeset.validate_length(changeset, "title", %{:min => 3, :max => 200})
-changeset = Ecto.Changeset.validate_length(changeset, "description", %{:max => 1000})
-priority_values = [{:StringValue, "low"}, {:StringValue, "medium"}, {:StringValue, "high"}]
-changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_values)
-changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")
-changeset end
+    changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
+    changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
+    changeset = Ecto.Changeset.validate_length(changeset, "title", %{:min => 3, :max => 200})
+    changeset = Ecto.Changeset.validate_length(changeset, "description", %{:max => 1000})
+    priority_values = [{:StringValue, "low"}, {:StringValue, "medium"}, {:StringValue, "high"}]
+    changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_values)
+    changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")
+    changeset
   end
   def toggle_completed(todo) do
-    fn todo -> params = %{}
-value = {:BoolValue, not todo.completed}
-Map.put(params, "completed", value)
-Todo.changeset(todo, params) end
+    params = %{}
+    value = {:BoolValue, not todo.completed}
+    Map.put(params, "completed", value)
+    Todo.changeset(todo, params)
   end
   def update_priority(todo, priority) do
-    fn todo, priority -> params = %{}
-value = {:StringValue, priority}
-Map.put(params, "priority", value)
-Todo.changeset(todo, params) end
+    params = %{}
+    value = {:StringValue, priority}
+    Map.put(params, "priority", value)
+    Todo.changeset(todo, params)
   end
   def add_tag(todo, tag) do
-    fn todo, tag -> tags = if (todo.tags != nil) do
+    tags = if (todo.tags != nil) do
   todo.tags
 else
   []
 end
-tags.push(tag)
-params = %{}
-value = {:ArrayValue, g = []
-g_1 = 0
-g_2 = tags
+    tags.push(tag)
+    params = %{}
+    value = {:ArrayValue, g = []
+g1 = 0
+g2 = tags
 (fn ->
   loop_14 = fn loop_14 ->
     if (g1 < g2.length) do
@@ -54,7 +49,7 @@ g_2 = tags
   loop_14.(loop_14)
 end).()
 g}
-Map.put(params, "tags", value)
-Todo.changeset(todo, params) end
+    Map.put(params, "tags", value)
+    Todo.changeset(todo, params)
   end
 end

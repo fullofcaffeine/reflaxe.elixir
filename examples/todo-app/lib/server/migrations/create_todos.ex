@@ -1,8 +1,8 @@
 defmodule CreateTodos do
   def migrateAddIndexes(struct) do
-    fn -> nil end
+    nil
   end
   def rollbackCustomOperation(struct) do
-    fn -> nil end
+    nil
   end
 end
