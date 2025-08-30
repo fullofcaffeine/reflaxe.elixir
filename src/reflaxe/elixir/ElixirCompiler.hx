@@ -391,6 +391,66 @@ class ElixirCompiler extends GenericCompiler<
      * HOW: Uses the dispatcher pattern to maintain clean separation of concerns
      */
     /**
+     * Override compileExpression to handle __elixir__ injection
+     * 
+     * WHY: GenericCompiler doesn't have built-in injection support like DirectToStringCompiler,
+     * so we need to handle it ourselves at the expression level.
+     * 
+     * WHAT: Checks for __elixir__ calls and returns ERaw nodes directly
+     * 
+     * HOW: Detects TCall patterns with __elixir__ and creates ERaw AST nodes
+     */
+    public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<reflaxe.elixir.ast.ElixirAST> {
+        // Check for __elixir__ injection
+        switch(expr.expr) {
+            case TCall(e, args):
+                var isInjection = switch(e.expr) {
+                    case TIdent("__elixir__"): true;
+                    case TLocal(v) if (v.name == "__elixir__"): true;
+                    case _: false;
+                };
+                
+                if (isInjection && args.length > 0) {
+                    // Extract the injection string from the first argument
+                    var injectionCode = switch(args[0].expr) {
+                        case TConst(TString(s)): s;
+                        case _: null;
+                    };
+                    
+                    if (injectionCode != null) {
+                        // Handle parameter substitution if there are additional arguments
+                        if (args.length > 1) {
+                            // Substitute parameters in the code string
+                            var processedCode = injectionCode;
+                            for (i in 1...args.length) {
+                                var paramAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(args[i]);
+                                // Convert AST to string for substitution
+                                var paramStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(paramAST);
+                                // Replace {i-1} placeholder with the parameter
+                                var placeholder = '{${i-1}}';
+                                processedCode = StringTools.replace(processedCode, placeholder, paramStr);
+                            }
+                            
+                            // Create ERaw node with substituted code
+                            return reflaxe.elixir.ast.ElixirAST.makeAST(
+                                reflaxe.elixir.ast.ElixirASTDef.ERaw(processedCode)
+                            );
+                        } else {
+                            // Simple injection without parameters
+                            return reflaxe.elixir.ast.ElixirAST.makeAST(
+                                reflaxe.elixir.ast.ElixirASTDef.ERaw(injectionCode)
+                            );
+                        }
+                    }
+                }
+            case _:
+        }
+        
+        // Not an injection, use normal compilation
+        return super.compileExpression(expr, topLevel);
+    }
+    
+    /**
      * Implement the required abstract method for expression compilation
      * 
      * WHY: Reflaxe's GenericCompiler calls this to compile individual expressions.
