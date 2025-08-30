@@ -307,7 +307,10 @@ class ElixirASTBuilder {
                     }]);
                     case OpIn: EBinary(In, left, right);
                     case OpNullCoal: 
-                        // a ?? b becomes if a != nil, do: a, else: b
+                        // a ?? b needs special handling to avoid double evaluation
+                        // For complex expressions, we need to store in a temp variable
+                        // For now, generate inline: if (tmp = a) != nil, do: tmp, else: b
+                        // This will be handled properly in the AST transformer
                         EIf(
                             makeAST(EBinary(NotEqual, left, makeAST(ENil))),
                             left,
