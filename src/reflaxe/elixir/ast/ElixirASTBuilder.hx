@@ -63,6 +63,45 @@ class ElixirASTBuilder {
      * WHAT: Recursively converts TypedExpr tree to ElixirAST tree
      * HOW: Pattern matches on expr type and delegates to specific handlers
      */
+    /**
+     * Replace TLocal references to a temp var with inline null coalescing pattern
+     */
+    static function replaceNullCoalVar(expr: TypedExpr, varId: Int, initExpr: TypedExpr): TypedExpr {
+        return switch(expr.expr) {
+            case TBinop(OpNullCoal, {expr: TLocal(v)}, defaultExpr) if (v.id == varId):
+                // Replace with inline null coalescing that includes the init expression
+                {
+                    expr: TBinop(OpNullCoal, initExpr, defaultExpr),
+                    pos: expr.pos,
+                    t: expr.t
+                };
+                
+            case TVar(v, init) if (init != null):
+                // Variable declaration with initialization - recurse into init
+                {
+                    expr: TVar(v, replaceNullCoalVar(init, varId, initExpr)),
+                    pos: expr.pos,
+                    t: expr.t
+                };
+                
+            case TObjectDecl(fields):
+                // Object declaration - recurse into field values
+                var newFields = [for (field in fields) {
+                    name: field.name,
+                    expr: replaceNullCoalVar(field.expr, varId, initExpr)
+                }];
+                {
+                    expr: TObjectDecl(newFields),
+                    pos: expr.pos,
+                    t: expr.t
+                };
+                
+            case _:
+                // No transformation needed
+                expr;
+        }
+    }
+    
     public static function buildFromTypedExpr(expr: TypedExpr): ElixirAST {
         #if debug_ast_builder
         trace('[XRay AST Builder] Converting TypedExpr: ${expr.expr}');
@@ -218,6 +257,9 @@ class ElixirASTBuilder {
                 EVar(finalName);
                 
             case TVar(v, init):
+                #if debug_null_coalescing
+                trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? init.expr : "null"}');
+                #end
                 // Apply same underscore variable renaming as in TLocal
                 var varName = v.name;
                 if (varName.charAt(0) == "_" && varName.length > 1) {
@@ -308,9 +350,8 @@ class ElixirASTBuilder {
                     case OpIn: EBinary(In, left, right);
                     case OpNullCoal: 
                         // a ?? b needs special handling to avoid double evaluation
-                        // For complex expressions, we need to store in a temp variable
-                        // For now, generate inline: if (tmp = a) != nil, do: tmp, else: b
-                        // This will be handled properly in the AST transformer
+                        // Generate inline: if (a) != nil, do: a, else: b
+                        // The printer will handle making this inline
                         EIf(
                             makeAST(EBinary(NotEqual, left, makeAST(ENil))),
                             left,
@@ -507,6 +548,44 @@ class ElixirASTBuilder {
                 EIf(condition, thenBranch, elseBranch);
                 
             case TBlock(el):
+                #if debug_null_coalescing
+                trace('[AST Builder] TBlock with ${el.length} expressions');
+                for (i in 0...el.length) {
+                    trace('[AST Builder]   Block[$i]: ${el[i].expr}');
+                }
+                #end
+                
+                // Check for null coalescing pattern: TVar followed by expr that uses it
+                if (el.length == 2) {
+                    switch([el[0].expr, el[1].expr]) {
+                        case [TVar(tmpVar, init), expr] if (tmpVar.name.charAt(0) == "_" && init != null):
+                            // Check if the second expression uses this temp var in null coalescing
+                            var usesInNullCoal = false;
+                            function checkForNullCoal(e: TypedExpr): Bool {
+                                switch(e.expr) {
+                                    case TBinop(OpNullCoal, {expr: TLocal(v)}, _) if (v.id == tmpVar.id):
+                                        usesInNullCoal = true;
+                                        return true;
+                                    case TVar(v2, init2) if (init2 != null):
+                                        return checkForNullCoal(init2);
+                                    case TObjectDecl(fields):
+                                        for (field in fields) {
+                                            if (checkForNullCoal(field.expr)) return true;
+                                        }
+                                    case _:
+                                }
+                                return false;
+                            }
+                            
+                            if (checkForNullCoal(el[1])) {
+                                // Transform: replace TLocal(tmpVar) with the init expression in null coalescing
+                                var transformed = replaceNullCoalVar(el[1], tmpVar.id, init);
+                                return buildFromTypedExpr(transformed).def;
+                            }
+                        case _:
+                    }
+                }
+                
                 var expressions = [for (e in el) buildFromTypedExpr(e)];
                 EBlock(expressions);
                 
@@ -695,8 +774,32 @@ class ElixirASTBuilder {
                 var pairs = [];
                 for (field in fields) {
                     var key = makeAST(EAtom(field.name));
-                    var value = buildFromTypedExpr(field.expr);
-                    pairs.push({key: key, value: value});
+                    
+                    // Check if the field value is a TBlock with null coalescing pattern
+                    var fieldValue = switch(field.expr.expr) {
+                        case TBlock([{expr: TVar(tmpVar, init)}, expr]) 
+                            if (tmpVar.name.charAt(0) == "_" && init != null):
+                            // Check if expr uses tmpVar in null coalescing
+                            function hasNullCoal(e: TypedExpr): Bool {
+                                return switch(e.expr) {
+                                    case TBinop(OpNullCoal, {expr: TLocal(v)}, _) if (v.id == tmpVar.id): true;
+                                    case _: false;
+                                }
+                            }
+                            
+                            if (hasNullCoal(expr)) {
+                                // Transform inline: replace temp var reference with init expr
+                                var transformed = replaceNullCoalVar(expr, tmpVar.id, init);
+                                buildFromTypedExpr(transformed);
+                            } else {
+                                buildFromTypedExpr(field.expr);
+                            }
+                            
+                        case _:
+                            buildFromTypedExpr(field.expr);
+                    };
+                    
+                    pairs.push({key: key, value: fieldValue});
                 }
                 EMap(pairs);
                 
