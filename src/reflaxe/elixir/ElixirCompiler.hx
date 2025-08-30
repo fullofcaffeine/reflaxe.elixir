@@ -526,8 +526,34 @@ class ElixirCompiler extends DirectToStringCompiler {
             
             // Build function AST
             var funcName = func.field.name;
-            var args = []; // Simple for now - can be enhanced
-            var body = buildFromTypedExpr(func.field.expr());
+            
+            // Extract the actual function expression to get parameters
+            var funcExpr = func.field.expr();
+            var args = [];
+            
+            // Check if this is an instance method (non-static)
+            // Instance methods in Elixir need the instance as the first parameter
+            if (!func.isStatic) {
+                // Add instance parameter as first argument
+                // Use "struct" as the parameter name for regular classes
+                // This matches the convention in the generated code
+                args.push(EPattern.PVar("struct"));
+            }
+            
+            // Extract additional parameters from the function expression
+            switch(funcExpr.expr) {
+                case TFunction(tfunc):
+                    // Add the function's actual parameters
+                    for (arg in tfunc.args) {
+                        // For now, use the parameter name as-is
+                        // The AST builder will handle proper variable naming
+                        args.push(EPattern.PVar(arg.v.name));
+                    }
+                default:
+                    // Not a function expression, keep empty args (beyond instance if needed)
+            }
+            
+            var body = buildFromTypedExpr(funcExpr);
             
             var funcDef = func.field.isPublic 
                 ? ElixirASTDef.EDef(funcName, args, null, body)

@@ -1,9 +1,9 @@
 defmodule TodoAppWeb.UserLive do
-  defp mount() do
+  defp mount(_params, _session, socket) do
     fn _params, _session, socket -> users = Users.list_users(nil)
 %{:status => "ok", :socket => UserLive.assign_multiple(socket, %{:users => users, :selectedUser => nil, :changeset => Users.change_user(nil), :searchTerm => "", :showForm => false})} end
   end
-  defp handle_event() do
+  defp handle_event(event, params, socket) do
     fn event, params, socket -> case (event) do
   "cancel" ->
     UserLive.handle_cancel(socket)
@@ -21,20 +21,20 @@ defmodule TodoAppWeb.UserLive do
     %{:status => "noreply", :socket => socket}
 end end
   end
-  defp handleNewUser() do
+  defp handleNewUser(params, socket) do
     fn params, socket -> changeset = Users.change_user(nil)
 selected_user = nil
 show_form = true
 %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:changeset => changeset, :selectedUser => selected_user, :showForm => show_form})} end
   end
-  defp handleEditUser() do
+  defp handleEditUser(params, socket) do
     fn params, socket -> user_id = params.id
 selected_user = Users.get_user(user_id)
 changeset = Users.change_user(selected_user)
 show_form = true
 %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:selectedUser => selected_user, :changeset => changeset, :showForm => show_form})} end
   end
-  defp handleSaveUser() do
+  defp handleSaveUser(params, socket) do
     fn params, socket -> user_params = params.user
 selected_user = Reflect.field(socket.assigns, "selectedUser")
 result = if (selected_user == nil) do
@@ -54,7 +54,7 @@ case (g) do
     %{:status => "noreply", :socket => socket}
 end end
   end
-  defp handleDeleteUser() do
+  defp handleDeleteUser(params, socket) do
     fn params, socket -> user_id = params.id
 user = Users.get_user(user_id)
 result = Users.delete_user(user)
@@ -64,7 +64,7 @@ if (result[:status] == "ok") do
 end
 %{:status => "noreply", :socket => socket} end
   end
-  defp handleSearch() do
+  defp handleSearch(params, socket) do
     fn params, socket -> search_term = params.search
 users = if (search_term.length > 0) do
   Users.search_users(search_term)
@@ -73,13 +73,13 @@ else
 end
 %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:users => users, :searchTerm => search_term})} end
   end
-  defp handleCancel() do
+  defp handleCancel(socket) do
     fn socket -> %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:showForm => false, :selectedUser => nil, :changeset => Users.change_user(nil)})} end
   end
-  defp render() do
+  defp render(assigns) do
     fn assigns -> HXX.hxx("\n        <div class=\"user-management\">\n            <div class=\"header\">\n                <h1>User Management</h1>\n                <.button phx-click=\"new_user\" class=\"btn-primary\">\n                    <.icon name=\"plus\" /> New User\n                </.button>\n            </div>\n            \n            <div class=\"search-bar\">\n                <.form phx-change=\"search\">\n                    <.input \n                        name=\"search\" \n                        value={@searchTerm}\n                        placeholder=\"Search users...\"\n                        type=\"search\"\n                    />\n                </.form>\n            </div>\n            \n            " + UserLive.render_user_list(assigns) + "\n            " + UserLive.render_user_form(assigns) + "\n        </div>\n        ") end
   end
-  defp renderUserList() do
+  defp renderUserList(assigns) do
     fn assigns -> ~H"""
 
         <div class="users-list">
@@ -103,25 +103,25 @@ end
         
 """ end
   end
-  defp renderUserRow() do
+  defp renderUserRow(assigns) do
     fn assigns -> user = assigns.user
 HXX.hxx("\n        <tr>\n            <td>" + user[:name] + "</td>\n            <td>" + user[:email] + "</td>\n            <td>" + user[:age] + "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " + UserLive.get_status_text(user[:active]) + "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        ") end
   end
-  defp getStatusClass() do
+  defp getStatusClass(active) do
     fn active -> if (active) do
   "status active"
 else
   "status inactive"
 end end
   end
-  defp getStatusText() do
+  defp getStatusText(active) do
     fn active -> if (active) do
   "Active"
 else
   "Inactive"
 end end
   end
-  defp renderUserForm() do
+  defp renderUserForm(assigns) do
     fn assigns -> if (not assigns.showForm) do
   ""
 end
@@ -175,10 +175,10 @@ end
         
 """ end
   end
-  defp assign() do
+  defp assign(socket, key, value) do
     fn socket, key, value -> socket end
   end
-  defp assign_multiple() do
+  defp assign_multiple(socket, assigns) do
     fn socket, assigns -> socket end
   end
   def main() do

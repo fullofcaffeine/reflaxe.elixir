@@ -1,5 +1,5 @@
 defmodule TodoAppWeb.Telemetry do
-  def start_link() do
+  def start_link(args) do
     fn args -> %{:ok => nil} end
   end
   def metrics() do

@@ -1,5 +1,5 @@
 defmodule TodoAppWeb.TodoLive do
-  def mount() do
+  def mount(_params, session, socket) do
     fn _params, session, socket -> g = {:unknown, :TodoUpdates}
 case (g.elem(0)) do
   0 ->
@@ -16,7 +16,7 @@ assigns = %{:todos => todos, :filter => "all", :sort_by => "created", :current_u
 updated_socket = Phoenix.LiveView.assign(socket, assigns)
 {:Ok, updated_socket} end
   end
-  def handle_event() do
+  def handle_event(event, params, socket) do
     fn event, params, socket -> result_socket = case (event) do
   "bulk_complete" ->
     TodoLive.complete_all_todos(socket)
@@ -51,7 +51,7 @@ updated_socket = Phoenix.LiveView.assign(socket, assigns)
 end
 {:NoReply, result_socket} end
   end
-  def handle_info() do
+  def handle_info(msg, socket) do
     fn msg, socket -> result_socket = g = {:unknown, msg}
 case (g.elem(0)) do
   0 ->
@@ -105,7 +105,7 @@ end
 end
 {:NoReply, result_socket} end
   end
-  defp create_new_todo() do
+  defp create_new_todo(params, socket) do
     fn params, socket -> todo_params_user_id = nil
 todo_params_title = nil
 todo_params_tags = nil
@@ -152,7 +152,7 @@ case (g.elem(0)) do
     Phoenix.LiveView.put_flash(socket, :Error, "Failed to create todo: " + Std.string(reason))
 end end
   end
-  defp toggle_todo_status() do
+  defp toggle_todo_status(id, socket) do
     fn id, socket -> todo = TodoLive.find_todo(id, socket.assigns.todos)
 if (todo == nil) do
   socket
@@ -180,7 +180,7 @@ case (g.elem(0)) do
     Phoenix.LiveView.put_flash(socket, :Error, "Failed to update todo: " + Std.string(reason))
 end end
   end
-  defp delete_todo() do
+  defp delete_todo(id, socket) do
     fn id, socket -> todo = TodoLive.find_todo(id, socket.assigns.todos)
 if (todo == nil) do
   socket
@@ -207,7 +207,7 @@ case (g.elem(0)) do
     Phoenix.LiveView.put_flash(socket, :Error, "Failed to delete todo: " + Std.string(reason))
 end end
   end
-  defp update_todo_priority() do
+  defp update_todo_priority(id, priority, socket) do
     fn id, priority, socket -> todo = TodoLive.find_todo(id, socket.assigns.todos)
 if (todo == nil) do
   socket
@@ -235,7 +235,7 @@ case (g.elem(0)) do
     Phoenix.LiveView.put_flash(socket, :Error, "Failed to update priority: " + Std.string(reason))
 end end
   end
-  defp add_todo_to_list() do
+  defp add_todo_to_list(todo, socket) do
     fn todo, socket -> if (todo.user_id == socket.assigns.current_user.id) do
   socket
 end
@@ -244,7 +244,7 @@ current_assigns = socket.assigns
 complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
 Phoenix.LiveView.assign(socket, complete_assigns) end
   end
-  defp update_todo_in_list() do
+  defp update_todo_in_list(updated_todo, socket) do
     fn updated_todo, socket -> todos = _this = socket.assigns.todos
 g = []
 g_1 = 0
@@ -271,7 +271,7 @@ current_assigns = socket.assigns
 complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
 Phoenix.LiveView.assign(socket, complete_assigns) end
   end
-  defp remove_todo_from_list() do
+  defp remove_todo_from_list(id, socket) do
     fn id, socket -> todos = _this = socket.assigns.todos
 g = []
 g_1 = 0
@@ -296,7 +296,7 @@ current_assigns = socket.assigns
 complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
 Phoenix.LiveView.assign(socket, complete_assigns) end
   end
-  defp load_todos() do
+  defp load_todos(user_id) do
     fn user_id -> query = Ecto.Query.from(Todo, "t")
 where_conditions = %{}
 value = {:Integer, user_id}
@@ -305,7 +305,7 @@ conditions = %{:where => where_conditions}
 query = Ecto.Query.where(query, conditions)
 Repo.all(query) end
   end
-  defp find_todo() do
+  defp find_todo(id, todos) do
     fn id, todos -> g = 0
 (fn ->
   loop_17 = fn loop_17 ->
@@ -324,7 +324,7 @@ Repo.all(query) end
 end).()
 nil end
   end
-  defp count_completed() do
+  defp count_completed(todos) do
     fn todos -> count = 0
 g = 0
 (fn ->
@@ -344,7 +344,7 @@ g = 0
 end).()
 count end
   end
-  defp count_pending() do
+  defp count_pending(todos) do
     fn todos -> count = 0
 g = 0
 (fn ->
@@ -364,7 +364,7 @@ g = 0
 end).()
 count end
   end
-  defp parse_tags() do
+  defp parse_tags(tags_string) do
     fn tags_string -> if (tags_string == nil || tags_string == "") do
   []
 end
@@ -387,14 +387,14 @@ g_2 = _this
 end).()
 g end
   end
-  defp get_user_from_session() do
+  defp get_user_from_session(session) do
     fn session -> %{:id => if (session.user_id != nil) do
   session.user_id
 else
   1
 end, :name => "Demo User", :email => "demo@example.com", :password_hash => "hashed_password", :confirmed_at => nil, :last_login_at => nil, :active => true} end
   end
-  defp complete_all_todos() do
+  defp complete_all_todos(socket) do
     fn socket -> pending = _this = socket.assigns.todos
 g = []
 g_1 = 0
@@ -458,7 +458,7 @@ pending_todos = 0
 updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
 Phoenix.LiveView.put_flash(updated_socket, :Info, "All todos marked as completed!") end
   end
-  defp delete_completed_todos() do
+  defp delete_completed_todos(socket) do
     fn socket -> completed = _this = socket.assigns.todos
 g = []
 g_1 = 0
@@ -521,11 +521,11 @@ pending_todos = remaining.length
 updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
 Phoenix.LiveView.put_flash(updated_socket, :Info, "Completed todos deleted!") end
   end
-  defp start_editing() do
+  defp start_editing(id, socket) do
     fn id, socket -> todo = TodoLive.find_todo(id, socket.assigns.todos)
 SafeAssigns.set_editing_todo(socket, todo) end
   end
-  defp save_edited_todo() do
+  defp save_edited_todo(params, socket) do
     fn params, socket -> todo = socket.assigns.editing_todo
 if (todo == nil) do
   socket
@@ -555,7 +555,7 @@ case (g.elem(0)) do
     Phoenix.LiveView.put_flash(socket, :Error, "Failed to save todo: " + Std.string(reason))
 end end
   end
-  defp handle_bulk_update() do
+  defp handle_bulk_update(action, socket) do
     fn action, socket -> case (action.elem(0)) do
   0 ->
     updated_todos = TodoLive.load_todos(socket.assigns.current_user.id)
@@ -581,7 +581,7 @@ end end
     socket
 end end
   end
-  defp toggle_tag_filter() do
+  defp toggle_tag_filter(tag, socket) do
     fn tag, socket -> selected_tags = socket.assigns.selected_tags
 updated_tags = if (selected_tags.contains(tag)) do
   g = []
