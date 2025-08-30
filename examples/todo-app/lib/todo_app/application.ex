@@ -7,7 +7,7 @@ defmodule TodoApp.Application do
     children = [{:unknown, "TodoApp.PubSub"}, {:unknown, "TodoAppWeb.Telemetry"}, {:unknown, "TodoAppWeb.Endpoint"}]
     opts = %{:strategy => :OneForOne, :max_restarts => 3, :max_seconds => 5}
     supervisor_result = Supervisor.start_link(children, opts)
-    supervisorResult
+    supervisor_result
   end
   def prep_stop(state) do
     state
