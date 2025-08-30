@@ -18,7 +18,7 @@ defmodule JsonPrinter do
         if (s == "NaN" || s == "Infinity" || s == "-Infinity"), do: "null"
         s
       3 ->
-        if (v), do: "true", else: "false"
+        if v, do: "true", else: "false"
       4 ->
         struct.writeObject(v)
       5 ->

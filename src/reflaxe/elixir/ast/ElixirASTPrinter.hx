@@ -181,22 +181,25 @@ class ElixirASTPrinter {
                 var isInline = isSimpleExpression(thenBranch) && 
                                (elseBranch == null || isSimpleExpression(elseBranch));
                 
+                // Print condition without unnecessary parentheses
+                var conditionStr = printIfCondition(condition);
+                
                 if (isInline && elseBranch != null) {
                     // Inline if-else expression: if condition, do: then_val, else: else_val
-                    'if ' + print(condition, 0) + ', do: ' + print(thenBranch, 0) + ', else: ' + print(elseBranch, 0);
+                    'if ' + conditionStr + ', do: ' + print(thenBranch, 0) + ', else: ' + print(elseBranch, 0);
                 } else if (elseBranch != null) {
                     // Multi-line if-else block
-                    'if ' + print(condition, 0) + ' do\n' +
+                    'if ' + conditionStr + ' do\n' +
                     indentStr(indent + 1) + print(thenBranch, indent + 1) + '\n' +
                     indentStr(indent) + 'else\n' +
                     indentStr(indent + 1) + print(elseBranch, indent + 1) + '\n' +
                     indentStr(indent) + 'end';
                 } else if (isInline) {
                     // Inline if without else: if condition, do: then_val
-                    'if ' + print(condition, 0) + ', do: ' + print(thenBranch, 0);
+                    'if ' + conditionStr + ', do: ' + print(thenBranch, 0);
                 } else {
                     // Multi-line if without else
-                    'if ' + print(condition, 0) + ' do\n' +
+                    'if ' + conditionStr + ' do\n' +
                     indentStr(indent + 1) + print(thenBranch, indent + 1) + '\n' +
                     indentStr(indent) + 'end';
                 }
@@ -366,7 +369,7 @@ class ElixirASTPrinter {
                     lines.join('\n' + indentStr(indent));
                 } else {
                     // Normal function call
-                    var argStr = [for (a in args) print(a, 0)].join(', ');
+                    var argStr = [for (a in args) printFunctionArg(a)].join(', ');
                     if (target != null) {
                         // Check if this is a function variable call (marked with empty funcName)
                         if (funcName == "") {
@@ -382,7 +385,7 @@ class ElixirASTPrinter {
                 }
                 
             case ERemoteCall(module, funcName, args):
-                var argStr = [for (a in args) print(a, 0)].join(', ');
+                var argStr = [for (a in args) printFunctionArg(a)].join(', ');
                 print(module, 0) + '.' + funcName + '(' + argStr + ')';
                 
             case EPipe(left, right):
@@ -823,6 +826,80 @@ class ElixirASTPrinter {
             case _:
                 false;
         };
+    }
+    
+    /**
+     * Print an if condition, avoiding unnecessary parentheses
+     * In Elixir, simple variables don't need parentheses in if conditions
+     */
+    static function printIfCondition(condition: ElixirAST): String {
+        if (condition == null) return "";
+        
+        // Check if this is a parenthesized simple expression
+        switch(condition.def) {
+            case EParen(inner):
+                // If the inner expression is simple, don't add parentheses
+                if (isSimpleVariable(inner)) {
+                    return print(inner, 0);
+                }
+                // Otherwise keep the parentheses for complex expressions
+                return '(' + print(inner, 0) + ')';
+            default:
+                return print(condition, 0);
+        }
+    }
+    
+    /**
+     * Check if an expression is a simple variable that doesn't need parentheses
+     */
+    static function isSimpleVariable(ast: ElixirAST): Bool {
+        if (ast == null) return false;
+        
+        return switch(ast.def) {
+            case EVar(_) | ENil | EBoolean(_):
+                true;
+            default:
+                false;
+        };
+    }
+    
+    /**
+     * Print a function argument, wrapping inline if expressions in parentheses
+     * 
+     * WHY: Elixir requires parentheses around inline if expressions when used as
+     *      function arguments to resolve ambiguity in nested calls
+     * WHAT: Detects inline if expressions and wraps them in parentheses
+     * HOW: Checks if the argument is an inline if and wraps it if needed
+     */
+    static function printFunctionArg(arg: ElixirAST): String {
+        if (arg == null) return "";
+        
+        // Check if this is an inline if expression
+        var needsParens = switch(arg.def) {
+            case EIf(condition, thenBranch, elseBranch):
+                // An if expression needs parentheses when used as a function argument
+                // if it will be printed inline (single line)
+                // We consider it inline if:
+                // 1. It has the keepInlineInAssignment metadata (null coalescing)
+                // 2. Or both branches are simple expressions (ternary operator)
+                if (arg.metadata != null && arg.metadata.keepInlineInAssignment == true) {
+                    true;
+                } else {
+                    // Check if branches are simple enough to be printed inline
+                    var thenSimple = isSimpleExpression(thenBranch);
+                    var elseSimple = elseBranch != null ? isSimpleExpression(elseBranch) : true;
+                    thenSimple && elseSimple;
+                }
+            default:
+                false;
+        };
+        
+        // Wrap in parentheses if needed
+        if (needsParens) {
+            return '(' + print(arg, 0) + ')';
+        } else {
+            return print(arg, 0);
+        }
     }
 }
 

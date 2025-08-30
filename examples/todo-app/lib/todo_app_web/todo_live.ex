@@ -242,7 +242,7 @@ g2 = _this
     if (g1 < g2.length) do
       v = g2[g1]
       g1 + 1
-      g.push(if (v.id == updated_todo.id), do: updated_todo, else: v)
+      g.push((if (v.id == updated_todo.id), do: updated_todo, else: v))
       loop_15.(loop_15)
     else
       :ok
