@@ -1,9 +1,9 @@
 defmodule JsonPrinter do
-  def new() do
+  def new(struct, replacer, space) do
     fn replacer, space -> replacer = replacer
 space = space end
   end
-  defp writeValue() do
+  defp writeValue(struct, v, key) do
     fn v, key -> if (struct.replacer != nil) do
   v = struct.replacer(key, v)
 end
@@ -52,7 +52,7 @@ case (g.elem(0)) do
     "null"
 end end
   end
-  defp writeArray() do
+  defp writeArray(struct, arr) do
     fn arr -> items = []
 g = 0
 g_1 = arr.length
@@ -74,7 +74,7 @@ else
   "[" + items.join(",") + "]"
 end end
   end
-  defp writeObject() do
+  defp writeObject(struct, obj) do
     fn obj -> fields = Reflect.fields(obj)
 pairs = []
 g = 0
@@ -104,7 +104,7 @@ else
   "{" + pairs.join(",") + "}"
 end end
   end
-  defp quoteString() do
+  defp quoteString(struct, s) do
     fn s -> result = "\""
 g = 0
 g_1 = s.length
@@ -155,10 +155,10 @@ end).()
 result = result + "\""
 result end
   end
-  def write() do
+  def write(struct, k, v) do
     fn k, v -> struct.writeValue(v, k) end
   end
-  def print() do
+  def print(o, replacer, space) do
     fn o, replacer, space -> printer = %JsonPrinter{}
 printer.writeValue(o, "") end
   end

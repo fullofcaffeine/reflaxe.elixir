@@ -1,5 +1,5 @@
 defmodule Log do
-  def formatOutput() do
+  def formatOutput(v, infos) do
     fn v, infos -> str = Std.string(v)
 if (infos == nil) do
   str
@@ -24,7 +24,7 @@ if (infos.customParams != nil) do
 end
 pstr + ": " + str end
   end
-  def trace() do
+  def trace(v, infos) do
     fn v, infos -> str = Log.format_output(v, infos)
 Sys.println(str) end
   end

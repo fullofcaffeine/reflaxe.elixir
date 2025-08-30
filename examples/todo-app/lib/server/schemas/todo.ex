@@ -1,5 +1,5 @@
 defmodule Todo do
-  def new() do
+  def new(struct) do
     fn -> tags = []
 priority = "medium"
 completed = false
@@ -7,7 +7,7 @@ tags = []
 completed = false
 priority = "medium" end
   end
-  def changeset() do
+  def changeset(todo, params) do
     fn todo, params -> changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
 changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
 changeset = Ecto.Changeset.validate_length(changeset, "title", %{:min => 3, :max => 200})
@@ -17,19 +17,19 @@ changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_va
 changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")
 changeset end
   end
-  def toggle_completed() do
+  def toggle_completed(todo) do
     fn todo -> params = %{}
 value = {:BoolValue, not todo.completed}
 Map.put(params, "completed", value)
 Todo.changeset(todo, params) end
   end
-  def update_priority() do
+  def update_priority(todo, priority) do
     fn todo, priority -> params = %{}
 value = {:StringValue, priority}
 Map.put(params, "priority", value)
 Todo.changeset(todo, params) end
   end
-  def add_tag() do
+  def add_tag(todo, tag) do
     fn todo, tag -> tags = if (todo.tags != nil) do
   todo.tags
 else
