@@ -1228,7 +1228,19 @@ class ElixirASTBuilder {
                     makeAST(EVar("Enum")),  // Use EVar for module name, not EAtom
                     "reduce_while",
                     [
-                        makeAST(ERange(makeAST(EInteger(1)), makeAST(EAtom("infinity")), false)),
+                        // Use Stream.iterate for infinite sequence
+                        makeAST(ERemoteCall(
+                            makeAST(EVar("Stream")),
+                            "iterate",
+                            [
+                                makeAST(EInteger(0)),
+                                makeAST(EFn([{
+                                    args: [PVar("n")],
+                                    guard: null,
+                                    body: makeAST(EBinary(Add, makeAST(EVar("n")), makeAST(EInteger(1))))
+                                }]))
+                            ]
+                        )),
                         makeAST(EAtom("ok")),
                         makeAST(EFn([
                             {
