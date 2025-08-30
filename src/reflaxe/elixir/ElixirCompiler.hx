@@ -567,7 +567,18 @@ class ElixirCompiler extends DirectToStringCompiler {
                     // AND register them to prevent snake_case conversion in the body
                     for (arg in tfunc.args) {
                         // Convert parameter names to snake_case for Elixir
-                        var elixirParamName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                        var baseName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                        
+                        // Check if the parameter is used in the function body
+                        // If not, prefix with underscore to follow Elixir conventions
+                        // For now, only prefix with underscore if the parameter has the -reflaxe.unused metadata
+                        // The isParameterUsedInExpr check is not reliable for all cases yet
+                        var elixirParamName = if (arg.v.meta != null && arg.v.meta.has("-reflaxe.unused")) {
+                            "_" + baseName;
+                        } else {
+                            baseName;
+                        };
+                        
                         args.push(EPattern.PVar(elixirParamName));
                         
                         // Register the mapping from original name to snake_case name
@@ -1082,6 +1093,78 @@ class ElixirCompiler extends DirectToStringCompiler {
         // This ensures variables from one function don't affect another
         
         return ""; // Function compilation now handled by AST pipeline
+    }
+    
+    /**
+     * Check if a parameter is used anywhere in an expression
+     * Recursively traverses the AST to find references to the parameter
+     */
+    private static function isParameterUsedInExpr(paramId: Int, expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        switch(expr.expr) {
+            case TLocal(v):
+                // Check if this is a reference to our parameter
+                if (v.id == paramId) return true;
+            case TBlock(exprs):
+                for (e in exprs) {
+                    if (isParameterUsedInExpr(paramId, e)) return true;
+                }
+            case TBinop(_, e1, e2):
+                return isParameterUsedInExpr(paramId, e1) || isParameterUsedInExpr(paramId, e2);
+            case TField(e, _):
+                return isParameterUsedInExpr(paramId, e);
+            case TCall(e, el):
+                if (isParameterUsedInExpr(paramId, e)) return true;
+                for (arg in el) {
+                    if (isParameterUsedInExpr(paramId, arg)) return true;
+                }
+            case TIf(econd, ethen, eelse):
+                if (isParameterUsedInExpr(paramId, econd)) return true;
+                if (isParameterUsedInExpr(paramId, ethen)) return true;
+                if (eelse != null && isParameterUsedInExpr(paramId, eelse)) return true;
+            case TSwitch(e, cases, edef):
+                if (isParameterUsedInExpr(paramId, e)) return true;
+                for (c in cases) {
+                    if (isParameterUsedInExpr(paramId, c.expr)) return true;
+                }
+                if (edef != null && isParameterUsedInExpr(paramId, edef)) return true;
+            case TReturn(e):
+                if (e != null) return isParameterUsedInExpr(paramId, e);
+            case TUnop(_, _, e):
+                return isParameterUsedInExpr(paramId, e);
+            case TFunction(tfunc):
+                return isParameterUsedInExpr(paramId, tfunc.expr);
+            case TVar(_, e):
+                if (e != null) return isParameterUsedInExpr(paramId, e);
+            case TFor(v, e1, e2):
+                // Don't check the loop variable itself, but check the iterator and body
+                return isParameterUsedInExpr(paramId, e1) || isParameterUsedInExpr(paramId, e2);
+            case TWhile(econd, e, _):
+                return isParameterUsedInExpr(paramId, econd) || isParameterUsedInExpr(paramId, e);
+            case TTry(e, catches):
+                if (isParameterUsedInExpr(paramId, e)) return true;
+                for (c in catches) {
+                    if (isParameterUsedInExpr(paramId, c.expr)) return true;
+                }
+            case TArrayDecl(el):
+                for (e in el) {
+                    if (isParameterUsedInExpr(paramId, e)) return true;
+                }
+            case TObjectDecl(fields):
+                for (f in fields) {
+                    if (isParameterUsedInExpr(paramId, f.expr)) return true;
+                }
+            case TParenthesis(e):
+                return isParameterUsedInExpr(paramId, e);
+            case TCast(e, _):
+                return isParameterUsedInExpr(paramId, e);
+            case TMeta(_, e):
+                return isParameterUsedInExpr(paramId, e);
+            default:
+                // For other cases, assume not used
+        }
+        return false;
     }
     
     /**
