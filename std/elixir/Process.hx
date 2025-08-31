@@ -1,5 +1,10 @@
 package elixir;
 
+import elixir.types.Pid;
+import elixir.types.Reference;
+import elixir.types.ProcessInfo;
+import elixir.types.ExitReason;
+
 #if (macro || reflaxe_runtime)
 
 /**
@@ -13,72 +18,75 @@ extern class Process {
     
     // Process identification
     @:native("Process.self")
-    public static function self(): Dynamic; // Pid represented as Dynamic
+    public static function self(): Pid;
     
     @:native("Process.whereis")
-    public static function whereis(name: String): Null<Dynamic>; // Pid or nil
+    public static function whereis(name: String): Null<Pid>;
     
     @:native("Process.pid_from_string")
-    public static function pidFromString(string: String): Dynamic; // Convert string to pid
+    public static function pidFromString(string: String): Pid;
     
     // Process spawning
     @:native("Process.spawn")
-    public static function spawn(func: Void -> Void): Dynamic; // Returns Pid
+    public static function spawn(func: Void -> Void): Pid;
     
     @:native("Process.spawn")
-    public static function spawnModule(module: String, func: String, args: Array<Dynamic>): Dynamic;
+    public static function spawnModule(module: String, func: String, args: Array<Dynamic>): Pid;
     
     @:native("Process.spawn_link")
-    public static function spawnLink(func: Void -> Void): Dynamic;
+    public static function spawnLink(func: Void -> Void): Pid;
     
     @:native("Process.spawn_link")
-    public static function spawnLinkModule(module: String, func: String, args: Array<Dynamic>): Dynamic;
+    public static function spawnLinkModule(module: String, func: String, args: Array<Dynamic>): Pid;
     
     @:native("Process.spawn_monitor") 
-    public static function spawnMonitor(func: Void -> Void): {_0: Dynamic, _1: Dynamic}; // {pid, ref}
+    public static function spawnMonitor(func: Void -> Void): {pid: Pid, ref: Reference};
     
     @:native("Process.spawn_monitor")
-    public static function spawnMonitorModule(module: String, func: String, args: Array<Dynamic>): {_0: Dynamic, _1: Dynamic};
+    public static function spawnMonitorModule(module: String, func: String, args: Array<Dynamic>): {pid: Pid, ref: Reference};
     
     // Process lifecycle
     @:native("Process.exit")
-    public static function exit(pid: Dynamic, reason: Dynamic): Bool;
+    public static function exit(pid: Pid, reason: ExitReason): Bool;
     
     @:native("Process.kill")
-    public static function kill(pid: Dynamic, reason: Dynamic): Bool;
+    public static function kill(pid: Pid, reason: ExitReason): Bool;
     
     @:native("Process.alive?")
-    public static function alive(pid: Dynamic): Bool;
+    public static function alive(pid: Pid): Bool;
     
     // Process linking and monitoring
     @:native("Process.link")
-    public static function link(pid: Dynamic): Bool;
+    public static function link(pid: Pid): Bool;
     
     @:native("Process.unlink")
-    public static function unlink(pid: Dynamic): Bool;
+    public static function unlink(pid: Pid): Bool;
     
     @:native("Process.monitor")
-    public static function monitor(pid: Dynamic): Dynamic; // Returns reference
+    public static function monitor(pid: Pid): Reference;
     
     @:native("Process.demonitor")
-    public static function demonitor(ref: Dynamic): Bool;
+    public static function demonitor(ref: Reference): Bool;
     
     @:native("Process.demonitor")
-    public static function demonitorWithOptions(ref: Dynamic, options: Array<String>): Bool;
+    public static function demonitorWithOptions(ref: Reference, options: Array<String>): Bool;
     
     // Process communication
     @:native("Process.send")
-    public static function send(dest: Dynamic, message: Dynamic): Dynamic; // Send message to pid/name
+    public static function send(dest: Pid, message: Dynamic): Dynamic;
     
     @:native("Process.send")
-    public static function sendWithOptions(dest: Dynamic, message: Dynamic, options: Array<String>): Dynamic;
+    public static function sendToName(dest: String, message: Dynamic): Dynamic;
+    
+    @:native("Process.send")
+    public static function sendWithOptions(dest: Pid, message: Dynamic, options: Array<String>): Dynamic;
     
     @:native("Process.send_after")
-    public static function sendAfter(dest: Dynamic, message: Dynamic, time: Int): Dynamic; // Returns timer ref
+    public static function sendAfter(dest: Pid, message: Dynamic, time: Int): Reference;
     
     // Process registration
     @:native("Process.register")
-    public static function register(pid: Dynamic, name: String): Bool;
+    public static function register(pid: Pid, name: String): Bool;
     
     @:native("Process.unregister")
     public static function unregister(name: String): Bool;
@@ -88,17 +96,17 @@ extern class Process {
     
     // Process information
     @:native("Process.info")
-    public static function info(pid: Dynamic): Null<Map<String, Dynamic>>; // Process info map
+    public static function info(pid: Pid): Null<ProcessInfo>; // Process info map
     
     @:native("Process.info")
-    public static function infoKey(pid: Dynamic, key: String): Null<Dynamic>; // Specific info key
+    public static function infoKey(pid: Pid, key: String): Null<Dynamic>; // Specific info key
     
     @:native("Process.info")
-    public static function infoKeys(pid: Dynamic, keys: Array<String>): Null<Map<String, Dynamic>>;
+    public static function infoKeys(pid: Pid, keys: Array<String>): Null<ProcessInfo>;
     
     // Process list operations
     @:native("Process.list")
-    public static function list(): Array<Dynamic>; // All process pids
+    public static function list(): Array<Pid>; // All process pids
     
     // Process flags and options
     @:native("Process.flag")
@@ -135,17 +143,17 @@ extern class Process {
     
     // Process cancellation
     @:native("Process.cancel_timer")
-    public static function cancelTimer(ref: Dynamic): Null<Int>; // Returns remaining time or nil
+    public static function cancelTimer(ref: Reference): Null<Int>; // Returns remaining time or nil
     
     @:native("Process.read_timer")
-    public static function readTimer(ref: Dynamic): Null<Int>; // Returns remaining time or nil
+    public static function readTimer(ref: Reference): Null<Int>; // Returns remaining time or nil
     
     // Group leader operations
     @:native("Process.group_leader")
-    public static function groupLeader(): Dynamic; // Get group leader pid
+    public static function groupLeader(): Pid; // Get group leader pid
     
     @:native("Process.group_leader")
-    public static function setGroupLeader(leader: Dynamic, pid: Dynamic): Bool;
+    public static function setGroupLeader(leader: Pid, pid: Pid): Bool;
 }
 
 #end
