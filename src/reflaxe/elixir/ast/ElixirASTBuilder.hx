@@ -537,16 +537,51 @@ class ElixirASTBuilder {
                                 var elixirFuncName = toSnakeCase(fieldName);
                                 ERemoteCall(objAst, elixirFuncName, args);
                             } else {
-                                // Check for array/list concatenation
-                                if (fieldName == "concat" && isArrayType(obj.t)) {
-                                    // Convert array.concat(other) to array ++ other in Elixir
-                                    if (args.length == 1) {
-                                        EBinary(Concat, objAst, args[0]);
-                                    } else {
-                                        // Fallback for invalid concat calls
-                                        ECall(objAst, fieldName, args);
+                                // Check if this is a method call that contains __elixir__() injection
+                                var methodHasElixirInjection = false;
+                                var expandedElixir: ElixirAST = null;
+                                
+                                // Try to get the method body to check for __elixir__
+                                switch(fa) {
+                                    case FInstance(_, _, cf):
+                                        var classField = cf.get();
+                                        var methodExpr = classField.expr();
+                                        #if debug_ast_builder
+                                        trace('[AST Builder] Checking method ${fieldName}, has expr: ${methodExpr != null}');
+                                        #end
+                                        if (methodExpr != null) {
+                                            // Check if the method body contains __elixir__()
+                                            expandedElixir = tryExpandElixirInjection(methodExpr, obj, el);
+                                            methodHasElixirInjection = (expandedElixir != null);
+                                            #if debug_ast_builder
+                                            trace('[AST Builder] Method ${fieldName} has __elixir__: $methodHasElixirInjection');
+                                            #end
+                                        }
+                                    default:
+                                }
+                                
+                                if (methodHasElixirInjection && expandedElixir != null) {
+                                    // Method contains __elixir__(), use the expanded version
+                                    return expandedElixir.def;
+                                } else if (isArrayType(obj.t)) {
+                                    // Check for array/list operations that come from loop desugaring
+                                    // These need special handling because Haxe desugars loops into array operations
+                                    switch(fieldName) {
+                                        case "filter" if (args.length == 1):
+                                            // Loop desugaring often generates array.filter()
+                                            // Transform: array.filter(fn) → Enum.filter(array, fn)
+                                            ERemoteCall(makeAST(EVar("Enum")), "filter", [objAst, args[0]]);
+                                            
+                                        case "map" if (args.length == 1):
+                                            // Loop desugaring often generates array.map()
+                                            // Transform: array.map(fn) → Enum.map(array, fn)
+                                            ERemoteCall(makeAST(EVar("Enum")), "map", [objAst, args[0]]);
+                                            
+                                        default:
+                                            // All other array methods use standard call generation
+                                            ECall(objAst, fieldName, args);
                                     }
-                                } 
+                                }
                                 // Check for Map operations that need transformation
                                 else if (isMapType(obj.t)) {
                                     // Transform Map methods to Elixir Map module functions
@@ -1928,6 +1963,176 @@ class ElixirASTBuilder {
                 abs.name == "Array";
             default: false;
         }
+    }
+    
+    /**
+     * Try to expand __elixir__() injection from a method body
+     * 
+     * WHY: When Array methods contain __elixir__(), we want to inline them
+     * to generate idiomatic Elixir instead of method calls
+     * 
+     * @param methodExpr The method body expression
+     * @param thisExpr The 'this' object (the array)
+     * @param args The arguments passed to the method
+     * @return The expanded Elixir AST or null if no __elixir__ found
+     */
+    static function tryExpandElixirInjection(methodExpr: TypedExpr, thisExpr: TypedExpr, args: Array<TypedExpr>): Null<ElixirAST> {
+        #if debug_ast_builder
+        trace('[AST Builder] tryExpandElixirInjection examining: ${Type.enumConstructor(methodExpr.expr)}');
+        #end
+        
+        // First check if this is a function, and if so, extract its body
+        switch(methodExpr.expr) {
+            case TFunction(tfunc):
+                // Method is a function, check its body
+                if (tfunc.expr != null) {
+                    return tryExpandElixirInjection(tfunc.expr, thisExpr, args);
+                }
+            default:
+        }
+        
+        // Look for return statement with __elixir__()
+        switch(methodExpr.expr) {
+            case TReturn(retOpt):
+                // Check if there's a return value
+                if (retOpt != null) {
+                    return tryExpandElixirCall(retOpt, thisExpr, args);
+                }
+                
+            case TBlock(exprs):
+                // Check the last expression (implicit return)
+                if (exprs.length > 0) {
+                    var lastExpr = exprs[exprs.length - 1];
+                    return tryExpandElixirCall(lastExpr, thisExpr, args);
+                }
+                
+            case TIf(cond, ifExpr, elseExpr):
+                // Handle conditional __elixir__() calls (like in slice method)
+                // We need to evaluate the condition and choose the right branch
+                // For now, we'll try to detect if both branches have __elixir__
+                var ifResult = tryExpandElixirCall(ifExpr, thisExpr, args);
+                if (ifResult != null) {
+                    // Both branches likely have __elixir__, create conditional
+                    var elseResult = elseExpr != null ? tryExpandElixirCall(elseExpr, thisExpr, args) : null;
+                    if (elseResult != null) {
+                        // Build conditional with expanded branches
+                        var condAst = buildFromTypedExpr(cond);
+                        return makeAST(EIf(condAst, ifResult, elseResult));
+                    }
+                    // Only if branch has __elixir__
+                    return ifResult;
+                }
+                
+            case TCall(_):
+                // Direct call, check if it's __elixir__
+                return tryExpandElixirCall(methodExpr, thisExpr, args);
+                
+            default:
+        }
+        return null;
+    }
+    
+    /**
+     * Try to expand a specific __elixir__() call
+     */
+    static function tryExpandElixirCall(expr: TypedExpr, thisExpr: TypedExpr, methodArgs: Array<TypedExpr>): Null<ElixirAST> {
+        #if debug_elixir_injection
+        trace("[XRay] tryExpandElixirCall checking expr type: " + expr.expr);
+        #end
+        
+        switch(expr.expr) {
+            // Handle return statements that wrap the actual call
+            case TReturn(retExpr) if (retExpr != null):
+                #if debug_elixir_injection
+                trace("[XRay] Found TReturn wrapper, checking inner: " + retExpr.expr);
+                #end
+                return tryExpandElixirCall(retExpr, thisExpr, methodArgs);
+                
+            // Handle untyped __elixir__() calls (wrapped in metadata)
+            case TMeta({name: ":untyped"}, untypedExpr):
+                #if debug_elixir_injection
+                trace("[XRay] Found untyped metadata, checking inner: " + untypedExpr.expr);
+                #end
+                return tryExpandElixirCall(untypedExpr, thisExpr, methodArgs);
+                
+            // Handle if-else statements with __elixir__() in branches
+            case TIf(cond, ifExpr, elseExpr):
+                #if debug_elixir_injection
+                trace("[XRay] Found TIf in tryExpandElixirCall");
+                #end
+                var ifResult = tryExpandElixirCall(ifExpr, thisExpr, methodArgs);
+                var elseResult = elseExpr != null ? tryExpandElixirCall(elseExpr, thisExpr, methodArgs) : null;
+                if (ifResult != null && elseResult != null) {
+                    // Both branches have __elixir__, create conditional
+                    var condAst = buildFromTypedExpr(cond);
+                    return makeAST(EIf(condAst, ifResult, elseResult));
+                } else if (ifResult != null) {
+                    return ifResult;
+                } else if (elseResult != null) {
+                    return elseResult;
+                }
+                
+            case TCall(e, callArgs):
+                #if debug_elixir_injection
+                trace("[XRay] TCall with target: " + e.expr);
+                #end
+                switch(e.expr) {
+                    case TIdent("__elixir__"):
+                        #if debug_elixir_injection
+                        trace("[XRay] Found __elixir__() call!");
+                        #end
+                        // Found __elixir__() call!
+                        if (callArgs.length > 0) {
+                            // First argument should be the code string
+                            switch(callArgs[0].expr) {
+                                case TConst(TString(code)):
+                                    #if debug_elixir_injection
+                                    trace('[XRay] Expanding __elixir__ with code: $code');
+                                    #end
+                                    // Process the injection with parameter substitution
+                                    var processedCode = code;
+                                    
+                                    // Substitute {0} with 'this' (the array)
+                                    var thisAst = buildFromTypedExpr(thisExpr);
+                                    var thisStr = ElixirASTPrinter.printAST(thisAst);
+                                    processedCode = StringTools.replace(processedCode, "{0}", thisStr);
+                                    
+                                    // Substitute other parameters
+                                    for (i in 1...callArgs.length) {
+                                        // Map callArgs[i] to the appropriate method argument
+                                        // Usually callArgs[1] refers to the first method parameter
+                                        if (i - 1 < methodArgs.length) {
+                                            var argAst = buildFromTypedExpr(methodArgs[i - 1]);
+                                            var argStr = ElixirASTPrinter.printAST(argAst);
+                                            var placeholder = '{$i}';
+                                            processedCode = StringTools.replace(processedCode, placeholder, argStr);
+                                        }
+                                    }
+                                    
+                                    #if debug_elixir_injection
+                                    trace('[XRay] Processed code: $processedCode');
+                                    #end
+                                    
+                                    // Return the expanded raw Elixir code
+                                    return makeAST(ERaw(processedCode));
+                                    
+                                default:
+                                    #if debug_elixir_injection
+                                    trace("[XRay] First arg is not TString: " + callArgs[0].expr);
+                                    #end
+                            }
+                        }
+                    default:
+                        #if debug_elixir_injection
+                        trace("[XRay] Not __elixir__, it's: " + e.expr);
+                        #end
+                }
+            default:
+                #if debug_elixir_injection
+                trace("[XRay] Not a call, it's: " + expr.expr);
+                #end
+        }
+        return null;
     }
     
     /**

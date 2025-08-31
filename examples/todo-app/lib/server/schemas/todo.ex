@@ -28,7 +28,7 @@ defmodule Todo do
     tags = if (todo.tags != nil), do: todo.tags, else: []
     tags.push(tag)
     params = %{}
-    value = {:ArrayValue, tags.map(fn t -> {:StringValue, t} end)}
+    value = {:ArrayValue, Enum.map(tags, fn t -> {:StringValue, t} end)}
     Map.put(params, "tags", value)
     Todo.changeset(todo, params)
   end
