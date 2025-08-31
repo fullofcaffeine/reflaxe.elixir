@@ -116,6 +116,22 @@ class ElixirASTTransformer {
             pass: bitwiseImportPass
         });
         
+        // Phoenix Component import pass (should run early to add imports)
+        passes.push({
+            name: "PhoenixComponentImport",
+            description: "Add Phoenix.Component import when ~H sigil is used",
+            enabled: true,
+            pass: phoenixComponentImportPass
+        });
+        
+        // LiveView CoreComponents import pass (should run after Phoenix Component)
+        passes.push({
+            name: "LiveViewCoreComponentsImport",
+            description: "Add CoreComponents import for LiveView modules that use components",
+            enabled: true,
+            pass: liveViewCoreComponentsImportPass
+        });
+        
         // Constant folding pass
         #if !disable_constant_folding
         passes.push({
@@ -209,14 +225,6 @@ class ElixirASTTransformer {
             description: "Fix 'this' references in abstract methods",
             enabled: true,
             pass: abstractMethodThisPass
-        });
-        
-        // Bitwise import pass (should run early to add imports)
-        passes.push({
-            name: "BitwiseImport",
-            description: "Add Bitwise import when bitwise operators are used",
-            enabled: true,
-            pass: bitwiseImportPass
         });
         
         // Supervisor options transformation pass (convert maps to keyword lists)
@@ -389,6 +397,254 @@ class ElixirASTTransformer {
                     
                 default:
                     node;
+            }
+        });
+    }
+    
+    /**
+     * Phoenix Component Import Pass: Add Phoenix.Component import when ~H sigil is used
+     * 
+     * WHY: The ~H sigil for HEEx templates requires Phoenix.Component to be imported
+     * WHAT: Detects any ESigil with type "H" and adds the necessary import
+     * HOW: Traverses AST looking for ~H sigils, then adds import if found
+     */
+    static function phoenixComponentImportPass(ast: ElixirAST): ElixirAST {
+        // Phase 1: Detect if ~H sigil is used
+        var needsPhoenixComponent = false;
+        
+        #if debug_phoenix_component_import
+        trace('[XRay PhoenixComponentImport] Starting scan for ~H sigils');
+        #end
+        
+        // Recursive function to deeply traverse the AST
+        function checkForHSigil(node: ElixirAST): Void {
+            switch(node.def) {
+                case ESigil(type, _, _):
+                    #if debug_phoenix_component_import
+                    trace('[XRay PhoenixComponentImport] Found sigil type: $type');
+                    #end
+                    if (type == "H") {
+                        needsPhoenixComponent = true;
+                    }
+                default:
+                    // For all other node types, recursively visit children
+                    iterateAST(node, checkForHSigil);
+            }
+        }
+        
+        checkForHSigil(ast);
+        
+        #if debug_phoenix_component_import
+        trace('[XRay PhoenixComponentImport] Needs Phoenix.Component: $needsPhoenixComponent');
+        #end
+        
+        // Phase 2: Add import if needed
+        if (!needsPhoenixComponent) return ast;
+        
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EDefmodule(name, doBlock):
+                    #if debug_phoenix_component_import
+                    trace('[XRay PhoenixComponentImport] Processing defmodule: $name');
+                    #end
+                    
+                    // For defmodule, we need to inject the import into the do block
+                    switch(doBlock.def) {
+                        case EBlock(statements):
+                            #if debug_phoenix_component_import
+                            trace('[XRay PhoenixComponentImport] Defmodule has ${statements.length} statements');
+                            #end
+                            
+                            // Check if Phoenix.Component is already imported
+                            var hasImport = false;
+                            for (stmt in statements) {
+                                switch(stmt.def) {
+                                    case EImport(module, _, _):
+                                        // module is a string in EImport
+                                        if (module == "Phoenix.Component") {
+                                            hasImport = true;
+                                            break;
+                                        }
+                                    case EUse(module, _):
+                                        // module is a string in EUse
+                                        if (module == "Phoenix.Component") {
+                                            hasImport = true;
+                                            break;
+                                        }
+                                    default:
+                                }
+                            }
+                            
+                            if (!hasImport) {
+                                #if debug_phoenix_component_import
+                                trace('[XRay PhoenixComponentImport] Adding Phoenix.Component import');
+                                #end
+                                
+                                // Create the import statement using EUse which takes a string
+                                var importStmt = makeAST(EUse("Phoenix.Component", []));
+                                
+                                // Add import at the beginning of the module body
+                                var newStatements = [importStmt].concat(statements);
+                                var newDoBlock = makeASTWithMeta(EBlock(newStatements), doBlock.metadata, doBlock.pos);
+                                
+                                return makeASTWithMeta(EDefmodule(name, newDoBlock), node.metadata, node.pos);
+                            }
+                            
+                            return node; // Return unchanged if already has import
+                            
+                        default:
+                            // Single expression body, wrap in block with import
+                            var importStmt = makeAST(EUse("Phoenix.Component", []));
+                            var newDoBlock = makeAST(EBlock([importStmt, doBlock]));
+                            return makeASTWithMeta(EDefmodule(name, newDoBlock), node.metadata, node.pos);
+                    }
+                    
+                default:
+                    return node;
+            }
+        });
+    }
+    
+    /**
+     * LiveView CoreComponents Import Pass: Add app's CoreComponents import for LiveView modules
+     * 
+     * WHY: LiveView modules that use component functions need to import their app's CoreComponents
+     * WHAT: Detects component usage (<.button, <.input, etc.) and adds CoreComponents import
+     * HOW: Looks for ~H sigils with component calls and adds appropriate import
+     */
+    static function liveViewCoreComponentsImportPass(ast: ElixirAST): ElixirAST {
+        // Phase 1: Detect if component functions are used
+        var needsCoreComponents = false;
+        var moduleName = "";
+        
+        #if debug_liveview_components
+        trace('[XRay LiveViewComponents] Starting scan for component usage');
+        #end
+        
+        // First, find the module name to determine the app name
+        function findModuleName(node: ElixirAST): Void {
+            switch(node.def) {
+                case EDefmodule(name, _):
+                    moduleName = name;
+                    return;
+                default:
+                    iterateAST(node, findModuleName);
+            }
+        }
+        
+        findModuleName(ast);
+        
+        // Check if this is a LiveView module (has "Live" in name)
+        if (moduleName == "" || moduleName.indexOf("Live") == -1) {
+            return ast; // Not a LiveView module
+        }
+        
+        // Recursive function to check for component usage in ~H sigils
+        function checkForComponents(node: ElixirAST): Void {
+            switch(node.def) {
+                case ESigil(type, content, _):
+                    if (type == "H") {
+                        // Check if content contains component calls like <.button, <.input, etc.
+                        if (content.indexOf("<.") != -1) {
+                            #if debug_liveview_components
+                            trace('[XRay LiveViewComponents] Found component usage in ~H sigil');
+                            #end
+                            needsCoreComponents = true;
+                        }
+                    }
+                default:
+                    iterateAST(node, checkForComponents);
+            }
+        }
+        
+        checkForComponents(ast);
+        
+        #if debug_liveview_components
+        trace('[XRay LiveViewComponents] Needs CoreComponents: $needsCoreComponents');
+        #end
+        
+        // Phase 2: Add import if needed
+        if (!needsCoreComponents) return ast;
+        
+        // Extract app name from module name (e.g., TodoAppWeb.UserLive -> TodoAppWeb)
+        var appWebName = "";
+        if (moduleName.indexOf(".") != -1) {
+            var parts = moduleName.split(".");
+            if (parts.length > 0) {
+                appWebName = parts[0]; // Get the first part (e.g., TodoAppWeb)
+            }
+        }
+        
+        if (appWebName == "") return ast; // Can't determine app name
+        
+        var coreComponentsModule = appWebName + ".CoreComponents";
+        
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EDefmodule(name, doBlock):
+                    #if debug_liveview_components
+                    trace('[XRay LiveViewComponents] Processing defmodule: $name');
+                    #end
+                    
+                    // For defmodule, we need to inject the import into the do block
+                    switch(doBlock.def) {
+                        case EBlock(statements):
+                            // Check if CoreComponents is already imported
+                            var hasImport = false;
+                            for (stmt in statements) {
+                                switch(stmt.def) {
+                                    case EImport(module, _, _):
+                                        if (module == coreComponentsModule) {
+                                            hasImport = true;
+                                            break;
+                                        }
+                                    default:
+                                }
+                            }
+                            
+                            if (!hasImport) {
+                                #if debug_liveview_components
+                                trace('[XRay LiveViewComponents] Adding CoreComponents import: $coreComponentsModule');
+                                #end
+                                
+                                // Create the import statement
+                                var importStmt = makeAST(EImport(coreComponentsModule, null, null));
+                                
+                                // Add import after use statements but before function definitions
+                                var newStatements = [];
+                                var importAdded = false;
+                                
+                                for (stmt in statements) {
+                                    newStatements.push(stmt);
+                                    // Add import after use statements
+                                    if (!importAdded) {
+                                        switch(stmt.def) {
+                                            case EUse(_, _):
+                                                newStatements.push(importStmt);
+                                                importAdded = true;
+                                            default:
+                                        }
+                                    }
+                                }
+                                
+                                // If no use statements, add at the beginning
+                                if (!importAdded) {
+                                    newStatements = [importStmt].concat(statements);
+                                }
+                                
+                                var newDoBlock = makeASTWithMeta(EBlock(newStatements), doBlock.metadata, doBlock.pos);
+                                return makeASTWithMeta(EDefmodule(name, newDoBlock), node.metadata, node.pos);
+                            }
+                            
+                            return node;
+                            
+                        default:
+                            // Single expression body, unlikely for LiveView
+                            return node;
+                    }
+                    
+                default:
+                    return node;
             }
         });
     }
