@@ -2,7 +2,7 @@ defmodule ArrayIterator do
   def new(array) do
     %{:current => 0, :array => array}
   end
-  def hasNext(struct) do
+  def has_next(struct) do
     struct.current < struct.array.length
   end
   def next(struct) do
