@@ -1,3 +1,5 @@
 defmodule ArrayKeyValueIterator do
-  nil
+  def new(array) do
+    %{:array => array}
+  end
 end

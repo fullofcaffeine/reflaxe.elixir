@@ -233,37 +233,13 @@ end
     Phoenix.LiveView.assign(socket, complete_assigns)
   end
   defp update_todo_in_list(updated_todo, socket) do
-    todos = _this = socket.assigns.todos
-g = []
-g1 = 0
-g2 = _this
-Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
-  v = g2[g1]
-  g1 + 1
-  g.push((if (v.id == updated_todo.id), do: updated_todo, else: v))
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
-g
+    todos = socket.assigns.todos.map(fn t -> if (t.id == updated_todo.id), do: updated_todo, else: t end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
     Phoenix.LiveView.assign(socket, complete_assigns)
   end
   defp remove_todo_from_list(id, socket) do
-    todos = _this = socket.assigns.todos
-g = []
-g1 = 0
-g2 = _this
-Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
-  v = g2[g1]
-  g1 + 1
-  if (v.id != id), do: g.push(v)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
-g
+    todos = socket.assigns.todos.filter(fn t -> t.id != id end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, todos)
     Phoenix.LiveView.assign(socket, complete_assigns)
@@ -317,37 +293,13 @@ end end)
   end
   defp parse_tags(tags_string) do
     if (tags_string == nil || tags_string == ""), do: []
-    _this = tags_string.split(",")
-    g = []
-    g1 = 0
-    g2 = _this
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
-  v = g2[g1]
-  g1 + 1
-  g.push(StringTools.trim(v))
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
-    g
+    tags_string.split(",").map(fn t -> StringTools.trim(t) end)
   end
   defp get_user_from_session(session) do
     %{:id => (if (session.user_id != nil), do: session.user_id, else: 1), :name => "Demo User", :email => "demo@example.com", :password_hash => "hashed_password", :confirmed_at => nil, :last_login_at => nil, :active => true}
   end
   defp complete_all_todos(socket) do
-    pending = _this = socket.assigns.todos
-g = []
-g1 = 0
-g2 = _this
-Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
-  v = g2[g1]
-  g1 + 1
-  if (not v.completed), do: g.push(v)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
-g
+    pending = socket.assigns.todos.filter(fn t -> not t.completed end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < pending.length) do
   todo = pending[g]
@@ -387,19 +339,7 @@ end end)
     Phoenix.LiveView.put_flash(updated_socket, :Info, "All todos marked as completed!")
   end
   defp delete_completed_todos(socket) do
-    completed = _this = socket.assigns.todos
-g = []
-g1 = 0
-g2 = _this
-Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
-  v = g2[g1]
-  g1 + 1
-  if (v.completed), do: g.push(v)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
-g
+    completed = socket.assigns.todos.filter(fn t -> t.completed end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < completed.length) do
   todo = completed[g]
@@ -410,19 +350,7 @@ else
   {:halt, acc}
 end end)
     {:unknown, :TodoUpdates, {:BulkUpdate, :DeleteCompleted}}
-    remaining = _this = socket.assigns.todos
-g = []
-g1 = 0
-g2 = _this
-Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
-  v = g2[g1]
-  g1 + 1
-  if (not v.completed), do: g.push(v)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
-g
+    remaining = socket.assigns.todos.filter(fn t -> not t.completed end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, remaining)
     completed_todos = 0
@@ -490,22 +418,7 @@ g
   end
   defp toggle_tag_filter(tag, socket) do
     selected_tags = socket.assigns.selected_tags
-    updated_tags = if (selected_tags.contains(tag)) do
-  g = []
-  g1 = 0
-  g2 = selected_tags
-  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
-  v = g2[g1]
-  g1 + 1
-  if (v != tag), do: g.push(v)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
-  g
-else
-  selected_tags ++ [tag]
-end
+    updated_tags = if (selected_tags.contains(tag)), do: selected_tags.filter(fn t -> t != tag end), else: selected_tags ++ [tag]
     SafeAssigns.set_selected_tags(socket, updated_tags)
   end
   def index() do
