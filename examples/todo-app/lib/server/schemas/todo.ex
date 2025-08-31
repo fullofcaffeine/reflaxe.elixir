@@ -28,18 +28,7 @@ defmodule Todo do
     tags = if (todo.tags != nil), do: todo.tags, else: []
     tags.push(tag)
     params = %{}
-    value = {:ArrayValue, g = []
-g1 = 0
-g2 = tags
-Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g1 < g2.length) do
-  v = g2[g1]
-  g1 + 1
-  g.push({:StringValue, v})
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
-g}
+    value = {:ArrayValue, tags.map(fn t -> {:StringValue, t} end)}
     Map.put(params, "tags", value)
     Todo.changeset(todo, params)
   end
