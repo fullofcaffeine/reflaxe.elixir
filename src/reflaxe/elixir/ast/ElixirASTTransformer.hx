@@ -1414,6 +1414,8 @@ class ElixirASTTransformer {
                 makeASTWithMeta(EBlock(expressions.map(transformer)), node.metadata, node.pos);
             case EModule(name, attributes, body):
                 makeASTWithMeta(EModule(name, attributes, body.map(transformer)), node.metadata, node.pos);
+            case EDefmodule(name, doBlock):
+                makeASTWithMeta(EDefmodule(name, transformer(doBlock)), node.metadata, node.pos);
             case EDef(name, args, guards, body):
                 makeASTWithMeta(EDef(name, args, guards, transformer(body)), node.metadata, node.pos);
             case EDefp(name, args, guards, body):
@@ -1445,6 +1447,17 @@ class ElixirASTTransformer {
             case ETuple(elements):
                 makeASTWithMeta(ETuple(elements.map(transformer)), node.metadata, node.pos);
             case EList(elements):
+                #if (debug_otp_child_spec && debug_otp_child_spec_verbose)
+                if (elements.length > 0) {
+                    trace('[XRay OTPChildSpec] Processing EList with ${elements.length} elements');
+                    for (i in 0...elements.length) {
+                        var elem = elements[i];
+                        if (elem.metadata != null && elem.metadata.requiresIdiomaticTransform == true) {
+                            trace('[XRay OTPChildSpec] Element $i has requiresIdiomaticTransform flag!');
+                        }
+                    }
+                }
+                #end
                 makeASTWithMeta(EList(elements.map(transformer)), node.metadata, node.pos);
             case EMap(pairs):
                 makeASTWithMeta(
@@ -1548,14 +1561,25 @@ class ElixirASTTransformer {
         trace("[XRay OTPChildSpec] Starting idiomatic enum transformation pass");
         #end
         
+        var transformCount = 0;
+        
         function transformNode(node: ElixirAST): ElixirAST {
+            #if (debug_otp_child_spec && debug_otp_child_spec_verbose)
+            // Very verbose - show every node being checked
+            trace('[XRay OTPChildSpec] Checking node type: ${Type.enumConstructor(node.def)}');
+            #end
+            
             // SINGLE detection: Check metadata flag set by builder
             if (node.metadata != null && node.metadata.requiresIdiomaticTransform == true) {
-                #if debug_ast_transformer
-                trace('[XRay OTPChildSpec] Transforming idiomatic enum');
+                #if debug_otp_child_spec
+                trace('[XRay OTPChildSpec] Found node #${++transformCount} with requiresIdiomaticTransform flag');
+                trace('[XRay OTPChildSpec] Node def: ${node.def}');
                 #end
                 // Apply transformation using shared utility
                 var transformed = reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(node);
+                #if debug_otp_child_spec
+                trace('[XRay OTPChildSpec] Transformed to: ${transformed.def}');
+                #end
                 // Continue recursion on transformed node
                 return transformAST(transformed, transformNode);
             }
@@ -1564,7 +1588,13 @@ class ElixirASTTransformer {
             return transformAST(node, transformNode);
         }
         
-        return transformNode(ast);
+        var result = transformNode(ast);
+        
+        #if debug_otp_child_spec
+        trace('[XRay OTPChildSpec] Pass complete. Transformed ${transformCount} nodes');
+        #end
+        
+        return result;
     }
     
     /**

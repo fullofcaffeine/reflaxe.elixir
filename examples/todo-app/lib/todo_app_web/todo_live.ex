@@ -1,6 +1,6 @@
 defmodule TodoAppWeb.TodoLive do
   def mount(_params, session, socket) do
-    g = {:unknown, :TodoUpdates}
+    g = {:Subscribe, :TodoUpdates}
     case (g.elem(0)) do
       0 ->
         g = g.elem(1)
@@ -52,7 +52,7 @@ end
     {:NoReply, result_socket}
   end
   def handle_info(msg, socket) do
-    result_socket = g = {:unknown, msg}
+    result_socket = g = {:ParseMessage, msg}
 case (g.elem(0)) do
   0 ->
     g = g.elem(1)
@@ -122,12 +122,12 @@ end
     todo_params_user_id = socket.assigns.current_user.id
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(Todo.new(), changeset_params)
-    g = {:unknown, changeset}
+    g = {:Insert, changeset}
     case (g.elem(0)) do
       0 ->
         g = g.elem(1)
         todo = g
-        g = {:unknown, :TodoUpdates, {:TodoCreated, todo}}
+        g = {:Broadcast, :TodoUpdates, {:TodoCreated, todo}}
         case (g.elem(0)) do
           0 ->
             g = g.elem(1)
@@ -152,12 +152,12 @@ end
     todo = TodoLive.find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
     updated_changeset = Todo.toggle_completed(todo)
-    g = {:unknown, updated_changeset}
+    g = {:Update, updated_changeset}
     case (g.elem(0)) do
       0 ->
         g = g.elem(1)
         updated_todo = g
-        g = {:unknown, :TodoUpdates, {:TodoUpdated, updated_todo}}
+        g = {:Broadcast, :TodoUpdates, {:TodoUpdated, updated_todo}}
         case (g.elem(0)) do
           0 ->
             g = g.elem(1)
@@ -177,12 +177,12 @@ end
   defp delete_todo(id, socket) do
     todo = TodoLive.find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
-    g = {:unknown, todo}
+    g = {:Delete, todo}
     case (g.elem(0)) do
       0 ->
         g = g.elem(1)
         deleted_todo = g
-        g = {:unknown, :TodoUpdates, {:TodoDeleted, id}}
+        g = {:Broadcast, :TodoUpdates, {:TodoDeleted, id}}
         case (g.elem(0)) do
           0 ->
             g = g.elem(1)
@@ -203,12 +203,12 @@ end
     todo = TodoLive.find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
     updated_changeset = Todo.update_priority(todo, priority)
-    g = {:unknown, updated_changeset}
+    g = {:Update, updated_changeset}
     case (g.elem(0)) do
       0 ->
         g = g.elem(1)
         updated_todo = g
-        g = {:unknown, :TodoUpdates, {:TodoUpdated, updated_todo}}
+        g = {:Broadcast, :TodoUpdates, {:TodoUpdated, updated_todo}}
         case (g.elem(0)) do
           0 ->
             g = g.elem(1)
@@ -305,7 +305,7 @@ end end)
   todo = pending[g]
   g + 1
   updated_changeset = Todo.toggle_completed(todo)
-  g = {:unknown, updated_changeset}
+  g = {:Update, updated_changeset}
   case (g.elem(0)) do
     0 ->
       g = g.elem(1)
@@ -320,7 +320,7 @@ end end)
 else
   {:halt, acc}
 end end)
-    g = {:unknown, :TodoUpdates, {:BulkUpdate, :CompleteAll}}
+    g = {:Broadcast, :TodoUpdates, {:BulkUpdate, :CompleteAll}}
     case (g.elem(0)) do
       0 ->
         g = g.elem(1)
@@ -344,12 +344,12 @@ end end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < completed.length) do
   todo = completed[g]
   g + 1
-  {:unknown, todo}
+  {:Delete, todo}
   {:cont, acc}
 else
   {:halt, acc}
 end end)
-    {:unknown, :TodoUpdates, {:BulkUpdate, :DeleteCompleted}}
+    {:Broadcast, :TodoUpdates, {:BulkUpdate, :DeleteCompleted}}
     remaining = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     current_assigns = socket.assigns
     complete_assigns = TypeSafeConversions.create_complete_assigns(current_assigns, remaining)
@@ -367,12 +367,12 @@ end end)
     if (todo == nil), do: socket
     changeset_params = TypeSafeConversions.event_params_to_changeset_params(params)
     changeset = Todo.changeset(todo, changeset_params)
-    g = {:unknown, changeset}
+    g = {:Update, changeset}
     case (g.elem(0)) do
       0 ->
         g = g.elem(1)
         updated_todo = g
-        g = {:unknown, :TodoUpdates, {:TodoUpdated, updated_todo}}
+        g = {:Broadcast, :TodoUpdates, {:TodoUpdated, updated_todo}}
         case (g.elem(0)) do
           0 ->
             g = g.elem(1)

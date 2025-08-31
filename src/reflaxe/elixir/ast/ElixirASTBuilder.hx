@@ -472,8 +472,18 @@ class ElixirASTBuilder {
                     var tag = extractEnumTag(e);
                     var args = [for (arg in el) buildFromTypedExpr(arg)];
                     
-                    // Just create the raw tuple - transformer will handle it
-                    ETuple([makeAST(EAtom(tag))].concat(args));
+                    // Create the tuple AST definition
+                    var tupleDef = ETuple([makeAST(EAtom(tag))].concat(args));
+                    
+                    #if debug_ast_builder
+                    if (hasIdiomaticMetadata(e)) {
+                        trace('[AST Builder] Building idiomatic enum tuple: ${tag} with ${args.length} args');
+                        trace('[AST Builder] Enum type: ${getEnumTypeName(e)}');
+                    }
+                    #end
+                    
+                    // The metadata will be set by the outer buildFromTypedExpr function
+                    tupleDef;
                 } else {
                     // Regular function call
                     var target = e != null ? buildFromTypedExpr(e) : null;
@@ -670,6 +680,23 @@ class ElixirASTBuilder {
             // Array Operations
             // ================================================================
             case TArrayDecl(el):
+                // Check if this array contains idiomatic enum constructors
+                var hasIdiomaticEnums = false;
+                for (e in el) {
+                    switch(e.expr) {
+                        case TCall(callTarget, _) if (callTarget != null && isEnumConstructor(callTarget) && hasIdiomaticMetadata(callTarget)):
+                            hasIdiomaticEnums = true;
+                            break;
+                        default:
+                    }
+                }
+                
+                #if debug_ast_builder
+                if (hasIdiomaticEnums) {
+                    trace('[AST Builder] Building array with idiomatic enum elements');
+                }
+                #end
+                
                 var elements = [for (e in el) buildFromTypedExpr(e)];
                 EList(elements);
                 
@@ -2153,11 +2180,23 @@ class ElixirASTBuilder {
     
     /**
      * Extract enum constructor tag name
+     * 
+     * For static method calls that return enums (like TypeSafeChildSpec.pubSub),
+     * we use the method name as a proxy for the enum constructor
      */
     static function extractEnumTag(expr: TypedExpr): String {
         return switch(expr.expr) {
-            case TField(_, FEnum(_, ef)): ef.name;
-            default: "unknown";
+            case TField(_, FEnum(_, ef)): 
+                // Direct enum constructor reference
+                ef.name;
+            case TField(_, FStatic(_, cf)):
+                // Static method call - use the method name (e.g., "pubSub" -> "PubSub")
+                var methodName = cf.get().name;
+                // Capitalize first letter for enum-like naming
+                methodName.charAt(0).toUpperCase() + methodName.substr(1);
+            default: 
+                // For unknown cases, generate a placeholder that will be transformed
+                "ModuleRef";
         }
     }
     
