@@ -1,4 +1,5 @@
 defmodule StringTools do
+  import Bitwise
   def isSpace(s, pos) do
     c = s.charCodeAt(pos)
     c > 8 && c < 14 || c == 32
