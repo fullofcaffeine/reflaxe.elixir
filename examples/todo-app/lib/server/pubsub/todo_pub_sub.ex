@@ -1,12 +1,12 @@
 defmodule TodoPubSub do
   def subscribe(topic) do
-    {:unknown, topic, TodoPubSub.topicToString}
+    {:SubscribeWithConverter, topic, TodoPubSub.topicToString}
   end
   def broadcast(topic, message) do
-    {:unknown, topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir}
+    {:BroadcastWithConverters, topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir}
   end
   def parseMessage(msg) do
-    {:unknown, msg, TodoPubSub.parseMessageImpl}
+    {:ParseWithConverter, msg, TodoPubSub.parseMessageImpl}
   end
   defp topicToString(topic) do
     case (topic.elem(0)) do
@@ -62,7 +62,7 @@ end
     case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
-          bulk_action = {:unknown, msg.action}
+          bulk_action = {:ParseBulkAction, msg.action}
           case (bulk_action.elem(0)) do
             0 ->
               g = bulk_action.elem(1)
@@ -76,7 +76,7 @@ end
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
-          alert_level = {:unknown, msg.level}
+          alert_level = {:ParseAlertLevel, msg.level}
           case (alert_level.elem(0)) do
             0 ->
               g = alert_level.elem(1)

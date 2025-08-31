@@ -20,7 +20,7 @@ defmodule Flash do
   end
   def fromPhoenixFlash(phoenix_flash) do
     type_string = if (tmp = phoenix_flash.type) != nil, do: tmp, else: "info"
-    flash_type = {:unknown, type_string}
+    flash_type = {:FromString, type_string}
     message = if (tmp = phoenix_flash.message) != nil, do: tmp, else: ""
     %{:type => flash_type, :message => message, :title => phoenix_flash.title, :details => phoenix_flash.details, :dismissible => (if (tmp = phoenix_flash.dismissible) != nil, do: tmp, else: true), :timeout => phoenix_flash.timeout, :action => phoenix_flash.action}
   end
