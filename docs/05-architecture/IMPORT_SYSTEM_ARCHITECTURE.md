@@ -2,7 +2,7 @@
 
 ## Overview
 
-Reflaxe.Elixir implements a **hybrid import system** that combines automatic import detection with explicit extern-based imports. This provides both convenience and control, allowing developers to choose between zero-friction development and type-safe APIs.
+Reflaxe.Elixir implements a **hybrid import system** that combines automatic import detection for language features with optional extern-based imports for library functions. This provides both seamless language integration and typed library access.
 
 ## Table of Contents
 1. [The Hybrid Philosophy](#the-hybrid-philosophy)
@@ -16,17 +16,17 @@ Reflaxe.Elixir implements a **hybrid import system** that combines automatic imp
 
 ### Why Hybrid?
 
-The hybrid approach balances three competing needs:
-1. **Developer Convenience** - Write code without import boilerplate
-2. **Type Safety** - Access to typed APIs when desired
-3. **Framework Conventions** - Follow Elixir/Phoenix idioms automatically
+The hybrid approach serves two distinct purposes:
+1. **Language Integration** - Native language features work transparently
+2. **Library Access** - Typed APIs for Elixir libraries when needed
+3. **Framework Conventions** - Phoenix/LiveView patterns apply automatically
 
 ### Core Principles
 
-- **Framework conventions are automatic** - LiveView always gets CoreComponents
-- **Language features offer choice** - Use typed externs or rely on auto-import
-- **App-specific modules require explicit imports** - Your own modules must be imported
-- **No magic, just smart defaults** - Predictable behavior with escape hatches
+- **Language features are always implicit** - Bitwise ops, pattern matching work naturally
+- **Framework conventions are automatic** - LiveView gets CoreComponents, Components get ~H
+- **Library functions can be explicit** - Use typed externs for Jason, Logger, etc.
+- **No unnecessary boilerplate** - Import only what adds value
 
 ## Implicit Imports (Automatic Detection)
 
@@ -42,22 +42,25 @@ Haxe Source → TypedExpr → ElixirAST → [Transformation Passes] → Final AS
 
 ### Current Implicit Import Triggers
 
-#### 1. Bitwise Operators → `import Bitwise`
+#### 1. Bitwise Operators → `import Bitwise` (Language Feature)
 
-**Detected Patterns:**
-- `&&&` (bitwise AND)
-- `|||` (bitwise OR)
-- `^^^` (bitwise XOR)
-- `<<<` (left shift)
-- `>>>` (right shift)
-- `~~~` (bitwise NOT)
+**Why Implicit:** Bitwise operations are native language features in Haxe. Users write `a & b`, not library calls. The compiler transparently handles the transformation to Elixir's triple operators.
+
+**Haxe → Elixir Operator Mapping:**
+- `&` → `&&&` (bitwise AND)
+- `|` → `|||` (bitwise OR)
+- `^` → `^^^` (bitwise XOR)
+- `<<` → `<<<` (left shift)
+- `>>>` → `>>>` (right shift)
+- `~` → `~~~` (bitwise NOT)
 
 **Example:**
 ```haxe
-// Haxe input
+// Natural Haxe syntax
 class Example {
     function test() {
-        var masked = value &&& 0xFF;  // Triggers import
+        var masked = value & 0xFF;    // Haxe operator
+        var shifted = value << 2;     // Haxe operator
     }
 }
 ```
@@ -65,15 +68,16 @@ class Example {
 **Generated Elixir:**
 ```elixir
 defmodule Example do
-  import Bitwise  # Auto-added
+  import Bitwise  # Auto-added because Elixir requires it
   
   def test() do
-    masked = value &&& 0xFF
+    masked = value &&& 255         # Transformed operator
+    shifted = value <<< 2          # Transformed operator
   end
 end
 ```
 
-**Implementation:** `bitwiseImportPass` in `ElixirASTTransformer.hx`
+**Implementation:** `bitwiseImportPass` in `ElixirASTTransformer.hx` - Detects Elixir's triple operators in the AST and adds the required import.
 
 #### 2. HEEx Templates → `use Phoenix.Component`
 
@@ -181,51 +185,66 @@ static function someImportPass(ast: ElixirAST): ElixirAST {
 
 ### How It Works
 
-Explicit imports use Haxe's standard import mechanism with specially-annotated extern classes that signal the compiler to generate Elixir imports.
+Explicit imports provide typed access to Elixir library functions through extern classes. These are for library APIs, not language features.
 
-### The @:autoimport Metadata
+### The @:autoimport Metadata (Future Enhancement)
 
-Extern classes marked with `@:autoimport` trigger import generation when imported in Haxe:
+Extern classes can be marked with `@:autoimport` to generate appropriate import/alias statements:
 
 ```haxe
-// std/elixir/Bitwise.hx
-@:native("Bitwise")
-@:autoimport           // Generates: import Bitwise
-extern class Bitwise {
-    static function band(a: Int, b: Int): Int;
+// std/elixir/Jason.hx - JSON library
+@:native("Jason")
+@:autoimport("alias")    // Would generate: alias Jason
+extern class Jason {
+    static function encode(term: Dynamic): Result<String, Dynamic>;
+    static function decode(json: String): Result<Dynamic, Dynamic>;
 }
 
-// std/phoenix/Component.hx
-@:native("Phoenix.Component")
-@:autoimport("use")    // Generates: use Phoenix.Component
-extern class Component {
-    // API definitions
+// std/elixir/Logger.hx - Logging
+@:native("Logger")
+@:autoimport("require")  // Would generate: require Logger
+extern class Logger {
+    static function debug(message: String): Void;
+    static function info(message: String): Void;
+    static function error(message: String): Void;
 }
 ```
 
-### Usage Example
+### Real-World Usage Examples
 
 ```haxe
-// Explicit import with typed API
-import elixir.Bitwise;
+// Using typed library APIs
+import elixir.Jason;
+import elixir.Logger;
 
-class BitwiseExample {
-    static function main() {
-        // Typed, IDE-friendly API
-        var result = Bitwise.band(0xFF, 0x0F);  // Full intellisense
-        var shifted = Bitwise.bsl(1, 8);        // Go-to definition works
+class ApiHandler {
+    static function handleRequest(body: String) {
+        // Typed JSON operations
+        switch(Jason.decode(body)) {
+            case Ok(data):
+                Logger.info("Request received");
+                processData(data);
+            case Error(reason):
+                Logger.error('JSON decode failed: $reason');
+        }
     }
 }
 ```
 
 **Generated Elixir:**
 ```elixir
-defmodule BitwiseExample do
-  import Bitwise  # Added due to extern import
+defmodule ApiHandler do
+  alias Jason       # Added by @:autoimport
+  require Logger    # Added by @:autoimport
   
-  def main() do
-    result = 0xFF &&& 0x0F
-    shifted = 1 <<< 8
+  def handle_request(body) do
+    case Jason.decode(body) do
+      {:ok, data} ->
+        Logger.info("Request received")
+        process_data(data)
+      {:error, reason} ->
+        Logger.error("JSON decode failed: #{reason}")
+    end
   end
 end
 ```
@@ -299,26 +318,27 @@ When both implicit and explicit imports could apply:
 
 ## When to Use Each Approach
 
-### Use Implicit Imports When:
-- Writing quick prototypes
-- Following standard patterns
-- Working with framework conventions
-- Minimizing boilerplate
+### Implicit Imports Are For:
+- **Language features** - Bitwise operators, pattern matching
+- **Framework conventions** - Phoenix.Component, CoreComponents
+- **Common patterns** - Detected automatically by the compiler
 
-### Use Explicit Imports When:
-- Need type safety and IDE support
-- Working in large codebases
-- Teaching or documenting code
-- Using less common operations
+### Explicit Imports Are For:
+- **Library functions** - Jason, Logger, Decimal, Timex
+- **Third-party packages** - Any Hex package with typed externs
+- **Custom modules** - Your own application modules
+- **Migration scenarios** - Integrating with existing Elixir code
 
-### Framework-Specific Guidelines
+### Decision Matrix
 
-| Feature | Implicit | Explicit | Recommendation |
-|---------|----------|----------|----------------|
-| Bitwise operations | ✅ Automatic | ✅ Available | Use explicit for complex bit manipulation |
-| Phoenix.Component | ✅ Automatic | ✅ Available | Implicit usually sufficient |
-| CoreComponents | ✅ Automatic | ❌ N/A | Always automatic in LiveView |
-| Custom modules | ❌ N/A | ✅ Required | Must explicitly import |
+| Category | Example | Import Type | Why |
+|----------|---------|-------------|-----|
+| **Language Operators** | `a & b`, `a << 2` | Always Implicit | Natural Haxe syntax |
+| **Framework Patterns** | ~H sigils, LiveView | Always Implicit | Convention over configuration |
+| **JSON Operations** | `Jason.encode()` | Explicit (Extern) | Library function, not language feature |
+| **Logging** | `Logger.info()` | Explicit (Extern) | Application choice |
+| **Process Operations** | `Process.self()` | Explicit (Extern) | OTP library function |
+| **Custom Modules** | `MyApp.Users` | Explicit (Import) | Application-specific |
 
 ## Adding New Import Support
 
@@ -394,22 +414,23 @@ make update-intended TEST=ImplicitImports
 ## Future Enhancements
 
 ### Planned Features
-1. **Import optimization** - Remove unused imports
-2. **Import grouping** - Organize imports by type
-3. **Conditional imports** - Based on compile flags
+1. **@:autoimport implementation** - Generate imports from extern usage
+2. **Import optimization** - Remove unused imports
+3. **Import grouping** - Organize imports by type
 4. **Import aliases** - Support `import X, as: Y`
 
-### Potential Implicit Imports
-- `Logger` for logging operations
-- `Jason` for JSON operations
-- `Process` for process operations
-- `GenServer` for OTP patterns
+### Candidates for New Implicit Imports
+*Note: These should only be added if they represent language-level features or universal framework conventions*
+- Pattern matching constructs that require imports in Elixir
+- Other sigil types that need specific modules
+- Universal OTP patterns (if any)
 
-### Potential Explicit Externs
-- Complete Elixir standard library
-- Popular hex packages (Ecto, Phoenix, etc.)
-- OTP behaviors
-- Testing frameworks
+### Candidates for New Externs
+*These are library functions that benefit from typed APIs*
+- **Elixir Standard Library**: Logger, Task, Agent, Registry
+- **Popular Libraries**: Decimal, Timex, Oban, Broadway
+- **Phoenix Modules**: PubSub, Presence, Token
+- **Testing**: ExUnit assertions, Mox, Faker
 
 ## Design Decisions and Rationale
 
@@ -426,18 +447,36 @@ make update-intended TEST=ImplicitImports
 - **IDE-friendly** - Standard imports work with all tools
 
 ### Why Hybrid Instead of One Approach?
-- **Best of both worlds** - Convenience AND control
-- **Progressive disclosure** - Start simple, add types as needed
+- **Natural language use** - Operators work like native Haxe
+- **Library type safety** - Typed access to Elixir libraries
 - **Framework alignment** - Matches Elixir/Phoenix philosophy
-- **Future-proof** - Can evolve each system independently
+- **Clear mental model** - Language vs library distinction
+
+### Language Features vs Library Functions
+
+**Language Features** (Always Implicit):
+- Written using Haxe's native syntax (`a & b`, `a << 2`)
+- Part of the core language semantics
+- Should work transparently without user intervention
+- Examples: Bitwise operators, pattern matching, string interpolation
+
+**Library Functions** (Can Be Explicit):
+- Called as functions (`Jason.encode()`, `Logger.info()`)
+- Part of standard library or third-party packages
+- Benefit from typed APIs and documentation
+- Examples: JSON operations, logging, process management
 
 ## Summary
 
 The hybrid import system provides:
-- ✅ **Zero-friction development** with implicit imports
-- ✅ **Type-safe APIs** with explicit externs
-- ✅ **Framework conventions** automatically applied
-- ✅ **Clear mental model** for developers
-- ✅ **Extensible architecture** for future needs
+- ✅ **Natural language integration** - Haxe operators work seamlessly
+- ✅ **Typed library access** - Optional externs for Elixir libraries
+- ✅ **Framework conventions** - Phoenix patterns apply automatically
+- ✅ **Clear distinction** - Language features vs library functions
+- ✅ **No unnecessary complexity** - Import only what adds value
 
-This design allows Reflaxe.Elixir to feel natural to both Haxe developers (familiar imports) and Elixir developers (automatic conventions) while providing maximum flexibility for different use cases and project sizes.
+This design ensures that:
+- **Language features** (like bitwise operators) work naturally without any user intervention
+- **Library functions** (like JSON operations) can have typed APIs when desired
+- **Framework patterns** (like LiveView) follow conventions automatically
+- **The compiler handles the complexity** of Elixir's import requirements transparently

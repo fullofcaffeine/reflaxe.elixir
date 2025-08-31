@@ -543,9 +543,44 @@ class ElixirASTBuilder {
                             }
                             // Check for module calls
                             else if (isModuleCall(obj)) {
-                                // Convert method name to snake_case for Elixir
-                                var elixirFuncName = toSnakeCase(fieldName);
-                                ERemoteCall(objAst, elixirFuncName, args);
+                                // Check if this is an extern static method with its own @:native
+                                var hasNativeMetadata = false;
+                                var nativeName: String = null;
+                                
+                                switch(fa) {
+                                    case FStatic(_, cf):
+                                        var classField = cf.get();
+                                        if (classField.meta.has(":native")) {
+                                            var nativeMeta = classField.meta.extract(":native");
+                                            if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                                                switch(nativeMeta[0].params[0].expr) {
+                                                    case EConst(CString(s, _)):
+                                                        hasNativeMetadata = true;
+                                                        nativeName = s;
+                                                    default:
+                                                }
+                                            }
+                                        }
+                                    default:
+                                }
+                                
+                                if (hasNativeMetadata && nativeName != null) {
+                                    // Method has its own @:native, use it directly
+                                    // Split the native name to get module and function
+                                    var parts = nativeName.split(".");
+                                    if (parts.length > 1) {
+                                        var module = parts.slice(0, parts.length - 1).join(".");
+                                        var funcName = parts[parts.length - 1];
+                                        ERemoteCall(makeAST(EVar(module)), funcName, args);
+                                    } else {
+                                        // Just a function name, use with the module
+                                        ERemoteCall(objAst, nativeName, args);
+                                    }
+                                } else {
+                                    // Regular module call - convert method name to snake_case for Elixir
+                                    var elixirFuncName = toSnakeCase(fieldName);
+                                    ERemoteCall(objAst, elixirFuncName, args);
+                                }
                             } else {
                                 // Check if this is a method call that contains __elixir__() injection
                                 var methodHasElixirInjection = false;

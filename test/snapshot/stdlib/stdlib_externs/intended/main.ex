@@ -1,392 +1,218 @@
 defmodule Main do
-  @moduledoc """
-    Main module generated from Haxe
-
-     * Test suite for essential standard library extern definitions
-     * Tests that all extern definitions compile correctly and generate proper Elixir code
-  """
-
-  # Static functions
-  @doc "Generated from Haxe main"
   def main() do
     Main.test_process_externs()
-
     Main.test_registry_externs()
-
     Main.test_agent_externs()
-
     Main.test_i_o_externs()
-
     Main.test_file_externs()
-
     Main.test_path_externs()
-
     Main.test_enum_externs()
-
     Main.test_string_externs()
-
     Main.test_gen_server_externs()
   end
-
-  @doc "Generated from Haxe testProcessExterns"
-  def test_process_externs() do
-    pid = Process.self(Process)
-
-    Process.send(Process, pid, "hello")
-
-    Process.exit(Process, pid, "normal")
-
-    new_pid = Process.spawn(Process, fn  -> IO.puts(IO, "Hello from spawned process") end)
-
-    Process.monitor(Process, new_pid)
-
-    Process.link(Process, new_pid)
-
-    _alive = Process.alive?(Process, pid)
-
-    _info = Process.info(Process, pid)
+  defp testProcessExterns() do
+    pid = Process.self()
+    Process.send(pid, "hello")
+    Process.exit(pid, "normal")
+    new_pid = Process.spawn(fn -> IO.puts("Hello from spawned process") end)
+    Process.monitor(new_pid)
+    Process.link(new_pid)
+    alive = Process.alive?(pid)
+    info = Process.info(pid)
   end
-
-  @doc "Generated from Haxe testRegistryExterns"
-  def test_registry_externs() do
-    temp_maybe_var = nil
-
-    _registry_spec = Registry.start_link(Registry, "unique", "MyRegistry")
-
-    _register_result = Registry.register(Registry, "MyRegistry", "user:123", "user_data")
-
-    _lookup_result = Registry.lookup(Registry, "MyRegistry", "user:123")
-
-    _count = Registry.count(Registry, "MyRegistry")
-
-    _keys = Registry.keys(Registry, "MyRegistry", Process.self(Process))
-
-    g_array = StringMap.new()
-
-    g_array = Map.put(g_array, "keys", "unique")
-
-    g_array = Map.put(g_array, "name", "TestRegistry")
-
-    temp_maybe_var = nil
-
-    results = Registry.lookup(Registry, "MyRegistry", "user:123")
-
-    if ((results.length > 0)), do: temp_maybe_var = Enum.at(results, 0).0, else: temp_maybe_var = nil
+  defp testRegistryExterns() do
+    registry_spec = Registry.start_link("unique", "MyRegistry")
+    register_result = Registry.register("MyRegistry", "user:123", "user_data")
+    lookup_result = Registry.lookup("MyRegistry", "user:123")
+    count = Registry.count("MyRegistry")
+    keys = Registry.keys("MyRegistry", Process.self())
+    unique_options = g = %{}
+Map.put(g, "keys", "unique")
+Map.put(g, "name", "TestRegistry")
+g
+    found_process = results = Registry.lookup("MyRegistry", "user:123")
+if (results.length > 0) do
+  results[0][:_0]
+else
+  nil
+end
   end
-
-  @doc "Generated from Haxe testAgentExterns"
-  def test_agent_externs() do
-    temp_number = nil
-    temp_var = nil
-
-    _agent_result = Agent.start_link(Agent, fn  -> 0 end)
-
-    _state = Agent.get(Agent, nil, fn count -> count end)
-
-    Agent.update(Agent, nil, fn count -> (count + 1) end)
-
-    Agent.cast(Agent, nil, fn count -> (count + 1) end)
-
-    _counter_agent = Agent.start_link(Agent, fn  -> 10 end)
-
+  defp testAgentExterns() do
+    agent_result = Agent.start_link(fn -> 0 end)
+    state = Agent.get(nil, fn count -> count end)
+    Agent.update(nil, fn count -> count + 1 end)
+    Agent.cast(nil, fn count -> count + 1 end)
+    counter_agent = Agent.start_link(fn -> 10 end)
     agent = nil
-    Agent.update(Agent, agent, fn count -> (count + 5) end)
-
-    temp_number = nil
-
+    Agent.update(agent, fn count -> count + 5 end)
+    current_count = agent = nil
+Agent.get(agent, fn count -> count end)
+    map_agent = Agent.start_link(fn -> nil end)
     agent = nil
-    temp_number = Agent.get(Agent, agent, fn count -> count end)
-
-    _current_count = temp_number
-
-    _map_agent = Agent.start_link(Agent, fn  -> nil end)
-
-    agent = nil
-    Agent.update(Agent, agent, fn state -> state end)
-
-    temp_var = nil
-
-    agent = nil
-    temp_var = Agent.get(Agent, agent, fn state -> nil end)
-
-    _value = temp_var
+    Agent.update(agent, fn state -> state end)
+    value = agent = nil
+Agent.get(agent, fn state -> nil end)
   end
-
-  @doc "Generated from Haxe testIOExterns"
-  def test_i_o_externs() do
-    temp_string = nil
-
-    IO.puts(IO, "Hello, World!")
-
-    IO.write(IO, "Hello ")
-
-    IO.inspect(IO, [1, 2, 3])
-
-    _input = IO.gets(IO, "Enter something: ")
-
-    _char = IO.read(IO, 1)
-
-    IO.puts(IO, "Using helper function")
-
-    IO.puts(IO, "stderr", "This is an error message")
-
+  defp testIOExterns() do
+    IO.puts("Hello, World!")
+    IO.write("Hello ")
+    IO.inspect([1, 2, 3])
+    input = IO.gets("Enter something: ")
+    char = IO.read(1)
+    IO.puts("Using helper function")
+    IO.puts("stderr", "This is an error message")
     label = "label"
-    if ((label == nil)), do: label = "", else: nil
-    if ((label != "")), do: IO.puts(IO, label <> ": "), else: nil
-    IO.inspect(IO, "Debug value")
-
-    color = IO.i_o._a_n_s_i.red
-    IO.write(IO, color <> "Error text" <> IO.i_o._a_n_s_i.reset)
-
-    color = IO.i_o._a_n_s_i.green
-    IO.write(IO, color <> "Success text" <> IO.i_o._a_n_s_i.reset)
-
-    color = IO.i_o._a_n_s_i.blue
-    IO.write(IO, color <> "Info text" <> IO.i_o._a_n_s_i.reset)
-
-    temp_string = nil
-
-    label = "Array"
-    if ((label == nil)), do: label = "", else: nil
-    result = IO.iodata_to_binary(IO, IO.inspect(IO, [1, 2, 3]))
-    if ((label != "")), do: temp_string = label <> ": " <> result, else: temp_string = result
+    if (label == nil) do
+      label = ""
+    end
+    if (label != "") do
+      IO.puts(label + ": ")
+    end
+    IO.inspect("Debug value")
+    color = IO.IO.ANSI.red
+    IO.write(color + "Error text" + IO.IO.ANSI.reset)
+    color = IO.IO.ANSI.green
+    IO.write(color + "Success text" + IO.IO.ANSI.reset)
+    color = IO.IO.ANSI.blue
+    IO.write(color + "Info text" + IO.IO.ANSI.reset)
+    formatted = label = "Array"
+if (label == nil) do
+  label = ""
+end
+result = IO.iodata_to_binary(IO.inspect([1, 2, 3]))
+if (label != ""), do: label + ": " + result, else: result
   end
-
-  @doc "Generated from Haxe testFileExterns"
-  def test_file_externs() do
-    temp_maybe_string = nil
-    temp_bool = nil
-    temp_maybe_string1 = nil
-    temp_maybe_array = nil
-    temp_bool1 = nil
-
-    _read_result = File.read(File, "test.txt")
-
-    _content = File.read!(File, "test.txt")
-
-    _write_result = File.write(File, "output.txt", "Hello, File!")
-
-    File.write!(File, "output2.txt", "Hello again!")
-
-    _stat_result = File.stat(File, "test.txt")
-
-    _exists = File.exists?(File, "test.txt")
-
-    _is_file = File.regular?(File, "test.txt")
-
-    _is_dir = File.dir?(File, "directory")
-
-    _mkdir_result = File.mkdir(File, "new_directory")
-
-    _ls_result = File.ls(File, ".")
-
-    _copy_result = File.copy(File, "source.txt", "dest.txt")
-
-    _rename_result = File.rename(File, "old.txt", "new.txt")
-
-    temp_maybe_string = nil
-
-    result = File.read(File, "text_file.txt")
-    if ((result.0 == "ok")), do: temp_maybe_string = result.1, else: temp_maybe_string = nil
-
-    temp_bool = nil
-
-    result = File.write(File, "output.txt", "content")
-    temp_bool = (result.0 == "ok")
-
-    _write_success = temp_bool
-
-    temp_maybe_string1 = nil
-
-    result = File.read(File, "multi_line.txt")
-    if ((result.0 == "ok")), do: temp_maybe_string1 = result.1, else: temp_maybe_string1 = nil
-
-    if ((temp_maybe_string1 != nil)), do: temp_maybe_array = temp_maybe_string1.split("\n"), else: temp_maybe_array = nil
-
-    temp_bool1 = nil
-
-    result = File.mkdir_p(File, "new_dir")
-    temp_bool1 = (result.0 == "ok")
-
-    _dir_created = temp_bool1
+  defp testFileExterns() do
+    read_result = File.read("test.txt")
+    content = File.read!("test.txt")
+    write_result = File.write("output.txt", "Hello, File!")
+    File.write!("output2.txt", "Hello again!")
+    stat_result = File.stat("test.txt")
+    exists = File.exists?("test.txt")
+    is_file = File.regular?("test.txt")
+    is_dir = File.dir?("directory")
+    mkdir_result = File.mkdir("new_directory")
+    ls_result = File.ls(".")
+    copy_result = File.copy("source.txt", "dest.txt")
+    rename_result = File.rename("old.txt", "new.txt")
+    text_content = result = File.read("text_file.txt")
+if (result[:_0] == "ok") do
+  result[:_1]
+else
+  nil
+end
+    write_success = result = File.write("output.txt", "content")
+result[:_0] == "ok"
+    lines = content = result = File.read("multi_line.txt")
+if (result[:_0] == "ok") do
+  result[:_1]
+else
+  nil
+end
+if (content != nil), do: content.split("\n"), else: nil
+    dir_created = result = File.mkdir_p("new_dir")
+result[:_0] == "ok"
   end
-
-  @doc "Generated from Haxe testPathExterns"
-  def test_path_externs() do
-    temp_string = nil
-
-    _joined = Path.join(Path, ["home", "user", "documents"])
-
-    _joined_two = Path.join(Path, "/home", "user")
-
-    _basename = Path.basename(Path, "/home/user/file.txt")
-
-    _dirname = Path.dirname(Path, "/home/user/file.txt")
-
-    _extension = Path.extname(Path, "/home/user/file.txt")
-
-    _rootname = Path.rootname(Path, "/home/user/file.txt")
-
-    _is_absolute = Path.absname?(Path, "/home/user")
-
-    _path_type = Path.type(Path, "/home/user")
-
-    _expanded = Path.expand(Path, "~/documents")
-
-    _relative = Path.relative_to_cwd(Path, "/home/user/documents")
-
-    _matches = Path.wildcard(Path, "*.txt")
-
-    _filename = Path.basename(Path, "/home/user/file.txt")
-
-    _filename_no_ext = Path.rootname(Path, Path.basename(Path, "/home/user/file.txt"))
-
-    ext = Path.extname(Path, "/home/user/file.txt")
-    if (((ext.length > 0) && (ext.char_at(0) == "."))), do: temp_string = ext.substr(1), else: temp_string = ext
-
-    _combined = Path.join(Path, ["home", "user", "file.txt"])
+  defp testPathExterns() do
+    joined = Path.join(["home", "user", "documents"])
+    joined_two = Path.join("/home", "user")
+    basename = Path.basename("/home/user/file.txt")
+    dirname = Path.dirname("/home/user/file.txt")
+    extension = Path.extname("/home/user/file.txt")
+    rootname = Path.rootname("/home/user/file.txt")
+    is_absolute = Path.absname?("/home/user")
+    path_type = Path.type("/home/user")
+    expanded = Path.expand("~/documents")
+    relative = Path.relative_to_cwd("/home/user/documents")
+    matches = Path.wildcard("*.txt")
+    filename = Path.basename("/home/user/file.txt")
+    filename_no_ext = Path.rootname(Path.basename("/home/user/file.txt"))
+    ext = ext = Path.extname("/home/user/file.txt")
+if (ext.length > 0 && ext.charAt(0) == "."), do: ext.substr(1), else: ext
+    combined = Path.join(["home", "user", "file.txt"])
   end
-
-  @doc "Generated from Haxe testEnumExterns"
-  def test_enum_externs() do
+  defp testEnumExterns() do
     test_array = [1, 2, 3, 4, 5]
-
-    _count = Enum.count(Enum, test_array)
-
-    _is_empty = Enum.empty?(Enum, test_array)
-
-    _contains = Enum.member?(Enum, test_array, 3)
-
-    _first = Enum.at(Enum, test_array, 0)
-
-    _found = Enum.find(Enum, test_array, fn x -> (x > 3) end)
-
-    _doubled = Enum.map(Enum, test_array, fn x -> (x * 2) end)
-
-    _filtered = Enum.filter(Enum, test_array, fn x -> (rem(x, 2) == 0) end)
-
-    _reduced = Enum.reduce(Enum, test_array, 0, fn acc, x -> (acc + x) end)
-
-    _sum = Enum.sum(Enum, test_array)
-
-    _max = Enum.max(Enum, test_array)
-
-    _min = Enum.min(Enum, test_array)
-
-    _taken = Enum.take(Enum, test_array, 3)
-
-    _dropped = Enum.drop(Enum, test_array, 2)
-
-    _reversed = Enum.reverse(Enum, test_array)
-
-    _sorted = Enum.sort(Enum, test_array)
-
-    _size = Enum.count(Enum, test_array)
-
-    _head = Enum.at(Enum, test_array, 0)
-
-    _tail = Enum.drop(Enum, test_array, 1)
-
-    _collected = Enum.map(Enum, test_array, fn x -> Std.string(x) end)
+    count = Enum.count(test_array)
+    is_empty = Enum.empty?(test_array)
+    contains = Enum.member?(test_array, 3)
+    first = Enum.at(test_array, 0)
+    found = Enum.find(test_array, fn x -> x > 3 end)
+    doubled = Enum.map(test_array, fn x -> x * 2 end)
+    filtered = Enum.filter(test_array, fn x -> x rem 2 == 0 end)
+    reduced = Enum.reduce(test_array, 0, fn acc, x -> acc + x end)
+    sum = Enum.sum(test_array)
+    max = Enum.max(test_array)
+    min = Enum.min(test_array)
+    taken = Enum.take(test_array, 3)
+    dropped = Enum.drop(test_array, 2)
+    reversed = Enum.reverse(test_array)
+    sorted = Enum.sort(test_array)
+    size = Enum.count(test_array)
+    head = Enum.at(test_array, 0)
+    tail = Enum.drop(test_array, 1)
+    collected = Enum.map(test_array, fn x -> Std.string(x) end)
   end
-
-  @doc "Generated from Haxe testStringExterns"
-  def test_string_externs() do
-    temp_bool = nil
-    temp_string = nil
-
+  defp testStringExterns() do
     test_string = "  Hello, World!  "
-
-    _length = String.length(String, test_string)
-
-    _byte_size = String.byte_size(String, test_string)
-
-    _is_valid = String.valid?(String, test_string)
-
-    _lower = String.downcase(String, test_string)
-
-    _upper = String.upcase(String, test_string)
-
-    _capitalized = String.capitalize(String, test_string)
-
-    _trimmed = String.trim(String, test_string)
-
-    _left_trimmed = String.trim_leading(String, test_string)
-
-    _padded = String.pad_leading(String, "hello", 10)
-
-    _slice = String.slice(String, test_string, 2, 5)
-
-    _char_at = String.at(String, test_string, 0)
-
-    _first = String.first(String, test_string)
-
-    _last = String.last(String, test_string)
-
-    _contains = String.contains?(String, test_string, "Hello")
-
-    _starts_with = String.starts_with?(String, test_string, "  Hello")
-
-    _ends_with = String.ends_with?(String, test_string, "!  ")
-
-    _replaced = String.replace(String, test_string, "World", "Elixir")
-
-    _prefix_replaced = String.replace_prefix(String, test_string, "  ", "")
-
-    _split = String.split(String, "a,b,c")
-
-    _split_on = String.split(String, "a,b,c", ",")
-
-    _split_at = String.split_at(String, test_string, 5)
-
-    _to_int_result = String.to_integer(String, "123")
-
-    _to_float_result = String.to_float(String, "123.45")
-
-    _is_empty = (String.length(String, "") == 0)
-
-    string = String.trim(String, "   ")
-
-    _temp_bool = (String.length(String, string) == 0)
-
-    _is_blank = _temp_bool
-
-    pad_with = "0"
-
-    if ((pad_with == nil)), do: pad_with = " ", else: nil
-
-    if ((String.length(String, "test") >= 10)), do: temp_string = "test", else: temp_string = String.pad_leading(String, "test", 10, pad_with)
-
-    _repeated = String.duplicate(String, "ha", 3)
+    length = String.length(test_string)
+    byte_size = String.byte_size(test_string)
+    is_valid = String.valid?(test_string)
+    lower = String.downcase(test_string)
+    upper = String.upcase(test_string)
+    capitalized = String.capitalize(test_string)
+    trimmed = String.trim(test_string)
+    left_trimmed = String.trim_leading(test_string)
+    padded = String.pad_leading("hello", 10)
+    slice = String.slice(test_string, 2, 5)
+    char_at = String.at(test_string, 0)
+    first = String.first(test_string)
+    last = String.last(test_string)
+    contains = String.contains?(test_string, "Hello")
+    starts_with = String.starts_with?(test_string, "  Hello")
+    ends_with = String.ends_with?(test_string, "!  ")
+    replaced = String.replace(test_string, "World", "Elixir")
+    prefix_replaced = String.replace_prefix(test_string, "  ", "")
+    split = String.split("a,b,c")
+    split_on = String.split("a,b,c", ",")
+    split_at = String.split_at(test_string, 5)
+    to_int_result = String.to_integer("123")
+    to_float_result = String.to_float("123.45")
+    is_empty = String.length("") == 0
+    is_blank = string = String.trim("   ")
+String.length(string) == 0
+    left_padded = pad_with = "0"
+if (pad_with == nil) do
+  pad_with = " "
+end
+if (String.length("test") >= 10) do
+  "test"
+else
+  String.pad_leading("test", 10, pad_with)
+end
+    repeated = String.duplicate("ha", 3)
   end
-
-  @doc "Generated from Haxe testGenServerExterns"
-  def test_gen_server_externs() do
-    _start_result = GenServer.start_link(GenServer, "MyGenServer", "init_arg")
-
-    _call_result = GenServer.call(GenServer, nil, "get_state")
-
-    GenServer.cast(GenServer, nil, "update_state")
-
-    GenServer.stop(GenServer, nil)
-
-    _reply_tuple__0 = :r_e_p_l_y
-
-    _reply_tuple__1 = "response"
-
-    _reply_tuple__2 = "new_state"
-
-    _noreply_tuple__0 = :n_o_r_e_p_l_y
-
-    _noreply_tuple__1 = "state"
-
-    _stop_tuple__0 = :s_t_o_p
-
-    _stop_tuple__1 = "normal"
-
-    _stop_tuple__2 = "final_state"
-
-    _pid = GenServer.whereis(GenServer, "MyGenServer")
+  defp testGenServerExterns() do
+    start_result = GenServer.start_link("MyGenServer", "init_arg")
+    call_result = GenServer.call(nil, "get_state")
+    GenServer.cast(nil, "update_state")
+    GenServer.stop(nil)
+    reply_tuple___2 = nil
+    reply_tuple___1 = nil
+    reply_tuple___0 = nil
+    reply_tuple___0 = :REPLY
+    reply_tuple___1 = "response"
+    reply_tuple___2 = "new_state"
+    noreply_tuple___1 = nil
+    noreply_tuple___0 = nil
+    noreply_tuple___0 = :NOREPLY
+    noreply_tuple___1 = "state"
+    stop_tuple___2 = nil
+    stop_tuple___1 = nil
+    stop_tuple___0 = nil
+    stop_tuple___0 = :STOP
+    stop_tuple___1 = "normal"
+    stop_tuple___2 = "final_state"
+    pid = GenServer.whereis("MyGenServer")
   end
-
 end
