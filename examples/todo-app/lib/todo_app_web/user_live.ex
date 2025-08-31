@@ -23,20 +23,20 @@ defmodule TodoAppWeb.UserLive do
         %{:status => "noreply", :socket => socket}
     end
   end
-  defp handleNewUser(params, socket) do
+  defp handle_new_user(params, socket) do
     changeset = Users.change_user(nil)
     selected_user = nil
     show_form = true
     %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:changeset => changeset, :selectedUser => selected_user, :showForm => show_form})}
   end
-  defp handleEditUser(params, socket) do
+  defp handle_edit_user(params, socket) do
     user_id = params.id
     selected_user = Users.get_user(user_id)
     changeset = Users.change_user(selected_user)
     show_form = true
     %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:selectedUser => selected_user, :changeset => changeset, :showForm => show_form})}
   end
-  defp handleSaveUser(params, socket) do
+  defp handle_save_user(params, socket) do
     user_params = params.user
     selected_user = Reflect.field(socket.assigns, "selectedUser")
     result = if (selected_user == nil) do
@@ -56,7 +56,7 @@ end
         %{:status => "noreply", :socket => socket}
     end
   end
-  defp handleDeleteUser(params, socket) do
+  defp handle_delete_user(params, socket) do
     user_id = params.id
     user = Users.get_user(user_id)
     result = Users.delete_user(user)
@@ -66,7 +66,7 @@ end
     end
     %{:status => "noreply", :socket => socket}
   end
-  defp handleSearch(params, socket) do
+  defp handle_search(params, socket) do
     search_term = params.search
     users = if (search_term.length > 0) do
   Users.search_users(search_term)
@@ -75,13 +75,13 @@ else
 end
     %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:users => users, :searchTerm => search_term})}
   end
-  defp handleCancel(socket) do
+  defp handle_cancel(socket) do
     %{:status => "noreply", :socket => UserLive.assign_multiple(socket, %{:showForm => false, :selectedUser => nil, :changeset => Users.change_user(nil)})}
   end
   defp render(assigns) do
     HXX.hxx("\n        <div class=\"user-management\">\n            <div class=\"header\">\n                <h1>User Management</h1>\n                <.button phx-click=\"new_user\" class=\"btn-primary\">\n                    <.icon name=\"plus\" /> New User\n                </.button>\n            </div>\n            \n            <div class=\"search-bar\">\n                <.form phx-change=\"search\">\n                    <.input \n                        name=\"search\" \n                        value={@searchTerm}\n                        placeholder=\"Search users...\"\n                        type=\"search\"\n                    />\n                </.form>\n            </div>\n            \n            " + UserLive.render_user_list(assigns) + "\n            " + UserLive.render_user_form(assigns) + "\n        </div>\n        ")
   end
-  defp renderUserList(assigns) do
+  defp render_user_list(assigns) do
     ~H"""
 
         <div class="users-list">
@@ -97,7 +97,7 @@ end
                 </thead>
                 <tbody>
                     <%= for user <- @users do %>
-                        <%= render_user_row(%{user => user}) %>
+                        <%= render_user_row(%{user: user}) %>
                     <% end %>
                 </tbody>
             </table>
@@ -105,17 +105,17 @@ end
         
 """
   end
-  defp renderUserRow(assigns) do
+  defp render_user_row(assigns) do
     user = assigns.user
     HXX.hxx("\n        <tr>\n            <td>" + user[:name] + "</td>\n            <td>" + user[:email] + "</td>\n            <td>" + user[:age] + "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " + UserLive.get_status_text(user[:active]) + "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        ")
   end
-  defp getStatusClass(active) do
+  defp get_status_class(active) do
     if active, do: "status active", else: "status inactive"
   end
-  defp getStatusText(active) do
+  defp get_status_text(active) do
     if active, do: "Active", else: "Inactive"
   end
-  defp renderUserForm(assigns) do
+  defp render_user_form(assigns) do
     if (not assigns.showForm), do: ""
     ~H"""
 

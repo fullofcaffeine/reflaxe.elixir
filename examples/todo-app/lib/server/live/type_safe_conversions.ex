@@ -1,5 +1,5 @@
 defmodule TypeSafeConversions do
-  def eventParamsToChangesetParams(params) do
+  def event_params_to_changeset_params(params) do
     changeset_params = %{}
     if (params.title != nil) do
       value = {:StringValue, params.title}
@@ -27,7 +27,7 @@ defmodule TypeSafeConversions do
     end
     changeset_params
   end
-  def createTodoParams(title, description, priority, due_date, tags, user_id) do
+  def create_todo_params(title, description, priority, due_date, tags, user_id) do
     changeset_params = %{}
     value = {:StringValue, title}
     Map.put(changeset_params, "title", value)
@@ -51,10 +51,10 @@ defmodule TypeSafeConversions do
     end
     changeset_params
   end
-  def validateTodoCreationParams(params) do
+  def validate_todo_creation_params(params) do
     params.title != nil && params.title.length > 0
   end
-  def createCompleteAssigns(base, todos, filter, sort_by, current_user, editing_todo, show_form, search_query, selected_tags) do
+  def create_complete_assigns(base, todos, filter, sort_by, current_user, editing_todo, show_form, search_query, selected_tags) do
     assigns = %{:todos => if (todos != nil) do
   todos
 else
@@ -97,10 +97,10 @@ end, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
     pending_todos = assigns.total_todos - assigns.completed_todos
     assigns
   end
-  defp createDefaultUser() do
+  defp create_default_user() do
     %{:id => 1, :name => "Default User", :email => "default@example.com", :password_hash => "default_hash", :confirmed_at => nil, :last_login_at => nil, :active => true}
   end
-  defp countCompleted(todos) do
+  defp count_completed(todos) do
     count = 0
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < todos.length) do
