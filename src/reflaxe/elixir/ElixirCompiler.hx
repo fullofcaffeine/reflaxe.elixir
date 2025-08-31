@@ -391,56 +391,45 @@ class ElixirCompiler extends GenericCompiler<
      * HOW: Uses the dispatcher pattern to maintain clean separation of concerns
      */
     /**
-     * Override compileExpression to handle __elixir__ injection
+     * Override compileExpression to handle __elixir__ injection properly using Reflaxe's system
      * 
-     * WHY: GenericCompiler doesn't have built-in injection support like DirectToStringCompiler,
-     * so we need to handle it ourselves at the expression level.
+     * WHY: We need to use checkTargetCodeInjectionGeneric like other Reflaxe compilers (C#, etc.)
+     * to properly handle __elixir__() injection with the GenericCompiler base class.
      * 
-     * WHAT: Checks for __elixir__ calls and returns ERaw nodes directly
+     * WHAT: Uses Reflaxe's built-in TargetCodeInjection system for code injection
      * 
-     * HOW: Detects TCall patterns with __elixir__ and creates ERaw AST nodes
+     * HOW: Calls checkTargetCodeInjectionGeneric and processes the results into ERaw nodes
      */
     public override function compileExpression(expr: TypedExpr, topLevel: Bool = false): Null<reflaxe.elixir.ast.ElixirAST> {
-        // Check for __elixir__ injection
+        // Check for target code injection using Reflaxe's built-in system
         switch(expr.expr) {
             case TCall(e, args):
-                var isInjection = switch(e.expr) {
-                    case TIdent("__elixir__"): true;
-                    case TLocal(v) if (v.name == "__elixir__"): true;
-                    case _: false;
-                };
-                
-                if (isInjection && args.length > 0) {
-                    // Extract the injection string from the first argument
-                    var injectionCode = switch(args[0].expr) {
-                        case TConst(TString(s)): s;
-                        case _: null;
-                    };
+                // Use Reflaxe's TargetCodeInjection system like C# compiler does
+                if (options.targetCodeInjectionName != null) {
+                    final result = TargetCodeInjection.checkTargetCodeInjectionGeneric(
+                        options.targetCodeInjectionName,
+                        expr,
+                        this
+                    );
                     
-                    if (injectionCode != null) {
-                        // Handle parameter substitution if there are additional arguments
-                        if (args.length > 1) {
-                            // Substitute parameters in the code string
-                            var processedCode = injectionCode;
-                            for (i in 1...args.length) {
-                                var paramAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(args[i]);
-                                // Convert AST to string for substitution
-                                var paramStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(paramAST);
-                                // Replace {i-1} placeholder with the parameter
-                                var placeholder = '{${i-1}}';
-                                processedCode = StringTools.replace(processedCode, placeholder, paramStr);
+                    if (result != null) {
+                        // Process the injection result
+                        var finalCode = "";
+                        for (entry in result) {
+                            switch(entry) {
+                                case Left(code):
+                                    // Direct string code
+                                    finalCode += code;
+                                case Right(ast):
+                                    // Compiled AST - convert to string
+                                    finalCode += reflaxe.elixir.ast.ElixirASTPrinter.printAST(ast);
                             }
-                            
-                            // Create ERaw node with substituted code
-                            return reflaxe.elixir.ast.ElixirAST.makeAST(
-                                reflaxe.elixir.ast.ElixirASTDef.ERaw(processedCode)
-                            );
-                        } else {
-                            // Simple injection without parameters
-                            return reflaxe.elixir.ast.ElixirAST.makeAST(
-                                reflaxe.elixir.ast.ElixirASTDef.ERaw(injectionCode)
-                            );
                         }
+                        
+                        // Return as raw Elixir code
+                        return reflaxe.elixir.ast.ElixirAST.makeAST(
+                            reflaxe.elixir.ast.ElixirASTDef.ERaw(finalCode)
+                        );
                     }
                 }
             case _:

@@ -50,7 +50,11 @@ defmodule JsonPrinter do
 else
   {:halt, acc}
 end end)
-    if (struct.space != nil && items.length > 0), do: "[\n  " + items.join(",\n  ") + "\n]", else: "[" + items.join(",") + "]"
+    if (struct.space != nil && items.length > 0) do
+      "[\n  " + Enum.join(items, ",\n  ") + "\n]"
+    else
+      "[" + Enum.join(items, ",") + "]"
+    end
   end
   defp writeObject(struct, obj) do
     fields = Reflect.fields(obj)
@@ -67,7 +71,11 @@ end end)
 else
   {:halt, acc}
 end end)
-    if (struct.space != nil && pairs.length > 0), do: "{\n  " + pairs.join(",\n  ") + "\n}", else: "{" + pairs.join(",") + "}"
+    if (struct.space != nil && pairs.length > 0) do
+      "{\n  " + Enum.join(pairs, ",\n  ") + "\n}"
+    else
+      "{" + Enum.join(pairs, ",") + "}"
+    end
   end
   defp quoteString(struct, s) do
     result = "\""

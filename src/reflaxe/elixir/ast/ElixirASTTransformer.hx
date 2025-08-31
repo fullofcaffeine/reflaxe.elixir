@@ -128,8 +128,8 @@ class ElixirASTTransformer {
         });
         #end
         
-        // Array operations now handled by std/Array.hx using __elixir__() injection
-        // See docs/07-patterns/ARRAY_IMPLEMENTATION_STRATEGY.md
+        // Array method transformations are handled in ElixirASTBuilder
+        // at the TCall(TField(...)) pattern to generate idiomatic Elixir directly
         
         // Loop to comprehension pass
         #if !disable_comprehension_conversion
