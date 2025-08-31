@@ -1428,6 +1428,42 @@ class ElixirASTTransformer {
                     visitor(after.timeout);
                     visitor(after.body);
                 }
+            case ERemoteCall(module, funcName, args):
+                if (module != null) visitor(module);
+                for (arg in args) visitor(arg);
+            case EParen(expr):
+                visitor(expr);
+            case EDo(body):
+                for (stmt in body) visitor(stmt);
+            case ETry(body, rescue, catchClauses, afterBlock, elseBlock):
+                visitor(body);
+                if (rescue != null) {
+                    for (clause in rescue) {
+                        // ERescueClause structure would need checking
+                        visitor(clause.body);
+                    }
+                }
+                if (catchClauses != null) {
+                    for (clause in catchClauses) {
+                        visitor(clause.body);
+                    }
+                }
+                if (afterBlock != null) visitor(afterBlock);
+                if (elseBlock != null) visitor(elseBlock);
+            case EWith(clauses, doBlock, elseBlock):
+                for (clause in clauses) {
+                    // Pattern is not an ElixirAST, only visit the expression
+                    visitor(clause.expr);
+                }
+                visitor(doBlock);
+                if (elseBlock != null) visitor(elseBlock);
+            case ECond(clauses):
+                for (clause in clauses) {
+                    visitor(clause.condition);
+                    visitor(clause.body);
+                }
+            case EField(object, field):
+                visitor(object);
             case _:
                 // Leaf nodes - nothing to iterate
         }
