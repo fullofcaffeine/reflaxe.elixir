@@ -108,6 +108,14 @@ class ElixirASTTransformer {
             pass: identityPass
         });
         
+        // Bitwise import pass (should run early to add imports)
+        passes.push({
+            name: "BitwiseImport",
+            description: "Add Bitwise import when bitwise operators are used",
+            enabled: true,
+            pass: bitwiseImportPass
+        });
+        
         // Constant folding pass
         #if !disable_constant_folding
         passes.push({
@@ -731,9 +739,20 @@ class ElixirASTTransformer {
         trace('[XRay BitwiseImport] Starting scan for bitwise operators');
         #end
         
-        iterateAST(ast, function(node: ElixirAST): Void {
+        // Recursive function to deeply traverse the AST
+        function checkForBitwise(node: ElixirAST): Void {
+            #if debug_bitwise_import
+            var nodeType = Type.enumConstructor(node.def);
+            if (nodeType == "EBinary") {
+                trace('[XRay BitwiseImport] Checking EBinary node');
+            }
+            #end
+            
             switch(node.def) {
-                case EBinary(op, _, _):
+                case EBinary(op, left, right):
+                    #if debug_bitwise_import
+                    trace('[XRay BitwiseImport] Binary operator: $op');
+                    #end
                     switch(op) {
                         case BitwiseAnd | BitwiseOr | BitwiseXor | ShiftLeft | ShiftRight:
                             #if debug_bitwise_import
@@ -742,15 +761,22 @@ class ElixirASTTransformer {
                             needsBitwise = true;
                         default:
                     }
-                case EUnary(BitwiseNot, _):
-                    // BitwiseNot is a unary operator, not binary
+                    // Recursively check child nodes
+                    checkForBitwise(left);
+                    checkForBitwise(right);
+                case EUnary(BitwiseNot, expr):
                     #if debug_bitwise_import
                     trace('[XRay BitwiseImport] Found BitwiseNot operator');
                     #end
                     needsBitwise = true;
+                    checkForBitwise(expr);
                 default:
+                    // For all other node types, recursively visit children
+                    iterateAST(node, checkForBitwise);
             }
-        });
+        }
+        
+        checkForBitwise(ast);
         
         #if debug_bitwise_import
         trace('[XRay BitwiseImport] Needs bitwise: $needsBitwise');
@@ -1344,6 +1370,8 @@ class ElixirASTTransformer {
                 for (expr in expressions) visitor(expr);
             case EModule(name, attributes, body):
                 for (b in body) visitor(b);
+            case EDefmodule(name, doBlock):
+                visitor(doBlock);
             case EDef(name, args, guards, body):
                 visitor(body);
             case EDefp(name, args, guards, body):
