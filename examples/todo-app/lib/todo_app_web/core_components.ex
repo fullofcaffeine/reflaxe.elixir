@@ -1,4 +1,5 @@
 defmodule TodoAppWeb.CoreComponents do
+  use Phoenix.Component
   def modal(assigns) do
     ~H"""
 <div id={@id} class="modal" phx-show={@show}>

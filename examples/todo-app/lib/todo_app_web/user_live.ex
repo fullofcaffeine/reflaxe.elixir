@@ -1,4 +1,6 @@
 defmodule TodoAppWeb.UserLive do
+  use Phoenix.Component
+  import TodoAppWeb.CoreComponents
   defp mount(_params, _session, socket) do
     users = Users.list_users(nil)
     %{:status => "ok", :socket => UserLive.assign_multiple(socket, %{:users => users, :selectedUser => nil, :changeset => Users.change_user(nil), :searchTerm => "", :showForm => false})}
