@@ -202,7 +202,7 @@ class UserLive {
                 </thead>
                 <tbody>
                     <%= for user <- @users do %>
-                        <%= render_user_row(%{user => user}) %>
+                        <%= render_user_row(%{user: user}) %>
                     <% end %>
                 </tbody>
             </table>

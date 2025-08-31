@@ -1,31 +1,31 @@
 defmodule SafeAssigns do
-  def setEditingTodo(socket, todo) do
+  def set_editing_todo(socket, todo) do
     Phoenix.LiveView.assign(socket, %{:editing_todo => todo})
   end
-  def setSelectedTags(socket, tags) do
+  def set_selected_tags(socket, tags) do
     Phoenix.LiveView.assign(socket, %{:selected_tags => tags})
   end
-  def setFilter(socket, filter) do
+  def set_filter(socket, filter) do
     Phoenix.LiveView.assign(socket, %{:filter => filter})
   end
-  def setSortBy(socket, sort_by) do
+  def set_sort_by(socket, sort_by) do
     Phoenix.LiveView.assign(socket, %{:sort_by => sort_by})
   end
-  def setSearchQuery(socket, query) do
+  def set_search_query(socket, query) do
     Phoenix.LiveView.assign(socket, %{:search_query => query})
   end
-  def setShowForm(socket, show_form) do
+  def set_show_form(socket, show_form) do
     Phoenix.LiveView.assign(socket, %{:show_form => show_form})
   end
-  def updateTodosAndStats(socket, todos) do
+  def update_todos_and_stats(socket, todos) do
     completed = SafeAssigns.count_completed(todos)
     pending = SafeAssigns.count_pending(todos)
     Phoenix.LiveView.assign(socket, %{:todos => todos, :total_todos => todos.length, :completed_todos => completed, :pending_todos => pending})
   end
-  def setTodos(socket, todos) do
+  def set_todos(socket, todos) do
     Phoenix.LiveView.assign(socket, %{:todos => todos})
   end
-  defp countCompleted(todos) do
+  defp count_completed(todos) do
     count = 0
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < todos.length) do
@@ -38,7 +38,7 @@ else
 end end)
     count
   end
-  defp countPending(todos) do
+  defp count_pending(todos) do
     count = 0
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < todos.length) do

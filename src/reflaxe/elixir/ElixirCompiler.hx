@@ -503,7 +503,8 @@ class ElixirCompiler extends GenericCompiler<
             if (func.field.expr() == null) continue;
             
             // Build function AST
-            var funcName = func.field.name;
+            // Convert function name to snake_case for idiomatic Elixir
+            var funcName = reflaxe.elixir.ast.NameUtils.toSnakeCase(func.field.name);
             
             // Extract the actual function expression to get parameters
             var funcExpr = func.field.expr();

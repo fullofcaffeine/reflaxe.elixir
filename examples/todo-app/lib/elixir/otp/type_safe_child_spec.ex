@@ -1,5 +1,5 @@
 defmodule TypeSafeChildSpec do
-  def pubSub(name) do
+  def pub_sub(name) do
     {:ModuleWithConfig, "Phoenix.PubSub", [%{:key => "name", :value => name}]}
   end
   def repo(module, config) do
@@ -27,7 +27,7 @@ defmodule TypeSafeChildSpec do
       if (args != nil && args.length > 0), do: {:ModuleWithArgs, module, args}, else: {:ModuleRef, module}
     end
   end
-  def taskSupervisor(name) do
+  def task_supervisor(name) do
     {:ModuleWithConfig, "Task.Supervisor", [%{:key => "name", :value => name}]}
   end
   def registry(name, opts) do
@@ -37,7 +37,7 @@ defmodule TypeSafeChildSpec do
     end
     {:ModuleWithConfig, "Registry", config}
   end
-  def fromMap(spec) do
+  def from_map(spec) do
     {:FullSpec, spec}
   end
   def simple(module, args) do

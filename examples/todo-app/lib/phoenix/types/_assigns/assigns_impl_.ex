@@ -1,11 +1,11 @@
 defmodule Assigns_Impl_ do
-  def fromDynamic(value) do
+  def from_dynamic(value) do
     value
   end
-  def fromObject(obj) do
+  def from_object(obj) do
     obj
   end
-  def toDynamic(this1) do
+  def to_dynamic(this1) do
     this1
   end
   def get(this1, key) do
@@ -15,17 +15,17 @@ defmodule Assigns_Impl_ do
     Reflect.set_field(this1, key, value)
     value
   end
-  def getField(this1, field) do
+  def get_field(this1, field) do
     Reflect.field(this1, field)
   end
-  def setField(this1, field, value) do
+  def set_field(this1, field, value) do
     Reflect.set_field(this1, field, value)
     value
   end
-  def hasField(this1, field) do
+  def has_field(this1, field) do
     Reflect.has_field(this1, field)
   end
-  def getFields(this1) do
+  def get_fields(this1) do
     Reflect.fields(this1)
   end
   def merge(this1, other) do
@@ -52,7 +52,7 @@ else
 end end)
     Assigns_Impl_.from_dynamic(result)
   end
-  def withField(this1, field, value) do
+  def with_field(this1, field, value) do
     result = %{}
     g = 0
     g1 = Reflect.fields(this1)
@@ -67,16 +67,16 @@ end end)
     Reflect.set_field(result, field, value)
     Assigns_Impl_.from_dynamic(result)
   end
-  def getInnerContent(this1) do
+  def get_inner_content(this1) do
     Reflect.field(this1, "inner_content")
   end
-  def getFlash(this1) do
+  def get_flash(this1) do
     Reflect.field(this1, "flash")
   end
-  def getCurrentUser(this1) do
+  def get_current_user(this1) do
     Reflect.field(this1, "current_user")
   end
-  def getCsrfToken(this1) do
+  def get_csrf_token(this1) do
     Reflect.field(this1, "csrf_token")
   end
 end

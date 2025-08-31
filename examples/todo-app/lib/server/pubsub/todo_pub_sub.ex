@@ -5,10 +5,10 @@ defmodule TodoPubSub do
   def broadcast(topic, message) do
     {:BroadcastWithConverters, topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir}
   end
-  def parseMessage(msg) do
+  def parse_message(msg) do
     {:ParseWithConverter, msg, TodoPubSub.parseMessageImpl}
   end
-  defp topicToString(topic) do
+  defp topic_to_string(topic) do
     case (topic.elem(0)) do
       0 ->
         "todo:updates"
@@ -18,7 +18,7 @@ defmodule TodoPubSub do
         "system:notifications"
     end
   end
-  defp messageToElixir(message) do
+  defp message_to_elixir(message) do
     base_payload = case (message.elem(0)) do
   0 ->
     g = message.elem(1)
@@ -53,7 +53,7 @@ defmodule TodoPubSub do
 end
     SafePubSub.add_timestamp(base_payload)
   end
-  defp parseMessageImpl(msg) do
+  defp parse_message_impl(msg) do
     if (not SafePubSub.is_valid_message(msg)) do
       Log.trace(SafePubSub.create_malformed_message_error(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 188, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
       :None
@@ -103,7 +103,7 @@ end
         :None
     end
   end
-  defp bulkActionToString(action) do
+  defp bulk_action_to_string(action) do
     case (action.elem(0)) do
       0 ->
         "complete_all"
@@ -123,7 +123,7 @@ end
         "remove_tag"
     end
   end
-  defp parseBulkAction(action) do
+  defp parse_bulk_action(action) do
     case (action) do
       "add_tag" ->
         {:Some, {:AddTag, ""}}
@@ -139,7 +139,7 @@ end
         :None
     end
   end
-  defp alertLevelToString(level) do
+  defp alert_level_to_string(level) do
     case (level.elem(0)) do
       0 ->
         "info"
@@ -151,7 +151,7 @@ end
         "critical"
     end
   end
-  defp parseAlertLevel(level) do
+  defp parse_alert_level(level) do
     case (level) do
       "critical" ->
         {:Some, :Critical}

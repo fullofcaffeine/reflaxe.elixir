@@ -2,7 +2,7 @@ defmodule JsonPrinter do
   def new(replacer, space) do
     %{:replacer => replacer, :space => space}
   end
-  defp writeValue(struct, v, key) do
+  defp write_value(struct, v, key) do
     if (struct.replacer != nil) do
       v = struct.replacer(key, v)
     end
@@ -39,7 +39,7 @@ defmodule JsonPrinter do
         "null"
     end
   end
-  defp writeArray(struct, arr) do
+  defp write_array(struct, arr) do
     items = []
     g = 0
     g1 = arr.length
@@ -56,7 +56,7 @@ end end)
       "[" + Enum.join(items, ",") + "]"
     end
   end
-  defp writeObject(struct, obj) do
+  defp write_object(struct, obj) do
     fields = Reflect.fields(obj)
     pairs = []
     g = 0
@@ -77,7 +77,7 @@ end end)
       "{" + Enum.join(pairs, ",") + "}"
     end
   end
-  defp quoteString(struct, s) do
+  defp quote_string(struct, s) do
     result = "\""
     g = 0
     g1 = s.length

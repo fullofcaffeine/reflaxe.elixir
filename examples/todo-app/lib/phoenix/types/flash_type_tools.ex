@@ -1,5 +1,5 @@
 defmodule FlashTypeTools do
-  def toString(type) do
+  def to_string(type) do
     case (type.elem(0)) do
       0 ->
         "info"
@@ -11,7 +11,7 @@ defmodule FlashTypeTools do
         "error"
     end
   end
-  def fromString(str) do
+  def from_string(str) do
     g = str.toLowerCase()
     case (g) do
       "error" ->
@@ -26,7 +26,7 @@ defmodule FlashTypeTools do
         :Info
     end
   end
-  def getCssClass(type) do
+  def get_css_class(type) do
     case (type.elem(0)) do
       0 ->
         "bg-blue-50 border-blue-200 text-blue-800"
@@ -38,7 +38,7 @@ defmodule FlashTypeTools do
         "bg-red-50 border-red-200 text-red-800"
     end
   end
-  def getIconName(type) do
+  def get_icon_name(type) do
     case (type.elem(0)) do
       0 ->
         "information-circle"

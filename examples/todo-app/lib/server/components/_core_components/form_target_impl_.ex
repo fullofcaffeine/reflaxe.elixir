@@ -4,10 +4,10 @@ defmodule FormTarget_Impl_ do
     this_1 = target
     this_1
   end
-  def fromString(s) do
+  def from_string(s) do
     FormTarget_Impl_._new(s)
   end
-  def toString(this1) do
+  def to_string(this1) do
     this1
   end
 end

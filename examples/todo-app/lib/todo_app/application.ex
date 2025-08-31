@@ -1,5 +1,5 @@
 defmodule TodoApp.Application do
-  defp getAppName() do
+  defp get_app_name() do
     "TodoApp"
   end
   def start(type, args) do

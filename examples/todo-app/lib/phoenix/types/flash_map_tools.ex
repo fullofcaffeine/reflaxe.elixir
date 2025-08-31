@@ -1,8 +1,8 @@
 defmodule FlashMapTools do
-  def hasAny(flash_map) do
+  def has_any(flash_map) do
     flash_map.info != nil || flash_map.success != nil || flash_map.warning != nil || flash_map.error != nil
   end
-  def getAll(flash_map) do
+  def get_all(flash_map) do
     messages = []
     if (flash_map.info != nil), do: messages.push(Flash.info(flash_map.info))
     if (flash_map.success != nil), do: messages.push(Flash.success(flash_map.success))
