@@ -7,7 +7,7 @@ defmodule JsonPrinter do
       v = struct.replacer(key, v)
     end
     if (v == nil), do: "null"
-    g = {:unknown, v}
+    g = {:Typeof, v}
     case (g.elem(0)) do
       0 ->
         "null"
