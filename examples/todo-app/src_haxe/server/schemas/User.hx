@@ -10,6 +10,7 @@ import phoenix.Ecto;
  */
 @:schema
 @:timestamps
+@:keep
 class User {
     @:field public var id: Int;
     @:field public var name: String;
@@ -32,6 +33,7 @@ class User {
      * Includes password validation and hashing
      */
     @:changeset
+    @:keep
     public static function registration_changeset(user: Dynamic, params: Dynamic): Dynamic {
         var changeset = phoenix.Ecto.EctoChangeset.changeset_cast(user, params, [
             "name", "email", "password", "password_confirmation"
@@ -58,6 +60,7 @@ class User {
      * Allows updating name and email without password changes
      */
     @:changeset
+    @:keep
     public static function changeset(user: Dynamic, params: Dynamic): Dynamic {
         var changeset = phoenix.Ecto.EctoChangeset.changeset_cast(user, params, [
             "name", "email", "active"
