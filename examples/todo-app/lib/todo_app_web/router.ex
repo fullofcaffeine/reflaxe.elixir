@@ -1,11 +1,12 @@
 defmodule TodoAppWeb.Router do
-  use TodoAppWeb, :router
-
+  use Phoenix.Router
+  import Phoenix.LiveView.Router
+  
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, html: {TodoAppWeb.Layouts, :root}
+    plug :put_root_layout, {TodoAppWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
@@ -25,15 +26,14 @@ defmodule TodoAppWeb.Router do
 
   scope "/api", TodoAppWeb do
     pipe_through :api
-    
+
     get "/users", UserController, :index
     post "/users", UserController, :create
     put "/users/:id", UserController, :update
     delete "/users/:id", UserController, :delete
   end
 
-  # Enable LiveDashboard in development
-  if Application.compile_env(:todo_app, :dev_routes) do
+  if Mix.env() in [:dev, :test] do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do

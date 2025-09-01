@@ -353,8 +353,32 @@ class ElixirCompiler extends GenericCompiler<
             return null;
         }
         
+        // Check for @:native annotation to determine output path
+        var moduleName = classType.name;
+        var modulePack = classType.pack;
+        
+        if (classType.meta.has(":native")) {
+            var nativeMeta = classType.meta.extract(":native");
+            if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                switch(nativeMeta[0].params[0].expr) {
+                    case EConst(CString(s, _)):
+                        // Parse the native module name for package and name
+                        var parts = s.split(".");
+                        if (parts.length > 1) {
+                            moduleName = parts[parts.length - 1];
+                            modulePack = parts.slice(0, parts.length - 1).map(p -> reflaxe.elixir.ast.NameUtils.toSnakeCase(p));
+                        } else {
+                            moduleName = s;
+                            modulePack = [];
+                        }
+                    default:
+                        // Keep original if annotation is malformed
+                }
+            }
+        }
+        
         // Set output file path with snake_case naming
-        setUniversalOutputPath(classType.name, classType.pack);
+        setUniversalOutputPath(moduleName, modulePack);
         
         // Store current class context for use in expression compilation
         this.currentClassType = classType;
@@ -475,6 +499,7 @@ class ElixirCompiler extends GenericCompiler<
                classType.meta.has(":application") ||
                classType.meta.has(":genserver") ||
                classType.meta.has(":router") ||
+               classType.meta.has(":controller") ||
                classType.meta.has(":phoenixWeb") ||
                classType.meta.has(":phoenixWebModule");
     }
@@ -492,10 +517,15 @@ class ElixirCompiler extends GenericCompiler<
         // Check if this class has special annotations that need ModuleBuilder
         if (hasSpecialAnnotations(classType)) {
             // Use ModuleBuilder for annotation-based modules
-            var classFields = classType.fields.get();
+            var instanceFields = classType.fields.get();
+            var staticFields = classType.statics.get();
+            
+            // Combine instance and static fields
+            var allFields = instanceFields.concat(staticFields);
+            
             return reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, 
-                classFields.filter(f -> f.kind.match(FVar(_, _))),
-                classFields.filter(f -> f.kind.match(FMethod(_)))
+                allFields.filter(f -> f.kind.match(FVar(_, _))),
+                allFields.filter(f -> f.kind.match(FMethod(_)))
             );
         }
         
@@ -768,6 +798,25 @@ class ElixirCompiler extends GenericCompiler<
     }
     
     /**
+     * Build the full module name for an enum including package
+     * Examples:
+     * - plug.HttpMethod → Plug.HttpMethod
+     * - phoenix.HttpMethod → Phoenix.HttpMethod
+     * - HttpMethod → HttpMethod (no package)
+     */
+    function buildEnumModuleName(enumType: EnumType): String {
+        if (enumType.pack.length > 0) {
+            // Convert package to module path with proper capitalization
+            var packageParts = enumType.pack.map(function(p) {
+                return p.charAt(0).toUpperCase() + p.substr(1);
+            });
+            return packageParts.join(".") + "." + enumType.name;
+        } else {
+            return enumType.name;
+        }
+    }
+    
+    /**
      * Build AST for an enum (generates tagged tuples in Elixir)
      */
     function buildEnumAST(enumType: EnumType, options: Array<EnumOptionData>): Null<reflaxe.elixir.ast.ElixirAST> {
@@ -777,7 +826,24 @@ class ElixirCompiler extends GenericCompiler<
         var isIdiomatic = enumType.meta.has(":elixirIdiomatic");
         
         // In Elixir, enums become modules with functions that return tagged tuples
-        var moduleName = enumType.name;
+        // Extract module name - check for @:native annotation first
+        var moduleName = if (enumType.meta.has(":native")) {
+            // Use explicit @:native module name if provided
+            var nativeMeta = enumType.meta.extract(":native");
+            if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                switch(nativeMeta[0].params[0].expr) {
+                    case EConst(CString(s, _)):
+                        s;
+                    default:
+                        // Fall back to package-based name if annotation is malformed
+                        buildEnumModuleName(enumType);
+                }
+            } else {
+                buildEnumModuleName(enumType);
+            }
+        } else {
+            buildEnumModuleName(enumType);
+        };
         var functions = [];
         
         for (option in options) {
