@@ -198,7 +198,7 @@ class ElixirASTBuilder {
                 
                 // Always debug variables that might be renamed
                 #if debug_ast_pipeline
-                if (varName.indexOf("priority") >= 0 || varName.indexOf("_") >= 0 || ~/\d$/.match(varName) || varName.indexOf("this") >= 0 || varName.indexOf("struct") >= 0) {
+                if (varName.indexOf("priority") >= 0 || varName.indexOf("_") >= 0 || ~/\d$/.match(varName) || varName.indexOf("this") >= 0 || varName.indexOf("struct") >= 0 || varName == "p") {
                     trace('[AST Builder] TLocal variable: name="${varName}", id=${v.id}, pos=${expr.pos}');
                 }
                 #end
@@ -241,6 +241,8 @@ class ElixirASTBuilder {
                 }
                 // Handle collision-renamed variables (priority2 -> priority) 
                 // BUT NEVER for function parameters or abstract method parameters (this1, struct1)
+                // Also skip single-letter variables with digits (p1, p2, i1, i2, etc.) as these are 
+                // commonly used in standard library code and are NOT collision renames
                 else if (!functionParameterIds.exists(idKey) && 
                          varName != "this1" && varName != "struct1" && // Never rename these
                          ~/^(.+?)(\d+)$/.match(varName)) {
@@ -249,9 +251,11 @@ class ElixirASTBuilder {
                         var baseName = regex.matched(1);
                         var suffix = regex.matched(2);
                         
-                        // Only strip suffix if it's a small number (1-9) which indicates collision renaming
-                        // Don't strip from intentional names like "base64" or "sha256"
-                        if (suffix.length == 1 && baseName != "_g") {
+                        // Only strip suffix if:
+                        // 1. It's a small number (1-9) which indicates collision renaming
+                        // 2. The base name is longer than 1 character (skip p1, p2, i1, etc.)
+                        // 3. It's not a special g-variable (_g)
+                        if (suffix.length == 1 && baseName.length > 1 && baseName != "_g") {
                             #if debug_ast_pipeline  
                             trace('[AST Builder] Collision-renamed variable detected: ${varName} -> ${baseName}');
                             #end
@@ -283,6 +287,12 @@ class ElixirASTBuilder {
                 trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
                 #end
                 
+                #if debug_ast_pipeline
+                if (v.name == "p1" || v.name == "p2" || v.name == "p" || v.name == "p_1" || v.name == "p_2") {
+                    trace('[AST Builder] TVar declaration: name="${v.name}", id=${v.id}');
+                }
+                #end
+                
                 #if debug_array_patterns
                 if (init != null) {
                     trace('[XRay ArrayPattern] TVar ${v.name} init: ${Type.enumConstructor(init.expr)}');
@@ -297,8 +307,9 @@ class ElixirASTBuilder {
                 
                 // Apply same underscore variable renaming as in TLocal
                 var varName = v.name;
+                var idKey = Std.string(v.id);
+                
                 if (varName.charAt(0) == "_" && varName.length > 1) {
-                    var idKey = Std.string(v.id);
                     if (!tempVarRenameMap.exists(idKey)) {
                         // Create a new non-underscore name for this temp variable
                         var newName = if (~/^_g\d*$/.match(varName)) {
@@ -321,8 +332,8 @@ class ElixirASTBuilder {
                 
                 // For renamed temp variables, use the name directly without further conversion
                 // Otherwise apply toElixirVarName for CamelCase conversion
-                var finalVarName = if (v.name.charAt(0) == "_" && tempVarRenameMap.exists(Std.string(v.id))) {
-                    varName; // Already renamed, use as-is
+                var finalVarName = if (tempVarRenameMap.exists(idKey)) {
+                    tempVarRenameMap.get(idKey); // Use mapped name
                 } else {
                     toElixirVarName(varName); // Apply CamelCase to snake_case conversion
                 };
@@ -376,18 +387,42 @@ class ElixirASTBuilder {
                 var right = buildFromTypedExpr(e2);
                 
                 switch(op) {
+                    /**
+                     * ADDITION AND STRING CONCATENATION OPERATOR
+                     * 
+                     * WHY: Elixir distinguishes between numeric addition and string concatenation
+                     * - Numbers use + operator for addition
+                     * - Strings use <> operator for concatenation
+                     * - Using + on strings causes compilation errors in Elixir
+                     * 
+                     * WHAT: Type-aware operator selection for addition operations
+                     * - Detect String types through type inspection
+                     * - Generate StringConcat for string operations
+                     * - Generate Add for numeric operations
+                     * 
+                     * HOW: Examine left operand type to determine operation
+                     * - TInst with name "String": String class instance
+                     * - TAbstract with name "String": String abstract type
+                     * - All other types: Numeric addition
+                     * 
+                     * EXAMPLES:
+                     * - Haxe: `"hello" + "world"` → Elixir: `"hello" <> "world"`
+                     * - Haxe: `5 + 3` → Elixir: `5 + 3`
+                     * - Haxe: `str1 + str2` → Elixir: `str1 <> str2` (if str1 is String)
+                     */
                     case OpAdd: 
-                        // Check if we're adding strings - use <> operator for string concatenation
+                        // Detect string concatenation based on left operand type
                         var isStringConcat = switch(e1.t) {
-                            case TInst(_.get() => {name: "String"}, _): true;
-                            case TAbstract(_.get() => {name: "String"}, _): true;
+                            case TInst(_.get() => {name: "String"}, _): true;      // String class instance
+                            case TAbstract(_.get() => {name: "String"}, _): true;  // String abstract type
                             default: false;
                         };
                         
+                        // Generate appropriate binary operation
                         if (isStringConcat) {
-                            EBinary(StringConcat, left, right);
+                            EBinary(StringConcat, left, right);  // String concatenation: <>
                         } else {
-                            EBinary(Add, left, right);
+                            EBinary(Add, left, right);           // Numeric addition: +
                         }
                     case OpSub: EBinary(Subtract, left, right);
                     case OpMult: EBinary(Multiply, left, right);
@@ -405,9 +440,53 @@ class ElixirASTBuilder {
                     case OpBoolOr: EBinary(OrElse, left, right);
                     
                     case OpAssign: EMatch(extractPattern(e1), right);
+                    
+                    /**
+                     * COMPOUND ASSIGNMENT OPERATOR HANDLING
+                     * 
+                     * WHY: Elixir strings are immutable, requiring special handling for string concatenation
+                     * - Numeric types use standard operators: +=, -=, *=, etc.
+                     * - String concatenation MUST use <> operator, not +
+                     * - Haxe's += on strings needs conversion to Elixir's <> operator
+                     * 
+                     * WHAT: Transform compound assignments (a += b) into expanded form (a = a op b)
+                     * - Detect when the target variable is a String type
+                     * - Use StringConcat operator for string concatenation
+                     * - Use standard arithmetic operators for numeric types
+                     * 
+                     * HOW: Type-based operator selection
+                     * 1. Check if operator is OpAdd (potential string concatenation)
+                     * 2. Examine the type of the left-hand expression
+                     * 3. Select StringConcat for String types, Add for numeric types
+                     * 4. Generate EMatch with expanded binary operation
+                     * 
+                     * EXAMPLES:
+                     * - Haxe: `result += "\\n"` → Elixir: `result = result <> "\\n"`
+                     * - Haxe: `count += 1` → Elixir: `count = count + 1`
+                     * - Haxe: `buffer += content` → Elixir: `buffer = buffer <> content` (if buffer is String)
+                     * 
+                     * EDGE CASES:
+                     * - Dynamic types: Falls back to Add operator (may cause runtime errors)
+                     * - Mixed types: Relies on Haxe's type checking for correctness
+                     * - Null strings: Handled by Elixir's <> operator semantics
+                     */
                     case OpAssignOp(op2): 
-                        // a += b becomes a = a + b
-                        var innerOp = convertAssignOp(op2);
+                        // Transform compound assignment: a += b becomes a = a + b
+                        // Special handling for string concatenation in Elixir
+                        var innerOp = if (op2 == OpAdd) {
+                            // Detect string concatenation based on left-hand expression type
+                            var isStringConcat = switch(e1.t) {
+                                case TInst(_.get() => {name: "String"}, _): true;      // String class instance
+                                case TAbstract(_.get() => {name: "String"}, _): true;  // String abstract type
+                                default: false;
+                            };
+                            // Select appropriate operator: <> for strings, + for numbers
+                            isStringConcat ? StringConcat : Add;
+                        } else {
+                            // Non-addition operators: -, *, /, %, &, |, ^, <<, >>
+                            convertAssignOp(op2);
+                        }
+                        // Generate assignment with expanded binary operation
                         EMatch(extractPattern(e1), makeAST(EBinary(innerOp, left, right)));
                     
                     case OpAnd: EBinary(BitwiseAnd, left, right);
@@ -765,6 +844,15 @@ class ElixirASTBuilder {
                         // Regular field access
                         var target = buildFromTypedExpr(e);
                         var fieldName = extractFieldName(fa);
+                        
+                        #if debug_ast_pipeline
+                        // Debug field access on p1/p2 variables
+                        switch(e.expr) {
+                            case TLocal(v) if (v.name == "p1" || v.name == "p2"):
+                                trace('[AST Builder] Field access: ${v.name}.${fieldName} (id=${v.id})');
+                            default:
+                        }
+                        #end
                         
                         // Detect map/struct access patterns
                         if (isMapAccess(e.t)) {
@@ -2596,7 +2684,10 @@ class ElixirASTBuilder {
         var result = "";
         for (i in 0...name.length) {
             var char = name.charAt(i);
-            if (i > 0 && char == char.toUpperCase() && char != "_") {
+            // Check if it's an uppercase letter (not a number or underscore)
+            // Numbers should NOT trigger underscore insertion
+            var isUpperLetter = char == char.toUpperCase() && char != char.toLowerCase() && char != "_";
+            if (i > 0 && isUpperLetter) {
                 result += "_" + char.toLowerCase();
             } else {
                 result += char.toLowerCase();

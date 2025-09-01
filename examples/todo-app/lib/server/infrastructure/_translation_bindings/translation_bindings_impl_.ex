@@ -1,14 +1,14 @@
 defmodule TranslationBindings_Impl_ do
   defp _new(map) do
-    this_1 = nil
-    this_1 = map
-    this_1
+    this1 = nil
+    this1 = map
+    this1
   end
   def create() do
     map = %{}
-    this_1 = nil
-    this_1 = map
-    this_1
+    this1 = nil
+    this1 = map
+    this1
   end
   def set(this1, key, value) do
     Map.put(this1, key, value)
