@@ -13,18 +13,18 @@ defmodule StringTools do
 else
   {:halt, acc}
 end end)
-    if (r > 0), do: s.substr(r, l - r), else: s
+    if (r > 0), do: s.substr(r, (l - r)), else: s
   end
   def rtrim(s) do
     l = s.length
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (r < l && is_space(s, l - r - 1)) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (r < l && is_space(s, ((l - r) - 1))) do
   r + 1
   {:cont, acc}
 else
   {:halt, acc}
 end end)
-    if (r > 0), do: s.substr(0, l - r), else: s
+    if (r > 0), do: s.substr(0, (l - r)), else: s
   end
   def trim(s) do
     ltrim(rtrim(s))

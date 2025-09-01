@@ -19,12 +19,12 @@ defmodule Input do
   end
   _ = byte &&& 255
   pos + 1
-  k - 1
+  (k - 1)
   {:cont, acc}
 else
   {:halt, acc}
 end end)
-    len - k
+    (len - k)
   end
   def read_all(struct, bufsize) do
     if (bufsize == nil) do

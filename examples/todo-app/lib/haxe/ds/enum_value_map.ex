@@ -3,7 +3,7 @@ defmodule EnumValueMap do
     %{}
   end
   defp compare(struct, k1, k2) do
-    d = Type.enum_index(k1) - Type.enum_index(k2)
+    d = (Type.enum_index(k1) - Type.enum_index(k2))
     if (d != 0), do: d
     p1 = Type.enum_parameters(k1)
     p2 = Type.enum_parameters(k2)
@@ -11,7 +11,7 @@ defmodule EnumValueMap do
     struct.compareArgs(p1, p2)
   end
   defp compare_args(struct, a1, a2) do
-    ld = a1.length - a2.length
+    ld = (a1.length - a2.length)
     if (ld != 0), do: ld
     g = 0
     g1 = a1.length
