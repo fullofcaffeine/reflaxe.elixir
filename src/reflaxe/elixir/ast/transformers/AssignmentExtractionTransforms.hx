@@ -38,6 +38,18 @@ using reflaxe.elixir.ast.ElixirASTTransformer;
 class AssignmentExtractionTransforms {
     
     /**
+     * Counter for generating unique temporary variable names.
+     * 
+     * WHY: When extracting complex pattern matches (not just PVar), we need a temp variable
+     * to hold the value first before pattern matching, ensuring proper evaluation order.
+     * 
+     * HOW: Incremented each time we extract a complex pattern (e.g., PTuple, PArray)
+     * to generate names like _extracted_0, _extracted_1, etc. These temps are only used
+     * internally during the extraction process and don't conflict with user variables.
+     */
+    private static var extractionCounter: Int = 0;
+    
+    /**
      * Main transformation pass for extracting assignments from expressions
      * 
      * WHY: Entry point for the assignment extraction transformation
@@ -128,8 +140,11 @@ class AssignmentExtractionTransforms {
                     trace('[XRay AssignmentExtraction] Pattern type: ${Type.enumConstructor(pattern)}');
                     trace('[XRay AssignmentExtraction] Value: ${value.def}');
                     #end
-                    // Extract this assignment
+                    
+                    // First extract any assignments from the value expression itself
                     var cleanValue = extractFromExpr(value);
+                    
+                    // Then extract this assignment
                     extracted.push(makeASTWithMeta(
                         EMatch(pattern, cleanValue),
                         e.metadata,
@@ -141,8 +156,40 @@ class AssignmentExtractionTransforms {
                         case PVar(name):
                             return makeAST(EVar(name));
                         default:
-                            // For complex patterns, keep the match
-                            return e;
+                            /**
+                             * Complex pattern handling (PTuple, PArray, PObject, etc.)
+                             * 
+                             * WHY: Complex patterns like {x, y} = func() need special handling
+                             * because we can't directly return a variable reference for them.
+                             * 
+                             * HOW: We use a two-step extraction:
+                             * 1. First assign the value to a temp variable: _extracted_0 = func()
+                             * 2. Then pattern match from the temp: {x, y} = _extracted_0
+                             * 3. Return the temp variable reference for use in expressions
+                             * 
+                             * This preserves both the pattern matching and proper evaluation order
+                             * while ensuring the extracted value can be used in the parent expression.
+                             */
+                            var tempVar = '_extracted_${extractionCounter++}';
+                            
+                            // Replace the last extraction (the full pattern match)
+                            // with a simple temp variable assignment
+                            extracted[extracted.length - 1] = makeASTWithMeta(
+                                EMatch(PVar(tempVar), cleanValue),
+                                e.metadata,
+                                e.pos
+                            );
+                            
+                            // Then add the actual pattern match from the temp variable
+                            // This ensures the pattern destructuring still happens
+                            extracted.push(makeASTWithMeta(
+                                EMatch(pattern, makeAST(EVar(tempVar))),
+                                e.metadata,
+                                e.pos
+                            ));
+                            
+                            // Return reference to the temp variable for use in parent expression
+                            return makeAST(EVar(tempVar));
                     }
                     
                 case EBinary(op, left, right):
