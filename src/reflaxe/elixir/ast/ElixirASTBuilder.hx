@@ -571,14 +571,27 @@ class ElixirASTBuilder {
                     case OpNeg: EUnary(Negate, makeAST(expr));
                     case OpNegBits: EUnary(BitwiseNot, makeAST(expr));
                     case OpIncrement, OpDecrement:
-                        // Elixir is immutable, so we convert increment/decrement to addition/subtraction
-                        // Note: This doesn't handle the assignment side-effect, which needs to be handled in context
+                        // Elixir is immutable, so we need to generate an assignment
+                        // When used as a statement, convert to: var = var + 1 or var = var - 1
                         var one = makeAST(EInteger(1));
                         var value = makeAST(expr);
-                        if (op == OpIncrement) {
+                        var operation = if (op == OpIncrement) {
                             EBinary(Add, value, one);
                         } else {
                             EBinary(Subtract, value, one);
+                        };
+                        
+                        // If this is a standalone statement (not part of another expression),
+                        // we need to generate an assignment
+                        // Check if the original expression is a local variable that can be assigned
+                        switch(e.expr) {
+                            case TLocal(v):
+                                // Generate: var = var +/- 1
+                                EBinary(Match, makeAST(expr), makeAST(operation));
+                            default:
+                                // For complex expressions, just return the operation
+                                // (this may not work correctly for all cases)
+                                operation;
                         };
                     case OpSpread:
                         // Spread operator for destructuring

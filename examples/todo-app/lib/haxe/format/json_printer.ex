@@ -44,7 +44,7 @@ defmodule JsonPrinter do
     g = 0
     g1 = arr.length
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1) do
-  i = g + 1
+  i = g = g + 1
   items.push(struct.writeValue(arr[i], Std.string(i)))
   {:cont, acc}
 else
@@ -62,7 +62,7 @@ end end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < fields.length) do
   field = fields[g]
-  g + 1
+  g = g + 1
   value = Reflect.field(obj, field)
   key = struct.quoteString(field)
   val = struct.writeValue(value, field)
@@ -82,7 +82,7 @@ end end)
     g = 0
     g1 = s.length
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1) do
-  i = g + 1
+  i = g = g + 1
   c = s.charCodeAt(i)
   if (c == nil) do
     if (c < 32) do
