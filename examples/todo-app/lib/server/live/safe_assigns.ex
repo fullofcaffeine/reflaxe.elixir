@@ -18,8 +18,8 @@ defmodule SafeAssigns do
     Phoenix.LiveView.assign(socket, %{:show_form => show_form})
   end
   def update_todos_and_stats(socket, todos) do
-    completed = SafeAssigns.count_completed(todos)
-    pending = SafeAssigns.count_pending(todos)
+    completed = count_completed(todos)
+    pending = count_pending(todos)
     Phoenix.LiveView.assign(socket, %{:todos => todos, :total_todos => todos.length, :completed_todos => completed, :pending_todos => pending})
   end
   def set_todos(socket, todos) do
