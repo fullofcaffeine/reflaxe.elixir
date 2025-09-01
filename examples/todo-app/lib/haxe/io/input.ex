@@ -12,18 +12,20 @@ defmodule Input do
       throw("Invalid parameters")
     end
     k = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (k > 0) do
-  byte = struct.readByte()
-  if (byte < 0) do
-    throw(:break)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if (k > 0) do
+    byte = struct.readByte()
+    if (byte < 0) do
+      throw(:break)
+    end
+    _ = byte &&& 255
+    pos = pos + 1
+    k = (k - 1)
+    {:cont, acc}
+  else
+    {:halt, acc}
   end
-  _ = byte &&& 255
-  pos = pos + 1
-  k = (k - 1)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
     (len - k)
   end
   def read_all(struct, bufsize) do
@@ -33,20 +35,22 @@ end end)
     buf = Bytes.alloc(bufsize)
     total = Bytes.alloc(0)
     len = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if true do
-  n = struct.readBytes(buf, 0, bufsize)
-  if (n == 0) do
-    throw(:break)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if true do
+    n = struct.readBytes(buf, 0, bufsize)
+    if (n == 0) do
+      throw(:break)
+    end
+    new_total = Bytes.alloc(len + n)
+    new_total.blit(0, total, 0, len)
+    new_total.blit(len, buf, 0, n)
+    total = new_total
+    len = len + n
+    {:cont, acc}
+  else
+    {:halt, acc}
   end
-  new_total = Bytes.alloc(len + n)
-  new_total.blit(0, total, 0, len)
-  new_total.blit(len, buf, 0, n)
-  total = new_total
-  len = len + n
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
     total
   end
   def read_string(struct, len) do
@@ -63,17 +67,19 @@ end end)
     buf_b = nil
     buf_b = ""
     last = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if ((last = struct.readByte()) >= 0) do
-  if (last == 10) do
-    throw(:break)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if ((last = struct.readByte()) >= 0) do
+    if (last == 10) do
+      throw(:break)
+    end
+    if (last != 13) do
+      buf_b = buf_b <> String.from_char_code(last)
+    end
+    {:cont, acc}
+  else
+    {:halt, acc}
   end
-  if (last != 13) do
-    buf_b = buf_b <> String.from_char_code(last)
-  end
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
     buf_b
   end
   def close(struct) do

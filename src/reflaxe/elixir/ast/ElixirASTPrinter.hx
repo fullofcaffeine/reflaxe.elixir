@@ -363,6 +363,48 @@ class ElixirASTPrinter {
             // Expressions
             // ================================================================
             case ECall(target, funcName, args):
+                /**
+                 * CRITICAL BUG FIX (2025-09-01): Method Call Indentation
+                 * 
+                 * ISSUE: Method calls were losing all indentation, appearing at column 0
+                 * regardless of their nesting level. This caused invalid Elixir syntax
+                 * when method calls appeared inside blocks, lambdas, or if-statements.
+                 * 
+                 * ROOT CAUSE: The printer was using `print(target, 0)` which reset
+                 * indentation to 0, instead of `print(target, indent)` which preserves
+                 * the current indentation level.
+                 * 
+                 * SYMPTOMS:
+                 * - In Bytes module: `s.cca(index)` appeared with no indentation
+                 * - Compilation error: "cannot invoke remote function inside a match"
+                 * - Method calls inside nested contexts lost their position
+                 * 
+                 * EXAMPLE OF BUG:
+                 * ```elixir
+                 * if condition do
+                 *   c = index = i = i + 1
+                 * s.cca(index)  # <- NO INDENTATION (wrong!)
+                 * end
+                 * ```
+                 * 
+                 * FIXED OUTPUT:
+                 * ```elixir
+                 * if condition do
+                 *   c = index = i = i + 1
+                 *   s.cca(index)  # <- PROPER INDENTATION
+                 * end
+                 * ```
+                 * 
+                 * LESSON LEARNED:
+                 * - Always pass the indent parameter through when recursively printing
+                 * - Never hardcode indent=0 unless specifically needed for inline contexts
+                 * - Test nested expressions thoroughly, especially in lambda bodies
+                 * - Indentation bugs can cause syntax errors that seem unrelated
+                 * 
+                 * This bug affected ALL method calls in nested contexts and was
+                 * particularly problematic for inline expansion of standard library
+                 * functions like String.charCodeAt.
+                 */
                 // Special handling for while loop placeholders
                 if (funcName == "while_loop" && target == null && args.length == 2) {
                     // Generate an immediately invoked recursive function for while loops
@@ -392,10 +434,10 @@ class ElixirASTPrinter {
                         // Check if this is a function variable call (marked with empty funcName)
                         if (funcName == "") {
                             // Function variable call - use .() syntax
-                            print(target, 0) + '.(' + argStr + ')';
+                            print(target, indent) + '.(' + argStr + ')';
                         } else {
                             // Method call on object
-                            print(target, 0) + '.' + funcName + '(' + argStr + ')';
+                            print(target, indent) + '.' + funcName + '(' + argStr + ')';
                         }
                     } else {
                         funcName + '(' + argStr + ')';
@@ -544,13 +586,55 @@ class ElixirASTPrinter {
             // ================================================================
             // Anonymous Functions
             // ================================================================
+            /**
+             * LESSON LEARNED: Anonymous Function Body Indentation
+             * 
+             * PROBLEM: When printing anonymous functions with complex bodies (like if statements
+             * containing blocks), the body was printed with indent level 0, causing nested
+             * expressions to lose their indentation context.
+             * 
+             * SYMPTOMS:
+             * - Method calls inside lambda bodies appeared at column 0
+             * - Code like `s.cca(index)` had no indentation inside reduce_while lambdas
+             * - Syntax errors in generated Elixir due to improper nesting
+             * 
+             * ROOT CAUSE: The single-line lambda format used `print(clause.body, 0)` which
+             * reset the indentation context to 0, losing all nesting information.
+             * 
+             * SOLUTION: 
+             * 1. Always pass proper indent level to body: `print(clause.body, indent + 1)`
+             * 2. Detect when bodies are complex and need multi-line formatting
+             * 3. Use multi-line format for if/case/cond/multi-expression blocks
+             * 
+             * This ensures that nested structures inside lambdas maintain proper indentation
+             * throughout the entire AST printing process.
+             */
             case EFn(clauses):
                 if (clauses.length == 1 && clauses[0].guard == null) {
                     var clause = clauses[0];
                     var argStr = printPatterns(clause.args);
                     // Handle empty parameter list properly (no extra space)
                     var paramPart = clause.args.length == 0 ? '' : ' ' + argStr;
-                    'fn' + paramPart + ' -> ' + print(clause.body, 0) + ' end';
+                    
+                    // Check if body is complex and needs multi-line formatting
+                    var bodyStr = print(clause.body, indent + 1);
+                    var isMultiLine = switch(clause.body.def) {
+                        case EIf(_, _, _): true;
+                        case ECase(_, _): true;
+                        case ECond(_): true;
+                        case EBlock(exprs) if (exprs.length > 1): true;
+                        case _: bodyStr.indexOf('\n') >= 0;
+                    };
+                    
+                    if (isMultiLine) {
+                        // Multi-line format for complex bodies
+                        'fn' + paramPart + ' ->\n' + 
+                        indentStr(indent + 1) + bodyStr + '\n' +
+                        indentStr(indent) + 'end';
+                    } else {
+                        // Single-line format for simple bodies
+                        'fn' + paramPart + ' -> ' + bodyStr + ' end';
+                    }
                 } else {
                     'fn\n' +
                     [for (clause in clauses)
@@ -641,13 +725,17 @@ class ElixirASTPrinter {
                 } else if (expressions.length == 1) {
                     print(expressions[0], indent);
                 } else {
-                    [for (i in 0...expressions.length) {
+                    var result = [];
+                    for (i in 0...expressions.length) {
                         var expr = expressions[i];
                         var str = print(expr, indent);
+                        result.push(str);
                         // Add newline between statements
-                        if (i < expressions.length - 1) str + '\n' + indentStr(indent);
-                        else str;
-                    }].join('');
+                        if (i < expressions.length - 1) {
+                            result.push('\n' + indentStr(indent));
+                        }
+                    }
+                    result.join('');
                 }
                 
             case EParen(expr):
