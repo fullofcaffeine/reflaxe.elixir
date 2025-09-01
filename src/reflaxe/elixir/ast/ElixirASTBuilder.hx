@@ -1031,17 +1031,90 @@ class ElixirASTBuilder {
             // ================================================================
             // Object/Anonymous Structure
             // ================================================================
+            /**
+             * Handles TObjectDecl conversion to either EMap or EKeywordList based on usage context.
+             * 
+             * Two special patterns are detected and handled:
+             * 
+             * 1. SUPERVISOR OPTIONS PATTERN:
+             *    When an object contains OTP supervisor configuration fields (strategy, max_restarts, max_seconds),
+             *    it's compiled to a keyword list instead of a map. This is required because Supervisor.start_link/2
+             *    expects options as a keyword list, not a map.
+             * 
+             *    Example:
+             *    ```haxe
+             *    // Haxe source
+             *    var opts = {strategy: OneForOne, max_restarts: 3, max_seconds: 5};
+             *    ```
+             *    
+             *    ```elixir
+             *    # Generated Elixir (keyword list, not map)
+             *    opts = [strategy: :OneForOne, max_restarts: 3, max_seconds: 5]
+             *    ```
+             * 
+             * 2. NULL COALESCING IN OBJECT FIELDS:
+             *    Haxe generates a specific AST pattern for null coalescing operators (??) in object field values.
+             *    This pattern is detected and transformed into idiomatic Elixir inline if-expressions.
+             * 
+             *    Example:
+             *    ```haxe
+             *    // Haxe source
+             *    {field: someValue ?? defaultValue}
+             *    ```
+             *    
+             *    ```elixir
+             *    # Generated Elixir
+             *    %{field: if (tmp = some_value) != nil, do: tmp, else: default_value}
+             *    ```
+             * 
+             * @param fields Array of object field declarations from Haxe's TypedExpr
+             * @return Either EKeywordList for supervisor options or EMap for regular objects
+             */
             case TObjectDecl(fields):
-                var pairs = [];
+                // Detect supervisor options pattern by checking for characteristic fields
+                var hasStrategy = false;
+                var hasMaxRestarts = false; 
+                var hasMaxSeconds = false;
+                
                 for (field in fields) {
-                    var key = makeAST(EAtom(field.name));
-                    
-                    // Check if the field value is a TBlock with null coalescing pattern
-                    var fieldValue = switch(field.expr.expr) {
+                    switch(field.name) {
+                        case "strategy": hasStrategy = true;
+                        case "max_restarts": hasMaxRestarts = true;
+                        case "max_seconds": hasMaxSeconds = true;
+                        case _:
+                    }
+                }
+                
+                // Supervisor options require keyword list format for Supervisor.start_link/2
+                if (hasStrategy && (hasMaxRestarts || hasMaxSeconds)) {
+                    var keywordPairs: Array<EKeywordPair> = [];
+                    for (field in fields) {
+                        // Convert field names to snake_case for idiomatic Elixir atoms
+                        var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+                        var fieldValue = buildFromTypedExpr(field.expr);
+                        keywordPairs.push({key: atomName, value: fieldValue});
+                    }
+                    EKeywordList(keywordPairs);
+                } else {
+                    // Regular object - generate as map
+                    var pairs = [];
+                    for (field in fields) {
+                        var key = makeAST(EAtom(field.name));
+                        
+                        /**
+                         * Detect and transform null coalescing pattern in object field values.
+                         * 
+                         * Haxe compiles `field: value ?? default` into a TBlock containing:
+                         * 1. TVar(tmpVar, init) - temporary variable assignment
+                         * 2. TBinop(OpNullCoal, TLocal(v), defaultExpr) - null coalescing operation
+                         * 
+                         * This pattern is transformed into Elixir's inline if-expression:
+                         * `if (tmp = value) != nil, do: tmp, else: default`
+                         */
+                        var fieldValue = switch(field.expr.expr) {
                         case TBlock([{expr: TVar(tmpVar, init)}, {expr: TBinop(OpNullCoal, {expr: TLocal(v)}, defaultExpr)}]) 
                             if (v.id == tmpVar.id && init != null):
-                            // This is null coalescing pattern in object field
-                            // Generate inline: if (tmp = init) != nil, do: tmp, else: default
+                            // Transform null coalescing pattern to idiomatic Elixir
                             var initAst = buildFromTypedExpr(init);
                             var defaultAst = buildFromTypedExpr(defaultExpr);
                             var tmpVarName = toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
@@ -1054,18 +1127,20 @@ class ElixirASTBuilder {
                                 makeAST(EVar(tmpVarName)),
                                 defaultAst
                             ));
-                            // Mark as inline for null coalescing
+                            // Mark for inline rendering to maintain compact syntax
                             if (ifExpr.metadata == null) ifExpr.metadata = {};
                             ifExpr.metadata.keepInlineInAssignment = true;
                             ifExpr;
                             
                         case _:
+                            // Standard field value compilation
                             buildFromTypedExpr(field.expr);
                     };
                     
                     pairs.push({key: key, value: fieldValue});
+                    }
+                    EMap(pairs);
                 }
-                EMap(pairs);
                 
             // ================================================================
             // Type Operations
