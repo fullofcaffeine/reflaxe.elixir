@@ -17,18 +17,11 @@ import elixir.otp.Supervisor.ChildSpecFormat;
 @:appName("TodoApp")  
 class TodoApp {
     /**
-     * Get the app name from the @:appName annotation
-     * Simplified version for testing
-     */
-    private static function getAppName(): String {
-        return "TodoApp";
-    }
-    /**
      * Start the application
      */
     public static function start(type: ApplicationStartType, args: ApplicationArgs): ApplicationResult {
-        // Get the app name dynamically - this will be replaced by the compiler
-        var appName = getAppName();
+        // Use the app name directly - later this could be replaced by the compiler
+        var appName = "TodoApp";
         
         // Define children for the supervision tree using type-safe child specs
         var children: Array<ChildSpecFormat> = [
