@@ -466,6 +466,18 @@ class ElixirCompiler extends GenericCompiler<
     }
     
     /**
+     * Check if a class has special annotations that need framework-specific handling
+     */
+    function hasSpecialAnnotations(classType: ClassType): Bool {
+        return classType.meta.has(":endpoint") ||
+               classType.meta.has(":liveview") ||
+               classType.meta.has(":schema") ||
+               classType.meta.has(":application") ||
+               classType.meta.has(":genserver") ||
+               classType.meta.has(":router");
+    }
+    
+    /**
      * Build AST for a class (generates Elixir module)
      */
     function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
@@ -473,6 +485,16 @@ class ElixirCompiler extends GenericCompiler<
         // Skip built-in types that shouldn't generate modules
         if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name)) {
             return null;
+        }
+        
+        // Check if this class has special annotations that need ModuleBuilder
+        if (hasSpecialAnnotations(classType)) {
+            // Use ModuleBuilder for annotation-based modules
+            var classFields = classType.fields.get();
+            return reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, 
+                classFields.filter(f -> f.kind.match(FVar(_, _))),
+                classFields.filter(f -> f.kind.match(FMethod(_)))
+            );
         }
         
         // Get module name - check for @:native annotation first

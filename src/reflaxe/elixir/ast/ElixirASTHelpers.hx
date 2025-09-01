@@ -253,7 +253,7 @@ class ASTBuilder {
     // Metadata Methods
     // ================================================================
     
-    public function inline(): ASTBuilder {
+    public function setInline(): ASTBuilder {
         metadata.canInline = true;
         metadata.keepInlineInAssignment = true;
         return this;

@@ -9,7 +9,7 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.EKeywordPair;
 import reflaxe.elixir.ast.ElixirAST.EMapPair;
-import reflaxe.elixir.ast.ElixirASTHelpers.transformAST;
+import reflaxe.elixir.ast.ElixirASTTransformer;
 
 /**
  * AnnotationTransforms: AST transformation passes for annotation-based modules
@@ -41,7 +41,19 @@ class AnnotationTransforms {
      * HOW: Detects isEndpoint metadata and builds proper Phoenix.Endpoint AST
      */
     public static function endpointTransformPass(ast: ElixirAST): ElixirAST {
-        return transformAST(ast, function(node: ElixirAST): ElixirAST {
+        #if debug_annotation_transforms
+        trace('[AnnotationTransforms] EndpointTransformPass starting, checking for endpoint modules');
+        #end
+        
+        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
+            #if debug_annotation_transforms
+            switch(node.def) {
+                case EDefmodule(name, _):
+                    trace('[AnnotationTransforms] Found module: $name, metadata: ${node.metadata}');
+                default:
+            }
+            #end
+            
             switch(node.def) {
                 case EDefmodule(name, body) if (node.metadata?.isEndpoint == true):
                     #if debug_annotation_transforms
@@ -84,13 +96,17 @@ class AnnotationTransforms {
             {key: "signing_salt", value: makeAST(EString('generated_salt_' + Date.now().getTime()))},
             {key: "same_site", value: makeAST(EString("Lax"))}
         ]));
-        statements.push(makeAST(EAttribute("session_options", sessionOptions)));
+        // Module attribute as assignment for now (TODO: add proper EModuleAttribute node)
+        statements.push(makeAST(EMatch(
+            EPattern.PVar("@session_options"),
+            sessionOptions
+        )));
         
         // socket "/live", Phoenix.LiveView.Socket configuration
         var socketOptions = makeAST(EKeywordList([
             {key: "websocket", value: makeAST(EKeywordList([
                 {key: "connect_info", value: makeAST(EKeywordList([
-                    {key: "session", value: makeAST(EAttribute("session_options", null))}
+                    {key: "session", value: makeAST(EVar("@session_options"))}
                 ]))}
             ]))}
         ]));
@@ -184,11 +200,11 @@ class AnnotationTransforms {
         
         statements.push(makeAST(ECall(null, "plug", [
             makeAST(ERemoteCall(makeAST(EAtom("Plug")), "Session", [])),
-            makeAST(EAttribute("session_options", null))
+            makeAST(EVar("@session_options"))
         ])));
         
         // Router plug (assumes Web module pattern)
-        var routerModule = moduleName.replace(".Endpoint", ".Router");
+        var routerModule = StringTools.replace(moduleName, ".Endpoint", ".Router");
         statements.push(makeAST(ECall(null, "plug", [
             makeAST(EAtom(routerModule))
         ])));
@@ -217,7 +233,7 @@ class AnnotationTransforms {
      * HOW: Detects isLiveView metadata and transforms module body
      */
     public static function liveViewTransformPass(ast: ElixirAST): ElixirAST {
-        return transformAST(ast, function(node: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case EDefmodule(name, body) if (node.metadata?.isLiveView == true):
                     #if debug_annotation_transforms
@@ -284,7 +300,7 @@ class AnnotationTransforms {
      * HOW: Detects isSchema metadata and transforms module body
      */
     public static function schemaTransformPass(ast: ElixirAST): ElixirAST {
-        return transformAST(ast, function(node: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case EDefmodule(name, body) if (node.metadata?.isSchema == true):
                     #if debug_annotation_transforms
@@ -361,7 +377,7 @@ class AnnotationTransforms {
      * HOW: Detects isApplication metadata and transforms module body
      */
     public static function applicationTransformPass(ast: ElixirAST): ElixirAST {
-        return transformAST(ast, function(node: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case EDefmodule(name, body) if (node.metadata?.isApplication == true):
                     #if debug_annotation_transforms
