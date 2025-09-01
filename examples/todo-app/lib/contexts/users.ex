@@ -1,6 +1,6 @@
 defmodule Users do
   def list_users(filter) do
-    []
+    TodoApp.Repo.all(User)
   end
   def change_user(user) do
     %{:valid => true}
@@ -9,21 +9,39 @@ defmodule Users do
     Log.trace("Users context with User schema compiled successfully!", %{:fileName => "src_haxe/server/contexts/Users.hx", :lineNumber => 66, :className => "contexts.Users", :methodName => "main"})
   end
   def get_user(id) do
-    nil
+    TodoApp.Repo.get!(User, id)
   end
   def get_user_safe(id) do
-    nil
+    TodoApp.Repo.get(User, id)
   end
   def create_user(attrs) do
-    changeset = UserChangeset.changeset(nil, attrs)
-    if (changeset != nil), do: %{:status => "ok", :user => nil}, else: %{:status => "error", :changeset => changeset}
+    result = 
+            changeset = User.changeset(%User{}, attrs)
+            case TodoApp.Repo.insert(changeset) do
+                {:ok, user} -> %{status: "ok", user: user}
+                {:error, changeset} -> %{status: "error", changeset: changeset}
+            end
+        
+    result
   end
   def update_user(user, attrs) do
-    changeset = UserChangeset.changeset(user, attrs)
-    if (changeset != nil), do: %{:status => "ok", :user => user}, else: %{:status => "error", :changeset => changeset}
+    result = 
+            changeset = User.changeset(user, attrs)
+            case TodoApp.Repo.update(changeset) do
+                {:ok, user} -> %{status: "ok", user: user}
+                {:error, changeset} -> %{status: "error", changeset: changeset}
+            end
+        
+    result
   end
   def delete_user(user) do
-    update_user(user, %{:active => false})
+    result = 
+            case TodoApp.Repo.delete(user) do
+                {:ok, user} -> %{status: "ok", user: user}
+                {:error, _} -> %{status: "error"}
+            end
+        
+    result
   end
   def search_users(term) do
     []

@@ -47,8 +47,8 @@ class Users {
      * Get all users with optional filtering
      */
     public static function list_users(?filter: UserFilter): Array<User> {
-        // Query DSL implementation will be handled by future @:query annotation
-        return [];
+        // Use __elixir__ to call Ecto directly until @:query annotation is implemented
+        return untyped __elixir__("TodoApp.Repo.all(User)");
     }
     
     /**
@@ -70,51 +70,60 @@ class Users {
      * Get user by ID with error handling
      */
     public static function get_user(id: Int): User {
-        // Would integrate with Repo.get!
-        return null;
+        // Use __elixir__ to call Ecto directly  
+        return untyped __elixir__("TodoApp.Repo.get!(User, {0})", id);
     }
     
     /**
      * Get user by ID, returns null if not found
      */
     public static function get_user_safe(id: Int): Null<User> {
-        // Would integrate with Repo.get
-        return null;
+        // Use __elixir__ to call Ecto directly
+        return untyped __elixir__("TodoApp.Repo.get(User, {0})", id);
     }
     
     /**
      * Create a new user
      */
     public static function create_user(attrs: Dynamic): {status: String, ?user: User, ?changeset: Dynamic} {
-        var changeset = UserChangeset.changeset(null, attrs);
-        
-        if (changeset != null) {
-            // Would call Repo.insert
-            return {status: "ok", user: null};
-        } else {
-            return {status: "error", changeset: changeset};
-        }
+        // Create changeset and insert using Ecto
+        var result = untyped __elixir__("
+            changeset = User.changeset(%User{}, {0})
+            case TodoApp.Repo.insert(changeset) do
+                {:ok, user} -> %{status: \"ok\", user: user}
+                {:error, changeset} -> %{status: \"error\", changeset: changeset}
+            end
+        ", attrs);
+        return result;
     }
     
     /**
      * Update existing user
      */
     public static function update_user(user: User, attrs: Dynamic): {status: String, ?user: User, ?changeset: Dynamic} {
-        var changeset = UserChangeset.changeset(user, attrs);
-        
-        if (changeset != null) {
-            // Would call Repo.update
-            return {status: "ok", user: user};
-        } else {
-            return {status: "error", changeset: changeset};
-        }
+        // Update user using Ecto
+        var result = untyped __elixir__("
+            changeset = User.changeset({0}, {1})
+            case TodoApp.Repo.update(changeset) do
+                {:ok, user} -> %{status: \"ok\", user: user}
+                {:error, changeset} -> %{status: \"error\", changeset: changeset}
+            end
+        ", user, attrs);
+        return result;
     }
     
     /**
-     * Delete user (soft delete by setting active: false)
+     * Delete user (hard delete from database)
      */
     public static function delete_user(user: User): {status: String, ?user: User} {
-        return update_user(user, {active: false});
+        // Delete user using Ecto
+        var result = untyped __elixir__("
+            case TodoApp.Repo.delete({0}) do
+                {:ok, user} -> %{status: \"ok\", user: user}
+                {:error, _} -> %{status: \"error\"}
+            end
+        ", user);
+        return result;
     }
     
     /**

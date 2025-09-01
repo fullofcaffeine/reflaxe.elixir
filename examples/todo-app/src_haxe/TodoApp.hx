@@ -25,8 +25,8 @@ class TodoApp {
         
         // Define children for the supervision tree using type-safe child specs
         var children: Array<ChildSpecFormat> = [
-            // Database repository - temporarily disabled due to PostgreSQL TypeManager issues
-            // TypeSafeChildSpec.repo("TodoApp.Repo"),
+            // Database repository - using ModuleRef directly to avoid inline conditional issue
+            ModuleRef("TodoApp.Repo"),
             
             // PubSub system with proper child spec
             TypeSafeChildSpec.pubSub("TodoApp.PubSub"),
