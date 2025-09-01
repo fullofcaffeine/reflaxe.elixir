@@ -1,6 +1,7 @@
 package controllers;
 
 import plug.Conn;
+import contexts.Users;
 
 // Type-safe parameter definitions for each action
 typedef IndexParams = Dynamic;  // No specific params for index
@@ -69,15 +70,17 @@ class UserController {
      * Traditional Phoenix:
      * ```elixir
      * def index(conn, _params) do
-     *   json(conn, %{users: []})
+     *   users = Users.list_users()
+     *   json(conn, %{users: users})
      * end
      * ```
      * 
      * With Haxe, we get type-safe JSON responses and can refactor safely.
      */
     public static function index(conn: Conn<IndexParams>, params: IndexParams): Conn<IndexParams> {
-        // Return JSON response with empty users array
-        return conn.json({users: []});
+        // Fetch all users from database
+        var users = Users.list_users(null);
+        return conn.json({users: users});
     }
     
     /**
@@ -91,15 +94,17 @@ class UserController {
      * @return JSON response with user data
      */
     public static function show(conn: Conn<ShowParams>, params: ShowParams): Conn<ShowParams> {
-        // In a real app, you'd fetch from database
-        // The type system ensures params.id is always available
-        return conn.json({
-            user: {
-                id: params.id, 
-                name: "User " + params.id,
-                email: 'user${params.id}@example.com'
-            }
-        });
+        // Fetch user from database
+        var userId = Std.parseInt(params.id);
+        var user = Users.get_user_safe(userId);
+        
+        if (user != null) {
+            return conn.json({user: user});
+        } else {
+            return conn
+                .putStatus(404)
+                .json({error: "User not found"});
+        }
     }
     
     /**
@@ -118,18 +123,25 @@ class UserController {
      * This gives you compile-time validation of required fields!
      */
     public static function create(conn: Conn<CreateParams>, params: CreateParams): Conn<CreateParams> {
-        // In production: validate, insert to database, return created user
-        // Type system ensures params.name and params.email exist!
-        return conn.json({
-            user: {
-                id: generateUniqueId(),
-                name: params.name,
-                email: params.email,
-                age: params.age  // Optional field - may be null
-            },
-            created: true,
-            message: "User created successfully"
-        });
+        // Create user through Users context with database persistence
+        var result = Users.create_user(params);
+        
+        if (result.status == "ok") {
+            return conn
+                .putStatus(201)
+                .json({
+                    user: result.user,
+                    created: true,
+                    message: "User created successfully"
+                });
+        } else {
+            return conn
+                .putStatus(422)
+                .json({
+                    error: "Failed to create user",
+                    changeset: result.changeset
+                });
+        }
     }
     
     /**
@@ -139,20 +151,38 @@ class UserController {
      * Type-safe with UpdateParams ensuring id always exists.
      */
     public static function update(conn: Conn<UpdateParams>, params: UpdateParams): Conn<UpdateParams> {
-        // The 'id' comes from the URL, other params from request body
-        // Type system guarantees params.id exists
+        // Fetch existing user first
+        var userId = Std.parseInt(params.id);
+        var user = Users.get_user_safe(userId);
         
-        // In production: validate, update database, return updated user
-        return conn.json({
-            user: {
-                id: params.id,
-                name: params.name != null ? params.name : "Existing Name",
-                email: params.email != null ? params.email : "existing@email.com",
-                age: params.age
-            },
-            updated: true,
-            message: "User " + params.id + " updated successfully"
-        });
+        if (user == null) {
+            return conn
+                .putStatus(404)
+                .json({error: "User not found"});
+        }
+        
+        // Update user through Users context
+        var updateAttrs = {};
+        if (params.name != null) Reflect.setField(updateAttrs, "name", params.name);
+        if (params.email != null) Reflect.setField(updateAttrs, "email", params.email);
+        if (params.age != null) Reflect.setField(updateAttrs, "age", params.age);
+        
+        var result = Users.update_user(user, updateAttrs);
+        
+        if (result.status == "ok") {
+            return conn.json({
+                user: result.user,
+                updated: true,
+                message: 'User ${params.id} updated successfully'
+            });
+        } else {
+            return conn
+                .putStatus(422)
+                .json({
+                    error: "Failed to update user",
+                    changeset: result.changeset
+                });
+        }
     }
     
     /**
@@ -162,11 +192,32 @@ class UserController {
      * No need for defensive programming or nil checks!
      */
     public static function delete(conn: Conn<DeleteParams>, params: DeleteParams): Conn<DeleteParams> {
-        // In production: delete from database, handle constraints
-        return conn.json({
-            deleted: params.id, 
-            success: true,
-            message: 'User ${params.id} deleted successfully'
-        });
+        // Fetch user to delete
+        var userId = Std.parseInt(params.id);
+        var user = Users.get_user_safe(userId);
+        
+        if (user == null) {
+            return conn
+                .putStatus(404)
+                .json({error: "User not found"});
+        }
+        
+        // Delete user through Users context
+        var result = Users.delete_user(user);
+        
+        if (result.status == "ok") {
+            return conn.json({
+                deleted: params.id,
+                success: true,
+                message: 'User ${params.id} deleted successfully'
+            });
+        } else {
+            return conn
+                .putStatus(500)
+                .json({
+                    error: "Failed to delete user",
+                    success: false
+                });
+        }
     }
 }
