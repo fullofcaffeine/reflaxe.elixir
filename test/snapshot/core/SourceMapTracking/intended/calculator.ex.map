@@ -1,11 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "AAiE8B,CAOrB,AAAA,YAAc,+BAId,AAAA,YAAc,oCAId,AAAO;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;ACjDf",
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AA+BC",
   "version": 3,
   "file": "calculator.ex",
   "sources": [
-  "Main.hx",
   "std/haxe/Int64Helper.hx"
 ]
 }

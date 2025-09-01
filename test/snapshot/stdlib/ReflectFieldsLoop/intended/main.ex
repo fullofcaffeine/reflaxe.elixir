@@ -1,52 +1,41 @@
 defmodule Main do
-  @moduledoc "Main module generated from Haxe"
-
-  # Static functions
-  @doc "Generated from Haxe main"
   def main() do
-    obj = %{"a" => 1, "b" => 2, "c" => 3}
-
-    g_counter = 0
-    g_array = Reflect.fields(obj)
-    Enum.each(g_array, fn field -> 
-      Log.trace("Field: " <> field, %{"fileName" => "Main.hx", "lineNumber" => 7, "className" => "Main", "methodName" => "main"})
-    end)
-
-    data = %{"errors" => %{"name" => ["Required"], "age" => ["Invalid"]}}
-
+    obj = %{:a => 1, :b => 2, :c => 3}
+    g = 0
+    g1 = Reflect.fields(obj)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
+  field = g1[g]
+  g + 1
+  Log.trace("Field: " + field, %{:fileName => "Main.hx", :lineNumber => 7, :className => "Main", :methodName => "main"})
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
+    data = %{:errors => %{:name => ["Required"], :age => ["Invalid"]}}
     changeset_errors = Reflect.field(data, "errors")
-
-    if ((changeset_errors != nil)) do
-      g_counter = 0
-      g_array = Reflect.fields(changeset_errors)
-      Enum.filter(g1, fn item -> Std.is_of_type(field_errors, Array) end)
-    else
-      nil
+    if (changeset_errors != nil) do
+      g = 0
+      g1 = Reflect.fields(changeset_errors)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
+  field = g1[g]
+  g + 1
+  field_errors = Reflect.field(changeset_errors, field)
+  if (Std.is_of_type(field_errors, Array)) do
+    g = 0
+    g1 = field_errors
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
+  error = g1[g]
+  g + 1
+  Log.trace("" + field + ": " + Std.string(error), %{:fileName => "Main.hx", :lineNumber => 18, :className => "Main", :methodName => "main"})
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
+  end
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     end
   end
-
-
-  # While loop helper functions
-  # Generated automatically for tail-recursive loop patterns
-
-  @doc false
-  defp while_loop(condition_fn, body_fn) do
-    if condition_fn.() do
-      body_fn.()
-      while_loop(condition_fn, body_fn)
-    else
-      nil
-    end
-  end
-
-  @doc false
-  defp do_while_loop(body_fn, condition_fn) do
-    body_fn.()
-    if condition_fn.() do
-      do_while_loop(body_fn, condition_fn)
-    else
-      nil
-    end
-  end
-
 end

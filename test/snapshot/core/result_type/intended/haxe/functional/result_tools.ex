@@ -1,268 +1,175 @@
 defmodule ResultTools do
-  @moduledoc """
-    ResultTools module generated from Haxe
-
-     * Companion class providing functional operations for Result<T,E>
-     *
-     * Implements the full functional toolkit for Result types:
-     * - Functor operations (map)
-     * - Monad operations (flatMap/bind)
-     * - Foldable operations (fold)
-     * - Utility functions (isOk, isError, unwrap)
-     *
-     * All operations are designed to work seamlessly across all Haxe targets
-     * while generating optimal target-specific code.
-  """
-
-  # Static functions
-  @doc "Generated from Haxe map"
   def map(result, transform) do
-    temp_result = nil
-
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    temp_result = {:ok, transform.(value)}
-      1 -> error = elem(result, 1)
-    temp_result = {:error, error}
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        {:Ok, transform.(value)}
+      1 ->
+        g = result.elem(1)
+        error = g
+        {:Error, error}
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe flatMap"
   def flat_map(result, transform) do
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    temp_result = transform.(value)
-      1 -> error = elem(result, 1)
-    temp_result = {:error, error}
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        {:ModuleRef, value}
+      1 ->
+        g = result.elem(1)
+        error = g
+        {:Error, error}
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe bind"
   def bind(result, transform) do
-    ResultTools.flat_map(result, transform)
+    {:FlatMap, result, transform}
   end
-
-  @doc "Generated from Haxe fold"
   def fold(result, on_success, on_error) do
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    temp_result = on_success.(value)
-      1 -> error = elem(result, 1)
-    temp_result = on_error.(error)
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        on_success.(value)
+      1 ->
+        g = result.elem(1)
+        error = g
+        on_error.(error)
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe isOk"
   def is_ok(result) do
-    temp_result = nil
-
-    case result do
-      0 -> g_param_0 = elem(result, 1)
-    temp_result = true
-      1 -> g_param_0 = elem(result, 1)
-    temp_result = false
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        true
+      1 ->
+        g = result.elem(1)
+        false
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe isError"
   def is_error(result) do
-    temp_result = nil
-
-    case result do
-      0 -> g_param_0 = elem(result, 1)
-    temp_result = false
-      1 -> g_param_0 = elem(result, 1)
-    temp_result = true
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        false
+      1 ->
+        g = result.elem(1)
+        true
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe unwrap"
   def unwrap(result) do
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    temp_result = value
-      1 -> error = elem(result, 1)
-    raise "Attempted to unwrap Error result: " <> Std.string(error)
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        value
+      1 ->
+        g = result.elem(1)
+        error = g
+        throw("Attempted to unwrap Error result: " + Std.string(error))
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe unwrapOr"
   def unwrap_or(result, default_value) do
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    temp_result = value
-      1 -> g_param_0 = elem(result, 1)
-    temp_result = default_value
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        value
+      1 ->
+        g = result.elem(1)
+        default_value
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe unwrapOrElse"
   def unwrap_or_else(result, error_handler) do
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    temp_result = value
-      1 -> error = elem(result, 1)
-    temp_result = error_handler.(error)
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        value
+      1 ->
+        g = result.elem(1)
+        error = g
+        error_handler.(error)
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe filter"
   def filter(result, predicate, error_value) do
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    if predicate.(value), do: temp_result = {:ok, value}, else: temp_result = {:error, error_value}
-      1 -> error = elem(result, 1)
-    temp_result = {:error, error}
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        if (predicate.(value)), do: {:Ok, value}, else: {:Error, error_value}
+      1 ->
+        g = result.elem(1)
+        error = g
+        {:Error, error}
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe mapError"
   def map_error(result, transform) do
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    temp_result = {:ok, value}
-      1 -> error = elem(result, 1)
-    temp_result = {:error, transform.(error)}
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        {:Ok, value}
+      1 ->
+        g = result.elem(1)
+        error = g
+        {:Error, transform.(error)}
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe bimap"
   def bimap(result, on_success, on_error) do
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    temp_result = {:ok, on_success.(value)}
-      1 -> error = elem(result, 1)
-    temp_result = {:error, on_error.(error)}
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        {:Ok, on_success.(value)}
+      1 ->
+        g = result.elem(1)
+        error = g
+        {:Error, on_error.(error)}
     end
-
-    temp_result
   end
-
-  @doc "Generated from Haxe ok"
   def ok(value) do
-    {:ok, value}
+    {:Ok, value}
   end
-
-  @doc "Generated from Haxe error"
   def error(error) do
-    {:error, error}
+    {:Error, error}
   end
-
-  @doc "Generated from Haxe sequence"
   def sequence(results) do
     values = []
-
-    g_counter = 0
-
-    (fn loop ->
-      if ((g_counter < results.length)) do
-            result = Enum.at(results, g_counter)
-        g_counter + 1
-        case result do
-          0 -> value = elem(result, 1)
-        values = values ++ [value]
-          1 -> error = elem(result, 1)
-        {:error, error}
-        end
-        loop.()
-      end
-    end).()
-
-    {:ok, values}
+    g = 0
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < results.length) do
+  result = results[g]
+  g + 1
+  case (result.elem(0)) do
+    0 ->
+      g = result.elem(1)
+      value = g
+      values.push(value)
+    1 ->
+      g = result.elem(1)
+      error = g
+      {:Error, error}
   end
-
-  @doc "Generated from Haxe traverse"
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
+    {:Ok, values}
+  end
   def traverse(array, transform) do
-    g_array = []
-
-    g_counter = 0
-
-    (fn loop ->
-      if ((g_counter < array.length)) do
-            v = Enum.at(array, g_counter)
-        g_counter + 1
-        g_array = g_array ++ [transform.(v)]
-        loop.()
-      end
-    end).()
-
-    ResultTools.sequence(g_array)
+    results = Enum.map(array, transform)
+    {:Sequence, results}
   end
-
-  @doc "Generated from Haxe toOption"
   def to_option(result) do
-    temp_result = nil
-
-    case result do
-      0 -> value = elem(result, 1)
-    temp_result = Option.some(value)
-      1 -> g_param_0 = elem(result, 1)
-    temp_result = :error
-    end
-
-    temp_result
-  end
-
-
-  # While loop helper functions
-  # Generated automatically for tail-recursive loop patterns
-
-  @doc false
-  defp while_loop(condition_fn, body_fn) do
-    if condition_fn.() do
-      body_fn.()
-      while_loop(condition_fn, body_fn)
-    else
-      nil
+    case (result.elem(0)) do
+      0 ->
+        g = result.elem(1)
+        value = g
+        {:Some, value}
+      1 ->
+        g = result.elem(1)
+        :None
     end
   end
-
-  @doc false
-  defp do_while_loop(body_fn, condition_fn) do
-    body_fn.()
-    if condition_fn.() do
-      do_while_loop(body_fn, condition_fn)
-    else
-      nil
-    end
-  end
-
 end

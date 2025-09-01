@@ -1,0 +1,90 @@
+defmodule PositiveInt_Impl_ do
+  def _new(value) do
+    this_1 = nil
+    if (value <= 0) do
+      throw("Value must be positive, got: " + value)
+    end
+    this_1 = value
+    this_1
+  end
+  def parse(value) do
+    if (value <= 0), do: {:Error, "Value must be positive, got: " + value}
+    {:Ok, value}
+  end
+  def add(this1, other) do
+    this1 + PositiveInt_Impl_.to_int(other)
+  end
+  def multiply(this1, other) do
+    this1 * PositiveInt_Impl_.to_int(other)
+  end
+  def multiply_by_int(this1, multiplier) do
+    if (multiplier <= 0) do
+      throw("Multiplier must be positive, got: " + multiplier)
+    end
+    this1 * multiplier
+  end
+  def safe_sub(this1, other) do
+    result = this1 - PositiveInt_Impl_.to_int(other)
+    if (result <= 0), do: {:Error, "Subtraction result would be non-positive: " + this1 + " - " + PositiveInt_Impl_.to_int(other) + " = " + result}
+    {:Ok, result}
+  end
+  def safe_sub_int(this1, value) do
+    result = this1 - value
+    if (result <= 0), do: {:Error, "Subtraction result would be non-positive: " + this1 + " - " + value + " = " + result}
+    {:Ok, result}
+  end
+  def safe_div(this1, divisor) do
+    divisor_int = PositiveInt_Impl_.to_int(divisor)
+    if (this1 rem divisor_int != 0), do: {:Error, "Division not exact: " + this1 + " / " + divisor_int + " has remainder " + this1 rem divisor_int}
+    result = Std.int(this1 / divisor_int)
+    if (result <= 0), do: {:Error, "Division result would be non-positive: " + this1 + " / " + divisor_int + " = " + result}
+    {:Ok, result}
+  end
+  def div(this1, divisor) do
+    Std.int(this1 / PositiveInt_Impl_.to_int(divisor))
+  end
+  def mod(this1, divisor) do
+    this1 rem PositiveInt_Impl_.to_int(divisor)
+  end
+  def less_than(this1, other) do
+    this1 < PositiveInt_Impl_.to_int(other)
+  end
+  def less_than_or_equal(this1, other) do
+    this1 <= PositiveInt_Impl_.to_int(other)
+  end
+  def greater_than(this1, other) do
+    this1 > PositiveInt_Impl_.to_int(other)
+  end
+  def greater_than_or_equal(this1, other) do
+    this1 >= PositiveInt_Impl_.to_int(other)
+  end
+  def equals(this1, other) do
+    this1 == PositiveInt_Impl_.to_int(other)
+  end
+  def min(this1, other) do
+    if (this1 < PositiveInt_Impl_.to_int(other)), do: this1, else: other
+  end
+  def max(this1, other) do
+    if (this1 > PositiveInt_Impl_.to_int(other)), do: this1, else: other
+  end
+  def to_int(this1) do
+    this1
+  end
+  def to_float(this1) do
+    this1
+  end
+  def to_string(this1) do
+    Std.string(this1)
+  end
+  def equals_int(this1, value) do
+    this1 == value
+  end
+  def from_abs(value) do
+    abs = if (value < 0) do
+  -value
+else
+  value
+end
+    {:Parse, abs}
+  end
+end

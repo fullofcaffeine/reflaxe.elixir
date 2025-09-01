@@ -1,11 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "AAkBmC,AACf,mBACE,AAAA,oBACG,AAAA,AAAuB,6BACvC,GAAM,AAAA,AAAA,AAAA,uBAA0B,AAAA,iCAAS,GAAnC,AAAA,uBAA0B,AAAA,yEAAe,AAAA,GAAA,qBAAzC,AAAA,AAAA,uBAA0B,AAAA,iCAAS,GAAnC,AAAA,uBAA0B,AAAA,yEAAe,AAAA,GAAA,sFAA/C,AAAA,kBAAA,EAAA,eAAA;;;;;;6LAfA,AAAO,YAIP,AAAI,AAAA,AAAA,AAAQ,yBACR,AAAO,QAEP,AAAO;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;ACTnB",
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAKC",
   "version": 3,
   "file": "source_map_test.ex",
   "sources": [
-  "SourceMapTest.hx",
   "std/haxe/exceptions/NotImplementedException.hx"
 ]
 }

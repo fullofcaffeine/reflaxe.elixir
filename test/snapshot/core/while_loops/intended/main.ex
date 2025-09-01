@@ -1,269 +1,91 @@
 defmodule Main do
-  @moduledoc "Main module generated from Haxe"
-
-  # Static functions
-  @doc "Generated from Haxe main"
   def main() do
     i = 0
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((i < 5)) end,
-        fn ->
-          i + 1
-        end,
-        loop_helper
-      )
-    )
-
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (i < 5) do
+  i + 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     j = 0
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((j < 3)) end,
-        fn ->
-          j + 1
-        end,
-        loop_helper
-      )
-    )
-
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (j < 3) do
+  j + 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     counter = 10
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((counter > 0)) end,
-        fn ->
-          counter = counter - 2
-          if ((counter == 4)) do
-            throw(:break)
-          else
-            nil
-          end
-        end,
-        loop_helper
-      )
-    )
-
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (counter > 0) do
+  counter = counter - 2
+  if (counter == 4) do
+    throw(:break)
+  end
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     k = 0
-
     evens = []
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((k < 10)) end,
-        fn ->
-          k + 1
-          if ((rem(k, 2) != 0)) do
-            throw(:continue)
-          else
-            nil
-          end
-          evens ++ [k]
-        end,
-        loop_helper
-      )
-    )
-
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (k < 10) do
+  k + 1
+  if (k rem 2 != 0) do
+    throw(:continue)
+  end
+  evens.push(k)
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     count = 0
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> true end,
-        fn ->
-          count + 1
-          if ((count == 10)) do
-            throw(:break)
-          else
-            nil
-          end
-        end,
-        loop_helper
-      )
-    )
-
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if true do
+  count + 1
+  if (count == 10) do
+    throw(:break)
+  end
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     outer = 0
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((outer < 3)) end,
-        fn ->
-          inner = 0
-          (
-            # Simple module-level pattern (inline for now)
-            loop_helper = fn condition_fn, body_fn, loop_fn ->
-              if condition_fn.() do
-                body_fn.()
-                loop_fn.(condition_fn, body_fn, loop_fn)
-              else
-                nil
-              end
-            end
-
-            loop_helper.(
-              fn -> ((inner < 2)) end,
-              fn ->
-                Log.trace("Nested: " <> to_string(outer) <> ", " <> to_string(inner), %{"fileName" => "Main.hx", "lineNumber" => 47, "className" => "Main", "methodName" => "main"})
-                inner + 1
-              end,
-              loop_helper
-            )
-          )
-          outer + 1
-        end,
-        loop_helper
-      )
-    )
-
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (outer < 3) do
+  inner = 0
+  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (inner < 2) do
+  Log.trace("Nested: " + outer + ", " + inner, %{:fileName => "Main.hx", :lineNumber => 47, :className => "Main", :methodName => "main"})
+  inner + 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
+  outer + 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     a = 0
-
     b = 10
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> (((a < 5) && (b > 5))) end,
-        fn ->
-          a + 1
-          b - 1
-        end,
-        loop_helper
-      )
-    )
-
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (a < 5 && b > 5) do
+  a + 1
+  b - 1
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     x = 0
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> ((x < 10)) end,
-        fn ->
-          x + 1
-          if ((x == 5)) do
-            throw(:break)
-          else
-            nil
-          end
-        end,
-        loop_helper
-      )
-    )
-
-    Log.trace("Final i: " <> to_string(i), %{"fileName" => "Main.hx", "lineNumber" => 68, "className" => "Main", "methodName" => "main"})
-
-    Log.trace("Final j: " <> to_string(j), %{"fileName" => "Main.hx", "lineNumber" => 69, "className" => "Main", "methodName" => "main"})
-
-    Log.trace("Final counter: " <> to_string(counter), %{"fileName" => "Main.hx", "lineNumber" => 70, "className" => "Main", "methodName" => "main"})
-
-    Log.trace("Evens: " <> Std.string(evens), %{"fileName" => "Main.hx", "lineNumber" => 71, "className" => "Main", "methodName" => "main"})
-
-    Log.trace("Count from infinite: " <> to_string(count), %{"fileName" => "Main.hx", "lineNumber" => 72, "className" => "Main", "methodName" => "main"})
-
-    Log.trace("Complex condition result: a=" <> to_string(a) <> ", b=" <> to_string(b), %{"fileName" => "Main.hx", "lineNumber" => 73, "className" => "Main", "methodName" => "main"})
-
-    Log.trace("Do-while with break: x=" <> to_string(x), %{"fileName" => "Main.hx", "lineNumber" => 74, "className" => "Main", "methodName" => "main"})
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (x < 10) do
+  x + 1
+  if (x == 5) do
+    throw(:break)
   end
-
-
-  # While loop helper functions
-  # Generated automatically for tail-recursive loop patterns
-
-  @doc false
-  defp while_loop(condition_fn, body_fn) do
-    if condition_fn.() do
-      body_fn.()
-      while_loop(condition_fn, body_fn)
-    else
-      nil
-    end
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
+    Log.trace("Final i: " + i, %{:fileName => "Main.hx", :lineNumber => 68, :className => "Main", :methodName => "main"})
+    Log.trace("Final j: " + j, %{:fileName => "Main.hx", :lineNumber => 69, :className => "Main", :methodName => "main"})
+    Log.trace("Final counter: " + counter, %{:fileName => "Main.hx", :lineNumber => 70, :className => "Main", :methodName => "main"})
+    Log.trace("Evens: " + Std.string(evens), %{:fileName => "Main.hx", :lineNumber => 71, :className => "Main", :methodName => "main"})
+    Log.trace("Count from infinite: " + count, %{:fileName => "Main.hx", :lineNumber => 72, :className => "Main", :methodName => "main"})
+    Log.trace("Complex condition result: a=" + a + ", b=" + b, %{:fileName => "Main.hx", :lineNumber => 73, :className => "Main", :methodName => "main"})
+    Log.trace("Do-while with break: x=" + x, %{:fileName => "Main.hx", :lineNumber => 74, :className => "Main", :methodName => "main"})
   end
-
-  @doc false
-  defp do_while_loop(body_fn, condition_fn) do
-    body_fn.()
-    if condition_fn.() do
-      do_while_loop(body_fn, condition_fn)
-    else
-      nil
-    end
-  end
-
 end

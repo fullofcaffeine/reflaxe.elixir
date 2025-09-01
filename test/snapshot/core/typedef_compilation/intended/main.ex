@@ -1,78 +1,69 @@
 defmodule Main do
-  @moduledoc "Main module generated from Haxe"
-
-  # Static functions
-  @doc "Generated from Haxe main"
-  def main() do
-    _user_id = 123
-
-    _username = "john_doe"
-
-    _score = 98.5
-
-    _is_active = true
-
-    _api_response_data_value_0_id = _user_id
-
-    _api_response_data_value_0_age = 30
-
-    _api_response_data_value_0_email = "john@example.com"
-
-    _api_response_data_value_1_id = 456
-
-    _api_response_data_value_1_name = "jane"
-
-    _api_response_data_value_1_age = 25
-
-    _company_name = "Tech Corp"
-
-    _company_address_street = "123 Main St"
-
-    _company_address_city = "San Francisco"
-
-    _company_address_zip_code = "94102"
-
-    _company_address_country = "USA"
-
-    _success_result_ok = true
-
-    _success_result_value = "Success!"
-
-    _error_result_ok = false
-
-    _error_result_error = "Something went wrong"
-
-    _pair_first = 42
-
-    _pair_second = "Answer"
-
-    _callback = fn msg, code -> (code == 200) end
-
-    _handler = fn  -> Log.trace("Async operation complete", %{"fileName" => "Main.hx", "lineNumber" => 145, "className" => "Main", "methodName" => "main"}) end
-
-    _api_response_status = 200
-
-    _api_response_data_ok = true
-
-    _api_response_metadata_timestamp = Date.now().get_time()
-
-    _api_response_metadata_version = "1.0.0"
-
-    _success_status_success = true
-
-    _error_status_error = "Failed to process"
-
-    _tree_value = 10
-
-    _tree_left_value = 5
-
-    _tree_left_left_value = 3
-
-    _tree_left_right_value = 7
-
-    _tree_right_value = 15
-
-    Log.trace("Typedef compilation test complete", %{"fileName" => "Main.hx", "lineNumber" => 183, "className" => "Main", "methodName" => "main"})
+  defp main() do
+    user_id = 123
+    username = "john_doe"
+    score = 98.5
+    is_active = true
+    api_response_data_value__0_name = nil
+    api_response_data_value__0_id = nil
+    api_response_data_value__0_email = nil
+    api_response_data_value__0_age = nil
+    api_response_data_value__0_id = user_id
+    api_response_data_value__0_name = username
+    api_response_data_value__0_age = 30
+    api_response_data_value__0_email = "john@example.com"
+    api_response_data_value__1_name = nil
+    api_response_data_value__1_id = nil
+    api_response_data_value__1_age = nil
+    api_response_data_value__1_id = 456
+    api_response_data_value__1_name = "jane"
+    api_response_data_value__1_age = 25
+    company_name = nil
+    company_address_zip_code = nil
+    company_address_street = nil
+    company_address_country = nil
+    company_address_city = nil
+    company_name = "Tech Corp"
+    company_address_street = "123 Main St"
+    company_address_city = "San Francisco"
+    company_address_zip_code = "94102"
+    company_address_country = "USA"
+    success_result_value = nil
+    success_result_ok = nil
+    success_result_ok = true
+    success_result_value = "Success!"
+    error_result_ok = nil
+    error_result_error = nil
+    error_result_ok = false
+    error_result_error = "Something went wrong"
+    pair_second = nil
+    pair_first = nil
+    pair_first = 42
+    pair_second = "Answer"
+    callback = fn msg, code -> code == 200 end
+    handler = fn -> Log.trace("Async operation complete", %{:fileName => "Main.hx", :lineNumber => 145, :className => "Main", :methodName => "main"}) end
+    api_response_status = nil
+    api_response_metadata_version = nil
+    api_response_metadata_timestamp = nil
+    api_response_data_ok = nil
+    api_response_status = 200
+    api_response_data_ok = true
+    api_response_metadata_timestamp = Date.now().getTime()
+    api_response_metadata_version = "1.0.0"
+    success_status_success = nil
+    success_status_success = true
+    error_status_error = nil
+    error_status_error = "Failed to process"
+    tree_value = nil
+    tree_right_value = nil
+    tree_left_value = nil
+    tree_left_right_value = nil
+    tree_left_left_value = nil
+    tree_value = 10
+    tree_left_value = 5
+    tree_left_left_value = 3
+    tree_left_right_value = 7
+    tree_right_value = 15
+    Log.trace("Typedef compilation test complete", %{:fileName => "Main.hx", :lineNumber => 183, :className => "Main", :methodName => "main"})
   end
-
 end

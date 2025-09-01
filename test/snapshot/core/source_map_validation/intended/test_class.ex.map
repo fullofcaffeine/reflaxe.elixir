@@ -1,11 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "AAwES,AAAA,GAAO,AAAA,kCAAiC,WAAA,4DAAxC,AAAA,4BAAA,EAAA,WAAA;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AC5CR",
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AA4BC",
   "version": 3,
   "file": "test_class.ex",
   "sources": [
-  "SourceMapValidationTest.hx",
   "std/haxe/io/Bytes.hx"
 ]
 }
