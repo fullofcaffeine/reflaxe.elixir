@@ -641,8 +641,16 @@ class ElixirASTPrinter {
                 '~' + type + '"""' + '\n' + content + '\n' + '"""' + modifiers;
                 
             case ERaw(code):
-                // Raw code injection - output as-is
-                code;
+                // Raw code injection
+                // Check if the code is multi-line and needs wrapping
+                // Multi-line Elixir expressions in assignments need parentheses
+                if (code.indexOf('\n') != -1 && code.indexOf('=') != -1) {
+                    // Multi-line code with assignments needs parentheses for proper scoping
+                    '(\n' + code + '\n)';
+                } else {
+                    // Single line or simple code - output as-is
+                    code;
+                }
                 
             case EAssign(name):
                 '@' + name;

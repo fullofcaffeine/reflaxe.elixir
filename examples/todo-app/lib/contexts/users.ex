@@ -15,23 +15,27 @@ defmodule Users do
     TodoApp.Repo.get(User, id)
   end
   def create_user(attrs) do
-    result = 
+    result = (
+
             changeset = User.changeset(%User{}, attrs)
             case TodoApp.Repo.insert(changeset) do
                 {:ok, user} -> %{status: "ok", user: user}
                 {:error, changeset} -> %{status: "error", changeset: changeset}
             end
         
+)
     result
   end
   def update_user(user, attrs) do
-    result = 
+    result = (
+
             changeset = User.changeset(user, attrs)
             case TodoApp.Repo.update(changeset) do
                 {:ok, user} -> %{status: "ok", user: user}
                 {:error, changeset} -> %{status: "error", changeset: changeset}
             end
         
+)
     result
   end
   def delete_user(user) do
