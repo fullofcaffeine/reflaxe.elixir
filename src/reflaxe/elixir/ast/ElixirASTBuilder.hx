@@ -6,6 +6,7 @@ import haxe.macro.Type;
 import haxe.macro.Expr;
 import haxe.macro.Context;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirASTPatterns;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -383,8 +384,20 @@ class ElixirASTBuilder {
             // Binary Operations
             // ================================================================
             case TBinop(op, e1, e2):
-                var left = buildFromTypedExpr(e1);
-                var right = buildFromTypedExpr(e2);
+                // Check if either operand is an inline expansion block
+                var left = switch(e1.expr) {
+                    case TBlock(el) if (ElixirASTPatterns.isInlineExpansionBlock(el)):
+                        makeAST(ElixirASTPatterns.transformInlineExpansion(el, buildFromTypedExpr, toElixirVarName));
+                    case _:
+                        buildFromTypedExpr(e1);
+                };
+                
+                var right = switch(e2.expr) {
+                    case TBlock(el) if (ElixirASTPatterns.isInlineExpansionBlock(el)):
+                        makeAST(ElixirASTPatterns.transformInlineExpansion(el, buildFromTypedExpr, toElixirVarName));
+                    case _:
+                        buildFromTypedExpr(e2);
+                };
                 
                 switch(op) {
                     /**
@@ -903,7 +916,16 @@ class ElixirASTBuilder {
             // Control Flow (Basic)
             // ================================================================
             case TIf(econd, eif, eelse):
-                var condition = buildFromTypedExpr(econd);
+                // Check if the condition is an inline expansion block
+                var condition = switch(econd.expr) {
+                    case TBlock(el) if (ElixirASTPatterns.isInlineExpansionBlock(el)):
+                        #if debug_inline_expansion
+                        trace('[XRay InlineExpansion] Detected inline expansion in if condition');
+                        #end
+                        makeAST(ElixirASTPatterns.transformInlineExpansion(el, buildFromTypedExpr, toElixirVarName));
+                    case _:
+                        buildFromTypedExpr(econd);
+                };
                 var thenBranch = buildFromTypedExpr(eif);
                 var elseBranch = eelse != null ? buildFromTypedExpr(eelse) : null;
                 EIf(condition, thenBranch, elseBranch);
@@ -963,7 +985,7 @@ class ElixirASTBuilder {
                     #end
                     
                     if (isArrayPattern && sourceArray != null && whileBody != null) {
-                        var operation = detectArrayOperationPattern(whileBody);
+                        var operation = ElixirASTPatterns.detectArrayOperationPattern(whileBody);
                         
                         #if debug_array_patterns
                         trace('[XRay ArrayPattern] Detected operation: $operation');
@@ -1004,6 +1026,11 @@ class ElixirASTBuilder {
                         case _:
                             // Not the null coalescing pattern
                     }
+                }
+                
+                // Check for inline expansion pattern
+                if (ElixirASTPatterns.isInlineExpansionBlock(el)) {
+                    return ElixirASTPatterns.transformInlineExpansion(el, buildFromTypedExpr, toElixirVarName);
                 }
                 
                 var expressions = [for (e in el) buildFromTypedExpr(e)];
@@ -1565,7 +1592,7 @@ class ElixirASTBuilder {
                 
                 if (isArrayLoop && arrayRef != null) {
                     // Analyze the loop body to determine what kind of operation this is
-                    var pattern = detectArrayOperationPattern(e);
+                    var pattern = ElixirASTPatterns.detectArrayOperationPattern(e);
                     
                     if (pattern != null) {
                         return generateIdiomaticEnumCall(arrayRef, pattern, e);
