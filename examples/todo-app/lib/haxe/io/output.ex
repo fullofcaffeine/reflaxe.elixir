@@ -13,8 +13,8 @@ defmodule Output do
     k = len
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (k > 0) do
   struct.writeByte(b.b[pos])
-  pos + 1
-  (k - 1)
+  pos = pos + 1
+  k = (k - 1)
   {:cont, acc}
 else
   {:halt, acc}

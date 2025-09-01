@@ -8,7 +8,7 @@ defmodule StringTools do
     l = s.length
     r = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (r < l && is_space(s, r)) do
-  r + 1
+  r = r + 1
   {:cont, acc}
 else
   {:halt, acc}
@@ -19,7 +19,7 @@ end end)
     l = s.length
     r = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (r < l && is_space(s, ((l - r) - 1))) do
-  r + 1
+  r = r + 1
   {:cont, acc}
 else
   {:halt, acc}
