@@ -102,9 +102,13 @@ class ElixirOutputIterator {
         
         #if debug_output_iterator
         trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
+        trace('[ElixirOutputIterator] AST data type: ${astData.data.def}');
+        trace('[ElixirOutputIterator] AST metadata: ${astData.data.metadata}');
         #end
         
         // Apply transformation passes to the AST
+        // The metadata from the outer AST node needs to be preserved
+        // when passing to the transformer
         final transformedAST = ElixirASTTransformer.transform(astData.data);
         
         #if debug_output_iterator

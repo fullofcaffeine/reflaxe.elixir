@@ -134,6 +134,13 @@ class ElixirASTTransformer {
         
         // Annotation-based transformation passes (should run early to set up module structure)
         passes.push({
+            name: "PhoenixWebTransform",
+            description: "Transform @:phoenixWeb modules into Phoenix Web helper module",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.phoenixWebTransformPass
+        });
+        
+        passes.push({
             name: "EndpointTransform",
             description: "Transform @:endpoint modules into Phoenix.Endpoint structure",
             enabled: true,

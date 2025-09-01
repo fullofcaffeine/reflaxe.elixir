@@ -626,6 +626,7 @@ typedef ElixirMetadata = {
     ?isApplication: Bool,         // @:application OTP Application
     ?isGenServer: Bool,           // @:genserver GenServer behavior
     ?isRouter: Bool,              // @:router Phoenix.Router
+    ?isPhoenixWeb: Bool,          // @:phoenixWeb TodoAppWeb module with macros
     ?appName: String,             // Application name for OTP/Phoenix
     ?tableName: String,           // Table name for Ecto schemas
     
