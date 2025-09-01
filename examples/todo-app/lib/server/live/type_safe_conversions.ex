@@ -101,8 +101,8 @@ end, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < todos.length) do
   todo = todos[g]
-  g + 1
-  if (todo.completed), do: count + 1
+  g = g + 1
+  if (todo.completed), do: count = count + 1
   {:cont, acc}
 else
   {:halt, acc}

@@ -12,7 +12,7 @@ defmodule Bytes do
     if (b1 == b2 && pos > srcpos) do
       i = len
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (i > 0) do
-  (i - 1)
+  i = (i - 1)
   _ = b2[i + srcpos]
   {:cont, acc}
 else
@@ -23,7 +23,7 @@ end end)
     g = 0
     g1 = len
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1) do
-  i = g + 1
+  i = g = g + 1
   _ = b2[i + srcpos]
   {:cont, acc}
 else
@@ -41,7 +41,7 @@ end end)
     i = pos
     max = pos + len
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (i < max) do
-  c = b[i + 1]
+  c = b[i = i + 1]
   if (c < 128) do
     if (c == 0) do
       throw(:break)
@@ -49,15 +49,15 @@ end end)
     s = s <> fcc.(c)
   else
     if (c < 224) do
-      s = s <> fcc.((c &&& 63) <<< 6 ||| b[i + 1] &&& 127)
+      s = s <> fcc.((c &&& 63) <<< 6 ||| b[i = i + 1] &&& 127)
     else
       if (c < 240) do
-        c2 = b[i + 1]
-        s = s <> fcc.((c &&& 31) <<< 12 ||| (c2 &&& 127) <<< 6 ||| b[i + 1] &&& 127)
+        c2 = b[i = i + 1]
+        s = s <> fcc.((c &&& 31) <<< 12 ||| (c2 &&& 127) <<< 6 ||| b[i = i + 1] &&& 127)
       else
-        c2 = b[i + 1]
-        c3 = b[i + 1]
-        u = (c &&& 15) <<< 18 ||| (c2 &&& 127) <<< 12 ||| (c3 &&& 127) <<< 6 ||| b[i + 1] &&& 127
+        c2 = b[i = i + 1]
+        c3 = b[i = i + 1]
+        u = (c &&& 15) <<< 18 ||| (c2 &&& 127) <<< 12 ||| (c3 &&& 127) <<< 6 ||| b[i = i + 1] &&& 127
         s = s <> fcc.((u >>> 10) + 55232)
         s = s <> fcc.(u &&& 1023 ||| 56320)
       end
@@ -77,7 +77,7 @@ end end)
     g = 0
     g1 = length
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1) do
-  i = g + 1
+  i = g = g + 1
   a.push(0)
   {:cont, acc}
 else
@@ -89,10 +89,10 @@ end end)
     a = Array.new()
     i = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (i < s.length) do
-  c = index = i + 1
+  c = index = i = i + 1
 s.cca(index)
   if (55296 <= c && c <= 56319) do
-    c = (c - 55232) <<< 10 ||| index = i + 1
+    c = (c - 55232) <<< 10 ||| index = i = i + 1
 s.cca(index) &&& 1023
   end
   if (c <= 127) do

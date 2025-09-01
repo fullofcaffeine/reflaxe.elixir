@@ -108,6 +108,14 @@ class ElixirASTTransformer {
             pass: identityPass
         });
         
+        // Inline expansion fixes (should run very early to fix AST structure)
+        passes.push({
+            name: "InlineMethodCallCombiner",
+            description: "Combine split inline expansion patterns from stdlib",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineExpansionTransforms.inlineMethodCallCombinerPass
+        });
+        
         // Bitwise import pass (should run early to add imports)
         passes.push({
             name: "BitwiseImport",

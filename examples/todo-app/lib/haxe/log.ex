@@ -8,7 +8,7 @@ defmodule Log do
       g1 = infos.customParams
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
   v = g1[g]
-  g + 1
+  g = g + 1
   str = str <> ", " <> Std.string(v)
   {:cont, acc}
 else

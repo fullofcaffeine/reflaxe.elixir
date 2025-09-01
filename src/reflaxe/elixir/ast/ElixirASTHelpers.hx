@@ -5,6 +5,7 @@ package reflaxe.elixir.ast;
 import reflaxe.elixir.ast.ElixirAST;
 import haxe.macro.Type;
 import haxe.macro.TypedExprTools;
+import haxe.macro.Expr.Position;
 using StringTools;
 
 /**
@@ -159,7 +160,7 @@ class ElixirASTHelpers {
 class ASTBuilder {
     var def: ElixirASTDef;
     var metadata: ElixirMetadata;
-    var pos: haxe.macro.Position;
+    var pos: Position;
     
     public function new() {
         this.metadata = {};
@@ -204,7 +205,7 @@ class ASTBuilder {
         return this;
     }
     
-    public function match(pattern: ElixirPattern, expr: ElixirAST): ASTBuilder {
+    public function match(pattern: EPattern, expr: ElixirAST): ASTBuilder {
         def = EMatch(pattern, expr);
         return this;
     }
@@ -214,7 +215,7 @@ class ASTBuilder {
         return this;
     }
     
-    public function binary(op: ElixirBinaryOp, left: ElixirAST, right: ElixirAST): ASTBuilder {
+    public function binary(op: EBinaryOp, left: ElixirAST, right: ElixirAST): ASTBuilder {
         def = EBinary(op, left, right);
         return this;
     }

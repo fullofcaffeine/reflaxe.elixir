@@ -18,8 +18,8 @@ defmodule Input do
     throw(:break)
   end
   _ = byte &&& 255
-  pos + 1
-  (k - 1)
+  pos = pos + 1
+  k = (k - 1)
   {:cont, acc}
 else
   {:halt, acc}

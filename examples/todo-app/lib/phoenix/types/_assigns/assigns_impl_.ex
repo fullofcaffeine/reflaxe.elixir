@@ -34,7 +34,7 @@ defmodule Assigns_Impl_ do
     g1 = Reflect.fields(this1)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
   field = g1[g]
-  g + 1
+  g = g + 1
   Reflect.set_field(result, field, Reflect.field(this1, field))
   {:cont, acc}
 else
@@ -44,7 +44,7 @@ end end)
     g1 = Reflect.fields(to_dynamic(other))
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
   field = g1[g]
-  g + 1
+  g = g + 1
   Reflect.set_field(result, field, Reflect.field(to_dynamic(other), field))
   {:cont, acc}
 else
@@ -58,7 +58,7 @@ end end)
     g1 = Reflect.fields(this1)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
   existing_field = g1[g]
-  g + 1
+  g = g + 1
   Reflect.set_field(result, existing_field, Reflect.field(this1, existing_field))
   {:cont, acc}
 else
