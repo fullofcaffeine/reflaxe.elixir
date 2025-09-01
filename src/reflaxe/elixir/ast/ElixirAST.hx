@@ -733,35 +733,81 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
             return makeASTWithMeta(unwrapped.def, node.metadata, node.pos);
             
         case 2:
-            // Two arguments with keyword list → OTP tuple pattern
-            // Check if second arg is a keyword list for config
-            var isKeywordConfig = switch(args[1].def) {
-                case EKeywordList(_): true;
-                case EList(elements) if (elements.length > 0):
-                    // Check if it's a list of keyword pairs
-                    switch(elements[0].def) {
-                        case ETuple([{def: EAtom(_)}, _]): true;
-                        default: false;
-                    }
-                default: false;
+            // Two arguments → check for OTP child spec pattern (Module, config)
+            // Transform ModuleWithConfig("Phoenix.PubSub", config) → {Phoenix.PubSub, config}
+            
+            // First arg should be a module name
+            var moduleArg = switch(args[0].def) {
+                case EString(s) if (isModuleName(s)):
+                    // Convert string module name to bare module reference
+                    makeAST(EVar(s), args[0].pos);
+                default:
+                    args[0];
             };
             
-            if (isKeywordConfig) {
-                // Transform to OTP child spec tuple: {Module, config}
-                // First arg should be the module (unwrap if string)
-                var moduleArg = switch(args[0].def) {
-                    case EString(s) if (isModuleName(s)):
-                        makeAST(EVar(s), args[0].pos);
-                    default:
-                        args[0];
-                };
-                
-                return makeASTWithMeta(
-                    ETuple([moduleArg, args[1]]),
-                    node.metadata,
-                    node.pos
-                );
-            }
+            // Second arg should be config - transform to keyword list if needed
+            var configArg = switch(args[1].def) {
+                case EKeywordList(_): 
+                    // Already a keyword list
+                    args[1];
+                    
+                case EList(elements):
+                    // Check if it's a list of {key: "...", value: ...} structures that should be keyword pairs
+                    var keywordPairs: Array<EKeywordPair> = [];
+                    var isKeyValueConfig = true;
+                    
+                    for (elem in elements) {
+                        switch(elem.def) {
+                            case EMap(pairs):
+                                // Look for {key: "name", value: data} pattern
+                                var keyName: String = null;
+                                var keyValue: ElixirAST = null;
+                                
+                                for (pair in pairs) {
+                                    switch(pair.key.def) {
+                                        case EAtom("key"):
+                                            // Extract the key name from the value
+                                            switch(pair.value.def) {
+                                                case EString(s): keyName = s;
+                                                default: isKeyValueConfig = false;
+                                            }
+                                        case EAtom("value"):
+                                            // This is the actual value
+                                            keyValue = pair.value;
+                                        default:
+                                            // Not the pattern we're looking for
+                                            isKeyValueConfig = false;
+                                    }
+                                }
+                                
+                                if (keyName != null && keyValue != null) {
+                                    keywordPairs.push({key: keyName, value: keyValue});
+                                } else {
+                                    isKeyValueConfig = false;
+                                }
+                                
+                            default:
+                                isKeyValueConfig = false;
+                        }
+                    }
+                    
+                    if (isKeyValueConfig && keywordPairs.length > 0) {
+                        // Convert to keyword list
+                        makeAST(EKeywordList(keywordPairs), args[1].pos);
+                    } else {
+                        args[1];
+                    }
+                    
+                default:
+                    args[1];
+            };
+            
+            // For OTP child specs, return a 2-tuple with module and config
+            return makeASTWithMeta(
+                ETuple([moduleArg, configArg]),
+                node.metadata,
+                node.pos
+            );
     }
     
     // No convention matched, return original

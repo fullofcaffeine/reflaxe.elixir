@@ -1883,32 +1883,33 @@ class ElixirASTTransformer {
         
         var transformCount = 0;
         
-        function transformNode(node: ElixirAST): ElixirAST {
+        function transformIdiomaticNode(node: ElixirAST): ElixirAST {
             #if (debug_otp_child_spec && debug_otp_child_spec_verbose)
             // Very verbose - show every node being checked
             trace('[XRay OTPChildSpec] Checking node type: ${Type.enumConstructor(node.def)}');
             #end
             
-            // SINGLE detection: Check metadata flag set by builder
-            if (node.metadata != null && node.metadata.requiresIdiomaticTransform == true) {
+            // First, recursively transform children
+            var nodeWithTransformedChildren = transformAST(node, transformIdiomaticNode);
+            
+            // Then check if this node itself needs transformation
+            if (nodeWithTransformedChildren.metadata != null && nodeWithTransformedChildren.metadata.requiresIdiomaticTransform == true) {
                 #if debug_otp_child_spec
                 trace('[XRay OTPChildSpec] Found node #${++transformCount} with requiresIdiomaticTransform flag');
-                trace('[XRay OTPChildSpec] Node def: ${node.def}');
+                trace('[XRay OTPChildSpec] Node def: ${nodeWithTransformedChildren.def}');
                 #end
                 // Apply transformation using shared utility
-                var transformed = reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(node);
+                var transformed = reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(nodeWithTransformedChildren);
                 #if debug_otp_child_spec
                 trace('[XRay OTPChildSpec] Transformed to: ${transformed.def}');
                 #end
-                // Continue recursion on transformed node
-                return transformAST(transformed, transformNode);
+                return transformed;
             }
             
-            // Recursively transform children
-            return transformAST(node, transformNode);
+            return nodeWithTransformedChildren;
         }
         
-        var result = transformNode(ast);
+        var result = transformIdiomaticNode(ast);
         
         #if debug_otp_child_spec
         trace('[XRay OTPChildSpec] Pass complete. Transformed ${transformCount} nodes');

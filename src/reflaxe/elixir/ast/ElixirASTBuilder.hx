@@ -114,13 +114,29 @@ class ElixirASTBuilder {
         var astDef = convertExpression(expr);
         
         // ONLY mark metadata - NO transformation in builder!
+        // Check both direct enum constructor calls AND function calls that return idiomatic enums
         switch(expr.expr) {
             case TCall(e, _) if (e != null && isEnumConstructor(e) && hasIdiomaticMetadata(e)):
+                // Direct enum constructor call (e.g., ModuleRef("MyModule"))
                 metadata.requiresIdiomaticTransform = true;
                 metadata.idiomaticEnumType = getEnumTypeName(e);
                 #if debug_ast_builder
-                trace('[AST Builder] Marked enum tuple for transformer: ${getEnumTypeName(e)}');
+                trace('[AST Builder] Marked direct enum constructor for transformer: ${getEnumTypeName(e)}');
                 #end
+            case TCall(_, _):
+                // Function call - check if it returns an idiomatic enum
+                switch(expr.t) {
+                    case TEnum(enumRef, _):
+                        var enumType = enumRef.get();
+                        if (enumType.meta.has(":elixirIdiomatic")) {
+                            metadata.requiresIdiomaticTransform = true;
+                            metadata.idiomaticEnumType = enumType.name;
+                            #if debug_ast_builder
+                            trace('[AST Builder] Marked function return value as idiomatic enum: ${enumType.name}');
+                            #end
+                        }
+                    default:
+                }
             default:
         }
         
@@ -715,13 +731,21 @@ class ElixirASTBuilder {
             // Array Operations
             // ================================================================
             case TArrayDecl(el):
-                // Check if this array contains idiomatic enum constructors
+                // Check if this array contains idiomatic enum constructors or function calls returning them
                 var hasIdiomaticEnums = false;
                 for (e in el) {
                     switch(e.expr) {
                         case TCall(callTarget, _) if (callTarget != null && isEnumConstructor(callTarget) && hasIdiomaticMetadata(callTarget)):
                             hasIdiomaticEnums = true;
                             break;
+                        case TCall(_, _):
+                            // Check if function call returns idiomatic enum
+                            switch(e.t) {
+                                case TEnum(enumRef, _) if (enumRef.get().meta.has(":elixirIdiomatic")):
+                                    hasIdiomaticEnums = true;
+                                    break;
+                                default:
+                            }
                         default:
                     }
                 }
