@@ -15,15 +15,15 @@ defmodule FlashTypeTools do
     g = str.toLowerCase()
     case (g) do
       "error" ->
-        :Error
+        :error
       "info" ->
-        :Info
+        :info
       "success" ->
-        :Success
+        :success
       "warning" ->
-        :Warning
+        :warning
       _ ->
-        :Info
+        :info
     end
   end
   def get_css_class(type) do

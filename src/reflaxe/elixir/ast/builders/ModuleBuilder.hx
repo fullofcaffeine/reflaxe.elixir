@@ -378,11 +378,39 @@ class ModuleBuilder {
     static function buildApplicationBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
         var statements = [];
         
-        // Application callbacks will be handled by transformer
+        // Build actual functions with their bodies
         for (func in funcFields) {
-            if (func.expr() != null) {
+            var funcExpr = func.expr();
+            if (funcExpr != null) {
                 var funcName = NameUtils.toSnakeCase(func.name);
-                statements.push(makeAST(EDef(funcName, [], null, makeAST(ENil))));
+                
+                // Extract the function body from the TypedExpr
+                switch(funcExpr.expr) {
+                    case TFunction(tfunc):
+                        // Extract arguments
+                        var args = [];
+                        for (arg in tfunc.args) {
+                            var paramName = NameUtils.toSnakeCase(arg.v.name);
+                            args.push(PVar(paramName));
+                        }
+                        
+                        // Build the function body using ElixirASTBuilder
+                        var body = if (tfunc.expr != null) {
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr);
+                        } else {
+                            makeAST(ENil);
+                        }
+                        
+                        // Create the function definition (use defp for private functions)
+                        if (func.isPublic) {
+                            statements.push(makeAST(EDef(funcName, args, null, body)));
+                        } else {
+                            statements.push(makeAST(EDefp(funcName, args, null, body)));
+                        }
+                        
+                    default:
+                        // Not a function, skip
+                }
             }
         }
         

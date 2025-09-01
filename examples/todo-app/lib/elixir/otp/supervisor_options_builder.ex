@@ -1,6 +1,6 @@
 defmodule SupervisorOptionsBuilder do
   def defaults() do
-    [strategy: :OneForOne, max_restarts: 3, max_seconds: 5]
+    [strategy: :one_for_one, max_restarts: 3, max_seconds: 5]
   end
   def with_strategy(strategy) do
     opts = SupervisorOptionsBuilder.defaults()

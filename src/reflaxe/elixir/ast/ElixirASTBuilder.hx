@@ -724,8 +724,9 @@ class ElixirASTBuilder {
                 switch(fa) {
                     case FEnum(enumType, ef):
                         // Enum constructor reference (no arguments)
-                        // Keep original Haxe name - snake_case conversion happens at print time
-                        EAtom(ef.name);
+                        // Convert CamelCase to snake_case for Elixir atoms
+                        var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+                        EAtom(atomName);
                     default:
                         // Regular field access
                         var target = buildFromTypedExpr(e);
@@ -1988,8 +1989,9 @@ class ElixirASTBuilder {
                 // Direct enum constructor reference
                 if (ef.params.length == 0) {
                     // No-argument constructor
-                    // Keep original name - conversion happens at print time
-                    PLiteral(makeAST(EAtom(ef.name)));
+                    // Convert CamelCase to snake_case for Elixir atoms
+                    var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+                    PLiteral(makeAST(EAtom(atomName)));
                 } else {
                     // Constructor with arguments - needs to be a tuple pattern
                     // This will be {:Constructor, _, _, ...} with wildcards for args

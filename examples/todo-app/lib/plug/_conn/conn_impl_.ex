@@ -9,21 +9,21 @@ defmodule Conn_Impl_ do
     method = Reflect.field(this1, "method")
     case (method) do
       "DELETE" ->
-        :DELETE
+        :delete
       "GET" ->
-        :GET
+        :get
       "HEAD" ->
-        :HEAD
+        :head
       "OPTIONS" ->
-        :OPTIONS
+        :options
       "PATCH" ->
-        :PATCH
+        :patch
       "POST" ->
-        :POST
+        :post
       "PUT" ->
-        :PUT
+        :put
       _ ->
-        :GET
+        :get
     end
   end
   def get_path(this1) do
