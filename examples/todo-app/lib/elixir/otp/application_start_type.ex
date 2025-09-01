@@ -1,4 +1,4 @@
-defmodule ApplicationStartType do
+defmodule Elixir.Otp.ApplicationStartType do
   def normal() do
     {:Normal}
   end

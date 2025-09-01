@@ -1,4 +1,4 @@
-defmodule ShutdownType do
+defmodule Elixir.Otp.ShutdownType do
   def brutal() do
     {:Brutal}
   end

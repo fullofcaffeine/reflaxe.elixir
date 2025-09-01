@@ -51,9 +51,9 @@ else
   {:halt, acc}
 end end)
     if (struct.space != nil && items.length > 0) do
-      "[\n  " + Enum.join(items, ",\n  ") + "\n]"
+      "[\n  " <> Enum.join(items, ",\n  ") <> "\n]"
     else
-      "[" + Enum.join(items, ",") + "]"
+      "[" <> Enum.join(items, ",") <> "]"
     end
   end
   defp write_object(struct, obj) do
@@ -66,15 +66,15 @@ end end)
   value = Reflect.field(obj, field)
   key = struct.quoteString(field)
   val = struct.writeValue(value, field)
-  if (struct.space != nil), do: pairs.push(key + ": " + val), else: pairs.push(key + ":" + val)
+  if (struct.space != nil), do: pairs.push(key <> ": " <> val), else: pairs.push(key <> ":" <> val)
   {:cont, acc}
 else
   {:halt, acc}
 end end)
     if (struct.space != nil && pairs.length > 0) do
-      "{\n  " + Enum.join(pairs, ",\n  ") + "\n}"
+      "{\n  " <> Enum.join(pairs, ",\n  ") <> "\n}"
     else
-      "{" + Enum.join(pairs, ",") + "}"
+      "{" <> Enum.join(pairs, ",") <> "}"
     end
   end
   defp quote_string(struct, s) do
@@ -87,7 +87,7 @@ end end)
   if (c == nil) do
     if (c < 32) do
       hex = StringTools.hex(c, 4)
-      result = result + "\\u" + hex
+      result = result + "\\u" <> hex
     else
       result = result + s.charAt(i)
     end
@@ -110,7 +110,7 @@ end end)
       _ ->
         if (c < 32) do
           hex = StringTools.hex(c, 4)
-          result = result + "\\u" + hex
+          result = result + "\\u" <> hex
         else
           result = result + s.charAt(i)
         end

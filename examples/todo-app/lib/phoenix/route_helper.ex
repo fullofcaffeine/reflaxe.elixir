@@ -1,4 +1,4 @@
-defmodule RouteHelper do
+defmodule Phoenix.RouteHelper do
   def named(arg0) do
     {:Named, arg0}
   end

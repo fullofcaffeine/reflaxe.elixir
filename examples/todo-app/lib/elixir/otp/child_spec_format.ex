@@ -1,4 +1,4 @@
-defmodule ChildSpecFormat do
+defmodule Elixir.Otp.ChildSpecFormat do
   def module_ref(arg0) do
     arg0
   end
