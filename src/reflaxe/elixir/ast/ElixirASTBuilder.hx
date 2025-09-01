@@ -1113,11 +1113,19 @@ class ElixirASTBuilder {
                 var hasMaxRestarts = false; 
                 var hasMaxSeconds = false;
                 
+                // Detect child spec pattern
+                var hasId = false;
+                var hasStart = false;
+                var hasType = false;
+                
                 for (field in fields) {
                     switch(field.name) {
                         case "strategy": hasStrategy = true;
                         case "max_restarts": hasMaxRestarts = true;
                         case "max_seconds": hasMaxSeconds = true;
+                        case "id": hasId = true;
+                        case "start": hasStart = true;
+                        case "type": hasType = true;
                         case _:
                     }
                 }
@@ -1132,6 +1140,77 @@ class ElixirASTBuilder {
                         keywordPairs.push({key: atomName, value: fieldValue});
                     }
                     EKeywordList(keywordPairs);
+                } else if (hasId && hasStart) {
+                    // Child spec pattern - needs special handling for the start field
+                    var pairs = [];
+                    for (field in fields) {
+                        var key = makeAST(EAtom(field.name));
+                        
+                        // Special handling for the start field in child specs
+                        var fieldValue = if (field.name == "start") {
+                            // Check if start is an object with module/func/args
+                            switch(field.expr.expr) {
+                                case TObjectDecl(startFields):
+                                    var moduleField = null;
+                                    var funcField = null;
+                                    var argsField = null;
+                                    
+                                    for (sf in startFields) {
+                                        switch(sf.name) {
+                                            case "module": moduleField = sf;
+                                            case "func": funcField = sf;
+                                            case "args": argsField = sf;
+                                            case _:
+                                        }
+                                    }
+                                    
+                                    if (moduleField != null && funcField != null && argsField != null) {
+                                        // Convert to tuple format {Module, :func, args}
+                                        var moduleAst = switch(moduleField.expr.expr) {
+                                            case TConst(TString(s)):
+                                                // Convert string module name to atom
+                                                makeAST(EVar(s));
+                                            case _:
+                                                buildFromTypedExpr(moduleField.expr);
+                                        };
+                                        
+                                        var funcAst = switch(funcField.expr.expr) {
+                                            case TConst(TString(s)):
+                                                // Convert string function name to atom
+                                                makeAST(EAtom(s));
+                                            case _:
+                                                buildFromTypedExpr(funcField.expr);
+                                        };
+                                        
+                                        var argsAst = buildFromTypedExpr(argsField.expr);
+                                        
+                                        // Create tuple {Module, :func, args}
+                                        makeAST(ETuple([moduleAst, funcAst, argsAst]));
+                                    } else {
+                                        // Not the expected format, compile normally
+                                        buildFromTypedExpr(field.expr);
+                                    }
+                                    
+                                case _:
+                                    // Not an object, compile normally
+                                    buildFromTypedExpr(field.expr);
+                            }
+                        } else if (field.name == "type" || field.name == "restart" || field.name == "shutdown") {
+                            // These fields should be atoms when they're strings
+                            switch(field.expr.expr) {
+                                case TConst(TString(s)):
+                                    makeAST(EAtom(s));
+                                case _:
+                                    buildFromTypedExpr(field.expr);
+                            }
+                        } else {
+                            // Standard field value compilation
+                            buildFromTypedExpr(field.expr);
+                        };
+                        
+                        pairs.push({key: key, value: fieldValue});
+                    }
+                    EMap(pairs);
                 } else {
                     // Regular object - generate as map
                     var pairs = [];
