@@ -1,6 +1,8 @@
 defmodule Todo do
   use Ecto.Schema
   import Ecto.Changeset
-  schema("todos", field(:name, :string)
-timestamps())
+  schema "todos" do
+    field(:name, :string)
+    timestamps()
+  end
 end

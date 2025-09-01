@@ -1688,6 +1688,9 @@ class ElixirASTTransformer {
             case ECall(target, funcName, args):
                 if (target != null) visitor(target);
                 for (arg in args) visitor(arg);
+            case EMacroCall(macroName, args, doBlock):
+                for (arg in args) visitor(arg);
+                visitor(doBlock);
             case ETuple(elements):
                 for (elem in elements) visitor(elem);
             case EList(elements):
@@ -1800,6 +1803,8 @@ class ElixirASTTransformer {
                 makeASTWithMeta(EUnary(op, transformer(expr)), node.metadata, node.pos);
             case ECall(target, funcName, args):
                 makeASTWithMeta(ECall(target != null ? transformer(target) : null, funcName, args.map(transformer)), node.metadata, node.pos);
+            case EMacroCall(macroName, args, doBlock):
+                makeASTWithMeta(EMacroCall(macroName, args.map(transformer), transformer(doBlock)), node.metadata, node.pos);
             case ETuple(elements):
                 makeASTWithMeta(ETuple(elements.map(transformer)), node.metadata, node.pos);
             case EList(elements):
