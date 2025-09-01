@@ -619,6 +619,16 @@ typedef ElixirMetadata = {
     ?phoenixContext: PhoenixContext,  // LiveView, Router, etc.
     ?ectoContext: EctoContext,        // Schema, Query, etc.
     
+    // Annotation-based Module Types
+    ?isEndpoint: Bool,            // @:endpoint Phoenix.Endpoint
+    ?isLiveView: Bool,            // @:liveview Phoenix.LiveView
+    ?isSchema: Bool,              // @:schema Ecto.Schema
+    ?isApplication: Bool,         // @:application OTP Application
+    ?isGenServer: Bool,           // @:genserver GenServer behavior
+    ?isRouter: Bool,              // @:router Phoenix.Router
+    ?appName: String,             // Application name for OTP/Phoenix
+    ?tableName: String,           // Table name for Ecto schemas
+    
     // Optimization Hints
     ?canInline: Bool,             // Can be inlined
     ?keepInlineInAssignment: Bool, // Keep inline when assigned (e.g., null coalescing)

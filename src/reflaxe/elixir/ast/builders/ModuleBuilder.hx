@@ -9,7 +9,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
-import reflaxe.elixir.ast.ElixirAST.ElixirASTMetadata;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.NameUtils;
 
@@ -110,8 +110,8 @@ class ModuleBuilder {
      * WHAT: Sets boolean flags and extracts annotation parameters
      * HOW: Checks for known annotations and extracts their parameters
      */
-    static function createModuleMetadata(classType: ClassType): ElixirASTMetadata {
-        var metadata = new ElixirASTMetadata();
+    static function createModuleMetadata(classType: ClassType): ElixirMetadata {
+        var metadata: ElixirMetadata = {};
         
         // Check for Phoenix Endpoint
         if (classType.meta.has(":endpoint")) {
