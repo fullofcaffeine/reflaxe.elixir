@@ -29,6 +29,31 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Predictable Pipeline: Metadata-driven, no string manipulation
  * - Maintainable: Small focused functions instead of monolithic code
  * - Extensible: Easy to add new annotation types
+ * 
+ * SUPPORTED ANNOTATIONS:
+ * - @:endpoint - Phoenix.Endpoint with plugs, sockets, and static configuration
+ * - @:liveview - Phoenix.LiveView with mount/handle_event/render callbacks
+ * - @:schema - Ecto.Schema with field definitions and changeset functions
+ * - @:application - OTP Application with supervision tree configuration
+ * - @:phoenixWeb - Phoenix Web module with router/controller/live_view macros
+ * 
+ * TRANSFORMATION PASSES:
+ * 1. phoenixWebTransformPass - Adds defmacro definitions for Phoenix DSL
+ * 2. endpointTransformPass - Configures Phoenix.Endpoint module structure
+ * 3. liveViewTransformPass - Sets up Phoenix.LiveView use statement
+ * 4. schemaTransformPass - Adds Ecto.Schema use and schema block
+ * 5. applicationTransformPass - Configures OTP Application callbacks
+ * 
+ * METADATA FLOW:
+ * 1. ModuleBuilder detects annotations and sets metadata flags
+ * 2. Each transformation pass checks its specific metadata flag
+ * 3. If flag is set, module body is transformed with framework code
+ * 4. Original module functions are preserved and integrated
+ * 
+ * EDGE CASES:
+ * - Multiple annotations on same module: First match wins
+ * - Missing required functions: Default implementations added
+ * - Conflicting metadata: Logged and first annotation takes precedence
  */
 @:nullSafety(Off)
 class AnnotationTransforms {
@@ -43,38 +68,31 @@ class AnnotationTransforms {
     public static function endpointTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
         trace('[AnnotationTransforms] EndpointTransformPass starting, checking for endpoint modules');
+        trace('[AnnotationTransforms] AST metadata: ${ast.metadata}');
         #end
         
-        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
-            #if debug_annotation_transforms
-            switch(node.def) {
-                case EDefmodule(name, _):
-                    trace('[AnnotationTransforms] Found module: $name, metadata: ${node.metadata}');
-                default:
-            }
-            #end
-            
-            switch(node.def) {
-                case EDefmodule(name, body) if (node.metadata?.isEndpoint == true):
-                    #if debug_annotation_transforms
-                    trace('[AnnotationTransforms] Transforming endpoint module: $name');
-                    trace('[AnnotationTransforms] App name: ${node.metadata.appName}');
-                    #end
-                    
-                    var appName = node.metadata.appName ?? "app";
-                    var endpointBody = buildEndpointBody(name, appName);
-                    
-                    // Create new module with endpoint body, preserving metadata
-                    return makeASTWithMeta(
-                        EDefmodule(name, endpointBody),
-                        node.metadata,
-                        node.pos
-                    );
-                    
-                default:
-                    return node;
-            }
-        });
+        // Check the top-level node first for Endpoint modules
+        switch(ast.def) {
+            case EDefmodule(name, body) if (ast.metadata?.isEndpoint == true):
+                #if debug_annotation_transforms
+                trace('[AnnotationTransforms] Transforming endpoint module: $name');
+                trace('[AnnotationTransforms] App name: ${ast.metadata.appName}');
+                #end
+                
+                var appName = ast.metadata.appName ?? "app";
+                var endpointBody = buildEndpointBody(name, appName);
+                
+                // Create new module with endpoint body, preserving metadata
+                return makeASTWithMeta(
+                    EDefmodule(name, endpointBody),
+                    ast.metadata,
+                    ast.pos
+                );
+                
+            default:
+                // Not an Endpoint module, just pass through
+                return ast;
+        }
     }
     
     /**
@@ -233,25 +251,25 @@ class AnnotationTransforms {
      * HOW: Detects isLiveView metadata and transforms module body
      */
     public static function liveViewTransformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
-            switch(node.def) {
-                case EDefmodule(name, body) if (node.metadata?.isLiveView == true):
-                    #if debug_annotation_transforms
-                    trace('[AnnotationTransforms] Transforming LiveView module: $name');
-                    #end
-                    
-                    var liveViewBody = buildLiveViewBody(name, body);
-                    
-                    return makeASTWithMeta(
-                        EDefmodule(name, liveViewBody),
-                        node.metadata,
-                        node.pos
-                    );
-                    
-                default:
-                    return node;
-            }
-        });
+        // Check the top-level node first for LiveView modules
+        switch(ast.def) {
+            case EDefmodule(name, body) if (ast.metadata?.isLiveView == true):
+                #if debug_annotation_transforms
+                trace('[AnnotationTransforms] Transforming LiveView module: $name');
+                #end
+                
+                var liveViewBody = buildLiveViewBody(name, body);
+                
+                return makeASTWithMeta(
+                    EDefmodule(name, liveViewBody),
+                    ast.metadata,
+                    ast.pos
+                );
+                
+            default:
+                // Not a LiveView module, just pass through
+                return ast;
+        }
     }
     
     /**
@@ -300,27 +318,27 @@ class AnnotationTransforms {
      * HOW: Detects isSchema metadata and transforms module body
      */
     public static function schemaTransformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
-            switch(node.def) {
-                case EDefmodule(name, body) if (node.metadata?.isSchema == true):
-                    #if debug_annotation_transforms
-                    trace('[AnnotationTransforms] Transforming schema module: $name');
-                    trace('[AnnotationTransforms] Table name: ${node.metadata.tableName}');
-                    #end
-                    
-                    var tableName = node.metadata.tableName ?? "items";
-                    var schemaBody = buildSchemaBody(name, tableName, body);
-                    
-                    return makeASTWithMeta(
-                        EDefmodule(name, schemaBody),
-                        node.metadata,
-                        node.pos
-                    );
-                    
-                default:
-                    return node;
-            }
-        });
+        // Check the top-level node first for Schema modules
+        switch(ast.def) {
+            case EDefmodule(name, body) if (ast.metadata?.isSchema == true):
+                #if debug_annotation_transforms
+                trace('[AnnotationTransforms] Transforming schema module: $name');
+                trace('[AnnotationTransforms] Table name: ${ast.metadata.tableName}');
+                #end
+                
+                var tableName = ast.metadata.tableName ?? "items";
+                var schemaBody = buildSchemaBody(name, tableName, body);
+                
+                return makeASTWithMeta(
+                    EDefmodule(name, schemaBody),
+                    ast.metadata,
+                    ast.pos
+                );
+                
+            default:
+                // Not a Schema module, just pass through
+                return ast;
+        }
     }
     
     /**
@@ -377,25 +395,25 @@ class AnnotationTransforms {
      * HOW: Detects isApplication metadata and transforms module body
      */
     public static function applicationTransformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
-            switch(node.def) {
-                case EDefmodule(name, body) if (node.metadata?.isApplication == true):
-                    #if debug_annotation_transforms
-                    trace('[AnnotationTransforms] Transforming application module: $name');
-                    #end
-                    
-                    var appBody = buildApplicationBody(name, body);
-                    
-                    return makeASTWithMeta(
-                        EDefmodule(name, appBody),
-                        node.metadata,
-                        node.pos
-                    );
-                    
-                default:
-                    return node;
-            }
-        });
+        // Check the top-level node first for Application modules
+        switch(ast.def) {
+            case EDefmodule(name, body) if (ast.metadata?.isApplication == true):
+                #if debug_annotation_transforms
+                trace('[AnnotationTransforms] Transforming application module: $name');
+                #end
+                
+                var appBody = buildApplicationBody(name, body);
+                
+                return makeASTWithMeta(
+                    EDefmodule(name, appBody),
+                    ast.metadata,
+                    ast.pos
+                );
+                
+            default:
+                // Not an Application module, just pass through
+                return ast;
+        }
     }
     
     /**
@@ -464,6 +482,242 @@ class AnnotationTransforms {
                 startBody
             )));
         }
+        
+        return makeAST(EBlock(statements));
+    }
+    
+    /**
+     * Transform @:phoenixWeb modules into Phoenix Web helper module
+     * 
+     * WHY: Phoenix Web modules need specific macro definitions for router, controller, etc.
+     * WHAT: Adds defmacro definitions that Phoenix expects for 'use TodoAppWeb, :router'
+     * HOW: Detects isPhoenixWeb metadata and transforms module body
+     */
+    public static function phoenixWebTransformPass(ast: ElixirAST): ElixirAST {
+        #if debug_annotation_transforms
+        trace('[AnnotationTransforms] phoenixWebTransformPass starting');
+        trace('[AnnotationTransforms] AST def type: ${ast.def}');
+        trace('[AnnotationTransforms] AST metadata: ${ast.metadata}');
+        #end
+        
+        // Check the top-level node first for PhoenixWeb modules
+        switch(ast.def) {
+            case EDefmodule(name, body) if (ast.metadata?.isPhoenixWeb == true):
+                #if debug_annotation_transforms
+                trace('[AnnotationTransforms] MATCH! Transforming PhoenixWeb module: $name');
+                trace('[AnnotationTransforms] Building Phoenix Web body with macros');
+                #end
+                
+                var phoenixWebBody = buildPhoenixWebBody(name, body);
+                
+                return makeASTWithMeta(
+                    EDefmodule(name, phoenixWebBody),
+                    ast.metadata,
+                    ast.pos
+                );
+                
+            default:
+                // Not a PhoenixWeb module, just pass through
+                return ast;
+        }
+    }
+    
+    /**
+     * Build Phoenix Web module body with macro definitions
+     */
+    static function buildPhoenixWebBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
+        var statements = [];
+        
+        // Add existing functions first (like static_paths)
+        switch(existingBody.def) {
+            case EBlock(stmts):
+                for (stmt in stmts) {
+                    switch(stmt.def) {
+                        case ENil:
+                            // Skip
+                        default:
+                            statements.push(stmt);
+                    }
+                }
+            default:
+                if (existingBody.def != ENil) {
+                    statements.push(existingBody);
+                }
+        }
+        
+        // defmacro __using__(which) when is_atom(which) do
+        var usingMacroBody = makeAST(ECall(null, "apply", [
+            makeAST(EAtom("__MODULE__")),
+            makeAST(EVar("which")),
+            makeAST(EList([]))
+        ]));
+        
+        statements.push(makeAST(EDefmacro(
+            "__using__",
+            [EPattern.PVar("which")],
+            makeAST(ECall(null, "is_atom", [makeAST(EVar("which"))])),
+            usingMacroBody
+        )));
+        
+        // Extract base app name from module name (e.g., "TodoAppWeb" -> "TodoApp")
+        var appBaseName = StringTools.replace(moduleName, "Web", "");
+        
+        // def router do
+        var routerBody = makeAST(EQuote([], makeAST(EBlock([
+            makeAST(EUse("Phoenix.Router", [])),
+            makeAST(EImport(moduleName, null, [
+                {name: "controller", arity: 0},
+                {name: "live_view", arity: 0}, 
+                {name: "live_component", arity: 0}
+            ])),
+            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
+        ]))));
+        
+        statements.push(makeAST(EDef(
+            "router",
+            [],
+            null,
+            routerBody
+        )));
+        
+        // def controller do
+        var controllerBody = makeAST(EQuote([], makeAST(EBlock([
+            makeAST(EUse("Phoenix.Controller", [
+                makeAST(EKeywordList([
+                    {key: "formats", value: makeAST(EList([makeAST(EAtom("html")), makeAST(EAtom("json"))]))},
+                    {key: "layouts", value: makeAST(EList([makeAST(EKeywordList([
+                        {key: "html", value: makeAST(ETuple([
+                            makeAST(ERemoteCall(
+                                makeAST(EAtom(moduleName)),
+                                "Layouts",
+                                []
+                            )),
+                            makeAST(EAtom("app"))
+                        ]))}
+                    ]))]))}
+                ]))
+            ])),
+            makeAST(EImport("Plug.Conn", null, null)),
+            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
+        ]))));
+        
+        statements.push(makeAST(EDef(
+            "controller",
+            [],
+            null,
+            controllerBody
+        )));
+        
+        // def live_view do
+        var liveViewBody = makeAST(EQuote([], makeAST(EBlock([
+            makeAST(EUse("Phoenix.LiveView", [
+                makeAST(EKeywordList([
+                    {key: "layout", value: makeAST(ETuple([
+                        makeAST(ERemoteCall(
+                            makeAST(EAtom(moduleName)),
+                            "Layouts",
+                            []
+                        )),
+                        makeAST(EAtom("app"))
+                    ]))}
+                ]))
+            ])),
+            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))])),
+            makeAST(EMatch(EPattern.PVar("_"), makeAST(EBlock([]))))
+        ]))));
+        
+        statements.push(makeAST(EDef(
+            "live_view",
+            [],
+            null,
+            liveViewBody
+        )));
+        
+        // def live_component do
+        var liveComponentBody = makeAST(EQuote([], makeAST(EBlock([
+            makeAST(EUse("Phoenix.LiveComponent", [])),
+            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))]))
+        ]))));
+        
+        statements.push(makeAST(EDef(
+            "live_component",
+            [],
+            null,
+            liveComponentBody
+        )));
+        
+        // def html do
+        var htmlBody = makeAST(EQuote([], makeAST(EBlock([
+            makeAST(EUse("Phoenix.Component", [])),
+            makeAST(EImport(moduleName + ".CoreComponents", null, null)),
+            makeAST(EImport(moduleName + ".Gettext", null, null)),
+            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))])),
+            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
+        ]))));
+        
+        statements.push(makeAST(EDef(
+            "html",
+            [],
+            null,
+            htmlBody
+        )));
+        
+        // defp html_helpers do
+        var htmlHelpersBody = makeAST(EQuote([], makeAST(EBlock([
+            makeAST(EImport("Phoenix.HTML", null, null)),
+            makeAST(EImport("Phoenix.HTML.Form", null, null)),
+            makeAST(EAlias("Phoenix.HTML.Form", "Form"))
+        ]))));
+        
+        statements.push(makeAST(EDefp(
+            "html_helpers",
+            [],
+            null,
+            htmlHelpersBody
+        )));
+        
+        // def verified_routes do
+        var verifiedRoutesBody = makeAST(EQuote([], makeAST(EBlock([
+            makeAST(EUse("Phoenix.VerifiedRoutes", [
+                makeAST(EKeywordList([
+                    {key: "endpoint", value: makeAST(ERemoteCall(
+                        makeAST(EAtom(moduleName)),
+                        "Endpoint",
+                        []
+                    ))},
+                    {key: "router", value: makeAST(ERemoteCall(
+                        makeAST(EAtom(moduleName)),
+                        "Router",
+                        []
+                    ))},
+                    {key: "statics", value: makeAST(ERemoteCall(
+                        makeAST(EAtom(moduleName)),
+                        "static_paths",
+                        []
+                    ))}
+                ]))
+            ]))
+        ]))));
+        
+        statements.push(makeAST(EDef(
+            "verified_routes",
+            [],
+            null,
+            verifiedRoutesBody
+        )));
+        
+        // def channel do
+        var channelBody = makeAST(EQuote([], makeAST(EBlock([
+            makeAST(EUse("Phoenix.Channel", [])),
+            makeAST(EImport(moduleName + ".Gettext", null, null))
+        ]))));
+        
+        statements.push(makeAST(EDef(
+            "channel",
+            [],
+            null,
+            channelBody
+        )));
         
         return makeAST(EBlock(statements));
     }
