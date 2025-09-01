@@ -267,6 +267,14 @@ class ElixirASTTransformer {
             pass: structFieldAssignmentTransformPass
         });
         
+        // Assignment extraction pass (must run before underscore cleanup)
+        passes.push({
+            name: "AssignmentExtraction",
+            description: "Extract assignments from binary operations and other expression contexts",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AssignmentExtractionTransforms.assignmentExtractionPass
+        });
+        
         // Underscore variable cleanup pass (should run late to catch all generated vars)
         #if !disable_underscore_cleanup
         passes.push({

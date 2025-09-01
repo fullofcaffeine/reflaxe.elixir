@@ -53,5 +53,5 @@ server.infrastructure.TranslationBindings
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
 # Temporarily exclude problematic stdlib modules
--D exclude-bytes
+# -D exclude-bytes  # Removed to test assignment extraction fix
 -D exclude-balanced-tree
