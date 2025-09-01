@@ -1,6 +1,6 @@
 package templates;
 
-import reflaxe.elixir.HXX;
+import reflaxe.elixir.macro.HXX;
 
 /**
  * Todo LiveView template using proper HXX inline syntax

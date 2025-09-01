@@ -1,4 +1,4 @@
-package reflaxe.elixir;
+package reflaxe.elixir.macro;
 
 #if macro
 import haxe.macro.Context;
