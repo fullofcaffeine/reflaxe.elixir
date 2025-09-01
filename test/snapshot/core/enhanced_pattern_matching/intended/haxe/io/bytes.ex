@@ -1,86 +1,41 @@
 defmodule Bytes do
-  @moduledoc """
-    Bytes struct generated from Haxe
-
-    This module defines a struct with typed fields and constructor functions.
-  """
-
-  defstruct [:length, :b]
-
-  @type t() :: %__MODULE__{
-    length: integer() | nil,
-    b: BytesData.t() | nil
-  }
-
-  @doc "Creates a new struct instance"
-  @spec new(integer(), BytesData.t()) :: t()
-  def new(arg0, arg1) do
-    %__MODULE__{
-      length: arg0,
-      b: arg1
-    }
+  import Bitwise
+  defp new(length, b) do
+    %{:length => length, :b => b}
   end
-
-  @doc "Updates struct fields using a map of changes"
-  @spec update(t(), map()) :: t()
-  def update(struct, changes) when is_map(changes) do
-    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
-  end
-
-  # Static functions
-  @doc "Generated from Haxe ofString"
-  def of_string(s, _encoding \\ nil) do
-    temp_number = nil
-    temp_left = nil
-
+  def of_string(s, encoding) do
     a = Array.new()
-
     i = 0
-
-    (fn loop ->
-      if ((i < s.length)) do
-            temp_number = nil
-        index = i + 1
-        temp_number = s.cca(index)
-        c = temp_number
-        if (((55296 <= c) && (c <= 56319))) do
-          temp_left = nil
-          index = i + 1
-          temp_left = s.cca(index)
-          c = (Bitwise.bsl((c - 55232), 10) or (temp_left and 1023))
-        else
-          nil
-        end
-        a = if ((c <= 127)), do: a ++ [c], else: a = if ((c <= 2047)), do: a ++ [(128 or (c and 63))], else: a = if ((c <= 65535)), do: a ++ [(128 or (c and 63))], else: a ++ [(128 or (c and 63))]
-        loop.()
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (i < s.length) do
+  c = index = i + 1
+s.cca(index)
+  if (55296 <= c && c <= 56319) do
+    c = c - 55232 <<< 10 ||| index = i + 1
+s.cca(index) &&& 1023
+  end
+  if (c <= 127) do
+    a.push(c)
+  else
+    if (c <= 2047) do
+      a.push(192 ||| c >>> 6)
+      a.push(128 ||| c &&& 63)
+    else
+      if (c <= 65535) do
+        a.push(224 ||| c >>> 12)
+        a.push(128 ||| c >>> 6 &&& 63)
+        a.push(128 ||| c &&& 63)
+      else
+        a.push(240 ||| c >>> 18)
+        a.push(128 ||| c >>> 12 &&& 63)
+        a.push(128 ||| c >>> 6 &&& 63)
+        a.push(128 ||| c &&& 63)
       end
-    end).()
-
+    end
+  end
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
     Bytes.new(a.length, a)
   end
-
-
-  # While loop helper functions
-  # Generated automatically for tail-recursive loop patterns
-
-  @doc false
-  defp while_loop(condition_fn, body_fn) do
-    if condition_fn.() do
-      body_fn.()
-      while_loop(condition_fn, body_fn)
-    else
-      nil
-    end
-  end
-
-  @doc false
-  defp do_while_loop(body_fn, condition_fn) do
-    body_fn.()
-    if condition_fn.() do
-      do_while_loop(body_fn, condition_fn)
-    else
-      nil
-    end
-  end
-
 end

@@ -1,164 +1,76 @@
 defmodule BytesBuffer do
-  @moduledoc """
-    BytesBuffer struct generated from Haxe
-
-    This module defines a struct with typed fields and constructor functions.
-  """
-
-  defstruct [:b]
-
-  @type t() :: %__MODULE__{
-    b: Array.t() | nil
-  }
-
-  @doc "Creates a new struct instance"
-  @spec new() :: t()
+  import Bitwise
   def new() do
-    %__MODULE__{
-    }
+    %{:b => Array.new()}
   end
-
-  @doc "Updates struct fields using a map of changes"
-  @spec update(t(), map()) :: t()
-  def update(struct, changes) when is_map(changes) do
-    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
-  end
-
-  # Instance functions
-  @doc "Generated from Haxe get_length"
-  def get_length(%__MODULE__{} = struct) do
+  defp get_length(struct) do
     struct.b.length
   end
-
-  @doc "Generated from Haxe addByte"
-  def add_byte(%__MODULE__{} = struct, byte) do
-    struct.b ++ [byte]
+  def add_byte(struct, byte) do
+    struct.b.push(byte)
   end
-
-  @doc "Generated from Haxe add"
-  def add(%__MODULE__{} = struct, src) do
-    _b1 = struct.b
-
-    b2 = src.b
-
-    g_counter = 0
-
-    g_array = src.length
-
-    (fn loop ->
-      if ((g_counter < g_array)) do
-            i = g_counter + 1
-        struct.b ++ [Enum.at(b2, _i)]
-        loop.()
-      end
-    end).()
+  def add(struct, src) do
+    b_1 = struct.b
+    b_2 = src.b
+    g = 0
+    g1 = src.length
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1) do
+  i = g + 1
+  struct.b.push(b[i])
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
   end
-
-  @doc "Generated from Haxe addString"
-  def add_string(%__MODULE__{} = struct, v, encoding \\ nil) do
+  def add_string(struct, v, encoding) do
     src = Bytes.of_string(v, encoding)
-
-    _b1 = struct.b
-
-    b2 = src.b
-
-    g_counter = 0
-
-    g_array = src.length
-
-    (fn loop ->
-      if ((g_counter < g_array)) do
-            i = g_counter + 1
-        struct.b ++ [Enum.at(b2, _i)]
-        loop.()
-      end
-    end).()
+    b_1 = struct.b
+    b_2 = src.b
+    g = 0
+    g1 = src.length
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1) do
+  i = g + 1
+  struct.b.push(b[i])
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
   end
-
-  @doc "Generated from Haxe addInt32"
-  def add_int32(%__MODULE__{} = struct, v) do
-    struct.b ++ [(v and 255)]
-
-    struct.b ++ [(Bitwise.bsr(v, 8) and 255)]
-
-    struct.b ++ [(Bitwise.bsr(v, 16) and 255)]
-
-    struct.b ++ [Bitwise.bsr(v, 24)]
+  def add_int32(struct, v) do
+    struct.b.push(v &&& 255)
+    struct.b.push(v >>> 8 &&& 255)
+    struct.b.push(v >>> 16 &&& 255)
+    struct.b.push(v >>> 24)
   end
-
-  @doc "Generated from Haxe addInt64"
-  def add_int64(%__MODULE__{} = struct, v) do
-    struct.add_int32(v.low)
-
-    struct.add_int32(v.high)
+  def add_int64(struct, v) do
+    struct.addInt32(v.low)
+    struct.addInt32(v.high)
   end
-
-  @doc "Generated from Haxe addFloat"
-  def add_float(%__MODULE__{} = struct, v) do
-    struct.add_int32(FPHelper.float_to_i32(v))
+  def add_float(struct, v) do
+    struct.addInt32(FPHelper.float_to_i32(v))
   end
-
-  @doc "Generated from Haxe addDouble"
-  def add_double(%__MODULE__{} = struct, v) do
-    struct.add_int64(FPHelper.double_to_i64(v))
+  def add_double(struct, v) do
+    struct.addInt64(FPHelper.double_to_i64(v))
   end
-
-  @doc "Generated from Haxe addBytes"
-  def add_bytes(%__MODULE__{} = struct, src, pos, len) do
-    if ((((pos < 0) || (len < 0)) || ((pos + len) > src.length))) do
-      raise :outside_bounds
-    else
-      nil
+  def add_bytes(struct, src, pos, len) do
+    if (pos < 0 || len < 0 || pos + len > src.length) do
+      throw(:OutsideBounds)
     end
-
-    _b1 = struct.b
-
-    b2 = src.b
-
-    g_array = pos
-
-    g_array = (pos + len)
-
-    (fn loop ->
-      if ((g_array < g_array)) do
-            i = g_array + 1
-        struct.b ++ [Enum.at(b2, _i)]
-        loop.()
-      end
-    end).()
+    b_1 = struct.b
+    b_2 = src.b
+    g = pos
+    g1 = pos + len
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1) do
+  i = g + 1
+  struct.b.push(b[i])
+  {:cont, acc}
+else
+  {:halt, acc}
+end end)
   end
-
-  @doc "Generated from Haxe getBytes"
-  def get_bytes(%__MODULE__{} = struct) do
+  def get_bytes(struct) do
     bytes = Bytes.new(struct.b.length, struct.b)
-
-    %{struct | b: nil}
-
+    b = nil
     bytes
   end
-
-
-  # While loop helper functions
-  # Generated automatically for tail-recursive loop patterns
-
-  @doc false
-  defp while_loop(condition_fn, body_fn) do
-    if condition_fn.() do
-      body_fn.()
-      while_loop(condition_fn, body_fn)
-    else
-      nil
-    end
-  end
-
-  @doc false
-  defp do_while_loop(body_fn, condition_fn) do
-    body_fn.()
-    if condition_fn.() do
-      do_while_loop(body_fn, condition_fn)
-    else
-      nil
-    end
-  end
-
 end
