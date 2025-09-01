@@ -59,6 +59,9 @@ class ElixirASTBuilder {
     // Counter for generating unique while loop function names
     static var whileLoopCounter: Int = 0;
     
+    // Current module being compiled (for detecting same-module static calls)
+    public static var currentModule: String = null;
+    
     /**
      * Main entry point: Convert TypedExpr to ElixirAST
      * 
@@ -607,7 +610,38 @@ class ElixirASTBuilder {
                                 } else {
                                     // Regular module call - convert method name to snake_case for Elixir
                                     var elixirFuncName = toSnakeCase(fieldName);
-                                    ERemoteCall(objAst, elixirFuncName, args);
+                                    
+                                    // Check if this is a same-module call
+                                    if (currentModule != null) {
+                                        switch(obj.expr) {
+                                            case TTypeExpr(m):
+                                                var moduleName = moduleTypeToString(m);
+                                                #if debug_same_module_calls
+                                                trace('[Same Module Check] Current: $currentModule, Called: $moduleName, Method: $elixirFuncName');
+                                                #end
+                                                if (moduleName == currentModule) {
+                                                    // Same module call - just use the function name without module prefix
+                                                    ECall(null, elixirFuncName, args);
+                                                } else {
+                                                    // Different module - use remote call
+                                                    ERemoteCall(objAst, elixirFuncName, args);
+                                                }
+                                            default:
+                                                // Not a module type expression, use remote call
+                                                ERemoteCall(objAst, elixirFuncName, args);
+                                        }
+                                    } else {
+                                        // No current module context, use remote call
+                                        #if debug_same_module_calls
+                                        switch(obj.expr) {
+                                            case TTypeExpr(m):
+                                                var moduleName = moduleTypeToString(m);
+                                                trace('[Same Module Check] No context set! Module: $moduleName, Method: $elixirFuncName');
+                                            default:
+                                        }
+                                        #end
+                                        ERemoteCall(objAst, elixirFuncName, args);
+                                    }
                                 }
                             } else {
                                 // Check if this is a method call that contains __elixir__() injection

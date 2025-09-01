@@ -5,7 +5,7 @@ defmodule FormTarget_Impl_ do
     this_1
   end
   def from_string(s) do
-    FormTarget_Impl_._new(s)
+    _new(s)
   end
   def to_string(this1) do
     this1

@@ -49,7 +49,7 @@ end end)
     result
   end
   def get_header(this1, name) do
-    headers = Conn_Impl_.get_headers(this1)
+    headers = get_headers(this1)
     key = name.toLowerCase()
     Map.get(headers, key)
   end
@@ -69,7 +69,7 @@ end end)
     Reflect.field(this1, "assigns")
   end
   def get_assign(this1, key) do
-    assigns = Conn_Impl_.get_assigns(this1)
+    assigns = get_assigns(this1)
     Reflect.field(assigns, key)
   end
   def is_halted(this1) do

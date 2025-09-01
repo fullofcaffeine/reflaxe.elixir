@@ -551,6 +551,10 @@ class ElixirCompiler extends GenericCompiler<
             return null;
         }
         
+        // Set current module context for ElixirASTBuilder
+        var previousModule = reflaxe.elixir.ast.ElixirASTBuilder.currentModule;
+        reflaxe.elixir.ast.ElixirASTBuilder.currentModule = classType.name;
+        
         // Build function definitions
         var functions = [];
         for (func in funcFields) {
@@ -787,7 +791,12 @@ class ElixirCompiler extends GenericCompiler<
         
         // Create module AST
         var moduleBody = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EBlock(functions));
-        return reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EDefmodule(moduleName, moduleBody));
+        var moduleAST = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EDefmodule(moduleName, moduleBody));
+        
+        // Restore previous module context
+        reflaxe.elixir.ast.ElixirASTBuilder.currentModule = previousModule;
+        
+        return moduleAST;
     }
     
     /**

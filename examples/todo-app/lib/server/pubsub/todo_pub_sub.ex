@@ -35,7 +35,7 @@ defmodule TodoPubSub do
   3 ->
     g = message.elem(1)
     action = g
-    %{:type => "bulk_update", :action => TodoPubSub.bulk_action_to_string(action)}
+    %{:type => "bulk_update", :action => bulk_action_to_string(action)}
   4 ->
     g = message.elem(1)
     user_id = g
@@ -49,7 +49,7 @@ defmodule TodoPubSub do
     g1 = message.elem(2)
     message = g
     level = g1
-    %{:type => "system_alert", :message => message, :level => TodoPubSub.alert_level_to_string(level)}
+    %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
 end
     SafePubSub.add_timestamp(base_payload)
   end

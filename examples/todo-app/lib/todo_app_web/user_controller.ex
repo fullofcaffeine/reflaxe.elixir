@@ -11,7 +11,7 @@ defmodule TodoAppWeb.UserController do
     Phoenix.Controller.json(conn, data)
   end
   def create(conn, params) do
-    data = %{:user => %{:id => UserController.generate_unique_id(), :name => params.name, :email => params.email, :age => params.age}, :created => true, :message => "User created successfully"}
+    data = %{:user => %{:id => generate_unique_id(), :name => params.name, :email => params.email, :age => params.age}, :created => true, :message => "User created successfully"}
     Phoenix.Controller.json(conn, data)
   end
   def update(conn, params) do

@@ -3,12 +3,12 @@ defmodule SupervisorOptionsBuilder do
     [strategy: :one_for_one, max_restarts: 3, max_seconds: 5]
   end
   def with_strategy(strategy) do
-    opts = SupervisorOptionsBuilder.defaults()
+    opts = defaults()
     strategy = strategy
     opts
   end
   def with_limits(max_restarts, max_seconds) do
-    opts = SupervisorOptionsBuilder.defaults()
+    opts = defaults()
     max_restarts = max_restarts
     max_seconds = max_seconds
     opts
