@@ -51,4 +51,6 @@ server.components.CoreComponents
 server.infrastructure.Gettext
 server.infrastructure.TranslationBindings
 server.infrastructure.GettextErrorMessages
-server.infrastructure.GettextUIMessages
+server.infrastructure.GettextUIMessages# Temporarily exclude problematic stdlib modules
+-D exclude-bytes
+-D exclude-balanced-tree
