@@ -27,6 +27,17 @@ import reflaxe.elixir.ast.ElixirASTHelpers;
  * 2. Analyzes the semantic intent of the original code
  * 3. Transforms to idiomatic Elixir that preserves semantics
  * 
+ * SOLUTION IMPLEMENTED (September 2025):
+ * - Fixed indentation in lambda bodies (EFn case in ElixirASTPrinter)
+ * - Improved pattern detection to check all variables in assignment chains
+ * - Fixed variable replacement logic to correctly embed assignment chains in method calls
+ * - Successfully combines patterns like: index = i = i + 1; s.cca(index) → index = s.cca(i = i + 1)
+ * 
+ * REMAINING ISSUE:
+ * - Assignments embedded in binary operations (e.g., expr1 ||| index = call() &&& expr2)
+ *   generate invalid Elixir because assignments cannot appear inside arithmetic expressions.
+ *   Solution requires extracting assignments before the expression that uses them.
+ * 
  * ARCHITECTURE BENEFITS:
  * - Single Responsibility: Only handles inline expansion issues
  * - Testability: Each pattern can be tested in isolation
@@ -177,12 +188,12 @@ class InlineExpansionTransforms {
      * PATTERN REQUIREMENTS:
      * 1. First expression must be an assignment chain (can be nested)
      * 2. Second expression must be a method call or field access
-     * 3. The call/access must use the last assigned variable from the chain
+     * 3. The call/access must use ANY variable from the assignment chain
      * 
      * EXAMPLES THAT MATCH:
      *   first:  c = index = i = i + 1
      *   second: s.cca(index)
-     *   → Matches because 'index' is used in the call
+     *   → Matches because 'index' is used in the call (part of the chain)
      * 
      *   first:  result = pos = pos + 1
      *   second: array[pos]
@@ -195,35 +206,104 @@ class InlineExpansionTransforms {
      * 
      *   first:  c = d = 10
      *   second: print("hello")
-     *   → Doesn't match because print doesn't use 'd'
+     *   → Doesn't match because print doesn't use 'c' or 'd'
      * 
      * @param first The first expression (potential assignment chain)
      * @param second The second expression (potential method call)
      * @return True if this is a split inline expansion
      */
     static function isInlineExpansionSplit(first: ElixirAST, second: ElixirAST): Bool {
-        // Extract the last assigned variable from the chain
-        var lastVar = extractLastAssignedVar(first);
+        // Extract ALL variables from the assignment chain
+        var assignedVars = extractAllAssignedVars(first);
         
         #if debug_inline_combiner
-        if (lastVar != null) {
-            trace('[XRay InlineCombiner] Last assigned variable: $lastVar');
+        if (assignedVars.length > 0) {
+            trace('[XRay InlineCombiner] Assignment chain variables: ${assignedVars.join(", ")}');
         }
         #end
         
-        if (lastVar == null) return false;
+        if (assignedVars.length == 0) return false;
         
-        // Check if second is a method call that uses this variable
+        // Check if second is a method call that uses ANY of these variables
         return switch(second.def) {
-            case ECall(target, methodName, args) if (target != null):
-                var uses = usesVariable(args, lastVar);
+            case ECall(target, methodName, args):
+                // Note: target can be null for local function calls
+                // Check if any of the assigned variables are used in the call
+                var uses = false;
+                for (varName in assignedVars) {
+                    if (usesVariable(args, varName)) {
+                        uses = true;
+                        #if debug_inline_combiner
+                        trace('[XRay InlineCombiner] Method call ${methodName} uses ${varName}: true');
+                        #end
+                        break;
+                    }
+                }
                 #if debug_inline_combiner
-                trace('[XRay InlineCombiner] Method call ${methodName} uses ${lastVar}: $uses');
+                if (!uses && methodName != null) {
+                    trace('[XRay InlineCombiner] Method call ${methodName} uses none of [${assignedVars.join(", ")}]');
+                }
                 #end
                 uses;
+            case EField(target, fieldName):
+                // Handle field access that might be a method call (e.g., s.cca)
+                #if debug_inline_combiner
+                trace('[XRay InlineCombiner] Found field access: ${fieldName} - not a direct call');
+                #end
+                false;
             default:
+                #if debug_inline_combiner
+                trace('[XRay InlineCombiner] Second expression is not a call: ${second.def}');
+                #end
                 false;
         };
+    }
+    
+    /**
+     * Extracts ALL assigned variables from an assignment chain
+     * 
+     * ALGORITHM:
+     * Collects all variables that appear on the left side of assignments
+     * in the chain. For `c = index = i = i + 1`, returns ["c", "index", "i"]
+     * 
+     * @param expr The expression to analyze
+     * @return Array of all assigned variable names in the chain
+     */
+    static function extractAllAssignedVars(expr: ElixirAST): Array<String> {
+        var vars = [];
+        
+        function collectVars(e: ElixirAST): Void {
+            switch(e.def) {
+                case EMatch(PVar(name), right):
+                    // Pattern match assignment: name = right
+                    vars.push(name);
+                    collectVars(right);
+                    
+                case EBinary(Match, left, right):
+                    // Binary match operation: left = right
+                    switch(left.def) {
+                        case EVar(name): 
+                            vars.push(name);
+                        default:
+                    }
+                    collectVars(right);
+                    
+                case EBinary(Add | Subtract | Multiply | Divide, left, _):
+                    // Arithmetic operations: check left side for variables
+                    switch(left.def) {
+                        case EVar(name): 
+                            vars.push(name);
+                        default:
+                            collectVars(left);
+                    }
+                    
+                default:
+                    // Not an assignment
+            }
+        }
+        
+        collectVars(expr);
+        return vars;
     }
     
     /**
@@ -380,8 +460,9 @@ class InlineExpansionTransforms {
         // Extract the rest of the assignment chain (everything after first var)
         var restOfChain = extractRestOfAssignmentChain(first);
         
-        // Modify the method call to include the assignment chain in its arguments
-        var modifiedCall = embedAssignmentInCall(second, restOfChain);
+        // The key insight: if the method call uses the first variable from the chain,
+        // we should replace it with the rest of the chain
+        var modifiedCall = embedAssignmentInCall(second, restOfChain, firstVar);
         
         // Create the final assignment: firstVar = modifiedCall
         var result = ElixirASTHelpers.make(EMatch(PVar(firstVar), modifiedCall));
@@ -445,30 +526,43 @@ class InlineExpansionTransforms {
      * Embeds an assignment chain into a method call's arguments
      * 
      * REPLACEMENT STRATEGY:
-     * Finds simple variable references in the call arguments and replaces
-     * them with the full assignment chain. This ensures the assignments
-     * happen as part of evaluating the method arguments.
+     * Replaces the firstVar (from the original assignment chain) with the restOfChain
+     * in the method call arguments.
      * 
      * Example:
+     *   Original: index = i = i + 1; s.cca(index)
      *   call: s.cca(index)
-     *   chain: index = i = i + 1
-     *   result: s.cca(index = i = i + 1)
+     *   assignmentChain: i = i + 1 (the rest after "index =")
+     *   firstVar: "index"
+     *   
+     * We replace "index" in the call with "i = i + 1"
+     * to produce: s.cca(i = i + 1)
+     * 
+     * Then the outer assignment is added: index = s.cca(i = i + 1)
      * 
      * @param call The method call to modify
-     * @param assignmentChain The assignment chain to embed
+     * @param assignmentChain The assignment chain to embed (rest of chain after first var)
+     * @param firstVar The variable from the original chain that should be replaced
      * @return Modified method call with embedded assignments
      */
-    static function embedAssignmentInCall(call: ElixirAST, assignmentChain: ElixirAST): ElixirAST {
+    static function embedAssignmentInCall(call: ElixirAST, assignmentChain: ElixirAST, firstVar: String): ElixirAST {
         return switch(call.def) {
             case ECall(target, methodName, args):
-                // Replace simple variable references with the assignment chain
+                #if debug_inline_combiner
+                trace('[XRay InlineCombiner] Looking to replace $firstVar with: ${assignmentChain.def}');
+                #end
+                
+                // Replace the firstVar argument with the assignment chain
+                var modified = false;
                 var newArgs = args.map(function(arg) {
                     return switch(arg.def) {
                         case EVar(name):
-                            // Check if this variable appears in the assignment chain
-                            var chainVar = extractFirstVar(assignmentChain);
-                            if (chainVar == name) {
-                                // Replace with the full assignment chain
+                            // Replace if this is the first variable from the original chain
+                            if (name == firstVar) {
+                                #if debug_inline_combiner
+                                trace('[XRay InlineCombiner] Replacing argument $name with assignment chain');
+                                #end
+                                modified = true;
                                 assignmentChain;
                             } else {
                                 arg;
@@ -477,9 +571,39 @@ class InlineExpansionTransforms {
                             arg;
                     };
                 });
-                ElixirASTHelpers.make(ECall(target, methodName, newArgs));
+                
+                if (modified) {
+                    ElixirASTHelpers.make(ECall(target, methodName, newArgs));
+                } else {
+                    // No modification needed - return original call
+                    call;
+                }
             default:
                 call;
+        };
+    }
+    
+    /**
+     * Extracts the first variable from an assignment chain
+     * 
+     * For "index = i = i + 1", returns "index"
+     * For "i = i + 1", returns "i"
+     * For non-assignment expressions, returns null
+     * 
+     * @param expr The assignment chain or expression
+     * @return The first variable being assigned, or null if not an assignment
+     */
+    static function extractFirstVarFromChain(expr: ElixirAST): Null<String> {
+        return switch(expr.def) {
+            case EMatch(PVar(name), _):
+                // Pattern match assignment: name = ...
+                name;
+            case EBinary(Match, {def: EVar(name)}, _):
+                // Binary match: name = ...
+                name;
+            default:
+                // Not an assignment chain - no variable to extract
+                null;
         };
     }
 }

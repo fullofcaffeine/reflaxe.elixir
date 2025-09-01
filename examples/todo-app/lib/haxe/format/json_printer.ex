@@ -43,13 +43,15 @@ defmodule JsonPrinter do
     items = []
     g = 0
     g1 = arr.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1) do
-  i = g = g + 1
-  items.push(struct.writeValue(arr[i], Std.string(i)))
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if (g < g1) do
+    i = g = g + 1
+    items.push(struct.writeValue(arr[i], Std.string(i)))
+    {:cont, acc}
+  else
+    {:halt, acc}
+  end
+end)
     if (struct.space != nil && items.length > 0) do
       "[\n  " <> Enum.join(items, ",\n  ") <> "\n]"
     else
@@ -60,17 +62,19 @@ end end)
     fields = Reflect.fields(obj)
     pairs = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < fields.length) do
-  field = fields[g]
-  g = g + 1
-  value = Reflect.field(obj, field)
-  key = struct.quoteString(field)
-  val = struct.writeValue(value, field)
-  if (struct.space != nil), do: pairs.push(key <> ": " <> val), else: pairs.push(key <> ":" <> val)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if (g < fields.length) do
+    field = fields[g]
+    g = g + 1
+    value = Reflect.field(obj, field)
+    key = struct.quoteString(field)
+    val = struct.writeValue(value, field)
+    if (struct.space != nil), do: pairs.push(key <> ": " <> val), else: pairs.push(key <> ":" <> val)
+    {:cont, acc}
+  else
+    {:halt, acc}
+  end
+end)
     if (struct.space != nil && pairs.length > 0) do
       "{\n  " <> Enum.join(pairs, ",\n  ") <> "\n}"
     else
@@ -81,45 +85,47 @@ end end)
     result = "\""
     g = 0
     g1 = s.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1) do
-  i = g = g + 1
-  c = s.charCodeAt(i)
-  if (c == nil) do
-    if (c < 32) do
-      hex = StringTools.hex(c, 4)
-      result = result <> "\\u" <> hex
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if (g < g1) do
+    i = g = g + 1
+    c = s.charCodeAt(i)
+    if (c == nil) do
+      if (c < 32) do
+        hex = StringTools.hex(c, 4)
+        result = result <> "\\u" <> hex
+      else
+        result = result <> s.charAt(i)
+      end
     else
-      result = result <> s.charAt(i)
+      case (c) do
+        8 ->
+          result = result <> "\\b"
+        9 ->
+          result = result <> "\\t"
+        10 ->
+          result = result <> "\\n"
+        12 ->
+          result = result <> "\\f"
+        13 ->
+          result = result <> "\\r"
+        34 ->
+          result = result <> "\\\""
+        92 ->
+          result = result <> "\\\\"
+        _ ->
+          if (c < 32) do
+            hex = StringTools.hex(c, 4)
+            result = result <> "\\u" <> hex
+          else
+            result = result <> s.charAt(i)
+          end
+      end
     end
+    {:cont, acc}
   else
-    case (c) do
-      8 ->
-        result = result <> "\\b"
-      9 ->
-        result = result <> "\\t"
-      10 ->
-        result = result <> "\\n"
-      12 ->
-        result = result <> "\\f"
-      13 ->
-        result = result <> "\\r"
-      34 ->
-        result = result <> "\\\""
-      92 ->
-        result = result <> "\\\\"
-      _ ->
-        if (c < 32) do
-          hex = StringTools.hex(c, 4)
-          result = result <> "\\u" <> hex
-        else
-          result = result <> s.charAt(i)
-        end
-    end
+    {:halt, acc}
   end
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
     result = result <> "\""
     result
   end

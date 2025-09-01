@@ -37,15 +37,17 @@ defmodule Conn_Impl_ do
     result = %{}
     g = 0
     g1 = Reflect.fields(headers)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
-  field = g1[g]
-  g = g + 1
-  value = Reflect.field(headers, field)
-  Map.put(result, field, value)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if (g < g1.length) do
+    field = g1[g]
+    g = g + 1
+    value = Reflect.field(headers, field)
+    Map.put(result, field, value)
+    {:cont, acc}
+  else
+    {:halt, acc}
+  end
+end)
     result
   end
   def get_header(this1, name) do
@@ -83,15 +85,17 @@ end end)
     result = %{}
     g = 0
     g1 = Reflect.fields(headers)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
-  field = g1[g]
-  g = g + 1
-  value = Reflect.field(headers, field)
-  Map.put(result, field, value)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if (g < g1.length) do
+    field = g1[g]
+    g = g + 1
+    value = Reflect.field(headers, field)
+    Map.put(result, field, value)
+    {:cont, acc}
+  else
+    {:halt, acc}
+  end
+end)
     result
   end
   def get_response_body(this1) do
