@@ -798,7 +798,19 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
                                 }
                                 
                                 if (keyName != null && keyValue != null) {
-                                    keywordPairs.push({key: keyName, value: keyValue});
+                                    // For certain keys like "name", convert module-like strings to atoms
+                                    var finalValue = if (keyName == "name") {
+                                        switch(keyValue.def) {
+                                            case EString(s) if (isModuleName(s)):
+                                                // Convert module name string to atom
+                                                makeAST(EAtom(s), keyValue.pos);
+                                            default:
+                                                keyValue;
+                                        }
+                                    } else {
+                                        keyValue;
+                                    };
+                                    keywordPairs.push({key: keyName, value: finalValue});
                                 } else {
                                     isKeyValueConfig = false;
                                 }

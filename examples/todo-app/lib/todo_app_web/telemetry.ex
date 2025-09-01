@@ -1,6 +1,6 @@
 defmodule TodoAppWeb.Telemetry do
   def child_spec(opts) do
-    %{:id => "TodoAppWeb.Telemetry", :start => %{:module => "TodoAppWeb.Telemetry", :func => "start_link", :args => [opts]}, :type => "supervisor", :restart => "permanent", :shutdown => "infinity"}
+    %{:id => "TodoAppWeb.Telemetry", :start => {TodoAppWeb.Telemetry, :start_link, [opts]}, :type => :supervisor, :restart => :permanent, :shutdown => :infinity}
   end
   def start_link(args) do
     children = []
