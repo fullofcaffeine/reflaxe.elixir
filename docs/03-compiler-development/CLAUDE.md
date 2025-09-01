@@ -84,6 +84,86 @@ Elixir Code Strings
 Generated .ex Files
 ```
 
+## 📝 Code Quality Standards
+
+### Pattern Matching Readability (NEW STANDARD)
+
+**FUNDAMENTAL RULE: Complex pattern matching must be refactored into self-documenting helper functions.**
+
+#### ❌ WRONG: Unreadable Inline Pattern Matching
+```haxe
+// This is unmaintainable and hard to understand
+case [TVar(tmpVar, init), TIf({expr: TBinop(OpEq, {expr: TLocal(v)}, {expr: TConst(TNull)})}, thenExpr, elseExpr)]
+    | [TVar(tmpVar, init), TIf({expr: TBinop(OpNotEq, {expr: TLocal(v)}, {expr: TConst(TNull)})}, elseExpr, thenExpr)]
+    if (v.id == tmpVar.id && init != null && elseExpr != null):
+    // Complex transformation logic...
+```
+
+#### ✅ RIGHT: Self-Documenting Helper Functions
+```haxe
+// Clear, testable, maintainable
+private static function isInlineExpansionBlock(block: Array<TypedExpr>): Bool {
+    if (block.length != 2) return false;
+    
+    return switch(block[0].expr, block[1].expr) {
+        case (TVar(tmpVar, init), TIf(cond, _, elseExpr)):
+            init != null && 
+            elseExpr != null && 
+            isNullCheckCondition(cond, tmpVar.id);
+        case _: false;
+    }
+}
+
+private static function transformInlineExpansion(block: Array<TypedExpr>): ElixirASTDef {
+    var pattern = extractInlineExpansionPattern(block);
+    return generateInlineConditional(pattern);
+}
+
+// Usage becomes self-documenting:
+case TBlock(el):
+    if (isInlineExpansionBlock(el)) {
+        return transformInlineExpansion(el);
+    }
+    // Regular block handling...
+```
+
+#### Pattern Extraction Guidelines
+
+**When to Extract a Pattern**:
+- Pattern matching exceeds 3 levels of nesting
+- Multiple similar patterns exist in the codebase
+- Pattern has complex guard conditions
+- Pattern purpose isn't immediately obvious
+
+**How to Name Pattern Functions**:
+- `is[PatternName]()` - Boolean pattern detection
+- `extract[PatternName]()` - Pattern data extraction
+- `transform[PatternName]()` - Pattern transformation
+- `generate[OutputType]()` - Code generation from pattern
+
+**Return Types for Pattern Functions**:
+```haxe
+// Detection: Simple boolean
+function isArrayBuildingPattern(expr: TypedExpr): Bool
+
+// Extraction: Structured data or null
+function extractLoopPattern(expr: TypedExpr): Null<{
+    loopVar: TVar,
+    sourceArray: TypedExpr,
+    body: TypedExpr
+}>
+
+// Transformation: New AST node
+function transformToEnumCall(pattern: LoopPattern): ElixirASTDef
+```
+
+#### Benefits of This Approach
+1. **Self-Documenting**: Function names explain intent
+2. **Testable**: Each pattern function can be unit tested
+3. **Reusable**: Same patterns can be detected in multiple places
+4. **Maintainable**: Changes to pattern detection are localized
+5. **Readable**: Main logic flow isn't obscured by complex matching
+
 ## 🔧 Development Workflow
 
 ### After ANY Compiler Change
