@@ -1041,13 +1041,42 @@ class ElixirASTBuilder {
                     }
                 }
                 
-                // Check for inline expansion pattern
+                // Check for inline expansion pattern at TypedExpr level
                 if (ElixirASTPatterns.isInlineExpansionBlock(el)) {
                     return ElixirASTPatterns.transformInlineExpansion(el, buildFromTypedExpr, toElixirVarName);
                 }
                 
+                // Build all expressions
                 var expressions = [for (e in el) buildFromTypedExpr(e)];
-                EBlock(expressions);
+                
+                // Check if we need to combine inline expansions
+                // Look for patterns like: c = index = expr; obj.method(index)
+                var needsCombining = false;
+                for (i in 0...expressions.length - 1) {
+                    var current = expressions[i];
+                    var next = expressions[i + 1];
+                    
+                    // Check for assignment followed by method call pattern
+                    switch([current.def, next.def]) {
+                        case [EMatch(_, _), ECall(_, _, _)]:
+                            needsCombining = true;
+                            break;
+                        case _:
+                    }
+                }
+                
+                if (needsCombining) {
+                    // Use the existing InlineExpansionTransforms to combine split patterns
+                    // This handles cases where inline expansions are created during AST building
+                    var combinedBlock = makeAST(EBlock(expressions));
+                    var transformed = reflaxe.elixir.ast.transformers.InlineExpansionTransforms.inlineMethodCallCombinerPass(combinedBlock);
+                    
+                    // Return the transformed block's definition
+                    transformed.def;
+                } else {
+                    // No combining needed, return regular block
+                    EBlock(expressions);
+                }
                 
             case TReturn(e):
                 if (e != null) {
@@ -3053,6 +3082,34 @@ class ElixirASTBuilder {
                     [arrayAST, lambda]
                 );
         }
+    }
+    
+    /**
+     * Check if an array of AST nodes uses a specific variable
+     */
+    static function usesVariable(nodes: Array<ElixirAST>, varName: String): Bool {
+        for (node in nodes) {
+            if (usesVariableInNode(node, varName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Check if an AST node uses a specific variable
+     */
+    static function usesVariableInNode(node: ElixirAST, varName: String): Bool {
+        return switch(node.def) {
+            case EVar(name): name == varName;
+            case ECall(target, _, args): 
+                (target != null && usesVariableInNode(target, varName)) || 
+                usesVariable(args, varName);
+            case EMatch(_, expr): usesVariableInNode(expr, varName);
+            case EBinary(_, left, right): 
+                usesVariableInNode(left, varName) || usesVariableInNode(right, varName);
+            case _: false;
+        };
     }
 }
 

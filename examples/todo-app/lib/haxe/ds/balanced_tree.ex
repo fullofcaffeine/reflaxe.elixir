@@ -7,18 +7,20 @@ defmodule BalancedTree do
   end
   def get(struct, key) do
     node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (node != nil) do
-  c = struct.compare(key, node.key)
-  if (c == 0), do: node.value
-  if (c < 0) do
-    node = node.left
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if (node != nil) do
+    c = struct.compare(key, node.key)
+    if (c == 0), do: node.value
+    if (c < 0) do
+      node = node.left
+    else
+      node = node.right
+    end
+    {:cont, acc}
   else
-    node = node.right
+    {:halt, acc}
   end
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
     nil
   end
   def remove(struct, key) do
@@ -31,34 +33,34 @@ end end)
   end
   def exists(struct, key) do
     node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (node != nil) do
-  c = struct.compare(key, node.key)
-  if (c == 0) do
-    true
-  else
-    if (c < 0) do
-      node = node.left
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if (node != nil) do
+    c = struct.compare(key, node.key)
+    if (c == 0) do
+      true
     else
-      node = node.right
+      if (c < 0) do
+        node = node.left
+      else
+        node = node.right
+      end
     end
+    {:cont, acc}
+  else
+    {:halt, acc}
   end
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
     false
   end
   def iterator(struct) do
-    ret = []
-    iterator_loop(struct.root, ret)
+    ret = iterator_loop(struct.root, [])
     ret.iterator()
   end
   def key_value_iterator(struct) do
     MapKeyValueIterator.new(struct)
   end
   def keys(struct) do
-    ret = []
-    struct.keysLoop(struct.root, ret)
+    ret = struct.keysLoop(struct.root, [])
     ret.iterator()
   end
   def copy(struct) do
@@ -75,11 +77,9 @@ end end)
       TreeNode.new(node.left, k, v, node.right, node.get_height())
     else
       if (c < 0) do
-        nl = struct.setLoop(k, v, node.left)
-        struct.balance(nl, node.key, node.value, node.right)
+        nl = struct.balance(struct.setLoop(k, v, node.left), node.key, node.value, node.right)
       else
-        nr = struct.setLoop(k, v, node.right)
-        struct.balance(node.left, node.key, node.value, nr)
+        nr = struct.balance(node.left, node.key, node.value, struct.setLoop(k, v, node.right))
       end
     end
   end

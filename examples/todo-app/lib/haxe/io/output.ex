@@ -11,14 +11,16 @@ defmodule Output do
       throw("Invalid parameters")
     end
     k = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (k > 0) do
-  struct.writeByte(b.b[pos])
-  pos = pos + 1
-  k = (k - 1)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if (k > 0) do
+    struct.writeByte(b.b[pos])
+    pos = pos + 1
+    k = (k - 1)
+    {:cont, acc}
+  else
+    {:halt, acc}
+  end
+end)
     len
   end
   def write(struct, b) do
@@ -29,20 +31,21 @@ end end)
       bufsize = 4096
     end
     buf = Bytes.alloc(bufsize)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if true do
-  len = i.readBytes(buf, 0, bufsize)
-  if (len == 0) do
-    throw(:break)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  if true do
+    len = i.readBytes(buf, 0, bufsize)
+    if (len == 0) do
+      throw(:break)
+    end
+    struct.writeBytes(buf, 0, len)
+    {:cont, acc}
+  else
+    {:halt, acc}
   end
-  struct.writeBytes(buf, 0, len)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
   end
   def write_string(struct, s) do
-    b = Bytes.of_string(s)
-    struct.write(b)
+    b = struct.write(Bytes.of_string(s))
   end
   def flush(struct) do
     nil
