@@ -131,6 +131,9 @@ enum ElixirASTDef {
     /** Function call */
     ECall(target: Null<ElixirAST>, funcName: String, args: Array<ElixirAST>);
     
+    /** Macro call with do-block (like schema, defmodule, etc.) */
+    EMacroCall(macroName: String, args: Array<ElixirAST>, doBlock: ElixirAST);
+    
     /** Remote call Module.function() */
     ERemoteCall(module: ElixirAST, funcName: String, args: Array<ElixirAST>);
     
