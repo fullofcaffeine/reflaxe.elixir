@@ -367,12 +367,47 @@ class ModuleBuilder {
     static function buildSchemaBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
         var statements = [];
         
-        // Schema structure will be added by transformer
-        // Just build the changeset and other functions
+        #if debug_module_builder
+        trace('[ModuleBuilder] buildSchemaBody called with ${funcFields.length} functions');
         for (func in funcFields) {
-            if (func.expr() != null) {
+            trace('[ModuleBuilder] - Function: ${func.name}, isPublic: ${func.isPublic}, hasExpr: ${func.expr() != null}');
+        }
+        #end
+        
+        // Schema structure will be added by transformer
+        // Build the changeset and other functions with their actual bodies
+        for (func in funcFields) {
+            var funcExpr = func.expr();
+            if (funcExpr != null) {
                 var funcName = NameUtils.toSnakeCase(func.name);
-                statements.push(makeAST(EDef(funcName, [], null, makeAST(ENil))));
+                
+                // Extract the function body from the TypedExpr
+                switch(funcExpr.expr) {
+                    case TFunction(tfunc):
+                        // Extract arguments
+                        var args = [];
+                        for (arg in tfunc.args) {
+                            var paramName = NameUtils.toSnakeCase(arg.v.name);
+                            args.push(PVar(paramName));
+                        }
+                        
+                        // Build the function body using ElixirASTBuilder
+                        var body = if (tfunc.expr != null) {
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr);
+                        } else {
+                            makeAST(ENil);
+                        }
+                        
+                        // Create the function definition (use defp for private functions)
+                        if (func.isPublic) {
+                            statements.push(makeAST(EDef(funcName, args, null, body)));
+                        } else {
+                            statements.push(makeAST(EDefp(funcName, args, null, body)));
+                        }
+                        
+                    default:
+                        // Not a function, skip
+                }
             }
         }
         

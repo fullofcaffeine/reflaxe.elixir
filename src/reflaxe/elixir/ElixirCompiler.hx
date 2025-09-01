@@ -520,13 +520,25 @@ class ElixirCompiler extends GenericCompiler<
             var instanceFields = classType.fields.get();
             var staticFields = classType.statics.get();
             
+            #if debug_module_builder
+            trace('[ElixirCompiler] Class ${classType.name} has ${instanceFields.length} instance fields and ${staticFields.length} static fields');
+            for (f in staticFields) {
+                trace('[ElixirCompiler] - Static field: ${f.name}, kind: ${f.kind}');
+            }
+            #end
+            
             // Combine instance and static fields
             var allFields = instanceFields.concat(staticFields);
             
+            var varFields = allFields.filter(f -> f.kind.match(FVar(_, _)));
+            var funcFields = allFields.filter(f -> f.kind.match(FMethod(_)));
+            
+            #if debug_module_builder
+            trace('[ElixirCompiler] Filtered: ${varFields.length} var fields, ${funcFields.length} func fields');
+            #end
+            
             return reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, 
-                allFields.filter(f -> f.kind.match(FVar(_, _))),
-                allFields.filter(f -> f.kind.match(FMethod(_)))
-            );
+                varFields, funcFields);
         }
         
         // Get module name - check for @:native annotation first
