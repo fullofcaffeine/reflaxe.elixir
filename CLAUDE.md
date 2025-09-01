@@ -238,6 +238,30 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 
 **Key Insight**: Reflaxe.Elixir is a **macro-time transpiler**, not a runtime library. All transpilation happens during Haxe compilation.
 
+## ⚠️ CRITICAL: NEVER EDIT GENERATED FILES
+
+**FUNDAMENTAL RULE: NEVER EDIT GENERATED .ex FILES DIRECTLY. ALL FIXES MUST BE IN THE COMPILER SOURCE.**
+
+**What counts as a generated file violation:**
+- ❌ **Editing any .ex file** in `lib/` directories of examples
+- ❌ **Manual fixes** to generated Elixir code to "make it work"
+- ❌ **Patching output** instead of fixing the generator
+- ❌ **Quick fixes** in generated files "just to test"
+- ❌ **Any modification** to files created by the transpiler
+
+**The correct approach:**
+- ✅ **Fix the compiler source** in `src/reflaxe/elixir/`
+- ✅ **Modify Haxe source** in `src_haxe/` if it's user code
+- ✅ **Update AST builder/transformer** to generate correct code
+- ✅ **Fix root cause** even if it takes longer
+- ✅ **Test via regeneration** - delete and regenerate files to verify
+
+**Why this matters:**
+- Generated files are **overwritten on every compilation**
+- Manual edits are **immediately lost**
+- It **violates the entire purpose** of the transpiler
+- Fixing symptoms instead of causes **perpetuates bugs**
+
 ## ⚠️ CRITICAL: NO BAND-AID FIXES EVER
 
 **FUNDAMENTAL RULE: NEVER USE POST-PROCESSING OR BAND-AID FIXES. ALWAYS FIX THE ROOT CAUSE.**

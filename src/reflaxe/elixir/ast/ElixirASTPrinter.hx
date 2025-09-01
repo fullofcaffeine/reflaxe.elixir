@@ -417,10 +417,51 @@ class ElixirASTPrinter {
             case EPipe(left, right):
                 print(left, 0) + ' |> ' + print(right, 0);
                 
+            /**
+             * BINARY OPERATION PRINTING
+             * 
+             * WHY: If expressions in binary operations require parentheses in Elixir
+             * - Without parentheses: `if x, do: 1, else: 2 > 3` is ambiguous
+             * - With parentheses: `(if x, do: 1, else: 2) > 3` is clear
+             * - Haxe's inline function expansion creates complex if expressions in comparisons
+             * 
+             * WHAT: Wrap if expressions when they appear as binary operation operands
+             * - Detect if expressions in left/right operands
+             * - Add parentheses around if expressions
+             * - Preserve existing parenthesization logic for the whole expression
+             * 
+             * HOW: Check operand types before printing
+             * - If operand is EIf: wrap in parentheses
+             * - Otherwise: print normally
+             * - Apply outer parentheses if needed by context
+             * 
+             * EXAMPLES:
+             * - `(if a, do: 1, else: 2) > (if b, do: 3, else: 4)`
+             * - `x + y` (no parentheses needed for simple operands)
+             * - `(if cond, do: val1, else: val2) + 5`
+             */
             case EBinary(op, left, right):
                 var needsParens = needsParentheses(node);
                 var opStr = binaryOpToString(op);
-                var result = print(left, 0) + ' ' + opStr + ' ' + print(right, 0);
+                
+                // Check if operands need parentheses (e.g., if expressions in comparisons)
+                var leftStr = switch(left.def) {
+                    case EIf(_, _, _):
+                        // If expressions in binary operations need parentheses
+                        '(' + print(left, 0) + ')';
+                    default:
+                        print(left, 0);
+                };
+                
+                var rightStr = switch(right.def) {
+                    case EIf(_, _, _):
+                        // If expressions in binary operations need parentheses
+                        '(' + print(right, 0) + ')';
+                    default:
+                        print(right, 0);
+                };
+                
+                var result = leftStr + ' ' + opStr + ' ' + rightStr;
                 needsParens ? '(' + result + ')' : result;
                 
             case EUnary(op, expr):
