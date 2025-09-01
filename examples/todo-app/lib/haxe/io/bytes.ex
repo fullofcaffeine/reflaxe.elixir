@@ -12,7 +12,7 @@ defmodule Bytes do
     if (b1 == b2 && pos > srcpos) do
       i = len
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (i > 0) do
-  i - 1
+  (i - 1)
   _ = b2[i + srcpos]
   {:cont, acc}
 else
@@ -92,7 +92,7 @@ end end)
   c = index = i + 1
 s.cca(index)
   if (55296 <= c && c <= 56319) do
-    c = c - 55232 <<< 10 ||| index = i + 1
+    c = (c - 55232) <<< 10 ||| index = i + 1
 s.cca(index) &&& 1023
   end
   if (c <= 127) do

@@ -870,8 +870,15 @@ class ElixirASTPrinter {
      * Check if expression needs parentheses
      */
     static function needsParentheses(node: ElixirASTDef): Bool {
-        // Simple heuristic - can be enhanced
-        return false;
+        return switch(node) {
+            // Subtraction needs parentheses in binary contexts to avoid match errors
+            case EBinary(Subtract, _, _): true;
+            // Other operations that might need parentheses in certain contexts
+            case EBinary(op, _, _): 
+                // Add more cases as needed
+                false;
+            default: false;
+        };
     }
     
     /**

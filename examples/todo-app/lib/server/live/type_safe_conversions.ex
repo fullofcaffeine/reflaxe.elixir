@@ -90,7 +90,7 @@ else
 end, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
     total_todos = assigns.todos.length
     completed_todos = count_completed(assigns.todos)
-    pending_todos = assigns.total_todos - assigns.completed_todos
+    pending_todos = (assigns.total_todos - assigns.completed_todos)
     assigns
   end
   defp create_default_user() do
