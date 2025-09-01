@@ -70,11 +70,7 @@ else
 end, :current_user => if (current_user != nil) do
   current_user
 else
-  if (base != nil) do
-    base.current_user
-  else
-    TypeSafeConversions.create_default_user()
-  end
+  if (base != nil), do: base.current_user, else: create_default_user()
 end, :editing_todo => if (editing_todo != nil) do
   editing_todo
 else
@@ -93,7 +89,7 @@ else
   if (base != nil), do: base.selected_tags, else: []
 end, :total_todos => 0, :completed_todos => 0, :pending_todos => 0}
     total_todos = assigns.todos.length
-    completed_todos = TypeSafeConversions.count_completed(assigns.todos)
+    completed_todos = count_completed(assigns.todos)
     pending_todos = assigns.total_todos - assigns.completed_todos
     assigns
   end

@@ -41,16 +41,16 @@ else
   {:halt, acc}
 end end)
     g = 0
-    g1 = Reflect.fields(Assigns_Impl_.to_dynamic(other))
+    g1 = Reflect.fields(to_dynamic(other))
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
   field = g1[g]
   g + 1
-  Reflect.set_field(result, field, Reflect.field(Assigns_Impl_.to_dynamic(other), field))
+  Reflect.set_field(result, field, Reflect.field(to_dynamic(other), field))
   {:cont, acc}
 else
   {:halt, acc}
 end end)
-    Assigns_Impl_.from_dynamic(result)
+    from_dynamic(result)
   end
   def with_field(this1, field, value) do
     result = %{}
@@ -65,7 +65,7 @@ else
   {:halt, acc}
 end end)
     Reflect.set_field(result, field, value)
-    Assigns_Impl_.from_dynamic(result)
+    from_dynamic(result)
   end
   def get_inner_content(this1) do
     Reflect.field(this1, "inner_content")

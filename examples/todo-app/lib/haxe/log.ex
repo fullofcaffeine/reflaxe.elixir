@@ -18,7 +18,7 @@ end end)
     pstr <> ": " <> str
   end
   def trace(v, infos) do
-    str = Log.format_output(v, infos)
+    str = format_output(v, infos)
     Sys.println(str)
   end
 end

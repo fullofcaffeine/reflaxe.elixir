@@ -82,6 +82,10 @@ class ModuleBuilder {
         // Extract module name
         var moduleName = extractModuleName(classType);
         
+        // Set current module context for ElixirASTBuilder
+        var previousModule = reflaxe.elixir.ast.ElixirASTBuilder.currentModule;
+        reflaxe.elixir.ast.ElixirASTBuilder.currentModule = classType.name;
+        
         // Create metadata for the module
         var metadata = createModuleMetadata(classType);
         
@@ -115,6 +119,9 @@ class ModuleBuilder {
             metadata,
             null
         );
+        
+        // Restore previous module context
+        reflaxe.elixir.ast.ElixirASTBuilder.currentModule = previousModule;
         
         #if debug_module_builder
         trace('[ModuleBuilder] Built module AST with metadata: ${metadata}');

@@ -23,7 +23,7 @@ defmodule Users do
     if (changeset != nil), do: %{:status => "ok", :user => user}, else: %{:status => "error", :changeset => changeset}
   end
   def delete_user(user) do
-    Users.update_user(user, %{:active => false})
+    update_user(user, %{:active => false})
   end
   def search_users(term) do
     []

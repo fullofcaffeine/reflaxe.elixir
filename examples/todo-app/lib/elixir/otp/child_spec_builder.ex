@@ -6,7 +6,7 @@ defmodule ChildSpecBuilder do
     %{:id => (if (id != nil), do: id, else: module), :start => {module, :start_link, args}, :restart => :permanent, :shutdown => :infinity, :type => :supervisor, :modules => [module]}
   end
   def temp_worker(module, args, id) do
-    spec = ChildSpecBuilder.worker(module, args, id)
+    spec = worker(module, args, id)
     restart = :temporary
     spec
   end
