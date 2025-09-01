@@ -1,4 +1,4 @@
-defmodule SortDirection do
+defmodule Phoenix.SortDirection do
   def asc() do
     {:Asc}
   end

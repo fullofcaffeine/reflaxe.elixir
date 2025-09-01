@@ -1,4 +1,4 @@
-defmodule OrderDirection do
+defmodule Phoenix.OrderDirection do
   def asc() do
     {:ASC}
   end

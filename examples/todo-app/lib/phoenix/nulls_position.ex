@@ -1,4 +1,4 @@
-defmodule NullsPosition do
+defmodule Phoenix.NullsPosition do
   def first() do
     {:First}
   end

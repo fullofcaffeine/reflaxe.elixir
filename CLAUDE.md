@@ -727,11 +727,33 @@ if (isPhoenixProject()) {
 
 **IMPORTANT CLARIFICATION**: `__elixir__()` IS available and can be strategically used for standard library implementations.
 
+**⚠️ CRITICAL: Correct Placeholder Syntax Required**
+
+The `__elixir__()` function requires specific placeholder syntax to work correctly:
+
 ```haxe
-// ✅ AVAILABLE: Direct Elixir code injection for efficient stdlib implementation
-var result = untyped __elixir__('IO.puts("Direct Elixir code")');
-var formatted = untyped __elixir__('Jason.encode!(data)');
+// ❌ WRONG: $variable syntax causes Haxe string interpolation at compile-time
+untyped __elixir__('Phoenix.Controller.json($conn, $data)');  // FAILS!
+// This becomes string concatenation: "" + conn + ", " + data + ")"
+// Result: Not a constant string, Reflaxe cannot process it
+
+// ✅ CORRECT: {N} placeholder syntax for variable substitution
+untyped __elixir__('Phoenix.Controller.json({0}, {1})', conn, data);  // WORKS!
+// Variables are passed as parameters and substituted at placeholder positions
 ```
+
+**WHY THIS MATTERS**: 
+- `$variable` triggers Haxe's compile-time string interpolation
+- The result is no longer a constant string literal
+- Reflaxe's TargetCodeInjection requires the first parameter to be a constant
+- `{N}` placeholders preserve the constant string while allowing substitution
+
+**RULES FOR `__elixir__()` USAGE**:
+1. First parameter MUST be a constant string literal (no concatenation)
+2. Use `{0}`, `{1}`, `{2}`... for variable substitution
+3. Variables are passed as additional parameters
+4. Variables are compiled to Elixir and substituted at placeholder positions
+5. Keyword lists and atoms should be written directly in the string
 
 ### Pragmatic Stdlib Implementation Strategy
 
@@ -741,9 +763,9 @@ var formatted = untyped __elixir__('Jason.encode!(data)');
 2. **Native Implementation**: Use `__elixir__()` or `@:native` for efficient Elixir implementation  
 3. **Best of Both Worlds**: Cross-platform API with idiomatic target code
 
-#### Example: StringBuf Implementation
+#### Example: StringBuf Implementation (CORRECTED)
 ```haxe
-// Type-safe Haxe interface
+// Type-safe Haxe interface with CORRECT placeholder syntax
 class StringBuf {
     var iolist: Dynamic;
     
@@ -753,13 +775,13 @@ class StringBuf {
     }
     
     public function add(x: String): Void {
-        // Native Elixir list concatenation
-        iolist = untyped __elixir__('$iolist ++ [$x]');
+        // Native Elixir list concatenation with {N} placeholders
+        iolist = untyped __elixir__('{0} ++ [{1}]', iolist, x);
     }
     
     public function toString(): String {
-        // Native Elixir binary conversion
-        return untyped __elixir__('IO.iodata_to_binary($iolist)');
+        // Native Elixir binary conversion with {N} placeholder
+        return untyped __elixir__('IO.iodata_to_binary({0})', iolist);
     }
 }
 ```

@@ -12,7 +12,7 @@ defmodule TodoAppWeb do
   end
   def controller() do
     quote do
-      use Phoenix.Controller, [formats: [:html, :json], layouts: [[html: {TodoAppWeb.Layouts, :app}]]]
+      use Phoenix.Controller, [formats: [:html, :json], layouts: [html: {TodoAppWeb.Layouts, :app}]]
       import Plug.Conn
       unquote(verified_routes())
     end
@@ -56,5 +56,8 @@ defmodule TodoAppWeb do
       use Phoenix.Channel
       import TodoAppWeb.Gettext
     end
+  end
+  def static_paths() do
+    ["assets", "fonts", "images", "favicon.ico", "robots.txt"]
   end
 end

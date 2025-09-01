@@ -1,4 +1,4 @@
-defmodule FieldType do
+defmodule Phoenix.FieldType do
   def id() do
     {:Id}
   end

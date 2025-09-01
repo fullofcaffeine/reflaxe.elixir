@@ -8,6 +8,7 @@ import reflaxe.elixir.macros.HttpMethod;
  * This example shows how to use HttpMethod enum and class references
  * instead of error-prone string literals for better compile-time safety.
  */
+@:native("TodoAppWeb.Router")
 @:router
 @:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
 @:routes([

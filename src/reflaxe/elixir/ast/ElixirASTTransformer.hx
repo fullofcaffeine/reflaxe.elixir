@@ -155,6 +155,20 @@ class ElixirASTTransformer {
         });
         
         passes.push({
+            name: "ControllerTransform",
+            description: "Transform @:controller modules into Phoenix.Controller structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.controllerTransformPass
+        });
+        
+        passes.push({
+            name: "RouterTransform",
+            description: "Transform @:router modules into Phoenix.Router structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.routerTransformPass
+        });
+        
+        passes.push({
             name: "SchemaTransform",
             description: "Transform @:schema modules into Ecto.Schema structure",
             enabled: true,

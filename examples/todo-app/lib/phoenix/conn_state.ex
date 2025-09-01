@@ -1,4 +1,4 @@
-defmodule ConnState do
+defmodule Phoenix.ConnState do
   def unset() do
     {:Unset}
   end

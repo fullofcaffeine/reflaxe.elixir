@@ -41,6 +41,7 @@ server.live.TodoLive
 server.schemas.Todo
 server.migrations.CreateTodos
 server.live.UserLive
+controllers.UserController
 server.layouts.Layouts
 server.infrastructure.Repo
 server.infrastructure.Telemetry

@@ -1,4 +1,4 @@
-defmodule Error do
+defmodule Haxe.Io.Error do
   def blocked() do
     {:Blocked}
   end

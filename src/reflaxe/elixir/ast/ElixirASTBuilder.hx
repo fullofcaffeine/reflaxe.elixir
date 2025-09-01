@@ -373,7 +373,19 @@ class ElixirASTBuilder {
                 var right = buildFromTypedExpr(e2);
                 
                 switch(op) {
-                    case OpAdd: EBinary(Add, left, right);
+                    case OpAdd: 
+                        // Check if we're adding strings - use <> operator for string concatenation
+                        var isStringConcat = switch(e1.t) {
+                            case TInst(_.get() => {name: "String"}, _): true;
+                            case TAbstract(_.get() => {name: "String"}, _): true;
+                            default: false;
+                        };
+                        
+                        if (isStringConcat) {
+                            EBinary(StringConcat, left, right);
+                        } else {
+                            EBinary(Add, left, right);
+                        }
                     case OpSub: EBinary(Subtract, left, right);
                     case OpMult: EBinary(Multiply, left, right);
                     case OpDiv: EBinary(Divide, left, right);

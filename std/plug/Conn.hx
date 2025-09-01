@@ -189,6 +189,228 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
     public function getResponseBody(): String {
         return Reflect.field(this, "resp_body");
     }
+    
+    // ========================================================================
+    // PHOENIX CONTROLLER RESPONSE METHODS
+    // ========================================================================
+    
+    /**
+     * ## Why @:extern inline and untyped __elixir__()?
+     * 
+     * Based on official Haxe documentation, these features work together:
+     * 
+     * ### @:extern Metadata (or extern keyword)
+     * - **Purpose**: Prevents the compiler from generating a field in the output
+     * - **With inline**: FORCES inlining (compilation error if impossible)
+     * - **Why use it**: We want the __elixir__() code to be inlined at call sites
+     * - **Guarantee**: Extern + inline is the ONLY way to guarantee inlining in Haxe
+     * 
+     * ### inline Keyword
+     * - **Purpose**: Function body is inserted directly at call sites
+     * - **Benefit**: Zero function call overhead - code is substituted at compile time
+     * - **With extern**: Becomes mandatory - must inline or compilation fails
+     * 
+     * ### untyped __elixir__() Magic Function
+     * - **Purpose**: Injects raw Elixir code into the generated output
+     * - **Why untyped**: Bypasses Haxe type checking for this specific expression
+     * - **$variable syntax**: Variables like $this and $data get substituted
+     * - **Benefit**: Full access to Elixir/Phoenix ecosystem without writing externs
+     * - **Safety**: We wrap it in typed Haxe methods for compile-time checking
+     * 
+     * ### Example Compilation
+     * 
+     * Haxe code:
+     * ```haxe
+     * conn.json({user: user})
+     * ```
+     * 
+     * Compiles to idiomatic Elixir:
+     * ```elixir
+     * Phoenix.Controller.json(conn, %{user: user})
+     * ```
+     * 
+     * This gives us the best of both worlds:
+     * - Type safety at compile time (Haxe checks types)
+     * - Native performance at runtime (direct Elixir calls)
+     * - Idiomatic output (looks like hand-written Elixir)
+     */
+    
+    /**
+     * Send JSON response - The most common API response method
+     * 
+     * ## Type Safety Benefits
+     * 
+     * Traditional Elixir (runtime errors possible):
+     * ```elixir
+     * json(conn, %{user: user})  # What if user is nil?
+     * ```
+     * 
+     * With Haxe (compile-time safety):
+     * ```haxe
+     * conn.json({user: user})  // Won't compile if user doesn't exist
+     * ```
+     * 
+     * ## Usage Examples
+     * 
+     * Simple response:
+     * ```haxe
+     * return conn.json({success: true, message: "Saved!"});
+     * ```
+     * 
+     * Complex typed response:
+     * ```haxe
+     * typedef ApiResponse = {
+     *     data: Array<User>,
+     *     meta: {count: Int, page: Int}
+     * }
+     * var response: ApiResponse = {
+     *     data: users,
+     *     meta: {count: users.length, page: 1}
+     * };
+     * return conn.json(response);
+     * ```
+     * 
+     * @param data Any data structure that can be JSON encoded
+     * @return Updated conn with JSON response set
+     */
+    @:extern
+    public inline function json(data: Dynamic): Conn<TParams> {
+        return untyped __elixir__('Phoenix.Controller.json({0}, {1})', this, data);
+    }
+    
+    /**
+     * Render HTML template with assigns - Core of Phoenix web apps
+     * 
+     * ## Why This Matters
+     * 
+     * Phoenix templates can have runtime errors if assigns are missing.
+     * With Haxe, we can type-check template variables at compile time!
+     * 
+     * ## Examples
+     * 
+     * Basic rendering:
+     * ```haxe
+     * return conn.render("index.html", {users: users});
+     * ```
+     * 
+     * Type-safe assigns:
+     * ```haxe
+     * typedef IndexAssigns = {
+     *     users: Array<User>,
+     *     current_user: User,
+     *     page_title: String
+     * }
+     * var assigns: IndexAssigns = {
+     *     users: getUsers(),
+     *     current_user: getCurrentUser(conn),
+     *     page_title: "User List"
+     * };
+     * return conn.render("index.html", assigns);
+     * ```
+     * 
+     * @param template Template name (e.g., "index.html", "show.json")
+     * @param assigns Data to pass to the template
+     * @return Updated conn with rendered response
+     */
+    @:extern
+    public inline function render(template: String, ?assigns: Dynamic): Conn<TParams> {
+        return if (assigns != null) {
+            untyped __elixir__('Phoenix.Controller.render({0}, {1}, {2})', this, template, assigns);
+        } else {
+            untyped __elixir__('Phoenix.Controller.render({0}, {1})', this, template);
+        }
+    }
+    
+    /**
+     * Redirect to another route - Type-safe navigation
+     * 
+     * ## Redirect Types
+     * 
+     * - `to: "/path"` - Internal path redirect
+     * - `external: "https://..."` - External URL redirect  
+     * 
+     * ## Examples
+     * 
+     * Simple redirect:
+     * ```haxe
+     * return conn.redirect("/users");
+     * ```
+     * 
+     * With flash message:
+     * ```haxe
+     * conn.putFlash("info", "User created successfully!")
+     *     .redirect("/users/" + user.id);
+     * ```
+     * 
+     * @param to Path or URL to redirect to
+     * @return Updated conn with redirect response
+     */
+    @:extern  
+    public inline function redirect(to: String): Conn<TParams> {
+        return untyped __elixir__('Phoenix.Controller.redirect({0}, to: {1})', this, to);
+    }
+    
+    /**
+     * Set HTTP status code - Control response status
+     * 
+     * @param status HTTP status code (200, 404, 500, etc.)
+     * @return Updated conn with status set
+     */
+    @:extern
+    public inline function putStatus(status: Int): Conn<TParams> {
+        return untyped __elixir__('Plug.Conn.put_status({0}, {1})', this, status);
+    }
+    
+    /**
+     * Add flash message - User feedback that persists across redirects
+     * 
+     * Flash messages are shown once then cleared automatically.
+     * Perfect for success/error messages after form submissions.
+     * 
+     * @param kind Flash type ("info", "error", "success", "warning")
+     * @param message The message to display
+     * @return Updated conn with flash message
+     */
+    @:extern
+    public inline function putFlash(kind: String, message: String): Conn<TParams> {
+        return untyped __elixir__('Phoenix.Controller.put_flash({0}, {1}, {2})', this, kind, message);
+    }
+    
+    /**
+     * Assign value for templates - Pass data to views
+     * 
+     * @param key The assign key
+     * @param value The value to assign
+     * @return Updated conn with new assign
+     */
+    @:extern
+    public inline function assign(key: String, value: Dynamic): Conn<TParams> {
+        return untyped __elixir__('Plug.Conn.assign({0}, {1}, {2})', this, key, value);
+    }
+    
+    /**
+     * Send raw response - For custom response types
+     * 
+     * @param status HTTP status code
+     * @param body Response body as string
+     * @return Updated conn with response sent
+     */
+    @:extern
+    public inline function sendResp(status: Int, body: String): Conn<TParams> {
+        return untyped __elixir__('Plug.Conn.send_resp({0}, {1}, {2})', this, status, body);
+    }
+    
+    /**
+     * Halt the connection - Stop processing the request
+     * 
+     * Used in plugs/middleware to stop the request pipeline.
+     * 
+     * @return Halted conn
+     */
+    @:extern
+    public inline function halt(): Conn<TParams> {
+        return untyped __elixir__('Plug.Conn.halt({0})', this);
+    }
 }
 
 /**

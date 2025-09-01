@@ -41,6 +41,7 @@ import reflaxe.elixir.ast.NameUtils;
  * - @:phoenixWeb - Phoenix Web helper module with DSL macros
  * - @:genserver - GenServer behavior module
  * - @:router - Phoenix.Router module with routing DSL
+ * - @:controller - Phoenix.Controller module with action functions
  * 
  * METADATA FIELDS SET:
  * - isEndpoint: Boolean flag for @:endpoint annotation
@@ -50,6 +51,7 @@ import reflaxe.elixir.ast.NameUtils;
  * - isPhoenixWeb: Boolean flag for @:phoenixWeb annotation
  * - isGenServer: Boolean flag for @:genserver annotation
  * - isRouter: Boolean flag for @:router annotation
+ * - isController: Boolean flag for @:controller annotation
  * - appName: String with application name (for endpoint/application)
  * - tableName: String with database table name (for schema)
  * 
@@ -90,6 +92,9 @@ class ModuleBuilder {
         } else if (metadata.isEndpoint) {
             // For @:endpoint, create minimal structure - transformer will add the rest
             buildMinimalBody(classType, varFields, funcFields);
+        } else if (metadata.isController) {
+            // For @:controller, build controller action functions
+            buildControllerBody(classType, varFields, funcFields);
         } else if (metadata.isLiveView) {
             // For @:liveview, build basic function structure
             buildLiveViewBody(classType, varFields, funcFields);
@@ -196,6 +201,15 @@ class ModuleBuilder {
             #end
         }
         
+        // Check for Controller
+        if (classType.meta.has(":controller")) {
+            metadata.isController = true;
+            metadata.appName = extractAppName(classType);
+            #if debug_module_builder
+            trace('[ModuleBuilder] Detected @:controller annotation, appName: ${metadata.appName}');
+            #end
+        }
+        
         // Check for PhoenixWeb (supports both @:phoenixWeb and @:phoenixWebModule)
         if (classType.meta.has(":phoenixWeb") || classType.meta.has(":phoenixWebModule")) {
             metadata.isPhoenixWeb = true;
@@ -260,6 +274,65 @@ class ModuleBuilder {
         // For endpoint and similar, just create an empty block
         // The transformer will add all the necessary structure
         return makeAST(EBlock([]));
+    }
+    
+    /**
+     * Build body for Controller modules
+     * 
+     * WHY: Phoenix controllers need their action functions compiled with proper signatures
+     * WHAT: Builds controller action functions that receive conn and params
+     * HOW: Compiles each public function as a controller action
+     */
+    static function buildControllerBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+        var statements = [];
+        
+        #if debug_module_builder
+        trace('[ModuleBuilder] Building controller body with ${funcFields.length} functions');
+        #end
+        
+        // Compile all functions (public and private) in controllers
+        for (func in funcFields) {
+            #if debug_module_builder
+            trace('[ModuleBuilder] Checking function: ${func.name}, isPublic: ${func.isPublic}, hasExpr: ${func.expr() != null}');
+            #end
+            
+            if (func.expr() != null) {
+                var funcName = NameUtils.toSnakeCase(func.name);
+                var funcExpr = func.expr();
+                
+                // Extract parameters and body from the function expression
+                switch(funcExpr.expr) {
+                    case TFunction(tfunc):
+                        var args = [];
+                        
+                        // Controller actions always take conn and params
+                        // The Haxe function should declare these parameters
+                        for (arg in tfunc.args) {
+                            var paramName = NameUtils.toSnakeCase(arg.v.name);
+                            args.push(PVar(paramName));
+                        }
+                        
+                        // Build the function body using ElixirASTBuilder
+                        var body = if (tfunc.expr != null) {
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr);
+                        } else {
+                            makeAST(ENil);
+                        }
+                        
+                        // Create the function definition (use defp for private functions)
+                        if (func.isPublic) {
+                            statements.push(makeAST(EDef(funcName, args, null, body)));
+                        } else {
+                            statements.push(makeAST(EDefp(funcName, args, null, body)));
+                        }
+                        
+                    default:
+                        // Not a function, skip
+                }
+            }
+        }
+        
+        return makeAST(EBlock(statements));
     }
     
     /**

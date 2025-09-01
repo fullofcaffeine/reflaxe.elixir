@@ -1,4 +1,4 @@
-defmodule TodoSort do
+defmodule Server.Types.TodoSort do
   def created() do
     {:Created}
   end
