@@ -273,7 +273,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @param data Any data structure that can be JSON encoded
      * @return Updated conn with JSON response set
      */
-    @:extern
+    extern
     public inline function json(data: Dynamic): Conn<TParams> {
         return untyped __elixir__('Phoenix.Controller.json({0}, {1})', this, data);
     }
@@ -312,7 +312,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @param assigns Data to pass to the template
      * @return Updated conn with rendered response
      */
-    @:extern
+    extern
     public inline function render(template: String, ?assigns: Dynamic): Conn<TParams> {
         return if (assigns != null) {
             untyped __elixir__('Phoenix.Controller.render({0}, {1}, {2})', this, template, assigns);
@@ -345,7 +345,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @param to Path or URL to redirect to
      * @return Updated conn with redirect response
      */
-    @:extern  
+    extern  
     public inline function redirect(to: String): Conn<TParams> {
         return untyped __elixir__('Phoenix.Controller.redirect({0}, to: {1})', this, to);
     }
@@ -356,7 +356,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @param status HTTP status code (200, 404, 500, etc.)
      * @return Updated conn with status set
      */
-    @:extern
+    extern
     public inline function putStatus(status: Int): Conn<TParams> {
         return untyped __elixir__('Plug.Conn.put_status({0}, {1})', this, status);
     }
@@ -371,7 +371,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @param message The message to display
      * @return Updated conn with flash message
      */
-    @:extern
+    extern
     public inline function putFlash(kind: String, message: String): Conn<TParams> {
         return untyped __elixir__('Phoenix.Controller.put_flash({0}, {1}, {2})', this, kind, message);
     }
@@ -383,7 +383,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @param value The value to assign
      * @return Updated conn with new assign
      */
-    @:extern
+    extern
     public inline function assign(key: String, value: Dynamic): Conn<TParams> {
         return untyped __elixir__('Plug.Conn.assign({0}, {1}, {2})', this, key, value);
     }
@@ -395,7 +395,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @param body Response body as string
      * @return Updated conn with response sent
      */
-    @:extern
+    extern
     public inline function sendResp(status: Int, body: String): Conn<TParams> {
         return untyped __elixir__('Plug.Conn.send_resp({0}, {1}, {2})', this, status, body);
     }
@@ -407,7 +407,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * 
      * @return Halted conn
      */
-    @:extern
+    extern
     public inline function halt(): Conn<TParams> {
         return untyped __elixir__('Plug.Conn.halt({0})', this);
     }
