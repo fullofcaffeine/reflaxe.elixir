@@ -72,7 +72,7 @@ end end)
     end
     c = struct.compare(k, node.key)
     if (c == 0) do
-      TreeNode.new(node.left, k, v, node.right, (if (node == nil), do: 0, else: node._height))
+      TreeNode.new(node.left, k, v, node.right, node.get_height())
     else
       if (c < 0) do
         nl = struct.setLoop(k, v, node.left)
@@ -125,21 +125,17 @@ end end)
     struct.balance(struct.removeMinBinding(t.left), t.key, t.value, t.right)
   end
   defp balance(struct, l, k, v, r) do
-    hl = if (l == nil), do: 0, else: l._height
-    hr = if (r == nil), do: 0, else: r._height
+    hl = l.get_height()
+    hr = r.get_height()
     if (hl > hr + 2) do
-      if (_this = l.left
-if (_this == nil), do: 0, else: _this._height >= _this = l.right
-if (_this == nil), do: 0, else: _this._height) do
+      if (l.left.get_height() >= l.right.get_height()) do
         TreeNode.new(l.left, l.key, l.value, TreeNode.new(l.right, k, v, r))
       else
         TreeNode.new(TreeNode.new(l.left, l.key, l.value, l.right.left), l.right.key, l.right.value, TreeNode.new(l.right.right, k, v, r))
       end
     else
       if (hr > hl + 2) do
-        if (_this = r.right
-if (_this == nil), do: 0, else: _this._height > _this = r.left
-if (_this == nil), do: 0, else: _this._height) do
+        if (r.right.get_height() > r.left.get_height()) do
           TreeNode.new(TreeNode.new(l, k, v, r.left), r.key, r.value, r.right)
         else
           TreeNode.new(TreeNode.new(l, k, v, r.left.left), r.left.key, r.left.value, TreeNode.new(r.left.right, r.key, r.value, r.right))

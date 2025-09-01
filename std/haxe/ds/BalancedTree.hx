@@ -244,7 +244,7 @@ class TreeNode<K, V> {
             _height = h;
     }
     
-    public inline function get_height()
+    public function get_height()
         return this == null ? 0 : _height;
     
     public function toString() {
