@@ -20,7 +20,7 @@ defmodule TypeSafeChildSpec do
       id = module
       start = %{:module => module, :func => "start_link", :args => (if (args != nil), do: args, else: [])}
       if (spec.type == nil) do
-        type = :Supervisor
+        type = :supervisor
       end
       {:FullSpec, spec}
     else
