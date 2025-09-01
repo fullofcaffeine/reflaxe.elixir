@@ -56,7 +56,7 @@ end
   defp parse_message_impl(msg) do
     if (not SafePubSub.is_valid_message(msg)) do
       Log.trace(SafePubSub.create_malformed_message_error(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 188, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
-      :None
+      :none
     end
     g = msg.type
     case (g) do
@@ -69,10 +69,10 @@ end
               action = g
               {:Some, {:BulkUpdate, action}}
             1 ->
-              :None
+              :none
           end
         else
-          :None
+          :none
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
@@ -83,24 +83,24 @@ end
               level = g
               {:Some, {:SystemAlert, msg.message, level}}
             1 ->
-              :None
+              :none
           end
         else
-          :None
+          :none
         end
       "todo_created" ->
-        if (msg.todo != nil), do: {:Some, {:TodoCreated, msg.todo}}, else: :None
+        if (msg.todo != nil), do: {:Some, {:TodoCreated, msg.todo}}, else: :none
       "todo_deleted" ->
-        if (msg.todo_id != nil), do: {:Some, {:TodoDeleted, msg.todo_id}}, else: :None
+        if (msg.todo_id != nil), do: {:Some, {:TodoDeleted, msg.todo_id}}, else: :none
       "todo_updated" ->
-        if (msg.todo != nil), do: {:Some, {:TodoUpdated, msg.todo}}, else: :None
+        if (msg.todo != nil), do: {:Some, {:TodoUpdated, msg.todo}}, else: :none
       "user_offline" ->
-        if (msg.user_id != nil), do: {:Some, {:UserOffline, msg.user_id}}, else: :None
+        if (msg.user_id != nil), do: {:Some, {:UserOffline, msg.user_id}}, else: :none
       "user_online" ->
-        if (msg.user_id != nil), do: {:Some, {:UserOnline, msg.user_id}}, else: :None
+        if (msg.user_id != nil), do: {:Some, {:UserOnline, msg.user_id}}, else: :none
       _ ->
         Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 220, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
-        :None
+        :none
     end
   end
   defp bulk_action_to_string(action) do
@@ -128,15 +128,15 @@ end
       "add_tag" ->
         {:Some, {:AddTag, ""}}
       "complete_all" ->
-        {:Some, :CompleteAll}
+        {:Some, :complete_all}
       "delete_completed" ->
-        {:Some, :DeleteCompleted}
+        {:Some, :delete_completed}
       "remove_tag" ->
         {:Some, {:RemoveTag, ""}}
       "set_priority" ->
-        {:Some, {:SetPriority, :Medium}}
+        {:Some, {:SetPriority, :medium}}
       _ ->
-        :None
+        :none
     end
   end
   defp alert_level_to_string(level) do
@@ -154,15 +154,15 @@ end
   defp parse_alert_level(level) do
     case (level) do
       "critical" ->
-        {:Some, :Critical}
+        {:Some, :critical}
       "error" ->
-        {:Some, :Error}
+        {:Some, :error}
       "info" ->
-        {:Some, :Info}
+        {:Some, :info}
       "warning" ->
-        {:Some, :Warning}
+        {:Some, :warning}
       _ ->
-        :None
+        :none
     end
   end
 end
