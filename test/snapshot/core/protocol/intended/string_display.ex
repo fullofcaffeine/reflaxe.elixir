@@ -1,2 +1,9 @@
-defimpl Drawable, for: String do
+defmodule StringDisplay do
+  def display(value) do
+    value
+  end
+  def format(value, options) do
+    if (options.uppercase), do: value.toUpperCase()
+    value
+  end
 end
