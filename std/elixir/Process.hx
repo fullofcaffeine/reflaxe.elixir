@@ -4,6 +4,9 @@ import elixir.types.Pid;
 import elixir.types.Reference;
 import elixir.types.ProcessInfo;
 import elixir.types.ExitReason;
+import elixir.types.ProcessFlag;
+import elixir.types.Priority;
+import elixir.types.MessageQueueData;
 
 #if (macro || reflaxe_runtime)
 
@@ -108,30 +111,31 @@ extern class Process {
     @:native("Process.list")
     public static function list(): Array<Pid>; // All process pids
     
-    // Process flags and options
+    // Process flags with type-safe abstractions
     @:native("Process.flag")
-    public static function flag(flag: String, value: Dynamic): Dynamic; // Set process flag, returns old value
+    public static function flag<T>(flag: ProcessFlag, value: T): T;
+    
+    // Process dictionary with generic key/value types
+    @:native("Process.get")
+    public static function get<K,V>(): Map<K, V>;
     
     @:native("Process.get")
-    public static function get(): Map<Dynamic, Dynamic>; // Get process dictionary
+    public static function getKey<K,V>(key: K): Null<V>;
     
     @:native("Process.get")
-    public static function getKey(key: Dynamic): Null<Dynamic>; // Get specific key
-    
-    @:native("Process.get")
-    public static function getWithDefault(key: Dynamic, defaultValue: Dynamic): Dynamic;
+    public static function getWithDefault<K,V>(key: K, defaultValue: V): V;
     
     @:native("Process.put")
-    public static function put(key: Dynamic, value: Dynamic): Null<Dynamic>; // Returns previous value
+    public static function put<K,V>(key: K, value: V): Null<V>;
     
     @:native("Process.delete")
-    public static function delete(key: Dynamic): Null<Dynamic>; // Delete and return value
+    public static function delete<K,V>(key: K): Null<V>;
     
     @:native("Process.get_keys")
-    public static function getKeys(): Array<Dynamic>; // All dictionary keys
+    public static function getKeys<K>(): Array<K>;
     
     @:native("Process.get_keys")
-    public static function getKeysForValue(value: Dynamic): Array<Dynamic>; // Keys for specific value
+    public static function getKeysForValue<K,V>(value: V): Array<K>;
     
     // Process sleeping and timing
     @:native("Process.sleep")
