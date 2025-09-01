@@ -132,6 +132,35 @@ class ElixirASTTransformer {
             pass: liveViewCoreComponentsImportPass
         });
         
+        // Annotation-based transformation passes (should run early to set up module structure)
+        passes.push({
+            name: "EndpointTransform",
+            description: "Transform @:endpoint modules into Phoenix.Endpoint structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.endpointTransformPass
+        });
+        
+        passes.push({
+            name: "LiveViewTransform",
+            description: "Transform @:liveview modules into Phoenix.LiveView structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.liveViewTransformPass
+        });
+        
+        passes.push({
+            name: "SchemaTransform",
+            description: "Transform @:schema modules into Ecto.Schema structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.schemaTransformPass
+        });
+        
+        passes.push({
+            name: "ApplicationTransform",
+            description: "Transform @:application modules into OTP Application structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.applicationTransformPass
+        });
+        
         // Constant folding pass
         #if !disable_constant_folding
         passes.push({

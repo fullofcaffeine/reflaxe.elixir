@@ -285,7 +285,11 @@ class ModuleBuilder {
         for (field in varFields) {
             var fieldName = NameUtils.toSnakeCase(field.name);
             // For now, just create nil - actual value would come from field.expr()
-            statements.push(makeAST(EAttribute(fieldName, makeAST(ENil))));
+            // TODO: Add proper EModuleAttribute node to AST
+            statements.push(makeAST(EMatch(
+                EPattern.PVar("@" + fieldName),
+                makeAST(ENil)
+            )));
         }
         
         // Add functions
