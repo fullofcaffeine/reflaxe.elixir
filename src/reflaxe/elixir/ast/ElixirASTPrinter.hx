@@ -154,18 +154,25 @@ class ElixirASTPrinter {
                 indentStr(indent) + 'end';
                 
             case EMatch(pattern, expr):
-                // Check if the expression has metadata indicating it should stay inline
-                // This is used for null coalescing patterns that need to stay on one line
-                var keepInline = expr != null && expr.metadata != null && 
-                                expr.metadata.keepInlineInAssignment == true;
-                
-                if (keepInline) {
-                    // Force inline format for the expression
-                    // This ensures null coalescing stays on one line to avoid syntax errors
-                    printPattern(pattern) + ' = ' + print(expr, 0);
+                // Check if this is a module attribute (starts with @)
+                var patternStr = printPattern(pattern);
+                if (patternStr.charAt(0) == '@') {
+                    // Module attributes don't use = in Elixir
+                    patternStr + ' ' + print(expr, 0);
                 } else {
-                    // Regular assignment
-                    printPattern(pattern) + ' = ' + print(expr, 0);
+                    // Check if the expression has metadata indicating it should stay inline
+                    // This is used for null coalescing patterns that need to stay on one line
+                    var keepInline = expr != null && expr.metadata != null && 
+                                    expr.metadata.keepInlineInAssignment == true;
+                    
+                    if (keepInline) {
+                        // Force inline format for the expression
+                        // This ensures null coalescing stays on one line to avoid syntax errors
+                        patternStr + ' = ' + print(expr, 0);
+                    } else {
+                        // Regular assignment
+                        patternStr + ' = ' + print(expr, 0);
+                    }
                 }
                 
             case EWith(clauses, doBlock, elseBlock):
@@ -395,6 +402,14 @@ class ElixirASTPrinter {
                     }
                 }
                 
+            case EMacroCall(macroName, args, doBlock):
+                // Macro calls with do-blocks don't use parentheses
+                // e.g., "schema 'users' do ... end"
+                var argStr = [for (a in args) print(a, 0)].join(', ');
+                macroName + (args.length > 0 ? ' ' + argStr : '') + ' do\n' +
+                indentStr(indent + 1) + print(doBlock, indent + 1) + '\n' +
+                indentStr(indent) + 'end';
+                
             case ERemoteCall(module, funcName, args):
                 var argStr = [for (a in args) printFunctionArg(a)].join(', ');
                 print(module, 0) + '.' + funcName + '(' + argStr + ')';
@@ -424,7 +439,12 @@ class ElixirASTPrinter {
             // Literals
             // ================================================================
             case EAtom(value):
-                ':' + value;
+                // Atoms with dots need to be quoted in Elixir
+                if (value.indexOf('.') != -1) {
+                    ':"' + value + '"';
+                } else {
+                    ':' + value;
+                }
                 
             case EString(value):
                 '"' + escapeString(value) + '"';
@@ -542,7 +562,13 @@ class ElixirASTPrinter {
                 var optStr = options.length > 0 
                     ? ' ' + [for (o in options) print(o, 0)].join(', ') + ','
                     : '';
-                'quote' + optStr + ' do: ' + print(expr, 0);
+                // Use do-end block for multi-line quotes
+                switch(expr.def) {
+                    case EBlock(_):
+                        'quote' + optStr + ' do\n' + indentStr(indent + 1) + print(expr, indent + 1) + '\n' + indentStr(indent) + 'end';
+                    case _:
+                        'quote' + optStr + ' do: ' + print(expr, 0);
+                }
                 
             case EUnquote(expr):
                 'unquote(' + print(expr, 0) + ')';

@@ -130,43 +130,33 @@ class AnnotationTransforms {
         ]));
         statements.push(makeAST(ECall(null, "socket", [
             makeAST(EString("/live")),
-            makeAST(ERemoteCall(
-                makeAST(EAtom("Phoenix")),
-                "LiveView.Socket",
-                []
-            )),
+            makeAST(EVar("Phoenix.LiveView.Socket")),
             socketOptions
         ])));
         
         // plug Plug.Static configuration
+        // Use the sigil directly for the only option instead of calling a function
         var staticOptions = makeAST(EKeywordList([
             {key: "at", value: makeAST(EString("/"))},
             {key: "from", value: makeAST(EAtom(appName))},
             {key: "gzip", value: makeAST(EBoolean(false))},
-            {key: "only", value: makeAST(ECall(
-                makeAST(EAtom(moduleName)),
-                "static_paths",
-                []
+            {key: "only", value: makeAST(ESigil(
+                "w",
+                "assets fonts images favicon.ico robots.txt",
+                ""
             ))}
         ]));
         statements.push(makeAST(ECall(null, "plug", [
-            makeAST(ERemoteCall(
-                makeAST(EAtom("Plug")),
-                "Static",
-                []
-            )),
+            makeAST(EVar("Plug.Static")),
             staticOptions
         ])));
         
         // if code_reloading? do plug Phoenix.CodeReloader end
+        // Note: code_reloading? is imported by use Phoenix.Endpoint but might need explicit reference
         var codeReloadingBlock = makeAST(EIf(
-            makeAST(ECall(null, "code_reloading?", [])),
+            makeAST(ECall(null, "Code.ensure_loaded?", [makeAST(EVar("Phoenix.CodeReloader"))])),
             makeAST(ECall(null, "plug", [
-                makeAST(ERemoteCall(
-                    makeAST(EAtom("Phoenix")),
-                    "CodeReloader",
-                    []
-                ))
+                makeAST(EVar("Phoenix.CodeReloader"))
             ])),
             null
         ));
@@ -174,7 +164,7 @@ class AnnotationTransforms {
         
         // Request pipeline plugs
         statements.push(makeAST(ECall(null, "plug", [
-            makeAST(ERemoteCall(makeAST(EAtom("Plug")), "RequestId", []))
+            makeAST(EVar("Plug.RequestId"))
         ])));
         
         var telemetryOptions = makeAST(EKeywordList([
@@ -184,7 +174,7 @@ class AnnotationTransforms {
             ]))}
         ]));
         statements.push(makeAST(ECall(null, "plug", [
-            makeAST(ERemoteCall(makeAST(EAtom("Plug")), "Telemetry", [])),
+            makeAST(EVar("Plug.Telemetry")),
             telemetryOptions
         ])));
         
@@ -197,48 +187,36 @@ class AnnotationTransforms {
             ]))},
             {key: "pass", value: makeAST(EList([makeAST(EString("*/*"))]))},
             {key: "json_decoder", value: makeAST(ERemoteCall(
-                makeAST(EAtom("Phoenix")),
+                makeAST(EVar("Phoenix")),
                 "json_library",
                 []
             ))}
         ]));
         statements.push(makeAST(ECall(null, "plug", [
-            makeAST(ERemoteCall(makeAST(EAtom("Plug")), "Parsers", [])),
+            makeAST(EVar("Plug.Parsers")),
             parsersOptions
         ])));
         
         // Other standard plugs
         statements.push(makeAST(ECall(null, "plug", [
-            makeAST(ERemoteCall(makeAST(EAtom("Plug")), "MethodOverride", []))
+            makeAST(EVar("Plug.MethodOverride"))
         ])));
         
         statements.push(makeAST(ECall(null, "plug", [
-            makeAST(ERemoteCall(makeAST(EAtom("Plug")), "Head", []))
+            makeAST(EVar("Plug.Head"))
         ])));
         
         statements.push(makeAST(ECall(null, "plug", [
-            makeAST(ERemoteCall(makeAST(EAtom("Plug")), "Session", [])),
+            makeAST(EVar("Plug.Session")),
             makeAST(EVar("@session_options"))
         ])));
         
         // Router plug (assumes Web module pattern)
         var routerModule = StringTools.replace(moduleName, ".Endpoint", ".Router");
         statements.push(makeAST(ECall(null, "plug", [
-            makeAST(EAtom(routerModule))
+            makeAST(EVar(routerModule))
         ])));
         
-        // def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
-        var staticPathsBody = makeAST(ESigil(
-            "w",
-            "assets fonts images favicon.ico robots.txt",
-            ""
-        ));
-        statements.push(makeAST(EDef(
-            "static_paths",
-            [],
-            null,
-            staticPathsBody
-        )));
         
         return makeAST(EBlock(statements));
     }
@@ -354,19 +332,21 @@ class AnnotationTransforms {
         statements.push(makeAST(EImport("Ecto.Changeset", null, null)));
         
         // schema "table_name" do ... end
-        // For now, create a simple schema block
-        // In a real implementation, this would analyze the class fields
-        var schemaBlock = makeAST(ECall(null, "schema", [
-            makeAST(EString(tableName)),
-            makeAST(EBlock([
-                // Fields would go here based on class analysis
-                makeAST(ECall(null, "field", [
-                    makeAST(EAtom("name")),
-                    makeAST(EAtom("string"))
-                ])),
-                makeAST(ECall(null, "timestamps", []))
-            ]))
+        // Use EMacroCall for proper do-block syntax
+        var schemaFields = makeAST(EBlock([
+            // Fields would go here based on class analysis
+            makeAST(ECall(null, "field", [
+                makeAST(EAtom("name")),
+                makeAST(EAtom("string"))
+            ])),
+            makeAST(ECall(null, "timestamps", []))
         ]));
+        
+        var schemaBlock = makeAST(EMacroCall(
+            "schema",
+            [makeAST(EString(tableName))],
+            schemaFields
+        ));
         statements.push(schemaBlock);
         
         // Add existing functions
@@ -457,11 +437,7 @@ class AnnotationTransforms {
                     EPattern.PVar("opts"),
                     makeAST(EKeywordList([
                         {key: "strategy", value: makeAST(EAtom("one_for_one"))},
-                        {key: "name", value: makeAST(ERemoteCall(
-                            makeAST(EAtom(moduleName)),
-                            "Supervisor",
-                            []
-                        ))}
+                        {key: "name", value: makeAST(EVar(moduleName + ".Supervisor"))}
                     ]))
                 )),
                 // Supervisor.start_link(children, opts)
@@ -547,7 +523,7 @@ class AnnotationTransforms {
         
         // defmacro __using__(which) when is_atom(which) do
         var usingMacroBody = makeAST(ECall(null, "apply", [
-            makeAST(EAtom("__MODULE__")),
+            makeAST(EVar("__MODULE__")),
             makeAST(EVar("which")),
             makeAST(EList([]))
         ]));
@@ -565,6 +541,7 @@ class AnnotationTransforms {
         // def router do
         var routerBody = makeAST(EQuote([], makeAST(EBlock([
             makeAST(EUse("Phoenix.Router", [])),
+            makeAST(EImport("Phoenix.LiveView.Router", null, null)),
             makeAST(EImport(moduleName, null, [
                 {name: "controller", arity: 0},
                 {name: "live_view", arity: 0}, 
@@ -587,15 +564,10 @@ class AnnotationTransforms {
                     {key: "formats", value: makeAST(EList([makeAST(EAtom("html")), makeAST(EAtom("json"))]))},
                     {key: "layouts", value: makeAST(EList([makeAST(EKeywordList([
                         {key: "html", value: makeAST(ETuple([
-                            makeAST(ERemoteCall(
-                                makeAST(EAtom(moduleName)),
-                                "Layouts",
-                                []
-                            )),
+                            makeAST(EVar(moduleName + ".Layouts")),
                             makeAST(EAtom("app"))
                         ]))}
-                    ]))]))}
-                ]))
+                    ]))]))}                ]))
             ])),
             makeAST(EImport("Plug.Conn", null, null)),
             makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
@@ -613,11 +585,7 @@ class AnnotationTransforms {
             makeAST(EUse("Phoenix.LiveView", [
                 makeAST(EKeywordList([
                     {key: "layout", value: makeAST(ETuple([
-                        makeAST(ERemoteCall(
-                            makeAST(EAtom(moduleName)),
-                            "Layouts",
-                            []
-                        )),
+                        makeAST(EVar(moduleName + ".Layouts")),
                         makeAST(EAtom("app"))
                     ]))}
                 ]))
@@ -680,18 +648,10 @@ class AnnotationTransforms {
         var verifiedRoutesBody = makeAST(EQuote([], makeAST(EBlock([
             makeAST(EUse("Phoenix.VerifiedRoutes", [
                 makeAST(EKeywordList([
-                    {key: "endpoint", value: makeAST(ERemoteCall(
-                        makeAST(EAtom(moduleName)),
-                        "Endpoint",
-                        []
-                    ))},
-                    {key: "router", value: makeAST(ERemoteCall(
-                        makeAST(EAtom(moduleName)),
-                        "Router",
-                        []
-                    ))},
+                    {key: "endpoint", value: makeAST(EAtom(moduleName + ".Endpoint"))},
+                    {key: "router", value: makeAST(EAtom(moduleName + ".Router"))},
                     {key: "statics", value: makeAST(ERemoteCall(
-                        makeAST(EAtom(moduleName)),
+                        makeAST(EVar(moduleName)),
                         "static_paths",
                         []
                     ))}
