@@ -1,148 +1,203 @@
 package elixir;
 
+import elixir.types.Result;
+import elixir.types.GenServerRef;
+import elixir.types.GenServerOption;
+import elixir.types.GenServerCallbackResults;
+import elixir.types.Pid;
+
 #if (macro || reflaxe_runtime)
 
 /**
- * Elixir atom-like constants for GenServer return tuples
- */
-enum ElixirAtom {
-    OK;
-    STOP;
-    REPLY;
-    NOREPLY;
-    CONTINUE;
-    HIBERNATE;
-}
-
-/**
  * GenServer extern definitions for Elixir OTP
- * Provides type-safe interfaces for GenServer operations
+ * Provides type-safe interfaces for GenServer operations with full generic support
+ * 
+ * GenServer is a generic server process that maintains state and handles
+ * synchronous (call) and asynchronous (cast) requests.
+ * 
+ * ## Type Parameters
+ * - `S`: State type maintained by the GenServer
+ * - `Req`: Request type for calls/casts
+ * - `Res`: Response type for calls
+ * 
+ * ## Usage Example
+ * ```haxe
+ * // Define your state type
+ * typedef CounterState = { count: Int }
+ * 
+ * // Start a GenServer
+ * var result = GenServer.start(CounterModule, {count: 0});
+ * switch(result) {
+ *     case Ok(server):
+ *         // Make a synchronous call
+ *         var count = GenServer.call(server, "get_count");
+ *         // Send an asynchronous cast
+ *         GenServer.cast(server, "increment");
+ *     case Error(reason):
+ *         trace("Failed to start: " + reason);
+ * }
+ * ```
  * 
  * Maps to Elixir's GenServer module functions with proper type signatures
  */
 @:native("GenServer")
 extern class GenServer {
     
-    // GenServer startup
+    // GenServer startup with type-safe results
     @:native("GenServer.start")
-    public static function start(module: String, initArg: Dynamic): {_0: String, _1: Dynamic}; // {:ok, pid} | {:error, reason}
+    public static function start<S>(module: Dynamic, initArg: S): Result<GenServerRef, String>;
     
     @:native("GenServer.start")
-    public static function startWithOptions(module: String, initArg: Dynamic, options: Array<Dynamic>): {_0: String, _1: Dynamic};
+    public static function startWithOptions<S>(module: Dynamic, initArg: S, options: GenServerOptions): Result<GenServerRef, String>;
     
     @:native("GenServer.start_link")
-    public static function startLink(module: String, initArg: Dynamic): {_0: String, _1: Dynamic}; // {:ok, pid} | {:error, reason}
+    public static function startLink<S>(module: Dynamic, initArg: S): Result<GenServerRef, String>;
     
     @:native("GenServer.start_link")
-    public static function startLinkWithOptions(module: String, initArg: Dynamic, options: Array<Dynamic>): {_0: String, _1: Dynamic};
+    public static function startLinkWithOptions<S>(module: Dynamic, initArg: S, options: GenServerOptions): Result<GenServerRef, String>;
     
     @:native("GenServer.child_spec")
-    public static function childSpec(options: Map<String, Dynamic>): Map<String, Dynamic>; // Child spec map
+    public static function childSpec(options: Map<String, Dynamic>): Map<String, Dynamic>;
     
-    // GenServer communication - synchronous calls
+    // GenServer communication - synchronous calls with generics
     @:native("GenServer.call")
-    public static function call(serverRef: Dynamic, request: Dynamic): Dynamic; // Synchronous call
+    public static function call<Req, Res>(serverRef: GenServerRef, request: Req): Res;
     
     @:native("GenServer.call")
-    public static function callWithTimeout(serverRef: Dynamic, request: Dynamic, timeout: Int): Dynamic;
+    public static function callWithTimeout<Req, Res>(serverRef: GenServerRef, request: Req, timeout: Int): Res;
     
     @:native("GenServer.multi_call")
-    public static function multiCall(nodes: Array<String>, name: String, request: Dynamic): {_0: Array<{_0: String, _1: Dynamic}>, _1: Array<String>}; // {replies, bad_nodes}
+    public static function multiCall<Req, Res>(nodes: Array<String>, name: String, request: Req): {replies: Array<{node: String, reply: Res}>, badNodes: Array<String>};
     
     @:native("GenServer.multi_call")
-    public static function multiCallWithTimeout(nodes: Array<String>, name: String, request: Dynamic, timeout: Int): {_0: Array<{_0: String, _1: Dynamic}>, _1: Array<String>};
+    public static function multiCallWithTimeout<Req, Res>(nodes: Array<String>, name: String, request: Req, timeout: Int): {replies: Array<{node: String, reply: Res}>, badNodes: Array<String>};
     
-    // GenServer communication - asynchronous casts
+    // GenServer communication - asynchronous casts with generics
     @:native("GenServer.cast")
-    public static function sendCast(serverRef: Dynamic, request: Dynamic): String; // Returns :ok
+    public static function cast<Req>(serverRef: GenServerRef, request: Req): Void;
     
     @:native("GenServer.abcast")
-    public static function abcast(nodes: Array<String>, name: String, request: Dynamic): String; // Broadcast cast
+    public static function abcast<Req>(nodes: Array<String>, name: String, request: Req): Void;
     
     @:native("GenServer.abcast")
-    public static function abcastAll(name: String, request: Dynamic): String; // Broadcast to all nodes
+    public static function abcastAll<Req>(name: String, request: Req): Void;
     
     // GenServer information and introspection
     @:native("GenServer.whereis")
-    public static function whereis(serverRef: Dynamic): Null<Dynamic>; // Find pid by name
+    public static function whereis(serverRef: GenServerRef): Null<Pid>;
     
-    // GenServer lifecycle management
+    // GenServer lifecycle management with type-safe reasons
     @:native("GenServer.stop")
-    public static function stop(serverRef: Dynamic): String; // Returns :ok
-    
-    @:native("GenServer.stop")
-    public static function stopWithReason(serverRef: Dynamic, reason: Dynamic): String;
+    public static function stop(serverRef: GenServerRef): Void;
     
     @:native("GenServer.stop")
-    public static function stopWithTimeout(serverRef: Dynamic, reason: Dynamic, timeout: Int): String;
+    public static function stopWithReason<R>(serverRef: GenServerRef, reason: R): Void;
     
-    // GenServer reply operations (for use in handle_call)
+    @:native("GenServer.stop")
+    public static function stopWithTimeout<R>(serverRef: GenServerRef, reason: R, timeout: Int): Void;
+    
+    // GenServer reply operations with generics
     @:native("GenServer.reply")
-    public static function reply(client: Dynamic, reply: Dynamic): String; // Returns :ok
-    
-    // GenServer behavior callbacks - these would be implemented by user code
-    // but we define them here for reference and type safety
+    public static function reply<R>(from: Dynamic, reply: R): Void;
     
     /**
-     * Callback signatures for GenServer behavior implementation
-     * These are not @:native as they are implemented by the user
+     * GenServer behavior callbacks - these would be implemented by user code
+     * but we define their signatures here for reference and type safety
+     * 
+     * User implementations should return the appropriate callback result types
+     * from GenServerCallbackResults for full type safety.
      */
     
-    // init callback - called when GenServer starts
-    public static function init(args: Dynamic): {_0: String, _1: Dynamic}; // {:ok, state} | {:stop, reason}
+    /**
+     * Initialize the GenServer state
+     * @param args Initial arguments passed to start/start_link
+     * @return InitResult with the initial state or stop reason
+     */
+    public static function init<S>(args: Dynamic): InitResult<S>;
     
-    // handle_call callback - handles synchronous requests
-    public static function handleCall(request: Dynamic, from: Dynamic, state: Dynamic): {_0: String, _1: Dynamic, _2: Dynamic}; // {:reply, reply, new_state}
+    /**
+     * Handle synchronous requests
+     * @param request The request from the caller
+     * @param from The caller's reference (for delayed replies)
+     * @param state Current GenServer state
+     * @return HandleCallResult with reply and new state
+     */
+    public static function handleCall<Req, Res, S>(request: Req, from: Dynamic, state: S): HandleCallResult<Res, S>;
     
-    // handle_cast callback - handles asynchronous requests  
-    public static function handleCast(request: Dynamic, state: Dynamic): {_0: String, _1: Dynamic}; // {:noreply, new_state}
+    /**
+     * Handle asynchronous messages
+     * @param request The cast message
+     * @param state Current GenServer state
+     * @return HandleCastResult with new state
+     */
+    public static function handleCast<Req, S>(request: Req, state: S): HandleCastResult<S>;
     
-    // handle_info callback - handles other messages
-    public static function handleInfo(info: Dynamic, state: Dynamic): {_0: String, _1: Dynamic}; // {:noreply, new_state}
+    /**
+     * Handle other messages (not calls or casts)
+     * @param info The message received
+     * @param state Current GenServer state
+     * @return HandleInfoResult with new state
+     */
+    public static function handleInfo<S>(info: Dynamic, state: S): HandleInfoResult<S>;
     
-    // handle_continue callback - handles continue instructions
-    public static function handleContinue(continueData: Dynamic, state: Dynamic): {_0: String, _1: Dynamic}; // {:noreply, new_state}
+    /**
+     * Handle continue instructions from previous callbacks
+     * @param continueArg The continue argument
+     * @param state Current GenServer state
+     * @return HandleContinueResult with new state
+     */
+    public static function handleContinue<S>(continueArg: Dynamic, state: S): HandleContinueResult<S>;
     
-    // terminate callback - cleanup before stopping
-    public static function terminate(reason: Dynamic, state: Dynamic): String; // Returns :ok
+    /**
+     * Clean up before stopping
+     * @param reason The stop reason
+     * @param state Final GenServer state
+     */
+    public static function terminate<S>(reason: Dynamic, state: S): Void;
     
-    // code_change callback - handle hot code upgrades
-    public static function codeChange(oldVsn: Dynamic, state: Dynamic, extra: Dynamic): {_0: String, _1: Dynamic}; // {:ok, new_state}
+    /**
+     * Handle hot code upgrades
+     * @param oldVsn Previous version
+     * @param state Current state
+     * @param extra Extra upgrade data
+     * @return Result with new state or error
+     */
+    public static function codeChange<S>(oldVsn: Dynamic, state: S, extra: Dynamic): Result<S, String>;
     
-    // format_status callback - custom status formatting
+    /**
+     * Format status for debugging
+     * @param opt Format option (:normal or :terminate)
+     * @param statusData Current status data
+     * @return Formatted status
+     */
     public static function formatStatus(opt: Dynamic, statusData: Array<Dynamic>): Dynamic;
     
-    // GenServer timeout and hibernation helpers
-    @:native("GenServer.timeout") 
-    public static var TIMEOUT: Int; // Default timeout constant
+    // Helper constants for common atoms
+    @:native("GenServer.timeout")
+    public static var TIMEOUT(default, never): Int;
     
-    // Common return tuple constructors for callbacks - using ElixirAtom enum for type safety
-    public static inline var OK: ElixirAtom = ElixirAtom.OK;
-    public static inline var STOP: ElixirAtom = ElixirAtom.STOP;  
-    public static inline var REPLY: ElixirAtom = ElixirAtom.REPLY;
-    public static inline var NOREPLY: ElixirAtom = ElixirAtom.NOREPLY;
-    public static inline var CONTINUE: ElixirAtom = ElixirAtom.CONTINUE;
-    public static inline var HIBERNATE: ElixirAtom = ElixirAtom.HIBERNATE;
-    
-    // Helper functions for building return tuples
-    public static inline function replyTuple<T, S>(reply: T, state: S): {_0: ElixirAtom, _1: T, _2: S} {
-        return {_0: REPLY, _1: reply, _2: state};
+    /**
+     * Helper function to create an infinite timeout
+     * @return The :infinity atom for no timeout
+     */
+    public static inline function infinity(): Dynamic {
+        return untyped __elixir__(':infinity');
     }
     
-    public static inline function noreplyTuple<S>(state: S): {_0: ElixirAtom, _1: S} {
-        return {_0: NOREPLY, _1: state};
+    /**
+     * Helper function to create a normal stop reason
+     * @return The :normal atom
+     */
+    public static inline function normal(): Dynamic {
+        return untyped __elixir__(':normal');
     }
     
-    public static inline function stopTuple<R, S>(reason: R, state: S): {_0: ElixirAtom, _1: R, _2: S} {
-        return {_0: STOP, _1: reason, _2: state};
-    }
-    
-    public static inline function continueTuple<S, C>(state: S, continue_: C): {_0: ElixirAtom, _1: S, _2: C} {
-        return {_0: CONTINUE, _1: state, _2: continue_};
-    }
-    
-    public static inline function hibernateTuple<S>(state: S): {_0: ElixirAtom, _1: S, _2: ElixirAtom} {
-        return {_0: NOREPLY, _1: state, _2: HIBERNATE};
+    /**
+     * Helper function to create a shutdown stop reason
+     * @return The :shutdown atom
+     */
+    public static inline function shutdown(): Dynamic {
+        return untyped __elixir__(':shutdown');
     }
 }
 
