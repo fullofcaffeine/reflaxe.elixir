@@ -1416,7 +1416,7 @@ class ElixirASTTransformer {
     /**
      * Recursively transform AST nodes
      */
-    static function transformNode(ast: ElixirAST, transformer: (ElixirAST) -> ElixirAST): ElixirAST {
+    public static function transformNode(ast: ElixirAST, transformer: (ElixirAST) -> ElixirAST): ElixirAST {
         // First transform children
         var transformed = switch(ast.def) {
             case EModule(name, attributes, body):
@@ -2253,6 +2253,12 @@ class SupervisorOptionsTransformPass {
     public static function transform(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
         trace("[XRay SupervisorOptions] Starting supervisor options transformation");
+        switch(ast.def) {
+            case EDefmodule(name, _):
+                trace('[XRay SupervisorOptions] Processing module: $name');
+            case _:
+                trace('[XRay SupervisorOptions] Processing non-module AST');
+        }
         #end
         
         return transformSupervisorCalls(ast);
@@ -2262,7 +2268,17 @@ class SupervisorOptionsTransformPass {
      * Find and transform Supervisor.start_link calls
      */
     static function transformSupervisorCalls(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformAST(ast, function(node: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            #if debug_ast_transformer
+            switch(node.def) {
+                case EMatch(PVar(name), _):
+                    trace('[XRay SupervisorOptions] Found variable assignment in transformSupervisorCalls: $name');
+                case EMap(_):
+                    trace('[XRay SupervisorOptions] Found map in transformSupervisorCalls');
+                case _:
+            }
+            #end
+            
             switch(node.def) {
                 case ERemoteCall(module, "start_link", args) if (args.length == 2):
                     // Check if this is Supervisor.start_link(children, opts)
@@ -2294,12 +2310,22 @@ class SupervisorOptionsTransformPass {
                         case _: null;
                     };
                     
+                    #if debug_ast_transformer
+                    if (varName != null) {
+                        trace('[XRay SupervisorOptions] Found variable assignment: $varName');
+                    }
+                    #end
+                    
                     if (varName != null && (varName == "opts" || varName.indexOf("option") != -1 || varName.indexOf("config") != -1)) {
                         // This might be supervisor options
+                        #if debug_ast_transformer
+                        trace('[XRay SupervisorOptions] Variable $varName looks like options, checking if it\'s a map...');
+                        #end
+                        
                         var transformedExpr = transformSupervisorOptions(expr);
                         if (transformedExpr != expr) {
                             #if debug_ast_transformer
-                            trace('[XRay SupervisorOptions] Transformed options assignment for variable: $varName');
+                            trace('[XRay SupervisorOptions] ✓ Transformed options assignment for variable: $varName');
                             #end
                             return makeASTWithMeta(
                                 EMatch(pattern, transformedExpr),
@@ -2323,6 +2349,10 @@ class SupervisorOptionsTransformPass {
     static function transformSupervisorOptions(expr: ElixirAST): ElixirAST {
         return switch(expr.def) {
             case EMap(pairs):
+                #if debug_ast_transformer
+                trace('[XRay SupervisorOptions] Analyzing map with ${pairs.length} pairs');
+                #end
+                
                 // Check if this looks like supervisor options
                 var hasStrategy = false;
                 var hasMaxRestarts = false;
@@ -2336,12 +2366,18 @@ class SupervisorOptionsTransformPass {
                     };
                     
                     if (keyName != null) {
-                        switch(keyName) {
+                        // Check both snake_case and original field names (before transformation)
+                        // since this pass might run at different stages
+                        switch(keyName.toLowerCase()) {
                             case "strategy": hasStrategy = true;
-                            case "max_restarts": hasMaxRestarts = true;
-                            case "max_seconds": hasMaxSeconds = true;
+                            case "max_restarts" | "maxrestarts": hasMaxRestarts = true;
+                            case "max_seconds" | "maxseconds": hasMaxSeconds = true;
                             case "name": hasName = true;
                         }
+                        
+                        #if debug_ast_transformer
+                        trace('[XRay SupervisorOptions] Checking key: $keyName (hasStrategy=$hasStrategy, hasMaxRestarts=$hasMaxRestarts)');
+                        #end
                     }
                 }
                 
