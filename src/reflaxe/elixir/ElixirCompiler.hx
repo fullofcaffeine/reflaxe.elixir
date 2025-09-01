@@ -474,7 +474,9 @@ class ElixirCompiler extends GenericCompiler<
                classType.meta.has(":schema") ||
                classType.meta.has(":application") ||
                classType.meta.has(":genserver") ||
-               classType.meta.has(":router");
+               classType.meta.has(":router") ||
+               classType.meta.has(":phoenixWeb") ||
+               classType.meta.has(":phoenixWebModule");
     }
     
     /**

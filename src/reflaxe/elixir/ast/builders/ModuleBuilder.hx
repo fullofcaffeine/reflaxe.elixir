@@ -20,7 +20,7 @@ import reflaxe.elixir.ast.NameUtils;
  *      to keep files under 1000 lines and maintain single responsibility principle.
  * 
  * WHAT: Converts Haxe ClassType to Elixir module AST (EDefmodule) with proper metadata
- *       for annotations like @:endpoint, @:liveview, @:schema, @:application, etc.
+ *       for annotations like @:endpoint, @:liveview, @:schema, @:application, @:phoenixWeb, etc.
  * 
  * HOW: Detects class annotations and sets metadata flags that transformers will use
  *      to apply framework-specific transformations. This builder ONLY builds structure,
@@ -32,6 +32,35 @@ import reflaxe.elixir.ast.NameUtils;
  * - Clean Separation: Building vs transformation logic separated
  * - Maintainable Size: Keeps files under 1000 lines
  * - Testable: Can test module building independently
+ * 
+ * SUPPORTED ANNOTATIONS:
+ * - @:endpoint - Phoenix.Endpoint module with web server configuration
+ * - @:liveview - Phoenix.LiveView module with mount/handle_event/render
+ * - @:schema - Ecto.Schema module with database field definitions
+ * - @:application - OTP Application module with supervision tree
+ * - @:phoenixWeb - Phoenix Web helper module with DSL macros
+ * - @:genserver - GenServer behavior module
+ * - @:router - Phoenix.Router module with routing DSL
+ * 
+ * METADATA FIELDS SET:
+ * - isEndpoint: Boolean flag for @:endpoint annotation
+ * - isLiveView: Boolean flag for @:liveview annotation  
+ * - isSchema: Boolean flag for @:schema annotation
+ * - isApplication: Boolean flag for @:application annotation
+ * - isPhoenixWeb: Boolean flag for @:phoenixWeb annotation
+ * - isGenServer: Boolean flag for @:genserver annotation
+ * - isRouter: Boolean flag for @:router annotation
+ * - appName: String with application name (for endpoint/application)
+ * - tableName: String with database table name (for schema)
+ * 
+ * USAGE:
+ * This is called by ElixirCompiler.buildClassAST() when hasSpecialAnnotations() returns true.
+ * The metadata set here is consumed by AnnotationTransforms transformation passes.
+ * 
+ * EDGE CASES:
+ * - Class without annotations: Returns regular module body structure
+ * - Multiple annotations: First annotation wins (shouldn't happen in practice)
+ * - Invalid annotation parameters: Falls back to default values
  */
 @:nullSafety(Off)
 class ModuleBuilder {
@@ -55,7 +84,10 @@ class ModuleBuilder {
         var metadata = createModuleMetadata(classType);
         
         // Build module body based on annotations
-        var moduleBody = if (metadata.isEndpoint) {
+        var moduleBody = if (metadata.isPhoenixWeb) {
+            // For @:phoenixWeb, create minimal structure - transformer will add macros
+            buildMinimalBody(classType, varFields, funcFields);
+        } else if (metadata.isEndpoint) {
             // For @:endpoint, create minimal structure - transformer will add the rest
             buildMinimalBody(classType, varFields, funcFields);
         } else if (metadata.isLiveView) {
@@ -161,6 +193,15 @@ class ModuleBuilder {
             metadata.isRouter = true;
             #if debug_module_builder
             trace('[ModuleBuilder] Detected @:router annotation');
+            #end
+        }
+        
+        // Check for PhoenixWeb (supports both @:phoenixWeb and @:phoenixWebModule)
+        if (classType.meta.has(":phoenixWeb") || classType.meta.has(":phoenixWebModule")) {
+            metadata.isPhoenixWeb = true;
+            metadata.appName = extractAppName(classType);
+            #if debug_module_builder
+            trace('[ModuleBuilder] Detected @:phoenixWeb/@:phoenixWebModule annotation, appName: ${metadata.appName}');
             #end
         }
         

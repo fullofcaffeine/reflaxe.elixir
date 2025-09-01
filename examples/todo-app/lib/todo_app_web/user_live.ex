@@ -1,3 +1,3 @@
 defmodule TodoAppWeb.UserLive do
-  nil
+  use TodoAppWeb, :live_view
 end

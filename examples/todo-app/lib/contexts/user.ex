@@ -1,3 +1,6 @@
 defmodule User do
-  nil
+  use Ecto.Schema
+  import Ecto.Changeset
+  schema("users", field(:name, :string)
+timestamps())
 end
