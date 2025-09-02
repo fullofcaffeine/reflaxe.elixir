@@ -18,9 +18,9 @@ typedef User = {
     var id: Int;
     var name: String;
     var email: String;
-    var password_hash: String;
-    var confirmed_at: Null<Dynamic>;
-    var last_login_at: Null<Dynamic>;
+    var passwordHash: String;  // camelCase
+    var confirmedAt: Null<Dynamic>;  // camelCase
+    var lastLoginAt: Null<Dynamic>;  // camelCase
     var active: Bool;
 }
 
@@ -207,14 +207,14 @@ typedef PubSubMetadata = {
  * Session data structure
  */
 typedef Session = {
-    var ?user_id: Int;
+    var ?userId: Int;  // camelCase
     var ?token: String;
-    var ?csrf_token: String;
+    var ?csrfToken: String;  // camelCase
     var ?locale: String;
     var ?timezone: String;
-    var ?user_agent: String;
-    var ?ip_address: String;
-    var ?login_at: Dynamic;
+    var ?userAgent: String;  // camelCase
+    var ?ipAddress: String;  // camelCase
+    var ?loginAt: Dynamic;  // camelCase
 }
 
 /**

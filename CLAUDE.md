@@ -1131,6 +1131,7 @@ class StringBuf {
 - **Date Rule**: Always run `date` command before writing timestamps
 - **CRITICAL: Idiomatic Elixir Code Generation** - Generate high-quality, functional Elixir code
 - **Testing Protocol**: ALWAYS run `npm test` after compiler changes
+- **Naming Convention**: ALWAYS use camelCase in Haxe code, compiler handles snake_case conversion
 
 ## Mandatory Testing Protocol ⚠️ CRITICAL
 
@@ -1149,6 +1150,90 @@ class StringBuf {
 **Rule**: If ANY step fails, the compiler change is incomplete. Fix the root cause.
 
 **See**: [docs/03-compiler-development/testing-infrastructure.md](docs/03-compiler-development/testing-infrastructure.md) - Complete testing guide
+
+## ⚠️ CRITICAL: Haxe Naming Convention Rules
+
+**FUNDAMENTAL RULE: All Haxe code MUST use camelCase consistently. The compiler handles snake_case conversion for Elixir output.**
+
+### Naming Convention Standards
+
+#### Haxe Code (Input) - Always camelCase:
+- **Variables**: `userId`, `currentUser`, `editingTodo`
+- **Functions**: `loadTodos()`, `updateTodoInList()`, `getUserFromSession()`
+- **Fields**: `showForm`, `searchQuery`, `selectedTags`
+- **Type fields**: In typedefs and classes, use camelCase for all fields
+
+#### Generated Elixir (Output) - Compiler converts to snake_case:
+- `userId` → `user_id`
+- `loadTodos()` → `load_todos()`
+- `showForm` → `show_form`
+
+#### External Library APIs (Externs) - Use actual API names:
+- **Phoenix/Ecto APIs**: Keep original names like `put_flash`, `assign`, `validate_required`
+- **Why**: These are external Elixir libraries with fixed APIs, not code we generate
+- **Rationale**: Adding camelCase wrappers would complicate the compiler and confuse developers
+- **Examples**:
+  - `LiveView.put_flash(socket, type, msg)` ✅ (actual Phoenix API)
+  - `LiveView.putFlash(...)` ❌ (doesn't exist in Phoenix)
+  - `changeset.validateRequired(fields)` ✅ (our Changeset abstract uses camelCase)
+  - `Changeset.validate_required(...)` ❌ (we're not using the Ecto extern)
+
+### Examples
+
+```haxe
+// ✅ CORRECT - Consistent camelCase in Haxe code, snake_case for extern APIs
+typedef TodoLiveAssigns = {
+    var currentUser: User;      // camelCase for our fields
+    var editingTodo: Todo;      // camelCase for our fields
+    var showForm: Bool;         // camelCase for our fields
+}
+
+// Our function uses camelCase
+function updateUserStatus(userId: Int, newStatus: String) {
+    var user = Repo.get(User, userId);
+    
+    // Our Changeset abstract uses camelCase methods
+    var changeset = new Changeset(user, {status: newStatus});
+    changeset = changeset.validateRequired(["status"]);  // Our abstract: camelCase
+    
+    // Phoenix extern API: snake_case
+    socket = LiveView.put_flash(socket, "info", "Status updated");
+    socket = LiveView.assign(socket, {currentUser: user});  // Our field: camelCase
+    
+    return socket;
+}
+
+function loadAndAssignTodos(socket: Socket): Socket {
+    var userId = socket.assigns.currentUser.id;
+    var todos = loadTodos(userId);
+    return LiveView.assign_multiple(socket, assigns);  // Phoenix API keeps snake_case
+}
+
+// ❌ WRONG - Mixing conventions
+typedef TodoLiveAssigns = {
+    var current_user: User;     // Wrong: snake_case in Haxe
+    var editing_todo: Todo;     // Wrong: snake_case in Haxe
+}
+```
+
+### Special Cases
+
+1. **Template Variables**: In HXX templates, use camelCase:
+   - `<%= @currentUser.name %>` NOT `<%= @current_user.name %>`
+   - The compiler will handle conversion for Phoenix templates
+
+2. **Database Fields**: When interfacing with Ecto schemas, the compiler handles mapping:
+   - Haxe: `user.firstName`
+   - Database column: `first_name`
+
+3. **Configuration Keys**: Keep original format when required by frameworks
+
+### Why This Matters
+
+- **Consistency**: One naming convention throughout Haxe codebase
+- **IDE Support**: Better autocomplete and refactoring with consistent names
+- **Clear Separation**: Obvious distinction between our code (camelCase) and external APIs (snake_case)
+- **Compiler Responsibility**: Let the compiler handle cross-language conventions
 
 ## Development Principles
 
