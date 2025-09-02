@@ -4,6 +4,7 @@ package phoenix;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+
 using haxe.macro.Tools;
 #end
 
@@ -242,7 +243,11 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * ```
 	 * 
 	 * ## CRITICAL LESSON: Why `extern inline` is Required for Abstract Types with `__elixir__`
-	 * 
+	 *
+	 * Abstract type methods are typed when the abstract is imported (early in compilation),
+	 * before Reflaxe can inject __elixir__. The solution is extern inline which delays the typing
+	 * of the method body until it's actually used at call sites, after Reflaxe initialization.
+	 *
 	 * ### The Problem We Encountered
 	 * When using `untyped __elixir__()` in abstract type methods, compilation fails with:
 	 * "Unknown identifier: __elixir__"
