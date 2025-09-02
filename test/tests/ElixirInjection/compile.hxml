@@ -1,6 +1,0 @@
-TestInject
--cp ../../../src
--cp ../../../std
---macro reflaxe.elixir.CompilerInit.Start()
--D reflaxe-output=out
--D debug_elixir_injection
