@@ -100,6 +100,83 @@ npx haxe build.hxml -D debug_ast_pipeline -D debug_ast_transformer
 npx haxe build.hxml -D debug_otp_child_spec -D debug_pattern_matching
 ```
 
+## 🎯 Phoenix Idiomatic Patterns with Type-Safe Augmentation
+
+**FUNDAMENTAL PRINCIPLE: Generate idiomatic Phoenix/Elixir code, augmented with Haxe's type safety.**
+
+### Core Philosophy
+- **Phoenix patterns first**: Use standard Phoenix patterns and conventions as the foundation
+- **Type safety on top**: Add Haxe's compile-time guarantees without changing the runtime patterns
+- **Don't reinvent**: If Phoenix has an established pattern, use it - don't create a "Haxe way"
+- **Augment intelligently**: Only deviate from Phoenix patterns when type safety provides clear value
+
+### Examples of Idiomatic Phoenix with Haxe Benefits
+
+#### ✅ GOOD: Phoenix Presence with Type Safety
+```haxe
+// Haxe: Type-safe metadata, but standard Phoenix Presence pattern
+typedef PresenceMeta = {
+    var onlineAt: Float;
+    var userName: String;
+    var editingTodoId: Null<Int>;  // Phoenix pattern: single presence with state
+}
+
+// Generates standard Phoenix Presence usage:
+// Presence.track(socket, "users", user_id, %{
+//   online_at: System.system_time(),
+//   user_name: user.name,
+//   editing_todo_id: nil
+// })
+```
+
+#### ❌ BAD: Over-Engineering with Nested Structures
+```haxe
+// Don't create complex nested structures that Phoenix doesn't use natively
+var editingUsers: Map<Int, Map<String, PresenceEntry>>;  // Too complex!
+```
+
+#### ✅ GOOD: LiveView Socket Assigns
+```haxe
+// Type-safe assigns that compile to standard Phoenix patterns
+typedef TodoLiveAssigns = {
+    var todos: Array<Todo>;        // Standard Phoenix: socket.assigns.todos
+    var currentUser: User;         // Standard Phoenix: socket.assigns.current_user
+}
+```
+
+#### ✅ GOOD: PubSub with Type Safety
+```haxe
+// Type-safe topics and messages, but standard Phoenix.PubSub underneath
+enum PubSubTopic {
+    TodoUpdates;  // Compiles to "todo:updates"
+}
+// Still uses Phoenix.PubSub.subscribe/broadcast normally
+```
+
+### When to Augment vs When to Follow
+
+**Follow Phoenix Exactly**:
+- Router DSL structure
+- LiveView lifecycle (mount/handle_event/handle_info)
+- Presence tracking patterns
+- PubSub topic conventions
+- Ecto changeset flow
+- Controller/action patterns
+
+**Augment with Type Safety**:
+- Event parameters (typed instead of maps)
+- Socket assigns structure (compile-time validation)
+- Message types (enums instead of atoms)
+- Form validation (typed changesets)
+- API contracts (typed structs)
+
+### The Litmus Test
+Ask yourself: "Would an experienced Phoenix developer recognize this pattern?"
+- If YES → You're doing it right
+- If NO → You might be over-engineering
+
+The goal is that generated Elixir code should be **indistinguishable from hand-written Phoenix code**, just with compile-time type guarantees that Phoenix developers wish they had.
+
 ## 🌐 Full-Stack Development with genes (JavaScript Generation)
 
 **REVOLUTIONARY CAPABILITY**: Reflaxe.Elixir now includes **genes** - a modern ES6 JavaScript generator that enables writing entire Phoenix applications (backend AND frontend) in pure Haxe with complete type safety.
@@ -784,6 +861,60 @@ var orphaned = isParameterUnusedInCurrentContext(e, ef, index);
 
 **Remember**: If you're checking specific enum names in the compiler, you're creating technical debt that will break when enums change.
 
+## ⚠️ CRITICAL: Abstract Types Require `extern inline` for `__elixir__` Injection
+
+**FUNDAMENTAL RULE: Abstract type methods that use `untyped __elixir__()` MUST be declared as `extern inline`.**
+
+### The Problem (Discovered After Extensive Debugging)
+When using `untyped __elixir__()` in abstract type methods without `extern inline`:
+```haxe
+// ❌ FAILS with "Unknown identifier: __elixir__"
+abstract LiveSocket<T>(...) {
+    public function clearFlash(): LiveSocket<T> {
+        return untyped __elixir__('Phoenix.LiveView.clear_flash({0})', this);
+    }
+}
+```
+
+### The Solution
+```haxe
+// ✅ WORKS: extern inline allows __elixir__ to work
+abstract LiveSocket<T>(...) {
+    extern inline public function clearFlash(): LiveSocket<T> {
+        return untyped __elixir__('Phoenix.LiveView.clear_flash({0})', this);
+    }
+}
+```
+
+### Why This Happens (Critical Understanding)
+1. **Abstract methods are typed early**: When an abstract is imported, its methods are typed
+2. **`__elixir__` doesn't exist yet**: Reflaxe injects `__elixir__` AFTER Haxe's typing phase
+3. **Timing mismatch**: The identifier is checked before it exists
+4. **`extern inline` delays typing**: The function body is only typed at call sites, after Reflaxe init
+
+### Why Regular Classes Don't Have This Problem
+- Regular class methods aren't forced to be typed immediately
+- They can contain `untyped __elixir__()` without `extern inline`
+- Exception: Classes with `@:coreApi` get special treatment (like Array.hx)
+
+### The Universal Rule
+**For ANY abstract type using `untyped __elixir__()`:**
+- ✅ ALWAYS use `extern inline` on methods with `__elixir__`
+  - **WHY**: The combination delays typing until the method is actually called, after Reflaxe has injected `__elixir__`
+- ✅ This ensures the code is typed AFTER Reflaxe initialization
+  - **WHY**: By the time the inlined code is expanded at call sites, `__elixir__` exists
+- ❌ NEVER use just `public function` - it will fail
+  - **WHY**: Regular functions in abstracts are typed immediately when the abstract is imported, before `__elixir__` exists
+- ❌ NEVER use just `inline` - must be `extern inline`
+  - **WHY**: `inline` alone still types the function body during abstract processing. `extern` is what prevents early typing
+
+### Lesson Learned
+We spent significant time debugging "Unknown identifier: __elixir__" errors in LiveSocket.hx.
+The root cause was abstract methods being typed before Reflaxe could inject the `__elixir__` identifier.
+This is now documented to prevent future time waste on the same issue.
+
+**See**: [`std/phoenix/LiveSocket.hx`](std/phoenix/LiveSocket.hx) - Working implementation with detailed documentation
+
 ## ⚠️ CRITICAL: Comprehensive Documentation Rule for ALL Compiler Code
 
 **FUNDAMENTAL RULE: Every piece of compiler logic MUST include comprehensive documentation and XRay debug traces.**
@@ -1041,7 +1172,20 @@ if (isPhoenixProject()) {
 
 ## Standard Library Philosophy ⚡ **PRAGMATIC NATIVE IMPLEMENTATION**
 
-### The `__elixir__()` Function - Available and Encouraged for Stdlib
+### The `__elixir__()` Function - Framework/Stdlib Only, NOT for Client Code
+
+**⚠️ CRITICAL PRINCIPLE: `__elixir__()` is for framework and standard library implementation ONLY.**
+
+**Client/Application Code Rules**:
+- ❌ **NEVER use `__elixir__()`** in application code - it's a sign of missing abstractions
+- ❌ **Exception: Emergency hotfixes only** - Must be justified, documented with TODO, and scheduled for proper fix
+- ✅ **Always use framework abstractions** - If you need `__elixir__()`, we need better framework APIs
+- ✅ **Report missing abstractions** - File an issue when framework APIs are insufficient
+
+**Framework/Stdlib Rules**:
+- ✅ **Use `__elixir__()` strategically** for efficient native implementations
+- ✅ **Wrap in type-safe APIs** - Never expose `__elixir__()` to users
+- ✅ **Provide complete abstractions** - Users should never need escape hatches
 
 **IMPORTANT CLARIFICATION**: `__elixir__()` IS available and can be strategically used for standard library implementations.
 
