@@ -11,6 +11,26 @@ import HXX;  // Import HXX for template rendering
 // HXX template calls are processed at compile-time by the Reflaxe.Elixir compiler
 
 /**
+ * Type-safe event definitions for UserLive.
+ * 
+ * This enum replaces string-based events with compile-time validated ADTs.
+ * Each event variant carries its own strongly-typed parameters.
+ */
+enum UserLiveEvent {
+    // User CRUD operations
+    NewUser;
+    EditUser(id: Int);
+    SaveUser(params: {user: Dynamic}); // User form params
+    DeleteUser(id: Int);
+    
+    // Search and filtering
+    Search(query: String);
+    
+    // UI interactions
+    Cancel;
+}
+
+/**
  * Type-safe assigns structure for UserLive socket
  */
 typedef UserLiveAssigns = {
@@ -44,33 +64,30 @@ class UserLive {
         };
     }
     
-    static function handle_event(event: String, params: Dynamic, socket: Socket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
+    static function handleEvent(event: UserLiveEvent, socket: Socket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
         var liveSocket: LiveSocket<UserLiveAssigns> = socket;
         return switch(event) {
-            case "new_user":
-                handleNewUser(params, liveSocket);
+            case NewUser:
+                handleNewUser(liveSocket);
                 
-            case "edit_user":
-                handleEditUser(params, liveSocket);
+            case EditUser(id):
+                handleEditUser(id, liveSocket);
                 
-            case "save_user":
+            case SaveUser(params):
                 handleSaveUser(params, liveSocket);
                 
-            case "delete_user":
-                handleDeleteUser(params, liveSocket);
+            case DeleteUser(id):
+                handleDeleteUser(id, liveSocket);
                 
-            case "search":
-                handleSearch(params, liveSocket);
+            case Search(query):
+                handleSearch(query, liveSocket);
                 
-            case "cancel":
+            case Cancel:
                 handleCancel(liveSocket);
-                
-            default:
-                {status: "noreply", socket: liveSocket};
         }
     }
     
-    static function handleNewUser(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
+    static function handleNewUser(socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         var changeset = Users.change_user(null);
         var selectedUser = null;
         var showForm = true;
@@ -85,8 +102,7 @@ class UserLive {
         };
     }
     
-    static function handleEditUser(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
-        var userId = params.id;
+    static function handleEditUser(userId: Int, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         var selectedUser = Users.get_user(userId);
         var changeset = Users.change_user(selectedUser);
         var showForm = true;
@@ -101,9 +117,9 @@ class UserLive {
         };
     }
     
-    static function handleSaveUser(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
+    static function handleSaveUser(params: {user: Dynamic}, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         var userParams = params.user;
-        var selectedUser = Reflect.field(socket.assigns, "selectedUser");
+        var selectedUser = socket.assigns.selectedUser;
         var result = selectedUser == null 
             ? Users.create_user(userParams)
             : Users.update_user(selectedUser, userParams);
@@ -134,8 +150,7 @@ class UserLive {
         }
     }
     
-    static function handleDeleteUser(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
-        var userId = params.id;
+    static function handleDeleteUser(userId: Int, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         var user = Users.get_user(userId);
         var result = Users.delete_user(user);
         
@@ -151,8 +166,7 @@ class UserLive {
         return {status: "noreply", socket: socket};
     }
     
-    static function handleSearch(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
-        var searchTerm = params.search;
+    static function handleSearch(searchTerm: String, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         
         var users = searchTerm.length > 0 
             ? Users.search_users(searchTerm)
@@ -322,17 +336,6 @@ class UserLive {
             </div>
         </div>
         ');
-    }
-    
-    // Helper functions that map to Phoenix.Component functions
-    // These allow the Haxe code to compile and will be filtered out during code generation
-    // since Phoenix.Component provides these functions
-    static function assign(socket: Dynamic, key: String, value: Dynamic): Dynamic {
-        return socket;
-    }
-    
-    static function assign_multiple(socket: Dynamic, assigns: Dynamic): Dynamic {
-        return socket;
     }
     
     // Main function for compilation testing
