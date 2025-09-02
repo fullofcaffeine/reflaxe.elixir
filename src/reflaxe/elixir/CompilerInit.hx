@@ -59,9 +59,6 @@ class CompilerInit {
                 RemoveReassignedVariableDeclarations,                    // Optimize variable declarations
                 RemoveLocalVariableAliases,                              // Remove unnecessary aliases
                 MarkUnusedVariables                                      // Mark unused variables for removal
-                // TODO: Fix map.set() operations to reassign in immutable Elixir
-                // The issue: map.set(k,v) generates Map.put(map,k,v) without reassignment
-                // This makes the map appear "unused" since it's never modified
             ]
         });
     }
