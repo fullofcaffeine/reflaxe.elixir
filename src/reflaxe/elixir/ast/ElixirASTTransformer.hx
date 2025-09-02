@@ -124,23 +124,7 @@ class ElixirASTTransformer {
             pass: bitwiseImportPass
         });
         
-        // Phoenix Component import pass (should run early to add imports)
-        passes.push({
-            name: "PhoenixComponentImport",
-            description: "Add Phoenix.Component import when ~H sigil is used",
-            enabled: true,
-            pass: phoenixComponentImportPass
-        });
-        
-        // LiveView CoreComponents import pass (should run after Phoenix Component)
-        passes.push({
-            name: "LiveViewCoreComponentsImport",
-            description: "Add CoreComponents import for LiveView modules that use components",
-            enabled: true,
-            pass: liveViewCoreComponentsImportPass
-        });
-        
-        // Annotation-based transformation passes (should run early to set up module structure)
+        // Annotation-based transformation passes (MUST run first to set up module structure)
         passes.push({
             name: "PhoenixWebTransform",
             description: "Transform @:phoenixWeb modules into Phoenix Web helper module",
@@ -160,6 +144,30 @@ class ElixirASTTransformer {
             description: "Transform @:liveview modules into Phoenix.LiveView structure",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.liveViewTransformPass
+        });
+        
+        // Phoenix Component import pass (MUST run AFTER LiveViewTransform to detect LiveView use statements)
+        passes.push({
+            name: "PhoenixComponentImport",
+            description: "Add Phoenix.Component import when ~H sigil is used (unless LiveView already includes it)",
+            enabled: true,
+            pass: phoenixComponentImportPass
+        });
+        
+        // LiveView CoreComponents import pass (should run after Phoenix Component)
+        passes.push({
+            name: "LiveViewCoreComponentsImport",
+            description: "Add CoreComponents import for LiveView modules that use components",
+            enabled: true,
+            pass: liveViewCoreComponentsImportPass
+        });
+        
+        // Phoenix function name mapping pass (transforms assign_multiple to assign, etc.)
+        passes.push({
+            name: "PhoenixFunctionMapping",
+            description: "Map custom function names to Phoenix conventions",
+            enabled: true,
+            pass: phoenixFunctionMappingPass
         });
         
         passes.push({
@@ -473,6 +481,8 @@ class ElixirASTTransformer {
      * WHY: The ~H sigil for HEEx templates requires Phoenix.Component to be imported
      * WHAT: Detects any ESigil with type "H" and adds the necessary import
      * HOW: Traverses AST looking for ~H sigils, then adds import if found
+     * 
+     * IMPORTANT: Skip if module already has LiveView use statement (includes Phoenix.Component)
      */
     static function phoenixComponentImportPass(ast: ElixirAST): ElixirAST {
         // Phase 1: Detect if ~H sigil is used
@@ -521,8 +531,9 @@ class ElixirASTTransformer {
                             trace('[XRay PhoenixComponentImport] Defmodule has ${statements.length} statements');
                             #end
                             
-                            // Check if Phoenix.Component is already imported
+                            // Check if Phoenix.Component is already imported or if LiveView is used
                             var hasImport = false;
+                            var hasLiveViewUse = false;
                             for (stmt in statements) {
                                 switch(stmt.def) {
                                     case EImport(module, _, _):
@@ -531,14 +542,44 @@ class ElixirASTTransformer {
                                             hasImport = true;
                                             break;
                                         }
-                                    case EUse(module, _):
+                                    case EUse(module, opts):
                                         // module is a string in EUse
+                                        #if debug_phoenix_component_import
+                                        trace('[XRay PhoenixComponentImport] Found EUse: module=$module, opts=$opts');
+                                        #end
                                         if (module == "Phoenix.Component") {
                                             hasImport = true;
                                             break;
                                         }
+                                        // Check if it's a LiveView use statement (e.g., use TodoAppWeb, :live_view)
+                                        if (module.indexOf("Web") != -1 && opts != null && opts.length > 0) {
+                                            // Check if it has :live_view option
+                                            for (opt in opts) {
+                                                #if debug_phoenix_component_import
+                                                trace('[XRay PhoenixComponentImport] Checking option: $opt');
+                                                #end
+                                                switch(opt.def) {
+                                                    case EAtom("live_view"):
+                                                        #if debug_phoenix_component_import
+                                                        trace('[XRay PhoenixComponentImport] Found :live_view option - will skip Phoenix.Component');
+                                                        #end
+                                                        hasLiveViewUse = true;
+                                                        hasImport = true; // LiveView includes Phoenix.Component
+                                                        break;
+                                                    default:
+                                                }
+                                            }
+                                        }
                                     default:
                                 }
+                            }
+                            
+                            // Don't add Phoenix.Component if LiveView is already used
+                            if (hasLiveViewUse) {
+                                #if debug_phoenix_component_import
+                                trace('[XRay PhoenixComponentImport] Module already has LiveView use statement, skipping Phoenix.Component');
+                                #end
+                                return node;
                             }
                             
                             if (!hasImport) {
@@ -572,11 +613,37 @@ class ElixirASTTransformer {
     }
     
     /**
+     * Phoenix function name mapping pass
+     * 
+     * WHY: Some Haxe helper functions need to be mapped to proper Phoenix functions
+     * WHAT: Transforms assign_multiple to assign, and other custom names to Phoenix conventions
+     * HOW: Detects function calls and remaps their names
+     */
+    static function phoenixFunctionMappingPass(node: ElixirAST): ElixirAST {
+        return transformNode(node, function(n: ElixirAST): ElixirAST {
+            switch(n.def) {
+                // Transform assign_multiple(socket, map) to assign(socket, map)
+                case ECall(null, "assign_multiple", args):
+                    #if debug_ast_transformer
+                    trace('[PhoenixFunctionMapping] Transforming assign_multiple to assign');
+                    #end
+                    return makeASTWithMeta(ECall(null, "assign", args), n.metadata, n.pos);
+                    
+                default:
+                    return n;
+            }
+        });
+    }
+    
+    /**
      * LiveView CoreComponents Import Pass: Add app's CoreComponents import for LiveView modules
      * 
      * WHY: LiveView modules that use component functions need to import their app's CoreComponents
      * WHAT: Detects component usage (<.button, <.input, etc.) and adds CoreComponents import
      * HOW: Looks for ~H sigils with component calls and adds appropriate import
+     * 
+     * NOTE: This can conflict with Phoenix.HTML.Form functions. In Phoenix apps, the CoreComponents
+     * version takes precedence for dot-notation components (<.label> uses CoreComponents.label/1)
      */
     static function liveViewCoreComponentsImportPass(ast: ElixirAST): ElixirAST {
         // Phase 1: Detect if component functions are used
@@ -673,8 +740,11 @@ class ElixirASTTransformer {
                                 trace('[XRay LiveViewComponents] Adding CoreComponents import: $coreComponentsModule');
                                 #end
                                 
-                                // Create the import statement
-                                var importStmt = makeAST(EImport(coreComponentsModule, null, null));
+                                // Create the import statement with specific functions to avoid conflicts
+                                // Import CoreComponents but exclude label to avoid conflict with Phoenix.HTML.Form.label/1
+                                // The dot-notation <.label> will still work via Phoenix.Component's component system
+                                var exceptOptions: Array<EImportOption> = [{name: "label", arity: 1}];
+                                var importStmt = makeAST(EImport(coreComponentsModule, null, exceptOptions));
                                 
                                 // Add import after use statements but before function definitions
                                 var newStatements = [];

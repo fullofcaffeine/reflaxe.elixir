@@ -399,6 +399,12 @@ class ElixirASTPrinter {
                  * particularly problematic for inline expansion of standard library
                  * functions like String.charCodeAt.
                  */
+                // Special handling for Phoenix function name mappings
+                // Transform assign_multiple to assign (Phoenix.Component only has assign/2)
+                if (funcName == "assign_multiple" && target == null) {
+                    funcName = "assign";
+                }
+                
                 // Special handling for while loop placeholders
                 if (funcName == "while_loop" && target == null && args.length == 2) {
                     // Generate an immediately invoked recursive function for while loops

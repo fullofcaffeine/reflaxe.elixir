@@ -1,55 +1,38 @@
 defmodule TypeSafeConversions do
   def event_params_to_changeset_params(params) do
-    changeset_params = %{}
+    todo_params = %{}
     if (params.title != nil) do
-      value = {:StringValue, params.title}
-      changeset_params = Map.put(changeset_params, "title", value)
+      title = params.title
     end
     if (params.description != nil) do
-      value = {:StringValue, params.description}
-      changeset_params = Map.put(changeset_params, "description", value)
+      description = params.description
     end
     if (params.priority != nil) do
-      value = {:StringValue, params.priority}
-      changeset_params = Map.put(changeset_params, "priority", value)
+      priority = params.priority
     end
     if (params.due_date != nil) do
-      value = {:StringValue, params.due_date}
-      changeset_params = Map.put(changeset_params, "due_date", value)
+      due_date = Date.from_string(params.due_date)
     end
     if (params.tags != nil) do
-      value = {:StringValue, params.tags}
-      changeset_params = Map.put(changeset_params, "tags", value)
+      tags = Enum.map(params.tags.split(","), fn s -> StringTools.trim(s) end)
     end
     if (params.completed != nil) do
-      value = {:BoolValue, params.completed}
-      changeset_params = Map.put(changeset_params, "completed", value)
+      completed = params.completed
     end
-    changeset_params
+    todo_params
   end
   def create_todo_params(title, description, priority, due_date, tags, user_id) do
-    changeset_params = %{}
-    value = {:StringValue, title}
-    changeset_params = Map.put(changeset_params, "title", value)
-    value = {:StringValue, priority}
-    changeset_params = Map.put(changeset_params, "priority", value)
-    value = {:IntValue, user_id}
-    changeset_params = Map.put(changeset_params, "user_id", value)
-    value = {:BoolValue, false}
-    changeset_params = Map.put(changeset_params, "completed", value)
+    todo_params = %{:title => title, :priority => priority, :user_id => user_id, :completed => false}
     if (description != nil) do
-      value = {:StringValue, description}
-      changeset_params = Map.put(changeset_params, "description", value)
+      description = description
     end
     if (due_date != nil) do
-      value = {:StringValue, due_date}
-      changeset_params = Map.put(changeset_params, "due_date", value)
+      due_date = Date.from_string(due_date)
     end
     if (tags != nil) do
-      value = {:StringValue, tags}
-      changeset_params = Map.put(changeset_params, "tags", value)
+      tags = Enum.map(tags.split(","), fn s -> StringTools.trim(s) end)
     end
-    changeset_params
+    todo_params
   end
   def validate_todo_creation_params(params) do
     params.title != nil && params.title.length > 0
