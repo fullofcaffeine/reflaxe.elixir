@@ -53,6 +53,9 @@ class Exception extends Register.inherits(() => Error, true) {
 	unwrap() {
 		return this.__nativeException;
 	}
+	get_native() {
+		return this.__nativeException;
+	}
 	static caught(value) {
 		if (((value) instanceof Exception)) {
 			return value;
@@ -60,6 +63,16 @@ class Exception extends Register.inherits(() => Error, true) {
 			return new Exception(value.message, null, value);
 		} else {
 			return new ValueException(value, null, value);
+		};
+	}
+	static thrown(value) {
+		if (((value) instanceof Exception)) {
+			return value.get_native();
+		} else if (((value) instanceof Error)) {
+			return value;
+		} else {
+			let e = new ValueException(value);
+			return e;
 		};
 	}
 	static get __name__() {
@@ -72,6 +85,7 @@ class Exception extends Register.inherits(() => Error, true) {
 		return Exception
 	}
 }
+Exception.prototype.native = null;
 Exception.prototype.__skipStack = null;
 Exception.prototype.__nativeException = null;
 Exception.prototype.__previousException = null;
