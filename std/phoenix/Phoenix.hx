@@ -894,5 +894,97 @@ typedef PatchOptions = {
     var ?replace: Bool;
 }
 
+// ============================================================================
+// Phoenix Presence for Real-Time User Tracking
+// ============================================================================
+
+/**
+ * Phoenix.Presence for real-time user tracking and awareness
+ * 
+ * Provides type-safe abstractions over Phoenix Presence, eliminating the need
+ * for __elixir__() calls in application code.
+ */
+@:native("Phoenix.Presence")
+extern class Presence {
+    /**
+     * Track a user's presence on a topic
+     * 
+     * @param socket The LiveView socket
+     * @param topic The topic to track on (e.g., "users", "room:123")
+     * @param key The unique key for this presence (usually user ID)
+     * @param meta Metadata to attach to the presence
+     * @return Updated socket
+     */
+    static function track<TSocket, TMeta>(socket: TSocket, topic: String, key: String, meta: TMeta): TSocket;
+    
+    /**
+     * Stop tracking presence on a topic
+     * 
+     * @param socket The LiveView socket
+     * @param topic The topic to untrack from
+     * @param key The unique key to remove
+     * @return Updated socket
+     */
+    static function untrack<TSocket>(socket: TSocket, topic: String, key: String): TSocket;
+    
+    /**
+     * List all presences for a topic
+     * 
+     * @param socket The LiveView socket
+     * @param topic The topic to list presences for
+     * @return Map of presence entries by key
+     */
+    static function list<TSocket, TMeta>(socket: TSocket, topic: String): Map<String, PresenceEntry<TMeta>>;
+    
+    /**
+     * Update presence metadata
+     * 
+     * @param socket The LiveView socket
+     * @param topic The topic to update on
+     * @param key The unique key to update
+     * @param meta New metadata to merge with existing
+     * @return Updated socket
+     */
+    static function update<TSocket, TMeta>(socket: TSocket, topic: String, key: String, meta: TMeta): TSocket;
+    
+    /**
+     * Fetch presence information with a callback
+     * 
+     * @param socket The LiveView socket  
+     * @param topic The topic to fetch from
+     * @param presences Current presences map
+     * @return Transformed presences
+     */
+    static function fetch<TSocket, TMeta, TResult>(socket: TSocket, topic: String, presences: Map<String, PresenceEntry<TMeta>>): TResult;
+    
+    /**
+     * Handle presence diff events
+     * 
+     * @param socket The LiveView socket
+     * @param diff The presence diff from the server
+     * @return Updated socket
+     */
+    static function handle_diff<TSocket, TMeta>(socket: TSocket, diff: PresenceDiff<TMeta>): TSocket;
+}
+
+/**
+ * Presence entry structure
+ * 
+ * @param TMeta The type of metadata attached to each presence
+ */
+typedef PresenceEntry<TMeta> = {
+    var metas: Array<TMeta>;
+}
+
+/**
+ * Presence diff structure for join/leave events
+ * 
+ * @param TMeta The type of metadata in the diff
+ */
+typedef PresenceDiff<TMeta> = {
+    var joins: Map<String, PresenceEntry<TMeta>>;
+    var leaves: Map<String, PresenceEntry<TMeta>>;
+}
+
 // Any/Dynamic types eliminated in favor of proper type-safe alternatives
 // Use generics, enums, or specific types instead of Any/Dynamic

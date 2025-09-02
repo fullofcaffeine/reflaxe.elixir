@@ -23,6 +23,7 @@ import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.live.SafeAssigns;
 import server.infrastructure.Repo; // Import the TodoApp.Repo module
 import HXX;  // Import HXX for template rendering
+import server.presence.TodoPresence;
 
 using StringTools;
 
@@ -84,6 +85,8 @@ typedef TodoLiveAssigns = {
 	var totalTodos: Int;
 	var completedTodos: Int;
 	var pendingTodos: Int;
+	// Presence tracking (idiomatic Phoenix pattern: single flat map)
+	var onlineUsers: Map<String, phoenix.Phoenix.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
 }
 
 /**
@@ -111,6 +114,9 @@ class TodoLive {
 		var currentUser = getUserFromSession(session);
 		var todos = loadTodos(currentUser.id);
 		
+		// Track user presence for real-time collaboration
+		var presenceSocket = server.presence.TodoPresence.trackUser(socket, currentUser);
+		
 		// Create type-safe assigns structure
 		var assigns: TodoLiveAssigns = {
 			todos: todos,
@@ -123,11 +129,13 @@ class TodoLive {
 			selectedTags: [],  // camelCase!
 			totalTodos: todos.length,  // camelCase!
 			completedTodos: countCompleted(todos),  // camelCase!
-			pendingTodos: countPending(todos)  // camelCase!
+			pendingTodos: countPending(todos),  // camelCase!
+			// Initialize presence tracking (single map - Phoenix pattern)
+			onlineUsers: new Map()  // Will be populated by handle_info
 		};
 		
 		// The TAssigns type parameter will be inferred as TodoLiveAssigns
-		var updatedSocket = LiveView.assign(socket, assigns);
+		var updatedSocket = LiveView.assign(presenceSocket, assigns);
 		
 		return Ok(updatedSocket);
 	}
@@ -157,7 +165,9 @@ class TodoLive {
 				saveEditedTodoTyped(params, socket);
 			
 			case CancelEdit:
-				SafeAssigns.setEditingTodo(socket, null);
+				// Clear editing state in presence (idiomatic Phoenix pattern)
+				var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.currentUser, null);
+				SafeAssigns.setEditingTodo(presenceSocket, null);
 			
 			// Filtering and sorting
 			case FilterTodos(filter):
@@ -509,7 +519,9 @@ class TodoLive {
 	
 	static function startEditing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var todo = findTodo(id, socket.assigns.todos);
-		return SafeAssigns.setEditingTodo(socket, todo);
+		// Update presence to show user is editing (idiomatic Phoenix pattern)
+		var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.currentUser, id);
+		return SafeAssigns.setEditingTodo(presenceSocket, todo);
 	}
 	
 	// Bulk operations with type-safe socket handling
@@ -614,8 +626,9 @@ class TodoLive {
 						trace("Failed to broadcast todo update: " + reason);
 				}
 				
-				// Clear editing state and refresh
-				var updatedSocket = SafeAssigns.setEditingTodo(socket, null);
+				// Clear editing state in presence and assigns (idiomatic Phoenix pattern)
+				var presenceSocket = server.presence.TodoPresence.updateUserEditing(socket, socket.assigns.currentUser, null);
+				var updatedSocket = SafeAssigns.setEditingTodo(presenceSocket, null);
 				return loadAndAssignTodos(updatedSocket);
 				
 			case Error(changeset):
@@ -890,6 +903,9 @@ class TodoLive {
 						</div>
 					</div>
 					
+					<!-- Online Users Panel -->
+					${renderPresencePanel(assigns)}
+					
 					<!-- Bulk Actions -->
 					${renderBulkActions(assigns)}
 					
@@ -900,6 +916,58 @@ class TodoLive {
 				</div>
 			</div>
 		');
+	}
+	
+	/**
+	 * Render presence panel showing online users and editing status
+	 * 
+	 * Uses idiomatic Phoenix pattern: single presence map with all user state
+	 */
+	static function renderPresencePanel(assigns: TodoLiveAssigns): String {
+		var onlineCount = 0;
+		var onlineUsersList = [];
+		var editingIndicators = [];
+		
+		// Iterate once through the single presence map (Phoenix pattern)
+		for (userId => entry in assigns.onlineUsers) {
+			onlineCount++;
+			if (entry.metas.length > 0) {
+				var meta = entry.metas[0];
+				
+				// Show online user with editing indicator if applicable
+				var editingBadge = meta.editingTodoId != null 
+					? ' <span class="text-xs text-blue-500">✏️</span>' 
+					: '';
+				
+				onlineUsersList.push('<div class="flex items-center space-x-2">
+					<div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+					<span class="text-sm text-gray-700 dark:text-gray-300">${meta.userName}${editingBadge}</span>
+				</div>');
+				
+				// Add to editing indicators if they're editing
+				if (meta.editingTodoId != null) {
+					editingIndicators.push('<div class="text-xs text-gray-500 dark:text-gray-400 italic">
+						🖊️ ${meta.userName} is editing todo #${meta.editingTodoId}
+					</div>');
+				}
+			}
+		}
+		
+		if (onlineCount == 0) {
+			return "";  // Don't show panel if no users online
+		}
+		
+		return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6">
+			<div class="flex items-center justify-between mb-2">
+				<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+					👥 Online Users (${onlineCount})
+				</h3>
+			</div>
+			<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+				${onlineUsersList.join("")}
+			</div>
+			${editingIndicators.length > 0 ? '<div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1">' + editingIndicators.join("") + '</div>' : ""}
+		</div>';
 	}
 	
 	/**

@@ -241,10 +241,36 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * socket.clearFlash()
 	 * ```
 	 * 
+	 * ## CRITICAL LESSON: Why `extern inline` is Required for Abstract Types with `__elixir__`
+	 * 
+	 * ### The Problem We Encountered
+	 * When using `untyped __elixir__()` in abstract type methods, compilation fails with:
+	 * "Unknown identifier: __elixir__"
+	 * 
+	 * ### Why This Happens
+	 * 1. **Typing Phase Timing**: Abstract methods are typed when the abstract is imported
+	 * 2. **Reflaxe Initialization**: `__elixir__` is injected AFTER Haxe's typing phase
+	 * 3. **The Gap**: During typing, `__elixir__` doesn't exist yet
+	 * 
+	 * ### The Solution: `extern inline`
+	 * - **`extern`**: Tells Haxe this is an external implementation
+	 * - **`inline`**: Forces the function body to be inlined at call sites
+	 * - **Result**: The `__elixir__` code is only typed when actually used, AFTER Reflaxe init
+	 * 
+	 * ### Why Regular Classes Work Without This
+	 * - Regular class methods aren't forced to be typed immediately
+	 * - Array.hx has `@:coreApi` which gives special compilation treatment
+	 * - Abstract methods are essentially always inline, causing early typing
+	 * 
+	 * ### The Rule
+	 * **ALWAYS use `extern inline` for abstract type methods that use `untyped __elixir__()`**
+	 * 
+	 * This critical lesson discovered after extensive debugging - see CLAUDE.md for full details.
+	 * 
 	 * @return Updated LiveSocket
 	 */
-	public inline function clearFlash(): LiveSocket<T> {
-		return cast phoenix.Phoenix.LiveView.clearFlash(this);
+	extern inline public function clearFlash(): LiveSocket<T> {
+		return untyped __elixir__('Phoenix.LiveView.clear_flash({0})', this);
 	}
 	
 	/**
@@ -258,8 +284,8 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param message The message to display
 	 * @return Updated LiveSocket
 	 */
-	public inline function putFlash(type: phoenix.Phoenix.FlashType, message: String): LiveSocket<T> {
-		return cast phoenix.Phoenix.LiveView.put_flash(this, type, message);
+	extern inline public function putFlash(type: phoenix.Phoenix.FlashType, message: String): LiveSocket<T> {
+		return untyped __elixir__('Phoenix.LiveView.put_flash({0}, {1}, {2})', this, type, message);
 	}
 	
 	/**
@@ -273,7 +299,7 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param payload Event payload
 	 * @return Updated LiveSocket
 	 */
-	public inline function pushEvent<P>(event: String, payload: P): LiveSocket<T> {
-		return cast phoenix.Phoenix.LiveView.push_event(this, event, payload);
+	extern inline public function pushEvent<P>(event: String, payload: P): LiveSocket<T> {
+		return untyped __elixir__('Phoenix.LiveView.push_event({0}, {1}, {2})', this, event, payload);
 	}
 }
