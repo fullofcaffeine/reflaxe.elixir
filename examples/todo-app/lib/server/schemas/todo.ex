@@ -11,33 +11,22 @@ defmodule Todo do
     timestamps()
   end
   def changeset(todo, params) do
-    changeset = Ecto.Changeset.cast_changeset(todo, params, ["title", "description", "completed", "priority", "due_date", "tags", "user_id"])
-    changeset = Ecto.Changeset.validate_required(changeset, ["title", "user_id"])
-    changeset = Ecto.Changeset.validate_length(changeset, "title", %{:min => 3, :max => 200})
-    changeset = Ecto.Changeset.validate_length(changeset, "description", %{:max => 1000})
-    priority_values = [{:StringValue, "low"}, {:StringValue, "medium"}, {:StringValue, "high"}]
-    changeset = Ecto.Changeset.validate_inclusion(changeset, "priority", priority_values)
-    changeset = Ecto.Changeset.foreign_key_constraint(changeset, "user_id")
-    changeset
+    cs = Changeset_Impl_._new(todo, params)
+    Changeset_Impl_.validate_length(Changeset_Impl_.validate_length(Changeset_Impl_.validate_required(cs, ["title", "user_id"]), "title", %{:min => 3, :max => 200}), "description", %{:max => 1000})
   end
   def toggle_completed(todo) do
-    params = %{}
-    value = {:BoolValue, not todo.completed}
-    params = Map.put(params, "completed", value)
-    changeset(todo, params)
+    params = changeset(todo, %{:completed => not todo.completed})
   end
   def update_priority(todo, priority) do
-    params = %{}
-    value = {:StringValue, priority}
-    params = Map.put(params, "priority", value)
-    changeset(todo, params)
+    params = changeset(todo, %{:priority => priority})
   end
   def add_tag(todo, tag) do
-    tags = if (todo.tags != nil), do: todo.tags, else: []
+    tags = if (todo.tags != nil) do
+  todo.tags
+else
+  []
+end
     tags.push(tag)
-    params = %{}
-    value = {:ArrayValue, Enum.map(tags, fn t -> {:StringValue, t} end)}
-    params = Map.put(params, "tags", value)
-    changeset(todo, params)
+    params = changeset(todo, %{:tags => tags})
   end
 end

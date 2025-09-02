@@ -1,10 +1,9 @@
 defmodule TodoAppWeb.UserLive do
   use TodoAppWeb, :live_view
-  use Phoenix.Component
-  import TodoAppWeb.CoreComponents
+  import TodoAppWeb.CoreComponents, except: [label: 1]
   defp mount(_params, _session, socket) do
     users = Users.list_users(nil)
-    %{:status => "ok", :socket => assign_multiple(socket, %{:users => users, :selectedUser => nil, :changeset => Users.change_user(nil), :searchTerm => "", :showForm => false})}
+    %{:status => "ok", :socket => assign(socket, %{:users => users, :selectedUser => nil, :changeset => Users.change_user(nil), :searchTerm => "", :showForm => false})}
   end
   defp handle_event(event, params, socket) do
     case (event) do
@@ -28,14 +27,14 @@ defmodule TodoAppWeb.UserLive do
     changeset = Users.change_user(nil)
     selected_user = nil
     show_form = true
-    %{:status => "noreply", :socket => assign_multiple(socket, %{:changeset => changeset, :selectedUser => selected_user, :showForm => show_form})}
+    %{:status => "noreply", :socket => assign(socket, %{:changeset => changeset, :selectedUser => selected_user, :showForm => show_form})}
   end
   defp handle_edit_user(params, socket) do
     user_id = params.id
     selected_user = Users.get_user(user_id)
     changeset = Users.change_user(selected_user)
     show_form = true
-    %{:status => "noreply", :socket => assign_multiple(socket, %{:selectedUser => selected_user, :changeset => changeset, :showForm => show_form})}
+    %{:status => "noreply", :socket => assign(socket, %{:selectedUser => selected_user, :changeset => changeset, :showForm => show_form})}
   end
   defp handle_save_user(params, socket) do
     user_params = params.user
@@ -52,7 +51,7 @@ end
       "ok" ->
         users = Users.list_users(nil)
         show_form = false
-        %{:status => "noreply", :socket => assign_multiple(socket, %{:users => users, :showForm => show_form, :selectedUser => nil, :changeset => Users.change_user(nil)})}
+        %{:status => "noreply", :socket => assign(socket, %{:users => users, :showForm => show_form, :selectedUser => nil, :changeset => Users.change_user(nil)})}
       _ ->
         %{:status => "noreply", :socket => socket}
     end
@@ -74,10 +73,10 @@ end
 else
   Users.list_users(nil)
 end
-    %{:status => "noreply", :socket => assign_multiple(socket, %{:users => users, :searchTerm => search_term})}
+    %{:status => "noreply", :socket => assign(socket, %{:users => users, :searchTerm => search_term})}
   end
   defp handle_cancel(socket) do
-    %{:status => "noreply", :socket => assign_multiple(socket, %{:showForm => false, :selectedUser => nil, :changeset => Users.change_user(nil)})}
+    %{:status => "noreply", :socket => assign(socket, %{:showForm => false, :selectedUser => nil, :changeset => Users.change_user(nil)})}
   end
   defp render(assigns) do
     HXX.hxx("\n        <div class=\"user-management\">\n            <div class=\"header\">\n                <h1>User Management</h1>\n                <.button phx-click=\"new_user\" class=\"btn-primary\">\n                    <.icon name=\"plus\" /> New User\n                </.button>\n            </div>\n            \n            <div class=\"search-bar\">\n                <.form phx-change=\"search\">\n                    <.input \n                        name=\"search\" \n                        value={@searchTerm}\n                        placeholder=\"Search users...\"\n                        type=\"search\"\n                    />\n                </.form>\n            </div>\n            \n            " <> render_user_list(assigns) <> "\n            " <> render_user_form(assigns) <> "\n        </div>\n        ")
@@ -129,19 +128,19 @@ end
                 
                 <.form for={@changeset} phx-submit="save_user">
                     <div class="form-group">
-                        <.label htmlFor="name">Name</.label>
+                        <.label for="name">Name</.label>
                         <.input field={@changeset[:name]} type="text" required />
                         <.error field={@changeset[:name]} />
                     </div>
                     
                     <div class="form-group">
-                        <.label htmlFor="email">Email</.label>
+                        <.label for="email">Email</.label>
                         <.input field={@changeset[:email]} type="email" required />
                         <.error field={@changeset[:email]} />
                     </div>
                     
                     <div class="form-group">
-                        <.label htmlFor="age">Age</.label>
+                        <.label for="age">Age</.label>
                         <.input field={@changeset[:age]} type="number" />
                         <.error field={@changeset[:age]} />
                     </div>
@@ -168,13 +167,7 @@ end
         
 """
   end
-  defp assign(socket, key, value) do
-    socket
-  end
-  defp assign_multiple(socket, assigns) do
-    socket
-  end
   def main() do
-    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{:fileName => "src_haxe/server/live/UserLive.hx", :lineNumber => 315, :className => "server.live.UserLive", :methodName => "main"})
+    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{:fileName => "src_haxe/server/live/UserLive.hx", :lineNumber => 322, :className => "server.live.UserLive", :methodName => "main"})
   end
 end

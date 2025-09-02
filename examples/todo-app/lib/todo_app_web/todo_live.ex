@@ -1,6 +1,5 @@
 defmodule TodoAppWeb.TodoLive do
   use TodoAppWeb, :live_view
-  use Phoenix.Component
   def mount(_params, session, socket) do
     g = {:Subscribe, :todo_updates}
     case (g.elem(0)) do
@@ -98,7 +97,7 @@ end
         Phoenix.LiveView.put_flash(socket, flash_type, message)
     end
   1 ->
-    Log.trace("Received unknown PubSub message: " <> Std.string(msg), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 199, :className => "server.live.TodoLive", :methodName => "handle_info"})
+    Log.trace("Received unknown PubSub message: " <> Std.string(msg), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 196, :className => "server.live.TodoLive", :methodName => "handle_info"})
     socket
 end
     {:NoReply, result_socket}
@@ -133,7 +132,7 @@ end
           1 ->
             g = g.elem(1)
             reason = g
-            Log.trace("Failed to broadcast todo creation: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 230, :className => "server.live.TodoLive", :methodName => "create_new_todo"})
+            Log.trace("Failed to broadcast todo creation: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 227, :className => "server.live.TodoLive", :methodName => "create_new_todo"})
         end
         todos = [todo] ++ socket.assigns.todos
         current_assigns = socket.assigns
@@ -143,7 +142,7 @@ end
       1 ->
         g = g.elem(1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to create todo: " <> reason)
+        Phoenix.LiveView.put_flash(socket, :error, "Failed to create todo: " <> Std.string(reason))
     end
   end
   defp toggle_todo_status(id, socket) do
@@ -163,13 +162,13 @@ end
           1 ->
             g = g.elem(1)
             reason = g
-            Log.trace("Failed to broadcast todo update: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 269, :className => "server.live.TodoLive", :methodName => "toggle_todo_status"})
+            Log.trace("Failed to broadcast todo update: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 266, :className => "server.live.TodoLive", :methodName => "toggle_todo_status"})
         end
         update_todo_in_list(updated_todo, socket)
       1 ->
         g = g.elem(1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to update todo: " <> reason)
+        Phoenix.LiveView.put_flash(socket, :error, "Failed to update todo: " <> Std.string(reason))
     end
   end
   defp delete_todo(id, socket) do
@@ -188,13 +187,13 @@ end
           1 ->
             g = g.elem(1)
             reason = g
-            Log.trace("Failed to broadcast todo deletion: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 291, :className => "server.live.TodoLive", :methodName => "delete_todo"})
+            Log.trace("Failed to broadcast todo deletion: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 288, :className => "server.live.TodoLive", :methodName => "delete_todo"})
         end
         remove_todo_from_list(id, socket)
       1 ->
         g = g.elem(1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to delete todo: " <> reason)
+        Phoenix.LiveView.put_flash(socket, :error, "Failed to delete todo: " <> Std.string(reason))
     end
   end
   defp update_todo_priority(id, priority, socket) do
@@ -214,13 +213,13 @@ end
           1 ->
             g = g.elem(1)
             reason = g
-            Log.trace("Failed to broadcast todo priority update: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 315, :className => "server.live.TodoLive", :methodName => "update_todo_priority"})
+            Log.trace("Failed to broadcast todo priority update: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 312, :className => "server.live.TodoLive", :methodName => "update_todo_priority"})
         end
         update_todo_in_list(updated_todo, socket)
       1 ->
         g = g.elem(1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to update priority: " <> reason)
+        Phoenix.LiveView.put_flash(socket, :error, "Failed to update priority: " <> Std.string(reason))
     end
   end
   defp add_todo_to_list(todo, socket) do
@@ -243,12 +242,7 @@ end
     Phoenix.LiveView.assign(socket, complete_assigns)
   end
   defp load_todos(user_id) do
-    query = Ecto.Query.from(Todo, "t")
-    where_conditions = %{}
-    value = {:Integer, user_id}
-    where_conditions = Map.put(where_conditions, "user_id", value)
-    conditions = %{:where => where_conditions}
-    query = Ecto.Query.where(query, conditions)
+    query = EctoQuery_Impl_.order_by(EctoQuery_Impl_.where(Query.from(Todo), "user_id", user_id), "inserted_at", "asc")
     TodoApp.Repo.all(query)
   end
   defp find_todo(id, todos) do
@@ -319,7 +313,7 @@ end)
       1 ->
         g = g.elem(1)
         reason = g
-        Log.trace("Failed to complete todo " <> todo.id <> ": " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 442, :className => "server.live.TodoLive", :methodName => "complete_all_todos"})
+        Log.trace("Failed to complete todo " <> todo.id <> ": " <> Std.string(reason), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 432, :className => "server.live.TodoLive", :methodName => "complete_all_todos"})
     end
     {:cont, acc}
   else
@@ -334,7 +328,7 @@ end)
       1 ->
         g = g.elem(1)
         reason = g
-        Log.trace("Failed to broadcast bulk complete: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 451, :className => "server.live.TodoLive", :methodName => "complete_all_todos"})
+        Log.trace("Failed to broadcast bulk complete: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 441, :className => "server.live.TodoLive", :methodName => "complete_all_todos"})
     end
     updated_todos = load_todos(socket.assigns.current_user.id)
     current_assigns = socket.assigns
@@ -388,14 +382,14 @@ end)
           1 ->
             g = g.elem(1)
             reason = g
-            Log.trace("Failed to broadcast todo save: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 516, :className => "server.live.TodoLive", :methodName => "save_edited_todo"})
+            Log.trace("Failed to broadcast todo save: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 506, :className => "server.live.TodoLive", :methodName => "save_edited_todo"})
         end
         updated_socket = update_todo_in_list(updated_todo, socket)
         Phoenix.LiveView.assign(updated_socket, "editing_todo", nil)
       1 ->
         g = g.elem(1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to save todo: " <> reason)
+        Phoenix.LiveView.put_flash(socket, :error, "Failed to save todo: " <> Std.string(reason))
     end
   end
   defp handle_bulk_update(action, socket) do
