@@ -73,8 +73,8 @@ defmodule Mix.Tasks.Haxe.Gen.Context do
     schema_attrs = parse_attrs(Keyword.get(opts, :schema_attrs, ""))
     context_attrs = parse_attrs(Keyword.get(opts, :context_attrs, ""))
     generate_schema = not Keyword.get(opts, :no_schema, false)
-    include_changeset = Keyword.get(opts, :changeset, true)
-    repo_module = Keyword.get(opts, :repo, "Repo")
+    _include_changeset = Keyword.get(opts, :changeset, true)
+    _repo_module = Keyword.get(opts, :repo, "Repo")
     
     # Associations
     belongs_to_assocs = parse_associations(Keyword.get_values(opts, :belongs_to))
@@ -125,7 +125,7 @@ defmodule Mix.Tasks.Haxe.Gen.Context do
   end
 
   # Generate Haxe context source file content
-  defp generate_haxe_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
+  defp generate_haxe_context_content(context_name, schema_name, table_name, schema_attrs, _context_attrs, opts, belongs_to, has_many, has_one) do
     generate_schema = not Keyword.get(opts, :no_schema, false)
     include_changeset = Keyword.get(opts, :changeset, true)
     repo_module = Keyword.get(opts, :repo, "Repo")
@@ -329,7 +329,7 @@ defmodule Mix.Tasks.Haxe.Gen.Context do
   end
 
   # Generate business logic methods specific to the context
-  defp generate_context_business_methods(context_name, schema_name, belongs_to, has_many, has_one) do
+  defp generate_context_business_methods(_context_name, schema_name, belongs_to, has_many, has_one) do
     singular = String.downcase(schema_name)
     plural = pluralize(singular)
     
@@ -394,7 +394,7 @@ defmodule Mix.Tasks.Haxe.Gen.Context do
     singular = String.downcase(schema_name)
     plural = pluralize(singular)
     
-    Enum.map_join(belongs_to, "", fn {parent_schema, field} ->
+    Enum.map_join(belongs_to, "", fn {parent_schema, _field} ->
       parent_singular = String.downcase(parent_schema)
       
       """
@@ -430,7 +430,7 @@ defmodule Mix.Tasks.Haxe.Gen.Context do
   end
 
   # Generate Elixir context content
-  defp generate_elixir_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
+  defp generate_elixir_context_content(context_name, schema_name, _table_name, _schema_attrs, _context_attrs, opts, belongs_to, has_many, has_one) do
     repo_module = Keyword.get(opts, :repo, "Repo")
     
     # Get the application module name
@@ -568,7 +568,7 @@ defmodule Mix.Tasks.Haxe.Gen.Context do
   end
 
   # Generate business logic methods for Elixir context
-  defp generate_elixir_business_methods(schema_name, belongs_to, has_many, has_one, app_module, repo_module) do
+  defp generate_elixir_business_methods(schema_name, belongs_to, has_many, has_one, _app_module, repo_module) do
     singular = String.downcase(schema_name)
     plural = pluralize(singular)
     
