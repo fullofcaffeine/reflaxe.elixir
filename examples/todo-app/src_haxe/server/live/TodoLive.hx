@@ -1,13 +1,12 @@
 package server.live;
 
 import server.schemas.Todo;
-import phoenix.Phoenix;
 import phoenix.Phoenix.Socket;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.HandleInfoResult;
 import phoenix.Phoenix.FlashType;
+import phoenix.LiveView;  // Now no conflict since we're not importing all of phoenix.Phoenix
 import ecto.Query;  // Import Ecto Query from the correct location
 import ecto.Changeset;  // Import Ecto Changeset from the correct location
 import haxe.functional.Result;  // Import Result type properly
@@ -127,7 +126,7 @@ class TodoLive {
 		};
 		
 		// The TAssigns type parameter will be inferred as TodoLiveAssigns
-		var updated_socket = LiveView.assign_multiple(socket, assigns);
+		var updated_socket = LiveView.assign(socket, assigns);
 		
 		return Ok(updated_socket);
 	}
@@ -231,7 +230,7 @@ class TodoLive {
 							case Error: phoenix.Phoenix.FlashType.Error;
 							case Critical: phoenix.Phoenix.FlashType.Error;
 						};
-						LiveView.putFlash(socket, flashType, message);  // camelCase!
+						LiveView.put_flash(socket, flashType, message);
 				}
 			
 			case None:
@@ -272,12 +271,12 @@ class TodoLive {
 				
 			case Error(changeset):
 				// Handle validation errors
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo");
+				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo");
 		}
 	}
 	
 	// Legacy function for backward compatibility - will be removed
-	static function create_new_todo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function createNewTodo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var todo_params = {
 			title: params.title,
 			description: params.description,
@@ -396,7 +395,7 @@ class TodoLive {
 	}
 	
 	// List management helpers with type-safe socket handling
-	static function add_todo_to_list(todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function addTodoToList(todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		// Don't add if it's our own todo (already added)
 		if (todo.user_id == socket.assigns.current_user.id) {
 			return socket;
@@ -410,68 +409,9 @@ class TodoLive {
 			todos // Updated todos list
 			// All other fields will maintain current values from base
 		);
-		return LiveView.assign_multiple(socket, completeAssigns);
+		return LiveView.assign(socket, completeAssigns);
 	}
 	
-	static function update_todo_in_list(updated_todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todos = socket.assigns.todos.map(function(t) {
-			return t.id == updated_todo.id ? updated_todo : t;
-		});
-		
-		// Use complete assigns structure for type safety
-		var currentAssigns = socket.assigns;
-		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
-			currentAssigns,
-			todos // Updated todos list
-			// All other fields will maintain current values from base
-		);
-		return LiveView.assign_multiple(socket, completeAssigns);
-	}
-	
-	static function remove_todo_from_list(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todos = socket.assigns.todos.filter(function(t) {
-			return t.id != id;
-		});
-		
-		// Use complete assigns structure for type safety
-		var currentAssigns = socket.assigns;
-		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
-			currentAssigns,
-			todos // Updated todos list
-			// All other fields will maintain current values from base
-		);
-		return LiveView.assign_multiple(socket, completeAssigns);
-	}
-	
-	// Utility functions
-	/**
-	 * Load todos and update socket assigns.
-	 */
-	static function load_and_assign_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todos = load_todos(socket.assigns.current_user.id);
-		
-		// Calculate statistics
-		var total = todos.length;
-		var completed = todos.filter(t -> t.completed).length;
-		var pending = total - completed;
-		
-		// Create updated assigns
-		var updated: TodoLiveAssigns = {
-			todos: todos,
-			filter: socket.assigns.filter,
-			sort_by: socket.assigns.sort_by,
-			current_user: socket.assigns.current_user,
-			editing_todo: socket.assigns.editing_todo,
-			show_form: socket.assigns.show_form,
-			search_query: socket.assigns.search_query,
-			selected_tags: socket.assigns.selected_tags,
-			total_todos: total,
-			completed_todos: completed,
-			pending_todos: pending
-		};
-		
-		return LiveView.assign_multiple(socket, updated);
-	}
 	
 	static function loadTodos(userId: Int): Array<server.schemas.Todo> {
 		// Use type-safe Query API with proper chaining
@@ -523,8 +463,77 @@ class TodoLive {
 		};
 	}
 	
+	// Missing helper functions
+	static function loadAndAssignTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var todos = loadTodos(socket.assigns.currentUser.id);
+		var currentAssigns = socket.assigns;
+		var completeAssigns: TodoLiveAssigns = {
+			todos: todos,
+			filter: currentAssigns.filter,
+			sortBy: currentAssigns.sortBy,
+			currentUser: currentAssigns.currentUser,
+			editingTodo: currentAssigns.editingTodo,
+			showForm: currentAssigns.showForm,
+			searchQuery: currentAssigns.searchQuery,
+			selectedTags: currentAssigns.selectedTags,
+			totalTodos: todos.length,
+			completedTodos: countCompleted(todos),
+			pendingTodos: countPending(todos)
+		};
+		return LiveView.assign(socket, completeAssigns);
+	}
+	
+	static function updateTodoInList(todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var todos = socket.assigns.todos;
+		var updatedTodos = todos.map(function(t) {
+			return t.id == todo.id ? todo : t;
+		});
+		
+		var currentAssigns = socket.assigns;
+		var completeAssigns: TodoLiveAssigns = {
+			todos: updatedTodos,
+			filter: currentAssigns.filter,
+			sortBy: currentAssigns.sortBy,
+			currentUser: currentAssigns.currentUser,
+			editingTodo: currentAssigns.editingTodo,
+			showForm: currentAssigns.showForm,
+			searchQuery: currentAssigns.searchQuery,
+			selectedTags: currentAssigns.selectedTags,
+			totalTodos: updatedTodos.length,
+			completedTodos: countCompleted(updatedTodos),
+			pendingTodos: countPending(updatedTodos)
+		};
+		return LiveView.assign(socket, completeAssigns);
+	}
+	
+	static function removeTodoFromList(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var todos = socket.assigns.todos;
+		var updatedTodos = todos.filter(function(t) return t.id != id);
+		
+		var currentAssigns = socket.assigns;
+		var completeAssigns: TodoLiveAssigns = {
+			todos: updatedTodos,
+			filter: currentAssigns.filter,
+			sortBy: currentAssigns.sortBy,
+			currentUser: currentAssigns.currentUser,
+			editingTodo: currentAssigns.editingTodo,
+			showForm: currentAssigns.showForm,
+			searchQuery: currentAssigns.searchQuery,
+			selectedTags: currentAssigns.selectedTags,
+			totalTodos: updatedTodos.length,
+			completedTodos: countCompleted(updatedTodos),
+			pendingTodos: countPending(updatedTodos)
+		};
+		return LiveView.assign(socket, completeAssigns);
+	}
+	
+	static function startEditing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var todo = findTodo(id, socket.assigns.todos);
+		return SafeAssigns.setEditingTodo(socket, todo);
+	}
+	
 	// Bulk operations with type-safe socket handling
-	static function complete_all_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function completeAllTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var pending: Array<server.schemas.Todo> = socket.assigns.todos.filter(function(t) return !t.completed);
 		
 		// Update all pending todos
@@ -564,7 +573,7 @@ class TodoLive {
 		};
 		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
 		
-		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "All todos marked as completed!");
+		return LiveView.put_flash(updatedSocket, phoenix.Phoenix.FlashType.Info, "All todos marked as completed!");
 	}
 	
 	static function deleteCompletedTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -595,11 +604,11 @@ class TodoLive {
 		};
 		
 		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
-		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "Completed todos deleted!");
+		return LiveView.put_flash(updatedSocket, phoenix.Phoenix.FlashType.Info, "Completed todos deleted!");
 	}
 	
 	// Additional helper functions with type-safe socket handling
-	static function start_editing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function startEditingOld(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var todo = find_todo(id, socket.assigns.todos);
 		return SafeAssigns.setEditingTodo(socket, todo);
 	}
@@ -630,7 +639,7 @@ class TodoLive {
 				return load_and_assign_todos(updated_socket);
 				
 			case Error(changeset):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
+				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
 		}
 	}
 	
@@ -1059,7 +1068,7 @@ class TodoLive {
 	/**
 	 * Render tags for a todo item
 	 */
-	static function render_tags(tags: Array<String>): String {
+	static function renderTags(tags: Array<String>): String {
 		if (tags == null || tags.length == 0) {
 			return "";
 		}
@@ -1074,7 +1083,7 @@ class TodoLive {
 	/**
 	 * Helper to filter todos based on filter and search query
 	 */
-	static function filter_todos(todos: Array<server.schemas.Todo>, filter: String, search_query: String): Array<server.schemas.Todo> {
+	static function filterTodos(todos: Array<server.schemas.Todo>, filter: String, searchQuery: String): Array<server.schemas.Todo> {
 		var filtered = todos;
 		
 		// Apply filter
@@ -1099,7 +1108,7 @@ class TodoLive {
 	/**
 	 * Helper to filter and sort todos
 	 */
-	static function filter_and_sort_todos(todos: Array<server.schemas.Todo>, filter: String, sort_by: String, search_query: String): Array<server.schemas.Todo> {
+	static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: String, sortBy: String, searchQuery: String): Array<server.schemas.Todo> {
 		var filtered = filter_todos(todos, filter, search_query);
 		
 		// Apply sorting
