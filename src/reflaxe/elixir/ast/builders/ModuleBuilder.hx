@@ -348,13 +348,51 @@ class ModuleBuilder {
     static function buildLiveViewBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
         var statements = [];
         
+        #if debug_module_builder
+        trace('[ModuleBuilder] Building LiveView body with ${funcFields.length} functions');
+        #end
+        
         // Add functions (mount, handle_event, render, etc.)
         for (func in funcFields) {
+            #if debug_module_builder
+            trace('[ModuleBuilder] Checking function: ${func.name}, isPublic: ${func.isPublic}, hasExpr: ${func.expr() != null}');
+            #end
+            
             if (func.expr() != null) {
                 var funcName = NameUtils.toSnakeCase(func.name);
-                // Build function AST (simplified for now)
-                // The actual function building would use FunctionBuilder
-                statements.push(makeAST(EDef(funcName, [], null, makeAST(ENil))));
+                var funcExpr = func.expr();
+                
+                // Extract parameters and body from the function expression
+                switch(funcExpr.expr) {
+                    case TFunction(tfunc):
+                        var args = [];
+                        
+                        // Build parameter patterns for the function
+                        for (arg in tfunc.args) {
+                            var paramName = NameUtils.toSnakeCase(arg.v.name);
+                            args.push(PVar(paramName));
+                        }
+                        
+                        // Build the function body using ElixirASTBuilder
+                        var body = if (tfunc.expr != null) {
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr);
+                        } else {
+                            makeAST(ENil);
+                        }
+                        
+                        // Create the function definition (use defp for private functions)
+                        if (func.isPublic) {
+                            statements.push(makeAST(EDef(funcName, args, null, body)));
+                        } else {
+                            statements.push(makeAST(EDefp(funcName, args, null, body)));
+                        }
+                        
+                    default:
+                        // Not a function, skip
+                        #if debug_module_builder
+                        trace('[ModuleBuilder] Skipping non-function field: ${func.name}');
+                        #end
+                }
             }
         }
         
