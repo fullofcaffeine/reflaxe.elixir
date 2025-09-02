@@ -23,13 +23,13 @@ defmodule Todo do
   def toggle_completed(todo) do
     params = %{}
     value = {:BoolValue, not todo.completed}
-    Map.put(params, "completed", value)
+    params = Map.put(params, "completed", value)
     changeset(todo, params)
   end
   def update_priority(todo, priority) do
     params = %{}
     value = {:StringValue, priority}
-    Map.put(params, "priority", value)
+    params = Map.put(params, "priority", value)
     changeset(todo, params)
   end
   def add_tag(todo, tag) do
@@ -37,7 +37,7 @@ defmodule Todo do
     tags.push(tag)
     params = %{}
     value = {:ArrayValue, Enum.map(tags, fn t -> {:StringValue, t} end)}
-    Map.put(params, "tags", value)
+    params = Map.put(params, "tags", value)
     changeset(todo, params)
   end
 end

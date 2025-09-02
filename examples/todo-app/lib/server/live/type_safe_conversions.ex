@@ -3,51 +3,51 @@ defmodule TypeSafeConversions do
     changeset_params = %{}
     if (params.title != nil) do
       value = {:StringValue, params.title}
-      Map.put(changeset_params, "title", value)
+      changeset_params = Map.put(changeset_params, "title", value)
     end
     if (params.description != nil) do
       value = {:StringValue, params.description}
-      Map.put(changeset_params, "description", value)
+      changeset_params = Map.put(changeset_params, "description", value)
     end
     if (params.priority != nil) do
       value = {:StringValue, params.priority}
-      Map.put(changeset_params, "priority", value)
+      changeset_params = Map.put(changeset_params, "priority", value)
     end
     if (params.due_date != nil) do
       value = {:StringValue, params.due_date}
-      Map.put(changeset_params, "due_date", value)
+      changeset_params = Map.put(changeset_params, "due_date", value)
     end
     if (params.tags != nil) do
       value = {:StringValue, params.tags}
-      Map.put(changeset_params, "tags", value)
+      changeset_params = Map.put(changeset_params, "tags", value)
     end
     if (params.completed != nil) do
       value = {:BoolValue, params.completed}
-      Map.put(changeset_params, "completed", value)
+      changeset_params = Map.put(changeset_params, "completed", value)
     end
     changeset_params
   end
   def create_todo_params(title, description, priority, due_date, tags, user_id) do
     changeset_params = %{}
     value = {:StringValue, title}
-    Map.put(changeset_params, "title", value)
+    changeset_params = Map.put(changeset_params, "title", value)
     value = {:StringValue, priority}
-    Map.put(changeset_params, "priority", value)
+    changeset_params = Map.put(changeset_params, "priority", value)
     value = {:IntValue, user_id}
-    Map.put(changeset_params, "user_id", value)
+    changeset_params = Map.put(changeset_params, "user_id", value)
     value = {:BoolValue, false}
-    Map.put(changeset_params, "completed", value)
+    changeset_params = Map.put(changeset_params, "completed", value)
     if (description != nil) do
       value = {:StringValue, description}
-      Map.put(changeset_params, "description", value)
+      changeset_params = Map.put(changeset_params, "description", value)
     end
     if (due_date != nil) do
       value = {:StringValue, due_date}
-      Map.put(changeset_params, "due_date", value)
+      changeset_params = Map.put(changeset_params, "due_date", value)
     end
     if (tags != nil) do
       value = {:StringValue, tags}
-      Map.put(changeset_params, "tags", value)
+      changeset_params = Map.put(changeset_params, "tags", value)
     end
     changeset_params
   end
