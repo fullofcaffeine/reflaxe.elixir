@@ -1251,25 +1251,52 @@ class ElixirASTTransformer {
             
             // First, recursively transform children with appropriate context
             var transformed = switch(node.def) {
+                case EDefmodule(name, doBlock):
+                    // Process the module's do block in statement context
+                    #if debug_ast_transformer
+                    trace('[XRay StatementContext] Processing EDefmodule: $name');
+                    #end
+                    makeASTWithMeta(
+                        EDefmodule(name, transformWithContext(doBlock, true)),
+                        node.metadata, node.pos
+                    );
+                    
                 case EBlock(expressions):
                     // In a block, all but the last expression are in statement context
+                    #if debug_ast_transformer
+                    trace('[XRay StatementContext] Processing EBlock with ${expressions.length} expressions');
+                    #end
                     var newExpressions = [];
                     for (i in 0...expressions.length) {
                         var isLast = (i == expressions.length - 1);
                         var childContext = isLast ? isStatementContext : true;
+                        #if debug_ast_transformer
+                        if (expressions[i] != null && expressions[i].def != null) {
+                            var exprType = Type.enumConstructor(expressions[i].def);
+                            trace('[XRay StatementContext] Block expr $i/${expressions.length}: $exprType, context: ${childContext ? "statement" : "expression"}');
+                        }
+                        #end
                         newExpressions.push(transformWithContext(expressions[i], childContext));
                     }
                     makeASTWithMeta(EBlock(newExpressions), node.metadata, node.pos);
                     
                 case EDef(name, args, guards, body):
-                    // Function body is in expression context (returns value)
+                    // Function body is a block - let it handle its own statement/expression context
+                    // The block will mark all but the last expression as statement context
+                    #if debug_ast_transformer
+                    trace('[XRay StatementContext] Processing EDef: $name, body type: ${body.def}');
+                    #end
                     makeASTWithMeta(
                         EDef(name, args, guards, transformWithContext(body, false)),
                         node.metadata, node.pos
                     );
                     
                 case EDefp(name, args, guards, body):
-                    // Private function body is in expression context
+                    // Function body is a block - let it handle its own statement/expression context  
+                    // The block will mark all but the last expression as statement context
+                    #if debug_ast_transformer
+                    trace('[XRay StatementContext] Processing EDefp: $name, body type: ${body.def}');
+                    #end
                     makeASTWithMeta(
                         EDefp(name, args, guards, transformWithContext(body, false)),
                         node.metadata, node.pos
@@ -1346,26 +1373,52 @@ class ElixirASTTransformer {
             if (isStatementContext) {
                 switch(transformed.def) {
                     case ERemoteCall(module, funcName, args):
-                        // Check for Map.put() in statement context
-                        switch(module.def) {
-                            case EAtom("Map") | EVar("Map"):
-                                if (funcName == "put" && args.length >= 1) {
-                                    // First arg should be the map variable
-                                    switch(args[0].def) {
-                                        case EVar(varName):
-                                            #if debug_ast_transformer
-                                            trace('[XRay StatementContext] Wrapping Map.put with reassignment to: $varName');
-                                            #end
-                                            // Transform to: varName = Map.put(varName, ...)
-                                            return makeASTWithMeta(
-                                                EMatch(PVar(varName), transformed),
-                                                node.metadata, node.pos
-                                            );
-                                        default:
-                                            // Not a simple variable, can't reassign
-                                    }
+                        #if debug_ast_transformer
+                        trace('[XRay StatementContext] Checking ERemoteCall: module=${module.def}, func=$funcName, args=${args.length}');
+                        #end
+                        // Check for immutable operations that need reassignment in statement context
+                        var moduleName = switch(module.def) {
+                            case EAtom(name) | EVar(name): name;
+                            default: null;
+                        };
+                        
+                        if (moduleName != null) {
+                            #if debug_ast_transformer
+                            trace('[XRay StatementContext] Found module $moduleName, checking function: $funcName');
+                            #end
+                            
+                            // Define immutable operations for each Elixir module
+                            var needsReassignment = switch(moduleName) {
+                                case "Map":
+                                    ["put", "delete", "merge", "update", "drop", "put_new", "put_new_lazy", "replace"].indexOf(funcName) >= 0;
+                                case "List":
+                                    ["delete", "delete_at", "insert_at", "replace_at", "update_at", "pop_at", "flatten", "wrap"].indexOf(funcName) >= 0;
+                                case "MapSet":
+                                    ["put", "delete", "union", "intersection", "difference"].indexOf(funcName) >= 0;
+                                case "Keyword":
+                                    ["put", "delete", "merge", "update", "drop", "put_new", "put_new_lazy", "replace"].indexOf(funcName) >= 0;
+                                case "String":
+                                    ["replace", "trim", "upcase", "downcase", "capitalize", "reverse", "slice"].indexOf(funcName) >= 0;
+                                default:
+                                    false;
+                            };
+                            
+                            if (needsReassignment && args.length >= 1) {
+                                // First arg should be the variable being modified
+                                switch(args[0].def) {
+                                    case EVar(varName):
+                                        #if debug_ast_transformer
+                                        trace('[XRay StatementContext] Wrapping $moduleName.$funcName with reassignment to: $varName');
+                                        #end
+                                        // Transform to: varName = Module.operation(varName, ...)
+                                        return makeASTWithMeta(
+                                            EMatch(PVar(varName), transformed),
+                                            node.metadata, node.pos
+                                        );
+                                    default:
+                                        // Not a simple variable, can't reassign
                                 }
-                            default:
+                            }
                         }
                         
                     case EBinary(Concat, left, right):
