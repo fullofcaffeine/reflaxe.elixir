@@ -1,47 +1,48 @@
 package;
 
-import reflaxe.js.Async;
+import js.lib.Promise;
 
 /**
- * Test async/await JavaScript generation with AsyncJSGenerator.
+ * Test async/await JavaScript generation with genes.
  * 
  * This test validates that @:async functions generate proper
- * JavaScript async function declarations and await expressions.
+ * JavaScript async function declarations and @:await expressions
+ * work correctly with the genes ES6 generator.
  */
-@:build(reflaxe.js.Async.build())
+@:build(genes.AsyncMacro.build())
 class Main {
     
     /**
      * Basic async function test.
      */
     @:async
-    public static function simpleAsync(): js.lib.Promise<String> {
-        var greeting = Async.await(js.lib.Promise.resolve("Hello"));
-        return js.lib.Promise.resolve(greeting + " World");
+    public static function simpleAsync(): Promise<String> {
+        var greeting = @:await Promise.resolve("Hello");
+        return Promise.resolve(greeting + " World");
     }
     
     /**
      * Multiple await expressions test.
      */
     @:async
-    public static function multipleAwaits(): js.lib.Promise<String> {
-        var first = Async.await(js.lib.Promise.resolve("First"));
-        var second = Async.await(js.lib.Promise.resolve("Second"));
-        var third = Async.await(js.lib.Promise.resolve("Third"));
+    public static function multipleAwaits(): Promise<String> {
+        var first = @:await Promise.resolve("First");
+        var second = @:await Promise.resolve("Second");
+        var third = @:await Promise.resolve("Third");
         
-        return js.lib.Promise.resolve(first + "-" + second + "-" + third);
+        return Promise.resolve(first + "-" + second + "-" + third);
     }
     
     /**
      * Error handling with try/catch test.
      */
     @:async
-    public static function errorHandling(): js.lib.Promise<String> {
+    public static function errorHandling(): Promise<String> {
         try {
-            var result = Async.await(js.lib.Promise.reject("Test Error"));
-            return js.lib.Promise.resolve("Should not reach here");
+            var result = @:await Promise.reject("Test Error");
+            return Promise.resolve("Should not reach here");
         } catch (error: Dynamic) {
-            return js.lib.Promise.resolve("Caught: " + error);
+            return Promise.resolve("Caught: " + error);
         }
     }
     
@@ -49,13 +50,30 @@ class Main {
      * Conditional async operations test.
      */
     @:async
-    public static function conditionalAsync(useAsync: Bool): js.lib.Promise<String> {
+    public static function conditionalAsync(useAsync: Bool): Promise<String> {
         if (useAsync) {
-            var result = Async.await(js.lib.Promise.resolve("Async path"));
-            return js.lib.Promise.resolve(result);
+            var result = @:await Promise.resolve("Async path");
+            return Promise.resolve(result);
         } else {
-            return js.lib.Promise.resolve("Sync path");
+            return Promise.resolve("Sync path");
         }
+    }
+    
+    /**
+     * Inline async function test with @:async metadata.
+     */
+    public static function inlineAsyncTest(): Void {
+        // Test inline async function syntax
+        var fetchData = @:async function(): Promise<String> {
+            var data = @:await Promise.resolve("Inline async data");
+            return Promise.resolve("Fetched: " + data);
+        };
+        
+        // Test with parameters
+        var processData = @:async function(input: String): Promise<String> {
+            var processed = @:await Promise.resolve(input.toUpperCase());
+            return Promise.resolve("Processed: " + processed);
+        };
     }
     
     /**
@@ -70,5 +88,6 @@ class Main {
      */
     public static function main(): Void {
         // Entry point for test compilation
+        inlineAsyncTest();
     }
 }

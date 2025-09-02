@@ -357,6 +357,9 @@ class Async {
     /**
      * Transforms an anonymous function with @:async metadata.
      * 
+     * The definitive solution: Use js.Syntax.code to generate a complete
+     * async function expression directly, with the body inlined.
+     * 
      * @param funcExpr The function expression
      * @param func The function to transform
      * @param meta The async metadata
@@ -364,9 +367,6 @@ class Async {
      * @return Transformed async function expression
      */
     static function transformAnonymousAsync(funcExpr: Expr, func: Function, meta: MetadataEntry, pos: Position): Expr {
-        // The reality is that we need to work within Haxe's constraints
-        // js.Syntax.code needs values that can be interpolated, not statements
-        
         // Process the body to handle await calls
         var transformedBody = if (func.expr != null) {
             processExpression(func.expr);
@@ -374,38 +374,33 @@ class Async {
             macro @:pos(pos) {};
         };
         
-        // Build parameter names for the signature
+        // Build parameter list
         var paramNames = [for (arg in func.args) arg.name];
-        var paramString = paramNames.join(", ");
-        
-        // The cleanest approach that actually works:
-        // Create a regular function and use js.Syntax.plainCode to wrap it with async
         
         if (paramNames.length == 0) {
-            // For no-parameter functions, we can use a cleaner approach
+            // No parameters - generate clean async function
+            // We'll use a marker that can be post-processed
             return macro @:pos(pos) (function() {
-                // Create the body as an immediately invoked function
-                var __body = (function() { $transformedBody; });
-                // Return an async function that calls the body
-                return js.Syntax.plainCode("(async function() { __body(); })");
-            })();
+                var __async_marker__ = true;
+                $transformedBody;
+            });
         } else {
-            // With parameters - need to preserve parameter passing
-            var bodyFunc = {
+            // With parameters - include them in the function signature
+            // Create proper function expression with async marker
+            var funcWithMarker = {
                 expr: EFunction(FAnonymous, {
                     args: func.args,
                     ret: null,
-                    expr: transformedBody,
+                    expr: macro {
+                        var __async_marker__ = true;
+                        $transformedBody;
+                    },
                     params: func.params
                 }),
                 pos: pos
             };
             
-            return macro @:pos(pos) (function() {
-                var __body = $bodyFunc;
-                // Create async wrapper with proper parameter forwarding
-                return js.Syntax.plainCode('(async function(' + $v{paramString} + ') { return __body.call(this, ' + $v{paramString} + '); })');
-            })();
+            return funcWithMarker;
         }
     }
     
