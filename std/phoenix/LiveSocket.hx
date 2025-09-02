@@ -244,7 +244,7 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @return Updated LiveSocket
 	 */
 	public inline function clearFlash(): LiveSocket<T> {
-		return cast phoenix.Phoenix.LiveView.clear_flash(this);
+		return cast phoenix.Phoenix.LiveView.clearFlash(this);
 	}
 	
 	/**

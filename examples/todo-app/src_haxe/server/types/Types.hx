@@ -24,30 +24,8 @@ typedef User = {
     var active: Bool;
 }
 
-/**
- * Phoenix LiveView Socket with comprehensive type safety
- */
-typedef Socket = {
-    var assigns: SocketAssigns;
-    var endpoint: String;
-    var id: String;
-    var parent_pid: Dynamic;
-    var root_pid: Dynamic;
-    var router: Dynamic;
-    var view: Dynamic;
-    var transport_pid: Dynamic;
-    var connected: Bool;
-    
-    // Socket manipulation functions
-    function assign(args: Dynamic): Socket;
-    function put_flash(type: String, message: String): Socket;
-    function clear_flash(): Socket;
-    function put_temp_flash(type: String, message: String): Socket;
-    function redirect(options: RedirectOptions): Socket;
-    function push_redirect(options: RedirectOptions): Socket;
-    function push_patch(options: PatchOptions): Socket;
-    function push_event(event: String, payload: Dynamic): Socket;
-}
+// Socket type removed - use phoenix.Phoenix.Socket<T> instead
+// This avoids conflicts with the proper Phoenix LiveView extern
 
 /**
  * Socket assigns structure for type-safe assign access
@@ -55,15 +33,15 @@ typedef Socket = {
 typedef SocketAssigns = {
     var todos: Array<server.schemas.Todo>;
     var filter: String;
-    var sort_by: String;
-    var current_user: User;
-    var editing_todo: Null<server.schemas.Todo>;
-    var show_form: Bool;
-    var search_query: String;
-    var selected_tags: Array<String>;
-    var total_todos: Int;
-    var completed_todos: Int;
-    var pending_todos: Int;
+    var sortBy: String;  // camelCase
+    var currentUser: User;  // camelCase
+    var editingTodo: Null<server.schemas.Todo>;  // camelCase
+    var showForm: Bool;  // camelCase
+    var searchQuery: String;  // camelCase
+    var selectedTags: Array<String>;  // camelCase
+    var totalTodos: Int;  // camelCase
+    var completedTodos: Int;  // camelCase
+    var pendingTodos: Int;  // camelCase
     var flash: FlashMessages;
 }
 
@@ -106,13 +84,13 @@ typedef EventParams = {
     var ?title: String;
     var ?description: String;
     var ?priority: String;
-    var ?due_date: String;
+    var ?dueDate: String;  // camelCase
     var ?tags: String;
     var ?completed: Bool;
     
     // UI interaction fields
     var ?filter: String;
-    var ?sort_by: String;
+    var ?sortBy: String;  // camelCase
     var ?query: String;
     var ?tag: String;
     var ?action: String;
