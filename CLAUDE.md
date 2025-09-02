@@ -1235,6 +1235,141 @@ typedef TodoLiveAssigns = {
 - **Clear Separation**: Obvious distinction between our code (camelCase) and external APIs (snake_case)
 - **Compiler Responsibility**: Let the compiler handle cross-language conventions
 
+## ⚠️ CRITICAL: Naming Convention Rules
+
+**FUNDAMENTAL RULE: Haxe code uses camelCase, Generated Elixir uses snake_case. The compiler handles the conversion.**
+
+### When to Use camelCase (In Haxe Source Files)
+- ✅ **ALL variable names**: `var updatedSocket`, NOT `var updated_socket`
+- ✅ **ALL function names**: `function loadAndAssignTodos()`, NOT `function load_and_assign_todos()`
+- ✅ **ALL method names**: `socket.merge()`, NOT `socket.merge_data()`
+- ✅ **ALL field names in typedefs**: `var dueDate: String`, NOT `var due_date: String`
+- ✅ **ALL parameter names**: `function update(userId: Int)`, NOT `function update(user_id: Int)`
+- ✅ **Case pattern variables**: `case Ok(updatedTodo):`, NOT `case Ok(updated_todo):`
+
+### When snake_case Appears (And How to Handle It)
+- **Phoenix event names in templates**: Keep as strings: `phx-click="delete_todo"` (these are Phoenix conventions)
+- **Database field names**: Use `@:native` annotation: `@:native("user_id") var userId: Int`
+- **Generated Elixir output**: The compiler automatically converts camelCase to snake_case
+
+### Examples of CORRECT Naming
+```haxe
+// ✅ CORRECT Haxe code
+class TodoLive {
+    static function handleEvent(eventName: String, eventParams: Dynamic, socket: Socket): Socket {
+        var updatedSocket = socket.assign("currentUser", user);
+        var resultSocket = updateTodoInList(updatedTodo, socket);
+        return resultSocket;
+    }
+}
+
+// The compiler generates this Elixir:
+defmodule TodoLive do
+    def handle_event(event_name, event_params, socket) do
+        updated_socket = Phoenix.LiveView.assign(socket, :current_user, user)
+        result_socket = update_todo_in_list(updated_todo, socket)
+        result_socket
+    end
+end
+```
+
+### Examples of INCORRECT Naming
+```haxe
+// ❌ WRONG: Using snake_case in Haxe
+var updated_socket = socket.merge(assigns);  // WRONG!
+var user_id = params.user_id;               // WRONG!
+function load_and_assign_todos() {}         // WRONG!
+case Ok(updated_todo):                      // WRONG!
+```
+
+### Key Principle
+**Write Haxe idiomatically (camelCase) and let the compiler handle the Elixir conversion (snake_case).**
+
+## ⚠️ CRITICAL: Extern Classes and snake_case Field Names
+
+**FUNDAMENTAL RULE: Extern classes mapping to Elixir modules should use camelCase in Haxe with @:native annotations for snake_case Elixir names.**
+
+### The Problem with snake_case in Externs
+The Haxe eval target (used during macro expansion) has issues resolving snake_case field names on extern classes. This causes compilation errors like:
+```
+Field index for clear_flash not found on prototype Phoenix.LiveView
+```
+
+### The Solution: camelCase + @:native
+```haxe
+// ✅ CORRECT: camelCase in Haxe, snake_case in Elixir via @:native
+@:native("Phoenix.LiveView")
+extern class LiveView {
+    @:native("clear_flash")
+    static function clearFlash<T>(socket: Socket<T>): Socket<T>;
+    
+    @:native("put_flash")
+    static function putFlash<T>(socket: Socket<T>, type: FlashType, message: String): Socket<T>;
+    
+    @:native("assign_new")
+    static function assignNew<T>(socket: Socket<T>, key: String, value: Dynamic): Socket<T>;
+}
+
+// ❌ WRONG: Direct snake_case names cause eval target errors
+extern class LiveView {
+    static function clear_flash<T>(socket: Socket<T>): Socket<T>;  // COMPILATION ERROR!
+    static function put_flash<T>(socket: Socket<T>, type: FlashType, message: String): Socket<T>;
+}
+```
+
+### Complete Extern Pattern
+```haxe
+/**
+ * Type-safe Phoenix LiveView extern
+ * 
+ * Uses camelCase method names for Haxe compatibility
+ * Maps to snake_case via @:native for Elixir
+ */
+@:native("Phoenix.LiveView")
+extern class LiveView {
+    // Core socket operations
+    @:native("assign")
+    static function assign<T>(socket: Socket<T>, key: String, value: Dynamic): Socket<T>;
+    
+    @:native("assign_new")
+    static function assignNew<T>(socket: Socket<T>, key: String, fn: () -> Dynamic): Socket<T>;
+    
+    @:native("clear_flash")
+    static function clearFlash<T>(socket: Socket<T>): Socket<T>;
+    
+    @:native("put_flash")
+    static function putFlash<T>(socket: Socket<T>, type: FlashType, message: String): Socket<T>;
+    
+    // Event handling
+    @:native("push_event")
+    static function pushEvent<T>(socket: Socket<T>, event: String, payload: Dynamic): Socket<T>;
+    
+    @:native("push_patch")
+    static function pushPatch<T>(socket: Socket<T>, to: String, ?opts: Dynamic): Socket<T>;
+    
+    @:native("push_redirect")
+    static function pushRedirect<T>(socket: Socket<T>, to: String, ?opts: Dynamic): Socket<T>;
+}
+```
+
+### Usage in Application Code
+```haxe
+// Application code uses camelCase naturally
+var socket = LiveView.clearFlash(socket);  // ✅ camelCase in Haxe
+socket = LiveView.putFlash(socket, Info, "Success!");  // ✅ camelCase in Haxe
+
+// Generated Elixir uses snake_case automatically
+Phoenix.LiveView.clear_flash(socket)  // Generated snake_case
+Phoenix.LiveView.put_flash(socket, :info, "Success!")  // Generated snake_case
+```
+
+### Benefits of This Pattern
+- **Haxe Compatibility**: Works with Haxe's eval target during macro expansion
+- **Natural Haxe Code**: Developers write idiomatic camelCase
+- **Correct Elixir Output**: Generated code uses proper snake_case
+- **Type Safety**: Full compile-time type checking
+- **IDE Support**: IntelliSense works with camelCase names
+
 ## Development Principles
 
 ### ⚠️ CRITICAL: Abstract Away Dynamic at System Boundaries

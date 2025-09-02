@@ -127,9 +127,9 @@ class TodoLive {
 		};
 		
 		// The TAssigns type parameter will be inferred as TodoLiveAssigns
-		var updated_socket = LiveView.assign(socket, assigns);
+		var updatedSocket = LiveView.assign(socket, assigns);
 		
-		return Ok(updated_socket);
+		return Ok(updatedSocket);
 	}
 	
 	/**
@@ -139,7 +139,7 @@ class TodoLive {
 	 * Each event carries its own typed parameters.
 	 */
 	public static function handleEvent(event: TodoLiveEvent, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
-		var result_socket = switch (event) {
+		var resultSocket = switch (event) {
 			// Todo CRUD operations - params are already typed!
 			case CreateTodo(params):
 				createTodoTyped(params, socket);
@@ -190,7 +190,7 @@ class TodoLive {
 			// No default case needed - compiler ensures exhaustiveness!
 		};
 		
-		return NoReply(result_socket);
+		return NoReply(resultSocket);
 	}
 	
 	/**
@@ -200,7 +200,7 @@ class TodoLive {
 	 */
 	public static function handleInfo(msg: PubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
 		// Parse incoming message to type-safe enum (will be auto-generated in Phase 2)
-		var result_socket = switch (TodoPubSub.parseMessage(msg)) {
+		var resultSocket = switch (TodoPubSub.parseMessage(msg)) {
 			case Some(parsedMsg):
 				switch (parsedMsg) {
 					case TodoCreated(todo):
@@ -240,7 +240,7 @@ class TodoLive {
 				socket;
 		};
 		
-		return NoReply(result_socket);
+		return NoReply(resultSocket);
 	}
 	
 	// Helper functions with type-safe socket handling
@@ -283,13 +283,21 @@ class TodoLive {
 			description: params.description,
 			completed: false,
 			priority: params.priority != null ? params.priority : "medium",
-			due_date: params.due_date,
-			tags: parse_tags(params.tags),
-			user_id: socket.assigns.current_user.id
+			dueDate: params.dueDate,
+			tags: params.tags != null ? parseTags(params.tags) : [],
+			userId: socket.assigns.currentUser.id
 		};
 		
 		// Convert EventParams to ChangesetParams with type safety
-		var changesetParams = TypeSafeConversions.eventParamsToChangesetParams(params);
+		// Convert event params to changeset params
+		var changesetParams = {
+			title: params.title,
+			description: params.description,
+			priority: params.priority,
+			dueDate: params.dueDate,
+			tags: params.tags,
+			completed: params.completed
+		};
 		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), changesetParams);
 		
 		// Use type-safe Repo operations
@@ -304,20 +312,12 @@ class TodoLive {
 				}
 				
 				var todos = [todo].concat(socket.assigns.todos);
-				// Use complete assigns structure for type safety
-				var currentAssigns = socket.assigns;
-				var completeAssigns = TypeSafeConversions.createCompleteAssigns(
-					currentAssigns,
-					todos,
-					null, // filter unchanged
-					null, // sort_by unchanged
-					null, // current_user unchanged  
-					null, // editing_todo unchanged
-					false, // show_form = false
-					null, // search_query unchanged
-					null  // selected_tags unchanged
-				);
-				var updatedSocket = socket.merge(completeAssigns);
+				// Use LiveSocket for type-safe assigns manipulation
+				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+				var updatedSocket = liveSocket.merge({
+					todos: todos,
+					showForm: false
+				});
 				return updatedSocket.putFlash(phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
 				
 			case Error(reason):
@@ -398,26 +398,21 @@ class TodoLive {
 	// List management helpers with type-safe socket handling
 	static function addTodoToList(todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		// Don't add if it's our own todo (already added)
-		if (todo.user_id == socket.assigns.current_user.id) {
+		if (todo.userId == socket.assigns.currentUser.id) {
 			return socket;
 		}
 		
 		var todos = [todo].concat(socket.assigns.todos);
-		// Use complete assigns structure for type safety
-		var currentAssigns = socket.assigns;
-		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
-			currentAssigns,
-			todos // Updated todos list
-			// All other fields will maintain current values from base
-		);
-		return LiveView.assign(socket, completeAssigns);
+		// Use LiveSocket for type-safe assigns manipulation
+		var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.merge({ todos: todos });
 	}
 	
 	
 	static function loadTodos(userId: Int): Array<server.schemas.Todo> {
 		// Use type-safe Query API with proper chaining
 		var query = Query.from(server.schemas.Todo)
-			.where("user_id", userId)  // Will be converted to snake_case by compiler
+			.where("userId", userId)
 			.orderBy("inserted_at", "asc");
 		return Repo.all(query);
 	}
@@ -556,7 +551,7 @@ class TodoLive {
 			completedTodos: updatedTodos.length,  // All are completed now
 			pendingTodos: 0  // None pending after bulk complete
 		};
-		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
+		var updatedSocket = LiveView.assign_multiple(socket, completeAssigns);
 		
 		return LiveView.put_flash(updatedSocket, phoenix.Phoenix.FlashType.Info, "All todos marked as completed!");
 	}
@@ -588,7 +583,7 @@ class TodoLive {
 			pendingTodos: remaining.length  // Only pending remain
 		};
 		
-		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
+		var updatedSocket = LiveView.assign_multiple(socket, completeAssigns);
 		return LiveView.put_flash(updatedSocket, phoenix.Phoenix.FlashType.Info, "Completed todos deleted!");
 	}
 	
@@ -610,7 +605,7 @@ class TodoLive {
 		var changeset = server.schemas.Todo.changeset(todo, params);
 		
 		switch (Repo.update(changeset)) {
-			case Ok(updated_todo):
+			case Ok(updatedTodo):
 				// Broadcast update
 				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
 					case Ok(_):
@@ -620,8 +615,8 @@ class TodoLive {
 				}
 				
 				// Clear editing state and refresh
-				var updated_socket = SafeAssigns.setEditingTodo(socket, null);
-				return load_and_assign_todos(updated_socket);
+				var updatedSocket = SafeAssigns.setEditingTodo(socket, null);
+				return loadAndAssignTodos(updatedSocket);
 				
 			case Error(changeset):
 				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
@@ -634,12 +629,20 @@ class TodoLive {
 		if (todo == null) return socket;
 		
 		// Convert EventParams to ChangesetParams with type safety
-		var changesetParams = TypeSafeConversions.eventParamsToChangesetParams(params);
+		// Convert event params to changeset params
+		var changesetParams = {
+			title: params.title,
+			description: params.description,
+			priority: params.priority,
+			dueDate: params.dueDate,
+			tags: params.tags,
+			completed: params.completed
+		};
 		var changeset = server.schemas.Todo.changeset(todo, changesetParams);
 		
 		// Use type-safe Repo operations
 		switch (Repo.update(changeset)) {
-			case Ok(updated_todo):
+			case Ok(updatedTodo):
 				// Broadcast to other users using type-safe PubSub
 				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
 					case Ok(_):
@@ -648,8 +651,8 @@ class TodoLive {
 						trace("Failed to broadcast todo save: " + reason);
 				}
 				
-				var updated_socket = updateTodoInList(updated_todo, socket);
-				return LiveView.assign(updated_socket, "editing_todo", null);
+				var updatedSocket = updateTodoInList(updatedTodo, socket);
+				return updatedSocket.merge({ editingTodo: null });
 				
 			case Error(reason):
 				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to save todo: " + reason);
@@ -663,7 +666,8 @@ class TodoLive {
 				// Reload todos to reflect bulk completion
 				var updatedTodos = loadTodos(socket.assigns.currentUser.id);
 				// Use LiveSocket's merge for batch updates
-				socket.merge({
+				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+				return liveSocket.merge({
 					todos: updatedTodos,
 					totalTodos: updatedTodos.length,
 					completedTodos: countCompleted(updatedTodos),
@@ -674,7 +678,8 @@ class TodoLive {
 				// Reload todos to reflect bulk deletion
 				var updatedTodos = loadTodos(socket.assigns.currentUser.id);
 				// Use LiveSocket's merge for batch updates
-				socket.merge({
+				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+				return liveSocket.merge({
 					todos: updatedTodos,
 					totalTodos: updatedTodos.length,
 					completedTodos: countCompleted(updatedTodos),
@@ -822,7 +827,7 @@ class TodoLive {
 										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 											Due Date
 										</label>
-										<input type="date" name="due_date"
+										<input type="date" name="dueDate"
 											class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
 									</div>
 								</div>
@@ -875,11 +880,11 @@ class TodoLive {
 							
 							<!-- Sort Dropdown -->
 							<div>
-								<select phx-change="sort_todos" name="sort_by"
+								<select phx-change="sort_todos" name="sortBy"
 									class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
 									<option value="created" selected={@sortBy == "created"}>Sort by Date</option>
 									<option value="priority" selected={@sortBy == "priority"}>Sort by Priority</option>
-									<option value="due_date" selected={@sortBy == "due_date"}>Sort by Due Date</option>
+									<option value="dueDate" selected={@sortBy == "dueDate"}>Sort by Due Date</option>
 								</select>
 							</div>
 						</div>
