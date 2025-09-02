@@ -24,17 +24,9 @@ class Std {
      * @param value The value to convert to string (any type)
      * @return String representation of the value
      */
-    extern public static function string<T>(value: T): String {
-        // Compiler will replace with proper Elixir string conversion
-        // case value do
-        //   v when is_binary(v) -> v
-        //   v when is_atom(v) -> Atom.to_string(v)
-        //   v when is_integer(v) -> Integer.to_string(v)
-        //   v when is_float(v) -> Float.to_string(v)
-        //   nil -> "null"
-        //   v -> inspect(v)
-        // end
-        return "";
+    public static function string<T>(value: T): String {
+        // Use native Elixir string conversion
+        return untyped __elixir__('to_string({0})', value);
     }
     
     /**
@@ -47,13 +39,14 @@ class Std {
      * @param str The string to parse
      * @return The parsed integer or null if parsing fails
      */
-    extern public static function parseInt(str: String): Null<Int> {
-        // Compiler will replace with:
-        // case Integer.parse(str) do
-        //   {num, _} -> num
-        //   :error -> nil
-        // end
-        return null;
+    public static function parseInt(str: String): Null<Int> {
+        // Use native Elixir Integer.parse
+        return untyped __elixir__('
+            case Integer.parse({0}) do
+                {num, _} -> num
+                :error -> nil
+            end
+        ', str);
     }
     
     /**
@@ -66,34 +59,139 @@ class Std {
      * @param str The string to parse
      * @return The parsed float or null if parsing fails
      */
-    extern public static function parseFloat(str: String): Null<Float> {
-        // Compiler will replace with:
-        // case Float.parse(str) do
-        //   {num, _} -> num
-        //   :error -> nil
-        // end
-        return null;
+    public static function parseFloat(str: String): Null<Float> {
+        // Use native Elixir Float.parse
+        return untyped __elixir__('
+            case Float.parse({0}) do
+                {num, _} -> num
+                :error -> nil
+            end
+        ', str);
     }
     
     /**
-     * Check if a value is of a specific type (legacy API).
+     * Check if a value is of a specific type at runtime.
      * 
-     * WHY: Runtime type checking is necessary for safe casts and validation.
-     * WHAT: Checks if a value matches a given type at runtime.
-     * HOW: The compiler will optimize this to Elixir type guards.
+     * ## WHY
+     * Runtime type checking is necessary for safe casts, validation, and handling dynamic data
+     * from external sources (JSON, user input, etc.) where compile-time type safety isn't available.
      * 
-     * In Elixir, types are determined by:
-     * - Basic types: checked with guards (is_integer, is_binary, etc.)
-     * - Structs: checked via __struct__ field
-     * - Enums: tagged tuples with first element as atom
+     * ## WHAT
+     * Checks if a value matches a given type at runtime using Elixir's guard clauses and
+     * pattern matching. Handles basic types, user-defined structs, and enum variants.
      * 
-     * @param value The value to check
+     * ## HOW IT WORKS
+     * 
+     * ### Basic Types
+     * - `String` → `is_binary/1` (Elixir strings are binaries)
+     * - `Int` → `is_integer/1`
+     * - `Float` → `is_float/1`
+     * - `Bool` → `is_boolean/1`
+     * - `Array` → `is_list/1` (Haxe arrays compile to Elixir lists)
+     * - `Map` → `is_map/1`
+     * 
+     * ### User-Defined Types
+     * - **Structs**: Checks the `__struct__` field for type matching
+     * - **Enums**: Checks tagged tuples where first element is the constructor atom
+     * - **Classes**: Compares against the module atom for struct types
+     * 
+     * ## LIMITATIONS & PITFALLS
+     * 
+     * ### 1. Type Erasure
+     * Generic type parameters are erased at runtime:
+     * ```haxe
+     * Std.is([1, 2, 3], Array<Int>);    // ❌ Can't check element types
+     * Std.is([1, 2, 3], Array);         // ✅ Can only check it's an array
+     * ```
+     * 
+     * ### 2. Interface Checking
+     * Interfaces don't exist at runtime in Elixir, so interface checks won't work:
+     * ```haxe
+     * interface ISerializable { }
+     * Std.is(obj, ISerializable);       // ❌ Will always return false
+     * ```
+     * 
+     * ### 3. Abstract Types
+     * Abstract types are compile-time only and don't exist at runtime:
+     * ```haxe
+     * abstract UserId(Int) {}
+     * Std.is(42, UserId);               // ❌ Will check for Int, not UserId
+     * ```
+     * 
+     * ### 4. Null Handling
+     * `null` (nil in Elixir) will return false for all type checks except:
+     * ```haxe
+     * Std.is(null, Null<T>);            // Implementation-dependent
+     * ```
+     * 
+     * ### 5. Dynamic Type
+     * Everything matches Dynamic since it represents "any type":
+     * ```haxe
+     * Std.is(anything, Dynamic);        // Always true (not implemented here)
+     * ```
+     * 
+     * ### 6. Enum Limitations
+     * Only checks constructor, not parameter types:
+     * ```haxe
+     * enum Option<T> { Some(v: T); None; }
+     * Std.is(Some("hello"), Option);    // ✅ Works
+     * Std.is(Some("hello"), Some);      // ⚠️ Checks for :Some atom
+     * ```
+     * 
+     * ### 7. Anonymous Structures
+     * Anonymous structures compile to maps, so specific field checking isn't done:
+     * ```haxe
+     * typedef Point = { x: Int, y: Int }
+     * Std.is({x: 1, y: 2}, Point);      // ❌ Just checks if it's a map
+     * ```
+     * 
+     * ## EDGE CASES
+     * - Empty arrays/maps will match their respective types
+     * - Atoms are not directly checkable from Haxe types
+     * - Tuples without atom tags won't match enum patterns
+     * - Recursive type checking is not performed on container contents
+     * 
+     * ## RECOMMENDED USAGE
+     * Best used for:
+     * - Checking basic types from dynamic sources
+     * - Validating struct types before casting
+     * - Simple enum constructor checking
+     * 
+     * Avoid for:
+     * - Generic type parameter validation
+     * - Interface implementation checking
+     * - Complex nested type validation
+     * 
+     * @param value The value to check (can be null)
      * @param type The type class to check against
-     * @return True if the value is of the specified type
+     * @return True if the value is of the specified type, false otherwise
      */
-    extern public static function is<T>(value: T, type: Class<T>): Bool {
-        // Compiler will replace with proper type checking
-        return false;
+    public static function is(value: Dynamic, type: Dynamic): Bool {
+        // Runtime type checking for Elixir types
+        // Handles basic types, structs, and enums (as tagged tuples)
+        return untyped __elixir__('
+            # Convert type to string for comparison
+            type_str = to_string({1})
+            
+            case type_str do
+                "String" -> is_binary({0})
+                "Float" -> is_float({0})
+                "Int" -> is_integer({0})
+                "Bool" -> is_boolean({0})
+                "Array" -> is_list({0})
+                "Map" -> is_map({0})
+                _ ->
+                    # For user-defined types, check if it\'s a struct with matching __struct__ field
+                    case {0} do
+                        %{__struct__: struct_type} -> struct_type == {1}
+                        # For enums (tagged tuples), check if first element matches the type atom
+                        {tag, _} when is_atom(tag) -> tag == {1}
+                        {tag, _, _} when is_atom(tag) -> tag == {1}
+                        {tag, _, _, _} when is_atom(tag) -> tag == {1}
+                        _ -> false
+                    end
+            end
+        ', value, type);
     }
     
     /**
@@ -107,7 +205,7 @@ class Std {
      * @param type The type class to check against
      * @return True if the value is of the specified type
      */
-    public static inline function isOfType<T>(value: T, type: Class<T>): Bool {
+    public static inline function isOfType(value: Dynamic, type: Dynamic): Bool {
         return is(value, type);
     }
     
@@ -120,9 +218,9 @@ class Std {
      * 
      * @return Random float value between 0 and 1
      */
-    extern public static function random(): Float {
-        // Compiler will replace with :rand.uniform()
-        return 0.0;
+    public static function random(): Float {
+        // Use Erlang's :rand.uniform() for random number generation
+        return untyped __elixir__(':rand.uniform()');
     }
     
     /**
@@ -135,8 +233,8 @@ class Std {
      * @param value The float to convert
      * @return Integer representation (truncated, not rounded)
      */
-    extern public static function int(value: Float): Int {
-        // Compiler will replace with trunc(value)
-        return 0;
+    public static function int(value: Float): Int {
+        // Use Elixir's trunc to convert float to integer (truncates decimal part)
+        return untyped __elixir__('trunc({0})', value);
     }
 }
