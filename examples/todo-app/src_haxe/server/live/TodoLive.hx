@@ -2,11 +2,12 @@ package server.live;
 
 import server.schemas.Todo;
 import phoenix.Phoenix.Socket;
+import phoenix.LiveSocket;  // Type-safe socket wrapper
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.HandleInfoResult;
 import phoenix.Phoenix.FlashType;
-import phoenix.LiveView;  // Now no conflict since we're not importing all of phoenix.Phoenix
+import phoenix.Phoenix.LiveView;  // Use the comprehensive Phoenix module version
 import ecto.Query;  // Import Ecto Query from the correct location
 import ecto.Changeset;  // Import Ecto Changeset from the correct location
 import haxe.functional.Result;  // Import Result type properly
@@ -316,8 +317,8 @@ class TodoLive {
 					null, // search_query unchanged
 					null  // selected_tags unchanged
 				);
-				var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
-				return LiveView.put_flash(updated_socket, Success, "Todo created successfully!");
+				var updatedSocket = socket.merge(completeAssigns);
+				return updatedSocket.putFlash(phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
 				
 			case Error(reason):
 				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
@@ -483,48 +484,32 @@ class TodoLive {
 		return LiveView.assign(socket, completeAssigns);
 	}
 	
-	static function updateTodoInList(todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function updateTodoInList(todo: server.schemas.Todo, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
 		var todos = socket.assigns.todos;
 		var updatedTodos = todos.map(function(t) {
 			return t.id == todo.id ? todo : t;
 		});
 		
-		var currentAssigns = socket.assigns;
-		var completeAssigns: TodoLiveAssigns = {
+		// Use LiveSocket's merge for batch updates
+		return socket.merge({
 			todos: updatedTodos,
-			filter: currentAssigns.filter,
-			sortBy: currentAssigns.sortBy,
-			currentUser: currentAssigns.currentUser,
-			editingTodo: currentAssigns.editingTodo,
-			showForm: currentAssigns.showForm,
-			searchQuery: currentAssigns.searchQuery,
-			selectedTags: currentAssigns.selectedTags,
 			totalTodos: updatedTodos.length,
 			completedTodos: countCompleted(updatedTodos),
 			pendingTodos: countPending(updatedTodos)
-		};
-		return LiveView.assign(socket, completeAssigns);
+		});
 	}
 	
-	static function removeTodoFromList(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function removeTodoFromList(id: Int, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
 		var todos = socket.assigns.todos;
 		var updatedTodos = todos.filter(function(t) return t.id != id);
 		
-		var currentAssigns = socket.assigns;
-		var completeAssigns: TodoLiveAssigns = {
+		// Use LiveSocket's merge for batch updates
+		return socket.merge({
 			todos: updatedTodos,
-			filter: currentAssigns.filter,
-			sortBy: currentAssigns.sortBy,
-			currentUser: currentAssigns.currentUser,
-			editingTodo: currentAssigns.editingTodo,
-			showForm: currentAssigns.showForm,
-			searchQuery: currentAssigns.searchQuery,
-			selectedTags: currentAssigns.selectedTags,
 			totalTodos: updatedTodos.length,
 			completedTodos: countCompleted(updatedTodos),
 			pendingTodos: countPending(updatedTodos)
-		};
-		return LiveView.assign(socket, completeAssigns);
+		});
 	}
 	
 	static function startEditing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -663,7 +648,7 @@ class TodoLive {
 						trace("Failed to broadcast todo save: " + reason);
 				}
 				
-				var updated_socket = update_todo_in_list(updated_todo, socket);
+				var updated_socket = updateTodoInList(updated_todo, socket);
 				return LiveView.assign(updated_socket, "editing_todo", null);
 				
 			case Error(reason):
@@ -677,42 +662,24 @@ class TodoLive {
 			case CompleteAll:
 				// Reload todos to reflect bulk completion
 				var updatedTodos = loadTodos(socket.assigns.currentUser.id);
-				// Use complete assigns structure for type safety
-				var currentAssigns = socket.assigns;
-				var completeAssigns: TodoLiveAssigns = {
+				// Use LiveSocket's merge for batch updates
+				socket.merge({
 					todos: updatedTodos,
-					filter: currentAssigns.filter,
-					sortBy: currentAssigns.sortBy,
-					currentUser: currentAssigns.currentUser,
-					editingTodo: currentAssigns.editingTodo,
-					showForm: currentAssigns.showForm,
-					searchQuery: currentAssigns.searchQuery,
-					selectedTags: currentAssigns.selectedTags,
 					totalTodos: updatedTodos.length,
 					completedTodos: countCompleted(updatedTodos),
 					pendingTodos: countPending(updatedTodos)
-				};
-				LiveView.assignMultiple(socket, completeAssigns);
+				});
 			
 			case DeleteCompleted:
 				// Reload todos to reflect bulk deletion
 				var updatedTodos = loadTodos(socket.assigns.currentUser.id);
-				// Use complete assigns structure for type safety
-				var currentAssigns = socket.assigns;
-				var completeAssigns: TodoLiveAssigns = {
+				// Use LiveSocket's merge for batch updates
+				socket.merge({
 					todos: updatedTodos,
-					filter: currentAssigns.filter,
-					sortBy: currentAssigns.sortBy,
-					currentUser: currentAssigns.currentUser,
-					editingTodo: currentAssigns.editingTodo,
-					showForm: currentAssigns.showForm,
-					searchQuery: currentAssigns.searchQuery,
-					selectedTags: currentAssigns.selectedTags,
 					totalTodos: updatedTodos.length,
 					completedTodos: countCompleted(updatedTodos),
 					pendingTodos: countPending(updatedTodos)
-				};
-				LiveView.assignMultiple(socket, completeAssigns);
+				});
 			
 			case SetPriority(priority):
 				// Could handle bulk priority changes in future
@@ -783,7 +750,7 @@ class TodoLive {
 									📝 Todo Manager
 								</h1>
 								<p class="text-gray-600 dark:text-gray-400">
-									Welcome, <%= @current_user.name %>!
+									Welcome, <%= @currentUser.name %>!
 								</p>
 							</div>
 							
@@ -791,19 +758,19 @@ class TodoLive {
 							<div class="flex space-x-6">
 								<div class="text-center">
 									<div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-										<%= @total_todos %>
+										<%= @totalTodos %>
 									</div>
 									<div class="text-sm text-gray-600 dark:text-gray-400">Total</div>
 								</div>
 								<div class="text-center">
 									<div class="text-3xl font-bold text-green-600 dark:text-green-400">
-										<%= @completed_todos %>
+										<%= @completedTodos %>
 									</div>
 									<div class="text-sm text-gray-600 dark:text-gray-400">Completed</div>
 								</div>
 								<div class="text-center">
 									<div class="text-3xl font-bold text-amber-600 dark:text-amber-400">
-										<%= @pending_todos %>
+										<%= @pendingTodos %>
 									</div>
 									<div class="text-sm text-gray-600 dark:text-gray-400">Pending</div>
 								</div>
@@ -812,12 +779,12 @@ class TodoLive {
 						
 						<!-- Add Todo Button -->
 						<button phx-click="toggle_form" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
-							<%= if @show_form, do: "✖ Cancel", else: "➕ Add New Todo" %>
+							<%= if @showForm, do: "✖ Cancel", else: "➕ Add New Todo" %>
 						</button>
 					</div>
 					
 					<!-- New Todo Form -->
-					<%= if @show_form do %>
+					<%= if @showForm do %>
 						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
 							<form phx-submit="create_todo" class="space-y-4">
 								<div>
@@ -882,8 +849,8 @@ class TodoLive {
 						<div class="flex flex-wrap gap-4">
 							<!-- Search -->
 							<div class="flex-1 min-w-[300px]">
-								<form phx-change="search_todos" class="relative">
-									<input type="search" name="query" value={@search_query}
+								<form phx-change="SearchTodos" class="relative">
+									<input type="search" name="query" value={@searchQuery}
 										class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="Search todos..." />
 									<span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
@@ -892,15 +859,15 @@ class TodoLive {
 							
 							<!-- Filter Buttons -->
 							<div class="flex space-x-2">
-								<button phx-click="filter_todos" phx-value-filter="all"
+								<button phx-click="FilterTodos" phx-value-filter="all"
 									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "all", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
 									All
 								</button>
-								<button phx-click="filter_todos" phx-value-filter="active"
+								<button phx-click="FilterTodos" phx-value-filter="active"
 									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "active", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
 									Active
 								</button>
-								<button phx-click="filter_todos" phx-value-filter="completed"
+								<button phx-click="FilterTodos" phx-value-filter="completed"
 									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "completed", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
 									Completed
 								</button>
@@ -910,9 +877,9 @@ class TodoLive {
 							<div>
 								<select phx-change="sort_todos" name="sort_by"
 									class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-									<option value="created" selected={@sort_by == "created"}>Sort by Date</option>
-									<option value="priority" selected={@sort_by == "priority"}>Sort by Priority</option>
-									<option value="due_date" selected={@sort_by == "due_date"}>Sort by Due Date</option>
+									<option value="created" selected={@sortBy == "created"}>Sort by Date</option>
+									<option value="priority" selected={@sortBy == "priority"}>Sort by Priority</option>
+									<option value="due_date" selected={@sortBy == "due_date"}>Sort by Due Date</option>
 								</select>
 							</div>
 						</div>
@@ -1094,8 +1061,8 @@ class TodoLive {
 		};
 		
 		// Apply search
-		if (search_query != null && search_query != "") {
-			var query = search_query.toLowerCase();
+		if (searchQuery != null && searchQuery != "") {
+			var query = searchQuery.toLowerCase();
 			filtered = filtered.filter(function(t) {
 				return t.title.toLowerCase().indexOf(query) >= 0 ||
 					   (t.description != null && t.description.toLowerCase().indexOf(query) >= 0);
@@ -1109,7 +1076,7 @@ class TodoLive {
 	 * Helper to filter and sort todos
 	 */
 	static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: String, sortBy: String, searchQuery: String): Array<server.schemas.Todo> {
-		var filtered = filter_todos(todos, filter, search_query);
+		var filtered = filterTodos(todos, filter, searchQuery);
 		
 		// Apply sorting
 		// Note: In real implementation, this would use proper date/priority comparison
