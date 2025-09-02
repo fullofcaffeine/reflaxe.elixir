@@ -364,44 +364,33 @@ class Async {
      * @return Transformed async function expression
      */
     static function transformAnonymousAsync(funcExpr: Expr, func: Function, meta: MetadataEntry, pos: Position): Expr {
-        // Transform return type from T to Promise<T>
-        var newReturnType = transformReturnType(func.ret, pos);
+        // For now, create a function that returns a Promise
+        // A complete solution would require post-processing or a custom JS generator
         
-        // For anonymous functions, transform the body to ensure it returns a Promise
+        // Process the body to handle await calls
         var transformedBody = if (func.expr != null) {
-            transformAnonymousFunctionBody(func.expr, pos);
+            processExpression(func.expr);
         } else {
-            // Empty function should return resolved Promise
-            macro @:pos(pos) return js.lib.Promise.resolve(null);
+            macro @:pos(pos) {};
         };
         
-        // Create new function with transformed properties
-        var newFunc: Function = {
+        // Wrap the body to return a Promise
+        var promiseBody = macro @:pos(pos) {
+            $transformedBody;
+            return js.lib.Promise.resolve();
+        };
+        
+        // Create the function
+        var asyncFunc: Function = {
             args: func.args,
-            ret: newReturnType,
-            expr: transformedBody,
+            ret: macro: js.lib.Promise<Dynamic>,
+            expr: promiseBody,
             params: func.params
         };
         
-        // Get the function kind from the original expression
-        var kind = switch (funcExpr.expr) {
-            case EFunction(k, _): k;
-            case _: FAnonymous;
-        };
-        
-        // Create function with :jsAsync metadata (don't wrap in another EMeta)
-        var transformedFunction = {
-            expr: EFunction(kind, newFunc),
-            pos: funcExpr.pos
-        };
-        
-        // Add the :jsAsync metadata to mark it for JavaScript generation
+        // Return as an anonymous function
         return {
-            expr: EMeta({
-                name: ":jsAsync",
-                params: [],
-                pos: pos
-            }, transformedFunction),
+            expr: EFunction(FAnonymous, asyncFunc),
             pos: pos
         };
     }
