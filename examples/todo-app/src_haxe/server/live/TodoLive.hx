@@ -138,7 +138,7 @@ class TodoLive {
 	 * No more string matching or Dynamic params!
 	 * Each event carries its own typed parameters.
 	 */
-	public static function handle_event(event: TodoLiveEvent, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
+	public static function handleEvent(event: TodoLiveEvent, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
 		var result_socket = switch (event) {
 			// Todo CRUD operations - params are already typed!
 			case CreateTodo(params):
@@ -198,7 +198,7 @@ class TodoLive {
 	 * 
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
-	public static function handle_info(msg: PubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+	public static function handleInfo(msg: PubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
 		// Parse incoming message to type-safe enum (will be auto-generated in Phase 2)
 		var result_socket = switch (TodoPubSub.parseMessage(msg)) {
 			case Some(parsedMsg):
