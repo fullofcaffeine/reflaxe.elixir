@@ -91,8 +91,6 @@
   "haxe/iterators/array_iterator.ex",
   "haxe/io/output.ex",
   "haxe/io/input.ex",
-  "haxe/io/fp_helper.ex",
-  "haxe/io/error.ex",
   "haxe/io/encoding.ex",
   "haxe/io/bytes.ex",
   "haxe/int64_helper.ex",
@@ -134,7 +132,7 @@
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],
-  "id": 512,
+  "id": 522,
   "wasCached": false,
   "version": 1
 }
