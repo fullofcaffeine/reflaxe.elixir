@@ -364,8 +364,8 @@ class Async {
      * @return Transformed async function expression
      */
     static function transformAnonymousAsync(funcExpr: Expr, func: Function, meta: MetadataEntry, pos: Position): Expr {
-        // For now, create a function that returns a Promise
-        // A complete solution would require post-processing or a custom JS generator
+        // The reality is that we need to work within Haxe's constraints
+        // js.Syntax.code needs values that can be interpolated, not statements
         
         // Process the body to handle await calls
         var transformedBody = if (func.expr != null) {
@@ -374,25 +374,39 @@ class Async {
             macro @:pos(pos) {};
         };
         
-        // Wrap the body to return a Promise
-        var promiseBody = macro @:pos(pos) {
-            $transformedBody;
-            return js.lib.Promise.resolve();
-        };
+        // Build parameter names for the signature
+        var paramNames = [for (arg in func.args) arg.name];
+        var paramString = paramNames.join(", ");
         
-        // Create the function
-        var asyncFunc: Function = {
-            args: func.args,
-            ret: macro: js.lib.Promise<Dynamic>,
-            expr: promiseBody,
-            params: func.params
-        };
+        // The cleanest approach that actually works:
+        // Create a regular function and use js.Syntax.plainCode to wrap it with async
         
-        // Return as an anonymous function
-        return {
-            expr: EFunction(FAnonymous, asyncFunc),
-            pos: pos
-        };
+        if (paramNames.length == 0) {
+            // For no-parameter functions, we can use a cleaner approach
+            return macro @:pos(pos) (function() {
+                // Create the body as an immediately invoked function
+                var __body = (function() { $transformedBody; });
+                // Return an async function that calls the body
+                return js.Syntax.plainCode("(async function() { __body(); })");
+            })();
+        } else {
+            // With parameters - need to preserve parameter passing
+            var bodyFunc = {
+                expr: EFunction(FAnonymous, {
+                    args: func.args,
+                    ret: null,
+                    expr: transformedBody,
+                    params: func.params
+                }),
+                pos: pos
+            };
+            
+            return macro @:pos(pos) (function() {
+                var __body = $bodyFunc;
+                // Create async wrapper with proper parameter forwarding
+                return js.Syntax.plainCode('(async function(' + $v{paramString} + ') { return __body.call(this, ' + $v{paramString} + '); })');
+            })();
+        }
     }
     
     /**
