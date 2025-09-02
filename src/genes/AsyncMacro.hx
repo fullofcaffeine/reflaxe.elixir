@@ -53,6 +53,20 @@ class AsyncMacro {
                 var processedExpr = if (f.expr != null) processAwaitExpr(f.expr) else null;
                 
                 // If async, add the marker for genes to detect
+                // 
+                // DESIGN NOTE: Why use __async_marker__ instead of checking metadata directly?
+                // 
+                // For class methods, this marker is actually REDUNDANT because genes already
+                // checks field.meta for @:async directly (see ModuleEmitter.hx line 288).
+                // However, we still inject it for consistency with anonymous functions.
+                //
+                // FUTURE REFACTOR OPPORTUNITY:
+                // - Remove marker injection for class methods (since genes checks metadata)
+                // - Only use markers for anonymous functions where metadata isn't preserved
+                // - This would reduce generated code size and complexity
+                //
+                // The marker pattern ensures async intent survives all Haxe optimization passes,
+                // which is critical for anonymous functions but unnecessary for class methods.
                 if (hasAsync && processedExpr != null) {
                     processedExpr = macro {
                         var __async_marker__ = true;
@@ -98,6 +112,25 @@ class AsyncMacro {
             // Handle @:async function() { ... }
             case EMeta({name: ":async" | "async"}, {expr: EFunction(kind, f)}):
                 var processedBody = processAwaitExpr(f.expr);
+                
+                // CRITICAL: Anonymous functions REQUIRE the marker pattern
+                // 
+                // Unlike class methods, anonymous functions in Haxe's TypedExpr
+                // don't reliably preserve metadata through the compilation pipeline.
+                // The @:async metadata we see here at macro-time won't be available
+                // to genes at code generation time.
+                //
+                // The __async_marker__ variable is our workaround - it's guaranteed
+                // to survive all optimization passes and be visible in the final AST.
+                //
+                // ALTERNATIVE APPROACHES CONSIDERED:
+                // 1. Modify Haxe to preserve metadata on anonymous functions (requires Haxe fork)
+                // 2. Use type annotations to signal async (would complicate type system)
+                // 3. Post-process the generated JS (fragile, requires parsing JS)
+                // 4. Current approach: Marker variable (simple, reliable, but adds overhead)
+                //
+                // The marker is removed during code generation, so the final output
+                // is clean ES6 async/await without any runtime overhead.
                 var markedBody = macro {
                     var __async_marker__ = true;
                     $processedBody;
