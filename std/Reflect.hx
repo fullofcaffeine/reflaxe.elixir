@@ -10,15 +10,235 @@
  * provides the bridge between Haxe's string-based field access and Elixir's
  * atom-based map keys.
  * 
- * HOW: Pure Haxe implementation that the Reflaxe compiler optimizes to
- * native Elixir Map operations during transpilation.
+ * HOW: Uses `untyped __elixir__()` to directly inject native Elixir Map 
+ * operations, providing efficient and idiomatic code generation.
  * 
- * ARCHITECTURE: Objects in generated Elixir code are maps where:
- * - Field names become atom keys
- * - Values retain their types
- * - Dynamic field access goes through Map module
+ * ## Haxe to Elixir Translation
+ * 
+ * ### Object Representation
+ * ```haxe
+ * // Haxe object
+ * var obj = { name: "John", age: 30 };
+ * 
+ * // Generates Elixir map
+ * %{name: "John", age: 30}
+ * ```
+ * 
+ * ### Field Access Translation
+ * | Haxe Code | Generated Elixir | Notes |
+ * |-----------|------------------|-------|
+ * | `Reflect.field(obj, "name")` | `Map.get(obj, String.to_existing_atom("name"))` | Safe atom lookup |
+ * | `Reflect.setField(obj, "age", 31)` | `Map.put(obj, String.to_atom("age"), 31)` | Returns new map |
+ * | `Reflect.fields(obj)` | `Map.keys(obj) \|> Enum.map(&Atom.to_string/1)` | Converts atoms to strings |
+ * | `Reflect.hasField(obj, "name")` | `Map.has_key?(obj, :name)` | Compiler-optimized |
+ * | `Reflect.deleteField(obj, "age")` | `Map.delete(obj, :age)` | Returns new map |
+ * 
+ * ## Elixir Idioms and Immutability
+ * 
+ * ### Immutable Operations
+ * All Reflect operations respect Elixir's immutability:
+ * ```haxe
+ * var original = { count: 1 };
+ * var updated = Reflect.setField(original, "count", 2);
+ * // original.count is still 1 (unchanged)
+ * // updated.count is 2 (new map)
+ * ```
+ * 
+ * ### Atom vs String Keys
+ * - Field names are converted to atoms for idiomatic Elixir
+ * - `String.to_existing_atom` used for safe lookups (field)
+ * - `String.to_atom` used for creation (setField)
+ * - This matches Elixir conventions while maintaining safety
+ * 
+ * ### Pattern Matching Compatibility
+ * Generated maps work seamlessly with Elixir pattern matching:
+ * ```elixir
+ * # Generated from Haxe objects
+ * case obj do
+ *   %{name: name, age: age} -> "#{name} is #{age} years old"
+ *   _ -> "Unknown"
+ * end
+ * ```
+ * 
+ * ## Performance Characteristics
+ * 
+ * - **O(1)** field access via Map.get
+ * - **O(1)** field updates via Map.put (returns new map)
+ * - **O(n)** for fields() operation (iterates all keys)
+ * - No runtime overhead - compiles to direct Map calls
+ * 
+ * ## Usage Patterns
+ * 
+ * ### Dynamic Property Access
+ * ```haxe
+ * function getValue(obj: Dynamic, path: String): Dynamic {
+ *     var parts = path.split(".");
+ *     var current = obj;
+ *     for (part in parts) {
+ *         current = Reflect.field(current, part);
+ *         if (current == null) break;
+ *     }
+ *     return current;
+ * }
+ * ```
+ * 
+ * ### Object Merging
+ * ```haxe
+ * function merge(obj1: Dynamic, obj2: Dynamic): Dynamic {
+ *     var result = Reflect.copy(obj1);
+ *     for (field in Reflect.fields(obj2)) {
+ *         result = Reflect.setField(result, field, Reflect.field(obj2, field));
+ *     }
+ *     return result;
+ * }
+ * ```
+ * 
+ * ## When to Use Reflect
+ * 
+ * ### ✅ Good Use Cases
+ * 
+ * 1. **JSON/External Data Processing**
+ * ```haxe
+ * // When working with dynamic JSON data
+ * var json = haxe.Json.parse(jsonString);
+ * var userName = Reflect.field(json, "user_name");
+ * ```
+ * 
+ * 2. **Generic Serialization/Deserialization**
+ * ```haxe
+ * // Building a generic serializer
+ * function serialize(obj: Dynamic): String {
+ *     var result = "{";
+ *     for (field in Reflect.fields(obj)) {
+ *         result += '"$field":' + haxe.Json.stringify(Reflect.field(obj, field)) + ",";
+ *     }
+ *     return result + "}";
+ * }
+ * ```
+ * 
+ * 3. **Meta-Programming and Macros**
+ * ```haxe
+ * // Dynamic property injection
+ * function addTimestamp(obj: Dynamic): Dynamic {
+ *     return Reflect.setField(obj, "timestamp", Date.now());
+ * }
+ * ```
+ * 
+ * 4. **Plugin/Extension Systems**
+ * ```haxe
+ * // Dynamic plugin loading
+ * function loadPlugin(obj: Dynamic, pluginData: Dynamic) {
+ *     for (method in Reflect.fields(pluginData)) {
+ *         Reflect.setField(obj, method, Reflect.field(pluginData, method));
+ *     }
+ * }
+ * ```
+ * 
+ * ### ❌ Avoid Reflect When
+ * 
+ * 1. **Type Safety is Available**
+ * ```haxe
+ * // ❌ BAD: Using Reflect on typed objects
+ * var user = new User("John", 30);
+ * var name = Reflect.field(user, "name");
+ * 
+ * // ✅ GOOD: Direct typed access
+ * var user = new User("John", 30);
+ * var name = user.name;
+ * ```
+ * 
+ * 2. **Performance Critical Code**
+ * ```haxe
+ * // ❌ BAD: Reflect in hot loops
+ * for (i in 0...1000000) {
+ *     total += Reflect.field(obj, "value");
+ * }
+ * 
+ * // ✅ GOOD: Typed access for performance
+ * var value = obj.value;
+ * for (i in 0...1000000) {
+ *     total += value;
+ * }
+ * ```
+ * 
+ * 3. **When Abstracts/Typedefs Work**
+ * ```haxe
+ * // ❌ BAD: Dynamic when structure is known
+ * function processConfig(config: Dynamic) {
+ *     var host = Reflect.field(config, "host");
+ * }
+ * 
+ * // ✅ GOOD: Use typedef for known structures
+ * typedef Config = { host: String, port: Int }
+ * function processConfig(config: Config) {
+ *     var host = config.host;
+ * }
+ * ```
+ * 
+ * ## Why Maps in Elixir?
+ * 
+ * ### The Natural Mapping
+ * Haxe anonymous objects `{}` naturally map to Elixir maps `%{}` because:
+ * - Both are key-value structures
+ * - Both support dynamic field access
+ * - Both are the idiomatic choice for structured data
+ * 
+ * ### Elixir Idioms and Reflect
+ * 
+ * #### Pattern Matching vs Reflect
+ * ```elixir
+ * # Idiomatic Elixir (when structure is known)
+ * case user do
+ *   %{name: name, age: age} when age >= 18 -> "Adult: #{name}"
+ *   %{name: name} -> "Minor: #{name}"
+ * end
+ * 
+ * # Using Reflect (when structure is dynamic)
+ * name = Reflect.field(user, "name")
+ * age = Reflect.field(user, "age") || 0
+ * if age >= 18 do "Adult: #{name}" else "Minor: #{name}" end
+ * ```
+ * 
+ * #### When Reflect Aligns with Elixir Idioms
+ * - **Dynamic configuration**: Maps with runtime-determined keys
+ * - **JSON handling**: External data with variable structure
+ * - **Meta-programming**: Building DSLs and macros
+ * - **Ecto changesets**: Dynamic field validation
+ * 
+ * #### When to Prefer Elixir Patterns
+ * - **Structs**: Use `%User{}` instead of dynamic maps
+ * - **Pattern matching**: When structure is known at compile time
+ * - **Protocols**: For polymorphic behavior over dynamic dispatch
+ * - **Behaviours**: For interface contracts over reflection
+ * 
+ * ## Performance Considerations
+ * 
+ * ### Compilation
+ * - Reflect calls compile to direct Map module calls (no overhead)
+ * - Field names converted to atoms at runtime (small cost)
+ * - No additional abstraction layers
+ * 
+ * ### Runtime
+ * - `field()`: O(1) Map.get operation
+ * - `setField()`: O(1) Map.put (creates new map)
+ * - `fields()`: O(n) iterates all keys
+ * - `hasField()`: O(1) Map.has_key?
+ * 
+ * ### Memory
+ * - Atoms are created for field names (be careful with user input!)
+ * - Use `String.to_existing_atom` for safety in field()
+ * - Maps are shallow-copied on updates (Elixir immutability)
+ * 
+ * ## Best Practices
+ * 
+ * 1. **Prefer Static Typing**: Use Reflect only when types are truly dynamic
+ * 2. **Validate External Data**: Always validate before using Reflect on user input
+ * 3. **Cache Field Lists**: Store `Reflect.fields()` result if used multiple times
+ * 4. **Use Typedefs for Known Structures**: Even partial typing is better than Dynamic
+ * 5. **Document Dynamic APIs**: Clearly specify expected fields in documentation
  * 
  * @see https://api.haxe.org/Reflect.html - Official Haxe Reflect documentation
+ * @see https://hexdocs.pm/elixir/Map.html - Elixir Map module documentation
  */
 class Reflect {
     /**
@@ -37,9 +257,9 @@ class Reflect {
      * @param field The name of the field to retrieve
      * @return The value of the field, or null if it doesn't exist
      */
-    extern public static function field<T, R>(obj: T, field: String): Null<R> {
-        // Compiler will replace with Map.get(obj, String.to_existing_atom(field))
-        return null;
+    public static function field<T, R>(obj: T, field: String): Null<R> {
+        // Use native Elixir Map.get with atom conversion
+        return untyped __elixir__('Map.get({0}, String.to_existing_atom({1}))', obj, field);
     }
     
     /**
@@ -57,10 +277,10 @@ class Reflect {
      * @param value The value to set
      * @return The updated object (new map with the field set)
      */
-    extern
     public static function setField<T, V>(obj: T, field: String, value: V): T {
-        // Compiler will replace with Map.put(obj, String.to_atom(field), value)
-        return obj;
+        // Use native Elixir Map.put with atom conversion
+        // Note: This returns a new map (immutability)
+        return untyped __elixir__('Map.put({0}, String.to_atom({1}), {2})', obj, field, value);
     }
     
     /**
@@ -73,10 +293,9 @@ class Reflect {
      * @param obj The object (map) to get fields from
      * @return Array of field names as strings
      */
-    extern
     public static function fields<T>(obj: T): Array<String> {
-        // Compiler will replace with Map.keys(obj) |> Enum.map(&Atom.to_string/1)
-        return [];
+        // Use native Elixir to get map keys and convert atoms to strings
+        return untyped __elixir__('Map.keys({0}) |> Enum.map(&Atom.to_string/1)', obj);
     }
     
     /**
@@ -91,10 +310,7 @@ class Reflect {
      * @return True if the field exists, false otherwise
      */
     extern
-    public static function hasField<T>(obj: T, field: String): Bool {
-        // Compiler will replace with Map.has_key?(obj, String.to_existing_atom(field))
-        return false;
-    }
+    public static function hasField<T>(obj: T, field: String): Bool;
     
     /**
      * Delete a field from an object.
@@ -110,10 +326,7 @@ class Reflect {
      * @return The updated object (new map without the field)
      */
     extern
-    public static function deleteField<T>(obj: T, field: String): T {
-        // Compiler will replace with Map.delete(obj, String.to_existing_atom(field))
-        return obj;
-    }
+    public static function deleteField<T>(obj: T, field: String): T;
     
     /**
      * Check if a value is an object (map in Elixir).
@@ -126,10 +339,7 @@ class Reflect {
      * @return True if the value is an object/map
      */
     extern
-    public static function isObject<T>(value: T): Bool {
-        // Compiler will replace with is_map(value)
-        return false;
-    }
+    public static function isObject<T>(value: T): Bool;
     
     /**
      * Make a shallow copy of an object with all its fields.
@@ -164,10 +374,7 @@ class Reflect {
      * @return The return value of the function call
      */
     extern
-    public static function callMethod<T, R>(obj: T, func: haxe.Constraints.Function, args: Array<{}>): R {
-        // Compiler will replace with proper Elixir function application
-        return null;
-    }
+    public static function callMethod<T, R>(obj: T, func: haxe.Constraints.Function, args: Array<{}>): R;
     
     /**
      * Compare two values for ordering.
@@ -205,8 +412,5 @@ class Reflect {
      * @return True if the value is an enum value
      */
     extern
-    public static function isEnumValue<T>(value: T): Bool {
-        // Compiler will replace with proper enum detection
-        return false;
-    }
+    public static function isEnumValue<T>(value: T): Bool;
 }

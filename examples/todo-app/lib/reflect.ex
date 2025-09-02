@@ -1,4 +1,13 @@
 defmodule Reflect do
+  def field(obj, field) do
+    Map.get(obj, String.to_existing_atom(field))
+  end
+  def set_field(obj, field, value) do
+    Map.put(obj, String.to_atom(field), value)
+  end
+  def fields(obj) do
+    Map.keys(obj) |> Enum.map(&Atom.to_string/1)
+  end
   def copy(obj) do
     obj
   end
