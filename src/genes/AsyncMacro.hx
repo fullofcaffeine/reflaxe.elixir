@@ -53,6 +53,7 @@ class AsyncMacro {
                 var processedExpr = if (f.expr != null) processAwaitExpr(f.expr) else null;
                 
                 // If async, add the marker for genes to detect
+                // AND wrap return statements in Promise.resolve() automatically
                 // 
                 // DESIGN NOTE: Why use __async_marker__ instead of checking metadata directly?
                 // 
@@ -68,6 +69,10 @@ class AsyncMacro {
                 // The marker pattern ensures async intent survives all Haxe optimization passes,
                 // which is critical for anonymous functions but unnecessary for class methods.
                 if (hasAsync && processedExpr != null) {
+                    // For async functions, automatically wrap returns in Promise.resolve()
+                    // This matches JavaScript/TypeScript behavior where async functions
+                    // automatically wrap return values in Promises
+                    processedExpr = wrapReturnsInPromise(processedExpr);
                     processedExpr = macro {
                         var __async_marker__ = true;
                         $processedExpr;
@@ -96,6 +101,43 @@ class AsyncMacro {
         }
         
         return field;
+    }
+    
+    /**
+     * Wrap return statements in Promise.resolve() for async functions.
+     * This provides JavaScript/TypeScript-like behavior where async functions
+     * automatically wrap return values in Promises.
+     */
+    static function wrapReturnsInPromise(expr: Expr): Expr {
+        if (expr == null) return null;
+        
+        return switch (expr.expr) {
+            // Direct return statement - wrap in Promise.resolve()
+            case EReturn(e) if (e != null):
+                // Check if it's already a Promise.resolve/reject call
+                switch (e.expr) {
+                    case ECall({expr: EField(_, "resolve" | "reject")}, _):
+                        // Already wrapped, don't double-wrap
+                        expr;
+                    case _:
+                        // Wrap the return value in Promise.resolve()
+                        {
+                            expr: EReturn(macro js.lib.Promise.resolve($e)),
+                            pos: expr.pos
+                        };
+                }
+            
+            // Empty return - return Promise.resolve()
+            case EReturn(null):
+                {
+                    expr: EReturn(macro js.lib.Promise.resolve()),
+                    pos: expr.pos
+                };
+            
+            // Recursively process other expressions
+            default:
+                expr.map(wrapReturnsInPromise);
+        };
     }
     
     /**
@@ -131,6 +173,10 @@ class AsyncMacro {
                 //
                 // The marker is removed during code generation, so the final output
                 // is clean ES6 async/await without any runtime overhead.
+                
+                // Also wrap returns in Promise.resolve() for 1:1 JS/TS behavior
+                processedBody = wrapReturnsInPromise(processedBody);
+                
                 var markedBody = macro {
                     var __async_marker__ = true;
                     $processedBody;
