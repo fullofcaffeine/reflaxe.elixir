@@ -93,7 +93,7 @@ extern class Controller {
  * @see /documentation/GENERIC_EXTERN_STATIC_FUNCTIONS.md - Complete explanation of this pattern
  */
 @:native("Phoenix.LiveView")
-extern class LiveView<T> {
+extern class LiveView {
     /**
      * Mount callback - called when LiveView is first rendered
      * 
@@ -190,11 +190,43 @@ extern class LiveView<T> {
     static function put_temp_flash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns>;
     
     /**
-     * Clear flash messages
+     * Clear flash messages from the socket
+     * 
+     * ## Critical Naming Issue Resolution
+     * 
+     * **IMPORTANT**: This function is named `clearFlash` in Haxe but maps to `clear_flash` in Elixir.
+     * 
+     * ### The Problem (Fixed)
+     * Previously named `clear_flash` directly in Haxe, which caused compilation error:
+     * ```
+     * Field index for clear_flash not found on prototype Phoenix.LiveView
+     * ```
+     * 
+     * ### Root Cause
+     * Haxe's eval target (used during macro expansion) has issues resolving snake_case field names
+     * on extern classes. This is a known Haxe limitation when the eval target tries to access
+     * fields during compilation, particularly for extern classes with generic methods.
+     * 
+     * ### The Solution
+     * - Use camelCase naming in Haxe: `clearFlash`
+     * - Map to snake_case in Elixir via: `@:native("clear_flash")`
+     * - This follows Haxe conventions while generating correct Elixir code
+     * 
+     * ### General Pattern
+     * For all Phoenix.LiveView methods with snake_case names in Elixir:
+     * 1. Define with camelCase in Haxe extern
+     * 2. Use @:native("snake_case_name") to map to Elixir
+     * 3. This avoids eval target field resolution issues
      * 
      * @param TAssigns The type of socket assigns structure
+     * @param type Optional flash type to clear (Info, Error, etc.)
+     * @return Updated socket with flash messages cleared
+     * 
+     * @see https://github.com/HaxeFoundation/haxe/issues/11631 - Similar field index issues
      */
-    static function clear_flash<TAssigns>(socket: Socket<TAssigns>, ?type: FlashType): Socket<TAssigns>;
+    @:native("clear_flash")
+    @:overload(function<TAssigns>(socket: Socket<TAssigns>): Socket<TAssigns> {})
+    static function clearFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType): Socket<TAssigns>;
     
     /**
      * Check if socket is connected (not during initial render)

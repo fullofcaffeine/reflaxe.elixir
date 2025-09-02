@@ -44,4 +44,16 @@ defmodule Phoenix.FieldType do
   def custom(arg0) do
     {:Custom, arg0}
   end
+  def belongs_to() do
+    {:BelongsTo}
+  end
+  def has_one() do
+    {:HasOne}
+  end
+  def has_many() do
+    {:HasMany}
+  end
+  def many_to_many() do
+    {:ManyToMany}
+  end
 end

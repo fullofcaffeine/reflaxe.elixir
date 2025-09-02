@@ -4,13 +4,8 @@ package types;
  * Type definitions for Phoenix LiveView interactions
  */
 
-// Socket type for LiveView
-typedef Socket = {
-    var assigns: SocketAssigns;
-    @:overload(function(assigns: {}): Socket {})
-    function assign(key: String, value: Any): Socket;
-    function put_flash(type: String, message: String): Socket;
-}
+// Socket type removed - use phoenix.Phoenix.Socket<T> or phoenix.LiveSocket<T> instead
+// This avoids conflicts with the proper Phoenix LiveView extern
 
 // Socket assigns structure
 typedef SocketAssigns = {
