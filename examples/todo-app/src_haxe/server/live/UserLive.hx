@@ -2,6 +2,7 @@ package server.live;
 
 import contexts.Users;
 import contexts.Users.User;
+import phoenix.LiveView;  // Add correct LiveView import for assign methods
 
 // HXX template calls are processed at compile-time by the Reflaxe.Elixir compiler
 
@@ -13,14 +14,14 @@ import contexts.Users.User;
 @:liveview
 class UserLive {
     static function mount(_params: Dynamic, _session: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        var users = Users.list_users(null);
+        var users = Users.listUsers(null);
         
         return {
             status: "ok", 
-            socket: assign_multiple(socket, {
+            socket: LiveView.assign(socket, {
                 users: users,
                 selectedUser: null,
-                changeset: Users.change_user(null),
+                changeset: Users.changeUser(null),
                 searchTerm: "",
                 showForm: false
             })
@@ -53,13 +54,13 @@ class UserLive {
     }
     
     static function handleNewUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        var changeset = Users.change_user(null);
+        var changeset = Users.changeUser(null);
         var selectedUser = null;
         var showForm = true;
         
         return {
             status: "noreply",
-            socket: assign_multiple(socket, {
+            socket: LiveView.assign(socket, {
                 changeset: changeset,
                 selectedUser: selectedUser,
                 showForm: showForm
@@ -69,13 +70,13 @@ class UserLive {
     
     static function handleEditUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         var userId = params.id;
-        var selectedUser = Users.get_user(userId);
-        var changeset = Users.change_user(selectedUser);
+        var selectedUser = Users.getUser(userId);
+        var changeset = Users.changeUser(selectedUser);
         var showForm = true;
         
         return {
             status: "noreply",
-            socket: assign_multiple(socket, {
+            socket: LiveView.assign(socket, {
                 selectedUser: selectedUser,
                 changeset: changeset,
                 showForm: showForm
@@ -87,28 +88,28 @@ class UserLive {
         var userParams = params.user;
         var selectedUser = Reflect.field(socket.assigns, "selectedUser");
         var result = selectedUser == null 
-            ? Users.create_user(userParams)
-            : Users.update_user(selectedUser, userParams);
+            ? Users.createUser(userParams)
+            : Users.updateUser(selectedUser, userParams);
             
         return switch(result.status) {
             case "ok":
-                var users = Users.list_users(null);
+                var users = Users.listUsers(null);
                 var showForm = false;
                 
                 {
                     status: "noreply",
-                    socket: assign_multiple(socket, {
+                    socket: LiveView.assign(socket, {
                         users: users,
                         showForm: showForm,
                         selectedUser: null,
-                        changeset: Users.change_user(null)
+                        changeset: Users.changeUser(null)
                     })
                 };
                 
             case "error":
                 {
                     status: "noreply",
-                    socket: assign(socket, "changeset", result.changeset)
+                    socket: LiveView.assign(socket, {changeset: result.changeset})
                 };
                 
             default:
@@ -119,14 +120,14 @@ class UserLive {
     static function handleDeleteUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
         var userId = params.id;
         var user = Users.get_user(userId);
-        var result = Users.delete_user(user);
+        var result = Users.deleteUser(user);
         
         if (result.status == "ok") {
-            var users = Users.list_users(null);
+            var users = Users.listUsers(null);
             
             return {
                 status: "noreply",
-                socket: assign(socket, "users", users)
+                socket: LiveView.assign(socket, {users: users})
             };
         }
         
@@ -137,12 +138,12 @@ class UserLive {
         var searchTerm = params.search;
         
         var users = searchTerm.length > 0 
-            ? Users.search_users(searchTerm)
-            : Users.list_users(null);
+            ? Users.searchUsers(searchTerm)
+            : Users.listUsers(null);
             
         return {
             status: "noreply",
-            socket: assign_multiple(socket, {
+            socket: LiveView.assign(socket, {
                 users: users,
                 searchTerm: searchTerm
             })
@@ -152,7 +153,7 @@ class UserLive {
     static function handleCancel(socket: Dynamic): {status: String, socket: Dynamic} {
         return {
             status: "noreply",
-            socket: assign_multiple(socket, {
+            socket: LiveView.assign(socket, {
                 showForm: false,
                 selectedUser: null,
                 changeset: Users.change_user(null)

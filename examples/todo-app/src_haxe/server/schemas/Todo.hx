@@ -12,9 +12,9 @@ typedef TodoParams = {
 	?description: String,
 	?completed: Bool,
 	?priority: String,
-	?due_date: Date,
+	?dueDate: Date,
 	?tags: Array<String>,
-	?user_id: Int
+	?userId: Int
 }
 
 /**
@@ -28,9 +28,9 @@ class Todo {
 	@:field public var description: String;
 	@:field public var completed: Bool = false;
 	@:field public var priority: String = "medium"; // low, medium, high
-	@:field public var due_date: Null<Date>; // Type-safe nullable Date
+	@:field public var dueDate: Null<Date>; // Type-safe nullable Date
 	@:field public var tags: Array<String> = [];
-	@:field public var user_id: Int;
+	@:field public var userId: Int;
 	
 	public function new() {
 		this.tags = [];
@@ -42,7 +42,7 @@ class Todo {
 	public static function changeset(todo: Todo, params: TodoParams): Changeset<Todo, TodoParams> {
 		// Create a fully typed changeset - no Dynamic!
 		var cs = new Changeset(todo, params);
-		return cs.validateRequired(["title", "user_id"])
+		return cs.validateRequired(["title", "userId"])
 			.validateLength("title", {min: 3, max: 200})
 			.validateLength("description", {max: 1000});
 			// Further validations will be added once macros are implemented
@@ -50,21 +50,21 @@ class Todo {
 	
 	
 	// Helper functions for business logic with proper types
-	public static function toggle_completed(todo: Todo): Changeset<Todo, TodoParams> {
+	public static function toggleCompleted(todo: Todo): Changeset<Todo, TodoParams> {
 		var params: TodoParams = {
 			completed: !todo.completed
 		};
 		return changeset(todo, params);
 	}
 	
-	public static function update_priority(todo: Todo, priority: String): Changeset<Todo, TodoParams> {
+	public static function updatePriority(todo: Todo, priority: String): Changeset<Todo, TodoParams> {
 		var params: TodoParams = {
 			priority: priority
 		};
 		return changeset(todo, params);
 	}
 	
-	public static function add_tag(todo: Todo, tag: String): Changeset<Todo, TodoParams> {
+	public static function addTag(todo: Todo, tag: String): Changeset<Todo, TodoParams> {
 		var tags: Array<String> = todo.tags != null ? todo.tags.copy() : [];
 		tags.push(tag);
 		var params: TodoParams = {
