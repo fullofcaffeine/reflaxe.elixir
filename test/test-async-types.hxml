@@ -1,0 +1,6 @@
+-cp .
+-cp ../src
+-main TestAsyncTypes
+-lib reflaxe
+-lib genes
+--js test-async-types.js
