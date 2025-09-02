@@ -51,7 +51,9 @@ class Async {
      * Also processes anonymous functions with @:async metadata.
      */
     public static function init(): Void {
-        Compiler.addGlobalMetadata("", "@:build(reflaxe.js.Async.build())", true, true, false);
+        // addGlobalMetadata(pathFilter, meta, recursive)
+        // Note: recursive defaults to true, toTypes defaults to true, toFields defaults to false
+        Compiler.addGlobalMetadata("", "@:build(reflaxe.js.Async.build())", true);
     }
     
     /**

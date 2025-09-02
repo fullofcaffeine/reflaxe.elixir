@@ -6,6 +6,20 @@ using reflaxe.js.Async;
 /**
  * Test @:async anonymous function support in JavaScript compilation.
  * This validates that the compiler correctly transforms various patterns.
+ * 
+ * IMPORTANT: This is a JavaScript test, not an Elixir test!
+ * 
+ * This test is part of the full-stack Haxe framework support, enabling developers
+ * to write entire Phoenix applications (including client-side JavaScript) in Haxe.
+ * 
+ * Why this exists:
+ * - Provides type-safe async/await patterns for Phoenix LiveView hooks
+ * - Enables writing JavaScript interop code with full type safety
+ * - Supports the vision of 100% Haxe Phoenix applications (backend + frontend)
+ * - Bonus UX feature for developers who want to avoid writing raw JavaScript
+ * 
+ * The test compiles to JavaScript (see compile.hxml with --js flag) and validates
+ * that various async function patterns are correctly transformed for browser execution.
  */
 class Main {
     
