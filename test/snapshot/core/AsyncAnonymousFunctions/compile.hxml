@@ -1,6 +1,7 @@
+-cp .
 -cp ../../../../src
--cp ../../../../std
 -main MainMinimal
 -lib reflaxe
 --macro reflaxe.js.Async.init()
 --js out/main.js
+-D js-es=6
