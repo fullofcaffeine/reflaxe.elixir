@@ -117,11 +117,8 @@ class AnnotationTransforms {
             {key: "signing_salt", value: makeAST(EString('generated_salt_' + Date.now().getTime()))},
             {key: "same_site", value: makeAST(EString("Lax"))}
         ]));
-        // Module attribute as assignment for now (TODO: add proper EModuleAttribute node)
-        statements.push(makeAST(EMatch(
-            EPattern.PVar("@session_options"),
-            sessionOptions
-        )));
+        // Module attribute for session options
+        statements.push(makeAST(EModuleAttribute("session_options", sessionOptions)));
         
         // socket "/live", Phoenix.LiveView.Socket configuration
         var socketOptions = makeAST(EKeywordList([

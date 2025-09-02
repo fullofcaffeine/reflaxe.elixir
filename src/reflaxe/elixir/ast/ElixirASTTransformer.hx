@@ -1388,6 +1388,12 @@ class ElixirASTTransformer {
                             #end
                             
                             // Define immutable operations for each Elixir module
+                            // TODO: Future improvement - Move this metadata to Haxe source files
+                            // Instead of hardcoding here, each module (Map.hx, List.hx, etc.) could
+                            // use metadata annotations like @:immutable or @:reassignsVar on methods
+                            // that return new instances. This would make the system more maintainable
+                            // and allow custom types to opt into this behavior.
+                            // Example: @:immutable function put(key: K, value: V): Map<K,V> { ... }
                             var needsReassignment = switch(moduleName) {
                                 case "Map":
                                     ["put", "delete", "merge", "update", "drop", "put_new", "put_new_lazy", "replace"].indexOf(funcName) >= 0;
@@ -1842,6 +1848,8 @@ class ElixirASTTransformer {
                 }
             case EField(object, field):
                 visitor(object);
+            case EModuleAttribute(name, value):
+                visitor(value);
             case _:
                 // Leaf nodes - nothing to iterate
         }
@@ -1941,6 +1949,8 @@ class ElixirASTTransformer {
                              after != null ? {timeout: transformer(after.timeout), body: transformer(after.body)} : null),
                     node.metadata, node.pos
                 );
+            case EModuleAttribute(name, value):
+                makeASTWithMeta(EModuleAttribute(name, transformer(value)), node.metadata, node.pos);
             case _:
                 // Leaf nodes - return unchanged
                 node;

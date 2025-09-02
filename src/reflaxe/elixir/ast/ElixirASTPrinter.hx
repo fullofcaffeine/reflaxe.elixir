@@ -154,25 +154,19 @@ class ElixirASTPrinter {
                 indentStr(indent) + 'end';
                 
             case EMatch(pattern, expr):
-                // Check if this is a module attribute (starts with @)
                 var patternStr = printPattern(pattern);
-                if (patternStr.charAt(0) == '@') {
-                    // Module attributes don't use = in Elixir
-                    patternStr + ' ' + print(expr, 0);
+                // Check if the expression has metadata indicating it should stay inline
+                // This is used for null coalescing patterns that need to stay on one line
+                var keepInline = expr != null && expr.metadata != null && 
+                                expr.metadata.keepInlineInAssignment == true;
+                
+                if (keepInline) {
+                    // Force inline format for the expression
+                    // This ensures null coalescing stays on one line to avoid syntax errors
+                    patternStr + ' = ' + print(expr, 0);
                 } else {
-                    // Check if the expression has metadata indicating it should stay inline
-                    // This is used for null coalescing patterns that need to stay on one line
-                    var keepInline = expr != null && expr.metadata != null && 
-                                    expr.metadata.keepInlineInAssignment == true;
-                    
-                    if (keepInline) {
-                        // Force inline format for the expression
-                        // This ensures null coalescing stays on one line to avoid syntax errors
-                        patternStr + ' = ' + print(expr, 0);
-                    } else {
-                        // Regular assignment
-                        patternStr + ' = ' + print(expr, 0);
-                    }
+                    // Regular assignment
+                    patternStr + ' = ' + print(expr, 0);
                 }
                 
             case EWith(clauses, doBlock, elseBlock):
@@ -749,8 +743,11 @@ class ElixirASTPrinter {
                 indentStr(indent) + 'end';
                 
             // ================================================================
-            // Documentation
+            // Documentation & Module Attributes
             // ================================================================
+            case EModuleAttribute(name, value):
+                '@' + name + ' ' + print(value, indent);
+                
             case EModuledoc(content):
                 '@moduledoc """' + '\n' + content + '\n' + '"""';
                 
