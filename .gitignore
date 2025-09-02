@@ -96,4 +96,4 @@ examples/*/test_*.exs
 examples/*/*.test.exs
 
 # Deprecated templates (no longer used)
-/templates/
+/templates/test/test-results.tmp

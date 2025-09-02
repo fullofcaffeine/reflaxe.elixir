@@ -72,6 +72,11 @@ test/
 - `intended/` - Expected Elixir output (committed)
 - `out/` - Generated output (NOT committed, in .gitignore)
 
+**IMPORTANT**: Both directories are required:
+- `intended/` contains the golden/expected output that we want the compiler to produce
+- `out/` is generated fresh each test run and compared against `intended/`
+- When migrating tests from old format, the old `out/` becomes the new `intended/`
+
 **Testing Workflow**:
 1. **Compilation Phase**: Haxe→Elixir transpilation (catches compiler crashes, type errors)
 2. **Comparison Phase**: Generated `out/` vs expected `intended/` (catches incorrect code generation)

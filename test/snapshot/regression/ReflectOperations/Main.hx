@@ -169,9 +169,20 @@ class Main {
         var noArgs = function() return "No arguments";
         
         // Test Reflect.callMethod() with various argument counts
-        var sum = Reflect.callMethod(null, add, [10, 20]);
-        var product = Reflect.callMethod(null, multiply, [5, 6]);
-        var greeting = Reflect.callMethod(null, greet, ["World"]);
+        // Note: Using 'untyped' because Reflect.callMethod expects Array<{}>
+        // but we need to pass strongly-typed arrays for testing reflection behavior
+        // This bypasses Haxe's type checking to test runtime reflection capabilities
+        
+        // Test: calling function with 2 Int arguments via reflection
+        var sum = Reflect.callMethod(null, add, untyped [10, 20]);
+        
+        // Test: calling another 2-arg function to verify consistency
+        var product = Reflect.callMethod(null, multiply, untyped [5, 6]);
+        
+        // Test: calling function with String argument via reflection
+        var greeting = Reflect.callMethod(null, greet, untyped ["World"]);
+        
+        // Test: calling function with no arguments via reflection
         var noArgsResult = Reflect.callMethod(null, noArgs, []);
         
         trace("Dynamic method calling:");
@@ -187,8 +198,12 @@ class Main {
             multiplyBy: function(n: Int) return n * 2
         };
         
-        var added = Reflect.callMethod(calculator, Reflect.field(calculator, "addTo"), [50]);
-        var multiplied = Reflect.callMethod(calculator, Reflect.field(calculator, "multiplyBy"), [25]);
+        // Test: calling methods on an object instance (not null) via reflection
+        // This tests that Reflect.callMethod properly handles the 'this' context
+        var added = Reflect.callMethod(calculator, Reflect.field(calculator, "addTo"), untyped [50]);
+        
+        // Test: calling another object method to verify object context is preserved
+        var multiplied = Reflect.callMethod(calculator, Reflect.field(calculator, "multiplyBy"), untyped [25]);
         
         trace("Object method calling:");
         trace('  calculator.addTo(50): $added');
