@@ -260,8 +260,11 @@ enum ElixirASTDef {
     EDo(body: Array<ElixirAST>);
     
     // ========================================================================
-    // Documentation
+    // Documentation & Module Attributes
     // ========================================================================
+    
+    /** Module attribute (e.g., @my_constant "value") */
+    EModuleAttribute(name: String, value: ElixirAST);
     
     /** @moduledoc documentation */
     EModuledoc(content: String);

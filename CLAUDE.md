@@ -1296,6 +1296,17 @@ When fixing a bug:
 - Never guess what the compiler is doing - instrument and observe
 - When debugging issues, add traces FIRST, then analyze
 
+### ⚠️ CRITICAL: No Hardcoded Class/Method Knowledge in Compiler
+**FUNDAMENTAL RULE: The compiler should NOT have hardcoded knowledge about specific classes or methods.**
+- **NO hardcoded class names** like checking for "Map", "List", "String" to determine behavior
+- **NO method-specific logic** like special handling for "put", "delete", "merge"
+- **Use metadata/annotations instead** - Let the library define its behavior via @:immutable, @:reassignsVar, etc.
+- **Acceptable exceptions**: Critical edge cases or temporary hotfixes, but must be documented with TODO for proper fix
+- **The compiler is generic** - It should work for any user-defined types with similar patterns
+- **Example of wrong approach**: Hardcoding immutable operations for Map.put, List.delete, etc. in AST transformer
+- **Example of right approach**: Methods annotated with @:immutable in Map.hx, compiler reads metadata
+- **Benefits**: Extensible system where user types can opt into compiler behaviors
+
 ### ⚠️ CRITICAL: No Untyped Usage in Compiler Code
 **FUNDAMENTAL RULE: NEVER use `untyped` or `Dynamic` in compiler code unless there's a very good justified reason.**
 
