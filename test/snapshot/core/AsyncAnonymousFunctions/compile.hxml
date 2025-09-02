@@ -1,6 +1,0 @@
--cp .
--cp ../../../../src
--main MainComplete
--lib reflaxe
--lib genes
---js out/main.js
