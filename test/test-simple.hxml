@@ -1,0 +1,6 @@
+-cp .
+-cp ../src
+-main TestAsyncSimple
+-lib reflaxe
+-lib genes
+--js test-simple.js
