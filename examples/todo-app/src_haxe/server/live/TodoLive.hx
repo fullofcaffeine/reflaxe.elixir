@@ -22,6 +22,7 @@ import server.live.SafeAssigns;
 import server.live.TypeSafeConversions;
 import server.infrastructure.Repo; // Import the TodoApp.Repo module
 import elixir.types.Result.*;  // Import the enum constructors directly
+import HXX;  // Import HXX for template rendering
 
 using StringTools;
 
@@ -598,5 +599,356 @@ class TodoLive {
 	public static function edit(): String {
 		// Edit specific todo - editing state would be handled in mount()
 		return "edit";
+	}
+	
+	/**
+	 * Render function for the LiveView component
+	 * This generates the HTML template that gets sent to the browser
+	 */
+	public static function render(assigns: TodoLiveAssigns): String {
+		return HXX.hxx('
+			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
+				<div class="container mx-auto px-4 py-8 max-w-6xl">
+					
+					<!-- Header -->
+					<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8">
+						<div class="flex justify-between items-center mb-6">
+							<div>
+								<h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">
+									📝 Todo Manager
+								</h1>
+								<p class="text-gray-600 dark:text-gray-400">
+									Welcome, <%= @current_user.name %>!
+								</p>
+							</div>
+							
+							<!-- Statistics -->
+							<div class="flex space-x-6">
+								<div class="text-center">
+									<div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+										<%= @total_todos %>
+									</div>
+									<div class="text-sm text-gray-600 dark:text-gray-400">Total</div>
+								</div>
+								<div class="text-center">
+									<div class="text-3xl font-bold text-green-600 dark:text-green-400">
+										<%= @completed_todos %>
+									</div>
+									<div class="text-sm text-gray-600 dark:text-gray-400">Completed</div>
+								</div>
+								<div class="text-center">
+									<div class="text-3xl font-bold text-amber-600 dark:text-amber-400">
+										<%= @pending_todos %>
+									</div>
+									<div class="text-sm text-gray-600 dark:text-gray-400">Pending</div>
+								</div>
+							</div>
+						</div>
+						
+						<!-- Add Todo Button -->
+						<button phx-click="toggle_form" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
+							<%= if @show_form, do: "✖ Cancel", else: "➕ Add New Todo" %>
+						</button>
+					</div>
+					
+					<!-- New Todo Form -->
+					<%= if @show_form do %>
+						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
+							<form phx-submit="create_todo" class="space-y-4">
+								<div>
+									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+										Title *
+									</label>
+									<input type="text" name="title" required
+										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+										placeholder="What needs to be done?" />
+								</div>
+								
+								<div>
+									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+										Description
+									</label>
+									<textarea name="description" rows="3"
+										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+										placeholder="Add more details..."></textarea>
+								</div>
+								
+								<div class="grid grid-cols-2 gap-4">
+									<div>
+										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+											Priority
+										</label>
+										<select name="priority"
+											class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+											<option value="low">Low</option>
+											<option value="medium" selected>Medium</option>
+											<option value="high">High</option>
+										</select>
+									</div>
+									
+									<div>
+										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+											Due Date
+										</label>
+										<input type="date" name="due_date"
+											class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
+									</div>
+								</div>
+								
+								<div>
+									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+										Tags (comma-separated)
+									</label>
+									<input type="text" name="tags"
+										class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+										placeholder="work, personal, urgent" />
+								</div>
+								
+								<button type="submit"
+									class="w-full py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors shadow-md">
+									✅ Create Todo
+								</button>
+							</form>
+						</div>
+					<% end %>
+					
+					<!-- Filters and Search -->
+					<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+						<div class="flex flex-wrap gap-4">
+							<!-- Search -->
+							<div class="flex-1 min-w-[300px]">
+								<form phx-change="search_todos" class="relative">
+									<input type="search" name="query" value={@search_query}
+										class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+										placeholder="Search todos..." />
+									<span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+								</form>
+							</div>
+							
+							<!-- Filter Buttons -->
+							<div class="flex space-x-2">
+								<button phx-click="filter_todos" phx-value-filter="all"
+									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "all", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
+									All
+								</button>
+								<button phx-click="filter_todos" phx-value-filter="active"
+									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "active", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
+									Active
+								</button>
+								<button phx-click="filter_todos" phx-value-filter="completed"
+									class={"px-4 py-2 rounded-lg font-medium transition-colors " <> if @filter == "completed", do: "bg-blue-500 text-white", else: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"}>
+									Completed
+								</button>
+							</div>
+							
+							<!-- Sort Dropdown -->
+							<div>
+								<select phx-change="sort_todos" name="sort_by"
+									class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+									<option value="created" selected={@sort_by == "created"}>Sort by Date</option>
+									<option value="priority" selected={@sort_by == "priority"}>Sort by Priority</option>
+									<option value="due_date" selected={@sort_by == "due_date"}>Sort by Due Date</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					
+					<!-- Bulk Actions -->
+					${render_bulk_actions(assigns)}
+					
+					<!-- Todo List -->
+					<div class="space-y-4">
+						${render_todo_list(assigns)}
+					</div>
+				</div>
+			</div>
+		');
+	}
+	
+	/**
+	 * Render bulk actions section
+	 */
+	static function render_bulk_actions(assigns: TodoLiveAssigns): String {
+		if (assigns.todos.length == 0) {
+			return "";
+		}
+		
+		var filteredCount = filter_todos(assigns.todos, assigns.filter, assigns.search_query).length;
+		
+		return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
+				<div class="text-sm text-gray-600 dark:text-gray-400">
+					Showing ${filteredCount} of ${assigns.total_todos} todos
+				</div>
+				<div class="flex space-x-2">
+					<button phx-click="bulk_complete"
+						class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">
+						✅ Complete All
+					</button>
+					<button phx-click="bulk_delete_completed" 
+						data-confirm="Are you sure you want to delete all completed todos?"
+						class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">
+						🗑️ Delete Completed
+					</button>
+				</div>
+			</div>';
+	}
+	
+	/**
+	 * Render the todo list section
+	 */
+	static function render_todo_list(assigns: TodoLiveAssigns): String {
+		if (assigns.todos.length == 0) {
+			return HXX.hxx('
+				<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center">
+					<div class="text-6xl mb-4">📋</div>
+					<h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+						No todos yet!
+					</h3>
+					<p class="text-gray-600 dark:text-gray-400">
+						Click "Add New Todo" to get started.
+					</p>
+				</div>
+			');
+		}
+		
+		var filteredTodos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query);
+		var todoItems = [];
+		for (todo in filteredTodos) {
+			todoItems.push(render_todo_item(todo, assigns.editing_todo));
+		}
+		return todoItems.join("\n");
+	}
+	
+	/**
+	 * Render individual todo item
+	 */
+	static function render_todo_item(todo: server.schemas.Todo, editing_todo: Null<server.schemas.Todo>): String {
+		var is_editing = editing_todo != null && editing_todo.id == todo.id;
+		var priority_color = switch(todo.priority) {
+			case "high": "border-red-500";
+			case "medium": "border-yellow-500";
+			case "low": "border-green-500";
+			case _: "border-gray-300";
+		};
+		
+		if (is_editing) {
+			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priority_color}">
+					<form phx-submit="save_todo" class="space-y-4">
+						<input type="hidden" name="id" value="${todo.id}" />
+						<input type="text" name="title" value="${todo.title}" required
+							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
+						<textarea name="description" rows="2"
+							class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">${todo.description}</textarea>
+						<div class="flex space-x-2">
+							<button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+								Save
+							</button>
+							<button type="button" phx-click="cancel_edit" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+								Cancel
+							</button>
+						</div>
+					</form>
+				</div>';
+		} else {
+			var completed_class = todo.completed ? "opacity-60" : "";
+			var text_decoration = todo.completed ? "line-through" : "";
+			var checkmark = todo.completed ? '<span class="text-green-500">✓</span>' : '';
+			
+			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priority_color} ${completed_class} transition-all hover:shadow-xl">
+					<div class="flex items-start space-x-4">
+						<!-- Checkbox -->
+						<button phx-click="toggle_todo" phx-value-id="${todo.id}"
+							class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
+							${checkmark}
+						</button>
+						
+						<!-- Content -->
+						<div class="flex-1">
+							<h3 class="text-lg font-semibold text-gray-800 dark:text-white ${text_decoration}">
+								${todo.title}
+							</h3>
+							${todo.description != null && todo.description != "" ? 
+								'<p class="text-gray-600 dark:text-gray-400 mt-1 ${text_decoration}">${todo.description}</p>' : 
+								''}
+							
+							<!-- Meta info -->
+							<div class="flex flex-wrap gap-2 mt-3">
+								<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
+									Priority: ${todo.priority}
+								</span>
+								${todo.due_date != null ? 
+									'<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">Due: ${todo.due_date}</span>' : 
+									''}
+								${render_tags(todo.tags)}
+							</div>
+						</div>
+						
+						<!-- Actions -->
+						<div class="flex space-x-2">
+							<button phx-click="edit_todo" phx-value-id="${todo.id}"
+								class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
+								✏️
+							</button>
+							<button phx-click="delete_todo" phx-value-id="${todo.id}"
+								data-confirm="Are you sure?"
+								class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
+								🗑️
+							</button>
+						</div>
+					</div>
+				</div>';
+		}
+	}
+	
+	/**
+	 * Render tags for a todo item
+	 */
+	static function render_tags(tags: Array<String>): String {
+		if (tags == null || tags.length == 0) {
+			return "";
+		}
+		
+		var tagElements = [];
+		for (tag in tags) {
+			tagElements.push('<button phx-click="toggle_tag" phx-value-tag="${tag}" class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200">#${tag}</button>');
+		}
+		return tagElements.join("");
+	}
+	
+	/**
+	 * Helper to filter todos based on filter and search query
+	 */
+	static function filter_todos(todos: Array<server.schemas.Todo>, filter: String, search_query: String): Array<server.schemas.Todo> {
+		var filtered = todos;
+		
+		// Apply filter
+		filtered = switch(filter) {
+			case "active": filtered.filter(function(t) return !t.completed);
+			case "completed": filtered.filter(function(t) return t.completed);
+			case _: filtered;
+		};
+		
+		// Apply search
+		if (search_query != null && search_query != "") {
+			var query = search_query.toLowerCase();
+			filtered = filtered.filter(function(t) {
+				return t.title.toLowerCase().indexOf(query) >= 0 ||
+					   (t.description != null && t.description.toLowerCase().indexOf(query) >= 0);
+			});
+		}
+		
+		return filtered;
+	}
+	
+	/**
+	 * Helper to filter and sort todos
+	 */
+	static function filter_and_sort_todos(todos: Array<server.schemas.Todo>, filter: String, sort_by: String, search_query: String): Array<server.schemas.Todo> {
+		var filtered = filter_todos(todos, filter, search_query);
+		
+		// Apply sorting
+		// Note: In real implementation, this would use proper date/priority comparison
+		// For now, we'll keep the original order
+		return filtered;
 	}
 }
