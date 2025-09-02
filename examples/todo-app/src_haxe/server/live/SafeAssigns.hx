@@ -1,7 +1,8 @@
 package server.live;
 
 import phoenix.Phoenix.Socket;
-import phoenix.LiveView;  // The correct LiveView with assign methods
+import phoenix.LiveSocket;
+import phoenix.Phoenix.LiveView;  // Use the comprehensive Phoenix module version
 import server.live.TodoLive.TodoLiveAssigns;
 
 /**
@@ -32,42 +33,48 @@ class SafeAssigns {
      * Set the editingTodo field
      */
     public static function setEditingTodo(socket: Socket<TodoLiveAssigns>, todo: Null<server.schemas.Todo>): Socket<TodoLiveAssigns> {
-        return LiveView.assign(socket, cast {editingTodo: todo});
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.editingTodo, todo);
     }
     
     /**
      * Set the selectedTags field
      */
     public static function setSelectedTags(socket: Socket<TodoLiveAssigns>, tags: Array<String>): Socket<TodoLiveAssigns> {
-        return LiveView.assign(socket, cast {selectedTags: tags});
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.selectedTags, tags);
     }
     
     /**
      * Set the filter field
      */
     public static function setFilter(socket: Socket<TodoLiveAssigns>, filter: String): Socket<TodoLiveAssigns> {
-        return LiveView.assign(socket, cast {filter: filter});
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.filter, filter);
     }
     
     /**
      * Set the sortBy field
      */
     public static function setSortBy(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
-        return LiveView.assign(socket, cast {sortBy: sortBy});
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.sortBy, sortBy);
     }
     
     /**
      * Set the searchQuery field
      */
     public static function setSearchQuery(socket: Socket<TodoLiveAssigns>, query: String): Socket<TodoLiveAssigns> {
-        return LiveView.assign(socket, cast {searchQuery: query});
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.searchQuery, query);
     }
     
     /**
      * Set the showForm field
      */
     public static function setShowForm(socket: Socket<TodoLiveAssigns>, showForm: Bool): Socket<TodoLiveAssigns> {
-        return LiveView.assign(socket, cast {showForm: showForm});
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.showForm, showForm);
     }
     
     /**
@@ -77,7 +84,8 @@ class SafeAssigns {
         var completed = countCompleted(todos);
         var pending = countPending(todos);
         
-        return LiveView.assign(socket, cast {
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.merge({
             todos: todos,
             totalTodos: todos.length,
             completedTodos: completed,
@@ -89,7 +97,8 @@ class SafeAssigns {
      * Update just the todos list without stats recalculation
      */
     public static function setTodos(socket: Socket<TodoLiveAssigns>, todos: Array<server.schemas.Todo>): Socket<TodoLiveAssigns> {
-        return LiveView.assign(socket, cast {todos: todos});
+        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.todos, todos);
     }
     
     /**

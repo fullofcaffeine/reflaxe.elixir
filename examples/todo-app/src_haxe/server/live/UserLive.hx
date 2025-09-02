@@ -2,9 +2,24 @@ package server.live;
 
 import contexts.Users;
 import contexts.Users.User;
-import phoenix.LiveView;  // Add correct LiveView import for assign methods
+import phoenix.Phoenix.LiveView;  // Use the comprehensive Phoenix module version
+import phoenix.LiveSocket;  // Type-safe socket wrapper
+import phoenix.Phoenix.Socket;
+import ecto.Changeset;
+import HXX;  // Import HXX for template rendering
 
 // HXX template calls are processed at compile-time by the Reflaxe.Elixir compiler
+
+/**
+ * Type-safe assigns structure for UserLive socket
+ */
+typedef UserLiveAssigns = {
+    var users: Array<User>;
+    var selectedUser: Null<User>;
+    var changeset: Changeset<User, Dynamic>;
+    var searchTerm: String;
+    var showForm: Bool;
+}
 
 /**
  * Phoenix LiveView for user management
@@ -13,54 +28,56 @@ import phoenix.LiveView;  // Add correct LiveView import for assign methods
 @:native("TodoAppWeb.UserLive")
 @:liveview
 class UserLive {
-    static function mount(_params: Dynamic, _session: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        var users = Users.listUsers(null);
+    static function mount(_params: Dynamic, _session: Dynamic, socket: Socket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
+        var users = Users.list_users(null);
+        var liveSocket: LiveSocket<UserLiveAssigns> = socket;
         
         return {
             status: "ok", 
-            socket: LiveView.assign(socket, {
+            socket: liveSocket.merge({
                 users: users,
                 selectedUser: null,
-                changeset: Users.changeUser(null),
+                changeset: Users.change_user(null),
                 searchTerm: "",
                 showForm: false
             })
         };
     }
     
-    static function handle_event(event: String, params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handle_event(event: String, params: Dynamic, socket: Socket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
+        var liveSocket: LiveSocket<UserLiveAssigns> = socket;
         return switch(event) {
             case "new_user":
-                handleNewUser(params, socket);
+                handleNewUser(params, liveSocket);
                 
             case "edit_user":
-                handleEditUser(params, socket);
+                handleEditUser(params, liveSocket);
                 
             case "save_user":
-                handleSaveUser(params, socket);
+                handleSaveUser(params, liveSocket);
                 
             case "delete_user":
-                handleDeleteUser(params, socket);
+                handleDeleteUser(params, liveSocket);
                 
             case "search":
-                handleSearch(params, socket);
+                handleSearch(params, liveSocket);
                 
             case "cancel":
-                handleCancel(socket);
+                handleCancel(liveSocket);
                 
             default:
-                {status: "noreply", socket: socket};
+                {status: "noreply", socket: liveSocket};
         }
     }
     
-    static function handleNewUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        var changeset = Users.changeUser(null);
+    static function handleNewUser(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
+        var changeset = Users.change_user(null);
         var selectedUser = null;
         var showForm = true;
         
         return {
             status: "noreply",
-            socket: LiveView.assign(socket, {
+            socket: socket.merge({
                 changeset: changeset,
                 selectedUser: selectedUser,
                 showForm: showForm
@@ -68,15 +85,15 @@ class UserLive {
         };
     }
     
-    static function handleEditUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleEditUser(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         var userId = params.id;
-        var selectedUser = Users.getUser(userId);
-        var changeset = Users.changeUser(selectedUser);
+        var selectedUser = Users.get_user(userId);
+        var changeset = Users.change_user(selectedUser);
         var showForm = true;
         
         return {
             status: "noreply",
-            socket: LiveView.assign(socket, {
+            socket: socket.merge({
                 selectedUser: selectedUser,
                 changeset: changeset,
                 showForm: showForm
@@ -84,76 +101,76 @@ class UserLive {
         };
     }
     
-    static function handleSaveUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleSaveUser(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         var userParams = params.user;
         var selectedUser = Reflect.field(socket.assigns, "selectedUser");
         var result = selectedUser == null 
-            ? Users.createUser(userParams)
-            : Users.updateUser(selectedUser, userParams);
+            ? Users.create_user(userParams)
+            : Users.update_user(selectedUser, userParams);
             
         return switch(result.status) {
             case "ok":
-                var users = Users.listUsers(null);
+                var users = Users.list_users(null);
                 var showForm = false;
                 
                 {
                     status: "noreply",
-                    socket: LiveView.assign(socket, {
+                    socket: socket.merge({
                         users: users,
                         showForm: showForm,
                         selectedUser: null,
-                        changeset: Users.changeUser(null)
+                        changeset: Users.change_user(null)
                     })
                 };
                 
             case "error":
                 {
                     status: "noreply",
-                    socket: LiveView.assign(socket, {changeset: result.changeset})
+                    socket: socket.assign(_.changeset, result.changeset)
                 };
                 
             default:
-                {status: "noreply", socket: socket};
+                {status: "noreply", socket: liveSocket};
         }
     }
     
-    static function handleDeleteUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleDeleteUser(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         var userId = params.id;
         var user = Users.get_user(userId);
-        var result = Users.deleteUser(user);
+        var result = Users.delete_user(user);
         
         if (result.status == "ok") {
-            var users = Users.listUsers(null);
+            var users = Users.list_users(null);
             
             return {
                 status: "noreply",
-                socket: LiveView.assign(socket, {users: users})
+                socket: socket.assign(_.users, users)
             };
         }
         
         return {status: "noreply", socket: socket};
     }
     
-    static function handleSearch(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleSearch(params: Dynamic, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         var searchTerm = params.search;
         
         var users = searchTerm.length > 0 
-            ? Users.searchUsers(searchTerm)
-            : Users.listUsers(null);
+            ? Users.search_users(searchTerm)
+            : Users.list_users(null);
             
         return {
             status: "noreply",
-            socket: LiveView.assign(socket, {
+            socket: socket.merge({
                 users: users,
                 searchTerm: searchTerm
             })
         };
     }
     
-    static function handleCancel(socket: Dynamic): {status: String, socket: Dynamic} {
+    static function handleCancel(socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
         return {
             status: "noreply",
-            socket: LiveView.assign(socket, {
+            socket: socket.merge({
                 showForm: false,
                 selectedUser: null,
                 changeset: Users.change_user(null)

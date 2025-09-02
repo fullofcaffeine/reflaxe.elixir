@@ -281,31 +281,57 @@ extern class EctoSchema {
     /**
      * Define an embedded schema
      */
-    macro static function embedded_schema(fields: Array<SchemaField>): Dynamic;
+    macro static function embedded_schema(fields: Array<SchemaField>): Dynamic {
+        // This would be implemented as a build macro
+        return macro {};
+    }
     
     /**
      * Create field definition
      */
-    static function field(name: String, type: FieldType, ?options: FieldOptions): SchemaField;
+    inline static function field(name: String, type: FieldType, ?options: FieldOptions): SchemaField {
+        return {
+            name: name,
+            type: type,
+            options: options != null ? options : {}
+        };
+    }
     
     /**
      * Create association definition
      */
-    static function belongs_to<T>(name: String, schema: Class<T>, ?options: AssociationOptions): SchemaField;
-    static function has_one<T>(name: String, schema: Class<T>, ?options: AssociationOptions): SchemaField;
-    static function has_many<T>(name: String, schema: Class<T>, ?options: AssociationOptions): SchemaField;
-    static function many_to_many<T>(name: String, schema: Class<T>, ?options: ManyToManyOptions): SchemaField;
+    inline static function belongs_to<T>(name: String, schema: Class<T>, ?options: AssociationOptions): SchemaField {
+        return field(name, BelongsTo, cast options);
+    }
+    inline static function has_one<T>(name: String, schema: Class<T>, ?options: AssociationOptions): SchemaField {
+        return field(name, HasOne, cast options);
+    }
+    inline static function has_many<T>(name: String, schema: Class<T>, ?options: AssociationOptions): SchemaField {
+        return field(name, HasMany, cast options);
+    }
+    inline static function many_to_many<T>(name: String, schema: Class<T>, ?options: ManyToManyOptions): SchemaField {
+        return field(name, ManyToMany, cast options);
+    }
     
     /**
      * Create embedded field definition
      */
-    static function embeds_one<T>(name: String, schema: Class<T>, ?options: EmbedOptions): SchemaField;
-    static function embeds_many<T>(name: String, schema: Class<T>, ?options: EmbedOptions): SchemaField;
+    inline static function embeds_one<T>(name: String, schema: Class<T>, ?options: EmbedOptions): SchemaField {
+        return field(name, Custom("embed"), cast options);
+    }
+    inline static function embeds_many<T>(name: String, schema: Class<T>, ?options: EmbedOptions): SchemaField {
+        return field(name, Array(Custom("embed")), cast options);
+    }
     
     /**
      * Generate timestamps fields (inserted_at, updated_at)
      */
-    static function timestamps(?options: TimestampsOptions): Array<SchemaField>;
+    inline static function timestamps(?options: TimestampsOptions): Array<SchemaField> {
+        return [
+            field("inserted_at", Naive_datetime, cast options),
+            field("updated_at", Naive_datetime, cast options)
+        ];
+    }
 }
 
 /**
@@ -686,6 +712,11 @@ enum FieldType {
     Array(itemType: FieldType);
     Decimal;
     Custom(typeName: String);
+    // Association types
+    BelongsTo;
+    HasOne;
+    HasMany;
+    ManyToMany;
 }
 
 /**
