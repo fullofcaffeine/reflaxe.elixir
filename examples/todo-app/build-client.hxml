@@ -6,15 +6,12 @@
 -cp src_haxe
 -cp ../../std
 
-# Include Reflaxe.js async/await library
+# Include libraries for modern JavaScript
 -lib reflaxe
+-lib genes
 
-# Enable AsyncJSGenerator for native async/await support
---macro reflaxe.js.AsyncJSGenerator.use()
-
-# JavaScript target with modern settings
+# JavaScript target with modern ES6 modules via genes
 -js assets/js/app.js
--D js-es6                     # ES6 module output for tree-shaking
 -D js-unflatten               # Better module structure 
 -D analyzer-optimize          # Enable optimizations
 --dce=full

@@ -1,7 +1,6 @@
 -cp .
 -cp ../../../../src
--main MainMinimal
+-main MainComplete
 -lib reflaxe
---macro reflaxe.js.Async.init()
+-lib genes
 --js out/main.js
--D js-es=6
