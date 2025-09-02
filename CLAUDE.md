@@ -817,6 +817,17 @@ class StringBuf {
 3. **Support All Haxe Code**: Ensure Turing completeness and full Haxe compatibility
 4. **Idiomatic Output**: Generated code should leverage target platform strengths
 
+### ⚠️ CRITICAL: Override Haxe Built-in Classes When Necessary
+
+**RULE**: When Haxe's built-in standard library classes generate problematic code for Elixir, provide our own implementation in `std/`.
+
+**Examples**:
+- **Array**: We provide `std/Array.hx` optimized for Elixir lists
+- **Bytes**: We provide `std/haxe/io/Bytes.hx` to avoid nested assignment patterns
+- **StringBuf**: Custom implementation using Elixir IO lists
+
+**Why**: Haxe's built-in implementations often use inline functions and patterns that don't translate well to Elixir's functional paradigm. Our versions generate clean, idiomatic Elixir code.
+
 **The Goal**: Complete Haxe standard library support with efficient, idiomatic Elixir implementations.
 
 **See**: [`docs/05-architecture/`](docs/05-architecture/) - Complete implementation guidelines

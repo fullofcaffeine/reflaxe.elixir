@@ -1,5 +1,4 @@
 defmodule Input do
-  import Bitwise
   defp set_big_endian(struct, b) do
     bigEndian = b
     b
@@ -18,7 +17,7 @@ defmodule Input do
     if (byte < 0) do
       throw(:break)
     end
-    _ = byte &&& 255
+    b.set(pos, byte)
     pos = pos + 1
     k = (k - 1)
     {:cont, acc}
