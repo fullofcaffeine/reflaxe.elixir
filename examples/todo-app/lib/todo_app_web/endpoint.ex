@@ -1,6 +1,6 @@
 defmodule TodoAppWeb.Endpoint do
   use Phoenix.Endpoint, [otp_app: :todo_app]
-  @session_options [store: :cookie, key: "_todo_app_key", signing_salt: "generated_salt_1.756801244e+12", same_site: "Lax"]
+  @session_options [store: :cookie, key: "_todo_app_key", signing_salt: "generated_salt_1.756837265e+12", same_site: "Lax"]
   socket("/live", Phoenix.LiveView.Socket, [websocket: [connect_info: [session: @session_options]]])
   plug(Plug.Static, [at: "/", from: :todo_app, gzip: false, only: ~w"""
 assets fonts images favicon.ico robots.txt

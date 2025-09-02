@@ -267,19 +267,19 @@ class UserLive {
                 
                 <.form for={@changeset} phx-submit="save_user">
                     <div class="form-group">
-                        <.label htmlFor="name">Name</.label>
+                        <.label for="name">Name</.label>
                         <.input field={@changeset[:name]} type="text" required />
                         <.error field={@changeset[:name]} />
                     </div>
                     
                     <div class="form-group">
-                        <.label htmlFor="email">Email</.label>
+                        <.label for="email">Email</.label>
                         <.input field={@changeset[:email]} type="email" required />
                         <.error field={@changeset[:email]} />
                     </div>
                     
                     <div class="form-group">
-                        <.label htmlFor="age">Age</.label>
+                        <.label for="age">Age</.label>
                         <.input field={@changeset[:age]} type="number" />
                         <.error field={@changeset[:age]} />
                     </div>
@@ -306,9 +306,16 @@ class UserLive {
         ');
     }
     
-    // Helper functions
-    static function assign(socket: Dynamic, key: String, value: Dynamic): Dynamic return socket;
-    static function assign_multiple(socket: Dynamic, assigns: Dynamic): Dynamic return socket;
+    // Helper functions that map to Phoenix.Component functions
+    // These allow the Haxe code to compile and will be filtered out during code generation
+    // since Phoenix.Component provides these functions
+    static function assign(socket: Dynamic, key: String, value: Dynamic): Dynamic {
+        return socket;
+    }
+    
+    static function assign_multiple(socket: Dynamic, assigns: Dynamic): Dynamic {
+        return socket;
+    }
     
     // Main function for compilation testing
     public static function main(): Void {

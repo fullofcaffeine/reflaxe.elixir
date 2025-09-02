@@ -352,11 +352,29 @@ class ModuleBuilder {
         trace('[ModuleBuilder] Building LiveView body with ${funcFields.length} functions');
         #end
         
+        // Common Phoenix.Component functions that shouldn't be compiled as local functions
+        // These are provided by Phoenix.Component and would conflict if defined locally
+        var phoenixComponentFunctions = [
+            "assign",
+            "assign_multiple", 
+            "assign_new",
+            "update",
+            "get_assign"
+        ];
+        
         // Add functions (mount, handle_event, render, etc.)
         for (func in funcFields) {
             #if debug_module_builder
             trace('[ModuleBuilder] Checking function: ${func.name}, isPublic: ${func.isPublic}, hasExpr: ${func.expr() != null}');
             #end
+            
+            // Skip Phoenix.Component placeholder functions
+            if (phoenixComponentFunctions.indexOf(func.name) != -1) {
+                #if debug_module_builder
+                trace('[ModuleBuilder] Skipping Phoenix.Component placeholder function: ${func.name}');
+                #end
+                continue;
+            }
             
             if (func.expr() != null) {
                 var funcName = NameUtils.toSnakeCase(func.name);

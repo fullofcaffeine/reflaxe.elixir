@@ -8,7 +8,9 @@ import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.HandleInfoResult;
 import phoenix.Phoenix.FlashType;
-import phoenix.Ecto; // Re-enable Ecto imports
+import ecto.Query;  // Import Ecto Query from the correct location
+import ecto.Changeset;  // Import Ecto Changeset from the correct location
+import haxe.functional.Result;  // Import Result type properly
 import server.types.Types.User;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
@@ -19,16 +21,49 @@ import server.pubsub.TodoPubSub;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.live.SafeAssigns;
-import server.live.TypeSafeConversions;
 import server.infrastructure.Repo; // Import the TodoApp.Repo module
-import elixir.types.Result.*;  // Import the enum constructors directly
 import HXX;  // Import HXX for template rendering
 
 using StringTools;
 
-// For convenience, alias Ecto types for cleaner code
-typedef EctoQuery = phoenix.Ecto.EctoQuery;
-typedef EctoChangeset = phoenix.Ecto.EctoChangeset;
+/**
+ * Type-safe event definitions for TodoLive.
+ * 
+ * This enum replaces string-based events with compile-time validated ADTs.
+ * Each event variant carries its own strongly-typed parameters.
+ * 
+ * Benefits:
+ * - Compile-time validation of event names
+ * - Type-safe parameters for each event
+ * - Exhaustiveness checking in handle_event
+ * - IntelliSense/autocomplete support
+ * - No Dynamic types or manual conversions
+ */
+enum TodoLiveEvent {
+    // Todo CRUD operations
+    CreateTodo(params: server.schemas.Todo.TodoParams);
+    ToggleTodo(id: Int);
+    DeleteTodo(id: Int);
+    EditTodo(id: Int);
+    SaveTodo(params: server.schemas.Todo.TodoParams);
+    CancelEdit;
+    
+    // Filtering and sorting
+    FilterTodos(filter: String);
+    SortTodos(sortBy: String);
+    SearchTodos(query: String);
+    ToggleTag(tag: String);
+    
+    // Priority management
+    SetPriority(id: Int, priority: String);
+    
+    // UI interactions
+    ToggleForm;
+    
+    // Bulk operations
+    BulkComplete;
+    BulkDeleteCompleted;
+}
 
 /**
  * Type-safe assigns structure for TodoLive socket
@@ -39,16 +74,16 @@ typedef EctoChangeset = phoenix.Ecto.EctoChangeset;
 typedef TodoLiveAssigns = {
 	var todos: Array<server.schemas.Todo>;
 	var filter: String; // all, active, completed
-	var sort_by: String; // created, priority, due_date
-	var current_user: User;
-	var editing_todo: Null<server.schemas.Todo>;
-	var show_form: Bool;
-	var search_query: String;
-	var selected_tags: Array<String>;
+	var sortBy: String; // created, priority, dueDate - camelCase!
+	var currentUser: User;
+	var editingTodo: Null<server.schemas.Todo>;
+	var showForm: Bool;
+	var searchQuery: String;
+	var selectedTags: Array<String>;
 	// Statistics
-	var total_todos: Int;
-	var completed_todos: Int;
-	var pending_todos: Int;
+	var totalTodos: Int;
+	var completedTodos: Int;
+	var pendingTodos: Int;
 }
 
 /**
@@ -73,22 +108,22 @@ class TodoLive {
 				// Subscription successful, continue
 		}
 		
-		var current_user = get_user_from_session(session);
-		var todos = load_todos(current_user.id);
+		var currentUser = getUserFromSession(session);
+		var todos = loadTodos(currentUser.id);
 		
 		// Create type-safe assigns structure
 		var assigns: TodoLiveAssigns = {
 			todos: todos,
 			filter: "all",
-			sort_by: "created",
-			current_user: current_user,
-			editing_todo: null,
-			show_form: false,
-			search_query: "",
-			selected_tags: [],
-			total_todos: todos.length,
-			completed_todos: count_completed(todos),
-			pending_todos: count_pending(todos)
+			sortBy: "created",  // camelCase!
+			currentUser: currentUser,  // camelCase!
+			editingTodo: null,  // camelCase!
+			showForm: false,  // camelCase!
+			searchQuery: "",  // camelCase!
+			selectedTags: [],  // camelCase!
+			totalTodos: todos.length,  // camelCase!
+			completedTodos: countCompleted(todos),  // camelCase!
+			pendingTodos: countPending(todos)  // camelCase!
 		};
 		
 		// The TAssigns type parameter will be inferred as TodoLiveAssigns
@@ -98,56 +133,61 @@ class TodoLive {
 	}
 	
 	/**
-	 * Handle events with type-safe assigns
+	 * Handle events with fully typed event system.
 	 * 
-	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
+	 * No more string matching or Dynamic params!
+	 * Each event carries its own typed parameters.
 	 */
-	public static function handle_event(event: String, params: EventParams, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
+	public static function handle_event(event: TodoLiveEvent, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
 		var result_socket = switch (event) {
-			case "create_todo":
-				create_new_todo(params, socket);
+			// Todo CRUD operations - params are already typed!
+			case CreateTodo(params):
+				createTodoTyped(params, socket);
 			
-			case "toggle_todo":
-				toggle_todo_status(params.id, socket);
+			case ToggleTodo(id):
+				toggleTodoStatus(id, socket);
 			
-			case "delete_todo":
-				delete_todo(params.id, socket);
+			case DeleteTodo(id):
+				deleteTodo(id, socket);
 			
-			case "edit_todo":
-				start_editing(params.id, socket);
+			case EditTodo(id):
+				startEditing(id, socket);
 			
-			case "save_todo":
-				save_edited_todo(params, socket);
+			case SaveTodo(params):
+				saveEditedTodoTyped(params, socket);
 			
-			case "cancel_edit":
+			case CancelEdit:
 				SafeAssigns.setEditingTodo(socket, null);
 			
-			case "filter_todos":
-				SafeAssigns.setFilter(socket, params.filter);
+			// Filtering and sorting
+			case FilterTodos(filter):
+				SafeAssigns.setFilter(socket, filter);
 			
-			case "sort_todos":
-				SafeAssigns.setSortBy(socket, params.sort_by);
+			case SortTodos(sortBy):
+				SafeAssigns.setSortBy(socket, sortBy);
 			
-			case "search_todos":
-				SafeAssigns.setSearchQuery(socket, params.query);
+			case SearchTodos(query):
+				SafeAssigns.setSearchQuery(socket, query);
 			
-			case "toggle_tag":
-				toggle_tag_filter(params.tag, socket);
+			case ToggleTag(tag):
+				toggleTagFilter(tag, socket);
 			
-			case "set_priority":
-				update_todo_priority(params.id, params.priority, socket);
+			// Priority management
+			case SetPriority(id, priority):
+				updateTodoPriority(id, priority, socket);
 			
-			case "toggle_form":
-				SafeAssigns.setShowForm(socket, !socket.assigns.show_form);
+			// UI interactions
+			case ToggleForm:
+				SafeAssigns.setShowForm(socket, !socket.assigns.showForm);  // camelCase!
 			
-			case "bulk_complete":
-				complete_all_todos(socket);
+			// Bulk operations
+			case BulkComplete:
+				completeAllTodos(socket);
 			
-			case "bulk_delete_completed":
-				delete_completed_todos(socket);
+			case BulkDeleteCompleted:
+				deleteCompletedTodos(socket);
 			
-			case _:
-				socket;
+			// No default case needed - compiler ensures exhaustiveness!
 		};
 		
 		return NoReply(result_socket);
@@ -164,34 +204,34 @@ class TodoLive {
 			case Some(parsedMsg):
 				switch (parsedMsg) {
 					case TodoCreated(todo):
-						add_todo_to_list(todo, socket);
+						addTodoToList(todo, socket);
 					
 					case TodoUpdated(todo):
-						update_todo_in_list(todo, socket);
+						updateTodoInList(todo, socket);
 					
 					case TodoDeleted(id):
-						remove_todo_from_list(id, socket);
+						removeTodoFromList(id, socket);
 					
 					case BulkUpdate(action):
-						handle_bulk_update(action, socket);
+						handleBulkUpdate(action, socket);
 					
-					case UserOnline(user_id):
+					case UserOnline(userId):
 						// Could update online user list in future
 						socket;
 					
-					case UserOffline(user_id):
+					case UserOffline(userId):
 						// Could update online user list in future
 						socket;
 					
 					case SystemAlert(message, level):
 						// Show system alert to user
-						var flash_type = switch (level) {
+						var flashType = switch (level) {
 							case Info: phoenix.Phoenix.FlashType.Info;
 							case Warning: phoenix.Phoenix.FlashType.Warning;
 							case Error: phoenix.Phoenix.FlashType.Error;
 							case Critical: phoenix.Phoenix.FlashType.Error;
 						};
-						LiveView.put_flash(socket, flash_type, message);
+						LiveView.putFlash(socket, flashType, message);  // camelCase!
 				}
 			
 			case None:
@@ -204,6 +244,39 @@ class TodoLive {
 	}
 	
 	// Helper functions with type-safe socket handling
+	
+	/**
+	 * Create a new todo with typed parameters - no conversion needed!
+	 */
+	static function createTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>) : Socket<TodoLiveAssigns> {
+		// Add userId from socket assigns
+		params.userId = socket.assigns.currentUser.id;  // camelCase!
+		
+		// Direct use of typed params - no conversion!
+		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), params);
+		
+		// Use type-safe Repo operations
+		switch (Repo.insert(changeset)) {
+			case Ok(todo):
+				// Broadcast to other users using type-safe PubSub
+				switch (TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo))) {
+					case Ok(_):
+						// Broadcast successful
+					case Error(reason):
+						trace("Failed to broadcast todo creation: " + reason);
+				}
+				
+				// Refresh todos and update UI
+				var updatedSocket = loadAndAssignTodos(socket);
+				return SafeAssigns.setShowForm(updatedSocket, false);
+				
+			case Error(changeset):
+				// Handle validation errors
+				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo");
+		}
+	}
+	
+	// Legacy function for backward compatibility - will be removed
 	static function create_new_todo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var todo_params = {
 			title: params.title,
@@ -244,7 +317,7 @@ class TodoLive {
 					null, // search_query unchanged
 					null  // selected_tags unchanged
 				);
-				var updated_socket = LiveView.assign_multiple(socket, completeAssigns);
+				var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
 				return LiveView.put_flash(updated_socket, Success, "Todo created successfully!");
 				
 			case Error(reason):
@@ -252,37 +325,37 @@ class TodoLive {
 		}
 	}
 	
-	static function toggle_todo_status(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo = find_todo(id, socket.assigns.todos);
+	static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var todo = findTodo(id, socket.assigns.todos);
 		if (todo == null) return socket;
 		
-		var updated_changeset = server.schemas.Todo.toggle_completed(todo);
+		var updatedChangeset = server.schemas.Todo.toggleCompleted(todo);
 		
 		// Use type-safe Repo operations
-		switch (Repo.update(updated_changeset)) {
-			case Ok(updated_todo):
+		switch (Repo.update(updatedChangeset)) {
+			case Ok(updatedTodo):
 				// Broadcast to other users using type-safe PubSub with compile-time validation
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updated_todo))) {
+				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
 					case Ok(_):
 						// Broadcast successful
 					case Error(reason):
 						trace("Failed to broadcast todo update: " + reason);
 				}
 				
-				return update_todo_in_list(updated_todo, socket);
+				return updateTodoInList(updatedTodo, socket);
 				
 			case Error(reason):
 				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
 		}
 	}
 	
-	static function delete_todo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo = find_todo(id, socket.assigns.todos);
+	static function deleteTodo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var todo = findTodo(id, socket.assigns.todos);
 		if (todo == null) return socket;
 		
 		// Use type-safe Repo operations
 		switch (Repo.delete(todo)) {
-			case Ok(deleted_todo):
+			case Ok(deletedTodo):
 				// Broadcast to other users using type-safe PubSub
 				switch (TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id))) {
 					case Ok(_):
@@ -291,31 +364,31 @@ class TodoLive {
 						trace("Failed to broadcast todo deletion: " + reason);
 				}
 				
-				return remove_todo_from_list(id, socket);
+				return removeTodoFromList(id, socket);
 				
 			case Error(reason):
 				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to delete todo: " + reason);
 		}
 	}
 	
-	static function update_todo_priority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo = find_todo(id, socket.assigns.todos);
+	static function updateTodoPriority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var todo = findTodo(id, socket.assigns.todos);
 		if (todo == null) return socket;
 		
-		var updated_changeset = server.schemas.Todo.update_priority(todo, priority);
+		var updatedChangeset = server.schemas.Todo.updatePriority(todo, priority);
 		
 		// Use type-safe Repo operations
-		switch (Repo.update(updated_changeset)) {
-			case Ok(updated_todo):
+		switch (Repo.update(updatedChangeset)) {
+			case Ok(updatedTodo):
 				// Broadcast to other users using type-safe PubSub
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updated_todo))) {
+				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
 					case Ok(_):
 						// Broadcast successful
 					case Error(reason):
 						trace("Failed to broadcast todo priority update: " + reason);
 				}
 				
-				return update_todo_in_list(updated_todo, socket);
+				return updateTodoInList(updatedTodo, socket);
 				
 			case Error(reason):
 				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
@@ -371,29 +444,51 @@ class TodoLive {
 	}
 	
 	// Utility functions
-	static function load_todos(user_id: Int): Array<server.schemas.Todo> {
-		// Use type-safe EctoQuery with proper method chaining
-		var query = EctoQuery.from(server.schemas.Todo, "t");
-		var whereConditions = new Map<String, phoenix.Ecto.QueryValue>();
-		whereConditions.set("user_id", phoenix.Ecto.QueryValue.Integer(user_id));
-		var conditions: phoenix.Ecto.QueryConditions = { where: whereConditions };
-		query = EctoQuery.where(query, conditions);
-		// TODO: Fix Ecto extern definition to support proper order_by syntax
-		// CURRENT ISSUE: OrderByClause typedef generates %{"field" => "inserted_at", "direction" => :asc, "nulls" => :default}
-		// IDEAL APPROACH: Should generate Elixir keyword list syntax like [asc: :inserted_at] or [asc: :inserted_at, nulls: :first]
-		// SIMPLER APPROACH: Use __elixir__() injection: query |> order_by([asc: :inserted_at])
-		// query = EctoQuery.order_by(query, [{field: "inserted_at", direction: phoenix.Ecto.SortDirection.Asc, nulls: phoenix.Ecto.NullsPosition.Default}]);
+	/**
+	 * Load todos and update socket assigns.
+	 */
+	static function load_and_assign_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var todos = load_todos(socket.assigns.current_user.id);
+		
+		// Calculate statistics
+		var total = todos.length;
+		var completed = todos.filter(t -> t.completed).length;
+		var pending = total - completed;
+		
+		// Create updated assigns
+		var updated: TodoLiveAssigns = {
+			todos: todos,
+			filter: socket.assigns.filter,
+			sort_by: socket.assigns.sort_by,
+			current_user: socket.assigns.current_user,
+			editing_todo: socket.assigns.editing_todo,
+			show_form: socket.assigns.show_form,
+			search_query: socket.assigns.search_query,
+			selected_tags: socket.assigns.selected_tags,
+			total_todos: total,
+			completed_todos: completed,
+			pending_todos: pending
+		};
+		
+		return LiveView.assign_multiple(socket, updated);
+	}
+	
+	static function loadTodos(userId: Int): Array<server.schemas.Todo> {
+		// Use type-safe Query API with proper chaining
+		var query = Query.from(server.schemas.Todo)
+			.where("user_id", userId)  // Will be converted to snake_case by compiler
+			.orderBy("inserted_at", "asc");
 		return Repo.all(query);
 	}
 	
-	static function find_todo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
+	static function findTodo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
 		for (todo in todos) {
 			if (todo.id == id) return todo;
 		}
 		return null;
 	}
 	
-	static function count_completed(todos: Array<server.schemas.Todo>): Int {
+	static function countCompleted(todos: Array<server.schemas.Todo>): Int {
 		var count = 0;
 		for (todo in todos) {
 			if (todo.completed) count++;
@@ -401,7 +496,7 @@ class TodoLive {
 		return count;
 	}
 	
-	static function count_pending(todos: Array<server.schemas.Todo>): Int {
+	static function countPending(todos: Array<server.schemas.Todo>): Int {
 		var count = 0;
 		for (todo in todos) {
 			if (!todo.completed) count++;
@@ -409,21 +504,21 @@ class TodoLive {
 		return count;
 	}
 	
-	static function parse_tags(tags_string: String): Array<String> {
-		if (tags_string == null || tags_string == "") return [];
-		return tags_string.split(",").map(function(t) return t.trim());
+	static function parseTags(tagsString: String): Array<String> {
+		if (tagsString == null || tagsString == "") return [];
+		return tagsString.split(",").map(function(t) return t.trim());
 	}
 	
-	static function get_user_from_session(session: Session): User {
+	static function getUserFromSession(session: Session): User {
 		// In real app, would fetch from session/token and validate properly
 		// For demo purposes, return a properly typed User object
 		return {
-			id: session.user_id != null ? session.user_id : 1,
+			id: session.userId != null ? session.userId : 1,  // camelCase!
 			name: "Demo User",
 			email: "demo@example.com", 
-			password_hash: "hashed_password",
-			confirmed_at: null,
-			last_login_at: null,
+			passwordHash: "hashed_password",  // camelCase!
+			confirmedAt: null,  // camelCase!
+			lastLoginAt: null,  // camelCase!
 			active: true
 		};
 	}
@@ -434,9 +529,9 @@ class TodoLive {
 		
 		// Update all pending todos
 		for (todo in pending) {
-			var updated_changeset = server.schemas.Todo.toggle_completed(todo);
-			switch (Repo.update(updated_changeset)) {
-				case Ok(updated_todo):
+			var updatedChangeset = server.schemas.Todo.toggleCompleted(todo);
+			switch (Repo.update(updatedChangeset)) {
+				case Ok(updatedTodo):
 					// Individual update successful
 				case Error(reason):
 					trace("Failed to complete todo " + todo.id + ": " + reason);
@@ -452,21 +547,27 @@ class TodoLive {
 		}
 		
 		// Reload todos and update socket with complete assigns
-		var updated_todos = load_todos(socket.assigns.current_user.id);
+		var updatedTodos = loadTodos(socket.assigns.currentUser.id);
 		var currentAssigns = socket.assigns;
-		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
-			currentAssigns,
-			updated_todos
-		);
-		// Override calculated statistics for bulk complete
-		completeAssigns.completed_todos = completeAssigns.total_todos;
-		completeAssigns.pending_todos = 0;
-		var updated_socket = LiveView.assign_multiple(socket, completeAssigns);
+		var completeAssigns: TodoLiveAssigns = {
+			todos: updatedTodos,
+			filter: currentAssigns.filter,
+			sortBy: currentAssigns.sortBy,
+			currentUser: currentAssigns.currentUser,
+			editingTodo: currentAssigns.editingTodo,
+			showForm: currentAssigns.showForm,
+			searchQuery: currentAssigns.searchQuery,
+			selectedTags: currentAssigns.selectedTags,
+			totalTodos: updatedTodos.length,
+			completedTodos: updatedTodos.length,  // All are completed now
+			pendingTodos: 0  // None pending after bulk complete
+		};
+		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
 		
-		return LiveView.put_flash(updated_socket, Info, "All todos marked as completed!");
+		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "All todos marked as completed!");
 	}
 	
-	static function delete_completed_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function deleteCompletedTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var completed: Array<server.schemas.Todo> = socket.assigns.todos.filter(function(t) return t.completed);
 		
 		for (todo in completed) {
@@ -479,16 +580,22 @@ class TodoLive {
 		
 		// Use complete assigns and proper type-safe socket operations
 		var currentAssigns = socket.assigns;
-		var completeAssigns = TypeSafeConversions.createCompleteAssigns(
-			currentAssigns,
-			remaining
-		);
-		// Override calculated statistics
-		completeAssigns.completed_todos = 0;
-		completeAssigns.pending_todos = remaining.length;
+		var completeAssigns: TodoLiveAssigns = {
+			todos: remaining,
+			filter: currentAssigns.filter,
+			sortBy: currentAssigns.sortBy,
+			currentUser: currentAssigns.currentUser,
+			editingTodo: currentAssigns.editingTodo,
+			showForm: currentAssigns.showForm,
+			searchQuery: currentAssigns.searchQuery,
+			selectedTags: currentAssigns.selectedTags,
+			totalTodos: remaining.length,
+			completedTodos: 0,  // All completed ones deleted
+			pendingTodos: remaining.length  // Only pending remain
+		};
 		
-		var updated_socket = LiveView.assign_multiple(socket, completeAssigns);
-		return LiveView.put_flash(updated_socket, Info, "Completed todos deleted!");
+		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
+		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "Completed todos deleted!");
 	}
 	
 	// Additional helper functions with type-safe socket handling
@@ -497,8 +604,39 @@ class TodoLive {
 		return SafeAssigns.setEditingTodo(socket, todo);
 	}
 	
-	static function save_edited_todo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo = socket.assigns.editing_todo;
+	/**
+	 * Save edited todo with typed parameters.
+	 */
+	static function saveEditedTodoTyped(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		if (socket.assigns.editingTodo == null) {
+			return socket;
+		}
+		
+		var todo = socket.assigns.editingTodo;
+		var changeset = server.schemas.Todo.changeset(todo, params);
+		
+		switch (Repo.update(changeset)) {
+			case Ok(updated_todo):
+				// Broadcast update
+				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
+					case Ok(_):
+						// Success
+					case Error(reason):
+						trace("Failed to broadcast todo update: " + reason);
+				}
+				
+				// Clear editing state and refresh
+				var updated_socket = SafeAssigns.setEditingTodo(socket, null);
+				return load_and_assign_todos(updated_socket);
+				
+			case Error(changeset):
+				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
+		}
+	}
+	
+	// Legacy function for backward compatibility - will be removed
+	static function saveEditedTodo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var todo = socket.assigns.editingTodo;
 		if (todo == null) return socket;
 		
 		// Convert EventParams to ChangesetParams with type safety
@@ -509,7 +647,7 @@ class TodoLive {
 		switch (Repo.update(changeset)) {
 			case Ok(updated_todo):
 				// Broadcast to other users using type-safe PubSub
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updated_todo))) {
+				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
 					case Ok(_):
 						// Broadcast successful
 					case Error(reason):
@@ -525,29 +663,47 @@ class TodoLive {
 	}
 	
 	// Handle bulk update messages from PubSub with type-safe socket handling
-	static function handle_bulk_update(action: BulkOperationType, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function handleBulkUpdate(action: BulkOperationType, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		return switch (action) {
 			case CompleteAll:
 				// Reload todos to reflect bulk completion
-				var updated_todos = load_todos(socket.assigns.current_user.id);
+				var updatedTodos = loadTodos(socket.assigns.currentUser.id);
 				// Use complete assigns structure for type safety
 				var currentAssigns = socket.assigns;
-				var completeAssigns = TypeSafeConversions.createCompleteAssigns(
-					currentAssigns,
-					updated_todos
-				);
-				LiveView.assign_multiple(socket, completeAssigns);
+				var completeAssigns: TodoLiveAssigns = {
+					todos: updatedTodos,
+					filter: currentAssigns.filter,
+					sortBy: currentAssigns.sortBy,
+					currentUser: currentAssigns.currentUser,
+					editingTodo: currentAssigns.editingTodo,
+					showForm: currentAssigns.showForm,
+					searchQuery: currentAssigns.searchQuery,
+					selectedTags: currentAssigns.selectedTags,
+					totalTodos: updatedTodos.length,
+					completedTodos: countCompleted(updatedTodos),
+					pendingTodos: countPending(updatedTodos)
+				};
+				LiveView.assignMultiple(socket, completeAssigns);
 			
 			case DeleteCompleted:
 				// Reload todos to reflect bulk deletion
-				var updated_todos = load_todos(socket.assigns.current_user.id);
+				var updatedTodos = loadTodos(socket.assigns.currentUser.id);
 				// Use complete assigns structure for type safety
 				var currentAssigns = socket.assigns;
-				var completeAssigns = TypeSafeConversions.createCompleteAssigns(
-					currentAssigns,
-					updated_todos
-				);
-				LiveView.assign_multiple(socket, completeAssigns);
+				var completeAssigns: TodoLiveAssigns = {
+					todos: updatedTodos,
+					filter: currentAssigns.filter,
+					sortBy: currentAssigns.sortBy,
+					currentUser: currentAssigns.currentUser,
+					editingTodo: currentAssigns.editingTodo,
+					showForm: currentAssigns.showForm,
+					searchQuery: currentAssigns.searchQuery,
+					selectedTags: currentAssigns.selectedTags,
+					totalTodos: updatedTodos.length,
+					completedTodos: countCompleted(updatedTodos),
+					pendingTodos: countPending(updatedTodos)
+				};
+				LiveView.assignMultiple(socket, completeAssigns);
 			
 			case SetPriority(priority):
 				// Could handle bulk priority changes in future
@@ -563,12 +719,12 @@ class TodoLive {
 		};
 	}
 	
-	static function toggle_tag_filter(tag: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var selected_tags: Array<String> = socket.assigns.selected_tags;
-		var updated_tags = selected_tags.contains(tag) ? 
-			selected_tags.filter(function(t) return t != tag) :
-			selected_tags.concat([tag]);
-		return SafeAssigns.setSelectedTags(socket, updated_tags);
+	static function toggleTagFilter(tag: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		var selectedTags: Array<String> = socket.assigns.selectedTags;
+		var updatedTags = selectedTags.contains(tag) ? 
+			selectedTags.filter(function(t) return t != tag) :
+			selectedTags.concat([tag]);
+		return SafeAssigns.setSelectedTags(socket, updatedTags);
 	}
 	
 	/**
@@ -754,11 +910,11 @@ class TodoLive {
 					</div>
 					
 					<!-- Bulk Actions -->
-					${render_bulk_actions(assigns)}
+					${renderBulkActions(assigns)}
 					
 					<!-- Todo List -->
 					<div class="space-y-4">
-						${render_todo_list(assigns)}
+						${renderTodoList(assigns)}
 					</div>
 				</div>
 			</div>
@@ -768,16 +924,16 @@ class TodoLive {
 	/**
 	 * Render bulk actions section
 	 */
-	static function render_bulk_actions(assigns: TodoLiveAssigns): String {
+	static function renderBulkActions(assigns: TodoLiveAssigns): String {
 		if (assigns.todos.length == 0) {
 			return "";
 		}
 		
-		var filteredCount = filter_todos(assigns.todos, assigns.filter, assigns.search_query).length;
+		var filteredCount = filterTodos(assigns.todos, assigns.filter, assigns.searchQuery).length;
 		
 		return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
 				<div class="text-sm text-gray-600 dark:text-gray-400">
-					Showing ${filteredCount} of ${assigns.total_todos} todos
+					Showing ${filteredCount} of ${assigns.totalTodos} todos
 				</div>
 				<div class="flex space-x-2">
 					<button phx-click="bulk_complete"
@@ -796,7 +952,7 @@ class TodoLive {
 	/**
 	 * Render the todo list section
 	 */
-	static function render_todo_list(assigns: TodoLiveAssigns): String {
+	static function renderTodoList(assigns: TodoLiveAssigns): String {
 		if (assigns.todos.length == 0) {
 			return HXX.hxx('
 				<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center">
@@ -811,10 +967,10 @@ class TodoLive {
 			');
 		}
 		
-		var filteredTodos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query);
+		var filteredTodos = filterAndSortTodos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery);
 		var todoItems = [];
 		for (todo in filteredTodos) {
-			todoItems.push(render_todo_item(todo, assigns.editing_todo));
+			todoItems.push(renderTodoItem(todo, assigns.editingTodo));
 		}
 		return todoItems.join("\n");
 	}
@@ -822,17 +978,17 @@ class TodoLive {
 	/**
 	 * Render individual todo item
 	 */
-	static function render_todo_item(todo: server.schemas.Todo, editing_todo: Null<server.schemas.Todo>): String {
-		var is_editing = editing_todo != null && editing_todo.id == todo.id;
-		var priority_color = switch(todo.priority) {
+	static function renderTodoItem(todo: server.schemas.Todo, editingTodo: Null<server.schemas.Todo>): String {
+		var isEditing = editingTodo != null && editingTodo.id == todo.id;
+		var priorityColor = switch(todo.priority) {
 			case "high": "border-red-500";
 			case "medium": "border-yellow-500";
 			case "low": "border-green-500";
 			case _: "border-gray-300";
 		};
 		
-		if (is_editing) {
-			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priority_color}">
+		if (isEditing) {
+			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor}">
 					<form phx-submit="save_todo" class="space-y-4">
 						<input type="hidden" name="id" value="${todo.id}" />
 						<input type="text" name="title" value="${todo.title}" required
@@ -850,11 +1006,11 @@ class TodoLive {
 					</form>
 				</div>';
 		} else {
-			var completed_class = todo.completed ? "opacity-60" : "";
-			var text_decoration = todo.completed ? "line-through" : "";
+			var completedClass = todo.completed ? "opacity-60" : "";
+			var textDecoration = todo.completed ? "line-through" : "";
 			var checkmark = todo.completed ? '<span class="text-green-500">✓</span>' : '';
 			
-			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priority_color} ${completed_class} transition-all hover:shadow-xl">
+			return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 ${priorityColor} ${completedClass} transition-all hover:shadow-xl">
 					<div class="flex items-start space-x-4">
 						<!-- Checkbox -->
 						<button phx-click="toggle_todo" phx-value-id="${todo.id}"
@@ -864,11 +1020,11 @@ class TodoLive {
 						
 						<!-- Content -->
 						<div class="flex-1">
-							<h3 class="text-lg font-semibold text-gray-800 dark:text-white ${text_decoration}">
+							<h3 class="text-lg font-semibold text-gray-800 dark:text-white ${textDecoration}">
 								${todo.title}
 							</h3>
 							${todo.description != null && todo.description != "" ? 
-								'<p class="text-gray-600 dark:text-gray-400 mt-1 ${text_decoration}">${todo.description}</p>' : 
+								'<p class="text-gray-600 dark:text-gray-400 mt-1 ${textDecoration}">${todo.description}</p>' : 
 								''}
 							
 							<!-- Meta info -->
@@ -876,10 +1032,10 @@ class TodoLive {
 								<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
 									Priority: ${todo.priority}
 								</span>
-								${todo.due_date != null ? 
-									'<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">Due: ${todo.due_date}</span>' : 
+								${todo.dueDate != null ? 
+									'<span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">Due: ${todo.dueDate}</span>' : 
 									''}
-								${render_tags(todo.tags)}
+								${renderTags(todo.tags)}
 							</div>
 						</div>
 						

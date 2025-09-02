@@ -1035,6 +1035,7 @@ if (isPhoenixProject()) {
 - **Typed externs welcome**: Leverage the rich Elixir ecosystem with full type safety
 - **Dual-API standard library**: Use cross-platform OR platform-specific methods as needed
 - **NO DYNAMIC OR ANY**: Never use Dynamic or Any in any Haxe code
+- **ABSTRACT AWAY DYNAMIC AT BOUNDARIES**: When interfacing with dynamic systems (like Ecto), use macros or builder patterns to provide fully typed APIs. Users should NEVER see Dynamic
 
 **The goal**: Maximum developer flexibility with complete type safety.
 
@@ -1150,6 +1151,54 @@ class StringBuf {
 **See**: [docs/03-compiler-development/testing-infrastructure.md](docs/03-compiler-development/testing-infrastructure.md) - Complete testing guide
 
 ## Development Principles
+
+### ⚠️ CRITICAL: Abstract Away Dynamic at System Boundaries
+**FUNDAMENTAL RULE: When interfacing with dynamic Elixir systems, ALWAYS provide a fully typed Haxe API. Users should NEVER interact with Dynamic directly.**
+
+**The Problem**: Some Elixir systems (like Ecto changesets) use heterogeneous data structures that would require Dynamic in Haxe.
+
+**The Solution**: Use one of these patterns to provide type safety:
+
+1. **Macro-Generated Casting** (BEST):
+   ```haxe
+   // User writes:
+   typedef TodoParams = { ?title: String, ?completed: Bool }
+   var changeset = Todo.changeset(todo, params);  // Fully typed!
+   
+   // Macro generates the casting code at compile time
+   ```
+
+2. **Builder Pattern with Hidden Dynamic**:
+   ```haxe
+   // Internal: May use Map<String, Dynamic>
+   // External: Fully typed fluent API
+   return cast(todo, params)
+       .validateRequired(["title"])
+       .validateLength("title", {min: 3});
+   ```
+
+3. **Abstract Types Over Dynamic**:
+   ```haxe
+   // Wrap Dynamic in an abstract with typed methods
+   abstract ChangesetData(Dynamic) {
+       public function getField<T>(name: String): T { ... }
+       public function setField<T>(name: String, value: T): Void { ... }
+   }
+   ```
+
+**Why This Matters**:
+- Type safety is the entire point of using Haxe
+- Dynamic defeats IntelliSense and compile-time checking
+- Users shouldn't need to know about Elixir's internal representations
+- The compiler/stdlib should handle the complexity, not the user
+
+**Examples in Practice**:
+- ✅ **Ecto.Changeset**: Typed params in, typed changeset out
+- ✅ **Delete operations**: Use `Changeset<T, {}>` for no-params cases, not Dynamic
+- ✅ **Phoenix.Socket.assigns**: Typed assigns structure, not Dynamic
+- ✅ **Plug.Conn**: Typed request/response, not Dynamic maps
+- ❌ **NEVER**: `function process(data: Dynamic): Dynamic`
+- ❌ **NEVER**: Use Dynamic when a proper type exists (even `{}` for empty)
 
 ### ⚠️ CRITICAL: Detect Patterns by Structure, Not by Name
 **FUNDAMENTAL RULE: Never detect patterns by checking for specific hardcoded names. Detect by structural patterns or usage context.**
