@@ -95,6 +95,24 @@ test/
   - Missing or extra code blocks
   - Incorrect Elixir idioms
 
+### JavaScript/Full-Stack Tests 
+
+**Purpose**: Support full-stack Haxe development for Phoenix applications
+
+Some tests in the suite compile to JavaScript instead of Elixir. These are part of the full-stack framework provided by the compiler, enabling developers to write entire Phoenix applications (including client-side JavaScript) in Haxe.
+
+**Examples**:
+- `AsyncAnonymousFunctions` - Tests async/await patterns for client-side code
+- Tests with `--js` target in `compile.hxml` - Generate JavaScript output
+
+**Why These Exist**:
+- **Full-Stack Type Safety**: Write both backend (Elixir) and frontend (JavaScript) in Haxe
+- **Phoenix Integration**: Type-safe LiveView hooks, JavaScript interop
+- **Bonus UX Features**: Not core compiler functionality, but valuable for Phoenix apps written 100% in Haxe
+- **Shared Code**: Enables code sharing between client and server with type safety
+
+**Important Note**: These tests may use different standard library components (like `reflaxe.js.Async`) and compile to `out/main.js` instead of Elixir files.
+
 ### Integration Tests (`.exs` files)
 
 **Purpose**: Test Mix tasks, compilation pipeline, error handling
