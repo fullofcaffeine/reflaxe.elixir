@@ -1120,6 +1120,145 @@ if (isPhoenixProject()) {
 }
 ```
 
+## 🎯 Elixir Language Semantics - Compiler Must Understand
+
+**CRITICAL KNOWLEDGE**: A robust Haxe→Elixir compiler must deeply understand Elixir's language semantics, reserved words, scoping rules, and idioms.
+
+### Complete List of Elixir Reserved Keywords
+The compiler MUST avoid using these as variable/function names:
+
+**Core Reserved Words**:
+- `true`, `false`, `nil` - Boolean/null atoms
+- `and`, `or`, `not`, `in`, `when` - Operators
+- `fn` - Anonymous function definition
+- `do`, `end`, `catch`, `rescue`, `after`, `else` - Block delimiters
+- `__MODULE__`, `__FILE__`, `__DIR__`, `__ENV__`, `__CALLER__` - Special forms
+
+### Variable Scoping & Rebinding Rules
+
+**Immutability vs Rebinding**:
+- **Data is immutable**: Lists, maps, structs never change
+- **Variables can rebind**: Variables can point to new data
+- **NOT mutation**: `x = x + 1` creates new binding, doesn't mutate
+
+**Scoping Principles**:
+```elixir
+# Outer scope
+x = 1
+
+# Inner scope (anonymous function)
+result = Enum.map([1, 2, 3], fn item ->
+  x = 2  # Creates NEW local x, doesn't affect outer x
+  item * x
+end)
+
+# x is still 1 here
+```
+
+**Pin Operator (^)**:
+```elixir
+x = 1
+^x = 2  # MatchError - tries to match 2 against existing value 1
+x = 2   # Rebinding - x now points to 2
+```
+
+### Variable Shadowing Hazards
+
+**The compiler must handle**:
+1. **Nested scopes**: Inner variables shadow outer ones
+2. **Case/cond clauses**: Each clause has its own scope
+3. **Comprehensions**: Variables in generators are local
+4. **With expressions**: Each clause can rebind
+
+### Module Naming Conflicts
+
+**Built-in Elixir modules the compiler MUST NOT override**:
+- `List`, `Map`, `Enum`, `String`, `Integer`, `Float`
+- `Process`, `GenServer`, `Supervisor`, `Agent`
+- `File`, `IO`, `Path`, `System`
+- `Code`, `Kernel`, `Module`, `Application`
+
+### Elixir Idioms the Compiler Should Generate
+
+**Pattern Matching over Conditionals**:
+```elixir
+# ✅ Idiomatic
+case result do
+  {:ok, value} -> process(value)
+  {:error, reason} -> handle_error(reason)
+end
+
+# ❌ Non-idiomatic
+if elem(result, 0) == :ok do
+  process(elem(result, 1))
+else
+  handle_error(elem(result, 1))
+end
+```
+
+**Pipeline over Nested Calls**:
+```elixir
+# ✅ Idiomatic
+data
+|> transform()
+|> validate()
+|> save()
+
+# ❌ Non-idiomatic
+save(validate(transform(data)))
+```
+
+### Phoenix-Specific Conventions
+
+**Module Organization**:
+- `AppName` - Business logic
+- `AppNameWeb` - Web layer
+- `AppNameWeb.Router` - Always named Router
+- `AppNameWeb.Endpoint` - Always named Endpoint
+
+**File Placement**:
+- `lib/app_name/` - Core domain
+- `lib/app_name_web/` - Web interface
+- `lib/app_name_web/live/` - LiveView modules
+- `lib/app_name_web/controllers/` - Controllers
+
+### Phoenix LiveView Patterns (2024 Best Practices)
+
+**Lifecycle Callbacks Order**:
+1. `mount/3` - Initial setup (called twice: disconnected then connected)
+2. `handle_params/3` - URL/param changes (prefer over mount for assigns)
+3. `handle_event/3` - User interactions
+4. `handle_info/2` - PubSub messages, async results
+5. `render/1` - Generate HTML (or use template)
+
+**Socket & Assigns Rules**:
+- **Immutable assigns**: Each render gets fresh copy
+- **Assign in callbacks only**: Business logic returns values, callbacks assign
+- **Never pass socket to business logic**: Separation of concerns
+- **Use assign_async/3**: For non-blocking data loading
+
+**Anti-Patterns to Avoid**:
+```elixir
+# ❌ BAD: Business logic taking socket
+def calculate_total(socket, items) do
+  total = Enum.sum(items)
+  assign(socket, :total, total)  # Wrong!
+end
+
+# ✅ GOOD: Business logic returns value
+def calculate_total(items) do
+  Enum.sum(items)
+end
+
+# In LiveView callback:
+socket = assign(socket, :total, calculate_total(items))
+```
+
+**Stream vs Regular Assigns**:
+- **Regular assigns**: Entire collection in memory
+- **Streams**: Efficient for large collections, freed after render
+- **Temporary assigns**: Auto-reset after render
+
 ## 🔄 Compiler-Example Development Feedback Loop
 
 **CRITICAL UNDERSTANDING**: Working on examples (todo-app, etc.) is simultaneously **compiler development**. Examples are **living compiler tests** that reveal bugs and drive improvements.
@@ -1864,6 +2003,8 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix
   - Reflaxe compiler implementation examples  
   - Working AST processing patterns
   - Test infrastructure patterns
+  - **Elixir Language Source**: `/elixir/` - Official Elixir language implementation
+  - **Phoenix Framework Source**: `/phoenix/` and `/phoenix_live_view/` - Framework patterns
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system and language features  
 - **Haxe Manual**: https://haxe.org/manual/ - **CRITICAL**: Always consult for advanced features
 - **Web Resources**: Use WebSearch and WebFetch for current documentation

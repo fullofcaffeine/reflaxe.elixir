@@ -222,6 +222,97 @@ defmodule UserLive do
 end
 ```
 
+### @:presence - Phoenix Presence
+
+Transforms a class into a Phoenix.Presence module for real-time presence tracking across distributed nodes.
+
+**Purpose**: Phoenix Presence is a distributed presence tracking system that allows you to:
+- Track who's online in real-time across multiple server nodes
+- Synchronize user state (e.g., "typing", "editing", "idle") across all connected clients
+- Handle node failures gracefully with CRDT-based conflict resolution
+- Build collaborative features like "users currently viewing this page" or "users editing this document"
+
+**How It Works**:
+1. The `@:presence` annotation tells the compiler to inject `use Phoenix.Presence, otp_app: :your_app`
+2. This enables the `track`, `untrack`, `update`, and `list` functions from Phoenix.Presence
+3. Presence data is automatically synchronized across all nodes in your cluster
+4. Each user gets a single presence entry with metadata you define
+
+**Basic Usage**:
+```haxe
+@:native("TodoAppWeb.Presence")
+@:presence
+class TodoPresence {
+    // Track a user coming online
+    public static function trackUser<T>(socket: Socket<T>, user: User): Socket<T> {
+        var meta = {
+            onlineAt: Date.now().getTime(),
+            userName: user.name,
+            status: "active"
+        };
+        return Presence.track(socket, "users", Std.string(user.id), meta);
+    }
+    
+    // Update user status (e.g., from "active" to "away")
+    public static function updateUserStatus<T>(socket: Socket<T>, userId: Int, status: String): Socket<T> {
+        var currentMeta = getUserPresence(socket, userId);
+        if (currentMeta != null) {
+            currentMeta.status = status;
+            return Presence.update(socket, "users", Std.string(userId), currentMeta);
+        }
+        return socket;
+    }
+    
+    // List all online users
+    public static function listOnlineUsers<T>(socket: Socket<T>): Map<String, PresenceEntry> {
+        return Presence.list(socket, "users");
+    }
+}
+```
+
+**Generated Elixir**:
+```elixir
+defmodule TodoAppWeb.Presence do
+  use Phoenix.Presence, otp_app: :todo_app
+  
+  def track_user(socket, user) do
+    meta = %{
+      online_at: System.system_time(:millisecond),
+      user_name: user.name,
+      status: "active"
+    }
+    track(socket, "users", to_string(user.id), meta)
+  end
+  
+  def update_user_status(socket, user_id, status) do
+    current_meta = get_user_presence(socket, user_id)
+    if current_meta do
+      updated_meta = Map.put(current_meta, :status, status)
+      update(socket, "users", to_string(user_id), updated_meta)
+    else
+      socket
+    end
+  end
+  
+  def list_online_users(socket) do
+    list(socket, "users")
+  end
+end
+```
+
+**Common Use Cases**:
+- **Online Users List**: Show who's currently online in a chat or collaboration app
+- **Typing Indicators**: Show when someone is typing in real-time
+- **Collaborative Editing**: Track who's editing which part of a document
+- **Live Cursors**: Show other users' cursor positions in collaborative tools
+- **User Status**: Display user status (active, away, busy) across the app
+
+**Best Practices**:
+1. **Single Presence Entry Per User**: Use one presence entry with all state, not multiple entries
+2. **Update, Don't Track/Untrack**: Use `update` to change state instead of untrack/track cycles
+3. **Minimal Metadata**: Keep presence metadata small for efficient synchronization
+4. **Topic Organization**: Use meaningful topic names like "users", "document:123", etc.
+
 ### @:genserver - OTP GenServer
 
 Generates OTP GenServer modules for stateful processes.

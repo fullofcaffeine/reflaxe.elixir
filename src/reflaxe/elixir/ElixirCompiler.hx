@@ -500,6 +500,7 @@ class ElixirCompiler extends GenericCompiler<
                classType.meta.has(":genserver") ||
                classType.meta.has(":router") ||
                classType.meta.has(":controller") ||
+               classType.meta.has(":presence") ||
                classType.meta.has(":phoenixWeb") ||
                classType.meta.has(":phoenixWebModule");
     }
@@ -976,7 +977,7 @@ class ElixirCompiler extends GenericCompiler<
     private function isStandardLibraryClass(name: String): Bool {
         // Standard library classes handled elsewhere
         return switch(name) {
-            case "String" | "Array" | "Map" | "Date" | "Math" | "Std": true;
+            case "String" | "Array" | "Map" | "Date" | "Math" | "Std" | "List": true;
             case "__Int64" | "Int64" | "Int64_Impl_": true; // Haxe Int64 internal types
             case _: false;
         }

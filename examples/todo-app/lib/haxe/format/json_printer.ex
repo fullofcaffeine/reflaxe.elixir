@@ -3,9 +3,7 @@ defmodule JsonPrinter do
     %{:replacer => replacer, :space => space}
   end
   defp write_value(struct, v, key) do
-    if (struct.replacer != nil) do
-      v = struct.replacer(key, v)
-    end
+    v = if (struct.replacer != nil), do: struct.replacer(key, v), else: v
     if (v == nil), do: "null"
     g = {:Typeof, v}
     case (g.elem(0)) do
