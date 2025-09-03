@@ -7,10 +7,10 @@ This file contains compiler-specific development guidance for agents working on 
 ## 🏗️ Compiler Architecture Overview
 
 ### Core Components
-- **ElixirCompiler.hx** - Main DirectToStringCompiler inheritance, entry point for compilation
-- **helpers/** directory - Specialized compiler components for different language features
-- **ElixirPrinter.hx** - AST to string conversion and formatting
+- **ElixirCompiler.hx** - Main GenericCompiler<ElixirAST> implementation, entry point for compilation
+- **ast/** directory - AST builder, transformer, and printer for pure AST-based compilation
 - **ElixirTyper.hx** - Type mapping between Haxe and Elixir systems
+- **schema/** directory - Schema introspection and metadata processing
 
 ### 📁 Complete Compiler File Structure
 
@@ -87,14 +87,14 @@ class ElixirCompiler extends BaseCompiler {
 - TypedExpr AST is provided BY Haxe, not created by us
 - Test the OUTPUT (.ex files), not the compiler internals
 
-### DirectToStringCompiler Inheritance
-We inherit from Reflaxe's `DirectToStringCompiler`:
+### GenericCompiler Architecture
+We inherit from Reflaxe's `GenericCompiler`:
 ```haxe
-class ElixirCompiler extends DirectToStringCompiler {
+class ElixirCompiler extends GenericCompiler<ElixirAST, ElixirAST, ElixirAST, ElixirAST, ElixirAST> {
     // Override specific methods for Elixir-specific behavior
-    override function compileClass(classType: ClassType, varFields: Array<String>): String
-    override function compileEnum(enumType: EnumType, constructs: Array<String>): String
-    override function compileExpression(expr: TypedExpr): String
+    override function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<ElixirAST>
+    override function compileEnumImpl(enumType: EnumType, options: Array<EnumOptionData>): Null<ElixirAST>
+    override function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<ElixirAST>
 }
 ```
 
@@ -135,17 +135,17 @@ cd examples/todo-app && mix compile --force
 
 ### TypedExpr Processing Best Practices
 ```haxe
-// ✅ GOOD: Keep AST until last moment
-function compileExpression(expr: TypedExpr): String {
-    var result = switch(expr.expr) {
-        case TCall(e, el): compileCall(e, el);     // Process AST nodes
-        case TBinop(op, e1, e2): compileBinop(op, e1, e2);
+// ✅ GOOD: Build AST nodes with metadata
+function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<ElixirAST> {
+    var ast = switch(expr.expr) {
+        case TCall(e, el): buildCallAST(e, el);     // Build AST nodes
+        case TBinop(op, e1, e2): buildBinopAST(op, e1, e2);
         default: // Handle all cases
     }
-    return result;
+    return ast;
 }
 
-// ❌ BAD: Convert to string too early
+// ❌ BAD: String manipulation instead of AST
 function compileExpression(expr: TypedExpr): String {
     var str = simpleStringConversion(expr);
     return manipulateString(str); // Lost structural information

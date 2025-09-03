@@ -360,6 +360,14 @@ class ElixirASTTransformer {
         });
         #end
         
+        // Prefix unused function parameters with underscore
+        passes.push({
+            name: "PrefixUnusedParameters", 
+            description: "Prefix unused function parameters with underscore to follow Elixir conventions",
+            enabled: true,
+            pass: prefixUnusedParametersPass
+        });
+        
         // Return only enabled passes
         return passes.filter(p -> p.enabled);
     }
@@ -2157,6 +2165,225 @@ class ElixirASTTransformer {
                     return node;
             }
         });
+    }
+    
+    /**
+     * PREFIX UNUSED PARAMETERS PASS
+     * 
+     * WHY: Elixir convention requires unused function parameters to be prefixed with underscore
+     *      to indicate they're intentionally unused. This prevents compiler warnings.
+     * 
+     * WHAT: Detects unused parameters in function definitions and prefixes them with underscore.
+     *       Handles EDef, EDefp, EDefmacro, EDefmacrop, and EFn (anonymous functions).
+     * 
+     * HOW: 1. For each function definition, collect all parameter names
+     *      2. Scan the function body to find which parameters are actually used
+     *      3. Prefix unused parameters with underscore
+     *      4. Update all references to maintain consistency
+     * 
+     * EDGE CASES:
+     * - Parameters already prefixed with underscore are left as-is
+     * - Parameters named "_" are not modified
+     * - Nested functions are handled recursively
+     */
+    static function prefixUnusedParametersPass(ast: ElixirAST): ElixirAST {
+        #if debug_ast_transformer
+        trace('[XRay PrefixUnusedParams] PASS START');
+        #end
+        
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                // Handle regular function definitions
+                case EDef(name, args, guards, body):
+                    #if debug_ast_transformer
+                    trace('[XRay PrefixUnusedParams] Found EDef: $name with ${args.length} args');
+                    #end
+                    var result = handleFunctionParameters(args, guards, body);
+                    if (result.hasChanges) {
+                        #if debug_ast_transformer
+                        trace('[XRay PrefixUnusedParams] Updated EDef: $name');
+                        #end
+                        return makeASTWithMeta(EDef(name, result.args, guards, result.body), node.metadata, node.pos);
+                    }
+                    return node;
+                    
+                case EDefp(name, args, guards, body):
+                    var result = handleFunctionParameters(args, guards, body);
+                    if (result.hasChanges) {
+                        #if debug_ast_transformer
+                        trace('[XRay PrefixUnusedParams] Updated EDefp: $name');
+                        #end
+                        return makeASTWithMeta(EDefp(name, result.args, guards, result.body), node.metadata, node.pos);
+                    }
+                    return node;
+                    
+                case EDefmacro(name, args, guards, body):
+                    var result = handleFunctionParameters(args, guards, body);
+                    if (result.hasChanges) {
+                        #if debug_ast_transformer
+                        trace('[XRay PrefixUnusedParams] Updated EDefmacro: $name');
+                        #end
+                        return makeASTWithMeta(EDefmacro(name, result.args, guards, result.body), node.metadata, node.pos);
+                    }
+                    return node;
+                    
+                case EDefmacrop(name, args, guards, body):
+                    var result = handleFunctionParameters(args, guards, body);
+                    if (result.hasChanges) {
+                        #if debug_ast_transformer
+                        trace('[XRay PrefixUnusedParams] Updated EDefmacrop: $name');
+                        #end
+                        return makeASTWithMeta(EDefmacrop(name, result.args, guards, result.body), node.metadata, node.pos);
+                    }
+                    return node;
+                    
+                // Handle anonymous functions
+                case EFn(clauses):
+                    var hasAnyChange = false;
+                    var newClauses = [];
+                    
+                    for (clause in clauses) {
+                        var result = handleFunctionParameters(clause.args, clause.guard, clause.body);
+                        if (result.hasChanges) {
+                            hasAnyChange = true;
+                            newClauses.push({
+                                args: result.args,
+                                guard: clause.guard,
+                                body: result.body
+                            });
+                        } else {
+                            newClauses.push(clause);
+                        }
+                    }
+                    
+                    if (hasAnyChange) {
+                        #if debug_ast_transformer
+                        trace('[XRay PrefixUnusedParams] Updated EFn with ${clauses.length} clauses');
+                        #end
+                        return makeASTWithMeta(EFn(newClauses), node.metadata, node.pos);
+                    }
+                    return node;
+                    
+                default:
+                    return node;
+            }
+        });
+    }
+    
+    /**
+     * Handle parameter detection and renaming for a function
+     * Returns updated args and body if changes were made
+     */
+    static function handleFunctionParameters(args: Array<EPattern>, guards: Null<ElixirAST>, body: ElixirAST): {args: Array<EPattern>, body: ElixirAST, hasChanges: Bool} {
+        // Extract parameter names from patterns
+        var paramNames: Map<String, Bool> = new Map();
+        var paramRenames: Map<String, String> = new Map();
+        
+        function extractParamNames(pattern: EPattern) {
+            switch(pattern) {
+                case PVar(name):
+                    if (!name.startsWith("_")) { // Don't track already underscored params
+                        paramNames.set(name, false); // false = not yet seen as used
+                    }
+                case PTuple(patterns):
+                    for (p in patterns) extractParamNames(p);
+                case PList(patterns):
+                    for (p in patterns) extractParamNames(p);
+                case PMap(pairs):
+                    for (pair in pairs) extractParamNames(pair.value);
+                case PCons(head, tail):
+                    extractParamNames(head);
+                    extractParamNames(tail);
+                case PPin(pattern):
+                    extractParamNames(pattern);
+                default:
+                    // Other patterns don't introduce variables
+            }
+        }
+        
+        for (arg in args) {
+            extractParamNames(arg);
+        }
+        
+        #if debug_ast_transformer
+        trace('[XRay PrefixUnusedParams] Found parameters: ' + [for (name => _ in paramNames) name].join(", "));
+        #end
+        
+        // If no parameters to check, return early
+        if (Lambda.count(paramNames) == 0) {
+            return {args: args, body: body, hasChanges: false};
+        }
+        
+        // Check which parameters are used in the body (and guards if present)
+        function markUsedVars(ast: ElixirAST) {
+            switch(ast.def) {
+                case EVar(name):
+                    if (paramNames.exists(name)) {
+                        paramNames.set(name, true); // Mark as used
+                        #if debug_ast_transformer
+                        trace('[XRay PrefixUnusedParams] Found usage of param: $name');
+                        #end
+                    }
+                default:
+                    iterateAST(ast, markUsedVars);
+            }
+        }
+        
+        // Check guards for parameter usage
+        if (guards != null) {
+            markUsedVars(guards);
+        }
+        
+        // Check body for parameter usage
+        markUsedVars(body);
+        
+        // Build rename map for unused parameters
+        var hasChanges = false;
+        for (name => used in paramNames) {
+            if (!used && !name.startsWith("_")) {
+                var newName = "_" + name;
+                paramRenames.set(name, newName);
+                hasChanges = true;
+                #if debug_ast_transformer
+                trace('[XRay PrefixUnusedParams] Will rename unused param: $name -> $newName');
+                #end
+            }
+        }
+        
+        // If no changes needed, return original
+        if (!hasChanges) {
+            return {args: args, body: body, hasChanges: false};
+        }
+        
+        // Apply renames to argument patterns
+        function renameInPattern(pattern: EPattern): EPattern {
+            switch(pattern) {
+                case PVar(name):
+                    if (paramRenames.exists(name)) {
+                        return PVar(paramRenames.get(name));
+                    }
+                    return pattern;
+                case PTuple(patterns):
+                    return PTuple(patterns.map(renameInPattern));
+                case PList(patterns):
+                    return PList(patterns.map(renameInPattern));
+                case PMap(pairs):
+                    return PMap([for (pair in pairs) {key: pair.key, value: renameInPattern(pair.value)}]);
+                case PCons(head, tail):
+                    return PCons(renameInPattern(head), renameInPattern(tail));
+                case PPin(p):
+                    return PPin(renameInPattern(p));
+                default:
+                    return pattern;
+            }
+        }
+        
+        var newArgs = args.map(renameInPattern);
+        
+        // Note: We don't need to rename in the body since unused parameters
+        // by definition aren't referenced there
+        
+        return {args: newArgs, body: body, hasChanges: true};
     }
     
     /**
