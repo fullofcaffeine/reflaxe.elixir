@@ -1,7 +1,6 @@
 defmodule Query do
   def from(schema) do
     query = Ecto.Query.from(schema)
-    this1 = nil
     this1 = query
     this1
   end
@@ -17,7 +16,6 @@ defmodule Query do
     {:halt, acc}
   end
 end)
-    this1 = nil
     this1 = elixir_query
     this1
   end

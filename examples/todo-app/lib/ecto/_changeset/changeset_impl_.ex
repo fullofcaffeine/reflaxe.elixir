@@ -1,6 +1,5 @@
 defmodule Changeset_Impl_ do
   def _new(data, params) do
-    this1 = nil
     this1 = %{:data => data, :params => params, :errors => [], :valid => true, :required => [], :action => :none}
     this1
   end

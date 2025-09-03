@@ -231,6 +231,14 @@ class ElixirASTTransformer {
             pass: conditionalReassignmentPass
         });
         
+        // Remove redundant nil initialization pass (should run before pipeline optimization)
+        passes.push({
+            name: "RemoveRedundantNilInit",
+            description: "Remove redundant nil initialization when variable is immediately reassigned",
+            enabled: true,
+            pass: removeRedundantNilInitPass
+        });
+        
         // Pipeline optimization pass
         #if !disable_pipeline_optimization
         passes.push({
@@ -2057,6 +2065,98 @@ class ElixirASTTransformer {
         
         visitor(ast);
         return found;
+    }
+    
+    /**
+     * Remove redundant nil initialization pass
+     * 
+     * WHY: Abstract type constructors generate redundant `var = nil` followed by `var = value`
+     * WHAT: Removes nil initialization when variable is immediately reassigned  
+     * HOW: Detects pattern of consecutive assignments to same variable and removes first
+     * 
+     * Pattern detected:
+     * ```elixir
+     * this1 = nil
+     * this1 = %{data: data, params: params}
+     * ```
+     * 
+     * Transformed to:
+     * ```elixir
+     * this1 = %{data: data, params: params}
+     * ```
+     */
+    static function removeRedundantNilInitPass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EBlock(expressions):
+                    var filtered = [];
+                    var i = 0;
+                    
+                    while (i < expressions.length) {
+                        var expr = expressions[i];
+                        var shouldSkip = false;
+                        
+                        // Check if this is a nil assignment
+                        switch(expr.def) {
+                            case EMatch(PVar(varName), nilValue):
+                                switch(nilValue.def) {
+                                    case ENil:
+                                        // This is `var = nil` - check if next expression reassigns same variable
+                                        if (i + 1 < expressions.length) {
+                                            switch(expressions[i + 1].def) {
+                                                case EMatch(PVar(nextVarName), _) if (nextVarName == varName):
+                                                    // Next expression reassigns same variable - skip the nil init
+                                                    #if debug_ast_transformer
+                                                    trace('[XRay RemoveRedundantNilInit] Removing redundant nil init for: $varName');
+                                                    #end
+                                                    shouldSkip = true;
+                                                default:
+                                                    // Keep the nil assignment
+                                            }
+                                        }
+                                    default:
+                                        // Not a nil assignment
+                                }
+                            default:
+                                // Not a match expression
+                        }
+                        
+                        if (!shouldSkip) {
+                            filtered.push(expr);
+                        }
+                        i++;
+                    }
+                    
+                    // Only create new block if we removed something
+                    if (filtered.length != expressions.length) {
+                        return makeASTWithMeta(EBlock(filtered), node.metadata, node.pos);
+                    } else {
+                        return node;
+                    }
+                    
+                case EFn(clauses):
+                    // Also handle anonymous function bodies
+                    var transformedClauses = [for (clause in clauses) {
+                        args: clause.args,
+                        guard: clause.guard,
+                        body: removeRedundantNilInitPass(clause.body)
+                    }];
+                    return makeASTWithMeta(EFn(transformedClauses), node.metadata, node.pos);
+                    
+                case EDef(name, args, guards, body):
+                    // Handle public function definitions
+                    var transformedBody = removeRedundantNilInitPass(body);
+                    return makeASTWithMeta(EDef(name, args, guards, transformedBody), node.metadata, node.pos);
+                    
+                case EDefp(name, args, guards, body):
+                    // Handle private function definitions
+                    var transformedBody = removeRedundantNilInitPass(body);
+                    return makeASTWithMeta(EDefp(name, args, guards, transformedBody), node.metadata, node.pos);
+                    
+                default:
+                    return node;
+            }
+        });
     }
     
     /**

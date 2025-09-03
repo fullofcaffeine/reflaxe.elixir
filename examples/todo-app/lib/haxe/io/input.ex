@@ -63,7 +63,6 @@ end)
     b.toString()
   end
   def read_line(struct) do
-    buf_b = nil
     buf_b = ""
     last = nil
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
