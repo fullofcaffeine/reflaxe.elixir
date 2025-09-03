@@ -96,7 +96,7 @@ class AssignMacro {
 					pos: updates.pos
 				};
 				
-				return macro phoenix.Phoenix.LiveView.assign($socketExpr, $mapExpr);
+				return macro phoenix.Phoenix.LiveView.assignMultiple($socketExpr, $mapExpr);
 				
 			case _:
 				Context.error("Expected object literal with fields to merge", updates.pos);

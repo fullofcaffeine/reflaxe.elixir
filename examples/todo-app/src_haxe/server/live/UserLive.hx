@@ -87,7 +87,7 @@ class UserLive {
         }
     }
     
-    static function handleNewUser(socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
+    static function handleNewUser(socket: LiveSocket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
         var changeset = Users.change_user(null);
         var selectedUser = null;
         var showForm = true;
@@ -102,7 +102,7 @@ class UserLive {
         };
     }
     
-    static function handleEditUser(userId: Int, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
+    static function handleEditUser(userId: Int, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
         var selectedUser = Users.get_user(userId);
         var changeset = Users.change_user(selectedUser);
         var showForm = true;
@@ -117,7 +117,7 @@ class UserLive {
         };
     }
     
-    static function handleSaveUser(params: {user: Dynamic}, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
+    static function handleSaveUser(params: {user: Dynamic}, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
         var userParams = params.user;
         var selectedUser = socket.assigns.selectedUser;
         var result = selectedUser == null 
@@ -146,11 +146,11 @@ class UserLive {
                 };
                 
             default:
-                {status: "noreply", socket: liveSocket};
+                {status: "noreply", socket: socket};
         }
     }
     
-    static function handleDeleteUser(userId: Int, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
+    static function handleDeleteUser(userId: Int, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
         var user = Users.get_user(userId);
         var result = Users.delete_user(user);
         
@@ -166,7 +166,7 @@ class UserLive {
         return {status: "noreply", socket: socket};
     }
     
-    static function handleSearch(searchTerm: String, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
+    static function handleSearch(searchTerm: String, socket: LiveSocket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
         
         var users = searchTerm.length > 0 
             ? Users.search_users(searchTerm)
@@ -181,7 +181,7 @@ class UserLive {
         };
     }
     
-    static function handleCancel(socket: LiveSocket<UserLiveAssigns>): {status: String, socket: LiveSocket<UserLiveAssigns>} {
+    static function handleCancel(socket: LiveSocket<UserLiveAssigns>): {status: String, socket: Socket<UserLiveAssigns>} {
         return {
             status: "noreply",
             socket: socket.merge({
