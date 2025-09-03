@@ -2,6 +2,93 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Haxe: Run HXML (prompt)",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${input:hxmlCwd}",
+      "args": [
+        "${input:hxmlPath}"
+      ]
+    },
+    {
+      "name": "Haxe: Run build.hxml (here)",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${fileDirname}",
+      "args": [
+        "compile.hxml"
+      ]
+    },
+    {
+      "name": "Haxe: Run build-server.hxml (here)",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${fileDirname}",
+      "args": [
+        "build-server.hxml"
+      ]
+    },
+    {
+      "name": "Haxe: Run build-client.hxml (here)",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${fileDirname}",
+      "args": [
+        "build-client.hxml"
+      ]
+    },
+    {
+      "name": "Haxe: Run HXML (prompt in file dir)",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${fileDirname}",
+      "args": [
+        "${input:localHxmlName}"
+      ]
+    },
+    {
+      "name": "Haxe: TodoApp (server eval)",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples/todo-app",
+      "args": [
+        "build-server.hxml"
+      ]
+    },
+    {
+      "name": "Haxe: TodoApp (client eval)",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/examples/todo-app",
+      "args": [
+        "build-client.hxml"
+      ]
+    },
+    {
+      "name": "Chrome: Attach (Phoenix @ http://localhost:4000)",
+      "type": "chrome",
+      "request": "attach",
+      "url": "http://localhost:4000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///./*": "${workspaceFolder}/*",
+        "webpack:///*": "${workspaceFolder}/*",
+        "*/assets/js/*": "${workspaceFolder}/examples/todo-app/assets/js/*",
+        "*": "${workspaceFolder}/*"
+      }
+    },
+    {
+      "name": "Haxe: Run HXML (eval + prompt)",
+      "type": "haxe-eval",
+      "request": "launch",
+      "cwd": "${input:hxmlCwd}",
+      "args": [
+        "${input:hxmlPath}",
+        "--interp"
+      ]
+    },
+    {
       "name": "Haxe Interpreter",
       "type": "haxe-eval",
       "request": "launch"
@@ -10,7 +97,7 @@
       "name": "Eval: Snapshot Test (choose)",
       "type": "haxe-eval",
       "request": "launch",
-      "cwd": "${workspaceFolder}/test/tests/${input:snapshotName}",
+      "cwd": "${workspaceFolder}/test/snapshot/${input:snapshotName}",
       "args": [
         "compile.hxml"
       ],
@@ -67,6 +154,24 @@
     }
   ],
   "inputs": [
+    {
+      "id": "hxmlPath",
+      "type": "promptString",
+      "description": "HXML to run (relative to CWD)",
+      "default": "examples/todo-app/build-server.hxml"
+    },
+    {
+      "id": "localHxmlName",
+      "type": "promptString",
+      "description": "HXML filename in current file directory (e.g. build.hxml)",
+      "default": "build.hxml"
+    },
+    {
+      "id": "hxmlCwd",
+      "type": "promptString",
+      "description": "Working directory (folder containing the HXML)",
+      "default": "${workspaceFolder}"
+    },
     {
       "id": "snapshotName",
       "type": "promptString",

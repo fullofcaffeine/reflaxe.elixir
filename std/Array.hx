@@ -19,7 +19,7 @@ class Array<T> {
      * Creates a new Array
      */
     public function new(): Void {
-        untyped __elixir__("[]");
+    untyped __elixir__("[]");
     }
     
     /**

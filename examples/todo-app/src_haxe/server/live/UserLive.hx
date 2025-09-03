@@ -1,13 +1,13 @@
 package server.live;
 
-import contexts.Users;
+import HXX; // Import HXX for template rendering
 import contexts.Users.User;
-import phoenix.Phoenix.LiveView;  // Use the comprehensive Phoenix module version
-import phoenix.LiveSocket;  // Type-safe socket wrapper
-import phoenix.Phoenix.Socket;
+import contexts.Users;
 import ecto.Changeset;
-import elixir.types.Result;  // For type-safe error handling
-import HXX;  // Import HXX for template rendering
+import elixir.types.Result; // For type-safe error handling
+import phoenix.LiveSocket; // Type-safe socket wrapper
+import phoenix.Phoenix.LiveView; // Use the comprehensive Phoenix module version
+import phoenix.Phoenix.Socket;
 
 // HXX template calls are processed at compile-time by the Reflaxe.Elixir compiler
 
@@ -400,7 +400,7 @@ class UserLive {
                     </p>
                 </div>
             <% end %>
-        </div>
+    </div>
         ');
     }
     
