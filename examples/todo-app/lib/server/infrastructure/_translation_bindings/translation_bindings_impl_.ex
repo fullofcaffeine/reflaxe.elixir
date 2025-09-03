@@ -1,12 +1,10 @@
 defmodule TranslationBindings_Impl_ do
   defp _new(map) do
-    this1 = nil
     this1 = map
     this1
   end
   def create() do
     map = %{}
-    this1 = nil
     this1 = map
     this1
   end
