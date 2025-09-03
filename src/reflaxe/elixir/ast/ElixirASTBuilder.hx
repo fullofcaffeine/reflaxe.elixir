@@ -2806,21 +2806,10 @@ class ElixirASTBuilder {
         // Transform compiler-generated temporary variables like _g, _g1, etc.
         // These are created by Haxe's desugaring and should be cleaned up
         // to remove the underscore prefix since they're actually used variables
-        // BUT: Keep the unique suffix to avoid shadowing
         if (name.charAt(0) == "_" && name.charAt(1) == "g") {
-            // Keep unique suffixes to prevent shadowing
+            // Remove the underscore but keep the rest for uniqueness
             // _g -> g, _g1 -> g1, _g_1 -> g_1
-            var result = name.substr(1); // Remove leading underscore
-            
-            // If it's just "g" without a suffix, we need to make it unique
-            // to prevent shadowing in nested contexts
-            if (result == "g") {
-                // Use a counter or context-based suffix
-                // For now, we'll keep the simple "g" and let Elixir handle the warning
-                // A proper fix would require tracking scope context
-                return result;
-            }
-            return result;
+            return name.substr(1);
         }
         
         // Simple snake_case conversion for regular variables

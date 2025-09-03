@@ -1,5 +1,5 @@
 defmodule HttpStatusTools do
-  def to_int(_status) do
+  def to_int(status) do
     case (status.elem(0)) do
       0 ->
         200

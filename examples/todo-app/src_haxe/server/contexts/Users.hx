@@ -166,14 +166,6 @@ class Users {
     }
     
     /**
-     * Get users with their posts (preload association)
-     */
-    static function usersWithPosts(): Array<User> {
-        // Query DSL implementation will be handled by future @:query annotation
-        return [];
-    }
-    
-    /**
      * Get user statistics
      */
     public static function userStats(): UserStats {

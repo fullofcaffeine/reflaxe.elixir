@@ -8,7 +8,7 @@ defmodule TodoPubSub do
   def parse_message(msg) do
     {:ParseWithConverter, msg, TodoPubSub.parseMessageImpl}
   end
-  defp topic_to_string(_topic) do
+  defp topic_to_string(topic) do
     case (topic.elem(0)) do
       0 ->
         "todo:updates"
@@ -18,7 +18,7 @@ defmodule TodoPubSub do
         "system:notifications"
     end
   end
-  defp message_to_elixir(_message) do
+  defp message_to_elixir(message) do
     base_payload = case (message.elem(0)) do
   0 ->
     g = message.elem(1)
@@ -103,7 +103,7 @@ end
         :none
     end
   end
-  defp bulk_action_to_string(_action) do
+  defp bulk_action_to_string(action) do
     case (action.elem(0)) do
       0 ->
         "complete_all"
@@ -139,7 +139,7 @@ end
         :none
     end
   end
-  defp alert_level_to_string(_level) do
+  defp alert_level_to_string(level) do
     case (level.elem(0)) do
       0 ->
         "info"
