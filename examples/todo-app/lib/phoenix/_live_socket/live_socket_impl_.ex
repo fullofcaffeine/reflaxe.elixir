@@ -4,7 +4,7 @@ defmodule LiveSocket_Impl_ do
     this1 = socket
     this1
   end
-  def pipe(socket, fn) do
-    fn.(socket)
+  def pipe(socket, func) do
+    func.(socket)
   end
 end

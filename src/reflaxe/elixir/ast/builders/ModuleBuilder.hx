@@ -42,6 +42,7 @@ import reflaxe.elixir.ast.NameUtils;
  * - @:genserver - GenServer behavior module
  * - @:router - Phoenix.Router module with routing DSL
  * - @:controller - Phoenix.Controller module with action functions
+ * - @:presence - Phoenix.Presence module with tracking and listing functions
  * 
  * METADATA FIELDS SET:
  * - isEndpoint: Boolean flag for @:endpoint annotation
@@ -52,6 +53,7 @@ import reflaxe.elixir.ast.NameUtils;
  * - isGenServer: Boolean flag for @:genserver annotation
  * - isRouter: Boolean flag for @:router annotation
  * - isController: Boolean flag for @:controller annotation
+ * - isPresence: Boolean flag for @:presence annotation
  * - appName: String with application name (for endpoint/application)
  * - tableName: String with database table name (for schema)
  * 
@@ -76,7 +78,6 @@ class ModuleBuilder {
      */
     public static function buildClassModule(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
         #if debug_module_builder
-        trace('[ModuleBuilder] Building module for class: ${classType.name}');
         #end
         
         // Extract module name
@@ -108,6 +109,9 @@ class ModuleBuilder {
         } else if (metadata.isApplication) {
             // For @:application, build OTP application structure
             buildApplicationBody(classType, varFields, funcFields);
+        } else if (metadata.isPresence) {
+            // For @:presence, build regular module body - transformer will add Phoenix.Presence
+            buildRegularModuleBody(classType, varFields, funcFields);
         } else {
             // Regular module
             buildRegularModuleBody(classType, varFields, funcFields);
@@ -124,7 +128,6 @@ class ModuleBuilder {
         reflaxe.elixir.ast.ElixirASTBuilder.currentModule = previousModule;
         
         #if debug_module_builder
-        trace('[ModuleBuilder] Built module AST with metadata: ${metadata}');
         #end
         
         return moduleAST;
@@ -162,7 +165,6 @@ class ModuleBuilder {
             metadata.isEndpoint = true;
             metadata.appName = extractAppName(classType);
             #if debug_module_builder
-            trace('[ModuleBuilder] Detected @:endpoint annotation, appName: ${metadata.appName}');
             #end
         }
         
@@ -170,7 +172,6 @@ class ModuleBuilder {
         if (classType.meta.has(":liveview")) {
             metadata.isLiveView = true;
             #if debug_module_builder
-            trace('[ModuleBuilder] Detected @:liveview annotation');
             #end
         }
         
@@ -179,7 +180,6 @@ class ModuleBuilder {
             metadata.isSchema = true;
             metadata.tableName = extractTableName(classType);
             #if debug_module_builder
-            trace('[ModuleBuilder] Detected @:schema annotation, table: ${metadata.tableName}');
             #end
         }
         
@@ -188,7 +188,6 @@ class ModuleBuilder {
             metadata.isApplication = true;
             metadata.appName = extractAppName(classType);
             #if debug_module_builder
-            trace('[ModuleBuilder] Detected @:application annotation');
             #end
         }
         
@@ -196,7 +195,6 @@ class ModuleBuilder {
         if (classType.meta.has(":genserver")) {
             metadata.isGenServer = true;
             #if debug_module_builder
-            trace('[ModuleBuilder] Detected @:genserver annotation');
             #end
         }
         
@@ -204,7 +202,6 @@ class ModuleBuilder {
         if (classType.meta.has(":router")) {
             metadata.isRouter = true;
             #if debug_module_builder
-            trace('[ModuleBuilder] Detected @:router annotation');
             #end
         }
         
@@ -213,8 +210,13 @@ class ModuleBuilder {
             metadata.isController = true;
             metadata.appName = extractAppName(classType);
             #if debug_module_builder
-            trace('[ModuleBuilder] Detected @:controller annotation, appName: ${metadata.appName}');
             #end
+        }
+        
+        // Check for Presence
+        if (classType.meta.has(":presence")) {
+            metadata.isPresence = true;
+            metadata.appName = extractAppName(classType);
         }
         
         // Check for PhoenixWeb (supports both @:phoenixWeb and @:phoenixWebModule)
@@ -222,7 +224,6 @@ class ModuleBuilder {
             metadata.isPhoenixWeb = true;
             metadata.appName = extractAppName(classType);
             #if debug_module_builder
-            trace('[ModuleBuilder] Detected @:phoenixWeb/@:phoenixWebModule annotation, appName: ${metadata.appName}');
             #end
         }
         
@@ -294,13 +295,11 @@ class ModuleBuilder {
         var statements = [];
         
         #if debug_module_builder
-        trace('[ModuleBuilder] Building controller body with ${funcFields.length} functions');
         #end
         
         // Compile all functions (public and private) in controllers
         for (func in funcFields) {
             #if debug_module_builder
-            trace('[ModuleBuilder] Checking function: ${func.name}, isPublic: ${func.isPublic}, hasExpr: ${func.expr() != null}');
             #end
             
             if (func.expr() != null) {
@@ -349,7 +348,6 @@ class ModuleBuilder {
         var statements = [];
         
         #if debug_module_builder
-        trace('[ModuleBuilder] Building LiveView body with ${funcFields.length} functions');
         #end
         
         // Common Phoenix.Component functions that shouldn't be compiled as local functions
@@ -365,13 +363,11 @@ class ModuleBuilder {
         // Add functions (mount, handle_event, render, etc.)
         for (func in funcFields) {
             #if debug_module_builder
-            trace('[ModuleBuilder] Checking function: ${func.name}, isPublic: ${func.isPublic}, hasExpr: ${func.expr() != null}');
             #end
             
             // Skip Phoenix.Component placeholder functions
             if (phoenixComponentFunctions.indexOf(func.name) != -1) {
                 #if debug_module_builder
-                trace('[ModuleBuilder] Skipping Phoenix.Component placeholder function: ${func.name}');
                 #end
                 continue;
             }
@@ -408,7 +404,6 @@ class ModuleBuilder {
                     default:
                         // Not a function, skip
                         #if debug_module_builder
-                        trace('[ModuleBuilder] Skipping non-function field: ${func.name}');
                         #end
                 }
             }
@@ -424,9 +419,7 @@ class ModuleBuilder {
         var statements = [];
         
         #if debug_module_builder
-        trace('[ModuleBuilder] buildSchemaBody called with ${funcFields.length} functions');
         for (func in funcFields) {
-            trace('[ModuleBuilder] - Function: ${func.name}, isPublic: ${func.isPublic}, hasExpr: ${func.expr() != null}');
         }
         #end
         

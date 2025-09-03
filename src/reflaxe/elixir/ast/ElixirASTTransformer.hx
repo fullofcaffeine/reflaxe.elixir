@@ -154,6 +154,13 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.liveViewTransformPass
         });
         
+        passes.push({
+            name: "PresenceTransform",
+            description: "Transform @:presence modules into Phoenix.Presence structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.presenceTransformPass
+        });
+        
         // Phoenix Component import pass (MUST run AFTER LiveViewTransform to detect LiveView use statements)
         passes.push({
             name: "PhoenixComponentImport",
@@ -215,6 +222,14 @@ class ElixirASTTransformer {
             pass: constantFoldingPass
         });
         #end
+        
+        // Conditional reassignment pass (should run before pipeline optimization)
+        passes.push({
+            name: "ConditionalReassignment",
+            description: "Convert conditional reassignments to functional style",
+            enabled: true,
+            pass: conditionalReassignmentPass
+        });
         
         // Pipeline optimization pass
         #if !disable_pipeline_optimization
@@ -1850,6 +1865,9 @@ class ElixirASTTransformer {
         // x = f(x, ...)
         // x = g(x, ...)
         // x = h(x, ...)
+        // Also handles remote calls like:
+        // x = Module.f(x, ...)
+        // x = Module.g(x, ...)
         
         if (expressions.length < 2) return null;
         
@@ -1874,6 +1892,27 @@ class ElixirASTTransformer {
                                                 func: func,
                                                 args: args.slice(1),
                                                 target: target
+                                            });
+                                            lastExpr = expr;
+                                            continue;
+                                        }
+                                    default:
+                                }
+                            }
+                        case ERemoteCall(module, func, args):
+                            // Handle remote calls like EctoQuery_Impl_.where(query, ...)
+                            if (args.length > 0) {
+                                switch(args[0].def) {
+                                    case EVar(argName) if (argName == name):
+                                        // Found a pipeline candidate for remote call
+                                        if (baseVar == null) {
+                                            baseVar = name;
+                                        }
+                                        if (baseVar == name) {
+                                            pipelineOps.push({
+                                                func: func,
+                                                args: args.slice(1),
+                                                target: module  // Use module as target
                                             });
                                             lastExpr = expr;
                                             continue;
@@ -1919,6 +1958,105 @@ class ElixirASTTransformer {
         }
         
         return null;
+    }
+    
+    /**
+     * Conditional reassignment transformation pass
+     * 
+     * WHY: Elixir warns when variables are reassigned (shadowing)
+     * WHAT: Transform conditional reassignments to functional style
+     * HOW: Make if blocks return the new value instead of reassigning
+     * 
+     * Example transformation:
+     * ```
+     * if (condition) {
+     *   query = query.where(...);
+     * }
+     * ```
+     * Becomes:
+     * ```
+     * query = if (condition) do
+     *   query.where(...)
+     * else
+     *   query
+     * end
+     * ```
+     */
+    static function conditionalReassignmentPass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EBlock(expressions):
+                    // Transform each if statement in the block
+                    var transformed = [];
+                    for (expr in expressions) {
+                        switch(expr.def) {
+                            case EIf(cond, thenBranch, null):  // If without else
+                                // Check if the then branch is a single reassignment
+                                switch(thenBranch.def) {
+                                    case EMatch(PVar(varName), value):
+                                        // Check if this is reassigning to an existing variable
+                                        // by looking if the value references the same variable
+                                        if (referencesVariable(value, varName)) {
+                                            // Transform to functional style: var = if cond do new_value else var end
+                                            var newIf = makeAST(EIf(
+                                                cond,
+                                                value,  // Return the new value
+                                                makeAST(EVar(varName))  // Return original variable
+                                            ));
+                                            transformed.push(makeAST(EMatch(PVar(varName), newIf)));
+                                        } else {
+                                            transformed.push(expr);
+                                        }
+                                    default:
+                                        transformed.push(expr);
+                                }
+                            default:
+                                transformed.push(expr);
+                        }
+                    }
+                    return makeASTWithMeta(EBlock(transformed), node.metadata, node.pos);
+                    
+                default:
+                    return node;
+            }
+        });
+    }
+    
+    /**
+     * Check if an AST node references a specific variable
+     */
+    static function referencesVariable(ast: ElixirAST, varName: String): Bool {
+        var found = false;
+        
+        function visitor(node: ElixirAST): Void {
+            if (found) return;
+            
+            switch(node.def) {
+                case EVar(name) if (name == varName):
+                    found = true;
+                case ERemoteCall(_, _, args):
+                    // Check if first argument is the variable
+                    if (args.length > 0) {
+                        switch(args[0].def) {
+                            case EVar(name) if (name == varName):
+                                found = true;
+                            default:
+                                for (arg in args) {
+                                    visitor(arg);
+                                }
+                        }
+                    }
+                default:
+                    // Recursively visit child nodes
+                    transformAST(node, function(n) { 
+                        visitor(n); 
+                        return n; 
+                    });
+            }
+        }
+        
+        visitor(ast);
+        return found;
     }
     
     /**
