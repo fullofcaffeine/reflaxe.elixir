@@ -52,9 +52,6 @@ end
   def search_users(_term) do
     []
   end
-  defp users_with_posts() do
-    []
-  end
   def user_stats() do
     %{:total => 0, :active => 0, :inactive => 0}
   end

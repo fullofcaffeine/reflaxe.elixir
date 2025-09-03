@@ -104,10 +104,13 @@ class Query {
      * @return The query with where conditions added
      */
     public static function whereAll<T>(query: EctoQuery<T>, conditions: Map<String, Dynamic>): EctoQuery<T> {
-        // Use Elixir's Enum.reduce to iterate over Map entries properly
-        // This avoids Haxe's iterator desugaring issues
+        // Use Enum.reduce to build up the query with field/2 function for dynamic field access
+        // This is the idiomatic way to handle dynamic field names in Ecto
         var elixirQuery = untyped __elixir__(
-            'Enum.reduce(Map.to_list({0}), {1}, fn {field, value}, acc -> Ecto.Query.where(acc, [{field}: value]) end)',
+            'Enum.reduce(Map.to_list({0}), {1}, fn {field_name, value}, acc ->
+                import Ecto.Query
+                from(q in acc, where: field(q, ^String.to_existing_atom(field_name)) == ^value)
+            end)',
             conditions, query.toElixirQuery()
         );
         return new EctoQuery<T>(elixirQuery);

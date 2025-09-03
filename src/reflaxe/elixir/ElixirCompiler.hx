@@ -1195,9 +1195,20 @@ class ElixirCompiler extends GenericCompiler<
                 if (isParameterUsedInExpr(paramId, ethen)) return true;
                 if (eelse != null && isParameterUsedInExpr(paramId, eelse)) return true;
             case TSwitch(e, cases, edef):
+                // Check if the switch expression uses the parameter
                 if (isParameterUsedInExpr(paramId, e)) return true;
+                
+                // Also check inside case expressions - but NOT in the pattern extraction
+                // The pattern extraction (TEnumParameter) creates new variables that shadow parameters
                 for (c in cases) {
+                    // Check the case body
                     if (isParameterUsedInExpr(paramId, c.expr)) return true;
+                    
+                    // Check if any of the case patterns reference the parameter
+                    // This handles switches on the parameter itself
+                    for (v in c.values) {
+                        if (isParameterUsedInExpr(paramId, v)) return true;
+                    }
                 }
                 if (edef != null && isParameterUsedInExpr(paramId, edef)) return true;
             case TReturn(e):
@@ -1231,6 +1242,12 @@ class ElixirCompiler extends GenericCompiler<
             case TCast(e, _):
                 return isParameterUsedInExpr(paramId, e);
             case TMeta(_, e):
+                return isParameterUsedInExpr(paramId, e);
+            case TEnumParameter(e, _, _):
+                // Check if the enum being deconstructed is our parameter
+                return isParameterUsedInExpr(paramId, e);
+            case TEnumIndex(e):
+                // Check if we're getting the index of our parameter (for switch)
                 return isParameterUsedInExpr(paramId, e);
             default:
                 // For other cases, assume not used
