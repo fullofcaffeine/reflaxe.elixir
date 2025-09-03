@@ -1,0 +1,4 @@
+-cp .
+-main Main
+--no-output
+# This test expects compilation to FAIL with type errors
