@@ -1,0 +1,16 @@
+-lib genes
+-lib hxnodejs
+-lib tink_unittest
+
+-debug
+-D dts
+-D genes.unchanged_no_rewrite
+-D no-deprecation-warnings
+-dce full
+-main tests.Run
+-js bin/tests.js
+--times 
+-D macro-times
+-D js-es=6
+
+-D genes.enum_discriminator=$kind
