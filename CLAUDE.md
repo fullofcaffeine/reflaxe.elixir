@@ -61,8 +61,8 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 
 **The AST-based pipeline (src/reflaxe/elixir/ast/) is the DEFAULT compilation path.**
 - When debugging issues, ALWAYS check ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
-- The old ElixirCompiler.hx string-based code is LEGACY and will be removed
-- Do NOT waste time looking at compileExpression() in ElixirCompiler.hx for current issues
+- The compiler uses a pure AST pipeline - all compilation goes through AST generation
+- ALL compilation methods return ElixirAST nodes that are transformed and printed
 
 ### 1. Primary AST-Based Pipeline (DEFAULT ✅)
 - Three-phase: TypedExpr → ElixirAST → Transformations → String
@@ -72,10 +72,10 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **Files**: ElixirASTBuilder.hx, ElixirASTPrinter.hx, ElixirASTTransformer.hx
 
 **⚠️ ARCHITECTURAL UPDATE: Complete Migration to AST Pipeline (August 2025)**
-- **ALL 75 helper compilers have been REMOVED** - No more string-based compilation
-- **The AST pipeline is now the ONLY compilation path** - Everything goes through it
-- **NO MORE HELPER FILES** - All functionality implemented as transformation passes
-- **ADDING NEW FEATURES**: Create a transformation pass in ElixirASTTransformer, NOT a helper file
+- **The compiler now extends GenericCompiler<ElixirAST>** - Pure AST-based architecture
+- **The AST pipeline is the ONLY compilation path** - Everything goes through it
+- **All functionality is AST-based** - No string concatenation for code generation
+- **ADDING NEW FEATURES**: Create a transformation pass in ElixirASTTransformer
 - **See**: [`docs/05-architecture/AST_PIPELINE_MIGRATION.md`](docs/05-architecture/AST_PIPELINE_MIGRATION.md) - Complete migration documentation
 - Example: Schema compilation → schemaTransformPass in ElixirASTTransformer
 
@@ -86,10 +86,6 @@ Enable developers to **write business logic once in Haxe and deploy it anywhere*
 - **Context-Aware Transforms**: Use metadata for intelligent decisions (parent class info, etc.)
 - **Multi-Pass Optimization**: Sequential transformation passes that build on each other
 
-### 2. ~~Legacy String-Based Pipeline~~ (REMOVED August 2025)
-- ~~Direct TypedExpr → String generation~~ - COMPLETELY REMOVED
-- ~~75 helper files~~ - ALL DELETED
-- No longer accessible - AST pipeline is the ONLY path
 
 ### Debug Flags for AST Pipeline
 ```bash
@@ -532,8 +528,8 @@ When documenting new features or fixes:
 haxe.elixir/                          # Project root (Reflaxe convention)
 ├── src/                              # 🔧 COMPILER SOURCE (macro-time code)
 │   └── reflaxe/elixir/               # The actual transpiler implementation
-│       ├── ElixirCompiler.hx         # Main compiler extending DirectToStringCompiler
-│       └── helpers/                  # Specialized compilation helpers
+│       ├── ElixirCompiler.hx         # Main compiler extending GenericCompiler<ElixirAST>
+│       └── ast/                      # AST builder, transformer, and printer
 ├── std/                              # 📚 STANDARD LIBRARY (compile-time classpath)
 │   ├── elixir/                       # Elixir stdlib externs (IO, File, etc.)
 │   ├── phoenix/                      # Phoenix framework externs  
@@ -754,7 +750,7 @@ if (node.metadata?.isIdiomaticEnum == true) { // ONLY check metadata
 **The Reflaxe way:**
 - ✅ **Use Reflaxe's preprocessor system** - MarkUnusedVariablesImpl for unused variable detection
 - ✅ **Check established metadata** - Look for `-reflaxe.unused` instead of inventing detection
-- ✅ **Follow DirectToStringCompiler patterns** - Extend established base class methods
+- ✅ **Follow GenericCompiler patterns** - Extend established base class methods
 - ✅ **Study reference implementations** - Check `/haxe.elixir.reference/reflaxe/` for patterns
 
 **LESSON LEARNED: Orphaned Variable Detection**
@@ -792,7 +788,7 @@ if (tvar.meta != null && tvar.meta.has("-reflaxe.unused")) {
 
 **The composition approach:**
 - ✅ **Implement compileExpressionImpl** - The abstract method Reflaxe requires
-- ✅ **Trust parent orchestration** - DirectToStringCompiler handles injection, hooks, etc.
+- ✅ **Trust parent orchestration** - GenericCompiler handles injection, hooks, etc.
 - ✅ **Let Reflaxe manage flow** - Don't intercept unless adding specific value
 - ✅ **Compose behaviors** - Add functionality through delegation, not overriding
 - ✅ **Respect the pipeline** - Each phase has clear responsibilities
@@ -818,7 +814,7 @@ public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<Str
 - **Clarity**: Clear separation between orchestration and implementation
 - **Future-proofing**: Parent class improvements automatically benefit us
 
-**Remember**: DirectToStringCompiler is a mature orchestrator. Trust it to manage the compilation flow while you focus on Elixir-specific implementation.
+**Remember**: GenericCompiler is a mature orchestrator. Trust it to manage the compilation flow while you focus on Elixir-specific implementation.
 
 ## ⚠️ CRITICAL: NO ENUM-SPECIFIC HARDCODING EVER
 
