@@ -37,7 +37,7 @@ defmodule ChangesetTools do
 end)
     error_map
   end
-  def to_option(result) do
+  def to_option(_result) do
     case (result.elem(0)) do
       0 ->
         g = result.elem(1)
@@ -48,7 +48,7 @@ end)
         :none
     end
   end
-  def unwrap(result) do
+  def unwrap(_result) do
     case (result.elem(0)) do
       0 ->
         g = result.elem(1)
@@ -61,7 +61,7 @@ end)
         throw("Changeset has errors: " <> (if (errors == nil), do: "null", else: errors.toString()))
     end
   end
-  def unwrap_or(result, default_value) do
+  def unwrap_or(_result, default_value) do
     case (result.elem(0)) do
       0 ->
         g = result.elem(1)

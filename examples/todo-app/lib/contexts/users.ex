@@ -49,7 +49,7 @@ end
   def delete_user(user) do
     {:Delete, user}
   end
-  def search_users(term) do
+  def search_users(_term) do
     []
   end
   defp users_with_posts() do

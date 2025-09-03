@@ -56,9 +56,6 @@ end)
     ret = iterator_loop(struct.root, [])
     ret.iterator()
   end
-  def key_value_iterator(struct) do
-    MapKeyValueIterator.new(struct)
-  end
   def keys(struct) do
     ret = struct.keysLoop(struct.root, [])
     ret.iterator()
@@ -124,7 +121,7 @@ end)
     if (t.left == nil), do: t.right
     struct.balance(struct.removeMinBinding(t.left), t.key, t.value, t.right)
   end
-  defp balance(struct, l, k, v, r) do
+  defp balance(struct, l, _k, _v, r) do
     hl = l.get_height()
     hr = r.get_height()
     if (hl > hr + 2) do

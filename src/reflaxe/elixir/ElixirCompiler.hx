@@ -7,6 +7,7 @@ import haxe.macro.Type;
 import haxe.macro.Type.TConstant;
 import haxe.macro.Type.AbstractType;
 import haxe.macro.Type.DefType;
+import haxe.macro.Type.MethodKind;
 import haxe.macro.Expr.Binop;
 import haxe.macro.Expr.Unop;
 import haxe.macro.Expr;
@@ -569,6 +570,16 @@ class ElixirCompiler extends GenericCompiler<
         for (func in funcFields) {
             if (func.field.expr() == null) continue;
             
+            // Skip inline functions - they should be inlined at call sites, not generated as functions
+            // This is particularly important for abstract type getters marked as 'inline'
+            // Check if the function kind is MethInline
+            switch(func.field.kind) {
+                case FMethod(MethInline):
+                    continue; // Skip inline functions
+                case _:
+                    // Continue with normal function generation
+            }
+            
             // Build function AST
             // Convert function name to snake_case for idiomatic Elixir
             var funcName = reflaxe.elixir.ast.NameUtils.toSnakeCase(func.field.name);
@@ -606,9 +617,8 @@ class ElixirCompiler extends GenericCompiler<
                         
                         // Check if the parameter is used in the function body
                         // If not, prefix with underscore to follow Elixir conventions
-                        // For now, only prefix with underscore if the parameter has the -reflaxe.unused metadata
-                        // The isParameterUsedInExpr check is not reliable for all cases yet
-                        var elixirParamName = if (arg.v.meta != null && arg.v.meta.has("-reflaxe.unused")) {
+                        var isUsed = isParameterUsedInExpr(arg.v.id, tfunc.expr);
+                        var elixirParamName = if (!isUsed || (arg.v.meta != null && arg.v.meta.has("-reflaxe.unused"))) {
                             "_" + baseName;
                         } else {
                             baseName;

@@ -1,8 +1,4 @@
 defmodule EctoQuery_Impl_ do
-  def _new(query) do
-    this1 = query
-    this1
-  end
   def where(this1, field, value) do
     new_query = Ecto.Query.where(this1, [field: value])
     this1 = new_query
@@ -26,9 +22,6 @@ end
   def offset(this1, count) do
     new_query = Ecto.Query.offset(this1, count)
     this1 = new_query
-    this1
-  end
-  def to_elixir_query(this1) do
     this1
   end
 end

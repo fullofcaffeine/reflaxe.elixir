@@ -213,9 +213,6 @@ end
     binary = :unicode.characters_to_binary(s, :utf8)
     length = Bytes.new(byte_size(binary), binary)
   end
-  def fast_get(b, pos) do
-    :binary.at(b, pos)
-  end
   def of_hex(s) do
     binary = Base.decode16!(s, case: :mixed)
     length = Bytes.new(byte_size(binary), binary)
