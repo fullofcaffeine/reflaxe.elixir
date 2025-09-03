@@ -9,18 +9,44 @@ using haxe.macro.Tools;
 #end
 
 /**
- * Type-safe wrapper around Phoenix.LiveView.Socket with idiomatic assign operations.
+ * LiveSocket - Type-safe wrapper around Phoenix.LiveView.Socket with idiomatic assign operations
  * 
  * LiveSocket provides multiple ways to update assigns while maintaining compile-time type safety.
  * All field names are validated at compile time and automatically converted to snake_case for Phoenix.
  * 
+ * ## Purpose & Design Philosophy
+ * 
+ * LiveSocket is an abstract type that wraps Socket<T> to provide a type-safe, ergonomic API
+ * for LiveView development. It solves the #1 source of LiveView bugs: typos in assign keys.
+ * 
+ * ## Relationship with Socket<T>
+ * 
+ * - **Socket<T>** is the base Phoenix type - what framework functions expect
+ * - **LiveSocket<T>** is an abstract wrapper adding type-safe methods
+ * - **Seamless conversion**: No casting needed, implicit in both directions
+ * 
+ * ```haxe
+ * // Phoenix functions expect Socket
+ * function mount(params, session, socket: Socket<MyAssigns>) {
+ *     // Implicit conversion to LiveSocket for type-safe operations
+ *     var liveSocket: LiveSocket<MyAssigns> = socket;
+ *     
+ *     // Chain operations with full type safety
+ *     return liveSocket
+ *         .assign(_.userId, 123)        // Validated at compile time!
+ *         .merge({name: "Alice", age: 30})
+ *         .putFlash(Info, "Welcome!");
+ *     // Returns Socket<MyAssigns> implicitly
+ * }
+ * ```
+ * 
  * ## Key Features
  * 
- * - **Compile-time validation**: Field names are checked against the assigns type
- * - **Automatic snake_case conversion**: camelCase fields become snake_case atoms
- * - **Multiple usage styles**: Choose the API that feels most natural
- * - **Zero runtime overhead**: All transformations happen at compile time
- * - **IntelliSense support**: Full IDE autocomplete for field names
+ * - **Compile-time validation**: Field names checked against assigns type - typos caught early!
+ * - **Automatic snake_case conversion**: `editingTodo` → `:editing_todo` for Phoenix
+ * - **Multiple usage styles**: Phoenix pipes, method chaining, or function calls
+ * - **Zero runtime overhead**: All transformations happen at compile time via macros
+ * - **IntelliSense support**: Full IDE autocomplete for field names and values
  * 
  * ## Usage Examples
  * 
@@ -148,6 +174,11 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * 2. Check that the value type matches the field type
 	 * 3. Convert `editingTodo` to `editing_todo` for Phoenix
 	 * 4. Generate: `Phoenix.LiveView.assign(socket, :editing_todo, todo)`
+	 * 
+	 * **Note on Syntax**: The underscore pattern (`_.field`) provides compile-time safety
+	 * but may feel unusual. We're exploring more intuitive alternatives for future versions.
+	 * See [Future Assign Syntax Ideas](../../docs/07-patterns/future-assign-syntax-ideas.md)
+	 * for proposals like field descriptors and typed builders.
 	 * 
 	 * @param fieldExpr Field access expression (_.fieldName)
 	 * @param value The value to assign

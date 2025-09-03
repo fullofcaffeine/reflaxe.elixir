@@ -134,8 +134,8 @@ class TodoLive {
 			onlineUsers: new Map()  // Will be populated by handle_info
 		};
 		
-		// The TAssigns type parameter will be inferred as TodoLiveAssigns
-		var updatedSocket = LiveView.assign(presenceSocket, assigns);
+		// Use assign_multiple for bulk assigns (full object)
+		var updatedSocket = LiveView.assignMultiple(presenceSocket, assigns);
 		
 		return Ok(updatedSocket);
 	}
@@ -241,7 +241,7 @@ class TodoLive {
 							case Error: phoenix.Phoenix.FlashType.Error;
 							case Critical: phoenix.Phoenix.FlashType.Error;
 						};
-						LiveView.put_flash(socket, flashType, message);
+						LiveView.putFlash(socket, flashType, message);
 				}
 			
 			case None:
@@ -282,33 +282,25 @@ class TodoLive {
 				
 			case Error(changeset):
 				// Handle validation errors
-				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo");
+				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo");
 		}
 	}
 	
 	// Legacy function for backward compatibility - will be removed
 	static function createNewTodo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo_params = {
+		// Convert EventParams (with String dates) to TodoParams (with Date type)
+		var todoParams: server.schemas.Todo.TodoParams = {
 			title: params.title,
 			description: params.description,
 			completed: false,
 			priority: params.priority != null ? params.priority : "medium",
-			dueDate: params.dueDate,
+			dueDate: params.dueDate != null ? Date.fromString(params.dueDate) : null,
 			tags: params.tags != null ? parseTags(params.tags) : [],
 			userId: socket.assigns.currentUser.id
 		};
 		
-		// Convert EventParams to ChangesetParams with type safety
-		// Convert event params to changeset params
-		var changesetParams = {
-			title: params.title,
-			description: params.description,
-			priority: params.priority,
-			dueDate: params.dueDate,
-			tags: params.tags,
-			completed: params.completed
-		};
-		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), changesetParams);
+		// Pass the properly typed TodoParams to changeset
+		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), todoParams);
 		
 		// Use type-safe Repo operations
 		switch (Repo.insert(changeset)) {
@@ -324,14 +316,13 @@ class TodoLive {
 				var todos = [todo].concat(socket.assigns.todos);
 				// Use LiveSocket for type-safe assigns manipulation
 				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-				var updatedSocket = liveSocket.merge({
+				return liveSocket.merge({
 					todos: todos,
 					showForm: false
-				});
-				return updatedSocket.putFlash(phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
+				}).putFlash(phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
 				
 			case Error(reason):
-				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
+				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
 		}
 	}
 	
@@ -355,7 +346,7 @@ class TodoLive {
 				return updateTodoInList(updatedTodo, socket);
 				
 			case Error(reason):
-				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
+				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
 		}
 	}
 	
@@ -377,7 +368,7 @@ class TodoLive {
 				return removeTodoFromList(id, socket);
 				
 			case Error(reason):
-				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to delete todo: " + reason);
+				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to delete todo: " + reason);
 		}
 	}
 	
@@ -401,7 +392,7 @@ class TodoLive {
 				return updateTodoInList(updatedTodo, socket);
 				
 			case Error(reason):
-				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
+				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
 		}
 	}
 	
@@ -472,21 +463,14 @@ class TodoLive {
 	// Missing helper functions
 	static function loadAndAssignTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var todos = loadTodos(socket.assigns.currentUser.id);
-		var currentAssigns = socket.assigns;
-		var completeAssigns: TodoLiveAssigns = {
+		// Use LiveSocket's merge for type-safe bulk updates
+		var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.merge({
 			todos: todos,
-			filter: currentAssigns.filter,
-			sortBy: currentAssigns.sortBy,
-			currentUser: currentAssigns.currentUser,
-			editingTodo: currentAssigns.editingTodo,
-			showForm: currentAssigns.showForm,
-			searchQuery: currentAssigns.searchQuery,
-			selectedTags: currentAssigns.selectedTags,
 			totalTodos: todos.length,
 			completedTodos: countCompleted(todos),
 			pendingTodos: countPending(todos)
-		};
-		return LiveView.assign(socket, completeAssigns);
+		});
 	}
 	
 	static function updateTodoInList(todo: server.schemas.Todo, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
@@ -495,7 +479,7 @@ class TodoLive {
 			return t.id == todo.id ? todo : t;
 		});
 		
-		// Use LiveSocket's merge for batch updates
+		// Use LiveSocket's merge for type-safe bulk updates
 		return socket.merge({
 			todos: updatedTodos,
 			totalTodos: updatedTodos.length,
@@ -561,11 +545,12 @@ class TodoLive {
 			selectedTags: currentAssigns.selectedTags,
 			totalTodos: updatedTodos.length,
 			completedTodos: updatedTodos.length,  // All are completed now
-			pendingTodos: 0  // None pending after bulk complete
+			pendingTodos: 0,  // None pending after bulk complete
+			onlineUsers: currentAssigns.onlineUsers  // Include onlineUsers field
 		};
-		var updatedSocket = LiveView.assign_multiple(socket, completeAssigns);
+		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
 		
-		return LiveView.put_flash(updatedSocket, phoenix.Phoenix.FlashType.Info, "All todos marked as completed!");
+		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "All todos marked as completed!");
 	}
 	
 	static function deleteCompletedTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -592,16 +577,17 @@ class TodoLive {
 			selectedTags: currentAssigns.selectedTags,
 			totalTodos: remaining.length,
 			completedTodos: 0,  // All completed ones deleted
-			pendingTodos: remaining.length  // Only pending remain
+			pendingTodos: remaining.length,  // Only pending remain
+			onlineUsers: currentAssigns.onlineUsers  // Include onlineUsers field
 		};
 		
-		var updatedSocket = LiveView.assign_multiple(socket, completeAssigns);
-		return LiveView.put_flash(updatedSocket, phoenix.Phoenix.FlashType.Info, "Completed todos deleted!");
+		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
+		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "Completed todos deleted!");
 	}
 	
 	// Additional helper functions with type-safe socket handling
 	static function startEditingOld(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo = find_todo(id, socket.assigns.todos);
+		var todo = findTodo(id, socket.assigns.todos);
 		return SafeAssigns.setEditingTodo(socket, todo);
 	}
 	
@@ -632,7 +618,7 @@ class TodoLive {
 				return loadAndAssignTodos(updatedSocket);
 				
 			case Error(changeset):
-				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
+				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo");
 		}
 	}
 	
@@ -641,17 +627,16 @@ class TodoLive {
 		var todo = socket.assigns.editingTodo;
 		if (todo == null) return socket;
 		
-		// Convert EventParams to ChangesetParams with type safety
-		// Convert event params to changeset params
-		var changesetParams = {
+		// Convert EventParams (with String dates) to TodoParams (with Date type)
+		var todoParams: server.schemas.Todo.TodoParams = {
 			title: params.title,
 			description: params.description,
 			priority: params.priority,
-			dueDate: params.dueDate,
-			tags: params.tags,
+			dueDate: params.dueDate != null ? Date.fromString(params.dueDate) : null,
+			tags: params.tags != null ? parseTags(params.tags) : null,
 			completed: params.completed
 		};
-		var changeset = server.schemas.Todo.changeset(todo, changesetParams);
+		var changeset = server.schemas.Todo.changeset(todo, todoParams);
 		
 		// Use type-safe Repo operations
 		switch (Repo.update(changeset)) {
@@ -665,10 +650,12 @@ class TodoLive {
 				}
 				
 				var updatedSocket = updateTodoInList(updatedTodo, socket);
-				return updatedSocket.merge({ editingTodo: null });
+				// Convert to LiveSocket to use assign for single field
+				var liveSocket: LiveSocket<TodoLiveAssigns> = updatedSocket;
+				return liveSocket.assign(_.editingTodo, null);
 				
 			case Error(reason):
-				return LiveView.put_flash(socket, phoenix.Phoenix.FlashType.Error, "Failed to save todo: " + reason);
+				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to save todo: " + reason);
 		}
 	}
 	

@@ -45,22 +45,26 @@ extern class Controller {
     /**
      * Put HTTP status code
      */
-    static function put_status(conn: Conn, status: HttpStatus): Conn;
+    @:native("put_status")
+    static function putStatus(conn: Conn, status: HttpStatus): Conn;
     
     /**
      * Put response header with validation
      */
-    static function put_resp_header(conn: Conn, key: String, value: String): Conn;
+    @:native("put_resp_header")
+    static function putRespHeader(conn: Conn, key: String, value: String): Conn;
     
     /**
      * Put flash message with type-safe message types
      */
-    static function put_flash(conn: Conn, type: FlashType, message: String): Conn;
+    @:native("put_flash")
+    static function putFlash(conn: Conn, type: FlashType, message: String): Conn;
     
     /**
      * Get flash message with optional type filter
      */
-    static function get_flash(conn: Conn, ?type: FlashType): Option<String>;
+    @:native("get_flash")
+    static function getFlash(conn: Conn, ?type: FlashType): Option<String>;
     
     /**
      * Assign values to the connection for templates
@@ -70,7 +74,8 @@ extern class Controller {
     /**
      * Assign multiple values at once
      */
-    static function assign_multiple<T>(conn: Conn, assigns: T): Conn;
+    @:native("assign")
+    static function assignMultiple<T>(conn: Conn, assigns: T): Conn;
 }
 
 /**
@@ -106,14 +111,14 @@ extern class LiveView {
      * 
      * @param TAssigns The type of socket assigns structure for this event operation
      */
-    static function handle_event<TAssigns>(event: String, params: EventParams, socket: Socket<TAssigns>): HandleEventResult<TAssigns>;
+    static function handleEvent<TAssigns>(event: String, params: EventParams, socket: Socket<TAssigns>): HandleEventResult<TAssigns>;
     
     /**
      * Handle info messages from processes
      * 
      * @param TAssigns The type of socket assigns structure for this info operation
      */
-    static function handle_info<TAssigns>(info: PubSubMessage, socket: Socket<TAssigns>): HandleInfoResult<TAssigns>;
+    static function handleInfo<TAssigns>(info: PubSubMessage, socket: Socket<TAssigns>): HandleInfoResult<TAssigns>;
     
     /**
      * Render the LiveView template with typed assigns
@@ -123,19 +128,48 @@ extern class LiveView {
     /**
      * Assign single value to the socket
      * 
+     * IMPORTANT: The value parameter is Dynamic because it can be any type.
+     * Phoenix.LiveView.assign/3 accepts any value for the given key.
+     * The key must be a string that will be converted to an atom in Elixir.
+     * 
+     * Example:
+     * ```haxe
+     * socket = LiveView.assign(socket, "user", currentUser);
+     * socket = LiveView.assign(socket, "count", 42);
+     * ```
+     * 
      * @param TAssigns The type of socket assigns structure
+     * @param key The assign key (will be converted to atom in Elixir)
+     * @param value The value to assign (can be any type)
      */
-    static function assign<TAssigns>(socket: Socket<TAssigns>, key: String, value: TAssigns): Socket<TAssigns>;
+    static function assign<TAssigns>(socket: Socket<TAssigns>, key: String, value: Dynamic): Socket<TAssigns>;
     
     /**
      * Assign multiple values to the socket using a map of assigns
      * 
-     * NOTE: This maps to Phoenix.LiveView.assign/2 with a map in Elixir
+     * IMPORTANT: The assigns parameter should be a partial object with only
+     * the fields you want to update. In Elixir, this becomes a map that gets
+     * merged with the existing assigns.
+     * 
+     * NOTE: This maps to Phoenix.LiveView.assign/2 with a map in Elixir.
+     * The @:native("assign") means this compiles to the same Elixir function
+     * as the single-value assign, just with different arity.
+     * 
+     * Example:
+     * ```haxe
+     * socket = LiveView.assign_multiple(socket, {
+     *     user: currentUser,
+     *     count: 42,
+     *     showForm: true
+     * });
+     * ```
      * 
      * @param TAssigns The type of socket assigns structure
+     * @param assigns Partial assigns object (only fields being updated)
      */
     @:native("assign")
-    static function assign_multiple<TAssigns>(socket: Socket<TAssigns>, assigns: TAssigns): Socket<TAssigns>;
+    @:native("assign")
+    static function assignMultiple<TAssigns>(socket: Socket<TAssigns>, assigns: Dynamic): Socket<TAssigns>;
     
     /**
      * Assign new values only if not already present
@@ -143,7 +177,8 @@ extern class LiveView {
      * @param TAssigns The type of socket assigns structure
      * @param TValue The type of the value being assigned
      */
-    static function assign_new<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, func: () -> TValue): Socket<TAssigns>;
+    @:native("assign_new")
+    static function assignNew<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, func: () -> TValue): Socket<TAssigns>;
     
     /**
      * Update an assign value with a function
@@ -158,14 +193,16 @@ extern class LiveView {
      * 
      * @param TAssigns The type of socket assigns structure
      */
-    static function push_patch<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns>;
+    @:native("push_patch")
+    static function pushPatch<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns>;
     
     /**
      * Push a redirect to the client
      * 
      * @param TAssigns The type of socket assigns structure
      */
-    static function push_redirect<TAssigns>(socket: Socket<TAssigns>, options: RedirectOptions): Socket<TAssigns>;
+    @:native("push_redirect")
+    static function pushRedirect<TAssigns>(socket: Socket<TAssigns>, options: RedirectOptions): Socket<TAssigns>;
     
     /**
      * Push an event to the client-side hooks
@@ -173,21 +210,24 @@ extern class LiveView {
      * @param TAssigns The type of socket assigns structure
      * @param TPayload The type of the event payload
      */
-    static function push_event<TAssigns, TPayload>(socket: Socket<TAssigns>, event: String, payload: TPayload): Socket<TAssigns>;
+    @:native("push_event")
+    static function pushEvent<TAssigns, TPayload>(socket: Socket<TAssigns>, event: String, payload: TPayload): Socket<TAssigns>;
     
     /**
      * Put flash message for LiveView
      * 
      * @param TAssigns The type of socket assigns structure
      */
-    static function put_flash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns>;
+    @:native("put_flash")
+    static function putFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns>;
     
     /**
      * Put temporary flash (cleared after next render)
      * 
      * @param TAssigns The type of socket assigns structure
      */
-    static function put_temp_flash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns>;
+    @:native("put_temp_flash")
+    static function putTempFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns>;
     
     /**
      * Clear flash messages from the socket
@@ -241,7 +281,7 @@ extern class LiveView {
      * @param TAssigns The type of socket assigns structure
      * @param TValue The type of the specific field being retrieved
      */
-    static function get_assign<TAssigns, TValue>(socket: Socket<TAssigns>, key: String): Option<TValue>;
+    static function getAssign<TAssigns, TValue>(socket: Socket<TAssigns>, key: String): Option<TValue>;
 }
 
 /**
@@ -257,24 +297,24 @@ extern class HTML {
     /**
      * Generate a form with changeset validation
      */
-    static function form_for<T>(changeset: Changeset<T>, action: String, options: FormOptions, content: Form<T> -> String): String;
+    static function formFor<T>(changeset: Changeset<T>, action: String, options: FormOptions, content: Form<T> -> String): String;
     
     /**
      * Generate form inputs with proper typing
      */
-    static function text_input<T>(form: Form<T>, field: String, options: InputOptions): String;
-    static function email_input<T>(form: Form<T>, field: String, options: InputOptions): String;
-    static function password_input<T>(form: Form<T>, field: String, options: InputOptions): String;
+    static function textInput<T>(form: Form<T>, field: String, options: InputOptions): String;
+    static function emailInput<T>(form: Form<T>, field: String, options: InputOptions): String;
+    static function passwordInput<T>(form: Form<T>, field: String, options: InputOptions): String;
     static function textarea<T>(form: Form<T>, field: String, options: TextareaOptions): String;
     static function select<T>(form: Form<T>, field: String, options: Array<SelectOption>, inputOptions: InputOptions): String;
     static function checkbox<T>(form: Form<T>, field: String, options: CheckboxOptions): String;
-    static function hidden_input<T>(form: Form<T>, field: String, options: InputOptions): String;
+    static function hiddenInput<T>(form: Form<T>, field: String, options: InputOptions): String;
     
     /**
      * Form labels and validation display
      */
     static function label<T>(form: Form<T>, field: String, options: LabelOptions): String;
-    static function error_tag<T>(form: Form<T>, field: String): String;
+    static function errorTag<T>(form: Form<T>, field: String): String;
     
     /**
      * Submit button with options
@@ -289,12 +329,12 @@ extern class HTML {
     /**
      * Escape HTML for security
      */
-    static function html_escape(text: String): String;
+    static function htmlEscape(text: String): String;
     
     /**
      * Generate CSRF token
      */
-    static function csrf_meta_tag(): String;
+    static function csrfMetaTag(): String;
 }
 
 /**
@@ -315,28 +355,66 @@ extern class Router {
     /**
      * Get current path from connection
      */
-    static function current_path(conn: Conn): String;
+    static function currentPath(conn: Conn): String;
     
     /**
      * Get current URL from connection
      */
-    static function current_url(conn: Conn): String;
+    static function currentUrl(conn: Conn): String;
     
     /**
      * Get current route from connection
      */
-    static function current_route(conn: Conn): Option<String>;
+    static function currentRoute(conn: Conn): Option<String>;
     
     /**
      * Check if current route matches pattern
      */
-    static function route_matches(conn: Conn, pattern: String): Bool;
+    static function routeMatches(conn: Conn, pattern: String): Bool;
 }
 
 /**
- * Phoenix.LiveView.Socket with complete type safety
+ * Phoenix.LiveView.Socket - The base Phoenix LiveView socket type
  * 
- * @param T The application-specific assigns structure type
+ * This is the fundamental socket type used by Phoenix LiveView for server-side
+ * state management. It represents the raw Phoenix.LiveView.Socket struct in Elixir.
+ * 
+ * ## Purpose
+ * - Holds the assigns (state) for a LiveView connection
+ * - Matches Phoenix's expected function signatures (mount, handle_event, etc.)
+ * - Provides the underlying storage for LiveView state
+ * 
+ * ## Relationship with LiveSocket
+ * - **Socket<T>** is the base type - what Phoenix functions expect and return
+ * - **LiveSocket<T>** is a type-safe wrapper that adds convenient methods
+ * - You can freely convert between them:
+ *   ```haxe
+ *   var socket: Socket<MyAssigns> = ...; 
+ *   var liveSocket: LiveSocket<MyAssigns> = socket;  // Add type-safe methods
+ *   var backToSocket: Socket<MyAssigns> = liveSocket; // Return to base type
+ *   ```
+ * 
+ * ## When to Use Socket vs LiveSocket
+ * - **Use Socket<T>** in function signatures that Phoenix expects
+ * - **Use LiveSocket<T>** when you need to manipulate assigns with type safety
+ * 
+ * ## Example
+ * ```haxe
+ * // Phoenix expects Socket in mount signature
+ * static function mount(params: Dynamic, session: Dynamic, socket: Socket<MyAssigns>) {
+ *     // Convert to LiveSocket for type-safe operations
+ *     var liveSocket: LiveSocket<MyAssigns> = socket;
+ *     
+ *     // Use LiveSocket's type-safe methods
+ *     return liveSocket.assign(_.userId, 123)
+ *                      .assign(_.userName, "Alice");
+ *     // Returns Socket<MyAssigns> automatically
+ * }
+ * ```
+ * 
+ * @param T The application-specific assigns structure type (e.g., TodoLiveAssigns)
+ * @see LiveSocket For the type-safe wrapper with convenient methods
+ * @see https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.Socket.html
  */
 @:native("Phoenix.LiveView.Socket")
 extern class Socket<T> {
@@ -395,12 +473,12 @@ extern class PubSub {
     /**
      * Broadcast with specific PubSub server
      */
-    static function broadcast_to<T>(pubsub: PubSubServer, topic: String, message: T): Result<Void, String>;
+    static function broadcastTo<T>(pubsub: PubSubServer, topic: String, message: T): Result<Void, String>;
     
     /**
      * Broadcast from a specific process (excludes sender)
      */
-    static function broadcast_from<T>(from: ProcessId, topic: String, message: T): Result<Void, String>;
+    static function broadcastFrom<T>(from: ProcessId, topic: String, message: T): Result<Void, String>;
     
     /**
      * Unsubscribe from a topic
@@ -410,7 +488,7 @@ extern class PubSub {
     /**
      * Unsubscribe with specific PubSub server
      */
-    static function unsubscribe_from(pubsub: PubSubServer, topic: String): Result<Void, String>;
+    static function unsubscribeFrom(pubsub: PubSubServer, topic: String): Result<Void, String>;
     
     /**
      * Get subscribers for a topic
@@ -420,12 +498,12 @@ extern class PubSub {
     /**
      * Local broadcast (single node only)
      */
-    static function local_broadcast<T>(topic: String, message: T): Result<Void, String>;
+    static function localBroadcast<T>(topic: String, message: T): Result<Void, String>;
     
     /**
      * Get subscription count for a topic
      */
-    static function subscription_count(topic: String): Int;
+    static function subscriptionCount(topic: String): Int;
 }
 
 // ============================================================================
@@ -737,7 +815,7 @@ enum MountResult<TAssigns> {
  * ## Generic Usage Pattern
  * 
  * ```haxe
- * public static function handle_event(event: String, params: EventParams, socket: Socket<MyAssigns>): HandleEventResult<MyAssigns> {
+ * public static function handleEvent(event: String, params: EventParams, socket: Socket<MyAssigns>): HandleEventResult<MyAssigns> {
  *     return switch (event) {
  *         case "create_todo":
  *             var updated_socket = socket.assign({todos: newTodos});
@@ -776,7 +854,7 @@ enum HandleEventResult<TAssigns> {
  * ## Generic Usage Pattern
  * 
  * ```haxe
- * public static function handle_info(info: PubSubMessage, socket: Socket<MyAssigns>): HandleInfoResult<MyAssigns> {
+ * public static function handleInfo(info: PubSubMessage, socket: Socket<MyAssigns>): HandleInfoResult<MyAssigns> {
  *     return switch (parseMessage(info)) {
  *         case Some(TodoCreated(todo)):
  *             var updated_todos = [todo].concat(socket.assigns.todos);
@@ -964,7 +1042,7 @@ extern class Presence {
      * @param diff The presence diff from the server
      * @return Updated socket
      */
-    static function handle_diff<TSocket, TMeta>(socket: TSocket, diff: PresenceDiff<TMeta>): TSocket;
+    static function handleDiff<TSocket, TMeta>(socket: TSocket, diff: PresenceDiff<TMeta>): TSocket;
 }
 
 /**
