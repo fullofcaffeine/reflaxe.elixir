@@ -37,6 +37,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - @:application - OTP Application with supervision tree configuration
  * - @:phoenixWeb - Phoenix Web module with router/controller/live_view macros
  * - @:controller - Phoenix.Controller with action functions
+ * - @:presence - Phoenix.Presence with tracking and listing callbacks
  * 
  * TRANSFORMATION PASSES:
  * 1. phoenixWebTransformPass - Adds defmacro definitions for Phoenix DSL
@@ -46,6 +47,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * 5. applicationTransformPass - Configures OTP Application callbacks
  * 6. controllerTransformPass - Sets up Phoenix.Controller use statement
  * 7. routerTransformPass - Sets up Phoenix.Router with pipelines and routes
+ * 8. presenceTransformPass - Sets up Phoenix.Presence use statement
  * 
  * METADATA FLOW:
  * 1. ModuleBuilder detects annotations and sets metadata flags
@@ -70,16 +72,12 @@ class AnnotationTransforms {
      */
     public static function endpointTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
-        trace('[AnnotationTransforms] EndpointTransformPass starting, checking for endpoint modules');
-        trace('[AnnotationTransforms] AST metadata: ${ast.metadata}');
         #end
         
         // Check the top-level node first for Endpoint modules
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isEndpoint == true):
                 #if debug_annotation_transforms
-                trace('[AnnotationTransforms] Transforming endpoint module: $name');
-                trace('[AnnotationTransforms] App name: ${ast.metadata.appName}');
                 #end
                 
                 var appName = ast.metadata.appName ?? "app";
@@ -233,7 +231,6 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isLiveView == true):
                 #if debug_annotation_transforms
-                trace('[AnnotationTransforms] Transforming LiveView module: $name');
                 #end
                 
                 var liveViewBody = buildLiveViewBody(name, body);
@@ -289,6 +286,66 @@ class AnnotationTransforms {
     }
     
     /**
+     * Transform @:presence modules into Phoenix.Presence structure
+     * 
+     * WHY: Phoenix Presence modules need use Phoenix.Presence with otp_app configuration
+     * WHAT: Adds use statement to enable track/update/list functions
+     * HOW: Detects isPresence metadata and adds Phoenix.Presence use statement
+     */
+    public static function presenceTransformPass(ast: ElixirAST): ElixirAST {
+        // Use transformNode for recursive transformation
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EDefmodule(name, body):
+                    if (node.metadata?.isPresence == true) {
+                        var presenceBody = buildPresenceBody(name, body);
+                        return makeASTWithMeta(EDefmodule(name, presenceBody), node.metadata, node.pos);
+                    }
+                    return node;
+                    
+                default:
+                    return node;
+            }
+        });
+    }
+    
+    /**
+     * Build Phoenix Presence module body with use statement
+     */
+    static function buildPresenceBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
+        var statements = [];
+        
+        // Extract app name from module name (e.g., TodoAppWeb.Presence -> todo_app)
+        var appName = extractAppName(moduleName);
+        
+        // use Phoenix.Presence, otp_app: :todo_app
+        var useStatement = makeAST(EUse("Phoenix.Presence", [
+            makeAST(EKeywordList([
+                {key: "otp_app", value: makeAST(EAtom(appName))}
+            ]))
+        ]));
+        statements.push(useStatement);
+        
+        // Add existing functions from the body
+        switch(existingBody.def) {
+            case EBlock(stmts):
+                for (stmt in stmts) {
+                    // Skip empty statements
+                    switch(stmt.def) {
+                        case ENil:
+                            // Skip
+                        default:
+                            statements.push(stmt);
+                    }
+                }
+            default:
+                statements.push(existingBody);
+        }
+        
+        return makeAST(EBlock(statements));
+    }
+    
+    /**
      * Transform @:router modules into Phoenix.Router structure
      * 
      * WHY: Phoenix routers require specific structure with use statement, pipelines, and scopes
@@ -297,13 +354,11 @@ class AnnotationTransforms {
      */
     public static function routerTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
-        trace('[AnnotationTransforms] RouterTransformPass starting');
         #end
         
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isRouter == true):
                 #if debug_annotation_transforms
-                trace('[AnnotationTransforms] Transforming router module: $name');
                 #end
                 
                 var routerBody = buildRouterBody(name, body);
@@ -388,8 +443,6 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isController == true):
                 #if debug_annotation_transforms
-                trace('[AnnotationTransforms] Transforming controller module: $name');
-                trace('[AnnotationTransforms] App name: ${ast.metadata.appName}');
                 #end
                 
                 var appName = ast.metadata.appName ?? "app";
@@ -454,8 +507,6 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isSchema == true):
                 #if debug_annotation_transforms
-                trace('[AnnotationTransforms] Transforming schema module: $name');
-                trace('[AnnotationTransforms] Table name: ${ast.metadata.tableName}');
                 #end
                 
                 var tableName = ast.metadata.tableName ?? "items";
@@ -587,7 +638,6 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isApplication == true):
                 #if debug_annotation_transforms
-                trace('[AnnotationTransforms] Transforming application module: $name');
                 #end
                 
                 var appBody = buildApplicationBody(name, body);
@@ -679,17 +729,12 @@ class AnnotationTransforms {
      */
     public static function phoenixWebTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
-        trace('[AnnotationTransforms] phoenixWebTransformPass starting');
-        trace('[AnnotationTransforms] AST def type: ${ast.def}');
-        trace('[AnnotationTransforms] AST metadata: ${ast.metadata}');
         #end
         
         // Check the top-level node first for PhoenixWeb modules
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isPhoenixWeb == true):
                 #if debug_annotation_transforms
-                trace('[AnnotationTransforms] MATCH! Transforming PhoenixWeb module: $name');
-                trace('[AnnotationTransforms] Building Phoenix Web body with macros');
                 #end
                 
                 var phoenixWebBody = buildPhoenixWebBody(name, body);
@@ -904,6 +949,41 @@ class AnnotationTransforms {
         )));
         
         return makeAST(EBlock(statements));
+    }
+    
+    /**
+     * Extract app name from module name
+     * 
+     * Examples:
+     * - TodoAppWeb.Presence -> todo_app
+     * - MyApp.Presence -> my_app
+     * - SomeModuleWeb.Presence -> some_module
+     */
+    static function extractAppName(moduleName: String): String {
+        // Remove Web suffix if present
+        var name = moduleName;
+        var webIndex = name.indexOf("Web.");
+        if (webIndex > 0) {
+            name = name.substring(0, webIndex);
+        }
+        
+        // Remove module path after last dot
+        var lastDotIndex = name.lastIndexOf(".");
+        if (lastDotIndex > 0) {
+            name = name.substring(0, lastDotIndex);
+        }
+        
+        // Convert CamelCase to snake_case
+        var result = "";
+        for (i in 0...name.length) {
+            var char = name.charAt(i);
+            if (i > 0 && char == char.toUpperCase() && char != char.toLowerCase()) {
+                result += "_";
+            }
+            result += char.toLowerCase();
+        }
+        
+        return result;
     }
 }
 

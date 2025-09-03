@@ -156,9 +156,9 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @return Updated LiveSocket with new assigns
 	 */
 	@:op(A | B)
-	public static inline function pipe<T>(socket: LiveSocket<T>, fn: LiveSocket<T> -> LiveSocket<T>): LiveSocket<T> {
+	public static inline function pipe<T>(socket: LiveSocket<T>, func: LiveSocket<T> -> LiveSocket<T>): LiveSocket<T> {
 		// Simple pipe operator implementation - just apply the function
-		return fn(socket);
+		return func(socket);
 	}
 	
 	/**

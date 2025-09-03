@@ -267,18 +267,18 @@ class Flash {
      */
     public static function fromPhoenixFlash(phoenixFlash: PhoenixFlashData): FlashMessage {
         // Extract type field and convert to FlashType
-        var typeString = phoenixFlash.type ?? "info";
+        var typeString = phoenixFlash.type != null ? phoenixFlash.type : "info";
         var flashType = FlashTypeTools.fromString(typeString);
         
         // Extract message with default
-        var message = phoenixFlash.message ?? "";
+        var message = phoenixFlash.message != null ? phoenixFlash.message : "";
         
         return {
             type: flashType,
             message: message,
             title: phoenixFlash.title,
             details: phoenixFlash.details,
-            dismissible: phoenixFlash.dismissible ?? true,
+            dismissible: phoenixFlash.dismissible != null ? phoenixFlash.dismissible : true,
             timeout: phoenixFlash.timeout,
             action: phoenixFlash.action
         };
