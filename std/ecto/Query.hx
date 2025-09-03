@@ -39,8 +39,12 @@ abstract EctoQuery<T>(Dynamic) {
      * @return The query with the order_by clause added
      */
     public function orderBy(field: String, direction: String = "asc"): EctoQuery<T> {
-        var dir = direction == "desc" ? untyped __elixir__(':desc') : untyped __elixir__(':asc');
-        var newQuery = untyped __elixir__('Ecto.Query.order_by({0}, [{1}: {2}])', this, dir, field);
+        // Build the order_by clause with proper direction atom
+        var newQuery = if (direction == "desc") {
+            untyped __elixir__('Ecto.Query.order_by({0}, [desc: {1}])', this, field);
+        } else {
+            untyped __elixir__('Ecto.Query.order_by({0}, [asc: {1}])', this, field);
+        }
         return new EctoQuery<T>(newQuery);
     }
     
@@ -100,11 +104,12 @@ class Query {
      * @return The query with where conditions added
      */
     public static function whereAll<T>(query: EctoQuery<T>, conditions: Map<String, Dynamic>): EctoQuery<T> {
-        var elixirQuery = query.toElixirQuery();
-        for (field in conditions.keys()) {
-            elixirQuery = untyped __elixir__('Ecto.Query.where({0}, [{1}: {2}])', 
-                elixirQuery, field, conditions.get(field));
-        }
+        // Use Elixir's Enum.reduce to iterate over Map entries properly
+        // This avoids Haxe's iterator desugaring issues
+        var elixirQuery = untyped __elixir__(
+            'Enum.reduce(Map.to_list({0}), {1}, fn {field, value}, acc -> Ecto.Query.where(acc, [{field}: value]) end)',
+            conditions, query.toElixirQuery()
+        );
         return new EctoQuery<T>(elixirQuery);
     }
 }

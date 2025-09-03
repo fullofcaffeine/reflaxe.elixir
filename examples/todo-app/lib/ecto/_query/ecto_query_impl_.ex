@@ -5,12 +5,11 @@ defmodule EctoQuery_Impl_ do
     this1
   end
   def order_by(this1, field, direction) do
-    dir = if (direction == "desc") do
-  :desc
+    new_query = if (direction == "desc") do
+  Ecto.Query.order_by(this1, [desc: field])
 else
-  :asc
+  Ecto.Query.order_by(this1, [asc: field])
 end
-    new_query = Ecto.Query.order_by(this1, [dir: field])
     this1 = new_query
     this1
   end
