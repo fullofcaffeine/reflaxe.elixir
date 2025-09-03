@@ -1,6 +1,6 @@
 package server.infrastructure;
 
-import haxe.functional.Result;
+import elixir.types.Result;
 import ecto.Changeset;
 import ecto.Query.EctoQuery;
 
