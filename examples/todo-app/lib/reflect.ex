@@ -8,9 +8,6 @@ defmodule Reflect do
   def fields(obj) do
     Map.keys(obj) |> Enum.map(&Atom.to_string/1)
   end
-  def copy(obj) do
-    obj
-  end
   def compare(a, b) do
     sa = Std.string(a)
     sb = Std.string(b)

@@ -24,7 +24,7 @@ defmodule Flash do
     message = if (phoenix_flash.message != nil), do: phoenix_flash.message, else: ""
     %{:type => flash_type, :message => message, :title => phoenix_flash.title, :details => phoenix_flash.details, :dismissible => (if (phoenix_flash.dismissible != nil), do: phoenix_flash.dismissible, else: true), :timeout => phoenix_flash.timeout, :action => phoenix_flash.action}
   end
-  defp extract_changeset_errors(changeset) do
+  defp extract_changeset_errors(_changeset) do
     []
   end
 end

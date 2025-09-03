@@ -8,20 +8,6 @@ defmodule Assigns_Impl_ do
   def to_dynamic(this1) do
     this1
   end
-  def get(this1, key) do
-    Reflect.field(this1, key)
-  end
-  def set(this1, key, value) do
-    Reflect.set_field(this1, key, value)
-    value
-  end
-  def get_field(this1, field) do
-    Reflect.field(this1, field)
-  end
-  def set_field(this1, field, value) do
-    Reflect.set_field(this1, field, value)
-    value
-  end
   def has_field(this1, field) do
     Reflect.has_field(this1, field)
   end
