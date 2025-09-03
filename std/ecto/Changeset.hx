@@ -248,6 +248,43 @@ typedef ChangesetResult<T, P> = Result<T, Changeset<T, P>>;
  * However, users NEVER interact with this Dynamic directly - they use typed
  * parameter structures and our type-safe builder APIs.
  */
+
+/**
+ * ChangesetTools - Type-safe utilities for Ecto changesets
+ * 
+ * WHY: Ecto changesets use dynamic error structures that are difficult to work with
+ *      in a type-safe manner. This abstraction provides compile-time guarantees
+ *      while maintaining full Ecto compatibility.
+ * 
+ * WHAT: Provides convenience methods for working with changesets in a type-safe manner.
+ *       These utilities abstract away common patterns and provide better IntelliSense support.
+ *       
+ * HOW: Generates a companion module with helper functions that handle the dynamic
+ *      nature of changeset errors while exposing a typed API to Haxe code.
+ * 
+ * BENEFITS:
+ * - Type-safe error handling with Result<T,E> pattern
+ * - IntelliSense support for changeset operations
+ * - Functional patterns (Option, Result) for Elixir data
+ * - No runtime overhead - compiles to simple Elixir functions
+ * - Abstraction over Ecto's dynamic error structures
+ * 
+ * USAGE:
+ * ```haxe
+ * var result = User.create(params);
+ * var user = ChangesetTools.unwrap(result); // Throws if errors
+ * // or
+ * var userOrDefault = ChangesetTools.unwrapOr(result, defaultUser);
+ * // or check errors
+ * if (ChangesetTools.hasFieldError(changeset, "email")) {
+ *     trace("Email is invalid");
+ * }
+ * ```
+ * 
+ * NOTE: This is an optional convenience layer. You can always work with
+ * changesets directly using standard Ecto patterns if preferred.
+ */
+@:native("ChangesetTools")
 class ChangesetTools {
     /**
      * Check if changeset is valid.
@@ -320,7 +357,10 @@ class ChangesetTools {
     public static function unwrap<T, P>(result: ChangesetResult<T, P>): T {
         return switch(result) {
             case Ok(value): value;
-            case Error(changeset): throw 'Changeset has errors: ${getErrorsMap(changeset)}';
+            case Error(changeset): 
+                // Extract the errors map first to avoid complex interpolation in throw
+                var errors = getErrorsMap(changeset);
+                throw 'Changeset has errors: $errors';
         };
     }
     

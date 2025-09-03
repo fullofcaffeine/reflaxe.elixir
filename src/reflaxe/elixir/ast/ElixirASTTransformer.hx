@@ -108,6 +108,14 @@ class ElixirASTTransformer {
             pass: identityPass
         });
         
+        // Throw statement transformation (must run early to fix complex expressions)
+        passes.push({
+            name: "ThrowStatementTransform",
+            description: "Transform complex throw expressions to avoid syntax errors",
+            enabled: true,
+            pass: throwStatementTransformPass
+        });
+        
         // Inline expansion fixes (should run very early to fix AST structure)
         passes.push({
             name: "InlineMethodCallCombiner",
@@ -328,6 +336,93 @@ class ElixirASTTransformer {
     // ========================================================================
     // Transformation Passes
     // ========================================================================
+    
+    /**
+     * Throw statement transformation pass
+     * 
+     * WHY: Complex expressions in throw statements can generate invalid Elixir syntax
+     *      when string concatenation includes conditionals or function calls
+     * WHAT: Transforms throw expressions with complex string concatenation
+     * HOW: Wraps complex expressions in parentheses to ensure valid syntax
+     */
+    static function throwStatementTransformPass(ast: ElixirAST): ElixirAST {
+        return switch(ast.def) {
+            case EThrow(value):
+                // Transform the throw value to ensure it's a valid single expression
+                var transformedValue = transformThrowValue(value);
+                {
+                    def: EThrow(transformedValue),
+                    metadata: ast.metadata,
+                    pos: ast.pos
+                };
+            default:
+                // Recursively transform children using the standard transformer
+                transformAST(ast, throwStatementTransformPass);
+        };
+    }
+    
+    /**
+     * Transform throw value to ensure it generates valid Elixir syntax
+     */
+    static function transformThrowValue(expr: ElixirAST): ElixirAST {
+        return switch(expr.def) {
+            case EBinary(StringConcat, left, right):
+                // For string concatenation, ensure both sides are properly formatted
+                var leftTransformed = transformThrowValue(left);
+                var rightTransformed = transformThrowValue(right);
+                
+                // If right side is complex, wrap it in parentheses
+                var rightWrapped = switch(rightTransformed.def) {
+                    case EIf(_, _, _):
+                        {
+                            def: EParen(rightTransformed),
+                            metadata: rightTransformed.metadata,
+                            pos: rightTransformed.pos
+                        };
+                    case ECall(_, _, _) if (hasConditionalInCall(rightTransformed)):
+                        {
+                            def: EParen(rightTransformed),
+                            metadata: rightTransformed.metadata,
+                            pos: rightTransformed.pos
+                        };
+                    default:
+                        rightTransformed;
+                };
+                
+                {
+                    def: EBinary(StringConcat, leftTransformed, rightWrapped),
+                    metadata: expr.metadata,
+                    pos: expr.pos
+                };
+                
+            case EIf(cond, then, els):
+                // Wrap if expressions in parentheses when used in throw
+                {
+                    def: EParen(expr),
+                    metadata: expr.metadata,
+                    pos: expr.pos
+                };
+                
+            default:
+                expr;
+        };
+    }
+    
+    /**
+     * Check if a call expression contains conditionals that might cause syntax issues
+     */
+    static function hasConditionalInCall(expr: ElixirAST): Bool {
+        return switch(expr.def) {
+            case ECall(_, _, args):
+                Lambda.exists(args, function(arg) {
+                    return switch(arg.def) {
+                        case EIf(_, _, _): true;
+                        default: false;
+                    };
+                });
+            default: false;
+        };
+    }
     
     /**
      * Identity pass - returns AST unchanged
