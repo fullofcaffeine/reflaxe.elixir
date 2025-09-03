@@ -524,6 +524,13 @@ class ElixirASTPrinter {
                 needsParens ? '(' + result + ')' : result;
                 
             case EUnary(op, expr):
+                #if debug_ast_printer
+                switch(expr.def) {
+                    case EBlock(stmts):
+                        trace('[XRay Printer] WARNING: EBlock inside EUnary! ${stmts.length} statements');
+                    default:
+                }
+                #end
                 unaryOpToString(op) + print(expr, 0);
                 
             case EField(target, field):

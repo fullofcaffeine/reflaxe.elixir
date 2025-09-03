@@ -134,7 +134,13 @@ class ElixirASTHelpers {
      * Convert variable name to Elixir snake_case
      */
     public static function toElixirVarName(name: String): String {
-        // Remove leading underscore if present
+        // Don't modify compiler-generated temporary variables like _g, _g1, etc.
+        // These are created by Haxe's desugaring and should be preserved as-is
+        if (name.charAt(0) == "_" && name.charAt(1) == "g") {
+            return name; // Keep _g variables as-is
+        }
+        
+        // Remove leading underscore if present (for other variables)
         if (name.charAt(0) == "_" && name.length > 1) {
             name = name.substr(1);
         }

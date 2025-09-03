@@ -2,12 +2,14 @@ package controllers;
 
 import plug.Conn;
 import contexts.Users;
+import contexts.Users.UserParams;
+import elixir.types.Result;
 
 // Type-safe parameter definitions for each action
-typedef IndexParams = Dynamic;  // No specific params for index
+typedef IndexParams = {}  // Empty params for index
 typedef ShowParams = {id: String};
-typedef CreateParams = {name: String, email: String, ?age: Int};
-typedef UpdateParams = {id: String, ?name: String, ?email: String, ?age: Int};
+typedef CreateParams = UserParams;
+typedef UpdateParams = {id: String} & UserParams;  // Combine ID with user params
 typedef DeleteParams = {id: String};
 
 /**
@@ -58,10 +60,13 @@ class UserController {
     
     /**
      * Generate a unique ID for new users
-     * Uses Elixir's System.unique_integer for uniqueness
+     * Uses timestamp and random for uniqueness
      */
     private static function generateUniqueId(): String {
-        return untyped __elixir__('Integer.to_string(System.unique_integer([:positive]))');
+        // Use Haxe's standard library instead of __elixir__()
+        var timestamp = Date.now().getTime();
+        var random = Math.floor(Math.random() * 10000);
+        return '${timestamp}_${random}';
     }
     
     /**
@@ -70,7 +75,7 @@ class UserController {
      * Traditional Phoenix:
      * ```elixir
      * def index(conn, _params) do
-     *   users = Users.list_users()
+     *   users = Users.listUsers()
      *   json(conn, %{users: users})
      * end
      * ```
@@ -79,7 +84,7 @@ class UserController {
      */
     public static function index(conn: Conn<IndexParams>, params: IndexParams): Conn<IndexParams> {
         // Fetch all users from database
-        var users = Users.list_users(null);
+        var users = Users.listUsers(null);
         return conn.json({users: users});
     }
     
@@ -96,7 +101,7 @@ class UserController {
     public static function show(conn: Conn<ShowParams>, params: ShowParams): Conn<ShowParams> {
         // Fetch user from database
         var userId = Std.parseInt(params.id);
-        var user = Users.get_user_safe(userId);
+        var user = Users.getUserSafe(userId);
         
         if (user != null) {
             return conn.json({user: user});
@@ -124,23 +129,25 @@ class UserController {
      */
     public static function create(conn: Conn<CreateParams>, params: CreateParams): Conn<CreateParams> {
         // Create user through Users context with database persistence
-        var result = Users.create_user(params);
+        var result = Users.createUser(params);
         
-        if (result.status == "ok") {
-            return conn
-                .putStatus(201)
-                .json({
-                    user: result.user,
-                    created: true,
-                    message: "User created successfully"
-                });
-        } else {
-            return conn
-                .putStatus(422)
-                .json({
-                    error: "Failed to create user",
-                    changeset: result.changeset
-                });
+        return switch(result) {
+            case Ok(user):
+                conn
+                    .putStatus(201)
+                    .json({
+                        user: user,
+                        created: true,
+                        message: "User created successfully"
+                    });
+                    
+            case Error(changeset):
+                conn
+                    .putStatus(422)
+                    .json({
+                        error: "Failed to create user",
+                        changeset: changeset
+                    });
         }
     }
     
@@ -153,7 +160,7 @@ class UserController {
     public static function update(conn: Conn<UpdateParams>, params: UpdateParams): Conn<UpdateParams> {
         // Fetch existing user first
         var userId = Std.parseInt(params.id);
-        var user = Users.get_user_safe(userId);
+        var user = Users.getUserSafe(userId);
         
         if (user == null) {
             return conn
@@ -162,26 +169,30 @@ class UserController {
         }
         
         // Update user through Users context
-        var updateAttrs = {};
-        if (params.name != null) Reflect.setField(updateAttrs, "name", params.name);
-        if (params.email != null) Reflect.setField(updateAttrs, "email", params.email);
-        if (params.age != null) Reflect.setField(updateAttrs, "age", params.age);
+        var updateAttrs: UserParams = {
+            name: params.name,
+            email: params.email,
+            age: params.age,
+            active: params.active
+        };
         
-        var result = Users.update_user(user, updateAttrs);
+        var result = Users.updateUser(user, updateAttrs);
         
-        if (result.status == "ok") {
-            return conn.json({
-                user: result.user,
-                updated: true,
-                message: 'User ${params.id} updated successfully'
-            });
-        } else {
-            return conn
-                .putStatus(422)
-                .json({
-                    error: "Failed to update user",
-                    changeset: result.changeset
+        return switch(result) {
+            case Ok(updatedUser):
+                conn.json({
+                    user: updatedUser,
+                    updated: true,
+                    message: 'User ${params.id} updated successfully'
                 });
+                
+            case Error(changeset):
+                conn
+                    .putStatus(422)
+                    .json({
+                        error: "Failed to update user",
+                        changeset: changeset
+                    });
         }
     }
     
@@ -194,7 +205,7 @@ class UserController {
     public static function delete(conn: Conn<DeleteParams>, params: DeleteParams): Conn<DeleteParams> {
         // Fetch user to delete
         var userId = Std.parseInt(params.id);
-        var user = Users.get_user_safe(userId);
+        var user = Users.getUserSafe(userId);
         
         if (user == null) {
             return conn
@@ -203,21 +214,23 @@ class UserController {
         }
         
         // Delete user through Users context
-        var result = Users.delete_user(user);
+        var result = Users.deleteUser(user);
         
-        if (result.status == "ok") {
-            return conn.json({
-                deleted: params.id,
-                success: true,
-                message: 'User ${params.id} deleted successfully'
-            });
-        } else {
-            return conn
-                .putStatus(500)
-                .json({
-                    error: "Failed to delete user",
-                    success: false
+        return switch(result) {
+            case Ok(deletedUser):
+                conn.json({
+                    deleted: params.id,
+                    success: true,
+                    message: 'User ${params.id} deleted successfully'
                 });
+                
+            case Error(changeset):
+                conn
+                    .putStatus(500)
+                    .json({
+                        error: "Failed to delete user",
+                        success: false
+                    });
         }
     }
 }

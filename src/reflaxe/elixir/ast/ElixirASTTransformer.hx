@@ -291,6 +291,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.AssignmentExtractionTransforms.assignmentExtractionPass
         });
         
+        // Idiomatic enum pattern matching transformation (must run before underscore cleanup)
+        passes.push({
+            name: "IdiomaticEnumPatternMatching",
+            description: "Transform enum tuple access patterns to idiomatic pattern matching",
+            enabled: true,
+            pass: idiomaticEnumPatternMatchingPass
+        });
+        
         // Underscore variable cleanup pass (should run late to catch all generated vars)
         #if !disable_underscore_cleanup
         passes.push({
@@ -1811,6 +1819,20 @@ class ElixirASTTransformer {
                     ast.pos
                 );
                 
+            case EFor(generators, filters, body, into, uniq):
+                makeASTWithMeta(
+                    EFor(generators.map(g -> {
+                        pattern: g.pattern,
+                        expr: transformNode(g.expr, transformer)
+                    }),
+                         filters.map(f -> transformNode(f, transformer)),
+                         transformNode(body, transformer),
+                         into != null ? transformNode(into, transformer) : null,
+                         uniq),
+                    ast.metadata,
+                    ast.pos
+                );
+                
             // Literals and simple nodes - no children to transform
             default:
                 ast;
@@ -2257,6 +2279,285 @@ class ElixirASTTransformer {
      * @param node The original AST node with metadata
      * @return Transformed AST following Elixir idioms
      */
+    /**
+     * Idiomatic Enum Pattern Matching Transformation Pass
+     * 
+     * WHY: The compiler generates low-level tuple access patterns for enum matching
+     * which results in non-idiomatic Elixir code and variable naming inconsistencies.
+     * Instead of case x.elem(0) with x.elem(1) extraction, we want case x with pattern matching.
+     * 
+     * WHAT: Transforms patterns like:
+     *   case result.elem(0) do
+     *     0 -> _g = result.elem(1); value = g; {:Some, value}
+     *     1 -> _g = result.elem(1); :none
+     *   end
+     * Into:
+     *   case result do
+     *     {0, value} -> {:Some, value}
+     *     {1, _} -> :none
+     *   end
+     * 
+     * HOW: Detects ECase with ETupleAccess(expr, 0) and transforms the entire structure
+     * to use tuple pattern matching instead of manual extraction.
+     */
+    static function idiomaticEnumPatternMatchingPass(ast: ElixirAST): ElixirAST {
+        #if debug_ast_transformer
+        trace('[XRay EnumPatternMatching] Starting idiomatic enum pattern matching pass');
+        #end
+        
+        return switch(ast.def) {
+            case ECase(expr, clauses):
+                // Check if this is an enum tag check pattern (case x.elem(0))
+                var isEnumTagCheck = false;
+                var baseExpr = expr;
+                
+                switch(expr.def) {
+                    case ECall(tupleExpr, "elem", [arg]):
+                        switch(arg.def) {
+                            case EInteger(0):
+                                #if debug_ast_transformer
+                                trace('[XRay EnumPatternMatching] Found enum tag check pattern on elem(0)');
+                                #end
+                                isEnumTagCheck = true;
+                                baseExpr = tupleExpr;
+                            default:
+                        }
+                    default:
+                }
+                
+                if (isEnumTagCheck) {
+                    
+                    #if debug_ast_transformer
+                    trace('[XRay EnumPatternMatching] Transforming enum case to idiomatic pattern matching');
+                    #end
+                    
+                    // Transform each clause
+                    var transformedClauses = [];
+                    for (clause in clauses) {
+                        var transformedClause = transformEnumClause(clause, baseExpr);
+                        transformedClauses.push(transformedClause);
+                    }
+                    
+                    // Return the transformed case using the base expression directly
+                    {
+                        def: ECase(baseExpr, transformedClauses),
+                        metadata: ast.metadata,
+                        pos: ast.pos
+                    };
+                } else {
+                    // Not an enum pattern, recursively transform children
+                    transformAST(ast, idiomaticEnumPatternMatchingPass);
+                }
+                
+            default:
+                // Recursively transform children
+                transformAST(ast, idiomaticEnumPatternMatchingPass);
+        };
+    }
+    
+    /**
+     * Transform an individual enum case clause to use pattern matching
+     * 
+     * WHY: Each clause needs to be transformed from tag checking to pattern matching
+     * WHAT: Converts manual elem() extraction to tuple pattern destructuring  
+     * HOW: Analyzes the body for elem(1) calls and creates appropriate patterns
+     */
+    static function transformEnumClause(clause: ECaseClause, baseExpr: ElixirAST): ECaseClause {
+        #if debug_ast_transformer
+        trace('[XRay EnumPatternMatching] Transforming clause with pattern: ${clause.pattern}');
+        #end
+        
+        // Extract the tag value from the pattern
+        var tagValue = switch(clause.pattern) {
+            case PLiteral(ast):
+                switch(ast.def) {
+                    case EInteger(tag): tag;
+                    default:
+                        #if debug_ast_transformer
+                        trace('[XRay EnumPatternMatching] Non-integer pattern, keeping as-is');
+                        #end
+                        return clause; // Can't transform non-integer patterns
+                }
+            default: 
+                #if debug_ast_transformer
+                trace('[XRay EnumPatternMatching] Non-literal pattern, keeping as-is');
+                #end
+                return clause; // Can't transform non-literal patterns
+        };
+        
+        // Analyze the body to find parameter extraction patterns
+        var extractedParams = analyzeEnumParameterExtraction(clause.body, baseExpr);
+        
+        #if debug_ast_transformer
+        trace('[XRay EnumPatternMatching] Found ${extractedParams.length} extracted parameters');
+        #end
+        
+        // Create tuple pattern based on extracted parameters
+        var tuplePattern = if (extractedParams.length > 0) {
+            // Create pattern with extracted variable names
+            var patterns = [PLiteral(makeAST(EInteger(tagValue)))];
+            for (param in extractedParams) {
+                patterns.push(PVar(param.finalName));
+            }
+            PTuple(patterns);
+        } else {
+            // No parameters, use wildcard
+            PTuple([PLiteral(makeAST(EInteger(tagValue))), PWildcard]);
+        };
+        
+        // Clean up the body by removing extraction statements
+        var cleanedBody = removeEnumParameterExtractions(clause.body, extractedParams);
+        
+        #if debug_ast_transformer
+        trace('[XRay EnumPatternMatching] Created tuple pattern with ${extractedParams.length + 1} elements');
+        #end
+        
+        return {
+            pattern: tuplePattern,
+            guard: clause.guard,
+            body: cleanedBody
+        };
+    }
+    
+    /**
+     * Analyze the body to find enum parameter extraction patterns
+     */
+    static function analyzeEnumParameterExtraction(body: ElixirAST, baseExpr: ElixirAST): Array<{tempName: String, finalName: String}> {
+        var params = [];
+        
+        switch(body.def) {
+            case EBlock(exprs):
+                for (expr in exprs) {
+                    switch(expr.def) {
+                        case EMatch(PVar(varName), ast):
+                            switch(ast.def) {
+                                case ECall(tupleExpr, "elem", [arg]):
+                                    switch(arg.def) {
+                                        case EInteger(1):
+                                            // Found pattern: _g = result.elem(1)
+                                            if (astEquals(tupleExpr, baseExpr)) {
+                                                // Look for subsequent assignment: value = g
+                                                var finalName = findSubsequentAssignment(exprs, varName.replace("_", ""));
+                                                if (finalName != null) {
+                                                    params.push({tempName: varName, finalName: finalName});
+                                                } else {
+                                                    // Use the temp name without underscore as final name
+                                                    params.push({tempName: varName, finalName: varName.replace("_", "")});
+                                                }
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                }
+            default:
+                // Single expression body, no extraction
+        }
+        
+        return params;
+    }
+    
+    /**
+     * Find subsequent assignment of a temp variable
+     */
+    static function findSubsequentAssignment(exprs: Array<ElixirAST>, tempVarWithoutUnderscore: String): Null<String> {
+        for (expr in exprs) {
+            switch(expr.def) {
+                case EMatch(PVar(finalName), ast):
+                    switch(ast.def) {
+                        case EVar(srcVar):
+                            if (srcVar == tempVarWithoutUnderscore) {
+                                return finalName;
+                            }
+                        default:
+                    }
+                default:
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Remove enum parameter extraction statements from the body
+     */
+    static function removeEnumParameterExtractions(body: ElixirAST, extractedParams: Array<{tempName: String, finalName: String}>): ElixirAST {
+        switch(body.def) {
+            case EBlock(exprs):
+                var cleanedExprs = [];
+                var skip = false;
+                
+                for (i in 0...exprs.length) {
+                    var expr = exprs[i];
+                    var shouldSkip = false;
+                    
+                    // Check if this is an extraction statement
+                    switch(expr.def) {
+                        case EMatch(PVar(varName), ast):
+                            switch(ast.def) {
+                                case ECall(_, "elem", [arg]):
+                                    switch(arg.def) {
+                                        case EInteger(1):
+                                            // Check if this matches any extracted param
+                                            for (param in extractedParams) {
+                                                if (varName == param.tempName) {
+                                                    shouldSkip = true;
+                                                    break;
+                                                }
+                                            }
+                                        default:
+                                    }
+                                case EVar(srcVar):
+                                    // Check if this is a reassignment from temp var
+                                    for (param in extractedParams) {
+                                        if (varName == param.finalName && srcVar == param.tempName.replace("_", "")) {
+                                            shouldSkip = true;
+                                            break;
+                                        }
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                    
+                    if (!shouldSkip) {
+                        cleanedExprs.push(expr);
+                    }
+                }
+                
+                // If only one expression remains, unwrap the block
+                if (cleanedExprs.length == 1) {
+                    return cleanedExprs[0];
+                } else if (cleanedExprs.length == 0) {
+                    // Empty block, return nil
+                    return makeAST(EAtom("nil"));
+                } else {
+                    return {
+                        def: EBlock(cleanedExprs),
+                        metadata: body.metadata,
+                        pos: body.pos
+                    };
+                }
+            default:
+                // Not a block, return as-is
+                return body;
+        }
+    }
+    
+    /**
+     * Check if two AST nodes are structurally equal
+     */
+    static function astEquals(a: ElixirAST, b: ElixirAST): Bool {
+        // Simple structural equality check for variable references
+        return switch([a.def, b.def]) {
+            case [EVar(name1), EVar(name2)]: name1 == name2;
+            case [EField(obj1, field1), EField(obj2, field2)]: 
+                field1 == field2 && astEquals(obj1, obj2);
+            default: false;
+        };
+    }
+    
     /**
      * Transform idiomatic enum constructors using shared utility
      * 

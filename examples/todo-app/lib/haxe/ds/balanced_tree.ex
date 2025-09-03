@@ -103,7 +103,7 @@ end)
   defp keys_loop(struct, node, acc) do
     if (node != nil) do
       struct.keysLoop(node.left, acc)
-      acc.push(node.key)
+      acc = acc ++ [node.key]
       struct.keysLoop(node.right, acc)
     end
   end
@@ -157,7 +157,7 @@ end)
   defp iterator_loop(node, acc) do
     if (node != nil) do
       iterator_loop(node.left, acc)
-      acc.push(node.value)
+      acc = acc ++ [node.value]
       iterator_loop(node.right, acc)
     end
   end

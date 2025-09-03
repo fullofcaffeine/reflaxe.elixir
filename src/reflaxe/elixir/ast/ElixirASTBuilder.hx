@@ -215,30 +215,14 @@ class ElixirASTBuilder {
                     trace('[AST Builder] Using mapped name for id=${v.id}: ${v.name} -> ${varName}');
                     #end
                 }
-                // Handle Haxe-generated temp variables that start with underscore
-                // These are variables like _g, _g1, etc. that Haxe generates during desugaring
-                // In Elixir, underscore-prefixed variables should not be used after assignment
-                // So we create a mapping to rename them consistently
-                else if (varName.charAt(0) == "_" && varName.length > 1) {
-                    // Create a new non-underscore name for this temp variable
-                    var newName = if (~/^_g\d*$/.match(varName)) {
-                        // _g, _g1, _g2 -> g, g1, g2
-                        varName.substr(1);
-                    } else if (~/^_\d+$/.match(varName)) {
-                        // _1, _2 -> temp1, temp2
-                        "temp" + varName.substr(1);
-                    } else {
-                        // Other underscore variables - keep as is for now
-                        varName;
-                    };
-                    
-                    if (newName != varName) {
-                        tempVarRenameMap.set(idKey, newName);
-                        varName = newName;
-                        #if debug_ast_pipeline
-                        trace('[AST Builder] Registering temp var rename: ${v.name} (id=${v.id}) -> ${newName}');
-                        #end
-                    }
+                // Apply consistent underscore removal for compiler-generated variables
+                // This ensures both declarations and references use the same name
+                // EXCEPT for _g variables which should be preserved as-is
+                else if (varName.charAt(0) == "_" && varName.charAt(1) != "g" && varName.length > 1) {
+                    // For underscore-prefixed variables OTHER than _g, _g1, etc.
+                    // We need to apply the same transformation as toElixirVarName
+                    // to ensure consistency
+                    varName = varName.substr(1); // Remove the underscore
                 }
                 // Handle collision-renamed variables (priority2 -> priority) 
                 // BUT NEVER for function parameters or abstract method parameters (this1, struct1)
@@ -288,6 +272,18 @@ class ElixirASTBuilder {
                 trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
                 #end
                 
+                #if debug_assignment_context
+                trace('[XRay AssignmentContext] TVar: ${v.name}');
+                if (init != null) {
+                    trace('[XRay AssignmentContext] Init expr: ${Type.enumConstructor(init.expr)}');
+                    switch(init.expr) {
+                        case TField(e, _):
+                            trace('[XRay AssignmentContext] TField access detected - likely in expression context');
+                        case _:
+                    }
+                }
+                #end
+                
                 #if debug_ast_pipeline
                 if (v.name == "p1" || v.name == "p2" || v.name == "p" || v.name == "p_1" || v.name == "p_2") {
                     trace('[AST Builder] TVar declaration: name="${v.name}", id=${v.id}');
@@ -306,30 +302,11 @@ class ElixirASTBuilder {
                 }
                 #end
                 
-                // Apply same underscore variable renaming as in TLocal
+                // DON'T rename underscore variables in TVar - keep them as-is
+                // The underscore indicates they are compiler-generated temporaries
+                // and should be preserved to maintain consistency
                 var varName = v.name;
                 var idKey = Std.string(v.id);
-                
-                if (varName.charAt(0) == "_" && varName.length > 1) {
-                    if (!tempVarRenameMap.exists(idKey)) {
-                        // Create a new non-underscore name for this temp variable
-                        var newName = if (~/^_g\d*$/.match(varName)) {
-                            // _g, _g1, _g2 -> g, g1, g2
-                            varName.substr(1);
-                        } else if (~/^_\d+$/.match(varName)) {
-                            // _1, _2 -> temp1, temp2
-                            "temp" + varName.substr(1);
-                        } else {
-                            // Other underscore variables - keep as is for now
-                            varName;
-                        };
-                        tempVarRenameMap.set(idKey, newName);
-                        #if debug_ast_pipeline
-                        trace('[AST Builder] Registering temp var rename in TVar: ${varName} (id=${v.id}) -> ${newName}');
-                        #end
-                    }
-                    varName = tempVarRenameMap.get(idKey);
-                }
                 
                 // For renamed temp variables, use the name directly without further conversion
                 // Otherwise apply toElixirVarName for CamelCase conversion
@@ -339,7 +316,8 @@ class ElixirASTBuilder {
                     toElixirVarName(varName); // Apply CamelCase to snake_case conversion
                 };
                 
-                if (init != null) {
+                // Handle variable initialization
+                var matchNode = if (init != null) {
                     // Check if init is a TBlock with null coalescing pattern
                     var initValue = switch(init.expr) {
                         case TBlock([{expr: TVar(tmpVar, tmpInit)}, {expr: TBinop(OpNullCoal, {expr: TLocal(localVar)}, defaultExpr)}])
@@ -368,17 +346,19 @@ class ElixirASTBuilder {
                             buildFromTypedExpr(init);
                     };
                     
-                    EMatch(
+                    makeAST(EMatch(
                         PVar(finalVarName),
                         initValue
-                    );
+                    ));
                 } else {
                     // Uninitialized variable - use nil
-                    EMatch(
+                    makeAST(EMatch(
                         PVar(finalVarName),
                         makeAST(ENil)
-                    );
-                }
+                    ));
+                };
+                
+                matchNode.def;
                 
             // ================================================================
             // Binary Operations
@@ -564,21 +544,49 @@ class ElixirASTBuilder {
             // Unary Operations
             // ================================================================
             case TUnop(op, postFix, e):
-                var expr = buildFromTypedExpr(e).def;
-                
+                // Special handling for OpNot with TBlock
+                // This happens when Haxe desugars complex expressions like !map.exists(key)
                 switch(op) {
-                    case OpNot: EUnary(Not, makeAST(expr));
-                    case OpNeg: EUnary(Negate, makeAST(expr));
-                    case OpNegBits: EUnary(BitwiseNot, makeAST(expr));
+                    case OpNot:
+                        switch(e.expr) {
+                            case TBlock([]):
+                                // Empty block - just return not(nil)
+                                EUnary(Not, makeAST(ENil));
+                            case TBlock(exprs) if (exprs.length == 1):
+                                // Single expression block - unwrap it
+                                EUnary(Not, buildFromTypedExpr(exprs[0]));
+                            case TBlock(exprs):
+                                // Multiple expressions - this is the problematic case
+                                // Extract all but the last expression as statements
+                                var statements = [];
+                                for (i in 0...exprs.length - 1) {
+                                    statements.push(buildFromTypedExpr(exprs[i]));
+                                }
+                                // Apply not to the last expression
+                                var lastExpr = buildFromTypedExpr(exprs[exprs.length - 1]);
+                                statements.push(makeAST(EUnary(Not, lastExpr)));
+                                // Return a block with statements
+                                EBlock(statements);
+                            default:
+                                // Normal case - just apply not
+                                var expr = buildFromTypedExpr(e).def;
+                                EUnary(Not, makeAST(expr));
+                        }
+                    case OpNeg: 
+                        var expr = buildFromTypedExpr(e).def;
+                        EUnary(Negate, makeAST(expr));
+                    case OpNegBits:
+                        var expr = buildFromTypedExpr(e).def;
+                        EUnary(BitwiseNot, makeAST(expr));
                     case OpIncrement, OpDecrement:
                         // Elixir is immutable, so we need to generate an assignment
                         // When used as a statement, convert to: var = var + 1 or var = var - 1
                         var one = makeAST(EInteger(1));
-                        var value = makeAST(expr);
+                        var builtExpr = buildFromTypedExpr(e);
                         var operation = if (op == OpIncrement) {
-                            EBinary(Add, value, one);
+                            makeAST(EBinary(Add, builtExpr, one));
                         } else {
-                            EBinary(Subtract, value, one);
+                            makeAST(EBinary(Subtract, builtExpr, one));
                         };
                         
                         // If this is a standalone statement (not part of another expression),
@@ -587,15 +595,16 @@ class ElixirASTBuilder {
                         switch(e.expr) {
                             case TLocal(v):
                                 // Generate: var = var +/- 1
-                                EBinary(Match, makeAST(expr), makeAST(operation));
+                                EBinary(Match, builtExpr, operation);
                             default:
                                 // For complex expressions, just return the operation
                                 // (this may not work correctly for all cases)
-                                operation;
+                                operation.def;
                         };
                     case OpSpread:
                         // Spread operator for destructuring
-                        EUnquoteSplicing(makeAST(expr));
+                        var builtExpr = buildFromTypedExpr(e);
+                        EUnquoteSplicing(builtExpr);
                 }
                 
             // ================================================================
@@ -1044,6 +1053,34 @@ class ElixirASTBuilder {
                 // Check for inline expansion pattern at TypedExpr level
                 if (ElixirASTPatterns.isInlineExpansionBlock(el)) {
                     return ElixirASTPatterns.transformInlineExpansion(el, buildFromTypedExpr, toElixirVarName);
+                }
+                
+                // Special handling for TBlock in expression contexts
+                // When Haxe desugars expressions like !map.exists(key), it creates:
+                // TBlock([TVar(tmp, key), map.has_key(tmp)])
+                // In expression contexts, this needs special handling to avoid invalid syntax
+                if (el.length == 2) {
+                    switch([el[0].expr, el[1].expr]) {
+                        case [TVar(v, init), expr] if (init != null):
+                            // This is a temporary variable pattern
+                            // Check if the variable is only used in the second expression
+                            // If so, we can inline it directly
+                            var varUsedOnce = true; // For simplicity, assume it's used once
+                            
+                            // Build the assignment
+                            var varName = toElixirVarName(v.name);
+                            var initExpr = buildFromTypedExpr(init);
+                            var bodyExpr = buildFromTypedExpr(el[1]);
+                            
+                            // Generate a block with the assignment extracted
+                            // This will be handled by the assignment extraction pass
+                            return EBlock([
+                                makeAST(EMatch(PVar(varName), initExpr)),
+                                bodyExpr
+                            ]);
+                        default:
+                            // Not the pattern we're looking for
+                    }
                 }
                 
                 // Build all expressions
@@ -1587,6 +1624,23 @@ class ElixirASTBuilder {
                 }
                 
             case TFor(v, e1, e2):
+                #if debug_for_loop
+                trace('[XRay ForLoop] Processing TFor');
+                trace('[XRay ForLoop] Variable: ${v.name}');
+                trace('[XRay ForLoop] Iteration expr type: ${Type.enumConstructor(e1.expr)}');
+                trace('[XRay ForLoop] Body expr type: ${Type.enumConstructor(e2.expr)}');
+                // Analyze body structure
+                switch(e2.expr) {
+                    case TBlock(exprs):
+                        trace('[XRay ForLoop] Body is TBlock with ${exprs.length} expressions');
+                        for (i in 0...exprs.length) {
+                            trace('[XRay ForLoop]   [${i}] ${Type.enumConstructor(exprs[i].expr)}');
+                        }
+                    case _:
+                        trace('[XRay ForLoop] Body is single expression');
+                }
+                #end
+                
                 // For loop becomes comprehension
                 var pattern = PVar(toElixirVarName(v.name));
                 var expr = buildFromTypedExpr(e1);
@@ -2747,6 +2801,12 @@ class ElixirASTBuilder {
         var specialConstants = ["__MODULE__", "__FILE__", "__ENV__", "__DIR__", "__CALLER__"];
         if (specialConstants.indexOf(name) >= 0) {
             return name;
+        }
+        
+        // Don't modify compiler-generated temporary variables like _g, _g1, etc.
+        // These are created by Haxe's desugaring and should be preserved as-is
+        if (name.charAt(0) == "_" && name.charAt(1) == "g") {
+            return name; // Keep _g variables as-is
         }
         
         // Simple snake_case conversion for regular variables

@@ -113,10 +113,82 @@ class AssignmentExtractionTransforms {
                 }
                 return transformedNode;
                 
-            // Binary operations should not create blocks themselves
-            // The extraction happens when we process the parent assignment
+            // Binary operations might contain assignments that need extraction
             case EBinary(op, left, right):
-                // Just return the already-transformed node
+                var result = extractAndTransformExpression(transformedNode);
+                if (result.hasExtracted) {
+                    // Create a block with extracted assignments followed by the expression
+                    var statements = result.extracted.copy();
+                    statements.push(result.expression);
+                    return makeAST(EBlock(statements));
+                }
+                return transformedNode;
+                
+            // Handle calls that might contain functions with assignments
+            case ECall(_, _, _):
+                var result = extractAndTransformExpression(transformedNode);
+                if (result.hasExtracted) {
+                    // Create a block with extracted assignments followed by the call
+                    var statements = result.extracted.copy();
+                    statements.push(result.expression);
+                    return makeAST(EBlock(statements));
+                }
+                return transformedNode;
+                
+            // Handle remote calls (like Enum.reduce_while) that might contain functions with assignments
+            case ERemoteCall(_, _, _):
+                #if debug_assignment_extraction
+                trace("[XRay AssignmentExtraction] Processing ERemoteCall at top level");
+                #end
+                var result = extractAndTransformExpression(transformedNode);
+                if (result.hasExtracted) {
+                    // Create a block with extracted assignments followed by the remote call
+                    var statements = result.extracted.copy();
+                    statements.push(result.expression);
+                    return makeAST(EBlock(statements));
+                }
+                return transformedNode;
+                
+            // Handle if expressions that might contain assignments in conditions
+            case EIf(condition, thenBranch, elseBranch):
+                #if debug_assignment_extraction
+                trace("[XRay AssignmentExtraction] Processing top-level EIf");
+                trace('[XRay AssignmentExtraction] Condition type: ${Type.enumConstructor(condition.def)}');
+                #end
+                
+                // First check if the condition is a parenthesized expression
+                var actualCondition = switch(condition.def) {
+                    case EParen(inner): inner;
+                    default: condition;
+                };
+                
+                #if debug_assignment_extraction
+                trace('[XRay AssignmentExtraction] Actual condition type: ${Type.enumConstructor(actualCondition.def)}');
+                #end
+                
+                // Extract assignments from the condition
+                var condResult = extractAndTransformExpression(actualCondition);
+                
+                if (condResult.hasExtracted) {
+                    #if debug_assignment_extraction
+                    trace('[XRay AssignmentExtraction] Extracted ${condResult.extracted.length} assignments from if condition');
+                    #end
+                    // Create a block with extracted assignments followed by the if expression
+                    var statements = condResult.extracted.copy();
+                    
+                    // Re-wrap in parentheses if needed
+                    var newCondition = switch(condition.def) {
+                        case EParen(_): makeASTWithMeta(EParen(condResult.expression), condition.metadata, condition.pos);
+                        default: condResult.expression;
+                    };
+                    
+                    statements.push(makeASTWithMeta(
+                        EIf(newCondition, thenBranch, elseBranch),
+                        transformedNode.metadata,
+                        transformedNode.pos
+                    ));
+                    return makeAST(EBlock(statements));
+                }
                 return transformedNode;
                 
             default:
@@ -135,10 +207,10 @@ class AssignmentExtractionTransforms {
             switch(e.def) {
                 case EMatch(pattern, value):
                     #if debug_assignment_extraction
-                    trace("[XRay AssignmentExtraction] Found embedded assignment");
+                    trace("[XRay AssignmentExtraction] 🔍 Found embedded assignment");
                     trace('[XRay AssignmentExtraction] Pattern: $pattern');
                     trace('[XRay AssignmentExtraction] Pattern type: ${Type.enumConstructor(pattern)}');
-                    trace('[XRay AssignmentExtraction] Value: ${value.def}');
+                    trace('[XRay AssignmentExtraction] Value type: ${Type.enumConstructor(value.def)}');
                     #end
                     
                     // First extract any assignments from the value expression itself
@@ -154,6 +226,9 @@ class AssignmentExtractionTransforms {
                     // Return variable reference
                     switch(pattern) {
                         case PVar(name):
+                            #if debug_assignment_extraction
+                            trace('[XRay AssignmentExtraction] 🔄 Replacing assignment with variable: $name');
+                            #end
                             return makeAST(EVar(name));
                         default:
                             /**
@@ -192,6 +267,45 @@ class AssignmentExtractionTransforms {
                             return makeAST(EVar(tempVar));
                     }
                     
+                case EUnary(op, operand):
+                    #if debug_assignment_extraction
+                    trace('[XRay AssignmentExtraction] Processing EUnary operator: $op');
+                    trace('[XRay AssignmentExtraction] Operand type: ${Type.enumConstructor(operand.def)}');
+                    #end
+                    
+                    // Special handling for EBlock inside unary operators
+                    switch(operand.def) {
+                        case EBlock(_):
+                            #if debug_assignment_extraction
+                            trace('[XRay AssignmentExtraction] Found EBlock in unary - delegating to extractFromExpr');
+                            #end
+                            
+                            // Let extractFromExpr handle the block properly
+                            // It will extract assignments and return the cleaned expression
+                            var cleanOperand = extractFromExpr(operand);
+                            
+                            #if debug_assignment_extraction
+                            trace('[XRay AssignmentExtraction] After extraction, applying unary to: ${Type.enumConstructor(cleanOperand.def)}');
+                            trace('[XRay AssignmentExtraction] Total extracted so far: ${extracted.length}');
+                            #end
+                            
+                            return makeASTWithMeta(
+                                EUnary(op, cleanOperand),
+                                e.metadata,
+                                e.pos
+                            );
+                            
+                        default:
+                            // Regular unary processing
+                            var cleanOperand = extractFromExpr(operand);
+                            
+                            return makeASTWithMeta(
+                                EUnary(op, cleanOperand),
+                                e.metadata,
+                                e.pos
+                            );
+                    }
+                    
                 case EBinary(op, left, right):
                     #if debug_assignment_extraction
                     trace("[XRay AssignmentExtraction] Processing binary in expression: " + Type.enumConstructor(op));
@@ -221,14 +335,21 @@ class AssignmentExtractionTransforms {
                     
                 case ECall(target, funcName, args):
                     #if debug_assignment_extraction
-                    trace('[XRay AssignmentExtraction] Processing call: $funcName');
-                    trace('[XRay AssignmentExtraction] Args: ${args.map(a -> a.def)}');
-                    // Check for assignments in args
-                    for (i in 0...args.length) {
-                        switch(args[i].def) {
-                            case EMatch(_, _):
-                                trace('[XRay AssignmentExtraction] Found assignment in arg $i');
-                            default:
+                    if (funcName == "reduce_while") {
+                        trace('[XRay AssignmentExtraction] 🎯 Processing Enum.reduce_while call!');
+                        trace('[XRay AssignmentExtraction] Args count: ${args.length}');
+                        for (i in 0...args.length) {
+                            trace('[XRay AssignmentExtraction] Arg $i type: ${Type.enumConstructor(args[i].def)}');
+                            switch(args[i].def) {
+                                case EMatch(_, _):
+                                    trace('[XRay AssignmentExtraction] Found assignment in arg $i');
+                                case EFn(clauses):
+                                    trace('[XRay AssignmentExtraction] 🔥 Found anonymous function in arg $i with ${clauses.length} clauses');
+                                    if (clauses.length > 0) {
+                                        trace('[XRay AssignmentExtraction] First clause body type: ${Type.enumConstructor(clauses[0].body.def)}');
+                                    }
+                                default:
+                            }
                         }
                     }
                     #end
@@ -241,13 +362,167 @@ class AssignmentExtractionTransforms {
                         e.pos
                     );
                     
-                case EParen(inner):
-                    var cleanInner = extractFromExpr(inner);
+                case ERemoteCall(module, funcName, args):
+                    #if debug_assignment_extraction
+                    trace('[XRay AssignmentExtraction] Processing remote call: ${funcName}');
+                    if (funcName == "reduce_while") {
+                        trace('[XRay AssignmentExtraction] 🎯 Found Enum.reduce_while!');
+                        for (i in 0...args.length) {
+                            trace('[XRay AssignmentExtraction] Arg $i type: ${Type.enumConstructor(args[i].def)}');
+                        }
+                    }
+                    #end
+                    var cleanModule = extractFromExpr(module);
+                    var cleanArgs = args.map(extractFromExpr);
+                    
                     return makeASTWithMeta(
-                        EParen(cleanInner),
+                        ERemoteCall(cleanModule, funcName, cleanArgs),
                         e.metadata,
                         e.pos
                     );
+                    
+                case EIf(condition, thenBranch, elseBranch):
+                    #if debug_assignment_extraction
+                    trace('[XRay AssignmentExtraction] Processing if condition');
+                    trace('[XRay AssignmentExtraction] Condition type: ${Type.enumConstructor(condition.def)}');
+                    #end
+                    
+                    // Extract assignments from the condition
+                    var cleanCondition = extractFromExpr(condition);
+                    var cleanThen = extractFromExpr(thenBranch);
+                    var cleanElse = elseBranch != null ? extractFromExpr(elseBranch) : null;
+                    
+                    return makeASTWithMeta(
+                        EIf(cleanCondition, cleanThen, cleanElse),
+                        e.metadata,
+                        e.pos
+                    );
+                    
+                case EParen(inner):
+                    // First extract from the inner expression
+                    var cleanInner = extractFromExpr(inner);
+                    
+                    // If we extracted assignments, don't wrap in parentheses anymore
+                    // since the extracted assignments need to be at statement level
+                    if (extracted.length > 0) {
+                        return cleanInner;
+                    } else {
+                        return makeASTWithMeta(
+                            EParen(cleanInner),
+                            e.metadata,
+                            e.pos
+                        );
+                    }
+                    
+                case EFn(clauses):
+                    #if debug_assignment_extraction
+                    trace('[XRay AssignmentExtraction] Processing anonymous function with ${clauses.length} clauses');
+                    #end
+                    
+                    // Process each clause body for assignments
+                    var cleanClauses = [];
+                    for (clause in clauses) {
+                        #if debug_assignment_extraction
+                        trace('[XRay AssignmentExtraction] Processing clause body type: ${Type.enumConstructor(clause.body.def)}');
+                        #end
+                        
+                        // Extract assignments from the clause body
+                        var result = extractAndTransformExpression(clause.body);
+                        
+                        if (result.hasExtracted) {
+                            #if debug_assignment_extraction
+                            trace('[XRay AssignmentExtraction] Extracted ${result.extracted.length} assignments from fn clause');
+                            #end
+                            
+                            // Create a block with extracted assignments followed by the cleaned expression
+                            var statements = result.extracted.copy();
+                            statements.push(result.expression);
+                            var cleanBody = makeAST(EBlock(statements));
+                            
+                            cleanClauses.push({
+                                args: clause.args,
+                                guard: clause.guard,
+                                body: cleanBody
+                            });
+                        } else {
+                            // Even if no top-level extractions, the body might have been cleaned internally
+                            cleanClauses.push({
+                                args: clause.args,
+                                guard: clause.guard,
+                                body: result.expression  // Use the cleaned expression
+                            });
+                        }
+                    }
+                    
+                    return makeASTWithMeta(
+                        EFn(cleanClauses),
+                        e.metadata,
+                        e.pos
+                    );
+                    
+                case EBlock(statements):
+                    #if debug_assignment_extraction
+                    trace('[XRay AssignmentExtraction] Processing EBlock in expression context with ${statements.length} statements');
+                    for (i in 0...statements.length) {
+                        trace('[XRay AssignmentExtraction] Statement $i: ${Type.enumConstructor(statements[i].def)}');
+                    }
+                    #end
+                    
+                    // Special case: EBlock with assignments should have those assignments extracted
+                    // This happens when Haxe desugars complex expressions
+                    if (statements.length == 2) {
+                        switch(statements[0].def) {
+                            case EMatch(pattern, value):
+                                #if debug_assignment_extraction
+                                trace('[XRay AssignmentExtraction] Found assignment in block - extracting');
+                                #end
+                                // Extract the assignment
+                                extracted.push(statements[0]);
+                                // Return just the second statement (the actual expression)
+                                return extractFromExpr(statements[1]);
+                            default:
+                        }
+                    }
+                    
+                    // General block processing
+                    var cleanStatements = [];
+                    for (i in 0...statements.length) {
+                        var stmt = statements[i];
+                        var isLast = (i == statements.length - 1);
+                        
+                        if (isLast) {
+                            // Last statement in block should be processed for extraction
+                            // but kept as the return value
+                            var cleanStmt = extractFromExpr(stmt);
+                            cleanStatements.push(cleanStmt);
+                        } else {
+                            // Non-last statements that are assignments should be extracted
+                            switch(stmt.def) {
+                                case EMatch(_, _):
+                                    // Extract assignment to outer scope
+                                    var cleanStmt = extractFromExpr(stmt);
+                                    // The extraction already added it to 'extracted' array
+                                    // Don't add to cleanStatements
+                                default:
+                                    // Keep other statements as-is
+                                    cleanStatements.push(extractFromExpr(stmt));
+                            }
+                        }
+                    }
+                    
+                    // If only one statement remains, unwrap the block
+                    if (cleanStatements.length == 1) {
+                        return cleanStatements[0];
+                    } else if (cleanStatements.length == 0) {
+                        // Empty block becomes nil
+                        return makeAST(ENil);
+                    } else {
+                        return makeASTWithMeta(
+                            EBlock(cleanStatements),
+                            e.metadata,
+                            e.pos
+                        );
+                    }
                     
                 default:
                     return e;
@@ -258,7 +533,11 @@ class AssignmentExtractionTransforms {
         
         #if debug_assignment_extraction
         if (extracted.length > 0) {
-            trace('[XRay AssignmentExtraction] Extracted ${extracted.length} assignments');
+            trace('[XRay AssignmentExtraction] ✅ Extracted ${extracted.length} assignments from expression');
+            for (i in 0...extracted.length) {
+                trace('[XRay AssignmentExtraction] Extracted[$i]: ${Type.enumConstructor(extracted[i].def)}');
+            }
+            trace('[XRay AssignmentExtraction] Cleaned expression: ${Type.enumConstructor(cleanExpr.def)}');
         }
         #end
         

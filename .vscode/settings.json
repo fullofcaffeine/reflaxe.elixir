@@ -4,16 +4,32 @@
     "*.hxml": "xml"
   },
   "haxe.configurations": [
-    ["src/reflaxe/elixir/ElixirCompiler.hx"],
-    ["test/integration/CompilationPipelineTest.hxml"],
-    ["test/performance/PerformanceBenchmarks.hxml"]
+    [
+      "-C",
+      "examples/todo-app",
+      "build-server.hxml"
+    ],
+    [
+      "-C",
+      "examples/todo-app",
+      "build-client.hxml"
+    ],
+    [
+      "-C",
+      "examples/todo-app",
+      "build-server.hxml",
+      "-cp",
+      "src_haxe/test"
+    ],
+    [
+      "test/integration/CompilationPipelineTest.hxml"
+    ],
+    [
+      "test/performance/PerformanceBenchmarks.hxml"
+    ]
   ],
   "haxe.enableCompilationServer": true,
   "haxe.enableServerView": true,
-  "haxe.enableMethodsView": true,
-  "haxe.displayConfigurations": [
-    "src"
-  ],
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
@@ -40,7 +56,9 @@
     "editor.defaultFormatter": "vshaxe.haxe-support",
     "editor.tabSize": 4,
     "editor.insertSpaces": true,
-    "editor.rulers": [100],
+    "editor.rulers": [
+      100
+    ],
     "editor.wordWrap": "wordWrapColumn",
     "editor.wordWrapColumn": 100
   },
@@ -48,7 +66,9 @@
     "editor.defaultFormatter": "elixir-lsp.elixir-ls",
     "editor.tabSize": 2,
     "editor.insertSpaces": true,
-    "editor.rulers": [98],
+    "editor.rulers": [
+      98
+    ],
     "editor.formatOnSave": true
   },
   "elixirLS.dialyzerEnabled": true,
@@ -76,7 +96,7 @@
     },
     "PERFORMANCE": {
       "icon": "zap",
-      "type": "line", 
+      "type": "line",
       "iconColour": "yellow",
       "foreground": "yellow"
     },

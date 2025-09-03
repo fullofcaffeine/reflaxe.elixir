@@ -117,8 +117,9 @@ class TodoLive {
 		// Track user presence for real-time collaboration
 		var presenceSocket = server.presence.TodoPresence.trackUser(socket, currentUser);
 		
-		// Create type-safe assigns structure
-		var assigns: TodoLiveAssigns = {
+		// Use LiveSocket for type-safe bulk assigns with inline object literal
+		var liveSocket: LiveSocket<TodoLiveAssigns> = presenceSocket;
+		var updatedSocket = liveSocket.merge({
 			todos: todos,
 			filter: "all",
 			sortBy: "created",  // camelCase!
@@ -131,11 +132,8 @@ class TodoLive {
 			completedTodos: countCompleted(todos),  // camelCase!
 			pendingTodos: countPending(todos),  // camelCase!
 			// Initialize presence tracking (single map - Phoenix pattern)
-			onlineUsers: new Map()  // Will be populated by handle_info
-		};
-		
-		// Use assign_multiple for bulk assigns (full object)
-		var updatedSocket = LiveView.assignMultiple(presenceSocket, assigns);
+			onlineUsers: []  // Will be populated by handle_info
+		});
 		
 		return Ok(updatedSocket);
 	}
@@ -241,7 +239,8 @@ class TodoLive {
 							case Error: phoenix.Phoenix.FlashType.Error;
 							case Critical: phoenix.Phoenix.FlashType.Error;
 						};
-						LiveView.putFlash(socket, flashType, message);
+						var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+					liveSocket.putFlash(flashType, message);
 				}
 			
 			case None:
@@ -282,7 +281,8 @@ class TodoLive {
 				
 			case Error(changeset):
 				// Handle validation errors
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo");
+				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+				return liveSocket.putFlash(phoenix.Phoenix.FlashType.Error, "Failed to create todo");
 		}
 	}
 	
@@ -316,13 +316,16 @@ class TodoLive {
 				var todos = [todo].concat(socket.assigns.todos);
 				// Use LiveSocket for type-safe assigns manipulation
 				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-				return liveSocket.merge({
+				var updatedSocket = liveSocket.merge({
 					todos: todos,
 					showForm: false
-				}).putFlash(phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
+				});
+				var liveSocketUpdated: LiveSocket<TodoLiveAssigns> = updatedSocket;
+				return liveSocketUpdated.putFlash(phoenix.Phoenix.FlashType.Success, "Todo created successfully!");
 				
 			case Error(reason):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
+				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+				return liveSocket.putFlash(phoenix.Phoenix.FlashType.Error, "Failed to create todo: " + reason);
 		}
 	}
 	
@@ -346,7 +349,8 @@ class TodoLive {
 				return updateTodoInList(updatedTodo, socket);
 				
 			case Error(reason):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
+				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+				return liveSocket.putFlash(phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
 		}
 	}
 	
@@ -368,7 +372,8 @@ class TodoLive {
 				return removeTodoFromList(id, socket);
 				
 			case Error(reason):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to delete todo: " + reason);
+				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+				return liveSocket.putFlash(phoenix.Phoenix.FlashType.Error, "Failed to delete todo: " + reason);
 		}
 	}
 	
@@ -392,7 +397,8 @@ class TodoLive {
 				return updateTodoInList(updatedTodo, socket);
 				
 			case Error(reason):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
+				var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+				return liveSocket.putFlash(phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
 		}
 	}
 	
@@ -531,10 +537,11 @@ class TodoLive {
 				trace("Failed to broadcast bulk complete: " + reason);
 		}
 		
-		// Reload todos and update socket with complete assigns
+		// Reload todos and update socket with inline object literal for merge()
 		var updatedTodos = loadTodos(socket.assigns.currentUser.id);
 		var currentAssigns = socket.assigns;
-		var completeAssigns: TodoLiveAssigns = {
+		var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+		var updatedSocket = liveSocket.merge({
 			todos: updatedTodos,
 			filter: currentAssigns.filter,
 			sortBy: currentAssigns.sortBy,
@@ -547,10 +554,10 @@ class TodoLive {
 			completedTodos: updatedTodos.length,  // All are completed now
 			pendingTodos: 0,  // None pending after bulk complete
 			onlineUsers: currentAssigns.onlineUsers  // Include onlineUsers field
-		};
-		var updatedSocket = LiveView.assignMultiple(socket, completeAssigns);
+		});
 		
-		return LiveView.putFlash(updatedSocket, phoenix.Phoenix.FlashType.Info, "All todos marked as completed!");
+		var liveSocketUpdated: LiveSocket<TodoLiveAssigns> = updatedSocket;
+		return liveSocketUpdated.putFlash(phoenix.Phoenix.FlashType.Info, "All todos marked as completed!");
 	}
 	
 	static function deleteCompletedTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {

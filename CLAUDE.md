@@ -1748,6 +1748,16 @@ When fixing a bug:
 - **Example of wrong approach**: Keeping detectArrayBuildingPattern() that returns null "for compatibility"
 - **Example of right approach**: Delete the method entirely when WhileLoopCompiler is removed
 
+### ⚠️ CRITICAL: Clean Up Failed Attempts Immediately
+**FUNDAMENTAL RULE: When debugging attempts fail, clean up the code immediately before trying a different approach.**
+- **NO accumulating debug code** that didn't solve the problem
+- **NO leaving metadata fields** that aren't actually used
+- **NO keeping helper functions** created for failed approaches
+- **Clean as you go** - don't wait until later to remove failed attempts
+- **Each new attempt** should start from a clean slate
+- **Example of wrong approach**: Adding metadata fields, debug traces, and helper functions that don't solve the issue
+- **Example of right approach**: Remove failed code immediately, understand the real problem, then implement a focused fix
+
 ### ⚠️ CRITICAL: No Untyped Usage
 **FUNDAMENTAL RULE: NEVER use `untyped` or `Dynamic` unless there's a very good justified reason.**
 - All field access must be properly typed

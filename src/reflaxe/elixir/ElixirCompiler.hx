@@ -794,6 +794,19 @@ class ElixirCompiler extends GenericCompiler<
                 body = buildFromTypedExpr(funcExpr);
             }
             
+            // Apply transformations to the function body before using it
+            // This ensures assignment extraction and other transforms run on expressions
+            var originalBody = body;
+            body = reflaxe.elixir.ast.ElixirASTTransformer.transform(body);
+            
+            #if debug_ast_transformation
+            if (funcName == "get_errors_map") {
+                trace('[XRay Transformation] Transforming get_errors_map function');
+                trace('[XRay Transformation] Original body type: ${Type.enumConstructor(originalBody.def)}');
+                trace('[XRay Transformation] Transformed body type: ${Type.enumConstructor(body.def)}');
+            }
+            #end
+            
             var funcDef = func.field.isPublic 
                 ? ElixirASTDef.EDef(funcName, args, null, body)
                 : ElixirASTDef.EDefp(funcName, args, null, body);
