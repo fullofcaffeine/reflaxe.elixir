@@ -3,7 +3,7 @@ defmodule Output do
     bigEndian = b
     b
   end
-  def write_byte(struct, c) do
+  def write_byte(struct, _c) do
     nil
   end
   def write_bytes(struct, b, pos, len) do
