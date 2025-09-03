@@ -267,7 +267,24 @@ class ElixirASTPrinter {
                 }
                 
             case EThrow(value):
-                'throw(' + print(value, 0) + ')';
+                // Ensure throw arguments are printed as single-line expressions
+                // to avoid syntax errors with complex string concatenation
+                var valueStr = switch(value.def) {
+                    case EBinary(StringConcat, left, right):
+                        // For string concatenation with complex expressions,
+                        // ensure everything stays on one line
+                        var leftStr = print(left, 0);
+                        var rightStr = print(right, 0);
+                        // Remove any line breaks that might have been introduced
+                        leftStr = leftStr.split('\n').join(' ');
+                        rightStr = rightStr.split('\n').join(' ');
+                        leftStr + ' <> ' + rightStr;
+                    default:
+                        // For other expressions, print normally but ensure single line
+                        var result = print(value, 0);
+                        result.split('\n').join(' ');
+                };
+                'throw(' + valueStr + ')';
                 
             // ================================================================
             // Data Structures
