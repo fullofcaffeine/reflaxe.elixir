@@ -2,35 +2,62 @@ package server.live;
 
 import phoenix.Phoenix.Socket;
 import phoenix.LiveSocket;
-import phoenix.Phoenix.LiveView;  // Use the comprehensive Phoenix module version
 import server.live.TodoLive.TodoLiveAssigns;
 
 /**
- * Type-safe socket assign operations for TodoLive
+ * Type-safe socket assign operations for TodoLive using LiveSocket patterns
  * 
- * This approach eliminates string-based keys and provides compile-time 
- * validation for socket assign operations, similar to our SafePubSub pattern.
+ * This class demonstrates how to use the Phoenix framework's LiveSocket
+ * type-safe assign patterns. The LiveSocket provides compile-time validation
+ * of field names WITHOUT needing Dynamic, cast, or string field names.
  * 
- * ## Benefits:
- * - **Compile-time validation**: No more typos in assign keys
- * - **Type safety**: Each assignment is validated for correct value type
- * - **IntelliSense support**: IDE can auto-complete available assignments
- * - **Refactor friendly**: Renaming fields updates all references automatically
+ * ## Architecture Benefits:
+ * - **Compile-time field validation**: The `_.fieldName` pattern validates fields exist
+ * - **No cast needed**: LiveSocket methods return properly typed sockets
+ * - **No Dynamic needed**: Field access is validated at compile time
+ * - **No strings for field names**: The underscore pattern provides type safety
+ * - **Automatic camelCase conversion**: Field names are converted to snake_case for Phoenix
+ * - **IntelliSense support**: Full IDE autocomplete for all operations
  * 
- * ## Usage:
+ * ## Usage Patterns:
  * ```haxe
- * // Type-safe individual assignments
- * socket = SafeAssigns.setEditingTodo(socket, todo);
- * socket = SafeAssigns.setSelectedTags(socket, tags);
+ * // Type-safe individual assignments with _.fieldName pattern
+ * var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+ * socket = liveSocket.assign(_.editingTodo, todo);
+ * socket = liveSocket.assign(_.selectedTags, tags);
  * 
- * // Type-safe bulk assignments  
- * socket = SafeAssigns.updateStats(socket, newTodos);
+ * // Type-safe bulk assignments with merge
+ * socket = liveSocket.merge({
+ *     todos: newTodos,
+ *     totalTodos: newTodos.length,
+ *     completedTodos: completed,
+ *     pendingTodos: pending
+ * });
  * ```
+ * 
+ * ## Why This Pattern Exists:
+ * Phoenix LiveView uses dynamic assigns that could cause runtime errors.
+ * The LiveSocket wrapper provides compile-time validation that:
+ * 1. Fields exist in the assigns typedef
+ * 2. Values match the expected types
+ * 3. Field names are correctly converted to snake_case
+ * 
+ * This prevents the #1 source of LiveView bugs: typos in assign keys.
+ * 
+ * ## Future Improvements:
+ * While the `_.fieldName` syntax works well, we're exploring more intuitive alternatives.
+ * See [Future Assign Syntax Ideas](../../../docs/07-patterns/future-assign-syntax-ideas.md)
+ * for proposals like typed field descriptors and fluent builders that might feel more natural.
  */
 class SafeAssigns {
     
     /**
-     * Set the editingTodo field
+     * Set the editingTodo field using LiveSocket's type-safe assign pattern
+     * 
+     * The _.editingTodo syntax is validated at compile time to ensure:
+     * - The field exists in TodoLiveAssigns
+     * - The type matches (Null<Todo>)
+     * - The field name is converted to :editing_todo in Elixir
      */
     public static function setEditingTodo(socket: Socket<TodoLiveAssigns>, todo: Null<server.schemas.Todo>): Socket<TodoLiveAssigns> {
         var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
@@ -38,7 +65,7 @@ class SafeAssigns {
     }
     
     /**
-     * Set the selectedTags field
+     * Set the selectedTags field using LiveSocket's type-safe assign pattern
      */
     public static function setSelectedTags(socket: Socket<TodoLiveAssigns>, tags: Array<String>): Socket<TodoLiveAssigns> {
         var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
@@ -46,7 +73,7 @@ class SafeAssigns {
     }
     
     /**
-     * Set the filter field
+     * Set the filter field using LiveSocket's type-safe assign pattern
      */
     public static function setFilter(socket: Socket<TodoLiveAssigns>, filter: String): Socket<TodoLiveAssigns> {
         var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
@@ -54,7 +81,7 @@ class SafeAssigns {
     }
     
     /**
-     * Set the sortBy field
+     * Set the sortBy field using LiveSocket's type-safe assign pattern
      */
     public static function setSortBy(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
         var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
@@ -62,7 +89,7 @@ class SafeAssigns {
     }
     
     /**
-     * Set the searchQuery field
+     * Set the searchQuery field using LiveSocket's type-safe assign pattern
      */
     public static function setSearchQuery(socket: Socket<TodoLiveAssigns>, query: String): Socket<TodoLiveAssigns> {
         var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
@@ -70,7 +97,7 @@ class SafeAssigns {
     }
     
     /**
-     * Set the showForm field
+     * Set the showForm field using LiveSocket's type-safe assign pattern
      */
     public static function setShowForm(socket: Socket<TodoLiveAssigns>, showForm: Bool): Socket<TodoLiveAssigns> {
         var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
@@ -79,11 +106,16 @@ class SafeAssigns {
     
     /**
      * Update todos and automatically recalculate statistics
+     * 
+     * Uses LiveSocket's merge pattern for type-safe bulk updates.
+     * The merge method validates all field names at compile time
+     * and ensures type compatibility. No Dynamic, cast, or strings needed!
      */
     public static function updateTodosAndStats(socket: Socket<TodoLiveAssigns>, todos: Array<server.schemas.Todo>): Socket<TodoLiveAssigns> {
         var completed = countCompleted(todos);
         var pending = countPending(todos);
         
+        // Use LiveSocket's type-safe merge for bulk updates
         var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
         return liveSocket.merge({
             todos: todos,
@@ -95,6 +127,8 @@ class SafeAssigns {
     
     /**
      * Update just the todos list without stats recalculation
+     * 
+     * Uses LiveSocket's assign pattern for single field update.
      */
     public static function setTodos(socket: Socket<TodoLiveAssigns>, todos: Array<server.schemas.Todo>): Socket<TodoLiveAssigns> {
         var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
