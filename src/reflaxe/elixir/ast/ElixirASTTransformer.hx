@@ -2138,6 +2138,11 @@ class ElixirASTTransformer {
                 );
             case EModuleAttribute(name, value):
                 makeASTWithMeta(EModuleAttribute(name, transformer(value)), node.metadata, node.pos);
+            case ERemoteCall(module, funcName, args):
+                makeASTWithMeta(
+                    ERemoteCall(module != null ? transformer(module) : null, funcName, args.map(transformer)),
+                    node.metadata, node.pos
+                );
             case _:
                 // Leaf nodes - return unchanged
                 node;
@@ -2690,8 +2695,28 @@ class ElixirASTTransformer {
                         underscoreVars.set(name, true);
                         allUnderscoreVars.set(name, true);
                         #if debug_ast_transformer
-                        trace('[XRay UnderscoreCleanup] Found used underscore variable: $name');
+                        trace('[XRay UnderscoreCleanup] Found used underscore variable: $name at ${node.pos}');
                         #end
+                    }
+                    
+                case ERemoteCall(module, funcName, args):
+                    #if debug_ast_transformer
+                    trace('[XRay UnderscoreCleanup] Found ERemoteCall: $funcName with ${args.length} args');
+                    #end
+                    // Recursively collect from module and all arguments
+                    if (module != null) collectVariables(module);
+                    for (arg in args) {
+                        collectVariables(arg);
+                    }
+                    
+                case EFn(clauses):
+                    #if debug_ast_transformer
+                    trace('[XRay UnderscoreCleanup] Found EFn with ${clauses.length} clauses');
+                    #end
+                    // Recursively collect from lambda/function bodies
+                    for (clause in clauses) {
+                        if (clause.guard != null) collectVariables(clause.guard);
+                        collectVariables(clause.body);
                     }
                     
                 case _:
@@ -2780,6 +2805,9 @@ class ElixirASTTransformer {
             var transformed = switch(node.def) {
                 case EVar(name):
                     if (renameMap.exists(name)) {
+                        #if debug_ast_transformer
+                        trace('[XRay UnderscoreCleanup] Renaming EVar: $name -> ${renameMap.get(name)}');
+                        #end
                         makeASTWithMeta(EVar(renameMap.get(name)), node.metadata, node.pos);
                     } else {
                         node;

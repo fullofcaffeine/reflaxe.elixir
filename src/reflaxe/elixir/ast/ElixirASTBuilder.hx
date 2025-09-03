@@ -2803,10 +2803,12 @@ class ElixirASTBuilder {
             return name;
         }
         
-        // Don't modify compiler-generated temporary variables like _g, _g1, etc.
-        // These are created by Haxe's desugaring and should be preserved as-is
+        // Transform compiler-generated temporary variables like _g, _g1, etc.
+        // These are created by Haxe's desugaring and should be cleaned up
+        // to remove the underscore prefix since they're actually used variables
         if (name.charAt(0) == "_" && name.charAt(1) == "g") {
-            return name; // Keep _g variables as-is
+            // _g, _g1, _g_1 -> g, g1, g_1
+            return name.substr(1); // Remove leading underscore
         }
         
         // Simple snake_case conversion for regular variables
