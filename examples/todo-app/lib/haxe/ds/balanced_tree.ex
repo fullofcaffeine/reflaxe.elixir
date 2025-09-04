@@ -125,7 +125,7 @@ end)
     if (t.left == nil), do: t.right
     struct.balance(struct.removeMinBinding(t.left), t.key, t.value, t.right)
   end
-  defp balance(struct, l, k, v, r) do
+  defp balance(_struct, l, k, v, r) do
     hl = l.get_height()
     hr = r.get_height()
     if (hl > hr + 2) do
@@ -146,7 +146,7 @@ end)
       end
     end
   end
-  defp compare(struct, k1, k2) do
+  defp compare(_struct, k1, k2) do
     Reflect.compare(k1, k2)
   end
   def to_string(struct) do

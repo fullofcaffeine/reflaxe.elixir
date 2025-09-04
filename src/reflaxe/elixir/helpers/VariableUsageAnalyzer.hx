@@ -297,6 +297,116 @@ class VariableUsageAnalyzer {
         
         return usageMap;
     }
+    
+    /**
+     * Check if an expression contains a reference to "this"
+     * Used to determine if the struct parameter in instance methods should be prefixed with underscore
+     * 
+     * @param expr The TypedExpr to analyze for "this" references
+     * @return true if the expression contains a reference to "this", false otherwise
+     */
+    public static function containsThisReference(expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        switch(expr.expr) {
+            case TConst(TThis):
+                return true;
+                
+            case TLocal(v) if (v.name == "this" || v.name == "_this"):
+                return true;
+                
+            case TBlock(exprs):
+                for (e in exprs) {
+                    if (containsThisReference(e)) return true;
+                }
+                
+            case TBinop(_, e1, e2):
+                return containsThisReference(e1) || containsThisReference(e2);
+                
+            case TUnop(_, _, e):
+                return containsThisReference(e);
+                
+            case TField(e, _):
+                return containsThisReference(e);
+                
+            case TCall(e, el):
+                if (containsThisReference(e)) return true;
+                for (arg in el) {
+                    if (containsThisReference(arg)) return true;
+                }
+                
+            case TIf(econd, eif, eelse):
+                if (containsThisReference(econd)) return true;
+                if (containsThisReference(eif)) return true;
+                if (eelse != null && containsThisReference(eelse)) return true;
+                
+            case TSwitch(e, cases, edef):
+                if (containsThisReference(e)) return true;
+                for (c in cases) {
+                    if (containsThisReference(c.expr)) return true;
+                }
+                if (edef != null && containsThisReference(edef)) return true;
+                
+            case TWhile(econd, e, _):
+                return containsThisReference(econd) || containsThisReference(e);
+                
+            case TFor(_, e1, e2):
+                return containsThisReference(e1) || containsThisReference(e2);
+                
+            case TTry(e, catches):
+                if (containsThisReference(e)) return true;
+                for (c in catches) {
+                    if (containsThisReference(c.expr)) return true;
+                }
+                
+            case TReturn(e):
+                if (e != null) return containsThisReference(e);
+                
+            case TThrow(e):
+                return containsThisReference(e);
+                
+            case TVar(_, e):
+                if (e != null) return containsThisReference(e);
+                
+            case TFunction(tfunc):
+                return containsThisReference(tfunc.expr);
+                
+            case TArrayDecl(el):
+                for (e in el) {
+                    if (containsThisReference(e)) return true;
+                }
+                
+            case TObjectDecl(fields):
+                for (f in fields) {
+                    if (containsThisReference(f.expr)) return true;
+                }
+                
+            case TParenthesis(e):
+                return containsThisReference(e);
+                
+            case TCast(e, _):
+                return containsThisReference(e);
+                
+            case TMeta(_, e):
+                return containsThisReference(e);
+                
+            case TNew(_, _, el):
+                for (e in el) {
+                    if (containsThisReference(e)) return true;
+                }
+                
+            case TEnumParameter(e, _, _):
+                return containsThisReference(e);
+                
+            case TEnumIndex(e):
+                return containsThisReference(e);
+                
+            default:
+                // For other cases, assume no this reference
+        }
+        
+        return false;
+    }
 }
 
 #end
