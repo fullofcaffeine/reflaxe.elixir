@@ -41,13 +41,13 @@ defmodule JsonPrinter do
     items = []
     g = 0
     g1 = arr.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
   if (g < g1) do
     i = g = g + 1
     items.push(struct.writeValue(arr[i], Std.string(i)))
-    {:cont, acc}
+    {:cont, {g, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {g, acc_state}}
   end
 end)
     if (struct.space != nil && items.length > 0) do
@@ -60,7 +60,7 @@ end)
     fields = Reflect.fields(obj)
     pairs = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
   if (g < fields.length) do
     field = fields[g]
     g = g + 1
@@ -68,9 +68,9 @@ end)
     key = struct.quoteString(field)
     val = struct.writeValue(value, field)
     if (struct.space != nil), do: pairs.push(key <> ": " <> val), else: pairs.push(key <> ":" <> val)
-    {:cont, acc}
+    {:cont, {g, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {g, acc_state}}
   end
 end)
     if (struct.space != nil && pairs.length > 0) do
@@ -83,7 +83,7 @@ end)
     result = "\""
     g = 0
     g1 = s.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, :ok}, fn _, {g, result, acc_state} ->
   if (g < g1) do
     i = g = g + 1
     c = s.charCodeAt(i)
@@ -119,9 +119,9 @@ end)
           end
       end
     end
-    {:cont, acc}
+    {:cont, {g, result, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {g, result, acc_state}}
   end
 end)
     result = result <> "\""
