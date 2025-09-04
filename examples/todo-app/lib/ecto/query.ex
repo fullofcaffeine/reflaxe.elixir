@@ -1,6 +1,6 @@
 defmodule Query do
   def from(schema) do
-    query = Ecto.Query.from(schema)
+    query = (require Ecto.Query; Ecto.Query.from(schema))
     this1 = query
     this1
   end

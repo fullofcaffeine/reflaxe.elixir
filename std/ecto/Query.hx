@@ -32,7 +32,9 @@ abstract EctoQuery<T>(Dynamic) {
         // TODO: This implementation is incorrect - it uses literal :field atom instead of dynamic field
         // Marking parameter as unused with underscore prefix to avoid compilation warning
         // Proper implementation would require Ecto.Query.dynamic or a different approach
-        var newQuery = untyped __elixir__('Ecto.Query.where({0}, [field: {1}])', this, value);
+        // Using import inside the function to access the macro
+        // Using require to make the macro available without importing all functions
+        var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.where({0}, [field: ^{1}]))', this, value);
         return new EctoQuery<T>(newQuery);
     }
     
@@ -44,10 +46,11 @@ abstract EctoQuery<T>(Dynamic) {
      */
     public function orderBy(field: String, direction: String = "asc"): EctoQuery<T> {
         // Build the order_by clause with proper direction atom
+        // Using import inside the expression to access the macro
         var newQuery = if (direction == "desc") {
-            untyped __elixir__('Ecto.Query.order_by({0}, [desc: {1}])', this, field);
+            untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [desc: ^{1}]))', this, field);
         } else {
-            untyped __elixir__('Ecto.Query.order_by({0}, [asc: {1}])', this, field);
+            untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [asc: ^{1}]))', this, field);
         }
         return new EctoQuery<T>(newQuery);
     }
@@ -58,7 +61,9 @@ abstract EctoQuery<T>(Dynamic) {
      * @return The query with the limit applied
      */
     public function limit(count: Int): EctoQuery<T> {
-        var newQuery = untyped __elixir__('Ecto.Query.limit({0}, {1})', this, count);
+        // Using import inside the expression to access the macro
+        // Using require to make the macro available without importing all functions
+        var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.limit({0}, ^{1}))', this, count);
         return new EctoQuery<T>(newQuery);
     }
     
@@ -68,7 +73,9 @@ abstract EctoQuery<T>(Dynamic) {
      * @return The query with the offset applied
      */
     public function offset(count: Int): EctoQuery<T> {
-        var newQuery = untyped __elixir__('Ecto.Query.offset({0}, {1})', this, count);
+        // Using import inside the expression to access the macro
+        // Using require to make the macro available without importing all functions
+        var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.offset({0}, ^{1}))', this, count);
         return new EctoQuery<T>(newQuery);
     }
     
@@ -97,7 +104,8 @@ class Query {
      * @return A new EctoQuery instance
      */
     public static function from<T>(schema: Class<T>): EctoQuery<T> {
-        var query = untyped __elixir__('Ecto.Query.from({0})', schema);
+        // Using require to make the macro available
+        var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from({0}))', schema);
         return new EctoQuery<T>(query);
     }
     
