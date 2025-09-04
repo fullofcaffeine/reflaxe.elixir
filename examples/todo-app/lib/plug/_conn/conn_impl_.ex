@@ -37,15 +37,15 @@ defmodule Conn_Impl_ do
     result = %{}
     g = 0
     g1 = Reflect.fields(headers)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
   if (g < g1.length) do
     field = g1[g]
     g = g + 1
     value = Reflect.field(headers, field)
     Map.put(result, field, value)
-    {:cont, acc}
+    {:cont, {g, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {g, acc_state}}
   end
 end)
     result
@@ -85,15 +85,15 @@ end)
     result = %{}
     g = 0
     g1 = Reflect.fields(headers)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
   if (g < g1.length) do
     field = g1[g]
     g = g + 1
     value = Reflect.field(headers, field)
     Map.put(result, field, value)
-    {:cont, acc}
+    {:cont, {g, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {g, acc_state}}
   end
 end)
     result
