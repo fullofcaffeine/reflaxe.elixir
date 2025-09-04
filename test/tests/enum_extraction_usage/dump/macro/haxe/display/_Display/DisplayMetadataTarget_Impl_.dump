@@ -1,0 +1,24 @@
+@:enum
+private class haxe.display._Display.DisplayMetadataTarget_Impl_ {
+
+	@:value(cast "class") @:impl @:enum
+	public static inline var Class:haxe.display.DisplayMetadataTarget = [Cast:haxe.display.DisplayMetadataTarget] [Const:String] "class";
+
+	@:value(cast "field") @:impl @:enum
+	public static inline var Field:haxe.display.DisplayMetadataTarget = [Cast:haxe.display.DisplayMetadataTarget] [Const:String] "field";
+
+	@:value(cast "expr") @:impl @:enum
+	public static inline var Expr:haxe.display.DisplayMetadataTarget = [Cast:haxe.display.DisplayMetadataTarget] [Const:String] "expr";
+
+	@:value(cast "function") @:impl @:enum
+	public static inline var Function:haxe.display.DisplayMetadataTarget = [Cast:haxe.display.DisplayMetadataTarget] [Const:String] "function";
+
+	@:value(cast "variable") @:impl @:enum
+	public static inline var Variable:haxe.display.DisplayMetadataTarget = [Cast:haxe.display.DisplayMetadataTarget] [Const:String] "variable";
+
+	@:value(cast "type") @:impl @:enum
+	public static inline var Type:haxe.display.DisplayMetadataTarget = [Cast:haxe.display.DisplayMetadataTarget] [Const:String] "type";
+
+	@:value(cast "argument") @:impl @:enum
+	public static inline var Argument:haxe.display.DisplayMetadataTarget = [Cast:haxe.display.DisplayMetadataTarget] [Const:String] "argument";
+}

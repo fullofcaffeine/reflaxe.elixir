@@ -1,0 +1,17 @@
+@:keep @:directlyUsed @:used @:ifFeature("anon_read.keyValueIterator", "dynamic_read.keyValueIterator")
+class haxe.iterators.ArrayKeyValueIterator<T> {
+
+	public inline function new[Function:(array : Array<haxe.iterators.ArrayKeyValueIterator.T>) -> Void]
+		[Arg:Array<haxe.iterators.ArrayKeyValueIterator.T>] [Local array(28627):Array<haxe.iterators.ArrayKeyValueIterator.T>]
+		[Block:Array<haxe.iterators.ArrayKeyValueIterator.T>]
+			[Binop:Array<haxe.iterators.ArrayKeyValueIterator.T>]
+				[Field:Array<haxe.iterators.ArrayKeyValueIterator.T>]
+					[Const:haxe.iterators.ArrayKeyValueIterator<haxe.iterators.ArrayKeyValueIterator.T>] this
+					[FInstance:Array<haxe.iterators.ArrayKeyValueIterator.T>]
+						haxe.iterators.ArrayKeyValueIterator<haxe.iterators.ArrayKeyValueIterator.T>
+						array:Array<haxe.iterators.ArrayKeyValueIterator.T>
+				=
+				[Local array(28627):Array<haxe.iterators.ArrayKeyValueIterator.T>:Array<haxe.iterators.ArrayKeyValueIterator.T>]
+
+	var array:Array<haxe.iterators.ArrayKeyValueIterator.T>;
+}

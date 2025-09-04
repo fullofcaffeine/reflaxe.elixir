@@ -1,0 +1,673 @@
+class reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl {
+
+	public function new[Function:(expr : haxe.macro.TypedExpr, wrapMetadata : Null<Array<String>>) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local expr(6611):haxe.macro.TypedExpr]
+		[Arg:Null<Array<String>>] [Local wrapMetadata(6612):Null<Array<String>>]
+		[Block:Void]
+			[Binop:Null<Array<String>>]
+				[Field:Null<Array<String>>]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FInstance:Null<Array<String>>]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						wrapMetadata:Null<Array<String>>
+				=
+				[Const:Null<Array<String>>] null
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FInstance:Bool]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						isInLambda:Bool
+				=
+				[Const:Bool] false
+			[Binop:haxe.macro.TypedExpr]
+				[Field:haxe.macro.TypedExpr]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FInstance:haxe.macro.TypedExpr]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						expr:haxe.macro.TypedExpr
+				=
+				[Local expr(6611):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Binop:Null<Array<String>>]
+				[Field:Null<Array<String>>]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FInstance:Null<Array<String>>]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						wrapMetadata:Null<Array<String>>
+				=
+				[Local wrapMetadata(6612):Null<Array<String>>:Null<Array<String>>]
+			[Var _g(6617):haxe.macro.TypedExprDef]
+				[Field:haxe.macro.TypedExprDef]
+					[Local expr(6611):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+			[Var tmp(12981):Array<haxe.macro.TypedExpr>]
+			[If:Void]
+				[Parenthesis:Bool]
+					[Binop:Bool]
+						[EnumIndex:Int] [Local _g(6617):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						==
+						[Const:Int] 14
+				[Then:Array<haxe.macro.TypedExpr>] [Block:Array<haxe.macro.TypedExpr>]
+					[Var exprs(6619):Array<haxe.macro.TypedExpr>]
+						[EnumParameter:Array<haxe.macro.TypedExpr>]
+							[Local _g(6617):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							TBlock
+							0
+					[Binop:Array<haxe.macro.TypedExpr>]
+						[Local tmp(12981):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+						=
+						[Call:Array<haxe.macro.TypedExpr>]
+							[Field:(f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> Array<haxe.macro.TypedExpr>]
+								[Local exprs(6619):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[FInstance:(f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> Array<haxe.macro.TypedExpr>]
+									Array<haxe.macro.TypedExpr>
+									map:(f : (Array.T -> map.S)) -> Array<map.S>
+							[Function:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+								[Arg:haxe.macro.TypedExpr] [Local e(6620):haxe.macro.TypedExpr]
+								[Block:Dynamic]
+									[Return:Dynamic]
+										[Call:haxe.macro.TypedExpr]
+											[Field:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+												[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+												[FStatic:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+													reflaxe.helpers.TypedExprHelper
+													copy:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr
+											[Local e(6620):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Const:Null<haxe.macro.TypedExprDef>] null
+				[Else:Array<haxe.macro.TypedExpr>] [Binop:Array<haxe.macro.TypedExpr>]
+					[Local tmp(12981):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+					=
+					[ArrayDecl:Array<haxe.macro.TypedExpr>]
+						[Call:haxe.macro.TypedExpr]
+							[Field:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+								[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+								[FStatic:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+									reflaxe.helpers.TypedExprHelper
+									copy:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr
+							[Local expr(6611):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Const:Null<haxe.macro.TypedExprDef>] null
+			[Binop:Array<haxe.macro.TypedExpr>]
+				[Field:Array<haxe.macro.TypedExpr>]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FInstance:Array<haxe.macro.TypedExpr>]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						exprList:Array<haxe.macro.TypedExpr>
+				=
+				[Local tmp(12981):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+			[Binop:Map<Int, haxe.macro.TVar>]
+				[Field:Map<Int, haxe.macro.TVar>]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FInstance:Map<Int, haxe.macro.TVar>]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						nonLambdaVars:Map<Int, haxe.macro.TVar>
+				=
+				[New:haxe.ds.IntMap<haxe.macro.TVar>] haxe.ds.IntMap<haxe.macro.TVar>
+			[Binop:Array<Int>]
+				[Field:Array<Int>]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FInstance:Array<Int>]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						arrayWrapVarIds:Array<Int>
+				=
+				[ArrayDecl:Array<Int>]
+			[Binop:haxe.macro.Position]
+				[Field:haxe.macro.Position]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FInstance:haxe.macro.Position]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						tempPos:haxe.macro.Position
+				=
+				[Call:haxe.macro.Position]
+					[Field:() -> haxe.macro.Position]
+						[TypeExpr reflaxe.helpers.PositionHelper:Class<reflaxe.helpers.PositionHelper>]
+						[FStatic:() -> haxe.macro.Position]
+							reflaxe.helpers.PositionHelper
+							unknownPos:() -> haxe.macro.Position
+
+	var expr:haxe.macro.TypedExpr;
+
+	var exprList:Array<haxe.macro.TypedExpr>;
+
+	@:value(false)
+	var isInLambda:Bool;
+
+	var nonLambdaVars:Map<Int, haxe.macro.TVar>;
+
+	var arrayWrapVarIds:Array<Int>;
+
+	@:value(null)
+	var wrapMetadata:Null<Array<String>>;
+
+	var tempPos:haxe.macro.Position;
+
+	public function fixCaptures[Function:() -> haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(6666):Int] [Const:Int] 0
+				[Var `(6667):Array<haxe.macro.TypedExpr>]
+					[Field:Array<haxe.macro.TypedExpr>]
+						[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+						[FInstance:Array<haxe.macro.TypedExpr>]
+							reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+							exprList:Array<haxe.macro.TypedExpr>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(6666):Int:Int]
+						<
+						[Field:Int]
+							[Local `(6667):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+					[Block:Void]
+						[Var e(6621):haxe.macro.TypedExpr]
+							[Array:haxe.macro.TypedExpr]
+								[Local `(6667):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[Local `(6666):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(6666):Int:Int]
+						[Call:Void]
+							[Field:(e : haxe.macro.TypedExpr) -> Void]
+								[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+								[FInstance:(e : haxe.macro.TypedExpr) -> Void]
+									reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+									fixCaptureExpr:(e : haxe.macro.TypedExpr) -> Void
+							[Local e(6621):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Block:Void]
+				[Var `(6699):Int] [Const:Int] 0
+				[Var `(6700):Array<haxe.macro.TypedExpr>]
+					[Field:Array<haxe.macro.TypedExpr>]
+						[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+						[FInstance:Array<haxe.macro.TypedExpr>]
+							reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+							exprList:Array<haxe.macro.TypedExpr>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(6699):Int:Int]
+						<
+						[Field:Int]
+							[Local `(6700):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+					[Block:Void]
+						[Var e(6668):haxe.macro.TypedExpr]
+							[Array:haxe.macro.TypedExpr]
+								[Local `(6700):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[Local `(6699):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(6699):Int:Int]
+						[Call:Void]
+							[Field:(e : haxe.macro.TypedExpr) -> Void]
+								[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+								[FInstance:(e : haxe.macro.TypedExpr) -> Void]
+									reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+									addMetaToLocals:(e : haxe.macro.TypedExpr) -> Void
+							[Local e(6668):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Return:Dynamic]
+				[ObjectDecl:{ t : haxe.macro.Type, pos : haxe.macro.Position, expr : haxe.macro.TypedExprDef }]
+					expr: [Call:haxe.macro.TypedExprDef]
+						[Field:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+							[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+							[FEnum:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+								haxe.macro.TypedExprDef
+								TBlock
+						[Field:Array<haxe.macro.TypedExpr>]
+							[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+							[FInstance:Array<haxe.macro.TypedExpr>]
+								reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+								exprList:Array<haxe.macro.TypedExpr>
+					pos: [Field:haxe.macro.Position]
+						[Field:haxe.macro.TypedExpr]
+							[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+							[FInstance:haxe.macro.TypedExpr]
+								reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+								expr:haxe.macro.TypedExpr
+						[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+					t: [Field:haxe.macro.Type]
+						[Field:haxe.macro.TypedExpr]
+							[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+							[FInstance:haxe.macro.TypedExpr]
+								reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+								expr:haxe.macro.TypedExpr
+						[FAnon:haxe.macro.Type] t:haxe.macro.Type
+
+	function fixCaptureExpr[Function:(e : haxe.macro.TypedExpr) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local e(6622):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Meta:Void]
+				:ast(switch (e.expr) {
+	case TFunction(tfunc):
+		{
+			var original = isInLambda;
+			isInLambda = true;
+			haxe.macro.TypedExprTools.iter(e, fixCaptureExpr);
+			isInLambda = original;
+		};	
+	case TVar(tvar, _):
+		{
+			if (!isInLambda && !nonLambdaVars.exists(tvar.id)) {
+				nonLambdaVars.set(tvar.id, tvar);
+			};
+		};	
+	case TLocal(tvar):
+		{
+			if (isInLambda && nonLambdaVars.exists(tvar.id)) {
+				nonLambdaVars.remove(tvar.id);
+				arrayWrapVarIds.push(tvar.id);
+			};
+		};	
+	case _:
+})
+				[Block:Void]
+					[Var `(6649):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local e(6622):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(6649):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Void]
+							[Const:Int] 1
+							[Block:Void]
+								[Var `(6650):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(6649):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TLocal
+										0
+								[Block:Void]
+									[Var tvar(6651):haxe.macro.TVar] [Local `(6650):haxe.macro.TVar:haxe.macro.TVar]
+									[Block:Void]
+										[Block:Void]
+											[If:Void]
+												[Binop:Bool]
+													[Field:Bool]
+														[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+														[FInstance:Bool]
+															reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+															isInLambda:Bool
+													&&
+													[Block:Bool]
+														[Var this(6652):haxe.IMap<Int, haxe.macro.TVar>]
+															[Field:Map<Int, haxe.macro.TVar>]
+																[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+																[FInstance:Map<Int, haxe.macro.TVar>]
+																	reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+																	nonLambdaVars:Map<Int, haxe.macro.TVar>
+														[Var key(6653):Int]
+															[Field:Int]
+																[Local tvar(6651):haxe.macro.TVar:haxe.macro.TVar]
+																[FAnon:Int] id:Int
+														[Call:Bool]
+															[Field:(key : Int) -> Bool]
+																[Cast:haxe.ds.IntMap<haxe.macro.TVar>] [Local this(6652):haxe.IMap<Int, haxe.macro.TVar>:haxe.IMap<Int, haxe.macro.TVar>]
+																[FInstance:(key : Int) -> Bool]
+																	haxe.ds.IntMap<haxe.macro.TVar>
+																	exists:(key : Int) -> Bool
+															[Local key(6653):Int:Int]
+												[Then:Int] [Block:Int]
+													[Block:Bool]
+														[Var this(6654):haxe.IMap<Int, haxe.macro.TVar>]
+															[Field:Map<Int, haxe.macro.TVar>]
+																[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+																[FInstance:Map<Int, haxe.macro.TVar>]
+																	reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+																	nonLambdaVars:Map<Int, haxe.macro.TVar>
+														[Var key(6655):Int]
+															[Field:Int]
+																[Local tvar(6651):haxe.macro.TVar:haxe.macro.TVar]
+																[FAnon:Int] id:Int
+														[Call:Bool]
+															[Field:(key : Int) -> Bool]
+																[Cast:haxe.ds.IntMap<haxe.macro.TVar>] [Local this(6654):haxe.IMap<Int, haxe.macro.TVar>:haxe.IMap<Int, haxe.macro.TVar>]
+																[FInstance:(key : Int) -> Bool]
+																	haxe.ds.IntMap<haxe.macro.TVar>
+																	remove:(key : Int) -> Bool
+															[Local key(6655):Int:Int]
+													[Call:Int]
+														[Field:(x : Int) -> Int]
+															[Field:Array<Int>]
+																[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+																[FInstance:Array<Int>]
+																	reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+																	arrayWrapVarIds:Array<Int>
+															[FInstance:(x : Int) -> Int]
+																Array<Int>
+																push:(x : Array.T) -> Int
+														[Field:Int]
+															[Local tvar(6651):haxe.macro.TVar:haxe.macro.TVar]
+															[FAnon:Int] id:Int
+						[Case:Bool]
+							[Const:Int] 12
+							[Block:Bool]
+								[Var `(6656):haxe.macro.TFunc]
+									[EnumParameter:haxe.macro.TFunc]
+										[Local `(6649):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFunction
+										0
+								[Block:Bool]
+									[Var tfunc(6657):haxe.macro.TFunc] [Local `(6656):haxe.macro.TFunc:haxe.macro.TFunc]
+									[Block:Bool]
+										[Block:Bool]
+											[Var original(6658):Bool]
+												[Field:Bool]
+													[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+													[FInstance:Bool]
+														reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+														isInLambda:Bool
+											[Binop:Bool]
+												[Field:Bool]
+													[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+													[FInstance:Bool]
+														reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+														isInLambda:Bool
+												=
+												[Const:Bool] true
+											[Call:Void]
+												[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+													[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+													[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+														haxe.macro.TypedExprTools
+														iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+												[Local e(6622):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Field:(e : haxe.macro.TypedExpr) -> Void]
+													[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+													[FClosure:(e : haxe.macro.TypedExpr) -> Void]
+														reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+														fixCaptureExpr:(e : haxe.macro.TypedExpr) -> Void
+											[Binop:Bool]
+												[Field:Bool]
+													[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+													[FInstance:Bool]
+														reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+														isInLambda:Bool
+												=
+												[Local original(6658):Bool:Bool]
+						[Case:Void]
+							[Const:Int] 13
+							[Block:Void]
+								[Var `(6659):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(6649):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										0
+								[Var `(6660):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(6649):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										1
+								[Block:Void]
+									[Var tvar(6661):haxe.macro.TVar] [Local `(6659):haxe.macro.TVar:haxe.macro.TVar]
+									[Block:Void]
+										[Block:Void]
+											[If:Void]
+												[Binop:Bool]
+													[Unop:Bool]
+														!
+														Prefix
+														[Field:Bool]
+															[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+															[FInstance:Bool]
+																reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+																isInLambda:Bool
+													&&
+													[Unop:Bool]
+														!
+														Prefix
+														[Block:Bool]
+															[Var this(6662):haxe.IMap<Int, haxe.macro.TVar>]
+																[Field:Map<Int, haxe.macro.TVar>]
+																	[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+																	[FInstance:Map<Int, haxe.macro.TVar>]
+																		reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+																		nonLambdaVars:Map<Int, haxe.macro.TVar>
+															[Var key(6663):Int]
+																[Field:Int]
+																	[Local tvar(6661):haxe.macro.TVar:haxe.macro.TVar]
+																	[FAnon:Int] id:Int
+															[Call:Bool]
+																[Field:(key : Int) -> Bool]
+																	[Cast:haxe.ds.IntMap<haxe.macro.TVar>] [Local this(6662):haxe.IMap<Int, haxe.macro.TVar>:haxe.IMap<Int, haxe.macro.TVar>]
+																	[FInstance:(key : Int) -> Bool]
+																		haxe.ds.IntMap<haxe.macro.TVar>
+																		exists:(key : Int) -> Bool
+																[Local key(6663):Int:Int]
+												[Then:Void] [Block:Void]
+													[Block:Void]
+														[Var this(6664):haxe.IMap<Int, haxe.macro.TVar>]
+															[Field:Map<Int, haxe.macro.TVar>]
+																[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+																[FInstance:Map<Int, haxe.macro.TVar>]
+																	reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+																	nonLambdaVars:Map<Int, haxe.macro.TVar>
+														[Var key(6665):Int]
+															[Field:Int]
+																[Local tvar(6661):haxe.macro.TVar:haxe.macro.TVar]
+																[FAnon:Int] id:Int
+														[Call:Void]
+															[Field:(key : Int, value : haxe.macro.TVar) -> Void]
+																[Cast:haxe.ds.IntMap<haxe.macro.TVar>] [Local this(6664):haxe.IMap<Int, haxe.macro.TVar>:haxe.IMap<Int, haxe.macro.TVar>]
+																[FInstance:(key : Int, value : haxe.macro.TVar) -> Void]
+																	haxe.ds.IntMap<haxe.macro.TVar>
+																	set:(key : Int, value : haxe.ds.IntMap.T) -> Void
+															[Local key(6665):Int:Int]
+															[Local tvar(6661):haxe.macro.TVar:haxe.macro.TVar]
+						[Default:Void] [Block:Void]
+			[Call:Void]
+				[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+					[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+					[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+						haxe.macro.TypedExprTools
+						iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+				[Local e(6622):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Field:(e : haxe.macro.TypedExpr) -> Void]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FClosure:(e : haxe.macro.TypedExpr) -> Void]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						fixCaptureExpr:(e : haxe.macro.TypedExpr) -> Void
+
+	function addMetaToLocals[Function:(e : haxe.macro.TypedExpr) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local e(6669):haxe.macro.TypedExpr]
+		[Block:Void]
+			[Var typeAndTVar(6682):Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>]
+				[Meta:Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>]
+					:ast(switch (e.expr) {
+	case TLocal(tvar):
+		{ type : e.t, tvar : tvar };	
+	case TVar(tvar, _):
+		{ type : tvar.t, tvar : tvar };	
+	case _:
+		null;	
+})
+					[Block:Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>]
+						[Var `(6676):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local e(6669):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[Switch:Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>]
+							[EnumIndex:Int] [Local `(6676):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							[Case:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+								[Const:Int] 1
+								[Block:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+									[Var `(6677):haxe.macro.TVar]
+										[EnumParameter:haxe.macro.TVar]
+											[Local `(6676):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TLocal
+											0
+									[Block:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+										[Var tvar(6678):haxe.macro.TVar] [Local `(6677):haxe.macro.TVar:haxe.macro.TVar]
+										[Block:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+											[ObjectDecl:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+												type: [Field:haxe.macro.Type]
+													[Local e(6669):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[FAnon:haxe.macro.Type] t:haxe.macro.Type
+												tvar: [Local tvar(6678):haxe.macro.TVar:haxe.macro.TVar]
+							[Case:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+								[Const:Int] 13
+								[Block:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+									[Var `(6679):haxe.macro.TVar]
+										[EnumParameter:haxe.macro.TVar]
+											[Local `(6676):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TVar
+											0
+									[Var `(6680):Null<haxe.macro.TypedExpr>]
+										[EnumParameter:Null<haxe.macro.TypedExpr>]
+											[Local `(6676):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TVar
+											1
+									[Block:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+										[Var tvar(6681):haxe.macro.TVar] [Local `(6679):haxe.macro.TVar:haxe.macro.TVar]
+										[Block:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+											[ObjectDecl:{ type : haxe.macro.Type, tvar : haxe.macro.TVar }]
+												type: [Field:haxe.macro.Type]
+													[Local tvar(6681):haxe.macro.TVar:haxe.macro.TVar]
+													[FAnon:haxe.macro.Type] t:haxe.macro.Type
+												tvar: [Local tvar(6681):haxe.macro.TVar:haxe.macro.TVar]
+							[Default:Null<Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>>] [Block:Null<Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>>] [Const:Null<Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>>] null
+			[If:Void]
+				[Binop:Bool]
+					[Local typeAndTVar(6682):Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>:Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>]
+					!=
+					[Const:Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>] null
+				[Then:Void] [Block:Void]
+					[Var tvar(6683):haxe.macro.TVar]
+						[Field:haxe.macro.TVar]
+							[Local typeAndTVar(6682):Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>:Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>]
+							[FAnon:haxe.macro.TVar] tvar:haxe.macro.TVar
+					[Var t(6684):haxe.macro.Type]
+						[Field:haxe.macro.Type]
+							[Local typeAndTVar(6682):Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>:Null<{ type : haxe.macro.Type, tvar : haxe.macro.TVar }>]
+							[FAnon:haxe.macro.Type] type:haxe.macro.Type
+					[If:Void]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local t(6684):haxe.macro.Type:haxe.macro.Type]
+									!=
+									[Const:haxe.macro.Type] null
+								&&
+								[Call:Bool]
+									[Field:(t : haxe.macro.Type) -> Bool]
+										[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+										[FInstance:(t : haxe.macro.Type) -> Bool]
+											reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+											isWrapType:(t : haxe.macro.Type) -> Bool
+									[Local t(6684):haxe.macro.Type:haxe.macro.Type]
+							&&
+							[Call:Bool]
+								[Field:(x : Int) -> Bool]
+									[Field:Array<Int>]
+										[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+										[FInstance:Array<Int>]
+											reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+											arrayWrapVarIds:Array<Int>
+									[FInstance:(x : Int) -> Bool]
+										Array<Int>
+										contains:(x : Array.T) -> Bool
+								[Field:Int]
+									[Local tvar(6683):haxe.macro.TVar:haxe.macro.TVar]
+									[FAnon:Int] id:Int
+						[Then:Void] [Block:Void]
+							[Call:Void]
+								[Field:(m : Null<haxe.macro.MetaAccess>, name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+									[TypeExpr reflaxe.helpers.NullableMetaAccessHelper:{ Statics reflaxe.helpers.NullableMetaAccessHelper }]
+									[FStatic:(m : Null<haxe.macro.MetaAccess>, name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void]
+										reflaxe.helpers.NullableMetaAccessHelper
+										maybeAdd:(m : Null<haxe.macro.MetaAccess>, name : String, params : Array<haxe.macro.Expr>, pos : haxe.macro.Position) -> Void
+								[Field:Null<haxe.macro.MetaAccess>]
+									[Local tvar(6683):haxe.macro.TVar:haxe.macro.TVar]
+									[FAnon:Null<haxe.macro.MetaAccess>] meta:Null<haxe.macro.MetaAccess>
+								[Const:String] ":arrayWrap"
+								[ArrayDecl:Array<haxe.macro.Expr>]
+								[Field:haxe.macro.Position]
+									[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+									[FInstance:haxe.macro.Position]
+										reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+										tempPos:haxe.macro.Position
+			[Call:Void]
+				[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+					[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+					[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+						haxe.macro.TypedExprTools
+						iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+				[Local e(6669):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Field:(e : haxe.macro.TypedExpr) -> Void]
+					[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+					[FClosure:(e : haxe.macro.TypedExpr) -> Void]
+						reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+						addMetaToLocals:(e : haxe.macro.TypedExpr) -> Void
+
+	function isWrapType[Function:(t : haxe.macro.Type) -> Bool]
+		[Arg:haxe.macro.Type] [Local t(6685):haxe.macro.Type]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(t : haxe.macro.Type) -> Bool]
+						[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+						[FStatic:(t : haxe.macro.Type) -> Bool]
+							reflaxe.helpers.TypeHelper
+							isPrimitive:(t : haxe.macro.Type) -> Bool
+					[Local t(6685):haxe.macro.Type:haxe.macro.Type]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[If:Void]
+				[Binop:Bool]
+					[Field:Null<Array<String>>]
+						[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+						[FInstance:Null<Array<String>>]
+							reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+							wrapMetadata:Null<Array<String>>
+					!=
+					[Const:Null<Array<String>>] null
+				[Then:Void] [Block:Void]
+					[Var m(6695):Null<haxe.macro.MetaAccess>]
+						[Call:Null<haxe.macro.MetaAccess>]
+							[Field:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>]
+								[TypeExpr reflaxe.helpers.TypeHelper:{ Statics reflaxe.helpers.TypeHelper }]
+								[FStatic:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>]
+									reflaxe.helpers.TypeHelper
+									getMeta:(type : haxe.macro.Type) -> Null<haxe.macro.MetaAccess>
+							[Local t(6685):haxe.macro.Type:haxe.macro.Type]
+					[If:Void]
+						[Binop:Bool]
+							[Local m(6695):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+							!=
+							[Const:Null<haxe.macro.MetaAccess>] null
+						[Then:Void] [Block:Void]
+							[Block:Void]
+								[Var `(6697):Int] [Const:Int] 0
+								[Var `(6698):Null<Array<String>>]
+									[Field:Null<Array<String>>]
+										[Const:reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl] this
+										[FInstance:Null<Array<String>>]
+											reflaxe.preprocessors.implementations.WrapLambdaCaptureVariablesInArrayImpl
+											wrapMetadata:Null<Array<String>>
+								[While:Void]
+									[Binop:Bool]
+										[Local `(6697):Int:Int]
+										<
+										[Field:Int]
+											[Local `(6698):Null<Array<String>>:Null<Array<String>>]
+											[FInstance:Int]
+												Array<String>
+												length:Int
+									[Block:Void]
+										[Var metaName(6696):String]
+											[Array:String]
+												[Local `(6698):Null<Array<String>>:Null<Array<String>>]
+												[Local `(6697):Int:Int]
+										[Unop:Int]
+											++
+											Prefix
+											[Local `(6697):Int:Int]
+										[If:Void]
+											[Call:Bool]
+												[Field:(name : String) -> Bool]
+													[Local m(6695):Null<haxe.macro.MetaAccess>:Null<haxe.macro.MetaAccess>]
+													[FAnon:(name : String) -> Bool] has:(name : String) -> Bool
+												[Local metaName(6696):String:String]
+											[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+}

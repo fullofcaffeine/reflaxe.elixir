@@ -1,0 +1,5 @@
+enum haxe.macro.FieldType {
+	FVar(t:Null<haxe.macro.ComplexType>, ?e:Null<haxe.macro.Expr>);
+	FFun(f:haxe.macro.Function);
+	FProp(get:String, set:String, ?t:Null<haxe.macro.ComplexType>, ?e:Null<haxe.macro.Expr>);
+}

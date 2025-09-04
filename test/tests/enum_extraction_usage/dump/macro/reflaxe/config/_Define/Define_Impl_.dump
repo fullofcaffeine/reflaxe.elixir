@@ -1,0 +1,18 @@
+@:enum
+private class reflaxe.config._Define.Define_Impl_ {
+
+	@:value(cast "reflaxe.allow_rose") @:impl @:enum
+	public static inline var AllowROSE:reflaxe.config.Define = [Cast:reflaxe.config.Define] [Const:String] "reflaxe.allow_rose";
+
+	@:value(cast "reflaxe.only_generate") @:impl @:enum
+	public static inline var OnlyGenerate:reflaxe.config.Define = [Cast:reflaxe.config.Define] [Const:String] "reflaxe.only_generate";
+
+	@:value(cast "reflaxe.generate_everything_except") @:impl @:enum
+	public static inline var GenerateEverythingExcept:reflaxe.config.Define = [Cast:reflaxe.config.Define] [Const:String] "reflaxe.generate_everything_except";
+
+	@:value(cast "reflaxe.disallow_build_cache_check") @:impl @:enum
+	public static inline var DisallowBuildCacheCheck:reflaxe.config.Define = [Cast:reflaxe.config.Define] [Const:String] "reflaxe.disallow_build_cache_check";
+
+	@:value(cast "reflaxe.dont_output_metadata_id") @:impl @:enum
+	public static inline var DontOutputMetadataId:reflaxe.config.Define = [Cast:reflaxe.config.Define] [Const:String] "reflaxe.dont_output_metadata_id";
+}

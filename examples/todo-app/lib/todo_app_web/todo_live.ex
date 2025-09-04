@@ -4,7 +4,7 @@ defmodule TodoAppWeb.TodoLive do
     g = {:Subscribe, :todo_updates}
     case (g.elem(0)) do
       0 ->
-        g = g.elem(1)
+        _g = g.elem(1)
         nil
       1 ->
         g = g.elem(1)
@@ -98,11 +98,11 @@ end
         handle_bulk_update(action, socket)
       4 ->
         g = parsed_msg.elem(1)
-        user_id = g
+        _user_id = g
         socket
       5 ->
         g = parsed_msg.elem(1)
-        user_id = g
+        _user_id = g
         socket
       6 ->
         g = parsed_msg.elem(1)
@@ -138,7 +138,7 @@ end
         g = {:Broadcast, :todo_updates, {:TodoCreated, todo}}
         case (g.elem(0)) do
           0 ->
-            g = g.elem(1)
+            _g = g.elem(1)
             nil
           1 ->
             g = g.elem(1)
@@ -149,7 +149,7 @@ end
         SafeAssigns.set_show_form(updated_socket, false)
       1 ->
         g = g.elem(1)
-        changeset = g
+        _changeset = g
         Phoenix.LiveView.put_flash(socket, :error, "Failed to create todo")
     end
   end
@@ -168,7 +168,7 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
         g = {:Broadcast, :todo_updates, {:TodoCreated, todo}}
         case (g.elem(0)) do
           0 ->
-            g = g.elem(1)
+            _g = g.elem(1)
             nil
           1 ->
             g = g.elem(1)
@@ -197,7 +197,7 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
         g = {:Broadcast, :todo_updates, {:TodoUpdated, updated_todo}}
         case (g.elem(0)) do
           0 ->
-            g = g.elem(1)
+            _g = g.elem(1)
             nil
           1 ->
             g = g.elem(1)
@@ -218,11 +218,11 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
     case (g.elem(0)) do
       0 ->
         g = g.elem(1)
-        deleted_todo = g
+        _deleted_todo = g
         g = {:Broadcast, :todo_updates, {:TodoDeleted, id}}
         case (g.elem(0)) do
           0 ->
-            g = g.elem(1)
+            _g = g.elem(1)
             nil
           1 ->
             g = g.elem(1)
@@ -248,7 +248,7 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
         g = {:Broadcast, :todo_updates, {:TodoUpdated, updated_todo}}
         case (g.elem(0)) do
           0 ->
-            g = g.elem(1)
+            _g = g.elem(1)
             nil
           1 ->
             g = g.elem(1)
@@ -419,7 +419,7 @@ end)
         g = {:Broadcast, :todo_updates, {:TodoUpdated, updated_todo}}
         case (g.elem(0)) do
           0 ->
-            g = g.elem(1)
+            _g = g.elem(1)
             nil
           1 ->
             g = g.elem(1)
@@ -430,7 +430,7 @@ end)
         updated_socket = load_and_assign_todos(SafeAssigns.set_editing_todo(presence_socket, nil))
       1 ->
         g = g.elem(1)
-        changeset = g
+        _changeset = g
         Phoenix.LiveView.put_flash(socket, :error, "Failed to update todo")
     end
   end
@@ -451,7 +451,7 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: nil),
         g = {:Broadcast, :todo_updates, {:TodoUpdated, updated_todo}}
         case (g.elem(0)) do
           0 ->
-            g = g.elem(1)
+            _g = g.elem(1)
             nil
           1 ->
             g = g.elem(1)
@@ -479,15 +479,15 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: nil),
         Phoenix.LiveView.assign(live_socket, %{:todos => updated_todos, :total_todos => updated_todos.length, :completed_todos => count_completed(updated_todos), :pending_todos => count_pending(updated_todos)})
       2 ->
         g = action.elem(1)
-        priority = g
+        _priority = g
         socket
       3 ->
         g = action.elem(1)
-        tag = g
+        _tag = g
         socket
       4 ->
         g = action.elem(1)
-        tag = g
+        _tag = g
         socket
     end
   end
@@ -521,7 +521,7 @@ end
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, :ok}, fn _, {online_count, acc_state} ->
   if (g.hasNext()) do
     g = g.next()
-    user_id = g[:key]
+    _user_id = g[:key]
     entry = g[:value]
     online_count = online_count + 1
     if (entry.metas.length > 0) do

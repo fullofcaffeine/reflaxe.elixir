@@ -1,0 +1,1598 @@
+class reflaxe.elixir.ast.transformers.InlineExpansionTransforms {
+
+	public static function inlineMethodCallCombinerPass[Function:(ast : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local ast(17633):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:reflaxe.elixir.ast.ElixirAST]
+					[Field:(ast : reflaxe.elixir.ast.ElixirAST, transformer : (reflaxe.elixir.ast.ElixirAST -> reflaxe.elixir.ast.ElixirAST)) -> reflaxe.elixir.ast.ElixirAST]
+						[TypeExpr reflaxe.elixir.ast.ElixirASTTransformer:Class<reflaxe.elixir.ast.ElixirASTTransformer>]
+						[FStatic:(ast : reflaxe.elixir.ast.ElixirAST, transformer : (reflaxe.elixir.ast.ElixirAST -> reflaxe.elixir.ast.ElixirAST)) -> reflaxe.elixir.ast.ElixirAST]
+							reflaxe.elixir.ast.ElixirASTTransformer
+							transformNode:(ast : reflaxe.elixir.ast.ElixirAST, transformer : (reflaxe.elixir.ast.ElixirAST -> reflaxe.elixir.ast.ElixirAST)) -> reflaxe.elixir.ast.ElixirAST
+					[Local ast(17633):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+					[Function:(node : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+						[Arg:reflaxe.elixir.ast.ElixirAST] [Local node(17893):reflaxe.elixir.ast.ElixirAST]
+						[Block:Dynamic]
+							[Meta:Void]
+								:ast(switch (node.def) {
+	case EBlock([first, second]):
+		if (isInlineExpansionSplit(first, second)) {
+			return combineInlineExpansion(first, second);
+		};	
+	case EBlock(exprs) if (exprs.length > 2):
+		var modified = false;
+		var newExprs = [];
+		var i = 0;
+		while (i < exprs.length) {
+			if (i < exprs.length - 1) {
+				var first = exprs[i];
+				var second = exprs[i + 1];
+				if (isInlineExpansionSplit(first, second)) {
+					var combined = combineInlineExpansion(first, second);
+					newExprs.push(combined);
+					modified = true;
+					i += 2;
+				} else {
+					newExprs.push(first);
+					i++;
+				};
+			} else {
+				newExprs.push(exprs[i]);
+				i++;
+			};
+		};
+		if (modified) {
+			return ElixirASTHelpers.make(EBlock(newExprs));
+		};	
+	default:
+})
+								[Block:Void]
+									[Var `(18146):reflaxe.elixir.ast.ElixirASTDef]
+										[Field:reflaxe.elixir.ast.ElixirASTDef]
+											[Local node(17893):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+											[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+									[If:Void]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(18146):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											==
+											[Const:Int] 53
+										[Then:Void] [Block:Void]
+											[Var `(18147):Array<reflaxe.elixir.ast.ElixirAST>]
+												[EnumParameter:Array<reflaxe.elixir.ast.ElixirAST>]
+													[Local `(18146):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+													EBlock
+													0
+											[If:Void]
+												[Binop:Bool]
+													[Field:Int]
+														[Local `(18147):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+														[FInstance:Int]
+															Array<reflaxe.elixir.ast.ElixirAST>
+															length:Int
+													==
+													[Const:Int] 2
+												[Then:Void] [Block:Void]
+													[Var `(18148):reflaxe.elixir.ast.ElixirAST]
+														[Array:reflaxe.elixir.ast.ElixirAST]
+															[Local `(18147):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+															[Const:Int] 0
+													[Var `(18149):reflaxe.elixir.ast.ElixirAST]
+														[Array:reflaxe.elixir.ast.ElixirAST]
+															[Local `(18147):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+															[Const:Int] 1
+													[Block:Void]
+														[Var first(18150):reflaxe.elixir.ast.ElixirAST] [Local `(18148):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[Var second(18151):reflaxe.elixir.ast.ElixirAST] [Local `(18149):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[Block:Void]
+															[If:Void]
+																[Call:Bool]
+																	[Field:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> Bool]
+																		[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																		[FStatic:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> Bool]
+																			reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																			isInlineExpansionSplit:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> Bool
+																	[Local first(18150):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																	[Local second(18151):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																[Then:Dynamic] [Block:Dynamic]
+																	[Return:Dynamic]
+																		[Call:reflaxe.elixir.ast.ElixirAST]
+																			[Field:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+																				[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																				[FStatic:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+																					reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																					combineInlineExpansion:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST
+																			[Local first(18150):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																			[Local second(18151):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+												[Else:Void] [Block:Void]
+													[Var exprs(18152):Array<reflaxe.elixir.ast.ElixirAST>] [Local `(18147):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+													[If:Void]
+														[Binop:Bool]
+															[Field:Int]
+																[Local exprs(18152):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																[FInstance:Int]
+																	Array<reflaxe.elixir.ast.ElixirAST>
+																	length:Int
+															>
+															[Const:Int] 2
+														[Then:Void] [Block:Void]
+															[Var modified(18153):Bool] [Const:Bool] false
+															[Var newExprs(18154):Array<reflaxe.elixir.ast.ElixirAST>] [ArrayDecl:Array<reflaxe.elixir.ast.ElixirAST>]
+															[Var i(18155):Int] [Const:Int] 0
+															[While:Void]
+																[Binop:Bool]
+																	[Local i(18155):Int:Int]
+																	<
+																	[Field:Int]
+																		[Local exprs(18152):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																		[FInstance:Int]
+																			Array<reflaxe.elixir.ast.ElixirAST>
+																			length:Int
+																[Block:Void]
+																	[If:Void]
+																		[Binop:Bool]
+																			[Local i(18155):Int:Int]
+																			<
+																			[Binop:Int]
+																				[Field:Int]
+																					[Local exprs(18152):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																					[FInstance:Int]
+																						Array<reflaxe.elixir.ast.ElixirAST>
+																						length:Int
+																				-
+																				[Const:Int] 1
+																		[Then:Void] [Block:Void]
+																			[Var first(18156):reflaxe.elixir.ast.ElixirAST]
+																				[Array:reflaxe.elixir.ast.ElixirAST]
+																					[Local exprs(18152):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																					[Local i(18155):Int:Int]
+																			[Var second(18157):reflaxe.elixir.ast.ElixirAST]
+																				[Array:reflaxe.elixir.ast.ElixirAST]
+																					[Local exprs(18152):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																					[Binop:Int]
+																						[Local i(18155):Int:Int]
+																						+
+																						[Const:Int] 1
+																			[If:Void]
+																				[Call:Bool]
+																					[Field:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> Bool]
+																						[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																						[FStatic:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> Bool]
+																							reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																							isInlineExpansionSplit:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> Bool
+																					[Local first(18156):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																					[Local second(18157):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																				[Then:Int] [Block:Int]
+																					[Var combined(18158):reflaxe.elixir.ast.ElixirAST]
+																						[Call:reflaxe.elixir.ast.ElixirAST]
+																							[Field:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+																								[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																								[FStatic:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+																									reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																									combineInlineExpansion:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST
+																							[Local first(18156):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																							[Local second(18157):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																					[Call:Int]
+																						[Field:(x : reflaxe.elixir.ast.ElixirAST) -> Int]
+																							[Local newExprs(18154):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																							[FInstance:(x : reflaxe.elixir.ast.ElixirAST) -> Int]
+																								Array<reflaxe.elixir.ast.ElixirAST>
+																								push:(x : Array.T) -> Int
+																						[Local combined(18158):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																					[Binop:Bool]
+																						[Local modified(18153):Bool:Bool]
+																						=
+																						[Const:Bool] true
+																					[Binop:Int]
+																						[Local i(18155):Int:Int]
+																						+=
+																						[Const:Int] 2
+																				[Else:Int] [Block:Int]
+																					[Call:Int]
+																						[Field:(x : reflaxe.elixir.ast.ElixirAST) -> Int]
+																							[Local newExprs(18154):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																							[FInstance:(x : reflaxe.elixir.ast.ElixirAST) -> Int]
+																								Array<reflaxe.elixir.ast.ElixirAST>
+																								push:(x : Array.T) -> Int
+																						[Local first(18156):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																					[Unop:Int]
+																						++
+																						Postfix
+																						[Local i(18155):Int:Int]
+																		[Else:Int] [Block:Int]
+																			[Call:Int]
+																				[Field:(x : reflaxe.elixir.ast.ElixirAST) -> Int]
+																					[Local newExprs(18154):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																					[FInstance:(x : reflaxe.elixir.ast.ElixirAST) -> Int]
+																						Array<reflaxe.elixir.ast.ElixirAST>
+																						push:(x : Array.T) -> Int
+																				[Array:reflaxe.elixir.ast.ElixirAST]
+																					[Local exprs(18152):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																					[Local i(18155):Int:Int]
+																			[Unop:Int]
+																				++
+																				Postfix
+																				[Local i(18155):Int:Int]
+															[If:Void]
+																[Local modified(18153):Bool:Bool]
+																[Then:Dynamic] [Block:Dynamic]
+																	[Return:Dynamic]
+																		[Block:reflaxe.elixir.ast.ElixirAST]
+																			[Var metadata(18159):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+																			[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+																				def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+																					[Field:(expressions : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+																						[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+																						[FEnum:(expressions : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+																							reflaxe.elixir.ast.ElixirASTDef
+																							EBlock
+																					[Local newExprs(18154):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																				metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+																					[Binop:Bool]
+																						[Local metadata(18159):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+																						!=
+																						[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+																					[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(18159):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+																					[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+																				pos: [Const:Null<haxe.macro.Position>] null
+														[Else:Void] [Block:Void]
+										[Else:Void] [Block:Void]
+							[Return:Dynamic] [Local node(17893):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+
+	static function isInlineExpansionSplit[Function:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> Bool]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local first(17896):reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local second(17897):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Var assignedVars(17944):Array<String>]
+				[Call:Array<String>]
+					[Field:(expr : reflaxe.elixir.ast.ElixirAST) -> Array<String>]
+						[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+						[FStatic:(expr : reflaxe.elixir.ast.ElixirAST) -> Array<String>]
+							reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+							extractAllAssignedVars:(expr : reflaxe.elixir.ast.ElixirAST) -> Array<String>
+					[Local first(17896):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local assignedVars(17944):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (second.def) {
+	case ECall(target, methodName, args):
+		var uses = false;
+		for (varName  in  assignedVars) {
+			if (usesVariable(args, varName)) {
+				uses = true;
+				break;
+			};
+		};
+		uses;	
+	case EField(target, fieldName):
+		false;	
+	default:
+		false;	
+})
+					[Block:Bool]
+						[Var `(18018):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Local second(17897):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[Switch:Bool]
+							[EnumIndex:Int] [Local `(18018):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+							[Case:Bool]
+								[Const:Int] 22
+								[Block:Bool]
+									[Var `(18019):Null<reflaxe.elixir.ast.ElixirAST>]
+										[EnumParameter:Null<reflaxe.elixir.ast.ElixirAST>]
+											[Local `(18018):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											ECall
+											0
+									[Var `(18020):String]
+										[EnumParameter:String]
+											[Local `(18018):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											ECall
+											1
+									[Var `(18021):Array<reflaxe.elixir.ast.ElixirAST>]
+										[EnumParameter:Array<reflaxe.elixir.ast.ElixirAST>]
+											[Local `(18018):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											ECall
+											2
+									[Block:Bool]
+										[Var target(18022):Null<reflaxe.elixir.ast.ElixirAST>] [Local `(18019):Null<reflaxe.elixir.ast.ElixirAST>:Null<reflaxe.elixir.ast.ElixirAST>]
+										[Var methodName(18023):String] [Local `(18020):String:String]
+										[Var args(18024):Array<reflaxe.elixir.ast.ElixirAST>] [Local `(18021):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+										[Block:Bool]
+											[Var uses(18025):Bool] [Const:Bool] false
+											[Block:Void]
+												[Var `(18026):Int] [Const:Int] 0
+												[While:Void]
+													[Binop:Bool]
+														[Local `(18026):Int:Int]
+														<
+														[Field:Int]
+															[Local assignedVars(17944):Array<String>:Array<String>]
+															[FInstance:Int]
+																Array<String>
+																length:Int
+													[Block:Void]
+														[Var varName(18027):String]
+															[Array:String]
+																[Local assignedVars(17944):Array<String>:Array<String>]
+																[Local `(18026):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(18026):Int:Int]
+														[If:Void]
+															[Call:Bool]
+																[Field:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool]
+																	[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																	[FStatic:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool]
+																		reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																		usesVariable:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool
+																[Local args(18024):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																[Local varName(18027):String:String]
+															[Then:Dynamic] [Block:Dynamic]
+																[Binop:Bool]
+																	[Local uses(18025):Bool:Bool]
+																	=
+																	[Const:Bool] true
+																[Break:Dynamic]
+											[Local uses(18025):Bool:Bool]
+							[Case:Bool]
+								[Const:Int] 28
+								[Block:Bool]
+									[Var `(18028):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(18018):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EField
+											0
+									[Var `(18029):String]
+										[EnumParameter:String]
+											[Local `(18018):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EField
+											1
+									[Block:Bool]
+										[Var target(18030):reflaxe.elixir.ast.ElixirAST] [Local `(18028):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[Var fieldName(18031):String] [Local `(18029):String:String]
+										[Block:Bool] [Const:Bool] false
+							[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	static function extractAllAssignedVars[Function:(expr : reflaxe.elixir.ast.ElixirAST) -> Array<String>]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local expr(17898):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Var vars(17899):Array<String>] [ArrayDecl:Array<String>]
+			[Var collectVars(17900):Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>] [ArrayDecl:Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>] [Const:(e : reflaxe.elixir.ast.ElixirAST) -> Void] null
+			[Binop:(e : reflaxe.elixir.ast.ElixirAST) -> Void]
+				[Array:(e : reflaxe.elixir.ast.ElixirAST) -> Void]
+					[Local collectVars(17900):Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>:Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>]
+					[Const:Int] 0
+				=
+				[Function:(e : reflaxe.elixir.ast.ElixirAST) -> Void]
+					[Arg:reflaxe.elixir.ast.ElixirAST] [Local e(17901):reflaxe.elixir.ast.ElixirAST]
+					[Block:Void]
+						[Meta:Void]
+							:ast(switch (e.def) {
+	case EMatch(PVar(name), right):
+		vars.push(name);
+		collectVars(right);	
+	case EBinary(Match, left, right):
+		switch (left.def) {
+			case EVar(name):
+				vars.push(name);			
+			default:
+		};
+		collectVars(right);	
+	case EBinary(Add | Subtract | Multiply | Divide, left, _):
+		switch (left.def) {
+			case EVar(name):
+				vars.push(name);			
+			default:
+				collectVars(left);			
+		};	
+	default:
+})
+							[Block:Void]
+								[Var `(17926):reflaxe.elixir.ast.ElixirASTDef]
+									[Field:reflaxe.elixir.ast.ElixirASTDef]
+										[Local e(17901):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+								[Switch:Void]
+									[EnumIndex:Int] [Local `(17926):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+									[Case:Void]
+										[Const:Int] 8
+										[Block:Void]
+											[Var `(17927):reflaxe.elixir.ast.EPattern]
+												[EnumParameter:reflaxe.elixir.ast.EPattern]
+													[Local `(17926):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+													EMatch
+													0
+											[Var `(17928):reflaxe.elixir.ast.ElixirAST]
+												[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+													[Local `(17926):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+													EMatch
+													1
+											[If:Void]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local `(17927):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+													==
+													[Const:Int] 0
+												[Then:Void] [Block:Void]
+													[Var `(17929):String]
+														[EnumParameter:String]
+															[Local `(17927):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+															PVar
+															0
+													[Block:Void]
+														[Var name(17930):String] [Local `(17929):String:String]
+														[Var right(17931):reflaxe.elixir.ast.ElixirAST] [Local `(17928):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[Block:Void]
+															[Call:Int]
+																[Field:(x : String) -> Int]
+																	[Local vars(17899):Array<String>:Array<String>]
+																	[FInstance:(x : String) -> Int]
+																		Array<String>
+																		push:(x : Array.T) -> Int
+																[Local name(17930):String:String]
+															[Call:Void]
+																[Array:(e : reflaxe.elixir.ast.ElixirAST) -> Void]
+																	[Local collectVars(17900):Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>:Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>]
+																	[Const:Int] 0
+																[Local right(17931):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+												[Else:Void] [Block:Void]
+									[Case:Void]
+										[Const:Int] 26
+										[Block:Void]
+											[Var `(17932):reflaxe.elixir.ast.EBinaryOp]
+												[EnumParameter:reflaxe.elixir.ast.EBinaryOp]
+													[Local `(17926):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+													EBinary
+													0
+											[Var `(17933):reflaxe.elixir.ast.ElixirAST]
+												[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+													[Local `(17926):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+													EBinary
+													1
+											[Var `(17934):reflaxe.elixir.ast.ElixirAST]
+												[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+													[Local `(17926):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+													EBinary
+													2
+											[Switch:Void]
+												[EnumIndex:Int] [Local `(17932):reflaxe.elixir.ast.EBinaryOp:reflaxe.elixir.ast.EBinaryOp]
+												[Case:Void]
+													[Const:Int] 0
+													[Const:Int] 1
+													[Const:Int] 2
+													[Const:Int] 3
+													[Block:Void]
+														[Block:Void]
+															[Var left(17935):reflaxe.elixir.ast.ElixirAST] [Local `(17933):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+															[Block:Void]
+																[Meta:Void]
+																	:ast(switch (left.def) {
+	case EVar(name):
+		vars.push(name);	
+	default:
+		collectVars(left);	
+})
+																	[Block:Void]
+																		[Var `(17936):reflaxe.elixir.ast.ElixirASTDef]
+																			[Field:reflaxe.elixir.ast.ElixirASTDef]
+																				[Local left(17935):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																				[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																		[If:Void]
+																			[Binop:Bool]
+																				[EnumIndex:Int] [Local `(17936):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																				==
+																				[Const:Int] 38
+																			[Then:Int] [Block:Int]
+																				[Var `(17937):String]
+																					[EnumParameter:String]
+																						[Local `(17936):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																						EVar
+																						0
+																				[Block:Int]
+																					[Var name(17938):String] [Local `(17937):String:String]
+																					[Block:Int]
+																						[Call:Int]
+																							[Field:(x : String) -> Int]
+																								[Local vars(17899):Array<String>:Array<String>]
+																								[FInstance:(x : String) -> Int]
+																									Array<String>
+																									push:(x : Array.T) -> Int
+																							[Local name(17938):String:String]
+																			[Else:Void] [Block:Void]
+																				[Call:Void]
+																					[Array:(e : reflaxe.elixir.ast.ElixirAST) -> Void]
+																						[Local collectVars(17900):Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>:Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>]
+																						[Const:Int] 0
+																					[Local left(17935):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+												[Case:Void]
+													[Const:Int] 27
+													[Block:Void]
+														[Block:Void]
+															[Var left(17939):reflaxe.elixir.ast.ElixirAST] [Local `(17933):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+															[Var right(17940):reflaxe.elixir.ast.ElixirAST] [Local `(17934):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+															[Block:Void]
+																[Meta:Void]
+																	:ast(switch (left.def) {
+	case EVar(name):
+		vars.push(name);	
+	default:
+})
+																	[Block:Void]
+																		[Var `(17941):reflaxe.elixir.ast.ElixirASTDef]
+																			[Field:reflaxe.elixir.ast.ElixirASTDef]
+																				[Local left(17939):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																				[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																		[If:Void]
+																			[Binop:Bool]
+																				[EnumIndex:Int] [Local `(17941):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																				==
+																				[Const:Int] 38
+																			[Then:Int] [Block:Int]
+																				[Var `(17942):String]
+																					[EnumParameter:String]
+																						[Local `(17941):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																						EVar
+																						0
+																				[Block:Int]
+																					[Var name(17943):String] [Local `(17942):String:String]
+																					[Block:Int]
+																						[Call:Int]
+																							[Field:(x : String) -> Int]
+																								[Local vars(17899):Array<String>:Array<String>]
+																								[FInstance:(x : String) -> Int]
+																									Array<String>
+																									push:(x : Array.T) -> Int
+																							[Local name(17943):String:String]
+																			[Else:Void] [Block:Void]
+																[Call:Void]
+																	[Array:(e : reflaxe.elixir.ast.ElixirAST) -> Void]
+																		[Local collectVars(17900):Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>:Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>]
+																		[Const:Int] 0
+																	[Local right(17940):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+												[Default:Void] [Block:Void]
+									[Default:Void] [Block:Void]
+			[Call:Void]
+				[Array:(e : reflaxe.elixir.ast.ElixirAST) -> Void]
+					[Local collectVars(17900):Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>:Array<(e : reflaxe.elixir.ast.ElixirAST) -> Void>]
+					[Const:Int] 0
+				[Local expr(17898):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+			[Return:Dynamic] [Local vars(17899):Array<String>:Array<String>]
+
+	static function extractLastAssignedVar[Function:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local expr(27048):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<String>]
+					:ast(switch (expr.def) {
+	case EMatch(PVar(name), right):
+		var rightVar = extractLastAssignedVar(right);
+		rightVar != null ? rightVar : name;	
+	case EBinary(Match, left, right):
+		var rightVar = extractLastAssignedVar(right);
+		if (rightVar != null) return rightVar;
+		switch (left.def) {
+			case EVar(name):
+				name;			
+			default:
+				null;			
+		};	
+	case EBinary(Add | Subtract | Multiply | Divide, left, _):
+		switch (left.def) {
+			case EVar(name):
+				name;			
+			default:
+				extractLastAssignedVar(left);			
+		};	
+	default:
+		null;	
+})
+					[Block:Null<String>]
+						[Var `(27075):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Local expr(27048):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[Switch:Null<String>]
+							[EnumIndex:Int] [Local `(27075):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+							[Case:Null<String>]
+								[Const:Int] 8
+								[Block:Null<String>]
+									[Var `(27076):reflaxe.elixir.ast.EPattern]
+										[EnumParameter:reflaxe.elixir.ast.EPattern]
+											[Local `(27075):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											0
+									[Var `(27077):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(27075):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											1
+									[If:Null<String>]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(27076):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+											==
+											[Const:Int] 0
+										[Then:Null<String>] [Block:Null<String>]
+											[Var `(27078):String]
+												[EnumParameter:String]
+													[Local `(27076):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+													PVar
+													0
+											[Block:Null<String>]
+												[Var name(27079):String] [Local `(27078):String:String]
+												[Var right(27080):reflaxe.elixir.ast.ElixirAST] [Local `(27077):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+												[Block:Null<String>]
+													[Var rightVar(27081):Null<String>]
+														[Call:Null<String>]
+															[Field:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+																[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																[FStatic:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+																	reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																	extractLastAssignedVar:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>
+															[Local right(27080):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+													[If:Null<String>]
+														[Binop:Bool]
+															[Local rightVar(27081):Null<String>:Null<String>]
+															!=
+															[Const:Null<String>] null
+														[Then:Null<String>] [Block:Null<String>] [Local rightVar(27081):Null<String>:Null<String>]
+														[Else:String] [Block:String] [Local name(27079):String:String]
+										[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+							[Case:Null<String>]
+								[Const:Int] 26
+								[Block:Null<String>]
+									[Var `(27082):reflaxe.elixir.ast.EBinaryOp]
+										[EnumParameter:reflaxe.elixir.ast.EBinaryOp]
+											[Local `(27075):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											0
+									[Var `(27083):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(27075):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											1
+									[Var `(27084):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(27075):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											2
+									[Switch:Null<String>]
+										[EnumIndex:Int] [Local `(27082):reflaxe.elixir.ast.EBinaryOp:reflaxe.elixir.ast.EBinaryOp]
+										[Case:Null<String>]
+											[Const:Int] 0
+											[Const:Int] 1
+											[Const:Int] 2
+											[Const:Int] 3
+											[Block:Null<String>]
+												[Block:Null<String>]
+													[Var left(27085):reflaxe.elixir.ast.ElixirAST] [Local `(27083):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+													[Block:Null<String>]
+														[Meta:Null<String>]
+															:ast(switch (left.def) {
+	case EVar(name):
+		name;	
+	default:
+		extractLastAssignedVar(left);	
+})
+															[Block:Null<String>]
+																[Var `(27086):reflaxe.elixir.ast.ElixirASTDef]
+																	[Field:reflaxe.elixir.ast.ElixirASTDef]
+																		[Local left(27085):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																		[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																[If:Null<String>]
+																	[Binop:Bool]
+																		[EnumIndex:Int] [Local `(27086):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																		==
+																		[Const:Int] 38
+																	[Then:String] [Block:String]
+																		[Var `(27087):String]
+																			[EnumParameter:String]
+																				[Local `(27086):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																				EVar
+																				0
+																		[Block:String]
+																			[Var name(27088):String] [Local `(27087):String:String]
+																			[Block:String] [Local name(27088):String:String]
+																	[Else:Null<String>] [Block:Null<String>]
+																		[Call:Null<String>]
+																			[Field:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+																				[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																				[FStatic:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+																					reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																					extractLastAssignedVar:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>
+																			[Local left(27085):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[Case:Null<String>]
+											[Const:Int] 27
+											[Block:Null<String>]
+												[Block:Null<String>]
+													[Var left(27089):reflaxe.elixir.ast.ElixirAST] [Local `(27083):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+													[Var right(27090):reflaxe.elixir.ast.ElixirAST] [Local `(27084):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+													[Block:Null<String>]
+														[Var rightVar(27091):Null<String>]
+															[Call:Null<String>]
+																[Field:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+																	[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																	[FStatic:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+																		reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																		extractLastAssignedVar:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>
+																[Local right(27090):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[If:Void]
+															[Binop:Bool]
+																[Local rightVar(27091):Null<String>:Null<String>]
+																!=
+																[Const:Null<String>] null
+															[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local rightVar(27091):Null<String>:Null<String>]
+														[Meta:Null<String>]
+															:ast(switch (left.def) {
+	case EVar(name):
+		name;	
+	default:
+		null;	
+})
+															[Block:Null<String>]
+																[Var `(27092):reflaxe.elixir.ast.ElixirASTDef]
+																	[Field:reflaxe.elixir.ast.ElixirASTDef]
+																		[Local left(27089):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																		[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																[If:Null<String>]
+																	[Binop:Bool]
+																		[EnumIndex:Int] [Local `(27092):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																		==
+																		[Const:Int] 38
+																	[Then:String] [Block:String]
+																		[Var `(27093):String]
+																			[EnumParameter:String]
+																				[Local `(27092):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																				EVar
+																				0
+																		[Block:String]
+																			[Var name(27094):String] [Local `(27093):String:String]
+																			[Block:String] [Local name(27094):String:String]
+																	[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+										[Default:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+							[Default:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+
+	static function usesVariable[Function:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool]
+		[Arg:Array<reflaxe.elixir.ast.ElixirAST>] [Local args(17950):Array<reflaxe.elixir.ast.ElixirAST>]
+		[Arg:String] [Local varName(17951):String]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(18008):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(18008):Int:Int]
+						<
+						[Field:Int]
+							[Local args(17950):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+							[FInstance:Int]
+								Array<reflaxe.elixir.ast.ElixirAST>
+								length:Int
+					[Block:Void]
+						[Var arg(17952):reflaxe.elixir.ast.ElixirAST]
+							[Array:reflaxe.elixir.ast.ElixirAST]
+								[Local args(17950):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+								[Local `(18008):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(18008):Int:Int]
+						[If:Void]
+							[Call:Bool]
+								[Field:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+									[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+									[FStatic:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+										reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+										containsVariable:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool
+								[Local arg(17952):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[Local varName(17951):String:String]
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+			[Return:Dynamic] [Const:Bool] false
+
+	static function containsVariable[Function:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local expr(17953):reflaxe.elixir.ast.ElixirAST]
+		[Arg:String] [Local varName(17954):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (expr.def) {
+	case EVar(name):
+		name == varName;	
+	case EBinary(_, left, right):
+		containsVariable(left, varName) || containsVariable(right, varName);	
+	case EMatch(_, value):
+		containsVariable(value, varName);	
+	case ECall(target, _, args):
+		(target != null && containsVariable(target, varName)) || usesVariable(args, varName);	
+	case EList(elements) | ETuple(elements):
+		usesVariable(elements, varName);	
+	case EField(target, _):
+		containsVariable(target, varName);	
+	case EMap(pairs):
+		for (pair  in  pairs) {
+			if (containsVariable(pair.key, varName) || containsVariable(pair.value, varName)) {
+				return true;
+			};
+		};
+		false;	
+	default:
+		false;	
+})
+					[Block:Bool]
+						[Var `(17981):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Local expr(17953):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[Switch:Bool]
+							[EnumIndex:Int] [Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+							[Case:Bool]
+								[Const:Int] 8
+								[Block:Bool]
+									[Var `(17982):reflaxe.elixir.ast.EPattern]
+										[EnumParameter:reflaxe.elixir.ast.EPattern]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											0
+									[Var `(17983):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											1
+									[Block:Bool]
+										[Var value(17984):reflaxe.elixir.ast.ElixirAST] [Local `(17983):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[Block:Bool]
+											[Call:Bool]
+												[Field:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+													[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+													[FStatic:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+														reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+														containsVariable:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool
+												[Local value(17984):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+												[Local varName(17954):String:String]
+							[Case:Bool]
+								[Const:Int] 15
+								[Block:Bool]
+									[Var `(17985):Array<reflaxe.elixir.ast.ElixirAST>]
+										[EnumParameter:Array<reflaxe.elixir.ast.ElixirAST>]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EList
+											0
+									[Block:Bool]
+										[Var elements(17986):Array<reflaxe.elixir.ast.ElixirAST>] [Local `(17985):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+										[Block:Bool]
+											[Call:Bool]
+												[Field:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool]
+													[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+													[FStatic:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool]
+														reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+														usesVariable:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool
+												[Local elements(17986):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+												[Local varName(17954):String:String]
+							[Case:Bool]
+								[Const:Int] 16
+								[Block:Bool]
+									[Var `(17987):Array<reflaxe.elixir.ast.ElixirAST>]
+										[EnumParameter:Array<reflaxe.elixir.ast.ElixirAST>]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											ETuple
+											0
+									[Block:Bool]
+										[Var elements(17988):Array<reflaxe.elixir.ast.ElixirAST>] [Local `(17987):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+										[Block:Bool]
+											[Call:Bool]
+												[Field:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool]
+													[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+													[FStatic:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool]
+														reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+														usesVariable:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool
+												[Local elements(17988):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+												[Local varName(17954):String:String]
+							[Case:Bool]
+								[Const:Int] 17
+								[Block:Bool]
+									[Var `(17989):Array<reflaxe.elixir.ast.EMapPair>]
+										[EnumParameter:Array<reflaxe.elixir.ast.EMapPair>]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMap
+											0
+									[Block:Bool]
+										[Var pairs(17990):Array<reflaxe.elixir.ast.EMapPair>] [Local `(17989):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+										[Block:Bool]
+											[Block:Void]
+												[Var `(17991):Int] [Const:Int] 0
+												[While:Void]
+													[Binop:Bool]
+														[Local `(17991):Int:Int]
+														<
+														[Field:Int]
+															[Local pairs(17990):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+															[FInstance:Int]
+																Array<reflaxe.elixir.ast.EMapPair>
+																length:Int
+													[Block:Void]
+														[Var pair(17992):reflaxe.elixir.ast.EMapPair]
+															[Array:reflaxe.elixir.ast.EMapPair]
+																[Local pairs(17990):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+																[Local `(17991):Int:Int]
+														[Unop:Int]
+															++
+															Prefix
+															[Local `(17991):Int:Int]
+														[If:Void]
+															[Binop:Bool]
+																[Call:Bool]
+																	[Field:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+																		[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																		[FStatic:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+																			reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																			containsVariable:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool
+																	[Field:reflaxe.elixir.ast.ElixirAST]
+																		[Local pair(17992):reflaxe.elixir.ast.EMapPair:reflaxe.elixir.ast.EMapPair]
+																		[FAnon:reflaxe.elixir.ast.ElixirAST] key:reflaxe.elixir.ast.ElixirAST
+																	[Local varName(17954):String:String]
+																||
+																[Call:Bool]
+																	[Field:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+																		[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																		[FStatic:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+																			reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																			containsVariable:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool
+																	[Field:reflaxe.elixir.ast.ElixirAST]
+																		[Local pair(17992):reflaxe.elixir.ast.EMapPair:reflaxe.elixir.ast.EMapPair]
+																		[FAnon:reflaxe.elixir.ast.ElixirAST] value:reflaxe.elixir.ast.ElixirAST
+																	[Local varName(17954):String:String]
+															[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] true
+											[Const:Bool] false
+							[Case:Bool]
+								[Const:Int] 22
+								[Block:Bool]
+									[Var `(17993):Null<reflaxe.elixir.ast.ElixirAST>]
+										[EnumParameter:Null<reflaxe.elixir.ast.ElixirAST>]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											ECall
+											0
+									[Var `(17994):String]
+										[EnumParameter:String]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											ECall
+											1
+									[Var `(17995):Array<reflaxe.elixir.ast.ElixirAST>]
+										[EnumParameter:Array<reflaxe.elixir.ast.ElixirAST>]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											ECall
+											2
+									[Block:Bool]
+										[Var target(17996):Null<reflaxe.elixir.ast.ElixirAST>] [Local `(17993):Null<reflaxe.elixir.ast.ElixirAST>:Null<reflaxe.elixir.ast.ElixirAST>]
+										[Var args(17997):Array<reflaxe.elixir.ast.ElixirAST>] [Local `(17995):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+										[Block:Bool]
+											[Binop:Bool]
+												[Parenthesis:Bool]
+													[Binop:Bool]
+														[Binop:Bool]
+															[Local target(17996):Null<reflaxe.elixir.ast.ElixirAST>:Null<reflaxe.elixir.ast.ElixirAST>]
+															!=
+															[Const:Null<reflaxe.elixir.ast.ElixirAST>] null
+														&&
+														[Call:Bool]
+															[Field:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+																[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+																[FStatic:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+																	reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+																	containsVariable:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool
+															[Local target(17996):Null<reflaxe.elixir.ast.ElixirAST>:Null<reflaxe.elixir.ast.ElixirAST>]
+															[Local varName(17954):String:String]
+												||
+												[Call:Bool]
+													[Field:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool]
+														[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+														[FStatic:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool]
+															reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+															usesVariable:(args : Array<reflaxe.elixir.ast.ElixirAST>, varName : String) -> Bool
+													[Local args(17997):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+													[Local varName(17954):String:String]
+							[Case:Bool]
+								[Const:Int] 26
+								[Block:Bool]
+									[Var `(17998):reflaxe.elixir.ast.EBinaryOp]
+										[EnumParameter:reflaxe.elixir.ast.EBinaryOp]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											0
+									[Var `(17999):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											1
+									[Var `(18000):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											2
+									[Block:Bool]
+										[Var left(18001):reflaxe.elixir.ast.ElixirAST] [Local `(17999):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[Var right(18002):reflaxe.elixir.ast.ElixirAST] [Local `(18000):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[Block:Bool]
+											[Binop:Bool]
+												[Call:Bool]
+													[Field:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+														[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+														[FStatic:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+															reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+															containsVariable:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool
+													[Local left(18001):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+													[Local varName(17954):String:String]
+												||
+												[Call:Bool]
+													[Field:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+														[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+														[FStatic:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+															reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+															containsVariable:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool
+													[Local right(18002):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+													[Local varName(17954):String:String]
+							[Case:Bool]
+								[Const:Int] 28
+								[Block:Bool]
+									[Var `(18003):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EField
+											0
+									[Var `(18004):String]
+										[EnumParameter:String]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EField
+											1
+									[Block:Bool]
+										[Var target(18005):reflaxe.elixir.ast.ElixirAST] [Local `(18003):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[Block:Bool]
+											[Call:Bool]
+												[Field:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+													[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+													[FStatic:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool]
+														reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+														containsVariable:(expr : reflaxe.elixir.ast.ElixirAST, varName : String) -> Bool
+												[Local target(18005):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+												[Local varName(17954):String:String]
+							[Case:Bool]
+								[Const:Int] 38
+								[Block:Bool]
+									[Var `(18006):String]
+										[EnumParameter:String]
+											[Local `(17981):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EVar
+											0
+									[Block:Bool]
+										[Var name(18007):String] [Local `(18006):String:String]
+										[Block:Bool]
+											[Binop:Bool]
+												[Local name(18007):String:String]
+												==
+												[Local varName(17954):String:String]
+							[Default:Bool] [Block:Bool] [Const:Bool] false
+
+	static function combineInlineExpansion[Function:(first : reflaxe.elixir.ast.ElixirAST, second : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local first(18032):reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local second(18033):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Var firstVar(18061):Null<String>]
+				[Call:Null<String>]
+					[Field:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+						[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+						[FStatic:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+							reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+							extractFirstVar:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>
+					[Local first(18032):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+			[If:Void]
+				[Binop:Bool]
+					[Local firstVar(18061):Null<String>:Null<String>]
+					==
+					[Const:Null<String>] null
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Block:reflaxe.elixir.ast.ElixirAST]
+							[Var metadata(18067):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+							[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+								def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+									[Field:(expressions : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+										[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+										[FEnum:(expressions : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+											reflaxe.elixir.ast.ElixirASTDef
+											EBlock
+									[ArrayDecl:Array<reflaxe.elixir.ast.ElixirAST>]
+										[Local first(18032):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[Local second(18033):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+									[Binop:Bool]
+										[Local metadata(18067):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+										!=
+										[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+									[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(18067):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+									[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+								pos: [Const:Null<haxe.macro.Position>] null
+			[Var restOfChain(18087):reflaxe.elixir.ast.ElixirAST]
+				[Call:reflaxe.elixir.ast.ElixirAST]
+					[Field:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+						[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+						[FStatic:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+							reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+							extractRestOfAssignmentChain:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST
+					[Local first(18032):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+			[Var modifiedCall(18125):reflaxe.elixir.ast.ElixirAST]
+				[Call:reflaxe.elixir.ast.ElixirAST]
+					[Field:(call : reflaxe.elixir.ast.ElixirAST, assignmentChain : reflaxe.elixir.ast.ElixirAST, firstVar : String) -> reflaxe.elixir.ast.ElixirAST]
+						[TypeExpr reflaxe.elixir.ast.transformers.InlineExpansionTransforms:Class<reflaxe.elixir.ast.transformers.InlineExpansionTransforms>]
+						[FStatic:(call : reflaxe.elixir.ast.ElixirAST, assignmentChain : reflaxe.elixir.ast.ElixirAST, firstVar : String) -> reflaxe.elixir.ast.ElixirAST]
+							reflaxe.elixir.ast.transformers.InlineExpansionTransforms
+							embedAssignmentInCall:(call : reflaxe.elixir.ast.ElixirAST, assignmentChain : reflaxe.elixir.ast.ElixirAST, firstVar : String) -> reflaxe.elixir.ast.ElixirAST
+					[Local second(18033):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+					[Local restOfChain(18087):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+					[Local firstVar(18061):Null<String>:Null<String>]
+			[Var result(18130):reflaxe.elixir.ast.ElixirAST]
+				[Block:reflaxe.elixir.ast.ElixirAST]
+					[Var metadata(18129):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+					[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+						def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+							[Field:(pattern : reflaxe.elixir.ast.EPattern, expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+								[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+								[FEnum:(pattern : reflaxe.elixir.ast.EPattern, expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+									reflaxe.elixir.ast.ElixirASTDef
+									EMatch
+							[Call:reflaxe.elixir.ast.EPattern]
+								[Field:(name : String) -> reflaxe.elixir.ast.EPattern]
+									[TypeExpr reflaxe.elixir.ast.EPattern:Enum<reflaxe.elixir.ast.EPattern>]
+									[FEnum:(name : String) -> reflaxe.elixir.ast.EPattern]
+										reflaxe.elixir.ast.EPattern
+										PVar
+								[Local firstVar(18061):Null<String>:Null<String>]
+							[Local modifiedCall(18125):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+						metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+							[Binop:Bool]
+								[Local metadata(18129):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+								!=
+								[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+							[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(18129):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+							[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+						pos: [Const:Null<haxe.macro.Position>] null
+			[Return:Dynamic] [Local result(18130):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+
+	static function extractFirstVar[Function:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local expr(18034):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<String>]
+					:ast(switch (expr.def) {
+	case EMatch(PVar(name), _):
+		name;	
+	case EBinary(Match, { def : EVar(name) }, _):
+		name;	
+	default:
+		null;	
+})
+					[Block:Null<String>]
+						[Var `(18048):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Local expr(18034):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[Switch:Null<String>]
+							[EnumIndex:Int] [Local `(18048):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+							[Case:Null<String>]
+								[Const:Int] 8
+								[Block:Null<String>]
+									[Var `(18049):reflaxe.elixir.ast.EPattern]
+										[EnumParameter:reflaxe.elixir.ast.EPattern]
+											[Local `(18048):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											0
+									[Var `(18050):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(18048):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											1
+									[If:Null<String>]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(18049):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+											==
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Var `(18051):String]
+												[EnumParameter:String]
+													[Local `(18049):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+													PVar
+													0
+											[Block:String]
+												[Var name(18052):String] [Local `(18051):String:String]
+												[Block:String] [Local name(18052):String:String]
+										[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+							[Case:Null<String>]
+								[Const:Int] 26
+								[Block:Null<String>]
+									[Var `(18053):reflaxe.elixir.ast.EBinaryOp]
+										[EnumParameter:reflaxe.elixir.ast.EBinaryOp]
+											[Local `(18048):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											0
+									[Var `(18054):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(18048):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											1
+									[Var `(18055):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(18048):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											2
+									[If:Null<String>]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(18053):reflaxe.elixir.ast.EBinaryOp:reflaxe.elixir.ast.EBinaryOp]
+											==
+											[Const:Int] 27
+										[Then:Null<String>] [Block:Null<String>]
+											[Block:Null<String>]
+												[Var `(18056):reflaxe.elixir.ast.ElixirASTDef]
+													[Field:reflaxe.elixir.ast.ElixirASTDef]
+														[Local `(18054):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+												[Var `(18057):reflaxe.elixir.ast.ElixirMetadata]
+													[Field:reflaxe.elixir.ast.ElixirMetadata]
+														[Local `(18054):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+												[Var `(18058):Null<haxe.macro.Position>]
+													[Field:Null<haxe.macro.Position>]
+														[Local `(18054):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+												[If:Null<String>]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(18056):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+														==
+														[Const:Int] 38
+													[Then:String] [Block:String]
+														[Var `(18059):String]
+															[EnumParameter:String]
+																[Local `(18056):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																EVar
+																0
+														[Block:String]
+															[Var name(18060):String] [Local `(18059):String:String]
+															[Block:String] [Local name(18060):String:String]
+													[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+										[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+							[Default:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+
+	static function extractRestOfAssignmentChain[Function:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local expr(18068):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:reflaxe.elixir.ast.ElixirAST]
+					:ast(switch (expr.def) {
+	case EMatch(PVar(_), right):
+		right;	
+	case EBinary(Match, _, right):
+		right;	
+	default:
+		expr;	
+})
+					[Block:reflaxe.elixir.ast.ElixirAST]
+						[Var `(18078):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Local expr(18068):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[Switch:reflaxe.elixir.ast.ElixirAST]
+							[EnumIndex:Int] [Local `(18078):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+							[Case:reflaxe.elixir.ast.ElixirAST]
+								[Const:Int] 8
+								[Block:reflaxe.elixir.ast.ElixirAST]
+									[Var `(18079):reflaxe.elixir.ast.EPattern]
+										[EnumParameter:reflaxe.elixir.ast.EPattern]
+											[Local `(18078):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											0
+									[Var `(18080):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(18078):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											1
+									[If:reflaxe.elixir.ast.ElixirAST]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(18079):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+											==
+											[Const:Int] 0
+										[Then:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+											[Var `(18081):String]
+												[EnumParameter:String]
+													[Local `(18079):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+													PVar
+													0
+											[Block:reflaxe.elixir.ast.ElixirAST]
+												[Var right(18082):reflaxe.elixir.ast.ElixirAST] [Local `(18080):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+												[Block:reflaxe.elixir.ast.ElixirAST] [Local right(18082):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local expr(18068):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+							[Case:reflaxe.elixir.ast.ElixirAST]
+								[Const:Int] 26
+								[Block:reflaxe.elixir.ast.ElixirAST]
+									[Var `(18083):reflaxe.elixir.ast.EBinaryOp]
+										[EnumParameter:reflaxe.elixir.ast.EBinaryOp]
+											[Local `(18078):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											0
+									[Var `(18084):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(18078):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											1
+									[Var `(18085):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(18078):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											2
+									[If:reflaxe.elixir.ast.ElixirAST]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(18083):reflaxe.elixir.ast.EBinaryOp:reflaxe.elixir.ast.EBinaryOp]
+											==
+											[Const:Int] 27
+										[Then:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+											[Block:reflaxe.elixir.ast.ElixirAST]
+												[Var right(18086):reflaxe.elixir.ast.ElixirAST] [Local `(18085):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+												[Block:reflaxe.elixir.ast.ElixirAST] [Local right(18086):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local expr(18068):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+							[Default:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local expr(18068):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+
+	static function embedAssignmentInCall[Function:(call : reflaxe.elixir.ast.ElixirAST, assignmentChain : reflaxe.elixir.ast.ElixirAST, firstVar : String) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local call(18088):reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local assignmentChain(18089):reflaxe.elixir.ast.ElixirAST]
+		[Arg:String] [Local firstVar(18090):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:reflaxe.elixir.ast.ElixirAST]
+					:ast(switch (call.def) {
+	case ECall(target, methodName, args):
+		var modified = false;
+		var newArgs = args.map(function(arg) {
+			return switch (arg.def) {
+				case EVar(name):
+					if (name == firstVar) {
+						modified = true;
+						assignmentChain;
+					} else {
+						arg;
+					};				
+				default:
+					arg;				
+			};
+		});
+		if (modified) {
+			ElixirASTHelpers.make(ECall(target, methodName, newArgs));
+		} else {
+			call;
+		};	
+	default:
+		call;	
+})
+					[Block:reflaxe.elixir.ast.ElixirAST]
+						[Var `(18111):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Local call(18088):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[If:reflaxe.elixir.ast.ElixirAST]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(18111):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+								==
+								[Const:Int] 22
+							[Then:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+								[Var `(18112):Null<reflaxe.elixir.ast.ElixirAST>]
+									[EnumParameter:Null<reflaxe.elixir.ast.ElixirAST>]
+										[Local `(18111):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+										ECall
+										0
+								[Var `(18113):String]
+									[EnumParameter:String]
+										[Local `(18111):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+										ECall
+										1
+								[Var `(18114):Array<reflaxe.elixir.ast.ElixirAST>]
+									[EnumParameter:Array<reflaxe.elixir.ast.ElixirAST>]
+										[Local `(18111):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+										ECall
+										2
+								[Block:reflaxe.elixir.ast.ElixirAST]
+									[Var target(18115):Null<reflaxe.elixir.ast.ElixirAST>] [Local `(18112):Null<reflaxe.elixir.ast.ElixirAST>:Null<reflaxe.elixir.ast.ElixirAST>]
+									[Var methodName(18116):String] [Local `(18113):String:String]
+									[Var args(18117):Array<reflaxe.elixir.ast.ElixirAST>] [Local `(18114):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+									[Block:reflaxe.elixir.ast.ElixirAST]
+										[Var modified(18118):Array<Bool>] [ArrayDecl:Array<Bool>] [Const:Bool] false
+										[Var newArgs(18119):Array<reflaxe.elixir.ast.ElixirAST>]
+											[Call:Array<reflaxe.elixir.ast.ElixirAST>]
+												[Field:(f : (reflaxe.elixir.ast.ElixirAST -> reflaxe.elixir.ast.ElixirAST)) -> Array<reflaxe.elixir.ast.ElixirAST>]
+													[Local args(18117):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+													[FInstance:(f : (reflaxe.elixir.ast.ElixirAST -> reflaxe.elixir.ast.ElixirAST)) -> Array<reflaxe.elixir.ast.ElixirAST>]
+														Array<reflaxe.elixir.ast.ElixirAST>
+														map:(f : (Array.T -> map.S)) -> Array<map.S>
+												[Function:(arg : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+													[Arg:reflaxe.elixir.ast.ElixirAST] [Local arg(18120):reflaxe.elixir.ast.ElixirAST]
+													[Block:Dynamic]
+														[Return:Dynamic]
+															[Meta:reflaxe.elixir.ast.ElixirAST]
+																:ast(switch (arg.def) {
+	case EVar(name):
+		if (name == firstVar) {
+			modified = true;
+			assignmentChain;
+		} else {
+			arg;
+		};	
+	default:
+		arg;	
+})
+																[Block:reflaxe.elixir.ast.ElixirAST]
+																	[Var `(18121):reflaxe.elixir.ast.ElixirASTDef]
+																		[Field:reflaxe.elixir.ast.ElixirASTDef]
+																			[Local arg(18120):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																			[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																	[If:reflaxe.elixir.ast.ElixirAST]
+																		[Binop:Bool]
+																			[EnumIndex:Int] [Local `(18121):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																			==
+																			[Const:Int] 38
+																		[Then:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+																			[Var `(18122):String]
+																				[EnumParameter:String]
+																					[Local `(18121):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																					EVar
+																					0
+																			[Block:reflaxe.elixir.ast.ElixirAST]
+																				[Var name(18123):String] [Local `(18122):String:String]
+																				[Block:reflaxe.elixir.ast.ElixirAST]
+																					[If:reflaxe.elixir.ast.ElixirAST]
+																						[Binop:Bool]
+																							[Local name(18123):String:String]
+																							==
+																							[Local firstVar(18090):String:String]
+																						[Then:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+																							[Binop:Bool]
+																								[Array:Bool]
+																									[Local modified(18118):Array<Bool>:Array<Bool>]
+																									[Const:Int] 0
+																								=
+																								[Const:Bool] true
+																							[Local assignmentChain(18089):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																						[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local arg(18120):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																		[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local arg(18120):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										[If:reflaxe.elixir.ast.ElixirAST]
+											[Array:Bool]
+												[Local modified(18118):Array<Bool>:Array<Bool>]
+												[Const:Int] 0
+											[Then:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+												[Block:reflaxe.elixir.ast.ElixirAST]
+													[Var metadata(18124):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+													[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+														def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+															[Field:(target : Null<reflaxe.elixir.ast.ElixirAST>, funcName : String, args : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+																[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+																[FEnum:(target : Null<reflaxe.elixir.ast.ElixirAST>, funcName : String, args : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+																	reflaxe.elixir.ast.ElixirASTDef
+																	ECall
+															[Local target(18115):Null<reflaxe.elixir.ast.ElixirAST>:Null<reflaxe.elixir.ast.ElixirAST>]
+															[Local methodName(18116):String:String]
+															[Local newArgs(18119):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+														metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+															[Binop:Bool]
+																[Local metadata(18124):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+																!=
+																[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+															[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(18124):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+															[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+														pos: [Const:Null<haxe.macro.Position>] null
+											[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local call(18088):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+							[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local call(18088):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+
+	static function extractFirstVarFromChain[Function:(expr : reflaxe.elixir.ast.ElixirAST) -> Null<String>]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local expr(27095):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:Null<String>]
+					:ast(switch (expr.def) {
+	case EMatch(PVar(name), _):
+		name;	
+	case EBinary(Match, { def : EVar(name) }, _):
+		name;	
+	default:
+		null;	
+})
+					[Block:Null<String>]
+						[Var `(27109):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Local expr(27095):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[Switch:Null<String>]
+							[EnumIndex:Int] [Local `(27109):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+							[Case:Null<String>]
+								[Const:Int] 8
+								[Block:Null<String>]
+									[Var `(27110):reflaxe.elixir.ast.EPattern]
+										[EnumParameter:reflaxe.elixir.ast.EPattern]
+											[Local `(27109):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											0
+									[Var `(27111):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(27109):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EMatch
+											1
+									[If:Null<String>]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(27110):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+											==
+											[Const:Int] 0
+										[Then:String] [Block:String]
+											[Var `(27112):String]
+												[EnumParameter:String]
+													[Local `(27110):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+													PVar
+													0
+											[Block:String]
+												[Var name(27113):String] [Local `(27112):String:String]
+												[Block:String] [Local name(27113):String:String]
+										[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+							[Case:Null<String>]
+								[Const:Int] 26
+								[Block:Null<String>]
+									[Var `(27114):reflaxe.elixir.ast.EBinaryOp]
+										[EnumParameter:reflaxe.elixir.ast.EBinaryOp]
+											[Local `(27109):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											0
+									[Var `(27115):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(27109):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											1
+									[Var `(27116):reflaxe.elixir.ast.ElixirAST]
+										[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+											[Local `(27109):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+											EBinary
+											2
+									[If:Null<String>]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local `(27114):reflaxe.elixir.ast.EBinaryOp:reflaxe.elixir.ast.EBinaryOp]
+											==
+											[Const:Int] 27
+										[Then:Null<String>] [Block:Null<String>]
+											[Block:Null<String>]
+												[Var `(27117):reflaxe.elixir.ast.ElixirASTDef]
+													[Field:reflaxe.elixir.ast.ElixirASTDef]
+														[Local `(27115):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+												[Var `(27118):reflaxe.elixir.ast.ElixirMetadata]
+													[Field:reflaxe.elixir.ast.ElixirMetadata]
+														[Local `(27115):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+												[Var `(27119):Null<haxe.macro.Position>]
+													[Field:Null<haxe.macro.Position>]
+														[Local `(27115):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+														[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+												[If:Null<String>]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(27117):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+														==
+														[Const:Int] 38
+													[Then:String] [Block:String]
+														[Var `(27120):String]
+															[EnumParameter:String]
+																[Local `(27117):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																EVar
+																0
+														[Block:String]
+															[Var name(27121):String] [Local `(27120):String:String]
+															[Block:String] [Local name(27121):String:String]
+													[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+										[Else:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+							[Default:Null<String>] [Block:Null<String>] [Const:Null<String>] null
+}

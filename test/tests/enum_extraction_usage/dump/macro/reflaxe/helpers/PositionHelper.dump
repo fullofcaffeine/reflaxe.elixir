@@ -1,0 +1,69 @@
+class reflaxe.helpers.PositionHelper {
+
+	public static function unknownPos[Function:() -> haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:haxe.macro.Position]
+					[Field:(inf : { min : Int, max : Int, file : String }) -> haxe.macro.Position]
+						[TypeExpr haxe.macro.Context:Class<haxe.macro.Context>]
+						[FStatic:(inf : { min : Int, max : Int, file : String }) -> haxe.macro.Position]
+							haxe.macro.Context
+							makePosition:(inf : { min : Int, max : Int, file : String }) -> haxe.macro.Position
+					[ObjectDecl:{ min : Int, max : Int, file : String }]
+						min: [Const:Int] 0
+						max: [Const:Int] 0
+						file: [Const:String] "(unknown)"
+
+	public static function getFile[Function:(p : haxe.macro.Position) -> String]
+		[Arg:haxe.macro.Position] [Local p(3202):haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Block:String]
+					[Var this(3207):String]
+						[Field:haxe.display.FsPath]
+							[Call:haxe.display.Location]
+								[Field:(p : haxe.macro.Position) -> haxe.display.Location]
+									[TypeExpr haxe.macro.PositionTools:Class<haxe.macro.PositionTools>]
+									[FStatic:(p : haxe.macro.Position) -> haxe.display.Location]
+										haxe.macro.PositionTools
+										toLocation:(p : haxe.macro.Position) -> haxe.display.Location
+								[Local p(3202):haxe.macro.Position:haxe.macro.Position]
+							[FAnon:haxe.display.FsPath] file:haxe.display.FsPath
+					[Cast:String] [Local this(3207):String:String]
+
+	public static function line[Function:(p : haxe.macro.Position) -> Int]
+		[Arg:haxe.macro.Position] [Local p(3213):haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Field:Int]
+					[Field:haxe.display.Position]
+						[Field:haxe.display.Range]
+							[Call:haxe.display.Location]
+								[Field:(p : haxe.macro.Position) -> haxe.display.Location]
+									[TypeExpr haxe.macro.PositionTools:Class<haxe.macro.PositionTools>]
+									[FStatic:(p : haxe.macro.Position) -> haxe.display.Location]
+										haxe.macro.PositionTools
+										toLocation:(p : haxe.macro.Position) -> haxe.display.Location
+								[Local p(3213):haxe.macro.Position:haxe.macro.Position]
+							[FAnon:haxe.display.Range] range:haxe.display.Range
+						[FAnon:haxe.display.Position] start:haxe.display.Position
+					[FAnon:Int] line:Int
+
+	public static function column[Function:(p : haxe.macro.Position) -> Int]
+		[Arg:haxe.macro.Position] [Local p(3214):haxe.macro.Position]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Field:Int]
+					[Field:haxe.display.Position]
+						[Field:haxe.display.Range]
+							[Call:haxe.display.Location]
+								[Field:(p : haxe.macro.Position) -> haxe.display.Location]
+									[TypeExpr haxe.macro.PositionTools:Class<haxe.macro.PositionTools>]
+									[FStatic:(p : haxe.macro.Position) -> haxe.display.Location]
+										haxe.macro.PositionTools
+										toLocation:(p : haxe.macro.Position) -> haxe.display.Location
+								[Local p(3214):haxe.macro.Position:haxe.macro.Position]
+							[FAnon:haxe.display.Range] range:haxe.display.Range
+						[FAnon:haxe.display.Position] start:haxe.display.Position
+					[FAnon:Int] character:Int
+}

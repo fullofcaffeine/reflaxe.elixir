@@ -1,0 +1,641 @@
+class reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl {
+
+	public function new[Function:(list : Array<haxe.macro.TypedExpr>) -> Void]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local list(6151):Array<haxe.macro.TypedExpr>]
+		[Block:Array<haxe.macro.TypedExpr>]
+			[Binop:Array<haxe.macro.TypedExpr>]
+				[Field:Array<haxe.macro.TypedExpr>]
+					[Const:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] this
+					[FInstance:Array<haxe.macro.TypedExpr>]
+						reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+						exprList:Array<haxe.macro.TypedExpr>
+				=
+				[Local list(6151):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+
+	var exprList:Array<haxe.macro.TypedExpr>;
+
+	public function removeUnnecessaryVarDecls[Function:() -> Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Var result(6153):Array<haxe.macro.TypedExpr>] [ArrayDecl:Array<haxe.macro.TypedExpr>]
+			[Var removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>] [ArrayDecl:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+			[Var indexesToRemove(6155):Array<Int>] [ArrayDecl:Array<Int>]
+			[Var i(6156):Int] [Const:Int] 0
+			[While:Void]
+				[Binop:Bool]
+					[Local i(6156):Int:Int]
+					<
+					[Field:Int]
+						[Field:Array<haxe.macro.TypedExpr>]
+							[Const:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] this
+							[FInstance:Array<haxe.macro.TypedExpr>]
+								reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+								exprList:Array<haxe.macro.TypedExpr>
+						[FInstance:Int]
+							Array<haxe.macro.TypedExpr>
+							length:Int
+				[Block:Int]
+					[Var expr(6157):haxe.macro.TypedExpr]
+						[Array:haxe.macro.TypedExpr]
+							[Field:Array<haxe.macro.TypedExpr>]
+								[Const:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] this
+								[FInstance:Array<haxe.macro.TypedExpr>]
+									reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+									exprList:Array<haxe.macro.TypedExpr>
+							[Unop:Int]
+								++
+								Postfix
+								[Local i(6156):Int:Int]
+					[Meta:Void]
+						:ast(switch (expr.expr) {
+	case TVar(tvar, e):
+		{
+			if (!isModifyingExpr(e)) {
+				removableVars.push({ tvar : tvar, index : i - 1 });
+			};
+		};	
+	case TBinop(OpAssign, { expr : TLocal(tvar) }, e):
+		{
+			removableVars = filterRemovableVars(e, removableVars);
+			var successful = false;
+			for (v  in  removableVars) {
+				if (v.tvar.id == tvar.id) {
+					var copyExpr = expr.copy();
+					copyExpr.expr = TVar(tvar, e);
+					result.push(copyExpr);
+					indexesToRemove.push(v.index);
+					successful = true;
+					break;
+				};
+			};
+			if (successful) {
+				continue;
+			};
+		};	
+	case TBlock(el):
+		{
+			var copyExpr = expr.copy();
+			copyExpr.expr = TBlock(process(el));
+			result.push(copyExpr);
+			continue;
+		};	
+	case _:
+		{
+			removableVars = filterRemovableVars(expr, removableVars);
+		};	
+})
+						[Block:Void]
+							[Var `(6211):haxe.macro.TypedExprDef]
+								[Field:haxe.macro.TypedExprDef]
+									[Local expr(6157):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+							[Switch:Void]
+								[EnumIndex:Int] [Local `(6211):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+								[Case:Void]
+									[Const:Int] 3
+									[Block:Void]
+										[Var `(6212):haxe.macro.Binop]
+											[EnumParameter:haxe.macro.Binop]
+												[Local `(6211):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TBinop
+												0
+										[Var `(6213):haxe.macro.TypedExpr]
+											[EnumParameter:haxe.macro.TypedExpr]
+												[Local `(6211):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TBinop
+												1
+										[Var `(6214):haxe.macro.TypedExpr]
+											[EnumParameter:haxe.macro.TypedExpr]
+												[Local `(6211):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TBinop
+												2
+										[If:Void]
+											[Binop:Bool]
+												[EnumIndex:Int] [Local `(6212):haxe.macro.Binop:haxe.macro.Binop]
+												==
+												[Const:Int] 4
+											[Then:Void] [Block:Void]
+												[Block:Void]
+													[Var `(6215):haxe.macro.TypedExprDef]
+														[Field:haxe.macro.TypedExprDef]
+															[Local `(6213):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+													[Var `(6216):haxe.macro.Position]
+														[Field:haxe.macro.Position]
+															[Local `(6213):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+													[Var `(6217):haxe.macro.Type]
+														[Field:haxe.macro.Type]
+															[Local `(6213):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[FAnon:haxe.macro.Type] t:haxe.macro.Type
+													[If:Void]
+														[Binop:Bool]
+															[EnumIndex:Int] [Local `(6215):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+															==
+															[Const:Int] 1
+														[Then:Void] [Block:Void]
+															[Var `(6218):haxe.macro.TVar]
+																[EnumParameter:haxe.macro.TVar]
+																	[Local `(6215):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	TLocal
+																	0
+															[Block:Void]
+																[Var tvar(6219):haxe.macro.TVar] [Local `(6218):haxe.macro.TVar:haxe.macro.TVar]
+																[Var e(6220):haxe.macro.TypedExpr] [Local `(6214):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																[Block:Void]
+																	[Block:Void]
+																		[Binop:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																			[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																			=
+																			[Call:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																				[Field:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																					[Const:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] this
+																					[FInstance:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																						reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+																						filterRemovableVars:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>
+																				[Local e(6220):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																				[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																		[Var successful(6221):Bool] [Const:Bool] false
+																		[Block:Void]
+																			[Var `(6222):Int] [Const:Int] 0
+																			[While:Void]
+																				[Binop:Bool]
+																					[Local `(6222):Int:Int]
+																					<
+																					[Field:Int]
+																						[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																						[FInstance:Int]
+																							Array<{ tvar : haxe.macro.TVar, index : Int }>
+																							length:Int
+																				[Block:Void]
+																					[Var v(6223):{ tvar : haxe.macro.TVar, index : Int }]
+																						[Array:{ tvar : haxe.macro.TVar, index : Int }]
+																							[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																							[Local `(6222):Int:Int]
+																					[Unop:Int]
+																						++
+																						Prefix
+																						[Local `(6222):Int:Int]
+																					[If:Void]
+																						[Binop:Bool]
+																							[Field:Int]
+																								[Field:haxe.macro.TVar]
+																									[Local v(6223):{ tvar : haxe.macro.TVar, index : Int }:{ tvar : haxe.macro.TVar, index : Int }]
+																									[FAnon:haxe.macro.TVar] tvar:haxe.macro.TVar
+																								[FAnon:Int] id:Int
+																							==
+																							[Field:Int]
+																								[Local tvar(6219):haxe.macro.TVar:haxe.macro.TVar]
+																								[FAnon:Int] id:Int
+																						[Then:Dynamic] [Block:Dynamic]
+																							[Var copyExpr(6224):haxe.macro.TypedExpr]
+																								[Call:haxe.macro.TypedExpr]
+																									[Field:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+																										[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+																										[FStatic:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+																											reflaxe.helpers.TypedExprHelper
+																											copy:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr
+																									[Local expr(6157):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																									[Const:Null<haxe.macro.TypedExprDef>] null
+																							[Binop:haxe.macro.TypedExprDef]
+																								[Field:haxe.macro.TypedExprDef]
+																									[Local copyExpr(6224):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																									[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																								=
+																								[Call:haxe.macro.TypedExprDef]
+																									[Field:(v : haxe.macro.TVar, expr : Null<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+																										[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+																										[FEnum:(v : haxe.macro.TVar, expr : Null<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+																											haxe.macro.TypedExprDef
+																											TVar
+																									[Local tvar(6219):haxe.macro.TVar:haxe.macro.TVar]
+																									[Local e(6220):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																							[Call:Int]
+																								[Field:(x : haxe.macro.TypedExpr) -> Int]
+																									[Local result(6153):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																									[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+																										Array<haxe.macro.TypedExpr>
+																										push:(x : Array.T) -> Int
+																								[Local copyExpr(6224):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																							[Call:Int]
+																								[Field:(x : Int) -> Int]
+																									[Local indexesToRemove(6155):Array<Int>:Array<Int>]
+																									[FInstance:(x : Int) -> Int]
+																										Array<Int>
+																										push:(x : Array.T) -> Int
+																								[Field:Int]
+																									[Local v(6223):{ tvar : haxe.macro.TVar, index : Int }:{ tvar : haxe.macro.TVar, index : Int }]
+																									[FAnon:Int] index:Int
+																							[Binop:Bool]
+																								[Local successful(6221):Bool:Bool]
+																								=
+																								[Const:Bool] true
+																							[Break:Dynamic]
+																		[If:Void]
+																			[Local successful(6221):Bool:Bool]
+																			[Then:Dynamic] [Block:Dynamic] [Continue:Dynamic]
+														[Else:Array<{ tvar : haxe.macro.TVar, index : Int }>] [Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+															[Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																[Binop:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																	[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																	=
+																	[Call:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																		[Field:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																			[Const:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] this
+																			[FInstance:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																				reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+																				filterRemovableVars:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>
+																		[Local expr(6157):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																		[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+											[Else:Array<{ tvar : haxe.macro.TVar, index : Int }>] [Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+												[Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+													[Binop:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+														[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+														=
+														[Call:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+															[Field:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																[Const:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] this
+																[FInstance:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																	reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+																	filterRemovableVars:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>
+															[Local expr(6157):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+								[Case:Void]
+									[Const:Int] 13
+									[Block:Void]
+										[Var `(6225):haxe.macro.TVar]
+											[EnumParameter:haxe.macro.TVar]
+												[Local `(6211):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TVar
+												0
+										[Var `(6226):Null<haxe.macro.TypedExpr>]
+											[EnumParameter:Null<haxe.macro.TypedExpr>]
+												[Local `(6211):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TVar
+												1
+										[Block:Void]
+											[Var tvar(6227):haxe.macro.TVar] [Local `(6225):haxe.macro.TVar:haxe.macro.TVar]
+											[Var e(6228):Null<haxe.macro.TypedExpr>] [Local `(6226):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+											[Block:Void]
+												[Block:Void]
+													[If:Void]
+														[Unop:Bool]
+															!
+															Prefix
+															[Call:Bool]
+																[Field:(e : Null<haxe.macro.TypedExpr>) -> Bool]
+																	[Const:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] this
+																	[FInstance:(e : Null<haxe.macro.TypedExpr>) -> Bool]
+																		reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+																		isModifyingExpr:(e : Null<haxe.macro.TypedExpr>) -> Bool
+																[Local e(6228):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+														[Then:Int] [Block:Int]
+															[Call:Int]
+																[Field:(x : { tvar : haxe.macro.TVar, index : Int }) -> Int]
+																	[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																	[FInstance:(x : { tvar : haxe.macro.TVar, index : Int }) -> Int]
+																		Array<{ tvar : haxe.macro.TVar, index : Int }>
+																		push:(x : Array.T) -> Int
+																[ObjectDecl:{ tvar : haxe.macro.TVar, index : Int }]
+																	tvar: [Local tvar(6227):haxe.macro.TVar:haxe.macro.TVar]
+																	index: [Binop:Int]
+																		[Local i(6156):Int:Int]
+																		-
+																		[Const:Int] 1
+								[Case:Dynamic]
+									[Const:Int] 14
+									[Block:Dynamic]
+										[Var `(6229):Array<haxe.macro.TypedExpr>]
+											[EnumParameter:Array<haxe.macro.TypedExpr>]
+												[Local `(6211):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TBlock
+												0
+										[Block:Dynamic]
+											[Var el(6230):Array<haxe.macro.TypedExpr>] [Local `(6229):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+											[Block:Dynamic]
+												[Block:Dynamic]
+													[Var copyExpr(6231):haxe.macro.TypedExpr]
+														[Call:haxe.macro.TypedExpr]
+															[Field:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+																[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+																[FStatic:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+																	reflaxe.helpers.TypedExprHelper
+																	copy:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr
+															[Local expr(6157):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Const:Null<haxe.macro.TypedExprDef>] null
+													[Binop:haxe.macro.TypedExprDef]
+														[Field:haxe.macro.TypedExprDef]
+															[Local copyExpr(6231):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+														=
+														[Call:haxe.macro.TypedExprDef]
+															[Field:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+																[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+																[FEnum:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+																	haxe.macro.TypedExprDef
+																	TBlock
+															[Call:Array<haxe.macro.TypedExpr>]
+																[Field:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+																	[TypeExpr reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl:Class<reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl>]
+																	[FStatic:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+																		reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+																		process:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>
+																[Local el(6230):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+													[Call:Int]
+														[Field:(x : haxe.macro.TypedExpr) -> Int]
+															[Local result(6153):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+																Array<haxe.macro.TypedExpr>
+																push:(x : Array.T) -> Int
+														[Local copyExpr(6231):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Continue:Dynamic]
+								[Default:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+									[Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+										[Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+											[Binop:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+												[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+												=
+												[Call:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+													[Field:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+														[Const:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] this
+														[FInstance:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+															reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+															filterRemovableVars:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>
+													[Local expr(6157):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Local removableVars(6154):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+					[Call:Int]
+						[Field:(x : haxe.macro.TypedExpr) -> Int]
+							[Local result(6153):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+								Array<haxe.macro.TypedExpr>
+								push:(x : Array.T) -> Int
+						[Local expr(6157):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Return:Dynamic]
+				[Block:Array<haxe.macro.TypedExpr>]
+					[Var filteredResult(6232):Array<haxe.macro.TypedExpr>] [ArrayDecl:Array<haxe.macro.TypedExpr>]
+					[Block:Void]
+						[Var `(6234):Int] [Const:Int] 0
+						[Var `(6235):Int]
+							[Field:Int]
+								[Local result(6153):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[FInstance:Int]
+									Array<haxe.macro.TypedExpr>
+									length:Int
+						[While:Void]
+							[Binop:Bool]
+								[Local `(6234):Int:Int]
+								<
+								[Local `(6235):Int:Int]
+							[Block:Void]
+								[Var i(6233):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(6234):Int:Int]
+								[If:Void]
+									[Unop:Bool]
+										!
+										Prefix
+										[Call:Bool]
+											[Field:(x : Int) -> Bool]
+												[Local indexesToRemove(6155):Array<Int>:Array<Int>]
+												[FInstance:(x : Int) -> Bool]
+													Array<Int>
+													contains:(x : Array.T) -> Bool
+											[Local i(6233):Int:Int]
+									[Then:Int] [Block:Int]
+										[Call:Int]
+											[Field:(x : haxe.macro.TypedExpr) -> Int]
+												[Local filteredResult(6232):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+												[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+													Array<haxe.macro.TypedExpr>
+													push:(x : Array.T) -> Int
+											[Array:haxe.macro.TypedExpr]
+												[Local result(6153):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+												[Local i(6233):Int:Int]
+					[Local filteredResult(6232):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+
+	function filterRemovableVars[Function:(expr : haxe.macro.TypedExpr, removableVars : Array<{ tvar : haxe.macro.TVar, index : Int }>) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+		[Arg:haxe.macro.TypedExpr] [Local expr(6182):haxe.macro.TypedExpr]
+		[Arg:Array<{ tvar : haxe.macro.TVar, index : Int }>] [Local removableVars(12958):Array<{ tvar : haxe.macro.TVar, index : Int }>]
+		[Block:Dynamic]
+			[Var removableVars(6183):Array<Array<{ tvar : haxe.macro.TVar, index : Int }>>] [ArrayDecl:Array<Array<{ tvar : haxe.macro.TVar, index : Int }>>] [Local removableVars(12958):Array<{ tvar : haxe.macro.TVar, index : Int }>:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+			[Var exprIter(6184):Array<(e : haxe.macro.TypedExpr) -> Void>] [ArrayDecl:Array<(e : haxe.macro.TypedExpr) -> Void>] [Const:(e : haxe.macro.TypedExpr) -> Void] null
+			[Binop:(e : haxe.macro.TypedExpr) -> Void]
+				[Array:(e : haxe.macro.TypedExpr) -> Void]
+					[Local exprIter(6184):Array<(e : haxe.macro.TypedExpr) -> Void>:Array<(e : haxe.macro.TypedExpr) -> Void>]
+					[Const:Int] 0
+				=
+				[Function:(e : haxe.macro.TypedExpr) -> Void]
+					[Arg:haxe.macro.TypedExpr] [Local e(6185):haxe.macro.TypedExpr]
+					[Block:Void]
+						[Meta:Void]
+							:ast(switch (e.expr) {
+	case TLocal(tvar):
+		{
+			removableVars = removableVars.filter(function(v) {
+				return v.tvar.id != tvar.id;
+			});
+		};	
+	case _:
+})
+							[Block:Void]
+								[Var `(6190):haxe.macro.TypedExprDef]
+									[Field:haxe.macro.TypedExprDef]
+										[Local e(6185):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+								[If:Void]
+									[Binop:Bool]
+										[EnumIndex:Int] [Local `(6190):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										==
+										[Const:Int] 1
+									[Then:Array<{ tvar : haxe.macro.TVar, index : Int }>] [Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+										[Var `(6191):haxe.macro.TVar]
+											[EnumParameter:haxe.macro.TVar]
+												[Local `(6190):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+												TLocal
+												0
+										[Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+											[Var tvar(6192):haxe.macro.TVar] [Local `(6191):haxe.macro.TVar:haxe.macro.TVar]
+											[Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+												[Block:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+													[Binop:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+														[Array:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+															[Local removableVars(6183):Array<Array<{ tvar : haxe.macro.TVar, index : Int }>>:Array<Array<{ tvar : haxe.macro.TVar, index : Int }>>]
+															[Const:Int] 0
+														=
+														[Call:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+															[Field:(f : ({ tvar : haxe.macro.TVar, index : Int } -> Bool)) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																[Array:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																	[Local removableVars(6183):Array<Array<{ tvar : haxe.macro.TVar, index : Int }>>:Array<Array<{ tvar : haxe.macro.TVar, index : Int }>>]
+																	[Const:Int] 0
+																[FInstance:(f : ({ tvar : haxe.macro.TVar, index : Int } -> Bool)) -> Array<{ tvar : haxe.macro.TVar, index : Int }>]
+																	Array<{ tvar : haxe.macro.TVar, index : Int }>
+																	filter:(f : (Array.T -> Bool)) -> Array<Array.T>
+															[Function:(v : { tvar : haxe.macro.TVar, index : Int }) -> Bool]
+																[Arg:{ tvar : haxe.macro.TVar, index : Int }] [Local v(6193):{ tvar : haxe.macro.TVar, index : Int }]
+																[Block:Dynamic]
+																	[Return:Dynamic]
+																		[Binop:Bool]
+																			[Field:Int]
+																				[Field:haxe.macro.TVar]
+																					[Local v(6193):{ tvar : haxe.macro.TVar, index : Int }:{ tvar : haxe.macro.TVar, index : Int }]
+																					[FAnon:haxe.macro.TVar] tvar:haxe.macro.TVar
+																				[FAnon:Int] id:Int
+																			!=
+																			[Field:Int]
+																				[Local tvar(6192):haxe.macro.TVar:haxe.macro.TVar]
+																				[FAnon:Int] id:Int
+									[Else:Void] [Block:Void]
+						[Call:Void]
+							[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+								[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+								[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+									haxe.macro.TypedExprTools
+									iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+							[Local e(6185):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[Array:(e : haxe.macro.TypedExpr) -> Void]
+								[Local exprIter(6184):Array<(e : haxe.macro.TypedExpr) -> Void>:Array<(e : haxe.macro.TypedExpr) -> Void>]
+								[Const:Int] 0
+			[Call:Void]
+				[Array:(e : haxe.macro.TypedExpr) -> Void]
+					[Local exprIter(6184):Array<(e : haxe.macro.TypedExpr) -> Void>:Array<(e : haxe.macro.TypedExpr) -> Void>]
+					[Const:Int] 0
+				[Local expr(6182):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Return:Dynamic]
+				[Array:Array<{ tvar : haxe.macro.TVar, index : Int }>]
+					[Local removableVars(6183):Array<Array<{ tvar : haxe.macro.TVar, index : Int }>>:Array<Array<{ tvar : haxe.macro.TVar, index : Int }>>]
+					[Const:Int] 0
+
+	function isModifyingExpr[Function:(e : Null<haxe.macro.TypedExpr>) -> Bool]
+		[Arg:Null<haxe.macro.TypedExpr>] [Local e(6160):Null<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Var `this(6163):reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] [Const:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl] this
+			[If:Void]
+				[Binop:Bool]
+					[Local e(6160):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+					==
+					[Const:Null<haxe.macro.TypedExpr>] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (e.expr) {
+	case TCall(_, _):
+		true;	
+	case TNew(_, _, _):
+		true;	
+	case TReturn(_):
+		true;	
+	case TBreak | TContinue:
+		true;	
+	case _:
+		{
+			var modifying = false;
+			haxe.macro.TypedExprTools.iter(e, function(subExpr:TypedExpr) {
+				if (isModifyingExpr(subExpr)) {
+					modifying = true;
+				};
+			});
+			modifying;
+		};	
+})
+					[Block:Bool]
+						[Var `(6171):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local e(6160):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[Switch:Bool]
+							[EnumIndex:Int] [Local `(6171):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							[Case:Bool]
+								[Const:Int] 9
+								[Block:Bool]
+									[Var `(6172):haxe.macro.TypedExpr]
+										[EnumParameter:haxe.macro.TypedExpr]
+											[Local `(6171):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TCall
+											0
+									[Var `(6173):Array<haxe.macro.TypedExpr>]
+										[EnumParameter:Array<haxe.macro.TypedExpr>]
+											[Local `(6171):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TCall
+											1
+									[Block:Bool] [Const:Bool] true
+							[Case:Bool]
+								[Const:Int] 10
+								[Block:Bool]
+									[Var `(6174):haxe.macro.Ref<haxe.macro.ClassType>]
+										[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+											[Local `(6171):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TNew
+											0
+									[Var `(6175):Array<haxe.macro.Type>]
+										[EnumParameter:Array<haxe.macro.Type>]
+											[Local `(6171):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TNew
+											1
+									[Var `(6176):Array<haxe.macro.TypedExpr>]
+										[EnumParameter:Array<haxe.macro.TypedExpr>]
+											[Local `(6171):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TNew
+											2
+									[Block:Bool] [Const:Bool] true
+							[Case:Bool]
+								[Const:Int] 20
+								[Block:Bool]
+									[Var `(6177):Null<haxe.macro.TypedExpr>]
+										[EnumParameter:Null<haxe.macro.TypedExpr>]
+											[Local `(6171):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+											TReturn
+											0
+									[Block:Bool] [Const:Bool] true
+							[Case:Bool]
+								[Const:Int] 21
+								[Const:Int] 22
+								[Block:Bool] [Block:Bool] [Const:Bool] true
+							[Default:Bool]
+								[Block:Bool]
+									[Block:Bool]
+										[Var modifying(6178):Array<Bool>] [ArrayDecl:Array<Bool>] [Const:Bool] false
+										[Call:Void]
+											[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+												[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+												[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void]
+													haxe.macro.TypedExprTools
+													iter:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> Void)) -> Void
+											[Local e(6160):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+											[Function:(subExpr : haxe.macro.TypedExpr) -> Void]
+												[Arg:haxe.macro.TypedExpr] [Local subExpr(6179):haxe.macro.TypedExpr]
+												[Block:Void]
+													[If:Void]
+														[Call:Bool]
+															[Field:(e : Null<haxe.macro.TypedExpr>) -> Bool]
+																[Local `this(6163):reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl]
+																[FInstance:(e : Null<haxe.macro.TypedExpr>) -> Bool]
+																	reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+																	isModifyingExpr:(e : Null<haxe.macro.TypedExpr>) -> Bool
+															[Local subExpr(6179):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Then:Bool] [Block:Bool]
+															[Binop:Bool]
+																[Array:Bool]
+																	[Local modifying(6178):Array<Bool>:Array<Bool>]
+																	[Const:Int] 0
+																=
+																[Const:Bool] true
+										[Array:Bool]
+											[Local modifying(6178):Array<Bool>:Array<Bool>]
+											[Const:Int] 0
+
+	public static function process[Function:(list : Array<haxe.macro.TypedExpr>) -> Array<haxe.macro.TypedExpr>]
+		[Arg:Array<haxe.macro.TypedExpr>] [Local list(6150):Array<haxe.macro.TypedExpr>]
+		[Block:Dynamic]
+			[Var ubr(6152):reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl]
+				[New:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl]
+					reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+					[Local list(6150):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+			[Return:Dynamic]
+				[Call:Array<haxe.macro.TypedExpr>]
+					[Field:() -> Array<haxe.macro.TypedExpr>]
+						[Local ubr(6152):reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl:reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl]
+						[FInstance:() -> Array<haxe.macro.TypedExpr>]
+							reflaxe.preprocessors.implementations.RemoveReassignedVariableDeclarationsImpl
+							removeUnnecessaryVarDecls:() -> Array<haxe.macro.TypedExpr>
+}

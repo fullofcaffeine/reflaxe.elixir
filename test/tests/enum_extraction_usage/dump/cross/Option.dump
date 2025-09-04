@@ -1,0 +1,5 @@
+@:directlyUsed @:used
+enum Option<T> {
+	Some(value:Option.T);
+	None;
+}

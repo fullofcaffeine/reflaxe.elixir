@@ -1,0 +1,1 @@
+typedef haxe.macro.TypeParameter = { t : haxe.macro.Type, name : String, ?defaultType : Null<haxe.macro.Type> }

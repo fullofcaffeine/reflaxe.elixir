@@ -1,0 +1,17 @@
+private class haxe.display._FsPath.FsPath_Impl_ {
+
+	@:noCompletion
+	public static inline function _new[Function:(path : String) -> haxe.display.FsPath]
+		[Arg:String] [Local path(3208):String]
+		[Block:Dynamic]
+			[Var this(3209):String]
+			[Binop:String]
+				[Local this(3209):String:String]
+				=
+				[Local path(3208):String:String]
+			[Return:Dynamic] [Cast:haxe.display.FsPath] [Local this(3209):String:String]
+
+	public static inline function toString[Function:(this : String) -> String]
+		[Arg:String] [Local this(3204):String]
+		[Block:Dynamic] [Return:Dynamic] [Local this(3204):String:String]
+}

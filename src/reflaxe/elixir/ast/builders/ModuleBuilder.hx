@@ -319,8 +319,15 @@ class ModuleBuilder {
                         }
                         
                         // Build the function body using ElixirASTBuilder
+                        // First analyze variable usage for proper underscore prefixing
+                        var functionUsageMap = if (tfunc.expr != null) {
+                            reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                        } else {
+                            null;
+                        };
+                        
                         var body = if (tfunc.expr != null) {
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
                         } else {
                             makeAST(ENil);
                         }
@@ -388,8 +395,15 @@ class ModuleBuilder {
                         }
                         
                         // Build the function body using ElixirASTBuilder
+                        // First analyze variable usage for proper underscore prefixing
+                        var functionUsageMap = if (tfunc.expr != null) {
+                            reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                        } else {
+                            null;
+                        };
+                        
                         var body = if (tfunc.expr != null) {
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
                         } else {
                             makeAST(ENil);
                         }
@@ -441,8 +455,15 @@ class ModuleBuilder {
                         }
                         
                         // Build the function body using ElixirASTBuilder
+                        // First analyze variable usage for proper underscore prefixing
+                        var functionUsageMap = if (tfunc.expr != null) {
+                            reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                        } else {
+                            null;
+                        };
+                        
                         var body = if (tfunc.expr != null) {
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
                         } else {
                             makeAST(ENil);
                         }
@@ -486,8 +507,15 @@ class ModuleBuilder {
                         }
                         
                         // Build the function body using ElixirASTBuilder
+                        // First analyze variable usage for proper underscore prefixing
+                        var functionUsageMap = if (tfunc.expr != null) {
+                            reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                        } else {
+                            null;
+                        };
+                        
                         var body = if (tfunc.expr != null) {
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
                         } else {
                             makeAST(ENil);
                         }

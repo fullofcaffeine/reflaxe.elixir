@@ -1,0 +1,908 @@
+private class reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_ {
+
+	public static inline function emptyMetadata[Function:() -> reflaxe.elixir.ast.ElixirMetadata] [Block:Dynamic] [Return:Dynamic] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+
+	public static inline function makeAST[Function:(def : reflaxe.elixir.ast.ElixirASTDef, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirASTDef] [Local def(13636):reflaxe.elixir.ast.ElixirASTDef]
+		[Arg:Null<haxe.macro.Position>]
+			[Local pos(13637):Null<haxe.macro.Position>]
+			[Const:Null<haxe.macro.Position>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+					def: [Local def(13636):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+					metadata: [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+					pos: [Local pos(13637):Null<haxe.macro.Position>:Null<haxe.macro.Position>]
+
+	public static inline function makeASTWithMeta[Function:(def : reflaxe.elixir.ast.ElixirASTDef, meta : reflaxe.elixir.ast.ElixirMetadata, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirASTDef] [Local def(13640):reflaxe.elixir.ast.ElixirASTDef]
+		[Arg:reflaxe.elixir.ast.ElixirMetadata] [Local meta(13641):reflaxe.elixir.ast.ElixirMetadata]
+		[Arg:Null<haxe.macro.Position>]
+			[Local pos(13642):Null<haxe.macro.Position>]
+			[Const:Null<haxe.macro.Position>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+					def: [Local def(13640):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+					metadata: [Local meta(13641):reflaxe.elixir.ast.ElixirMetadata:reflaxe.elixir.ast.ElixirMetadata]
+					pos: [Local pos(13642):Null<haxe.macro.Position>:Null<haxe.macro.Position>]
+
+	public static function applyIdiomaticEnumTransformation[Function:(node : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local node(13643):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Var elements(13650):Array<reflaxe.elixir.ast.ElixirAST>]
+				[Meta:Array<reflaxe.elixir.ast.ElixirAST>]
+					:ast(switch (node.def) {
+	case ETuple(els):
+		els;	
+	default:
+		return node;	
+})
+					[Block:Array<reflaxe.elixir.ast.ElixirAST>]
+						[Var `(13647):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[If:Array<reflaxe.elixir.ast.ElixirAST>]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(13647):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+								==
+								[Const:Int] 16
+							[Then:Array<reflaxe.elixir.ast.ElixirAST>] [Block:Array<reflaxe.elixir.ast.ElixirAST>]
+								[Var `(13648):Array<reflaxe.elixir.ast.ElixirAST>]
+									[EnumParameter:Array<reflaxe.elixir.ast.ElixirAST>]
+										[Local `(13647):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+										ETuple
+										0
+								[Block:Array<reflaxe.elixir.ast.ElixirAST>]
+									[Var els(13649):Array<reflaxe.elixir.ast.ElixirAST>] [Local `(13648):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+									[Block:Array<reflaxe.elixir.ast.ElixirAST>] [Local els(13649):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+							[Else:Array<reflaxe.elixir.ast.ElixirAST>] [Block:Array<reflaxe.elixir.ast.ElixirAST>] [Return:Array<reflaxe.elixir.ast.ElixirAST>] [Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local elements(13650):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+						[FInstance:Int]
+							Array<reflaxe.elixir.ast.ElixirAST>
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+			[Var tag(13657):String]
+				[Meta:String]
+					:ast(switch (elements[0].def) {
+	case EAtom(name):
+		name;	
+	default:
+		return node;	
+})
+					[Block:String]
+						[Var `(13654):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Array:reflaxe.elixir.ast.ElixirAST]
+									[Local elements(13650):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+									[Const:Int] 0
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[If:String]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(13654):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+								==
+								[Const:Int] 31
+							[Then:String] [Block:String]
+								[Var `(13655):String]
+									[EnumParameter:String]
+										[Local `(13654):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+										EAtom
+										0
+								[Block:String]
+									[Var name(13656):String] [Local `(13655):String:String]
+									[Block:String] [Local name(13656):String:String]
+							[Else:String] [Block:String] [Return:String] [Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+			[Var args(13658):Array<reflaxe.elixir.ast.ElixirAST>]
+				[Call:Array<reflaxe.elixir.ast.ElixirAST>]
+					[Field:(pos : Int, ?end : Null<Int>) -> Array<reflaxe.elixir.ast.ElixirAST>]
+						[Local elements(13650):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+						[FInstance:(pos : Int, ?end : Null<Int>) -> Array<reflaxe.elixir.ast.ElixirAST>]
+							Array<reflaxe.elixir.ast.ElixirAST>
+							slice:(pos : Int, ?end : Null<Int>) -> Array<Array.T>
+					[Const:Int] 1
+					[Const:Null<Int>] null
+			[Var argCount(13659):Int]
+				[Field:Int]
+					[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+					[FInstance:Int]
+						Array<reflaxe.elixir.ast.ElixirAST>
+						length:Int
+			[Meta:Void]
+				:ast(switch (argCount) {
+	case 0:
+		return makeASTWithMeta(EAtom(tag), node.metadata, node.pos);	
+	case 1:
+		var unwrapped = switch (args[0].def) {
+			case EString(s) if (isModuleName(s)):
+				makeAST(EVar(s), args[0].pos);			
+			default:
+				args[0];			
+		};
+		return makeASTWithMeta(unwrapped.def, node.metadata, node.pos);	
+	case 2:
+		var moduleArg = switch (args[0].def) {
+			case EString(s) if (isModuleName(s)):
+				makeAST(EVar(s), args[0].pos);			
+			default:
+				args[0];			
+		};
+		var configArg = switch (args[1].def) {
+			case EKeywordList(_):
+				args[1];			
+			case EList(elements):
+				var keywordPairs:Array<EKeywordPair> = [];
+				var isKeyValueConfig = true;
+				for (elem  in  elements) {
+					switch (elem.def) {
+						case EMap(pairs):
+							var keyName:String = null;
+							var keyValue:ElixirAST = null;
+							for (pair  in  pairs) {
+								switch (pair.key.def) {
+									case EAtom("key"):
+										switch (pair.value.def) {
+											case EString(s):
+												keyName = s;											
+											default:
+												isKeyValueConfig = false;											
+										};									
+									case EAtom("value"):
+										keyValue = pair.value;									
+									default:
+										isKeyValueConfig = false;									
+								};
+							};
+							if (keyName != null && keyValue != null) {
+								var finalValue = if (keyName == "name") {
+									switch (keyValue.def) {
+										case EString(s) if (isModuleName(s)):
+											makeAST(EAtom(s), keyValue.pos);										
+										default:
+											keyValue;										
+									};
+								} else {
+									keyValue;
+								};
+								keywordPairs.push({ key : keyName, value : finalValue });
+							} else {
+								isKeyValueConfig = false;
+							};						
+						default:
+							isKeyValueConfig = false;						
+					};
+				};
+				if (isKeyValueConfig && keywordPairs.length > 0) {
+					makeAST(EKeywordList(keywordPairs), args[1].pos);
+				} else {
+					args[1];
+				};			
+			default:
+				args[1];			
+		};
+		return makeASTWithMeta(ETuple([moduleArg, configArg]), node.metadata, node.pos);	
+})
+				[Switch:Void]
+					[Local argCount(13659):Int:Int]
+					[Case:Dynamic]
+						[Const:Int] 0
+						[Block:Dynamic]
+							[Block:Dynamic]
+								[Return:Dynamic]
+									[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+										def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+											[Field:(value : String) -> reflaxe.elixir.ast.ElixirASTDef]
+												[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+												[FEnum:(value : String) -> reflaxe.elixir.ast.ElixirASTDef]
+													reflaxe.elixir.ast.ElixirASTDef
+													EAtom
+											[Local tag(13657):String:String]
+										metadata: [Field:reflaxe.elixir.ast.ElixirMetadata]
+											[Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+											[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+										pos: [Field:Null<haxe.macro.Position>]
+											[Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+											[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+					[Case:Dynamic]
+						[Const:Int] 1
+						[Block:Dynamic]
+							[Block:Dynamic]
+								[Var unwrapped(13789):{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+									[Meta:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+										:ast(switch (args[0].def) {
+	case EString(s) if (isModuleName(s)):
+		makeAST(EVar(s), args[0].pos);	
+	default:
+		args[0];	
+})
+										[Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+											[Var `(13790):reflaxe.elixir.ast.ElixirASTDef]
+												[Field:reflaxe.elixir.ast.ElixirASTDef]
+													[Array:reflaxe.elixir.ast.ElixirAST]
+														[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+														[Const:Int] 0
+													[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+											[If:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local `(13790):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+													==
+													[Const:Int] 32
+												[Then:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }] [Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+													[Var `(13791):String]
+														[EnumParameter:String]
+															[Local `(13790):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+															EString
+															0
+													[Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+														[Var s(13792):String] [Local `(13791):String:String]
+														[If:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+															[Call:Bool]
+																[Field:(s : String) -> Bool]
+																	[TypeExpr reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_:Class<reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_>]
+																	[FStatic:(s : String) -> Bool]
+																		reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_
+																		isModuleName:(s : String) -> Bool
+																[Local s(13792):String:String]
+															[Then:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }] [Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																	def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+																		[Field:(name : String) -> reflaxe.elixir.ast.ElixirASTDef]
+																			[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+																			[FEnum:(name : String) -> reflaxe.elixir.ast.ElixirASTDef]
+																				reflaxe.elixir.ast.ElixirASTDef
+																				EVar
+																		[Local s(13792):String:String]
+																	metadata: [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+																	pos: [Field:Null<haxe.macro.Position>]
+																		[Array:reflaxe.elixir.ast.ElixirAST]
+																			[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																			[Const:Int] 0
+																		[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+															[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+																[Array:reflaxe.elixir.ast.ElixirAST]
+																	[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																	[Const:Int] 0
+												[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+													[Array:reflaxe.elixir.ast.ElixirAST]
+														[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+														[Const:Int] 0
+								[Return:Dynamic]
+									[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+										def: [Field:reflaxe.elixir.ast.ElixirASTDef]
+											[Local unwrapped(13789):{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+											[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+										metadata: [Field:reflaxe.elixir.ast.ElixirMetadata]
+											[Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+											[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+										pos: [Field:Null<haxe.macro.Position>]
+											[Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+											[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+					[Case:Dynamic]
+						[Const:Int] 2
+						[Block:Dynamic]
+							[Block:Dynamic]
+								[Var moduleArg(13793):{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+									[Meta:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+										:ast(switch (args[0].def) {
+	case EString(s) if (isModuleName(s)):
+		makeAST(EVar(s), args[0].pos);	
+	default:
+		args[0];	
+})
+										[Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+											[Var `(13794):reflaxe.elixir.ast.ElixirASTDef]
+												[Field:reflaxe.elixir.ast.ElixirASTDef]
+													[Array:reflaxe.elixir.ast.ElixirAST]
+														[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+														[Const:Int] 0
+													[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+											[If:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local `(13794):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+													==
+													[Const:Int] 32
+												[Then:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }] [Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+													[Var `(13795):String]
+														[EnumParameter:String]
+															[Local `(13794):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+															EString
+															0
+													[Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+														[Var s(13796):String] [Local `(13795):String:String]
+														[If:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+															[Call:Bool]
+																[Field:(s : String) -> Bool]
+																	[TypeExpr reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_:Class<reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_>]
+																	[FStatic:(s : String) -> Bool]
+																		reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_
+																		isModuleName:(s : String) -> Bool
+																[Local s(13796):String:String]
+															[Then:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }] [Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																	def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+																		[Field:(name : String) -> reflaxe.elixir.ast.ElixirASTDef]
+																			[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+																			[FEnum:(name : String) -> reflaxe.elixir.ast.ElixirASTDef]
+																				reflaxe.elixir.ast.ElixirASTDef
+																				EVar
+																		[Local s(13796):String:String]
+																	metadata: [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+																	pos: [Field:Null<haxe.macro.Position>]
+																		[Array:reflaxe.elixir.ast.ElixirAST]
+																			[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																			[Const:Int] 0
+																		[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+															[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+																[Array:reflaxe.elixir.ast.ElixirAST]
+																	[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																	[Const:Int] 0
+												[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+													[Array:reflaxe.elixir.ast.ElixirAST]
+														[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+														[Const:Int] 0
+								[Var configArg(13797):reflaxe.elixir.ast.ElixirAST]
+									[Meta:reflaxe.elixir.ast.ElixirAST]
+										:ast(switch (args[1].def) {
+	case EKeywordList(_):
+		args[1];	
+	case EList(elements):
+		var keywordPairs:Array<EKeywordPair> = [];
+		var isKeyValueConfig = true;
+		for (elem  in  elements) {
+			switch (elem.def) {
+				case EMap(pairs):
+					var keyName:String = null;
+					var keyValue:ElixirAST = null;
+					for (pair  in  pairs) {
+						switch (pair.key.def) {
+							case EAtom("key"):
+								switch (pair.value.def) {
+									case EString(s):
+										keyName = s;									
+									default:
+										isKeyValueConfig = false;									
+								};							
+							case EAtom("value"):
+								keyValue = pair.value;							
+							default:
+								isKeyValueConfig = false;							
+						};
+					};
+					if (keyName != null && keyValue != null) {
+						var finalValue = if (keyName == "name") {
+							switch (keyValue.def) {
+								case EString(s) if (isModuleName(s)):
+									makeAST(EAtom(s), keyValue.pos);								
+								default:
+									keyValue;								
+							};
+						} else {
+							keyValue;
+						};
+						keywordPairs.push({ key : keyName, value : finalValue });
+					} else {
+						isKeyValueConfig = false;
+					};				
+				default:
+					isKeyValueConfig = false;				
+			};
+		};
+		if (isKeyValueConfig && keywordPairs.length > 0) {
+			makeAST(EKeywordList(keywordPairs), args[1].pos);
+		} else {
+			args[1];
+		};	
+	default:
+		args[1];	
+})
+										[Block:reflaxe.elixir.ast.ElixirAST]
+											[Var `(13798):reflaxe.elixir.ast.ElixirASTDef]
+												[Field:reflaxe.elixir.ast.ElixirASTDef]
+													[Array:reflaxe.elixir.ast.ElixirAST]
+														[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+														[Const:Int] 1
+													[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+											[Switch:reflaxe.elixir.ast.ElixirAST]
+												[EnumIndex:Int] [Local `(13798):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+												[Case:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+													[Const:Int] 15
+													[Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+														[Var `(13799):Array<reflaxe.elixir.ast.ElixirAST>]
+															[EnumParameter:Array<reflaxe.elixir.ast.ElixirAST>]
+																[Local `(13798):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																EList
+																0
+														[Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+															[Var elements(13800):Array<reflaxe.elixir.ast.ElixirAST>] [Local `(13799):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+															[Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																[Var keywordPairs(13801):Array<reflaxe.elixir.ast.EKeywordPair>] [ArrayDecl:Array<reflaxe.elixir.ast.EKeywordPair>]
+																[Var isKeyValueConfig(13802):Bool] [Const:Bool] true
+																[Block:Void]
+																	[Var `(13803):Int] [Const:Int] 0
+																	[While:Void]
+																		[Binop:Bool]
+																			[Local `(13803):Int:Int]
+																			<
+																			[Field:Int]
+																				[Local elements(13800):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																				[FInstance:Int]
+																					Array<reflaxe.elixir.ast.ElixirAST>
+																					length:Int
+																		[Block:Void]
+																			[Var elem(13804):reflaxe.elixir.ast.ElixirAST]
+																				[Array:reflaxe.elixir.ast.ElixirAST]
+																					[Local elements(13800):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																					[Local `(13803):Int:Int]
+																			[Unop:Int]
+																				++
+																				Prefix
+																				[Local `(13803):Int:Int]
+																			[Meta:Void]
+																				:ast(switch (elem.def) {
+	case EMap(pairs):
+		var keyName:String = null;
+		var keyValue:ElixirAST = null;
+		for (pair  in  pairs) {
+			switch (pair.key.def) {
+				case EAtom("key"):
+					switch (pair.value.def) {
+						case EString(s):
+							keyName = s;						
+						default:
+							isKeyValueConfig = false;						
+					};				
+				case EAtom("value"):
+					keyValue = pair.value;				
+				default:
+					isKeyValueConfig = false;				
+			};
+		};
+		if (keyName != null && keyValue != null) {
+			var finalValue = if (keyName == "name") {
+				switch (keyValue.def) {
+					case EString(s) if (isModuleName(s)):
+						makeAST(EAtom(s), keyValue.pos);					
+					default:
+						keyValue;					
+				};
+			} else {
+				keyValue;
+			};
+			keywordPairs.push({ key : keyName, value : finalValue });
+		} else {
+			isKeyValueConfig = false;
+		};	
+	default:
+		isKeyValueConfig = false;	
+})
+																				[Block:Void]
+																					[Var `(13805):reflaxe.elixir.ast.ElixirASTDef]
+																						[Field:reflaxe.elixir.ast.ElixirASTDef]
+																							[Local elem(13804):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																							[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																					[If:Void]
+																						[Binop:Bool]
+																							[EnumIndex:Int] [Local `(13805):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																							==
+																							[Const:Int] 17
+																						[Then:Void] [Block:Void]
+																							[Var `(13806):Array<reflaxe.elixir.ast.EMapPair>]
+																								[EnumParameter:Array<reflaxe.elixir.ast.EMapPair>]
+																									[Local `(13805):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																									EMap
+																									0
+																							[Block:Void]
+																								[Var pairs(13807):Array<reflaxe.elixir.ast.EMapPair>] [Local `(13806):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+																								[Block:Void]
+																									[Var keyName(13808):String] [Const:String] null
+																									[Var keyValue(13809):reflaxe.elixir.ast.ElixirAST] [Const:reflaxe.elixir.ast.ElixirAST] null
+																									[Block:Void]
+																										[Var `(13810):Int] [Const:Int] 0
+																										[While:Void]
+																											[Binop:Bool]
+																												[Local `(13810):Int:Int]
+																												<
+																												[Field:Int]
+																													[Local pairs(13807):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+																													[FInstance:Int]
+																														Array<reflaxe.elixir.ast.EMapPair>
+																														length:Int
+																											[Block:Void]
+																												[Var pair(13811):reflaxe.elixir.ast.EMapPair]
+																													[Array:reflaxe.elixir.ast.EMapPair]
+																														[Local pairs(13807):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+																														[Local `(13810):Int:Int]
+																												[Unop:Int]
+																													++
+																													Prefix
+																													[Local `(13810):Int:Int]
+																												[Meta:Void]
+																													:ast(switch (pair.key.def) {
+	case EAtom("key"):
+		switch (pair.value.def) {
+			case EString(s):
+				keyName = s;			
+			default:
+				isKeyValueConfig = false;			
+		};	
+	case EAtom("value"):
+		keyValue = pair.value;	
+	default:
+		isKeyValueConfig = false;	
+})
+																													[Block:Void]
+																														[Var `(13812):reflaxe.elixir.ast.ElixirASTDef]
+																															[Field:reflaxe.elixir.ast.ElixirASTDef]
+																																[Field:reflaxe.elixir.ast.ElixirAST]
+																																	[Local pair(13811):reflaxe.elixir.ast.EMapPair:reflaxe.elixir.ast.EMapPair]
+																																	[FAnon:reflaxe.elixir.ast.ElixirAST] key:reflaxe.elixir.ast.ElixirAST
+																																[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																														[If:Void]
+																															[Binop:Bool]
+																																[EnumIndex:Int] [Local `(13812):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																																==
+																																[Const:Int] 31
+																															[Then:Void] [Block:Void]
+																																[Var `(13813):String]
+																																	[EnumParameter:String]
+																																		[Local `(13812):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																																		EAtom
+																																		0
+																																[Switch:Void]
+																																	[Local `(13813):String:String]
+																																	[Case:Void]
+																																		[Const:String] "key"
+																																		[Block:Void]
+																																			[Block:Void]
+																																				[Meta:Void]
+																																					:ast(switch (pair.value.def) {
+	case EString(s):
+		keyName = s;	
+	default:
+		isKeyValueConfig = false;	
+})
+																																					[Block:Void]
+																																						[Var `(13814):reflaxe.elixir.ast.ElixirASTDef]
+																																							[Field:reflaxe.elixir.ast.ElixirASTDef]
+																																								[Field:reflaxe.elixir.ast.ElixirAST]
+																																									[Local pair(13811):reflaxe.elixir.ast.EMapPair:reflaxe.elixir.ast.EMapPair]
+																																									[FAnon:reflaxe.elixir.ast.ElixirAST] value:reflaxe.elixir.ast.ElixirAST
+																																								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																																						[If:Void]
+																																							[Binop:Bool]
+																																								[EnumIndex:Int] [Local `(13814):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																																								==
+																																								[Const:Int] 32
+																																							[Then:String] [Block:String]
+																																								[Var `(13815):String]
+																																									[EnumParameter:String]
+																																										[Local `(13814):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																																										EString
+																																										0
+																																								[Block:String]
+																																									[Var s(13816):String] [Local `(13815):String:String]
+																																									[Block:String]
+																																										[Binop:String]
+																																											[Local keyName(13808):String:String]
+																																											=
+																																											[Local s(13816):String:String]
+																																							[Else:Bool] [Block:Bool]
+																																								[Binop:Bool]
+																																									[Local isKeyValueConfig(13802):Bool:Bool]
+																																									=
+																																									[Const:Bool] false
+																																	[Case:reflaxe.elixir.ast.ElixirAST]
+																																		[Const:String] "value"
+																																		[Block:reflaxe.elixir.ast.ElixirAST]
+																																			[Block:reflaxe.elixir.ast.ElixirAST]
+																																				[Binop:reflaxe.elixir.ast.ElixirAST]
+																																					[Local keyValue(13809):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																																					=
+																																					[Field:reflaxe.elixir.ast.ElixirAST]
+																																						[Local pair(13811):reflaxe.elixir.ast.EMapPair:reflaxe.elixir.ast.EMapPair]
+																																						[FAnon:reflaxe.elixir.ast.ElixirAST] value:reflaxe.elixir.ast.ElixirAST
+																																	[Default:Bool]
+																																		[Block:Bool]
+																																			[Binop:Bool]
+																																				[Local isKeyValueConfig(13802):Bool:Bool]
+																																				=
+																																				[Const:Bool] false
+																															[Else:Bool] [Block:Bool]
+																																[Binop:Bool]
+																																	[Local isKeyValueConfig(13802):Bool:Bool]
+																																	=
+																																	[Const:Bool] false
+																									[If:Void]
+																										[Binop:Bool]
+																											[Binop:Bool]
+																												[Local keyName(13808):String:String]
+																												!=
+																												[Const:String] null
+																											&&
+																											[Binop:Bool]
+																												[Local keyValue(13809):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																												!=
+																												[Const:reflaxe.elixir.ast.ElixirAST] null
+																										[Then:Int] [Block:Int]
+																											[Var finalValue(13817):{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																												[If:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																													[Binop:Bool]
+																														[Local keyName(13808):String:String]
+																														==
+																														[Const:String] "name"
+																													[Then:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }] [Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																														[Meta:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																															:ast(switch (keyValue.def) {
+	case EString(s) if (isModuleName(s)):
+		makeAST(EAtom(s), keyValue.pos);	
+	default:
+		keyValue;	
+})
+																															[Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																																[Var `(13818):reflaxe.elixir.ast.ElixirASTDef]
+																																	[Field:reflaxe.elixir.ast.ElixirASTDef]
+																																		[Local keyValue(13809):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																																		[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																																[If:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																																	[Binop:Bool]
+																																		[EnumIndex:Int] [Local `(13818):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																																		==
+																																		[Const:Int] 32
+																																	[Then:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }] [Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																																		[Var `(13819):String]
+																																			[EnumParameter:String]
+																																				[Local `(13818):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																																				EString
+																																				0
+																																		[Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																																			[Var s(13820):String] [Local `(13819):String:String]
+																																			[If:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																																				[Call:Bool]
+																																					[Field:(s : String) -> Bool]
+																																						[TypeExpr reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_:Class<reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_>]
+																																						[FStatic:(s : String) -> Bool]
+																																							reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_
+																																							isModuleName:(s : String) -> Bool
+																																					[Local s(13820):String:String]
+																																				[Then:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }] [Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																																					[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																																						def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+																																							[Field:(value : String) -> reflaxe.elixir.ast.ElixirASTDef]
+																																								[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+																																								[FEnum:(value : String) -> reflaxe.elixir.ast.ElixirASTDef]
+																																									reflaxe.elixir.ast.ElixirASTDef
+																																									EAtom
+																																							[Local s(13820):String:String]
+																																						metadata: [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+																																						pos: [Field:Null<haxe.macro.Position>]
+																																							[Local keyValue(13809):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																																							[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+																																				[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local keyValue(13809):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																																	[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local keyValue(13809):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																													[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local keyValue(13809):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																											[Call:Int]
+																												[Field:(x : reflaxe.elixir.ast.EKeywordPair) -> Int]
+																													[Local keywordPairs(13801):Array<reflaxe.elixir.ast.EKeywordPair>:Array<reflaxe.elixir.ast.EKeywordPair>]
+																													[FInstance:(x : reflaxe.elixir.ast.EKeywordPair) -> Int]
+																														Array<reflaxe.elixir.ast.EKeywordPair>
+																														push:(x : Array.T) -> Int
+																												[ObjectDecl:{ value : { pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }, key : String }]
+																													key: [Local keyName(13808):String:String]
+																													value: [Local finalValue(13817):{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																										[Else:Bool] [Block:Bool]
+																											[Binop:Bool]
+																												[Local isKeyValueConfig(13802):Bool:Bool]
+																												=
+																												[Const:Bool] false
+																						[Else:Bool] [Block:Bool]
+																							[Binop:Bool]
+																								[Local isKeyValueConfig(13802):Bool:Bool]
+																								=
+																								[Const:Bool] false
+																[If:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																	[Binop:Bool]
+																		[Local isKeyValueConfig(13802):Bool:Bool]
+																		&&
+																		[Binop:Bool]
+																			[Field:Int]
+																				[Local keywordPairs(13801):Array<reflaxe.elixir.ast.EKeywordPair>:Array<reflaxe.elixir.ast.EKeywordPair>]
+																				[FInstance:Int]
+																					Array<reflaxe.elixir.ast.EKeywordPair>
+																					length:Int
+																			>
+																			[Const:Int] 0
+																	[Then:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }] [Block:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																		[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+																			def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+																				[Field:(pairs : Array<reflaxe.elixir.ast.EKeywordPair>) -> reflaxe.elixir.ast.ElixirASTDef]
+																					[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+																					[FEnum:(pairs : Array<reflaxe.elixir.ast.EKeywordPair>) -> reflaxe.elixir.ast.ElixirASTDef]
+																						reflaxe.elixir.ast.ElixirASTDef
+																						EKeywordList
+																				[Local keywordPairs(13801):Array<reflaxe.elixir.ast.EKeywordPair>:Array<reflaxe.elixir.ast.EKeywordPair>]
+																			metadata: [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+																			pos: [Field:Null<haxe.macro.Position>]
+																				[Array:reflaxe.elixir.ast.ElixirAST]
+																					[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																					[Const:Int] 1
+																				[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+																	[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+																		[Array:reflaxe.elixir.ast.ElixirAST]
+																			[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																			[Const:Int] 1
+												[Case:reflaxe.elixir.ast.ElixirAST]
+													[Const:Int] 20
+													[Block:reflaxe.elixir.ast.ElixirAST]
+														[Var `(13821):Array<reflaxe.elixir.ast.EKeywordPair>]
+															[EnumParameter:Array<reflaxe.elixir.ast.EKeywordPair>]
+																[Local `(13798):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																EKeywordList
+																0
+														[Block:reflaxe.elixir.ast.ElixirAST]
+															[Array:reflaxe.elixir.ast.ElixirAST]
+																[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																[Const:Int] 1
+												[Default:reflaxe.elixir.ast.ElixirAST]
+													[Block:reflaxe.elixir.ast.ElixirAST]
+														[Array:reflaxe.elixir.ast.ElixirAST]
+															[Local args(13658):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+															[Const:Int] 1
+								[Return:Dynamic]
+									[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+										def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+											[Field:(elements : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+												[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+												[FEnum:(elements : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+													reflaxe.elixir.ast.ElixirASTDef
+													ETuple
+											[ArrayDecl:Array<reflaxe.elixir.ast.ElixirAST>]
+												[Local moduleArg(13793):{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }:{ pos : Null<haxe.macro.Position>, metadata : { ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }, def : reflaxe.elixir.ast.ElixirASTDef }]
+												[Local configArg(13797):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+										metadata: [Field:reflaxe.elixir.ast.ElixirMetadata]
+											[Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+											[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+										pos: [Field:Null<haxe.macro.Position>]
+											[Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+											[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+			[Return:Dynamic] [Local node(13643):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+
+	public static function isModuleName[Function:(s : String) -> Bool]
+		[Arg:String] [Local s(13666):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Field:Int]
+						[Local s(13666):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+					==
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Var firstChar(13667):String]
+				[Call:String]
+					[Field:(index : Int) -> String]
+						[Local s(13666):String:String]
+						[FInstance:(index : Int) -> String]
+							String
+							charAt:(index : Int) -> String
+					[Const:Int] 0
+			[If:Void]
+				[Binop:Bool]
+					[Local firstChar(13667):String:String]
+					!=
+					[Call:String]
+						[Field:() -> String]
+							[Local firstChar(13667):String:String]
+							[FInstance:() -> String]
+								String
+								toUpperCase:() -> String
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Block:Void]
+				[Var `(13672):Int] [Const:Int] 0
+				[Var `(13673):Int]
+					[Field:Int]
+						[Local s(13666):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(13672):Int:Int]
+						<
+						[Local `(13673):Int:Int]
+					[Block:Void]
+						[Var i(13668):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(13672):Int:Int]
+						[Var char(13669):String]
+							[Call:String]
+								[Field:(index : Int) -> String]
+									[Local s(13666):String:String]
+									[FInstance:(index : Int) -> String]
+										String
+										charAt:(index : Int) -> String
+								[Local i(13668):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Unop:Bool]
+										!
+										Prefix
+										[Call:Bool]
+											[Field:(char : String) -> Bool]
+												[TypeExpr reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_:Class<reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_>]
+												[FStatic:(char : String) -> Bool]
+													reflaxe.elixir.ast._ElixirAST.ElixirAST_Fields_
+													isAlphaNumeric:(char : String) -> Bool
+											[Local char(13669):String:String]
+									&&
+									[Binop:Bool]
+										[Local char(13669):String:String]
+										!=
+										[Const:String] "."
+								&&
+								[Binop:Bool]
+									[Local char(13669):String:String]
+									!=
+									[Const:String] "_"
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic] [Const:Bool] true
+
+	public static function isAlphaNumeric[Function:(char : String) -> Bool]
+		[Arg:String] [Local char(13670):String]
+		[Block:Dynamic]
+			[Var code(13671):Null<Int>]
+				[Call:Null<Int>]
+					[Field:(index : Int) -> Null<Int>]
+						[Local char(13670):String:String]
+						[FInstance:(index : Int) -> Null<Int>]
+							String
+							charCodeAt:(index : Int) -> Null<Int>
+					[Const:Int] 0
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Parenthesis:Bool]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local code(13671):Null<Int>:Null<Int>]
+									>=
+									[Const:Int] 48
+								&&
+								[Binop:Bool]
+									[Local code(13671):Null<Int>:Null<Int>]
+									<=
+									[Const:Int] 57
+						||
+						[Parenthesis:Bool]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Local code(13671):Null<Int>:Null<Int>]
+									>=
+									[Const:Int] 65
+								&&
+								[Binop:Bool]
+									[Local code(13671):Null<Int>:Null<Int>]
+									<=
+									[Const:Int] 90
+					||
+					[Parenthesis:Bool]
+						[Binop:Bool]
+							[Binop:Bool]
+								[Local code(13671):Null<Int>:Null<Int>]
+								>=
+								[Const:Int] 97
+							&&
+							[Binop:Bool]
+								[Local code(13671):Null<Int>:Null<Int>]
+								<=
+								[Const:Int] 122
+}

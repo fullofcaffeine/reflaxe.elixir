@@ -31,7 +31,7 @@ defmodule JsonPrinter do
           if (class_name == "Array"), do: struct.writeArray(v), else: struct.writeObject(v)
         end
       7 ->
-        g = g.elem(1)
+        _g = g.elem(1)
         "null"
       8 ->
         "null"

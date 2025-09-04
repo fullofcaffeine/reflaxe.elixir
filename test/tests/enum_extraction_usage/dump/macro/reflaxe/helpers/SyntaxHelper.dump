@@ -1,0 +1,144 @@
+class reflaxe.helpers.SyntaxHelper {
+
+	@:value({ tabCount : 1 })
+	public static function tab[Function:(s : String, ?tabCount : Int) -> String]
+		[Arg:String] [Local s(10119):String]
+		[Arg:Int]
+			[Local tabCount(10120):Int]
+			[Const:Int] 1
+		[Block:Dynamic]
+			[Var tabStr(10121):String] [Const:String] "\t"
+			[If:Void]
+				[Binop:Bool]
+					[Local tabCount(10120):Int:Int]
+					>
+					[Const:Int] 1
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(10123):Int] [Const:Int] 1
+						[Var `(10124):Int] [Local tabCount(10120):Int:Int]
+						[While:Void]
+							[Binop:Bool]
+								[Local `(10123):Int:Int]
+								<
+								[Local `(10124):Int:Int]
+							[Block:String]
+								[Var i(10122):Int]
+									[Unop:Int]
+										++
+										Postfix
+										[Local `(10123):Int:Int]
+								[Binop:String]
+									[Local tabStr(10121):String:String]
+									+=
+									[Const:String] "\t"
+			[Var lines(10125):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local s(10119):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "\n"
+			[Block:Void]
+				[Var `(10131):Int] [Const:Int] 0
+				[Var `(10132):Int]
+					[Field:Int]
+						[Local lines(10125):Array<String>:Array<String>]
+						[FInstance:Int]
+							Array<String>
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(10131):Int:Int]
+						<
+						[Local `(10132):Int:Int]
+					[Block:Void]
+						[Var i(10126):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(10131):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Field:Int]
+										[Array:String]
+											[Local lines(10125):Array<String>:Array<String>]
+											[Local i(10126):Int:Int]
+										[FInstance:Int]
+											String
+											length:Int
+									>
+									[Const:Int] 0
+								&&
+								[Unop:Bool]
+									!
+									Prefix
+									[Call:Bool]
+										[Field:(s : String) -> Bool]
+											[TypeExpr reflaxe.helpers.SyntaxHelper:Class<reflaxe.helpers.SyntaxHelper>]
+											[FStatic:(s : String) -> Bool]
+												reflaxe.helpers.SyntaxHelper
+												isOnlySpaces:(s : String) -> Bool
+										[Array:String]
+											[Local lines(10125):Array<String>:Array<String>]
+											[Local i(10126):Int:Int]
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Array:String]
+										[Local lines(10125):Array<String>:Array<String>]
+										[Local i(10126):Int:Int]
+									=
+									[Binop:String]
+										[Local tabStr(10121):String:String]
+										+
+										[Array:String]
+											[Local lines(10125):Array<String>:Array<String>]
+											[Local i(10126):Int:Int]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(sep : String) -> String]
+						[Local lines(10125):Array<String>:Array<String>]
+						[FInstance:(sep : String) -> String]
+							Array<String>
+							join:(sep : String) -> String
+					[Const:String] "\n"
+
+	static function isOnlySpaces[Function:(s : String) -> Bool]
+		[Arg:String] [Local s(10127):String]
+		[Block:Dynamic]
+			[Block:Void]
+				[Var `(10129):Int] [Const:Int] 0
+				[Var `(10130):Int]
+					[Field:Int]
+						[Local s(10127):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(10129):Int:Int]
+						<
+						[Local `(10130):Int:Int]
+					[Block:Void]
+						[Var i(10128):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(10129):Int:Int]
+						[If:Void]
+							[Unop:Bool]
+								!
+								Prefix
+								[Call:Bool]
+									[Field:(s : String, pos : Int) -> Bool]
+										[TypeExpr StringTools:Class<StringTools>]
+										[FStatic:(s : String, pos : Int) -> Bool]
+											StringTools
+											isSpace:(s : String, pos : Int) -> Bool
+									[Local s(10127):String:String]
+									[Local i(10128):Int:Int]
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Bool] false
+			[Return:Dynamic] [Const:Bool] true
+}
