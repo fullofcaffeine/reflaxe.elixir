@@ -74,7 +74,7 @@ extern class GenServer {
     
     // GenServer communication - asynchronous casts with generics
     @:native("GenServer.cast")
-    public static function cast<Req>(serverRef: GenServerRef, request: Req): Void;
+    public static function sendCast<Req>(serverRef: GenServerRef, request: Req): Void;
     
     @:native("GenServer.abcast")
     public static function abcast<Req>(nodes: Array<String>, name: String, request: Req): Void;
