@@ -130,7 +130,7 @@ end)
   def write(struct, k, v) do
     struct.writeValue(v, k)
   end
-  def print(o, _replacer, _space) do
+  def print(o, replacer, space) do
     printer = JsonPrinter.new(replacer, space)
     printer.writeValue(o, "")
   end

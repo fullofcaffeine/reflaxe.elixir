@@ -791,7 +791,13 @@ class ElixirCompiler extends GenericCompiler<
                             reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = true;
                             
                             // Analyze variable usage in the function body BEFORE building AST
-                            var functionUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                            // Pass the whole TFunction expression so it knows about parameters
+                            var tempExpr: TypedExpr = {
+                                expr: TFunction(tfunc),
+                                pos: tfunc.expr.pos,
+                                t: tfunc.t
+                            };
+                            var functionUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tempExpr);
                             
                             body = buildFromTypedExpr(tfunc.expr, functionUsageMap);
                             
@@ -1263,6 +1269,11 @@ class ElixirCompiler extends GenericCompiler<
             case TEnumIndex(e):
                 // Check if we're getting the index of our parameter (for switch)
                 return isParameterUsedInExpr(paramId, e);
+            case TNew(_, _, el):
+                // Check constructor arguments - CRITICAL for detecting usage in new expressions
+                for (arg in el) {
+                    if (isParameterUsedInExpr(paramId, arg)) return true;
+                }
             default:
                 // For other cases, assume not used
         }
