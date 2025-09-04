@@ -3,7 +3,7 @@ defmodule StringBuf do
     %{:parts => []}
   end
   defp get_length(struct) do
-    joined = struct.parts.join("")
+    joined = Enum.join(struct.parts, "")
     joined.length
   end
   def add(struct, x) do

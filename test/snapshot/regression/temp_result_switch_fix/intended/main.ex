@@ -21,7 +21,7 @@ end
     result
   end
   def main() do
-    Log.trace(Main.topic_to_string(:TopicA), %{:fileName => "Main.hx", :lineNumber => 42, :className => "Main", :methodName => "main"})
-    Log.trace(Main.get_value(1), %{:fileName => "Main.hx", :lineNumber => 43, :className => "Main", :methodName => "main"})
+    Log.trace(topic_to_string(:topic_a), %{:fileName => "Main.hx", :lineNumber => 42, :className => "Main", :methodName => "main"})
+    Log.trace(get_value(1), %{:fileName => "Main.hx", :lineNumber => 43, :className => "Main", :methodName => "main"})
   end
 end

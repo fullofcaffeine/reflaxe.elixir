@@ -12,7 +12,10 @@ defmodule SysTools do
       bs_buf = StringBuf.new()
       g = 0
       g1 = argument.length
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result_b, g, bs_buf, :ok}, fn _, {acc_result_b, acc_g, acc_bs_buf, acc_state} ->
+  result_b = acc_result_b
+  g = acc_g
+  bs_buf = acc_bs_buf
   if (g < g1) do
     i = g = g + 1
     g = argument.charCodeAt(i)
@@ -46,9 +49,9 @@ defmodule SysTools do
           result_b = result_b <> String.from_char_code(c)
       end
     end
-    {:cont, acc}
+    {:cont, {result_b, g, bs_buf, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {result_b, g, bs_buf, acc_state}}
   end
 end)
       x = bs_buf.b
@@ -64,7 +67,9 @@ end)
       result_b = ""
       g = 0
       g1 = argument.length
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result_b, g, :ok}, fn _, {acc_result_b, acc_g, acc_state} ->
+  result_b = acc_result_b
+  g = acc_g
   if (g < g1) do
     i = g = g + 1
     c = argument.charCodeAt(i)
@@ -73,9 +78,9 @@ end)
     end
     c = c
     result_b = result_b <> String.from_char_code(c)
-    {:cont, acc}
+    {:cont, {result_b, g, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {result_b, g, acc_state}}
   end
 end)
       result_b

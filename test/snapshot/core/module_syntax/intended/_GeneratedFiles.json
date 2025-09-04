@@ -5,6 +5,7 @@
   "user_helper.ex",
   "string_utils.ex",
   "string_buf.ex",
+  "std.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
   "haxe/iterators/array_key_value_iterator.ex",

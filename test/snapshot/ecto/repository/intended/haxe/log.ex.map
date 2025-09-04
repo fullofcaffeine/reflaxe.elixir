@@ -1,11 +1,10 @@
 {
   "sourceRoot": "",
   "names": [],
-  "mappings": "AAgCwE,AAC3D,AAAA,GAAW,aACjB,AAAA,AAAA,AAAS,iCACZ,AAAO,GACG,AAAA,AAAA,AAAA,eAAiB,GAAjB,AAAA,qCAAuB,AAAA,iBAAvB,AAAA,AAAA,eAAiB,GAAjB,AAAA,qCAAuB,AAAA,uEAC9B,AAAA,AAAA,AAAA,mBAAsB,6DACzB,AAAA,CAAU,AAAA,mBAAV,AAAU,AACT,AAAA,AAAO,AAAA,IAAO,AAAA,GAAW,aAAX,AAAA,GAAW;;;;IACpB,AAAA,AAAA,AAAO,IAAP,YAAc,AAAd,AAAA,AAAO,IAAP,YAAc;;;;;;;;;;;;;;;;;;;;mBAqBgD,AAC3D,AAAA,GAAa,AAAG,2BAO1B,GAAY;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;ACvCd,ACEA",
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AA8BC,ACEA",
   "version": 3,
   "file": "log.ex",
   "sources": [
-    "std/haxe/Log.hx",
     "std/haxe/iterators/MapKeyValueIterator.hx",
     "std/haxe/iterators/StringIteratorUnicode.hx"
   ]

@@ -1,4 +1,3 @@
 defmodule UserController do
-  @moduledoc "UserController module generated from Haxe"
-
+  nil
 end

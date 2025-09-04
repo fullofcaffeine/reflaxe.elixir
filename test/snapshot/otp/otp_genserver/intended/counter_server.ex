@@ -1,25 +1,18 @@
 defmodule CounterServer do
-  @moduledoc """
-  Generated GenServer for CounterServer
-  
-  Provides type-safe concurrent programming with the BEAM actor model
-  following OTP GenServer patterns with compile-time validation.
-  """
-  
-  use GenServer
-  
-  @doc """
-  Start the GenServer - integrates with supervision trees
-  """
-  def start_link(init_arg) do
-    GenServer.start_link(__MODULE__, init_arg)
+  @count nil
+  def init() do
+    nil
   end
-  
-  @doc """
-  Initialize GenServer state
-  """
-  def init(_init_arg) do
-    {:ok, %{}}
+  def handle_call_get_count() do
+    nil
   end
-  
+  def handle_call_increment() do
+    nil
+  end
+  def handle_cast_reset() do
+    nil
+  end
+  def handle_info() do
+    nil
+  end
 end

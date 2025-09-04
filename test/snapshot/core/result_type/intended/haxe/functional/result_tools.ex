@@ -23,9 +23,6 @@ defmodule ResultTools do
         {:Error, error}
     end
   end
-  def bind(result, transform) do
-    {:FlatMap, result, transform}
-  end
   def fold(result, on_success, on_error) do
     case (result.elem(0)) do
       0 ->
@@ -41,20 +38,20 @@ defmodule ResultTools do
   def is_ok(result) do
     case (result.elem(0)) do
       0 ->
-        g = result.elem(1)
+        _g = result.elem(1)
         true
       1 ->
-        g = result.elem(1)
+        _g = result.elem(1)
         false
     end
   end
   def is_error(result) do
     case (result.elem(0)) do
       0 ->
-        g = result.elem(1)
+        _g = result.elem(1)
         false
       1 ->
-        g = result.elem(1)
+        _g = result.elem(1)
         true
     end
   end
@@ -67,7 +64,7 @@ defmodule ResultTools do
       1 ->
         g = result.elem(1)
         error = g
-        throw("Attempted to unwrap Error result: " + Std.string(error))
+        throw("Attempted to unwrap Error result: " <> Std.string(error))
     end
   end
   def unwrap_or(result, default_value) do
@@ -77,7 +74,7 @@ defmodule ResultTools do
         value = g
         value
       1 ->
-        g = result.elem(1)
+        _g = result.elem(1)
         default_value
     end
   end
@@ -129,32 +126,28 @@ defmodule ResultTools do
         {:Error, on_error.(error)}
     end
   end
-  def ok(value) do
-    {:Ok, value}
-  end
-  def error(error) do
-    {:Error, error}
-  end
   def sequence(results) do
     values = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < results.length) do
-  result = results[g]
-  g + 1
-  case (result.elem(0)) do
-    0 ->
-      g = result.elem(1)
-      value = g
-      values.push(value)
-    1 ->
-      g = result.elem(1)
-      error = g
-      {:Error, error}
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, results, :ok}, fn _, {acc_g, acc_results, acc_state} ->
+  if (acc_g < acc_results.length) do
+    result = results[g]
+    acc_g = acc_g + 1
+    case (result.elem(0)) do
+      0 ->
+        acc_g = result.elem(1)
+        value = acc_g
+        values.push(value)
+      1 ->
+        acc_g = result.elem(1)
+        error = acc_g
+        {:Error, error}
+    end
+    {:cont, {acc_g, acc_results, acc_state}}
+  else
+    {:halt, {acc_g, acc_results, acc_state}}
   end
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
     {:Ok, values}
   end
   def traverse(array, transform) do
@@ -168,8 +161,8 @@ end end)
         value = g
         {:Some, value}
       1 ->
-        g = result.elem(1)
-        :None
+        _g = result.elem(1)
+        :none
     end
   end
 end

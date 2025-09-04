@@ -4,7 +4,7 @@ defmodule IntDisplay do
   end
   def format(value, options) do
     if (options.hex) do
-      "0x" + StringTools.hex(value)
+      "0x" <> StringTools.hex(value)
     end
     Std.string(value)
   end

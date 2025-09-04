@@ -7,18 +7,18 @@ defmodule BalancedTree do
   end
   def get(struct, key) do
     node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  if (node != nil) do
-    c = struct.compare(key, node.key)
-    if (c == 0), do: node.value
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
+  if (acc_node != nil) do
+    c = struct.compare(key, acc_node.key)
+    if (c == 0), do: acc_node.value
     if (c < 0) do
-      node = node.left
+      acc_node = acc_node.left
     else
-      node = node.right
+      acc_node = acc_node.right
     end
-    {:cont, acc}
+    {:cont, {acc_node, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {acc_node, acc_state}}
   end
 end)
     nil
@@ -33,35 +33,34 @@ end)
   end
   def exists(struct, key) do
     node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  if (node != nil) do
-    c = struct.compare(key, node.key)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
+  if (acc_node != nil) do
+    c = struct.compare(key, acc_node.key)
     if (c == 0) do
       true
     else
       if (c < 0) do
-        node = node.left
+        acc_node = acc_node.left
       else
-        node = node.right
+        acc_node = acc_node.right
       end
     end
-    {:cont, acc}
+    {:cont, {acc_node, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {acc_node, acc_state}}
   end
 end)
     false
   end
   def iterator(struct) do
-    ret = iterator_loop(struct.root, [])
-    ret.iterator()
-  end
-  def key_value_iterator(struct) do
-    MapKeyValueIterator.new(struct)
+    ret = []
+    iterator_loop(struct.root, ret)
+    ArrayIterator.new(ret)
   end
   def keys(struct) do
-    ret = struct.keysLoop(struct.root, [])
-    ret.iterator()
+    ret = []
+    struct.keysLoop(struct.root, ret)
+    ArrayIterator.new(ret)
   end
   def copy(struct) do
     copied = BalancedTree.new()
@@ -77,9 +76,11 @@ end)
       TreeNode.new(node.left, k, v, node.right, node.get_height())
     else
       if (c < 0) do
-        nl = struct.balance(struct.setLoop(k, v, node.left), node.key, node.value, node.right)
+        nl = struct.setLoop(k, v, node.left)
+        struct.balance(nl, node.key, node.value, node.right)
       else
-        nr = struct.balance(node.left, node.key, node.value, struct.setLoop(k, v, node.right))
+        nr = struct.setLoop(k, v, node.right)
+        struct.balance(node.left, node.key, node.value, nr)
       end
     end
   end
@@ -103,7 +104,7 @@ end)
   defp keys_loop(struct, node, acc) do
     if (node != nil) do
       struct.keysLoop(node.left, acc)
-      acc.push(node.key)
+      acc = acc ++ [node.key]
       struct.keysLoop(node.right, acc)
     end
   end
@@ -124,7 +125,7 @@ end)
     if (t.left == nil), do: t.right
     struct.balance(struct.removeMinBinding(t.left), t.key, t.value, t.right)
   end
-  defp balance(struct, l, k, v, r) do
+  defp balance(_struct, l, k, v, r) do
     hl = l.get_height()
     hr = r.get_height()
     if (hl > hr + 2) do
@@ -145,7 +146,7 @@ end)
       end
     end
   end
-  defp compare(struct, k1, k2) do
+  defp compare(_struct, k1, k2) do
     Reflect.compare(k1, k2)
   end
   def to_string(struct) do
@@ -157,7 +158,7 @@ end)
   defp iterator_loop(node, acc) do
     if (node != nil) do
       iterator_loop(node.left, acc)
-      acc.push(node.value)
+      acc = acc ++ [node.value]
       iterator_loop(node.right, acc)
     end
   end

@@ -1,17 +1,17 @@
 defmodule Users do
-  def list_users(filter) do
+  def list_users(_filter) do
     []
   end
-  def change_user(user) do
+  def change_user(_user) do
     %{:valid => true}
   end
   def main() do
     Log.trace("Users context with User schema compiled successfully!", %{:fileName => "./contexts/Users.hx", :lineNumber => 66, :className => "contexts.Users", :methodName => "main"})
   end
-  def get_user(id) do
+  def get_user(_id) do
     nil
   end
-  def get_user_safe(id) do
+  def get_user_safe(_id) do
     nil
   end
   def create_user(attrs) do
@@ -23,9 +23,9 @@ defmodule Users do
     if (changeset != nil), do: %{:status => "ok", :user => user}, else: %{:status => "error", :changeset => changeset}
   end
   def delete_user(user) do
-    Users.update_user(user, %{:active => false})
+    update_user(user, %{:active => false})
   end
-  def search_users(term) do
+  def search_users(_term) do
     []
   end
   defp users_with_posts() do

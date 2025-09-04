@@ -1,11 +1,11 @@
 defmodule NonEmptyString_Impl_ do
   def _new(value) do
-    this_1 = nil
+    this1 = nil
     if (value == nil || value.length == 0) do
       throw("String cannot be empty or null")
     end
-    this_1 = value
-    this_1
+    this1 = value
+    this1
   end
   def parse(value) do
     if (value == nil), do: {:Error, "String cannot be null"}
@@ -14,7 +14,7 @@ defmodule NonEmptyString_Impl_ do
   end
   def parse_and_trim(value) do
     if (value == nil), do: {:Error, "String cannot be null"}
-    trimmed = StringTools.trim(value)
+    trimmed = StringTools.ltrim(StringTools.rtrim(value))
     if (trimmed.length == 0), do: {:Error, "String cannot be empty or whitespace-only"}
     {:Ok, trimmed}
   end
@@ -22,21 +22,21 @@ defmodule NonEmptyString_Impl_ do
     this1.length
   end
   def concat(this1, other) do
-    this1 + NonEmptyString_Impl_.to_string(other)
+    this1 <> to_string(other)
   end
   def concat_string(this1, other) do
-    this1 + other
+    this1 <> other
   end
   def safe_trim(this1) do
-    trimmed = StringTools.trim(this1)
+    trimmed = StringTools.ltrim(StringTools.rtrim(this1))
     if (trimmed.length == 0), do: {:Error, "Trimmed string would be empty"}
     {:Ok, trimmed}
   end
   def to_upper_case(this1) do
-    this1.toUpperCase()
+    this1 = String.upcase(this1)
   end
   def to_lower_case(this1) do
-    this1.toLowerCase()
+    this1 = String.downcase(this1)
   end
   def safe_substring(this1, start_index) do
     if (start_index < 0), do: {:Error, "Start index cannot be negative"}
@@ -60,7 +60,7 @@ defmodule NonEmptyString_Impl_ do
     StringTools.ends_with(this1, suffix)
   end
   def contains(this1, substring) do
-    this1.indexOf(substring) != -1
+    String.index(this1, substring) != -1
   end
   def safe_replace(this1, search, replacement) do
     result = StringTools.replace(this1, search, replacement)
@@ -71,33 +71,35 @@ defmodule NonEmptyString_Impl_ do
     parts = this1.split(delimiter)
     result = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < parts.length) do
-  part = parts[g]
-  g + 1
-  if (part.length > 0), do: result.push(part)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {parts, g, :ok}, fn _, {acc_parts, acc_g, acc_state} ->
+  if (acc_g < acc_parts.length) do
+    part = parts[g]
+    acc_g = acc_g + 1
+    if (part.length > 0), do: result.push(part)
+    {:cont, {acc_parts, acc_g, acc_state}}
+  else
+    {:halt, {acc_parts, acc_g, acc_state}}
+  end
+end)
     result
   end
   def first_char(this1) do
-    this1.charAt(0)
+    String.at(this1, 0)
   end
   def last_char(this1) do
-    this1.charAt(this1.length - 1)
+    String.at(this1, (this1.length - 1))
   end
   def to_string(this1) do
     this1
   end
   def equals(this1, other) do
-    this1 == NonEmptyString_Impl_.to_string(other)
+    this1 == to_string(other)
   end
   def less_than(this1, other) do
-    this1 < NonEmptyString_Impl_.to_string(other)
+    this1 < to_string(other)
   end
   def add(this1, other) do
-    NonEmptyString_Impl_.concat(this1, other)
+    concat(this1, other)
   end
   def equals_string(this1, value) do
     this1 == value
@@ -108,7 +110,7 @@ end end)
   end
   def join(strings, separator) do
     if (strings.length == 0), do: {:Error, "Cannot join empty array"}
-    string_array = Enum.map(strings, fn s -> NonEmptyString_Impl_.to_string(s) end)
+    string_array = Enum.map(strings, fn s -> to_string(s) end)
     {:Ok, Enum.join(string_array, separator)}
   end
 end

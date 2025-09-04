@@ -1,4 +1,3 @@
 defmodule DashboardLive do
-  @moduledoc "DashboardLive module generated from Haxe"
-
+  nil
 end

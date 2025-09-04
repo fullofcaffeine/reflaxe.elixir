@@ -3,7 +3,7 @@ defmodule Circle do
     %{:radius => radius, :velocity => Point.new(0, 0)}
   end
   def draw(struct) do
-    "" + nil.draw() + " with radius " + struct.radius
+    "" <> nil.draw() <> " with radius " <> struct.radius
   end
   def update(struct, dt) do
     struct.move(struct.velocity.x * dt, struct.velocity.y * dt)

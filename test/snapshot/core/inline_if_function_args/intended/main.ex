@@ -1,83 +1,75 @@
 defmodule Main do
   defp main() do
-    Main.test_map_put()
-    Main.test_function_calls()
-    Main.test_multiple_inline_ifs()
-    Main.test_nested_calls()
-    Main.test_complex_conditions()
+    test_map_put()
+    test_function_calls()
+    test_multiple_inline_ifs()
+    test_nested_calls()
+    test_complex_conditions()
   end
   defp test_map_put() do
     map = %{}
     condition = true
     value = 42
-    Map.put(map, "bool_key", (if condition, do: "true", else: "false"))
-    Map.put(map, "number_key", (if (value > 10), do: "high", else: "low"))
+    map = Map.put(map, "bool_key", (if condition, do: "true", else: "false"))
+    map = Map.put(map, "number_key", (if (value > 10), do: "high", else: "low"))
     is_active = false
-    Map.put(map, "status", (if is_active, do: "active", else: "inactive"))
+    map = Map.put(map, "status", (if is_active, do: "active", else: "inactive"))
     maybe = nil
-    Map.put(map, "nullable", (if (maybe != nil), do: maybe, else: "default"))
+    map = Map.put(map, "nullable", (if (maybe != nil), do: maybe, else: "default"))
   end
   defp test_function_calls() do
     flag = true
     count = 5
-    Main.process_string((if flag, do: "yes", else: "no"))
-    Main.process_two("first", (if (count > 3), do: "many", else: "few"))
-    Main.process_two((if flag, do: "enabled", else: "disabled"), "second")
+    process_string((if flag, do: "yes", else: "no"))
+    process_two("first", (if (count > 3), do: "many", else: "few"))
+    process_two((if flag, do: "enabled", else: "disabled"), "second")
   end
   defp test_multiple_inline_ifs() do
     a = true
     b = false
     c = 10
-    Main.process_three((if a, do: "a_true", else: "a_false"), (if b, do: "b_true", else: "b_false"), (if (c > 5), do: "c_high", else: "c_low"))
-    Main.process_mixed("regular", (if a, do: "conditional", else: "alternative"), 42, (if b, do: 1, else: 0))
+    process_three((if a, do: "a_true", else: "a_false"), (if b, do: "b_true", else: "b_false"), (if (c > 5), do: "c_high", else: "c_low"))
+    process_mixed("regular", (if a, do: "conditional", else: "alternative"), 42, (if b, do: 1, else: 0))
   end
   defp test_nested_calls() do
     enabled = true
     level = 7
-    result = Main.wrap_string(if enabled do
-  Main.get_value("on")
-else
-  Main.get_value("off")
-end)
-    nested = Main.process_string(Main.wrap_string((if (level > 5), do: "high", else: "low")))
-    complex = Main.process_string(if enabled do
-  Main.compute_value(10)
-else
-  Main.compute_value(5)
-end)
+    _result = wrap_string((if enabled, do: get_value("on"), else: get_value("off")))
+    _nested = process_string(wrap_string((if (level > 5), do: "high", else: "low")))
+    _complex = process_string((if enabled, do: compute_value(10), else: compute_value(5)))
   end
   defp test_complex_conditions() do
     x = 10
     y = 20
     flag = true
-    Main.process_string((if (x > 5 && y < 30), do: "in_range", else: "out_of_range"))
-    Main.process_string(if flag do
+    process_string((if (x > 5 && y < 30), do: "in_range", else: "out_of_range"))
+    process_string(if flag do
   if (x > y), do: "x_greater", else: "y_greater"
 else
   "disabled"
 end)
     str = "test"
-    Main.process_string((if (str.length > 3), do: "long", else: "short"))
+    process_string((if (str.length > 3), do: "long", else: "short"))
   end
   defp process_string(s) do
-    "Processed: " + s
+    "Processed: " <> s
   end
   defp process_two(a, b) do
-    "" + a + ", " + b
+    "" <> a <> ", " <> b
   end
   defp process_three(a, b, c) do
-    "" + a + ", " + b + ", " + c
+    "" <> a <> ", " <> b <> ", " <> c
   end
   defp process_mixed(a, b, c, d) do
-    "" + a + ", " + b + ", " + c + ", " + d
+    "" <> a <> ", " <> b <> ", " <> c <> ", " <> d
   end
   defp get_value(key) do
-    "value_" + key
+    "value_" <> key
   end
   defp wrap_string(s) do
-    "[" + s + "]"
+    "[" <> s <> "]"
   end
   defp compute_value(n) do
-    "computed_" + n
+    "computed_" <> n
   end
 end

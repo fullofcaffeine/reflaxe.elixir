@@ -1,6 +1,6 @@
 defmodule BitwiseOperations do
   import Bitwise
-  def testBitwise() do
+  def test_bitwise() do
     a = 255
     b = 15
     and_result = a &&& b
@@ -11,7 +11,7 @@ defmodule BitwiseOperations do
     right_shift = a >>> 2
     and_result + or_result + xor_result + not_result + left_shift + right_shift
   end
-  def complexBitwise() do
+  def complex_bitwise() do
     mask = 255
     value = 305419896
     value &&& mask ||| value >>> 8 &&& mask

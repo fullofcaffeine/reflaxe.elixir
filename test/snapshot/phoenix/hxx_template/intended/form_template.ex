@@ -1,33 +1,25 @@
 defmodule FormTemplate do
-  @moduledoc """
-  Phoenix HEEx template module generated from Haxe @:template class
-  Template file: form_template.html.heex
-  """
-
-  use Phoenix.Component
-  import Phoenix.HTML
-  import Phoenix.HTML.Form
-
-  @doc """
-  Renders the form_template.html.heex template with the provided assigns
-  """
-  def render(assigns) do
-    ~H"""
-    <!-- Template content will be processed by hxx() function -->
-    <div class="haxe-template">
-      <%= assigns[:content] || "Template content" %>
-    </div>
-    """
+  def render_form(action, method) do
+    csrf = get_csrf_token()
+    "<form action='" <> action <> "' method='" <> method <> "'>" <> "<input type='hidden' name='_csrf_token' value='" <> csrf <> "'>" <> "<div class='form-group'>" <> "<label for='name'>Name:</label>" <> "<input type='text' id='name' name='name' required>" <> "</div>" <> "<button type='submit'>Submit</button>" <> "</form>"
   end
-
-  @doc """
-  Template string processor - converts Haxe template strings to HEEx
-  """
-  def process_template_string(template_str) do
-    # Process template string interpolations and convert to HEEx syntax
-    template_str
-    |> String.replace(~r/\$\{([^}]+)\}/, "<%= \\1 %>")
-    |> String.replace(~r/<\.([^>]+)>/, "<.\\1>")
+  def render_with_helpers(errors) do
+    if (errors.length == 0), do: "<div class='no-errors'></div>"
+    error_items = []
+    g = 0
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, errors, :ok}, fn _, {acc_g, acc_errors, acc_state} ->
+  if (acc_g < acc_errors.length) do
+    error = errors[g]
+    acc_g = acc_g + 1
+    error_items.push("<li class='error-item'>" <> error <> "</li>")
+    {:cont, {acc_g, acc_errors, acc_state}}
+  else
+    {:halt, {acc_g, acc_errors, acc_state}}
   end
-
+end)
+    "<div class='form-errors'><ul class='error-list'>" <> Enum.join(error_items, "") <> "</ul></div>"
+  end
+  defp get_csrf_token() do
+    "csrf_token_placeholder"
+  end
 end

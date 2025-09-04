@@ -1,9 +1,9 @@
 defmodule TestBuilder do
   def pubsub(app_name) do
-    app_name + ".PubSub"
+    app_name <> ".PubSub"
   end
   def endpoint(app_name, port) do
     actual_port = if (port != nil), do: port, else: 4000
-    app_name + ".Endpoint on port " + actual_port
+    app_name <> ".Endpoint on port " <> actual_port
   end
 end

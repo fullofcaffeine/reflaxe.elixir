@@ -1,4 +1,3 @@
 defmodule ErrorController do
-  @moduledoc "ErrorController module generated from Haxe"
-
+  nil
 end

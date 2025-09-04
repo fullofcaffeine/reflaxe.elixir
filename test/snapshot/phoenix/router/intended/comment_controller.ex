@@ -1,4 +1,3 @@
 defmodule CommentController do
-  @moduledoc "CommentController module generated from Haxe"
-
+  nil
 end

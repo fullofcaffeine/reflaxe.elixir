@@ -1,14 +1,16 @@
 defmodule Main do
   defp main() do
-    result = IO.puts("Hello from Elixir!")
-    sum = 1 + 2 + 3
-    piped = [1, 2, 3] |> Enum.map(&(&1 * 2))
-    multiline = 
+    _result = IO.puts("Hello from Elixir!")
+    _sum = 1 + 2 + 3
+    _piped = [1, 2, 3] |> Enum.map(&(&1 * 2))
+    _multiline = (
+
             x = 10
             y = 20
             x + y
         
-    Main.test_injection_in_function()
+)
+    test_injection_in_function()
   end
   defp test_injection_in_function() do
     Logger.info("Injection works in functions!")

@@ -51,11 +51,10 @@ defmodule Main do
   end
   defp test_type_checking() do
     str = "hello"
-    num = 42
-    float = 3.14
-    bool = true
+    _num = 42
+    _float = 3.14
+    _bool = true
     arr = [1, 2, 3]
-    obj_field = nil
     obj_field = "value"
     str_is_string = Std.is(str, String)
     arr_is_array = Std.is(arr, Array)
