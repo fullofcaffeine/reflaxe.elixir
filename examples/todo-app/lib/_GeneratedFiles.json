@@ -84,13 +84,9 @@
   "phoenix/_live_socket/live_socket_impl_.ex",
   "lambda.ex",
   "int_iterator.ex",
-  "haxe/sys_tools.ex",
   "haxe/stack_item.ex",
   "haxe/log.ex",
   "haxe/json.ex",
-  "haxe/iterators/string_key_value_iterator.ex",
-  "haxe/iterators/string_iterator_unicode.ex",
-  "haxe/iterators/string_iterator.ex",
   "haxe/iterators/map_key_value_iterator.ex",
   "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
@@ -109,7 +105,6 @@
   "haxe/ds/option.ex",
   "haxe/ds/enum_value_map.ex",
   "haxe/ds/balanced_tree.ex",
-  "haxe/ds/_read_only_array/read_only_array_impl_.ex",
   "haxe/ds/_map/map_impl_.ex",
   "haxe/ds/_list/list_node.ex",
   "haxe/ds/_list/list_key_value_iterator.ex",
@@ -148,7 +143,7 @@
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],
-  "id": 4,
+  "id": 1,
   "wasCached": false,
   "version": 1
 }

@@ -15,15 +15,14 @@ defmodule EnumValueMap do
     if (ld != 0), do: ld
     g = 0
     g1 = a1.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
-  g = acc_g
-  if (g < g1) do
-    i = g = g + 1
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+  if (acc_g < acc_g1) do
+    i = acc_g = acc_g + 1
     d = struct.compareArg(a1[i], a2[i])
     if (d != 0), do: d
-    {:cont, {g, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_state}}
   else
-    {:halt, {g, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
     0
