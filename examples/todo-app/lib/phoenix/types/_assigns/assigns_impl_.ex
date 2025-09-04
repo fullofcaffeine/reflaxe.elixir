@@ -18,7 +18,8 @@ defmodule Assigns_Impl_ do
     result = %{}
     g = 0
     g1 = Reflect.fields(this1)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
+  g = acc_g
   if (g < g1.length) do
     field = g1[g]
     g = g + 1
@@ -30,7 +31,8 @@ defmodule Assigns_Impl_ do
 end)
     g = 0
     g1 = Reflect.fields(to_dynamic(other))
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
+  g = acc_g
   if (g < g1.length) do
     field = g1[g]
     g = g + 1
@@ -46,7 +48,8 @@ end)
     result = %{}
     g = 0
     g1 = Reflect.fields(this1)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
+  g = acc_g
   if (g < g1.length) do
     existing_field = g1[g]
     g = g + 1

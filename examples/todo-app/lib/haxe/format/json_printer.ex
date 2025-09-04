@@ -41,7 +41,8 @@ defmodule JsonPrinter do
     items = []
     g = 0
     g1 = arr.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
+  g = acc_g
   if (g < g1) do
     i = g = g + 1
     items.push(struct.writeValue(arr[i], Std.string(i)))
@@ -60,7 +61,8 @@ end)
     fields = Reflect.fields(obj)
     pairs = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
+  g = acc_g
   if (g < fields.length) do
     field = fields[g]
     g = g + 1
@@ -83,7 +85,9 @@ end)
     result = "\""
     g = 0
     g1 = s.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, :ok}, fn _, {g, result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, :ok}, fn _, {acc_result, acc_g, acc_state} ->
+  result = acc_result
+  g = acc_g
   if (g < g1) do
     i = g = g + 1
     c = s.charCodeAt(i)
@@ -119,9 +123,9 @@ end)
           end
       end
     end
-    {:cont, {g, result, acc_state}}
+    {:cont, {result, g, acc_state}}
   else
-    {:halt, {g, result, acc_state}}
+    {:halt, {result, g, acc_state}}
   end
 end)
     result = result <> "\""

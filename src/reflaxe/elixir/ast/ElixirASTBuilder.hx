@@ -1919,7 +1919,8 @@ class ElixirASTBuilder {
                     for (v in mutatedVars) {
                         var varName = toElixirVarName(v.name);
                         initialAccValues.push(makeAST(EVar(varName)));
-                        accPattern.push(PVar(varName));
+                        // Use acc_ prefix to avoid shadowing outer variables
+                        accPattern.push(PVar("acc_" + varName));
                         accVarNames.push(varName);
                     }
                     
@@ -1961,21 +1962,39 @@ class ElixirASTBuilder {
                                 {
                                     args: [PWildcard, accPatternTuple],
                                     guard: null,
-                                    body: makeAST(EIf(
-                                        condition,
-                                        makeAST(EBlock([
-                                            body,
-                                            makeAST(ETuple([makeAST(EAtom("cont")), contAccumulator]))
-                                        ])),
-                                        makeAST(ETuple([makeAST(EAtom("halt")), contAccumulator]))
-                                    ))
+                                    body: {
+                                        // Create reassignments from acc_ prefixed names to original names
+                                        var reassignments: Array<ElixirAST> = [];
+                                        for (varName in accVarNames) {
+                                            reassignments.push(makeAST(EMatch(
+                                                PVar(varName),
+                                                makeAST(EVar("acc_" + varName))
+                                            )));
+                                        }
+                                        
+                                        // Build the body with reassignments first
+                                        makeAST(EBlock(
+                                            reassignments.concat([
+                                                makeAST(EIf(
+                                                    condition,
+                                                    makeAST(EBlock([
+                                                        body,
+                                                        makeAST(ETuple([makeAST(EAtom("cont")), contAccumulator]))
+                                                    ])),
+                                                    makeAST(ETuple([makeAST(EAtom("halt")), contAccumulator]))
+                                                ))
+                                            ])
+                                        ));
+                                    }
                                 }
                             ]))
                         ]
                     );
                     
                     // The reduce_while returns the final accumulator
-                    // We'll destructure it in the assignment
+                    // For now, we don't destructure it since most while loops with mutated
+                    // variables are just using them as loop counters that aren't needed after
+                    // TODO: Analyze if variables are used after the loop and only destructure then
                     reduceResult;
                 } else {
                     // No mutated variables, use simpler form
