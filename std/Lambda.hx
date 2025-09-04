@@ -23,108 +23,86 @@
 /**
  * Lambda provides functional programming utilities for collections.
  * 
- * This is Layer 3 of the layered architecture - Haxe's cross-platform abstractions
- * built on top of Elixir's native Enum module for efficient implementation.
+ * This is a cross-platform abstraction that uses Elixir's native Enum module
+ * for efficient implementation on the Elixir target.
  * 
- * For Elixir-specific code, you can also use elixir.Enum directly for more idiomatic patterns.
+ * For Elixir-specific code, you can also use elixir.Enum directly.
  * 
  * @see https://api.haxe.org/Lambda.html
  */
 class Lambda {
     /**
      * Creates an Array from an Iterable.
-     * If the Iterable is already an Array, returns it unchanged.
      */
     public static function array<T>(it: Iterable<T>): Array<T> {
-        #if elixir
-        // Use Elixir's Enum.to_list for efficient conversion
-        return elixir.Enum.toList(it);
-        #else
-        var arr = new Array<T>();
+        var arr = [];
         for (v in it) arr.push(v);
+        return arr;
+    }
+    
+    /**
+     * Creates an Array from an Iterable (List not available on Elixir target).
+     * For compatibility, this returns an Array instead of List.
+     */
+    public static function list<T>(it: Iterable<T>): Array<T> {
+        var arr = [];
+        for (v in it) arr.push(v);
+        return arr;
+    }
+    
+    /**
+     * Returns a new Array containing all elements from both iterables.
+     */
+    public static function concat<T>(a: Iterable<T>, b: Iterable<T>): Array<T> {
+        var arr = [];
+        for (v in a) arr.push(v);
+        for (v in b) arr.push(v);
+        return arr;
+    }
+    
+    /**
+     * Returns a new Array by applying function f to all elements.
+     */
+    public static function map<T, S>(it: Iterable<T>, f: T -> S): Array<S> {
+        #if elixir
+        return untyped __elixir__('Enum.map({0}, {1})', it, f);
+        #else
+        var arr = [];
+        for (v in it) arr.push(f(v));
         return arr;
         #end
     }
     
     /**
-     * Returns a List containing all elements of the Iterable.
-     * Note: In Elixir target, List is represented as Array
+     * Returns a new Array containing all elements for which f returns true.
      */
-    public static function list<T>(it: Iterable<T>): List<T> {
+    public static function filter<T>(it: Iterable<T>, f: T -> Bool): Array<T> {
         #if elixir
-        // In Elixir, we use arrays for lists
-        var result = elixir.Enum.toList(it);
-        return List.fromArray(result);
+        return untyped __elixir__('Enum.filter({0}, {1})', it, f);
         #else
-        var l = new List<T>();
-        for (v in it) l.add(v);
-        return l;
-        #end
-    }
-    
-    /**
-     * Creates a new List by applying function f to all elements of the Iterable.
-     */
-    public static function map<T,R>(it: Iterable<T>, f: T -> R): List<R> {
-        #if elixir
-        var result = elixir.Enum.map(it, f);
-        return List.fromArray(result);
-        #else
-        var l = new List<R>();
-        for (v in it) l.add(f(v));
-        return l;
-        #end
-    }
-    
-    /**
-     * Creates a new List by applying function f to all elements of the Iterable
-     * and concatenating the results.
-     */
-    public static function flatMap<T,R>(it: Iterable<T>, f: T -> Iterable<R>): List<R> {
-        #if elixir
-        var result = elixir.Enum.flatMap(it, f);
-        return List.fromArray(result);
-        #else
-        var l = new List<R>();
+        var arr = [];
         for (v in it) {
-            for (r in f(v)) {
-                l.add(r);
-            }
+            if (f(v)) arr.push(v);
         }
-        return l;
+        return arr;
         #end
     }
     
     /**
-     * Returns a List containing only elements of the Iterable for which f returns true.
+     * Functional fold (reduce) with standard signature.
+     * Note: Haxe's standard fold uses curried functions, but for simplicity
+     * and Elixir compatibility, we use a regular two-parameter function.
      */
-    public static function filter<T>(it: Iterable<T>, f: T -> Bool): List<T> {
+    public static function fold<T, A>(it: Iterable<T>, f: (T, A) -> A, first: A): A {
         #if elixir
-        var result = elixir.Enum.filter(it, f);
-        return List.fromArray(result);
+        // Elixir's reduce expects (element, accumulator) order
+        return untyped __elixir__('Enum.reduce({0}, {1}, {2})', it, first, f);
         #else
-        var l = new List<T>();
+        var acc = first;
         for (v in it) {
-            if (f(v)) l.add(v);
+            acc = f(v, acc);
         }
-        return l;
-        #end
-    }
-    
-    /**
-     * Functional fold (left-to-right), also known as reduce.
-     * Applies function f to the first element and the initial value first,
-     * then applies f to the result and the next element, and so on.
-     */
-    public static function fold<T,Acc>(it: Iterable<T>, f: T -> Acc -> Acc, first: Acc): Acc {
-        #if elixir
-        // Note: Elixir's reduce has parameters in different order (element, acc)
-        return elixir.Enum.reduce(it, first, function(item, acc) return f(item)(acc));
-        #else
-        for (v in it) {
-            first = f(v)(first);
-        }
-        return first;
+        return acc;
         #end
     }
     
@@ -134,9 +112,9 @@ class Lambda {
     public static function count<T>(it: Iterable<T>, ?pred: T -> Bool): Int {
         #if elixir
         if (pred == null) {
-            return elixir.Enum.count(it);
+            return untyped __elixir__('Enum.count({0})', it);
         } else {
-            return elixir.Enum.countBy(it, pred);
+            return untyped __elixir__('Enum.count({0}, {1})', it, pred);
         }
         #else
         var n = 0;
@@ -152,23 +130,11 @@ class Lambda {
     }
     
     /**
-     * Tells if the Iterable does not contain any element.
-     */
-    public static function empty<T>(it: Iterable<T>): Bool {
-        #if elixir
-        return elixir.Enum.empty(it);
-        #else
-        for (_ in it) return false;
-        return true;
-        #end
-    }
-    
-    /**
      * Tells if at least one element of the Iterable satisfies predicate f.
      */
     public static function exists<T>(it: Iterable<T>, f: T -> Bool): Bool {
         #if elixir
-        return elixir.Enum.any(it, f);
+        return untyped __elixir__('Enum.any?({0}, {1})', it, f);
         #else
         for (v in it) {
             if (f(v)) return true;
@@ -182,7 +148,7 @@ class Lambda {
      */
     public static function foreach<T>(it: Iterable<T>, f: T -> Bool): Bool {
         #if elixir
-        return elixir.Enum.all(it, f);
+        return untyped __elixir__('Enum.all?({0}, {1})', it, f);
         #else
         for (v in it) {
             if (!f(v)) return false;
@@ -192,23 +158,11 @@ class Lambda {
     }
     
     /**
-     * Calls function f for each element of the Iterable.
-     */
-    public static function iter<T>(it: Iterable<T>, f: T -> Void): Void {
-        #if elixir
-        elixir.Enum.each(it, f);
-        #else
-        for (v in it) f(v);
-        #end
-    }
-    
-    /**
-     * Returns the first element of the Iterable for which predicate f returns true.
-     * Returns null if no such element is found.
+     * Returns the first element for which f returns true.
      */
     public static function find<T>(it: Iterable<T>, f: T -> Bool): Null<T> {
         #if elixir
-        return elixir.Enum.find(it, f);
+        return untyped __elixir__('Enum.find({0}, {1})', it, f);
         #else
         for (v in it) {
             if (f(v)) return v;
@@ -218,24 +172,28 @@ class Lambda {
     }
     
     /**
-     * Returns the index of the first element for which predicate f returns true.
-     * Returns -1 if no such element is found.
+     * Tells if the Iterable does not contain any element.
      */
-    public static function findIndex<T>(it: Iterable<T>, f: T -> Bool): Int {
+    public static function empty<T>(it: Iterable<T>): Bool {
         #if elixir
-        // Use Enum.with_index to get indexed pairs, then find
-        var indexed = elixir.Enum.withIndex(it);
-        for (pair in indexed) {
-            // pair is a tuple {element, index}
-            var element = untyped __elixir__('elem({0}, 0)', pair);
-            var index = untyped __elixir__('elem({0}, 1)', pair);
-            if (f(element)) return index;
-        }
-        return -1;
+        return untyped __elixir__('Enum.empty?({0})', it);
+        #else
+        for (_ in it) return false;
+        return true;
+        #end
+    }
+    
+    /**
+     * Returns the index of the first element for which f returns true.
+     */
+    public static function indexOf<T>(it: Iterable<T>, v: T): Int {
+        #if elixir
+        var result = untyped __elixir__('Enum.find_index({0}, fn x -> x == {1} end)', it, v);
+        return result == null ? -1 : result;
         #else
         var i = 0;
-        for (v in it) {
-            if (f(v)) return i;
+        for (x in it) {
+            if (x == v) return i;
             i++;
         }
         return -1;
@@ -243,40 +201,11 @@ class Lambda {
     }
     
     /**
-     * Returns a List containing elements e of the Iterable for which
-     * pred(e) is true. Also returns a List containing all other elements.
-     * Returned as {trues: List<T>, falses: List<T>}
-     */
-    public static function partition<T>(it: Iterable<T>, pred: T -> Bool): {trues: List<T>, falses: List<T>} {
-        #if elixir
-        var result = elixir.Enum.splitWith(it, pred);
-        // result is a tuple {trues, falses}
-        var trues = untyped __elixir__('elem({0}, 0)', result);
-        var falses = untyped __elixir__('elem({0}, 1)', result);
-        return {
-            trues: List.fromArray(trues),
-            falses: List.fromArray(falses)
-        };
-        #else
-        var trues = new List<T>();
-        var falses = new List<T>();
-        for (v in it) {
-            if (pred(v)) {
-                trues.add(v);
-            } else {
-                falses.add(v);
-            }
-        }
-        return {trues: trues, falses: falses};
-        #end
-    }
-    
-    /**
-     * Tells if element v is part of the Iterable.
+     * Tells if it contains v.
      */
     public static function has<T>(it: Iterable<T>, v: T): Bool {
         #if elixir
-        return elixir.Enum.member(it, v);
+        return untyped __elixir__('Enum.member?({0}, {1})', it, v);
         #else
         for (x in it) {
             if (x == v) return true;
@@ -286,25 +215,14 @@ class Lambda {
     }
     
     /**
-     * Returns the index of element v within the Iterable.
-     * Returns -1 if element is not found.
+     * Iterate over elements (shorthand for for loop)
+     * This is essential for macro compilation compatibility
      */
-    public static function indexOf<T>(it: Iterable<T>, v: T): Int {
+    public static function iter<T>(it: Iterable<T>, f: T -> Void): Void {
         #if elixir
-        var indexed = elixir.Enum.withIndex(it);
-        for (pair in indexed) {
-            var element = untyped __elixir__('elem({0}, 0)', pair);
-            var index = untyped __elixir__('elem({0}, 1)', pair);
-            if (element == v) return index;
-        }
-        return -1;
+        untyped __elixir__('Enum.each({0}, {1})', it, f);
         #else
-        var i = 0;
-        for (x in it) {
-            if (x == v) return i;
-            i++;
-        }
-        return -1;
+        for (x in it) f(x);
         #end
     }
 }

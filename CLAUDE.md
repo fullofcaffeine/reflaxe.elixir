@@ -1327,15 +1327,97 @@ socket = assign(socket, :total, calculate_total(items))
 └─────────────────────────────────────┘
 ```
 
+### ⚠️ CRITICAL: Both Layers Must Generate Idiomatic Elixir
+
+**KEY PRINCIPLE**: Whether using Layer 2 (Elixir externs) or Layer 3 (Haxe stdlib), the generated Elixir code should be nearly identical and idiomatic.
+
+```haxe
+// Using Layer 2 (Elixir Externs):
+import elixir.Enum;
+var doubled = Enum.map(numbers, x -> x * 2);
+
+// Using Layer 3 (Haxe Standard Library):  
+var doubled = numbers.map(x -> x * 2);
+
+// BOTH generate the SAME idiomatic Elixir:
+doubled = Enum.map(numbers, fn x -> x * 2 end)
+```
+
+### Implementation Rules
+
+**Layer 2 (Elixir Externs) - `std/elixir/`**:
+- ✅ **1:1 mapping** to Elixir modules and functions
+- ✅ **@:native annotations** for exact Elixir names
+- ✅ **camelCase methods** with proper type signatures
+- ❌ **NO business logic** - pure API definitions only
+- ❌ **NO helper methods** - keep externs faithful
+
+**Layer 3 (Haxe Stdlib) - `std/`**:
+- ✅ **Built on Layer 2** - use elixir.Enum, not __elixir__()
+- ✅ **Cross-platform contract** - same API across targets
+- ✅ **Immutability warnings** for mutable operations
+- ✅ **May use __elixir__()** for critical optimizations only
+- ❌ **NO iterator objects** - transform to Enum operations
+
+### Mutable Operations Must Warn
+
+When Haxe patterns assume mutability:
+```haxe
+array.push(item);  // Mutable operation
+
+// Compiler should warn:
+// Warning: Array.push() creates a new list in Elixir (immutable).
+// Consider using elixir.List.append() for explicit immutable semantics.
+
+// Generates rebinding, not mutation:
+array = array ++ [item]
+```
+
 ### Benefits of This Architecture
 - **User Choice**: Developers can choose Elixir-idiomatic APIs OR Haxe cross-platform APIs
 - **Better Code Generation**: Direct extern usage generates more idiomatic Elixir
 - **Maintainability**: Clear separation between Elixir bindings and Haxe abstractions
 - **Learning Curve**: Elixir developers can use familiar APIs while gaining type safety
+- **NO Iterator Objects**: Elixir uses Enum, not iterators - compiler handles transformation
 
-**See**: [`ELIXIR_EXTERN_ARCHITECTURE.md`](ELIXIR_EXTERN_ARCHITECTURE.md) - Complete layered architecture documentation and implementation guide
+**See**: [`docs/05-architecture/LAYERED_API_ARCHITECTURE.md`](docs/05-architecture/LAYERED_API_ARCHITECTURE.md) - Complete layered architecture PRD and implementation guide
 
 ## Standard Library Philosophy ⚡ **PRAGMATIC NATIVE IMPLEMENTATION**
+
+### ⚠️ CRITICAL: Prefer Externs Over Wrappers for Elixir Standard Library
+
+**FUNDAMENTAL RULE: If it exists in Elixir's standard library, use an extern, NOT a wrapper class.**
+
+**The Principle**:
+- **Elixir stdlib modules** → Create externs in `std/elixir/` (e.g., `elixir.List`, `elixir.Map`, `elixir.File`)
+- **NO wrapper classes** → Don't create `std/List.hx` when `elixir.List` extern suffices
+- **Arrays ARE lists** → `Array<T>` already compiles to Elixir lists, no need for List class
+- **Direct usage** → Users can import and use Elixir modules directly with type safety
+
+**Examples**:
+```haxe
+// ✅ CORRECT: Use Array (compiles to Elixir list) + extern functions
+import elixir.List;
+var items: Array<Int> = [1, 2, 3];  // This IS an Elixir list
+var first = List.first(items);      // Direct extern usage
+
+// ❌ WRONG: Creating unnecessary wrapper classes
+class List<T> {  // Don't do this if elixir.List extern exists!
+    private var internal: Array<T>;
+    // ... reimplementing what Elixir already has
+}
+```
+
+**When Wrappers ARE Needed**:
+1. **Cross-platform abstractions** - Code that must work on multiple targets (StringBuf, etc.)
+2. **Missing in Elixir** - Functionality that doesn't exist natively (specialized data structures)
+3. **Complex transformations** - When Haxe semantics differ significantly from Elixir
+
+**Benefits of Extern-First Approach**:
+- **Smaller codebase** - No redundant wrapper code
+- **Idiomatic output** - Direct module calls, not wrapper indirection
+- **Better performance** - No extra abstraction layers
+- **Clear mental model** - Elixir developers know exactly what they're getting
 
 ### The `__elixir__()` Function - Framework/Stdlib Only, NOT for Client Code
 

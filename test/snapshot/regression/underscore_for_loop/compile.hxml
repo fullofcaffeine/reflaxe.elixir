@@ -1,0 +1,9 @@
+# Test configuration for underscore variable handling in for loops
+-cp .
+-cp ../../../../src
+-cp ../../../../std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out
+--macro reflaxe.elixir.CompilerInit.Start()
+Main
