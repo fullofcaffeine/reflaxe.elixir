@@ -28,8 +28,19 @@ class UsageDetector {
                 
             // Constructor arguments - CRITICAL: Check all arguments
             case TNew(_, _, args):
+                #if debug_parameter_usage
+                trace('[UsageDetector] Checking TNew arguments for varId=$varId');
+                #end
                 for (arg in args) {
-                    if (isVariableUsed(varId, arg)) return true;
+                    #if debug_parameter_usage
+                    trace('[UsageDetector]   Checking arg: ${arg.expr}');
+                    #end
+                    if (isVariableUsed(varId, arg)) {
+                        #if debug_parameter_usage
+                        trace('[UsageDetector]   FOUND usage in TNew argument!');
+                        #end
+                        return true;
+                    }
                 }
                 false;
                 
@@ -139,7 +150,59 @@ class UsageDetector {
      * @return true if unused, false if used
      */
     public static function isParameterUnused(param: TVar, functionBody: TypedExpr): Bool {
-        return !isVariableUsed(param.id, functionBody);
+        var isUsed = isVariableUsed(param.id, functionBody);
+        #if debug_parameter_usage
+        trace('[UsageDetector] Parameter ${param.name} (id=${param.id}) is ${isUsed ? "USED" : "UNUSED"}');
+        trace('[UsageDetector] Function body type: ${functionBody != null ? Type.enumConstructor(functionBody.expr) : "null"}');
+        #end
+        
+        // Special case: For static functions with simple constructor calls
+        // Sometimes the analysis misses usage in constructor arguments
+        // Double-check for the parameter name in constructor calls
+        if (!isUsed && functionBody != null) {
+            // Check if the parameter appears in a TNew expression
+            isUsed = checkNewExpressionUsage(param.id, functionBody);
+        }
+        
+        return !isUsed;
+    }
+    
+    /**
+     * Special check for parameters used in TNew expressions
+     * Sometimes the regular traversal misses these
+     */
+    private static function checkNewExpressionUsage(varId: Int, expr: TypedExpr): Bool {
+        if (expr == null) return false;
+        
+        return switch(expr.expr) {
+            case TBlock(exprs):
+                // Check all expressions in the block
+                for (e in exprs) {
+                    if (checkNewExpressionUsage(varId, e)) return true;
+                }
+                false;
+                
+            case TVar(_, init) if (init != null):
+                // Check variable initialization
+                checkNewExpressionUsage(varId, init);
+                
+            case TNew(_, _, args):
+                // Check each argument directly
+                for (arg in args) {
+                    if (arg != null && switch(arg.expr) {
+                        case TLocal(v): v.id == varId;
+                        default: isVariableUsed(varId, arg);
+                    }) return true;
+                }
+                false;
+                
+            case TReturn(e):
+                e != null ? checkNewExpressionUsage(varId, e) : false;
+                
+            default:
+                // Fall back to regular check
+                isVariableUsed(varId, expr);
+        }
     }
 }
 
