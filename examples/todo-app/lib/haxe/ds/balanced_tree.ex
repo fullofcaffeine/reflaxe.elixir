@@ -121,7 +121,7 @@ end)
     if (t.left == nil), do: t.right
     struct.balance(struct.removeMinBinding(t.left), t.key, t.value, t.right)
   end
-  defp balance(struct, l, _k, _v, r) do
+  defp balance(struct, l, k, v, r) do
     hl = l.get_height()
     hr = r.get_height()
     if (hl > hr + 2) do

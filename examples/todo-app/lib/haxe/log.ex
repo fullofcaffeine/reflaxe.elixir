@@ -6,14 +6,14 @@ defmodule Log do
     if (infos.customParams != nil) do
       g = 0
       g1 = infos.customParams
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, str, :ok}, fn _, {g, str, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {str, g, :ok}, fn _, {str, g, acc_state} ->
   if (g < g1.length) do
     v = g1[g]
     g = g + 1
     str = str <> ", " <> Std.string(v)
-    {:cont, {g, str, acc_state}}
+    {:cont, {str, g, acc_state}}
   else
-    {:halt, {g, str, acc_state}}
+    {:halt, {str, g, acc_state}}
   end
 end)
     end
