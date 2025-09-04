@@ -36,14 +36,14 @@ defmodule SafeAssigns do
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, :ok}, fn _, {g, count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, :ok}, fn _, {count, g, acc_state} ->
   if (g < todos.length) do
     todo = todos[g]
     g = g + 1
     if (todo.completed), do: count = count + 1
-    {:cont, {g, count, acc_state}}
+    {:cont, {count, g, acc_state}}
   else
-    {:halt, {g, count, acc_state}}
+    {:halt, {count, g, acc_state}}
   end
 end)
     count
@@ -51,14 +51,14 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, :ok}, fn _, {g, count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, :ok}, fn _, {count, g, acc_state} ->
   if (g < todos.length) do
     todo = todos[g]
     g = g + 1
     if (not todo.completed), do: count = count + 1
-    {:cont, {g, count, acc_state}}
+    {:cont, {count, g, acc_state}}
   else
-    {:halt, {g, count, acc_state}}
+    {:halt, {count, g, acc_state}}
   end
 end)
     count

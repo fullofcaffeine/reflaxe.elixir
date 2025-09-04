@@ -1,5 +1,5 @@
 defmodule EctoQuery_Impl_ do
-  def where(this1, field, value) do
+  def where(this1, __field, value) do
     new_query = Ecto.Query.where(this1, [field: value])
     this1 = new_query
     this1

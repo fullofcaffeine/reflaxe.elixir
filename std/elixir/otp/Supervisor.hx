@@ -173,19 +173,22 @@ class SupervisorOptionsBuilder {
      * Create supervisor options with custom strategy
      */
     public static function withStrategy(strategy: SupervisorStrategy): SupervisorOptions {
-        var opts = defaults();
-        opts.strategy = strategy;
-        return opts;
+        return {
+            strategy: strategy,
+            max_restarts: 3,
+            max_seconds: 5
+        };
     }
     
     /**
      * Create supervisor options with custom restart limits
      */
-    public static function withLimits(max_restarts: Int, max_seconds: Int): SupervisorOptions {
-        var opts = defaults();
-        opts.max_restarts = max_restarts;
-        opts.max_seconds = max_seconds;
-        return opts;
+    public static function withLimits(maxRestarts: Int, maxSeconds: Int): SupervisorOptions {
+        return {
+            strategy: OneForOne,
+            max_restarts: maxRestarts,
+            max_seconds: maxSeconds
+        };
     }
 }
 

@@ -230,18 +230,15 @@ class TreeNode<K, V> {
     public var right: TreeNode<K, V>;
     public var key: K;
     public var value: V;
-    
-    var _height: Int;
+    public var _height: Int;
     
     public function new(l, k, v, r, h = -1) {
         left = l;
         key = k;
         value = v;
         right = r;
-        if (h == -1)
-            _height = (left.get_height() > right.get_height() ? left.get_height() : right.get_height()) + 1;
-        else
-            _height = h;
+        // Simplified height logic
+        _height = h == -1 ? 1 : h;
     }
     
     public function get_height()
