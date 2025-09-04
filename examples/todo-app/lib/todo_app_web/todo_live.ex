@@ -290,14 +290,14 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, todos, :ok}, fn _, {acc_count, acc_g, acc_todos, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed), do: acc_count = acc_count + 1
-    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
+    {:cont, {acc_count, acc_g, acc_todos, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
+    {:halt, {acc_count, acc_g, acc_todos, acc_state}}
   end
 end)
     count
@@ -305,14 +305,14 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, todos, :ok}, fn _, {acc_g, acc_count, acc_todos, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed), do: acc_count = acc_count + 1
-    {:cont, {acc_todos, acc_count, acc_g, acc_state}}
+    {:cont, {acc_g, acc_count, acc_todos, acc_state}}
   else
-    {:halt, {acc_todos, acc_count, acc_g, acc_state}}
+    {:halt, {acc_g, acc_count, acc_todos, acc_state}}
   end
 end)
     count
@@ -568,14 +568,14 @@ end) <> "\n\t\t</div>"
     filtered_todos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
     todo_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, filtered_todos, :ok}, fn _, {acc_g, acc_filtered_todos, acc_state} ->
   if (acc_g < acc_filtered_todos.length) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
     todo_items.push(render_todo_item(todo, assigns.editingTodo))
-    {:cont, {acc_filtered_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_filtered_todos, acc_state}}
   else
-    {:halt, {acc_filtered_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_filtered_todos, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")

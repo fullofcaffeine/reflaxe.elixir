@@ -1,0 +1,4 @@
+--class-path ../../../std
+--library reflaxe
+--library reflaxe.elixir
+--main Main
