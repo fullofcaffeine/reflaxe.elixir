@@ -1,124 +1,36 @@
 defmodule MemoryStorage do
-  @moduledoc """
-    MemoryStorage struct generated from Haxe
-
-    This module defines a struct with typed fields and constructor functions.
-  """
-
-  defstruct [:data]
-
-  @type t() :: %__MODULE__{
-    data: Map.t() | nil
-  }
-
-  @doc "Creates a new struct instance"
-  @spec new() :: t()
   def new() do
-    %__MODULE__{
-    }
+    %{:data => %{}}
   end
-
-  @doc "Updates struct fields using a map of changes"
-  @spec update(t(), map()) :: t()
-  def update(struct, changes) when is_map(changes) do
-    Map.merge(struct, changes) |> then(&struct(__MODULE__, &1))
+  def init(struct, _config) do
+    %{:ok => struct}
   end
-
-  # Instance functions
-  @doc "Generated from Haxe init"
-  def init(%__MODULE__{} = struct, _config) do
-    %{"ok" => struct}
+  def get(struct, key) do
+    this1 = struct.data
+    Map.get(this1, key)
   end
-
-  @doc "Generated from Haxe get"
-  def get(%__MODULE__{} = struct, key) do
-    temp_result = nil
-
-    struct = struct.data
-
-    temp_result = Map.get(struct, key)
-
-    temp_result
-  end
-
-  @doc "Generated from Haxe put"
-  def put(%__MODULE__{} = struct, key, value) do
-    struct = struct.data
-
-    struct = Map.put(struct, key, value)
-
+  def put(struct, key, value) do
+    this1 = struct.data
+    this1 = Map.put(this1, key, value)
     true
   end
-
-  @doc "Generated from Haxe delete"
-  def delete(%__MODULE__{} = struct, key) do
-    temp_result = nil
-
-    struct = struct.data
-
-    temp_result = Map.delete(struct, key)
-
-    temp_result
+  def delete(struct, key) do
+    this1 = struct.data
+    this1 = Map.delete(this1, key)
   end
-
-  @doc "Generated from Haxe list"
-  def list(%__MODULE__{} = struct) do
-    temp_iterator = nil
-
-    g_array = []
-
-    struct = struct.data
-
-    temp_iterator = Map.keys(struct)
-
-    k = temp_iterator
-
-    (
-      # Simple module-level pattern (inline for now)
-      loop_helper = fn condition_fn, body_fn, loop_fn ->
-        if condition_fn.() do
-          body_fn.()
-          loop_fn.(condition_fn, body_fn, loop_fn)
-        else
-          nil
-        end
-      end
-
-      loop_helper.(
-        fn -> k.has_next() end,
-        fn ->
-          k = k.next()
-          g_array ++ [k]
-        end,
-        loop_helper
-      )
-    )
-
-    g_array
+  def list(struct) do
+    g = []
+    this1 = struct.data
+    k = Map.keys(this1)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
+  if (acc_k.hasNext()) do
+    acc_k = acc_k.next()
+    g.push(acc_k)
+    {:cont, {acc_k, acc_state}}
+  else
+    {:halt, {acc_k, acc_state}}
   end
-
-
-  # While loop helper functions
-  # Generated automatically for tail-recursive loop patterns
-
-  @doc false
-  defp while_loop(condition_fn, body_fn) do
-    if condition_fn.() do
-      body_fn.()
-      while_loop(condition_fn, body_fn)
-    else
-      nil
-    end
+end)
+    g
   end
-
-  @doc false
-  defp do_while_loop(body_fn, condition_fn) do
-    body_fn.()
-    if condition_fn.() do
-      do_while_loop(body_fn, condition_fn)
-    else
-      nil
-    end
-  end
-
 end

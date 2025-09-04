@@ -58,7 +58,8 @@ end
     if (pos < 0 || len < 0 || pos + len > struct.length) do
       throw("Out of bounds")
     end
-    sub_binary = Bytes.new(len, :binary.part(struct.b, pos, len))
+    sub_binary = :binary.part(struct.b, pos, len)
+    Bytes.new(len, sub_binary)
   end
   def fill(struct, pos, len, value) do
     if (pos < 0 || len < 0 || pos + len > struct.length) do
@@ -204,23 +205,24 @@ end
     Base.encode16(struct.b, case: :lower)
   end
   def alloc(length) do
-    b = Bytes.new(length, :binary.copy(<<0>>, length))
+    b = :binary.copy(<<0>>, length)
+    Bytes.new(length, b)
   end
   def of_string(s, encoding) do
     if (encoding == nil) do
       encoding = :utf8
     end
     binary = :unicode.characters_to_binary(s, :utf8)
-    length = Bytes.new(byte_size(binary), binary)
-  end
-  def fast_get(b, pos) do
-    :binary.at(b, pos)
+    length = byte_size(binary)
+    Bytes.new(length, binary)
   end
   def of_hex(s) do
     binary = Base.decode16!(s, case: :mixed)
-    length = Bytes.new(byte_size(binary), binary)
+    length = byte_size(binary)
+    Bytes.new(length, binary)
   end
   def of_data(b) do
-    length = Bytes.new(byte_size(b), b)
+    length = byte_size(b)
+    Bytes.new(length, b)
   end
 end

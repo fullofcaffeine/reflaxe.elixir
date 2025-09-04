@@ -6,14 +6,16 @@ defmodule Log do
     if (infos.customParams != nil) do
       g = 0
       g1 = infos.customParams
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (g < g1.length) do
-  v = g1[g]
-  g = g + 1
-  str = str <> ", " <> Std.string(v)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {str, g, g1, :ok}, fn _, {acc_str, acc_g, acc_g1, acc_state} ->
+  if (acc_g < acc_g1.length) do
+    v = g1[g]
+    acc_g = acc_g + 1
+    acc_str = acc_str <> ", " <> Std.string(v)
+    {:cont, {acc_str, acc_g, acc_g1, acc_state}}
+  else
+    {:halt, {acc_str, acc_g, acc_g1, acc_state}}
+  end
+end)
     end
     pstr <> ": " <> str
   end

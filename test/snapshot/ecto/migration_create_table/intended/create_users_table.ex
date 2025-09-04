@@ -1,19 +1,28 @@
 defmodule CreateUsersTable do
-  use Ecto.Migration
-
-  def up do
-    create table(:users) do
-      # columns will be added by subsequent DSL calls
-    end
-    add :name, :string
-    add :email, :string
-    add :age, :integer
-    create index(:users, [:column_name])
-    timestamps()
+  def up(struct) do
+    struct.createTable("users")
+    struct.addColumn("users", "name", "string")
+    struct.addColumn("users", "email", "string")
+    struct.addColumn("users", "age", "integer")
+    struct.addIndex("users", ["email"])
+    struct.timestamps()
   end
-
-  def down do
-    drop table(:users)
+  def down(struct) do
+    struct.dropTable("users")
   end
-
+  defp create_table(_struct, _table_name) do
+    nil
+  end
+  defp drop_table(_struct, _table_name) do
+    nil
+  end
+  defp add_column(_struct, _table, _column, _type) do
+    nil
+  end
+  defp add_index(_struct, _table, _columns) do
+    nil
+  end
+  defp timestamps(_struct) do
+    nil
+  end
 end

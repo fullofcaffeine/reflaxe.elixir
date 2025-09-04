@@ -1,6 +1,6 @@
 defmodule TestAppWeb.TestLive do
-  use Phoenix.Component
-  import TestAppWeb.CoreComponents
+  use TestAppWeb, :live_view
+  import TestAppWeb.CoreComponents, except: [label: 1]
   def mount(params, session, socket) do
     %{:status => "ok", :socket => socket}
   end

@@ -1,4 +1,3 @@
 defmodule StatusController do
-  @moduledoc "StatusController module generated from Haxe"
-
+  nil
 end

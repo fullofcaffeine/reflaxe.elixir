@@ -1,5 +1,5 @@
 defmodule EnumValue_Impl_ do
-  def match(this1, pattern) do
+  def match(_this1, _pattern) do
     false
   end
 end

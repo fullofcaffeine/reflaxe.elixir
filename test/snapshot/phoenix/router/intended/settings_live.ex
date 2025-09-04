@@ -1,4 +1,3 @@
 defmodule SettingsLive do
-  @moduledoc "SettingsLive module generated from Haxe"
-
+  nil
 end

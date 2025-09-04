@@ -3,7 +3,7 @@ defmodule Output do
     bigEndian = b
     b
   end
-  def write_byte(struct, _c) do
+  def write_byte(_struct, _c) do
     nil
   end
   def write_bytes(struct, b, pos, len) do
@@ -11,14 +11,14 @@ defmodule Output do
       throw("Invalid parameters")
     end
     k = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  if (k > 0) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, k, :ok}, fn _, {acc_pos, acc_k, acc_state} ->
+  if (acc_k > 0) do
     struct.writeByte(:binary.at(b, pos))
-    pos = pos + 1
-    k = (k - 1)
-    {:cont, acc}
+    acc_pos = acc_pos + 1
+    acc_k = (acc_k - 1)
+    {:cont, {acc_pos, acc_k, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {acc_pos, acc_k, acc_state}}
   end
 end)
     len
@@ -45,12 +45,13 @@ end)
 end)
   end
   def write_string(struct, s) do
-    b = struct.write(Bytes.of_string(s))
+    b = Bytes.of_string(s)
+    struct.write(b)
   end
-  def flush(struct) do
+  def flush(_struct) do
     nil
   end
-  def close(struct) do
+  def close(_struct) do
     nil
   end
 end

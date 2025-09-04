@@ -7,18 +7,20 @@ defmodule BalancedTree do
   end
   def get(struct, key) do
     node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (node != nil) do
-  c = struct.compare(key, node.key)
-  if (c == 0), do: node.value
-  if (c < 0) do
-    node = node.left
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
+  if (acc_node != nil) do
+    c = struct.compare(key, acc_node.key)
+    if (c == 0), do: acc_node.value
+    if (c < 0) do
+      acc_node = acc_node.left
+    else
+      acc_node = acc_node.right
+    end
+    {:cont, {acc_node, acc_state}}
   else
-    node = node.right
+    {:halt, {acc_node, acc_state}}
   end
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
     nil
   end
   def remove(struct, key) do
@@ -31,35 +33,34 @@ end end)
   end
   def exists(struct, key) do
     node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (node != nil) do
-  c = struct.compare(key, node.key)
-  if (c == 0) do
-    true
-  else
-    if (c < 0) do
-      node = node.left
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
+  if (acc_node != nil) do
+    c = struct.compare(key, acc_node.key)
+    if (c == 0) do
+      true
     else
-      node = node.right
+      if (c < 0) do
+        acc_node = acc_node.left
+      else
+        acc_node = acc_node.right
+      end
     end
+    {:cont, {acc_node, acc_state}}
+  else
+    {:halt, {acc_node, acc_state}}
   end
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+end)
     false
   end
   def iterator(struct) do
     ret = []
     iterator_loop(struct.root, ret)
-    ret.iterator()
-  end
-  def key_value_iterator(struct) do
-    MapKeyValueIterator.new(struct)
+    ArrayIterator.new(ret)
   end
   def keys(struct) do
     ret = []
     struct.keysLoop(struct.root, ret)
-    ret.iterator()
+    ArrayIterator.new(ret)
   end
   def copy(struct) do
     copied = BalancedTree.new()
@@ -72,7 +73,7 @@ end end)
     end
     c = struct.compare(k, node.key)
     if (c == 0) do
-      TreeNode.new(node.left, k, v, node.right, (if (node == nil), do: 0, else: node._height))
+      TreeNode.new(node.left, k, v, node.right, node.get_height())
     else
       if (c < 0) do
         nl = struct.setLoop(k, v, node.left)
@@ -103,7 +104,7 @@ end end)
   defp keys_loop(struct, node, acc) do
     if (node != nil) do
       struct.keysLoop(node.left, acc)
-      acc.push(node.key)
+      acc = acc ++ [node.key]
       struct.keysLoop(node.right, acc)
     end
   end
@@ -124,22 +125,18 @@ end end)
     if (t.left == nil), do: t.right
     struct.balance(struct.removeMinBinding(t.left), t.key, t.value, t.right)
   end
-  defp balance(struct, l, k, v, r) do
-    hl = if (l == nil), do: 0, else: l._height
-    hr = if (r == nil), do: 0, else: r._height
+  defp balance(_struct, l, k, v, r) do
+    hl = l.get_height()
+    hr = r.get_height()
     if (hl > hr + 2) do
-      if (_this = l.left
-if (_this == nil), do: 0, else: _this._height >= _this = l.right
-if (_this == nil), do: 0, else: _this._height) do
+      if (l.left.get_height() >= l.right.get_height()) do
         TreeNode.new(l.left, l.key, l.value, TreeNode.new(l.right, k, v, r))
       else
         TreeNode.new(TreeNode.new(l.left, l.key, l.value, l.right.left), l.right.key, l.right.value, TreeNode.new(l.right.right, k, v, r))
       end
     else
       if (hr > hl + 2) do
-        if (_this = r.right
-if (_this == nil), do: 0, else: _this._height > _this = r.left
-if (_this == nil), do: 0, else: _this._height) do
+        if (r.right.get_height() > r.left.get_height()) do
           TreeNode.new(TreeNode.new(l, k, v, r.left), r.key, r.value, r.right)
         else
           TreeNode.new(TreeNode.new(l, k, v, r.left.left), r.left.key, r.left.value, TreeNode.new(r.left.right, r.key, r.value, r.right))
@@ -149,7 +146,7 @@ if (_this == nil), do: 0, else: _this._height) do
       end
     end
   end
-  defp compare(struct, k1, k2) do
+  defp compare(_struct, k1, k2) do
     Reflect.compare(k1, k2)
   end
   def to_string(struct) do
@@ -161,7 +158,7 @@ if (_this == nil), do: 0, else: _this._height) do
   defp iterator_loop(node, acc) do
     if (node != nil) do
       iterator_loop(node.left, acc)
-      acc.push(node.value)
+      acc = acc ++ [node.value]
       iterator_loop(node.right, acc)
     end
   end

@@ -2,6 +2,7 @@
   "filesGenerated": [
   "value_type.ex",
   "string_buf.ex",
+  "std.ex",
   "main.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",

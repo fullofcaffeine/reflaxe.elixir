@@ -1,66 +1,26 @@
 defmodule Log do
-  @moduledoc """
-    Log module generated from Haxe
-
-      Log primarily provides the `trace()` method, which is invoked upon a call to
-      `trace()` in Haxe code.
-  """
-
-  # Static functions
-  @doc "Generated from Haxe formatOutput"
   def format_output(v, infos) do
     str = Std.string(v)
-
-    if ((infos == nil)) do
-      str
-    else
-      nil
+    if (infos == nil), do: str
+    pstr = infos.fileName <> ":" <> infos.lineNumber
+    if (infos.customParams != nil) do
+      g = 0
+      g1 = infos.customParams
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {str, g, g1, :ok}, fn _, {acc_str, acc_g, acc_g1, acc_state} ->
+  if (acc_g < acc_g1.length) do
+    v = g1[g]
+    acc_g = acc_g + 1
+    acc_str = acc_str <> ", " <> Std.string(v)
+    {:cont, {acc_str, acc_g, acc_g1, acc_state}}
+  else
+    {:halt, {acc_str, acc_g, acc_g1, acc_state}}
+  end
+end)
     end
-
-    pstr = infos.file_name <> ":" <> to_string(infos.line_number)
-
-    if ((infos.custom_params != nil)) do
-      g_counter = 0
-      g_array = infos.custom_params
-      Enum.each(g_array, fn v2 -> 
-        str = str <> ", " <> Std.string(v)
-      end)
-    else
-      nil
-    end
-
     pstr <> ": " <> str
   end
-
-  @doc "Generated from Haxe trace"
-  def trace(v, infos \\ nil) do
-    str = Log.format_output(v, infos)
-
+  def trace(v, infos) do
+    str = format_output(v, infos)
     Sys.println(str)
   end
-
-
-  # While loop helper functions
-  # Generated automatically for tail-recursive loop patterns
-
-  @doc false
-  defp while_loop(condition_fn, body_fn) do
-    if condition_fn.() do
-      body_fn.()
-      while_loop(condition_fn, body_fn)
-    else
-      nil
-    end
-  end
-
-  @doc false
-  defp do_while_loop(body_fn, condition_fn) do
-    body_fn.()
-    if condition_fn.() do
-      do_while_loop(body_fn, condition_fn)
-    else
-      nil
-    end
-  end
-
 end
