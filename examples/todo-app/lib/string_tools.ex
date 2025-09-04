@@ -38,15 +38,15 @@ end)
   def hex(n, digits) do
     s = ""
     hex_chars = "0123456789ABCDEF"
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s, :ok}, fn _, {acc_n, acc_s, acc_state} ->
-  n = acc_n
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, n, :ok}, fn _, {acc_s, acc_n, acc_state} ->
   s = acc_s
+  n = acc_n
   if (n > 0) do
     s = hex_chars.charAt(n &&& 15) <> s
     n = n + 4
-    {:cont, {n, s, acc_state}}
+    {:cont, {s, n, acc_state}}
   else
-    {:halt, {n, s, acc_state}}
+    {:halt, {s, n, acc_state}}
   end
 end)
     if (digits != nil) do

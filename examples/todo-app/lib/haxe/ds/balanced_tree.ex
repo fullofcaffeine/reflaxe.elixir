@@ -55,11 +55,13 @@ end)
     false
   end
   def iterator(struct) do
-    ret = iterator_loop(struct.root, [])
+    ret = []
+    iterator_loop(struct.root, ret)
     ret.iterator()
   end
   def keys(struct) do
-    ret = struct.keysLoop(struct.root, [])
+    ret = []
+    struct.keysLoop(struct.root, ret)
     ret.iterator()
   end
   def copy(struct) do
@@ -76,9 +78,11 @@ end)
       TreeNode.new(node.left, k, v, node.right, node.get_height())
     else
       if (c < 0) do
-        nl = struct.balance(struct.setLoop(k, v, node.left), node.key, node.value, node.right)
+        nl = struct.setLoop(k, v, node.left)
+        struct.balance(nl, node.key, node.value, node.right)
       else
-        nr = struct.balance(node.left, node.key, node.value, struct.setLoop(k, v, node.right))
+        nr = struct.setLoop(k, v, node.right)
+        struct.balance(node.left, node.key, node.value, nr)
       end
     end
   end
