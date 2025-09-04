@@ -12,19 +12,17 @@ defmodule Input do
     end
     k = len
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, k, :ok}, fn _, {acc_pos, acc_k, acc_state} ->
-  pos = acc_pos
-  k = acc_k
-  if (k > 0) do
+  if (acc_k > 0) do
     byte = struct.readByte()
     if (byte < 0) do
       throw(:break)
     end
-    b.set(pos, byte)
-    pos = pos + 1
-    k = (k - 1)
-    {:cont, {pos, k, acc_state}}
+    b.set(acc_pos, byte)
+    acc_pos = acc_pos + 1
+    acc_k = (acc_k - 1)
+    {:cont, {acc_pos, acc_k, acc_state}}
   else
-    {:halt, {pos, k, acc_state}}
+    {:halt, {acc_pos, acc_k, acc_state}}
   end
 end)
     (len - k)
@@ -37,21 +35,19 @@ end)
     total = Bytes.alloc(0)
     len = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len, :ok}, fn _, {acc_total, acc_len, acc_state} ->
-  total = acc_total
-  len = acc_len
   if true do
     n = struct.readBytes(buf, 0, bufsize)
     if (n == 0) do
       throw(:break)
     end
-    new_total = Bytes.alloc(len + n)
-    new_total.blit(0, total, 0, len)
-    new_total.blit(len, buf, 0, n)
-    total = new_total
-    len = len + n
-    {:cont, {total, len, acc_state}}
+    new_total = Bytes.alloc(acc_len + n)
+    new_total.blit(0, acc_total, 0, acc_len)
+    new_total.blit(acc_len, buf, 0, n)
+    acc_total = new_total
+    acc_len = acc_len + n
+    {:cont, {acc_total, acc_len, acc_state}}
   else
-    {:halt, {total, len, acc_state}}
+    {:halt, {acc_total, acc_len, acc_state}}
   end
 end)
     total
@@ -69,19 +65,17 @@ end)
   def read_line(struct) do
     buf_b = ""
     last = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf_b, :ok}, fn _, {acc_buf_b, acc_state} ->
-  buf_b = acc_buf_b
-  last = struct.readByte()
-  if (last >= 0) do
-    if (last == 10) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {last, buf_b, :ok}, fn _, {acc_last, acc_buf_b, acc_state} ->
+  if (acc_last >= 0) do
+    if (acc_last == 10) do
       throw(:break)
     end
-    if (last != 13) do
-      buf_b = buf_b <> String.from_char_code(last)
+    if (acc_last != 13) do
+      acc_buf_b = acc_buf_b <> String.from_char_code(acc_last)
     end
-    {:cont, {buf_b, acc_state}}
+    {:cont, {acc_last, acc_buf_b, acc_state}}
   else
-    {:halt, {buf_b, acc_state}}
+    {:halt, {acc_last, acc_buf_b, acc_state}}
   end
 end)
     buf_b

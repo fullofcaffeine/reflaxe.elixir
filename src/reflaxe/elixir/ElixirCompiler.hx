@@ -476,7 +476,14 @@ class ElixirCompiler extends GenericCompiler<
         var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
         
         // Build AST for the expression with usage information
-        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, usageMap);
+        var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, usageMap);
+        
+        // Apply transformations to all expressions, not just function bodies
+        if (ast != null) {
+            ast = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast);
+        }
+        
+        return ast;
     }
     
     /**
