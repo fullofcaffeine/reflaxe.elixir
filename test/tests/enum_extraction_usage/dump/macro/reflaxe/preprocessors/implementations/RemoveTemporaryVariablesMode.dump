@@ -1,0 +1,7 @@
+@:flatEnum
+enum reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode {
+	OnlyAvoidTemporaryFieldAccess;
+	AllTempVariables;
+	AllOneUseVariables;
+	AllVariables;
+}

@@ -1,0 +1,49 @@
+@:coreApi
+class sys.FileSystem {
+
+	public static function exists
+
+	public static function rename
+
+	public static function stat
+
+	public static function fullPath
+
+	public static function absolutePath[Function:(relPath : String) -> String]
+		[Arg:String] [Local relPath(8177):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Call:Bool]
+					[Field:(path : String) -> Bool]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(path : String) -> Bool]
+							haxe.io.Path
+							isAbsolute:(path : String) -> Bool
+					[Local relPath(8177):String:String]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local relPath(8177):String:String]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(paths : Array<String>) -> String]
+						[TypeExpr haxe.io.Path:Class<haxe.io.Path>]
+						[FStatic:(paths : Array<String>) -> String]
+							haxe.io.Path
+							join:(paths : Array<String>) -> String
+					[ArrayDecl:Array<String>]
+						[Call:String]
+							[Field:() -> String]
+								[TypeExpr Sys:Class<Sys>]
+								[FStatic:() -> String]
+									Sys
+									getCwd:() -> String
+						[Local relPath(8177):String:String]
+
+	public static function isDirectory
+
+	public static function createDirectory
+
+	public static function deleteFile
+
+	public static function deleteDirectory
+
+	public static function readDirectory
+}

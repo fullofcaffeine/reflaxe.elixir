@@ -1,0 +1,76 @@
+class haxe.iterators.StringKeyValueIterator {
+
+	public inline function new[Function:(s : String) -> Void]
+		[Arg:String] [Local s(6247):String]
+		[Block:Void]
+			[Binop:Int]
+				[Field:Int]
+					[Const:haxe.iterators.StringKeyValueIterator] this
+					[FInstance:Int]
+						haxe.iterators.StringKeyValueIterator
+						offset:Int
+				=
+				[Const:Int] 0
+			[Binop:String]
+				[Field:String]
+					[Const:haxe.iterators.StringKeyValueIterator] this
+					[FInstance:String]
+						haxe.iterators.StringKeyValueIterator
+						s:String
+				=
+				[Local s(6247):String:String]
+
+	@:value(0)
+	var offset:Int;
+
+	var s:String;
+
+	public inline function hasNext[Function:() -> Bool]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Field:Int]
+						[Const:haxe.iterators.StringKeyValueIterator] this
+						[FInstance:Int]
+							haxe.iterators.StringKeyValueIterator
+							offset:Int
+					<
+					[Field:Int]
+						[Field:String]
+							[Const:haxe.iterators.StringKeyValueIterator] this
+							[FInstance:String]
+								haxe.iterators.StringKeyValueIterator
+								s:String
+						[FInstance:Int]
+							String
+							length:Int
+
+	public inline function next[Function:() -> { value : Int, key : Int }]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ value : Int, key : Int }]
+					key: [Field:Int]
+						[Const:haxe.iterators.StringKeyValueIterator] this
+						[FInstance:Int]
+							haxe.iterators.StringKeyValueIterator
+							offset:Int
+					value: [Call:Int]
+						[Field:(s : String, index : Int) -> Int]
+							[TypeExpr StringTools:Class<StringTools>]
+							[FStatic:(s : String, index : Int) -> Int]
+								StringTools
+								fastCodeAt:(s : String, index : Int) -> Int
+						[Field:String]
+							[Const:haxe.iterators.StringKeyValueIterator] this
+							[FInstance:String]
+								haxe.iterators.StringKeyValueIterator
+								s:String
+						[Unop:Int]
+							++
+							Postfix
+							[Field:Int]
+								[Const:haxe.iterators.StringKeyValueIterator] this
+								[FInstance:Int]
+									haxe.iterators.StringKeyValueIterator
+									offset:Int
+}

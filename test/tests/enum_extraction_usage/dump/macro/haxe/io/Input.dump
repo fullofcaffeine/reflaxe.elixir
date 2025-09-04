@@ -1,0 +1,288 @@
+class haxe.io.Input {
+
+	public var bigEndian(default,set):Bool;
+
+	function set_bigEndian[Function:(b : Bool) -> Bool]
+		[Arg:Bool] [Local b(9676):Bool]
+		[Block:Dynamic]
+			[Binop:Bool]
+				[Field:Bool]
+					[Const:haxe.io.Input] this
+					[FInstance:Bool]
+						haxe.io.Input
+						bigEndian:Bool
+				=
+				[Local b(9676):Bool:Bool]
+			[Return:Dynamic] [Local b(9676):Bool:Bool]
+
+	public function readByte[Function:() -> Int] [Block:Dynamic] [Return:Dynamic] [Const:Int] -1
+
+	public function readBytes[Function:(b : haxe.io.Bytes, pos : Int, len : Int) -> Int]
+		[Arg:haxe.io.Bytes] [Local b(9677):haxe.io.Bytes]
+		[Arg:Int] [Local pos(9678):Int]
+		[Arg:Int] [Local len(9679):Int]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Binop:Bool]
+							[Local pos(9678):Int:Int]
+							<
+							[Const:Int] 0
+						||
+						[Binop:Bool]
+							[Local len(9679):Int:Int]
+							<
+							[Const:Int] 0
+					||
+					[Binop:Bool]
+						[Binop:Int]
+							[Local pos(9678):Int:Int]
+							+
+							[Local len(9679):Int:Int]
+						>
+						[Field:Int]
+							[Local b(9677):haxe.io.Bytes:haxe.io.Bytes]
+							[FInstance:Int]
+								haxe.io.Bytes
+								length:Int
+				[Then:Dynamic] [Block:Dynamic] [Throw:Dynamic] [Const:String] "Invalid parameters"
+			[Var k(9680):Int] [Local len(9679):Int:Int]
+			[While:Void]
+				[Binop:Bool]
+					[Local k(9680):Int:Int]
+					>
+					[Const:Int] 0
+				[Block:Int]
+					[Var byte(9681):Int]
+						[Call:Int]
+							[Field:() -> Int]
+								[Const:haxe.io.Input] this
+								[FInstance:() -> Int]
+									haxe.io.Input
+									readByte:() -> Int
+					[If:Void]
+						[Binop:Bool]
+							[Local byte(9681):Int:Int]
+							<
+							[Const:Int] 0
+						[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+					[Call:Void]
+						[Field:(pos : Int, v : Int) -> Void]
+							[Local b(9677):haxe.io.Bytes:haxe.io.Bytes]
+							[FInstance:(pos : Int, v : Int) -> Void]
+								haxe.io.Bytes
+								set:(pos : Int, v : Int) -> Void
+						[Local pos(9678):Int:Int]
+						[Local byte(9681):Int:Int]
+					[Unop:Int]
+						++
+						Postfix
+						[Local pos(9678):Int:Int]
+					[Unop:Int]
+						--
+						Postfix
+						[Local k(9680):Int:Int]
+			[Return:Dynamic]
+				[Binop:Int]
+					[Local len(9679):Int:Int]
+					-
+					[Local k(9680):Int:Int]
+
+	public function readAll[Function:(?bufsize : Null<Int>) -> haxe.io.Bytes]
+		[Arg:Null<Int>]
+			[Local bufsize(9682):Null<Int>]
+			[Const:Null<Int>] null
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Local bufsize(9682):Null<Int>:Null<Int>]
+					==
+					[Const:Null<Int>] null
+				[Then:Null<Int>] [Block:Null<Int>]
+					[Binop:Null<Int>]
+						[Local bufsize(9682):Null<Int>:Null<Int>]
+						=
+						[Const:Int] 4096
+			[Var buf(9683):haxe.io.Bytes]
+				[Call:haxe.io.Bytes]
+					[Field:(length : Int) -> haxe.io.Bytes]
+						[TypeExpr haxe.io.Bytes:Class<haxe.io.Bytes>]
+						[FStatic:(length : Int) -> haxe.io.Bytes]
+							haxe.io.Bytes
+							alloc:(length : Int) -> haxe.io.Bytes
+					[Local bufsize(9682):Null<Int>:Null<Int>]
+			[Var total(9684):haxe.io.Bytes]
+				[Call:haxe.io.Bytes]
+					[Field:(length : Int) -> haxe.io.Bytes]
+						[TypeExpr haxe.io.Bytes:Class<haxe.io.Bytes>]
+						[FStatic:(length : Int) -> haxe.io.Bytes]
+							haxe.io.Bytes
+							alloc:(length : Int) -> haxe.io.Bytes
+					[Const:Int] 0
+			[Var len(9685):Int] [Const:Int] 0
+			[While:Void]
+				[Const:Bool] true
+				[Block:Int]
+					[Var n(9686):Int]
+						[Call:Int]
+							[Field:(b : haxe.io.Bytes, pos : Int, len : Int) -> Int]
+								[Const:haxe.io.Input] this
+								[FInstance:(b : haxe.io.Bytes, pos : Int, len : Int) -> Int]
+									haxe.io.Input
+									readBytes:(b : haxe.io.Bytes, pos : Int, len : Int) -> Int
+							[Local buf(9683):haxe.io.Bytes:haxe.io.Bytes]
+							[Const:Int] 0
+							[Local bufsize(9682):Null<Int>:Null<Int>]
+					[If:Void]
+						[Binop:Bool]
+							[Local n(9686):Int:Int]
+							==
+							[Const:Int] 0
+						[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+					[Var newTotal(9687):haxe.io.Bytes]
+						[Call:haxe.io.Bytes]
+							[Field:(length : Int) -> haxe.io.Bytes]
+								[TypeExpr haxe.io.Bytes:Class<haxe.io.Bytes>]
+								[FStatic:(length : Int) -> haxe.io.Bytes]
+									haxe.io.Bytes
+									alloc:(length : Int) -> haxe.io.Bytes
+							[Binop:Int]
+								[Local len(9685):Int:Int]
+								+
+								[Local n(9686):Int:Int]
+					[Call:Void]
+						[Field:(pos : Int, src : haxe.io.Bytes, srcpos : Int, len : Int) -> Void]
+							[Local newTotal(9687):haxe.io.Bytes:haxe.io.Bytes]
+							[FInstance:(pos : Int, src : haxe.io.Bytes, srcpos : Int, len : Int) -> Void]
+								haxe.io.Bytes
+								blit:(pos : Int, src : haxe.io.Bytes, srcpos : Int, len : Int) -> Void
+						[Const:Int] 0
+						[Local total(9684):haxe.io.Bytes:haxe.io.Bytes]
+						[Const:Int] 0
+						[Local len(9685):Int:Int]
+					[Call:Void]
+						[Field:(pos : Int, src : haxe.io.Bytes, srcpos : Int, len : Int) -> Void]
+							[Local newTotal(9687):haxe.io.Bytes:haxe.io.Bytes]
+							[FInstance:(pos : Int, src : haxe.io.Bytes, srcpos : Int, len : Int) -> Void]
+								haxe.io.Bytes
+								blit:(pos : Int, src : haxe.io.Bytes, srcpos : Int, len : Int) -> Void
+						[Local len(9685):Int:Int]
+						[Local buf(9683):haxe.io.Bytes:haxe.io.Bytes]
+						[Const:Int] 0
+						[Local n(9686):Int:Int]
+					[Binop:haxe.io.Bytes]
+						[Local total(9684):haxe.io.Bytes:haxe.io.Bytes]
+						=
+						[Local newTotal(9687):haxe.io.Bytes:haxe.io.Bytes]
+					[Binop:Int]
+						[Local len(9685):Int:Int]
+						+=
+						[Local n(9686):Int:Int]
+			[Return:Dynamic] [Local total(9684):haxe.io.Bytes:haxe.io.Bytes]
+
+	public function readString[Function:(len : Int) -> String]
+		[Arg:Int] [Local len(9688):Int]
+		[Block:Dynamic]
+			[Var b(9689):haxe.io.Bytes]
+				[Call:haxe.io.Bytes]
+					[Field:(length : Int) -> haxe.io.Bytes]
+						[TypeExpr haxe.io.Bytes:Class<haxe.io.Bytes>]
+						[FStatic:(length : Int) -> haxe.io.Bytes]
+							haxe.io.Bytes
+							alloc:(length : Int) -> haxe.io.Bytes
+					[Local len(9688):Int:Int]
+			[Var actual(9690):Int]
+				[Call:Int]
+					[Field:(b : haxe.io.Bytes, pos : Int, len : Int) -> Int]
+						[Const:haxe.io.Input] this
+						[FInstance:(b : haxe.io.Bytes, pos : Int, len : Int) -> Int]
+							haxe.io.Input
+							readBytes:(b : haxe.io.Bytes, pos : Int, len : Int) -> Int
+					[Local b(9689):haxe.io.Bytes:haxe.io.Bytes]
+					[Const:Int] 0
+					[Local len(9688):Int:Int]
+			[If:Void]
+				[Binop:Bool]
+					[Local actual(9690):Int:Int]
+					<
+					[Local len(9688):Int:Int]
+				[Then:haxe.io.Bytes] [Block:haxe.io.Bytes]
+					[Var smaller(9691):haxe.io.Bytes]
+						[Call:haxe.io.Bytes]
+							[Field:(length : Int) -> haxe.io.Bytes]
+								[TypeExpr haxe.io.Bytes:Class<haxe.io.Bytes>]
+								[FStatic:(length : Int) -> haxe.io.Bytes]
+									haxe.io.Bytes
+									alloc:(length : Int) -> haxe.io.Bytes
+							[Local actual(9690):Int:Int]
+					[Call:Void]
+						[Field:(pos : Int, src : haxe.io.Bytes, srcpos : Int, len : Int) -> Void]
+							[Local smaller(9691):haxe.io.Bytes:haxe.io.Bytes]
+							[FInstance:(pos : Int, src : haxe.io.Bytes, srcpos : Int, len : Int) -> Void]
+								haxe.io.Bytes
+								blit:(pos : Int, src : haxe.io.Bytes, srcpos : Int, len : Int) -> Void
+						[Const:Int] 0
+						[Local b(9689):haxe.io.Bytes:haxe.io.Bytes]
+						[Const:Int] 0
+						[Local actual(9690):Int:Int]
+					[Binop:haxe.io.Bytes]
+						[Local b(9689):haxe.io.Bytes:haxe.io.Bytes]
+						=
+						[Local smaller(9691):haxe.io.Bytes:haxe.io.Bytes]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local b(9689):haxe.io.Bytes:haxe.io.Bytes]
+						[FInstance:() -> String]
+							haxe.io.Bytes
+							toString:() -> String
+
+	public function readLine[Function:() -> String]
+		[Block:Dynamic]
+			[Var buf(9692):StringBuf] [New:StringBuf] StringBuf
+			[Var last(9693):Int]
+			[While:Void]
+				[Binop:Bool]
+					[Parenthesis:Int]
+						[Binop:Int]
+							[Local last(9693):Int:Int]
+							=
+							[Call:Int]
+								[Field:() -> Int]
+									[Const:haxe.io.Input] this
+									[FInstance:() -> Int]
+										haxe.io.Input
+										readByte:() -> Int
+					>=
+					[Const:Int] 0
+				[Block:Void]
+					[If:Void]
+						[Binop:Bool]
+							[Local last(9693):Int:Int]
+							==
+							[Const:Int] 10
+						[Then:Dynamic] [Block:Dynamic] [Break:Dynamic]
+					[If:Void]
+						[Binop:Bool]
+							[Local last(9693):Int:Int]
+							!=
+							[Const:Int] 13
+						[Then:Void] [Block:Void]
+							[Call:Void]
+								[Field:(c : Int) -> Void]
+									[Local buf(9692):StringBuf:StringBuf]
+									[FInstance:(c : Int) -> Void]
+										StringBuf
+										addChar:(c : Int) -> Void
+								[Local last(9693):Int:Int]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local buf(9692):StringBuf:StringBuf]
+						[FInstance:() -> String]
+							StringBuf
+							toString:() -> String
+
+	public function close[Function:() -> Void] [Block:Void]
+}

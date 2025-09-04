@@ -1,0 +1,594 @@
+class reflaxe.elixir.ast.SupervisorOptionsTransformPass {
+
+	public static function transform[Function:(ast : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local ast(26391):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:reflaxe.elixir.ast.ElixirAST]
+					[Field:(ast : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+						[TypeExpr reflaxe.elixir.ast.SupervisorOptionsTransformPass:Class<reflaxe.elixir.ast.SupervisorOptionsTransformPass>]
+						[FStatic:(ast : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+							reflaxe.elixir.ast.SupervisorOptionsTransformPass
+							transformSupervisorCalls:(ast : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST
+					[Local ast(26391):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+
+	static function transformSupervisorCalls[Function:(ast : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local ast(26392):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:reflaxe.elixir.ast.ElixirAST]
+					[Field:(ast : reflaxe.elixir.ast.ElixirAST, transformer : (reflaxe.elixir.ast.ElixirAST -> reflaxe.elixir.ast.ElixirAST)) -> reflaxe.elixir.ast.ElixirAST]
+						[TypeExpr reflaxe.elixir.ast.ElixirASTTransformer:Class<reflaxe.elixir.ast.ElixirASTTransformer>]
+						[FStatic:(ast : reflaxe.elixir.ast.ElixirAST, transformer : (reflaxe.elixir.ast.ElixirAST -> reflaxe.elixir.ast.ElixirAST)) -> reflaxe.elixir.ast.ElixirAST]
+							reflaxe.elixir.ast.ElixirASTTransformer
+							transformNode:(ast : reflaxe.elixir.ast.ElixirAST, transformer : (reflaxe.elixir.ast.ElixirAST -> reflaxe.elixir.ast.ElixirAST)) -> reflaxe.elixir.ast.ElixirAST
+					[Local ast(26392):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+					[Function:(node : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+						[Arg:reflaxe.elixir.ast.ElixirAST] [Local node(26393):reflaxe.elixir.ast.ElixirAST]
+						[Block:Dynamic]
+							[Meta:Void]
+								:ast(switch (node.def) {
+	case ERemoteCall(module, "start_link", args) if (args.length == 2):
+		var isSupervisor = switch (module.def) {
+			case EVar("Supervisor"):
+				true;			
+			case _:
+				false;			
+		};
+		if (isSupervisor) {
+			var children = args[0];
+			var opts = transformSupervisorOptions(args[1]);
+			return makeASTWithMeta(ERemoteCall(module, "start_link", [children, opts]), node.metadata, node.pos);
+		};	
+	case EMatch(pattern, expr):
+		var varName = switch (pattern) {
+			case PVar(name):
+				name;			
+			case _:
+				null;			
+		};
+		if (varName != null && (varName == "opts" || varName.indexOf("option") != -1 || varName.indexOf("config") != -1)) {
+			var transformedExpr = transformSupervisorOptions(expr);
+			if (transformedExpr != expr) {
+				return makeASTWithMeta(EMatch(pattern, transformedExpr), node.metadata, node.pos);
+			};
+		};	
+	case _:
+})
+								[Block:Void]
+									[Var `(26470):reflaxe.elixir.ast.ElixirASTDef]
+										[Field:reflaxe.elixir.ast.ElixirASTDef]
+											[Local node(26393):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+											[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+									[Switch:Void]
+										[EnumIndex:Int] [Local `(26470):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+										[Case:Void]
+											[Const:Int] 8
+											[Block:Void]
+												[Var `(26471):reflaxe.elixir.ast.EPattern]
+													[EnumParameter:reflaxe.elixir.ast.EPattern]
+														[Local `(26470):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+														EMatch
+														0
+												[Var `(26472):reflaxe.elixir.ast.ElixirAST]
+													[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+														[Local `(26470):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+														EMatch
+														1
+												[Block:Void]
+													[Var pattern(26473):reflaxe.elixir.ast.EPattern] [Local `(26471):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+													[Var expr(26474):reflaxe.elixir.ast.ElixirAST] [Local `(26472):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+													[Block:Void]
+														[Var varName(26475):Null<String>]
+															[Meta:Null<String>]
+																:ast(switch (pattern) {
+	case PVar(name):
+		name;	
+	case _:
+		null;	
+})
+																[If:Null<String>]
+																	[Binop:Bool]
+																		[EnumIndex:Int] [Local pattern(26473):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+																		==
+																		[Const:Int] 0
+																	[Then:String] [Block:String]
+																		[Var `(26476):String]
+																			[EnumParameter:String]
+																				[Local pattern(26473):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+																				PVar
+																				0
+																		[Block:String]
+																			[Var name(26477):String] [Local `(26476):String:String]
+																			[Block:String] [Local name(26477):String:String]
+																	[Else:Null<Null<String>>] [Block:Null<Null<String>>] [Const:Null<Null<String>>] null
+														[If:Void]
+															[Binop:Bool]
+																[Binop:Bool]
+																	[Local varName(26475):Null<String>:Null<String>]
+																	!=
+																	[Const:Null<String>] null
+																&&
+																[Parenthesis:Bool]
+																	[Binop:Bool]
+																		[Binop:Bool]
+																			[Binop:Bool]
+																				[Local varName(26475):Null<String>:Null<String>]
+																				==
+																				[Const:String] "opts"
+																			||
+																			[Binop:Bool]
+																				[Call:Int]
+																					[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+																						[Local varName(26475):Null<String>:Null<String>]
+																						[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+																							String
+																							indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+																					[Const:String] "option"
+																					[Const:Null<Int>] null
+																				!=
+																				[Const:Int] -1
+																		||
+																		[Binop:Bool]
+																			[Call:Int]
+																				[Field:(str : String, ?startIndex : Null<Int>) -> Int]
+																					[Local varName(26475):Null<String>:Null<String>]
+																					[FInstance:(str : String, ?startIndex : Null<Int>) -> Int]
+																						String
+																						indexOf:(str : String, ?startIndex : Null<Int>) -> Int
+																				[Const:String] "config"
+																				[Const:Null<Int>] null
+																			!=
+																			[Const:Int] -1
+															[Then:Void] [Block:Void]
+																[Var transformedExpr(26478):reflaxe.elixir.ast.ElixirAST]
+																	[Call:reflaxe.elixir.ast.ElixirAST]
+																		[Field:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+																			[TypeExpr reflaxe.elixir.ast.SupervisorOptionsTransformPass:Class<reflaxe.elixir.ast.SupervisorOptionsTransformPass>]
+																			[FStatic:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+																				reflaxe.elixir.ast.SupervisorOptionsTransformPass
+																				transformSupervisorOptions:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST
+																		[Local expr(26474):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																[If:Void]
+																	[Binop:Bool]
+																		[Local transformedExpr(26478):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																		!=
+																		[Local expr(26474):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																	[Then:Dynamic] [Block:Dynamic]
+																		[Return:Dynamic]
+																			[Call:reflaxe.elixir.ast.ElixirAST]
+																				[Field:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST]
+																					[TypeExpr reflaxe.elixir.ast.SupervisorOptionsTransformPass:Class<reflaxe.elixir.ast.SupervisorOptionsTransformPass>]
+																					[FStatic:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST]
+																						reflaxe.elixir.ast.SupervisorOptionsTransformPass
+																						makeASTWithMeta:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST
+																				[Call:reflaxe.elixir.ast.ElixirASTDef]
+																					[Field:(pattern : reflaxe.elixir.ast.EPattern, expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+																						[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+																						[FEnum:(pattern : reflaxe.elixir.ast.EPattern, expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+																							reflaxe.elixir.ast.ElixirASTDef
+																							EMatch
+																					[Local pattern(26473):reflaxe.elixir.ast.EPattern:reflaxe.elixir.ast.EPattern]
+																					[Local transformedExpr(26478):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																				[Field:reflaxe.elixir.ast.ElixirMetadata]
+																					[Local node(26393):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																					[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+																				[Field:Null<haxe.macro.Position>]
+																					[Local node(26393):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																					[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+										[Case:Void]
+											[Const:Int] 24
+											[Block:Void]
+												[Var `(26479):reflaxe.elixir.ast.ElixirAST]
+													[EnumParameter:reflaxe.elixir.ast.ElixirAST]
+														[Local `(26470):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+														ERemoteCall
+														0
+												[Var `(26480):String]
+													[EnumParameter:String]
+														[Local `(26470):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+														ERemoteCall
+														1
+												[Var `(26481):Array<reflaxe.elixir.ast.ElixirAST>]
+													[EnumParameter:Array<reflaxe.elixir.ast.ElixirAST>]
+														[Local `(26470):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+														ERemoteCall
+														2
+												[If:Void]
+													[Binop:Bool]
+														[Local `(26480):String:String]
+														==
+														[Const:String] "start_link"
+													[Then:Void] [Block:Void]
+														[Block:Void]
+															[Var module(26482):reflaxe.elixir.ast.ElixirAST] [Local `(26479):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+															[Var args(26483):Array<reflaxe.elixir.ast.ElixirAST>] [Local `(26481):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+															[If:Void]
+																[Binop:Bool]
+																	[Field:Int]
+																		[Local args(26483):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																		[FInstance:Int]
+																			Array<reflaxe.elixir.ast.ElixirAST>
+																			length:Int
+																	==
+																	[Const:Int] 2
+																[Then:Void] [Block:Void]
+																	[Var isSupervisor(26484):Bool]
+																		[Meta:Bool]
+																			:ast(switch (module.def) {
+	case EVar("Supervisor"):
+		true;	
+	case _:
+		false;	
+})
+																			[Block:Bool]
+																				[Var `(26485):reflaxe.elixir.ast.ElixirASTDef]
+																					[Field:reflaxe.elixir.ast.ElixirASTDef]
+																						[Local module(26482):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																						[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																				[If:Bool]
+																					[Binop:Bool]
+																						[EnumIndex:Int] [Local `(26485):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																						==
+																						[Const:Int] 38
+																					[Then:Bool] [Block:Bool]
+																						[Var `(26486):String]
+																							[EnumParameter:String]
+																								[Local `(26485):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																								EVar
+																								0
+																						[If:Bool]
+																							[Binop:Bool]
+																								[Local `(26486):String:String]
+																								==
+																								[Const:String] "Supervisor"
+																							[Then:Bool] [Block:Bool] [Block:Bool] [Const:Bool] true
+																							[Else:Bool] [Block:Bool] [Const:Bool] false
+																					[Else:Bool] [Block:Bool] [Const:Bool] false
+																	[If:Void]
+																		[Local isSupervisor(26484):Bool:Bool]
+																		[Then:Dynamic] [Block:Dynamic]
+																			[Var children(26487):reflaxe.elixir.ast.ElixirAST]
+																				[Array:reflaxe.elixir.ast.ElixirAST]
+																					[Local args(26483):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																					[Const:Int] 0
+																			[Var opts(26488):reflaxe.elixir.ast.ElixirAST]
+																				[Call:reflaxe.elixir.ast.ElixirAST]
+																					[Field:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+																						[TypeExpr reflaxe.elixir.ast.SupervisorOptionsTransformPass:Class<reflaxe.elixir.ast.SupervisorOptionsTransformPass>]
+																						[FStatic:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+																							reflaxe.elixir.ast.SupervisorOptionsTransformPass
+																							transformSupervisorOptions:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST
+																					[Array:reflaxe.elixir.ast.ElixirAST]
+																						[Local args(26483):Array<reflaxe.elixir.ast.ElixirAST>:Array<reflaxe.elixir.ast.ElixirAST>]
+																						[Const:Int] 1
+																			[Return:Dynamic]
+																				[Call:reflaxe.elixir.ast.ElixirAST]
+																					[Field:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST]
+																						[TypeExpr reflaxe.elixir.ast.SupervisorOptionsTransformPass:Class<reflaxe.elixir.ast.SupervisorOptionsTransformPass>]
+																						[FStatic:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST]
+																							reflaxe.elixir.ast.SupervisorOptionsTransformPass
+																							makeASTWithMeta:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST
+																					[Call:reflaxe.elixir.ast.ElixirASTDef]
+																						[Field:(module : reflaxe.elixir.ast.ElixirAST, funcName : String, args : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+																							[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+																							[FEnum:(module : reflaxe.elixir.ast.ElixirAST, funcName : String, args : Array<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+																								reflaxe.elixir.ast.ElixirASTDef
+																								ERemoteCall
+																						[Local module(26482):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																						[Const:String] "start_link"
+																						[ArrayDecl:Array<reflaxe.elixir.ast.ElixirAST>]
+																							[Local children(26487):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																							[Local opts(26488):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																					[Field:reflaxe.elixir.ast.ElixirMetadata]
+																						[Local node(26393):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																						[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+																					[Field:Null<haxe.macro.Position>]
+																						[Local node(26393):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+																						[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+																[Else:Void] [Block:Void]
+													[Else:Void] [Block:Void]
+										[Default:Void] [Block:Void]
+							[Return:Dynamic] [Local node(26393):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+
+	static function transformSupervisorOptions[Function:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local expr(26402):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Meta:reflaxe.elixir.ast.ElixirAST]
+					:ast(switch (expr.def) {
+	case EMap(pairs):
+		var hasStrategy = false;
+		var hasMaxRestarts = false;
+		var hasMaxSeconds = false;
+		var hasName = false;
+		for (pair  in  pairs) {
+			var keyName = switch (pair.key.def) {
+				case EAtom(name):
+					name;				
+				case _:
+					null;				
+			};
+			if (keyName != null) {
+				switch (keyName.toLowerCase()) {
+					case "strategy":
+						hasStrategy = true;					
+					case "max_restarts" | "maxrestarts":
+						hasMaxRestarts = true;					
+					case "max_seconds" | "maxseconds":
+						hasMaxSeconds = true;					
+					case "name":
+						hasName = true;					
+				};
+			};
+		};
+		if (hasStrategy && (hasMaxRestarts || hasMaxSeconds || hasName)) {
+			var keywordPairs:Array<EKeywordPair> = [];
+			for (pair  in  pairs) {
+				var key = switch (pair.key.def) {
+					case EAtom(name):
+						name;					
+					case _:
+						continue;					
+				};
+				keywordPairs.push({ key : key, value : pair.value });
+			};
+			return makeASTWithMeta(EKeywordList(keywordPairs), expr.metadata, expr.pos);
+		};
+		expr;	
+	case _:
+		expr;	
+})
+					[Block:reflaxe.elixir.ast.ElixirAST]
+						[Var `(26434):reflaxe.elixir.ast.ElixirASTDef]
+							[Field:reflaxe.elixir.ast.ElixirASTDef]
+								[Local expr(26402):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+								[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+						[If:reflaxe.elixir.ast.ElixirAST]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(26434):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+								==
+								[Const:Int] 17
+							[Then:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST]
+								[Var `(26435):Array<reflaxe.elixir.ast.EMapPair>]
+									[EnumParameter:Array<reflaxe.elixir.ast.EMapPair>]
+										[Local `(26434):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+										EMap
+										0
+								[Block:reflaxe.elixir.ast.ElixirAST]
+									[Var pairs(26436):Array<reflaxe.elixir.ast.EMapPair>] [Local `(26435):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+									[Block:reflaxe.elixir.ast.ElixirAST]
+										[Var hasStrategy(26437):Bool] [Const:Bool] false
+										[Var hasMaxRestarts(26438):Bool] [Const:Bool] false
+										[Var hasMaxSeconds(26439):Bool] [Const:Bool] false
+										[Var hasName(26440):Bool] [Const:Bool] false
+										[Block:Void]
+											[Var `(26441):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(26441):Int:Int]
+													<
+													[Field:Int]
+														[Local pairs(26436):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+														[FInstance:Int]
+															Array<reflaxe.elixir.ast.EMapPair>
+															length:Int
+												[Block:Void]
+													[Var pair(26442):reflaxe.elixir.ast.EMapPair]
+														[Array:reflaxe.elixir.ast.EMapPair]
+															[Local pairs(26436):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+															[Local `(26441):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(26441):Int:Int]
+													[Var keyName(26443):Null<String>]
+														[Meta:Null<String>]
+															:ast(switch (pair.key.def) {
+	case EAtom(name):
+		name;	
+	case _:
+		null;	
+})
+															[Block:Null<String>]
+																[Var `(26444):reflaxe.elixir.ast.ElixirASTDef]
+																	[Field:reflaxe.elixir.ast.ElixirASTDef]
+																		[Field:reflaxe.elixir.ast.ElixirAST]
+																			[Local pair(26442):reflaxe.elixir.ast.EMapPair:reflaxe.elixir.ast.EMapPair]
+																			[FAnon:reflaxe.elixir.ast.ElixirAST] key:reflaxe.elixir.ast.ElixirAST
+																		[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																[If:Null<String>]
+																	[Binop:Bool]
+																		[EnumIndex:Int] [Local `(26444):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																		==
+																		[Const:Int] 31
+																	[Then:String] [Block:String]
+																		[Var `(26445):String]
+																			[EnumParameter:String]
+																				[Local `(26444):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																				EAtom
+																				0
+																		[Block:String]
+																			[Var name(26446):String] [Local `(26445):String:String]
+																			[Block:String] [Local name(26446):String:String]
+																	[Else:Null<Null<String>>] [Block:Null<Null<String>>] [Const:Null<Null<String>>] null
+													[If:Void]
+														[Binop:Bool]
+															[Local keyName(26443):Null<String>:Null<String>]
+															!=
+															[Const:Null<String>] null
+														[Then:Void] [Block:Void]
+															[Meta:Void]
+																:ast(switch (keyName.toLowerCase()) {
+	case "strategy":
+		hasStrategy = true;	
+	case "max_restarts" | "maxrestarts":
+		hasMaxRestarts = true;	
+	case "max_seconds" | "maxseconds":
+		hasMaxSeconds = true;	
+	case "name":
+		hasName = true;	
+})
+																[Block:Void]
+																	[Var `(26447):String]
+																		[Call:String]
+																			[Field:() -> String]
+																				[Local keyName(26443):Null<String>:Null<String>]
+																				[FInstance:() -> String]
+																					String
+																					toLowerCase:() -> String
+																	[Switch:Void]
+																		[Local `(26447):String:String]
+																		[Case:Bool]
+																			[Const:String] "max_restarts"
+																			[Const:String] "maxrestarts"
+																			[Block:Bool]
+																				[Block:Bool]
+																					[Binop:Bool]
+																						[Local hasMaxRestarts(26438):Bool:Bool]
+																						=
+																						[Const:Bool] true
+																		[Case:Bool]
+																			[Const:String] "max_seconds"
+																			[Const:String] "maxseconds"
+																			[Block:Bool]
+																				[Block:Bool]
+																					[Binop:Bool]
+																						[Local hasMaxSeconds(26439):Bool:Bool]
+																						=
+																						[Const:Bool] true
+																		[Case:Bool]
+																			[Const:String] "name"
+																			[Block:Bool]
+																				[Block:Bool]
+																					[Binop:Bool]
+																						[Local hasName(26440):Bool:Bool]
+																						=
+																						[Const:Bool] true
+																		[Case:Bool]
+																			[Const:String] "strategy"
+																			[Block:Bool]
+																				[Block:Bool]
+																					[Binop:Bool]
+																						[Local hasStrategy(26437):Bool:Bool]
+																						=
+																						[Const:Bool] true
+										[If:Void]
+											[Binop:Bool]
+												[Local hasStrategy(26437):Bool:Bool]
+												&&
+												[Parenthesis:Bool]
+													[Binop:Bool]
+														[Binop:Bool]
+															[Local hasMaxRestarts(26438):Bool:Bool]
+															||
+															[Local hasMaxSeconds(26439):Bool:Bool]
+														||
+														[Local hasName(26440):Bool:Bool]
+											[Then:Dynamic] [Block:Dynamic]
+												[Var keywordPairs(26448):Array<reflaxe.elixir.ast.EKeywordPair>] [ArrayDecl:Array<reflaxe.elixir.ast.EKeywordPair>]
+												[Block:Void]
+													[Var `(26449):Int] [Const:Int] 0
+													[While:Void]
+														[Binop:Bool]
+															[Local `(26449):Int:Int]
+															<
+															[Field:Int]
+																[Local pairs(26436):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+																[FInstance:Int]
+																	Array<reflaxe.elixir.ast.EMapPair>
+																	length:Int
+														[Block:Void]
+															[Var pair(26450):reflaxe.elixir.ast.EMapPair]
+																[Array:reflaxe.elixir.ast.EMapPair]
+																	[Local pairs(26436):Array<reflaxe.elixir.ast.EMapPair>:Array<reflaxe.elixir.ast.EMapPair>]
+																	[Local `(26449):Int:Int]
+															[Unop:Int]
+																++
+																Prefix
+																[Local `(26449):Int:Int]
+															[Var key(26451):String]
+																[Meta:String]
+																	:ast(switch (pair.key.def) {
+	case EAtom(name):
+		name;	
+	case _:
+		continue;	
+})
+																	[Block:String]
+																		[Var `(26452):reflaxe.elixir.ast.ElixirASTDef]
+																			[Field:reflaxe.elixir.ast.ElixirASTDef]
+																				[Field:reflaxe.elixir.ast.ElixirAST]
+																					[Local pair(26450):reflaxe.elixir.ast.EMapPair:reflaxe.elixir.ast.EMapPair]
+																					[FAnon:reflaxe.elixir.ast.ElixirAST] key:reflaxe.elixir.ast.ElixirAST
+																				[FAnon:reflaxe.elixir.ast.ElixirASTDef] def:reflaxe.elixir.ast.ElixirASTDef
+																		[If:String]
+																			[Binop:Bool]
+																				[EnumIndex:Int] [Local `(26452):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																				==
+																				[Const:Int] 31
+																			[Then:String] [Block:String]
+																				[Var `(26453):String]
+																					[EnumParameter:String]
+																						[Local `(26452):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+																						EAtom
+																						0
+																				[Block:String]
+																					[Var name(26454):String] [Local `(26453):String:String]
+																					[Block:String] [Local name(26454):String:String]
+																			[Else:String] [Block:String] [Continue:String]
+															[Call:Int]
+																[Field:(x : reflaxe.elixir.ast.EKeywordPair) -> Int]
+																	[Local keywordPairs(26448):Array<reflaxe.elixir.ast.EKeywordPair>:Array<reflaxe.elixir.ast.EKeywordPair>]
+																	[FInstance:(x : reflaxe.elixir.ast.EKeywordPair) -> Int]
+																		Array<reflaxe.elixir.ast.EKeywordPair>
+																		push:(x : Array.T) -> Int
+																[ObjectDecl:{ value : reflaxe.elixir.ast.ElixirAST, key : String }]
+																	key: [Local key(26451):String:String]
+																	value: [Field:reflaxe.elixir.ast.ElixirAST]
+																		[Local pair(26450):reflaxe.elixir.ast.EMapPair:reflaxe.elixir.ast.EMapPair]
+																		[FAnon:reflaxe.elixir.ast.ElixirAST] value:reflaxe.elixir.ast.ElixirAST
+												[Return:Dynamic]
+													[Call:reflaxe.elixir.ast.ElixirAST]
+														[Field:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST]
+															[TypeExpr reflaxe.elixir.ast.SupervisorOptionsTransformPass:Class<reflaxe.elixir.ast.SupervisorOptionsTransformPass>]
+															[FStatic:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST]
+																reflaxe.elixir.ast.SupervisorOptionsTransformPass
+																makeASTWithMeta:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST
+														[Call:reflaxe.elixir.ast.ElixirASTDef]
+															[Field:(pairs : Array<reflaxe.elixir.ast.EKeywordPair>) -> reflaxe.elixir.ast.ElixirASTDef]
+																[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+																[FEnum:(pairs : Array<reflaxe.elixir.ast.EKeywordPair>) -> reflaxe.elixir.ast.ElixirASTDef]
+																	reflaxe.elixir.ast.ElixirASTDef
+																	EKeywordList
+															[Local keywordPairs(26448):Array<reflaxe.elixir.ast.EKeywordPair>:Array<reflaxe.elixir.ast.EKeywordPair>]
+														[Field:reflaxe.elixir.ast.ElixirMetadata]
+															[Local expr(26402):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+															[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+														[Field:Null<haxe.macro.Position>]
+															[Local expr(26402):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+															[FAnon:Null<haxe.macro.Position>] pos:Null<haxe.macro.Position>
+										[Local expr(26402):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+							[Else:reflaxe.elixir.ast.ElixirAST] [Block:reflaxe.elixir.ast.ElixirAST] [Local expr(26402):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+
+	static function makeASTWithMeta[Function:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>, ?pos : Null<haxe.macro.Position>) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirASTDef] [Local def(26429):reflaxe.elixir.ast.ElixirASTDef]
+		[Arg:Null<reflaxe.elixir.ast.ElixirMetadata>]
+			[Local metadata(26430):Null<reflaxe.elixir.ast.ElixirMetadata>]
+			[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+		[Arg:Null<haxe.macro.Position>]
+			[Local pos(26431):Null<haxe.macro.Position>]
+			[Const:Null<haxe.macro.Position>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+					def: [Local def(26429):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+					metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+						[Binop:Bool]
+							[Local metadata(26430):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+							!=
+							[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+						[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(26430):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+						[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+					pos: [Local pos(26431):Null<haxe.macro.Position>:Null<haxe.macro.Position>]
+}

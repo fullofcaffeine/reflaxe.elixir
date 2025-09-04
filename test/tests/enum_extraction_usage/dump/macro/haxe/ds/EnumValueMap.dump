@@ -1,0 +1,227 @@
+class haxe.ds.EnumValueMap<K:EnumValue, V> extends haxe.ds.BalancedTree<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V> implements haxe.IMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V> {
+
+	public function new[Function:() -> Void] [Call:Void] [Const:haxe.ds.BalancedTree<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>] super
+
+	function compare[Function:(k1 : EnumValue, k2 : EnumValue) -> Int]
+		[Arg:EnumValue] [Local k1(305):EnumValue]
+		[Arg:EnumValue] [Local k2(306):EnumValue]
+		[Block:Dynamic]
+			[Var d(313):Int]
+				[Binop:Int]
+					[Call:Int]
+						[Field:(e : EnumValue) -> Int]
+							[TypeExpr Type:Class<Type>]
+							[FStatic:(e : EnumValue) -> Int]
+								Type
+								enumIndex:(e : EnumValue) -> Int
+						[Local k1(305):EnumValue:EnumValue]
+					-
+					[Call:Int]
+						[Field:(e : EnumValue) -> Int]
+							[TypeExpr Type:Class<Type>]
+							[FStatic:(e : EnumValue) -> Int]
+								Type
+								enumIndex:(e : EnumValue) -> Int
+						[Local k2(306):EnumValue:EnumValue]
+			[If:Void]
+				[Binop:Bool]
+					[Local d(313):Int:Int]
+					!=
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local d(313):Int:Int]
+			[Var p1(317):Array<Dynamic>]
+				[Call:Array<Dynamic>]
+					[Field:(e : EnumValue) -> Array<Dynamic>]
+						[TypeExpr Type:Class<Type>]
+						[FStatic:(e : EnumValue) -> Array<Dynamic>]
+							Type
+							enumParameters:(e : EnumValue) -> Array<Dynamic>
+					[Local k1(305):EnumValue:EnumValue]
+			[Var p2(321):Array<Dynamic>]
+				[Call:Array<Dynamic>]
+					[Field:(e : EnumValue) -> Array<Dynamic>]
+						[TypeExpr Type:Class<Type>]
+						[FStatic:(e : EnumValue) -> Array<Dynamic>]
+							Type
+							enumParameters:(e : EnumValue) -> Array<Dynamic>
+					[Local k2(306):EnumValue:EnumValue]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Field:Int]
+							[Local p1(317):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+						==
+						[Const:Int] 0
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Local p2(321):Array<Dynamic>:Array<Dynamic>]
+							[FInstance:Int]
+								Array<Dynamic>
+								length:Int
+						==
+						[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Int] 0
+			[Return:Dynamic]
+				[Call:Int]
+					[Field:(a1 : Array<Dynamic>, a2 : Array<Dynamic>) -> Int]
+						[Const:haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>] this
+						[FInstance:(a1 : Array<Dynamic>, a2 : Array<Dynamic>) -> Int]
+							haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>
+							compareArgs:(a1 : Array<Dynamic>, a2 : Array<Dynamic>) -> Int
+					[Local p1(317):Array<Dynamic>:Array<Dynamic>]
+					[Local p2(321):Array<Dynamic>:Array<Dynamic>]
+
+	function compareArgs[Function:(a1 : Array<Dynamic>, a2 : Array<Dynamic>) -> Int]
+		[Arg:Array<Dynamic>] [Local a1(322):Array<Dynamic>]
+		[Arg:Array<Dynamic>] [Local a2(323):Array<Dynamic>]
+		[Block:Dynamic]
+			[Var ld(324):Int]
+				[Binop:Int]
+					[Field:Int]
+						[Local a1(322):Array<Dynamic>:Array<Dynamic>]
+						[FInstance:Int]
+							Array<Dynamic>
+							length:Int
+					-
+					[Field:Int]
+						[Local a2(323):Array<Dynamic>:Array<Dynamic>]
+						[FInstance:Int]
+							Array<Dynamic>
+							length:Int
+			[If:Void]
+				[Binop:Bool]
+					[Local ld(324):Int:Int]
+					!=
+					[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local ld(324):Int:Int]
+			[Block:Void]
+				[Var `(337):Int] [Const:Int] 0
+				[Var `(338):Int]
+					[Field:Int]
+						[Local a1(322):Array<Dynamic>:Array<Dynamic>]
+						[FInstance:Int]
+							Array<Dynamic>
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(337):Int:Int]
+						<
+						[Local `(338):Int:Int]
+					[Block:Void]
+						[Var i(325):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(337):Int:Int]
+						[Var d(336):Int]
+							[Call:Int]
+								[Field:(v1 : Dynamic, v2 : Dynamic) -> Int]
+									[Const:haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>] this
+									[FInstance:(v1 : Dynamic, v2 : Dynamic) -> Int]
+										haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>
+										compareArg:(v1 : Dynamic, v2 : Dynamic) -> Int
+								[Array:Dynamic]
+									[Local a1(322):Array<Dynamic>:Array<Dynamic>]
+									[Local i(325):Int:Int]
+								[Array:Dynamic]
+									[Local a2(323):Array<Dynamic>:Array<Dynamic>]
+									[Local i(325):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Local d(336):Int:Int]
+								!=
+								[Const:Int] 0
+							[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local d(336):Int:Int]
+			[Return:Dynamic] [Const:Int] 0
+
+	function compareArg[Function:(v1 : Dynamic, v2 : Dynamic) -> Int]
+		[Arg:Dynamic] [Local v1(326):Dynamic]
+		[Arg:Dynamic] [Local v2(327):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:Int]
+					[Binop:Bool]
+						[Call:Bool]
+							[Field:(value : Unknown<50>) -> Bool]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(value : Unknown<50>) -> Bool]
+									Reflect
+									isEnumValue:(value : isEnumValue.T) -> Bool
+							[Local v1(326):Dynamic:Dynamic]
+						&&
+						[Call:Bool]
+							[Field:(value : Unknown<49>) -> Bool]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(value : Unknown<49>) -> Bool]
+									Reflect
+									isEnumValue:(value : isEnumValue.T) -> Bool
+							[Local v2(327):Dynamic:Dynamic]
+					[Then:Int] [Block:Int]
+						[Call:Int]
+							[Field:(k1 : EnumValue, k2 : EnumValue) -> Int]
+								[Const:haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>] this
+								[FInstance:(k1 : EnumValue, k2 : EnumValue) -> Int]
+									haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>
+									compare:(k1 : EnumValue, k2 : EnumValue) -> Int
+							[Local v1(326):Dynamic:Dynamic]
+							[Local v2(327):Dynamic:Dynamic]
+					[Else:Int] [Block:Int]
+						[If:Int]
+							[Binop:Bool]
+								[Call:Bool]
+									[Field:(value : Dynamic, type : Dynamic) -> Bool]
+										[TypeExpr Std:Class<Std>]
+										[FStatic:(value : Dynamic, type : Dynamic) -> Bool]
+											Std
+											is:(value : Dynamic, type : Dynamic) -> Bool
+									[Local v1(326):Dynamic:Dynamic]
+									[Cast:Dynamic] [TypeExpr Array:Class<Array>]
+								&&
+								[Call:Bool]
+									[Field:(value : Dynamic, type : Dynamic) -> Bool]
+										[TypeExpr Std:Class<Std>]
+										[FStatic:(value : Dynamic, type : Dynamic) -> Bool]
+											Std
+											is:(value : Dynamic, type : Dynamic) -> Bool
+									[Local v2(327):Dynamic:Dynamic]
+									[Cast:Dynamic] [TypeExpr Array:Class<Array>]
+							[Then:Int] [Block:Int]
+								[Call:Int]
+									[Field:(a1 : Array<Dynamic>, a2 : Array<Dynamic>) -> Int]
+										[Const:haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>] this
+										[FInstance:(a1 : Array<Dynamic>, a2 : Array<Dynamic>) -> Int]
+											haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>
+											compareArgs:(a1 : Array<Dynamic>, a2 : Array<Dynamic>) -> Int
+									[Local v1(326):Dynamic:Dynamic]
+									[Local v2(327):Dynamic:Dynamic]
+							[Else:Int] [Block:Int]
+								[Call:Int]
+									[Field:(a : Unknown<48>, b : Unknown<48>) -> Int]
+										[TypeExpr Reflect:Class<Reflect>]
+										[FStatic:(a : Unknown<48>, b : Unknown<48>) -> Int]
+											Reflect
+											compare:(a : compare.T, b : compare.T) -> Int
+									[Local v1(326):Dynamic:Dynamic]
+									[Local v2(327):Dynamic:Dynamic]
+
+	public function copy[Function:() -> haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>]
+		[Block:Dynamic]
+			[Var copied(339):haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>] [New:haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>] haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>
+			[Binop:haxe.ds.TreeNode<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>]
+				[Field:haxe.ds.TreeNode<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>]
+					[Local copied(339):haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>:haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>]
+					[FInstance:haxe.ds.TreeNode<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>]
+						haxe.ds.BalancedTree<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+				=
+				[Field:haxe.ds.TreeNode<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>]
+					[Const:haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>] this
+					[FInstance:haxe.ds.TreeNode<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>]
+						haxe.ds.BalancedTree<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>
+						root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>
+			[Return:Dynamic] [Local copied(339):haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>:haxe.ds.EnumValueMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V>]
+}

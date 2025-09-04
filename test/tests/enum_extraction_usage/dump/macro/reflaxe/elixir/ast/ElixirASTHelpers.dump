@@ -1,0 +1,822 @@
+class reflaxe.elixir.ast.ElixirASTHelpers {
+
+	public static inline function ast[Function:() -> reflaxe.elixir.ast.ASTBuilder] [Block:Dynamic] [Return:Dynamic] [New:reflaxe.elixir.ast.ASTBuilder] reflaxe.elixir.ast.ASTBuilder
+
+	public static inline function make[Function:(def : reflaxe.elixir.ast.ElixirASTDef, ?metadata : Null<reflaxe.elixir.ast.ElixirMetadata>) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirASTDef] [Local def(18062):reflaxe.elixir.ast.ElixirASTDef]
+		[Arg:Null<reflaxe.elixir.ast.ElixirMetadata>]
+			[Local metadata(18063):Null<reflaxe.elixir.ast.ElixirMetadata>]
+			[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+					def: [Local def(18062):reflaxe.elixir.ast.ElixirASTDef:reflaxe.elixir.ast.ElixirASTDef]
+					metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+						[Binop:Bool]
+							[Local metadata(18063):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+							!=
+							[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+						[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(18063):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+						[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+					pos: [Const:Null<haxe.macro.Position>] null
+
+	public static function isNullCoalescingPattern[Function:(expr : haxe.macro.TypedExpr) -> Null<reflaxe.elixir.ast.NullCoalescingPattern>]
+		[Arg:haxe.macro.TypedExpr] [Local expr(26789):haxe.macro.TypedExpr]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(26789):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					==
+					[Const:haxe.macro.TypedExpr] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.ast.NullCoalescingPattern>] null
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TMeta({ name : ":mergeBlock" }, { expr : TBlock([varExpr, ifExpr]) }):
+		return checkNullCoalescingBlock(varExpr, ifExpr);	
+	case TBlock([varExpr, ifExpr]):
+		return checkNullCoalescingBlock(varExpr, ifExpr);	
+	default:
+		return null;	
+})
+				[Block:Void]
+					[Var `(26961):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(26789):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(26961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Void]
+							[Const:Int] 14
+							[Block:Void]
+								[Var `(26962):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(26961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBlock
+										0
+								[If:Void]
+									[Binop:Bool]
+										[Field:Int]
+											[Local `(26962):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+											[FInstance:Int]
+												Array<haxe.macro.TypedExpr>
+												length:Int
+										==
+										[Const:Int] 2
+									[Then:Dynamic] [Block:Dynamic]
+										[Var `(26963):haxe.macro.TypedExpr]
+											[Array:haxe.macro.TypedExpr]
+												[Local `(26962):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+												[Const:Int] 0
+										[Var `(26964):haxe.macro.TypedExpr]
+											[Array:haxe.macro.TypedExpr]
+												[Local `(26962):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+												[Const:Int] 1
+										[Block:Dynamic]
+											[Var varExpr(26965):haxe.macro.TypedExpr] [Local `(26963):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Var ifExpr(26966):haxe.macro.TypedExpr] [Local `(26964):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Block:Dynamic]
+												[Return:Dynamic]
+													[Call:Null<reflaxe.elixir.ast.NullCoalescingPattern>]
+														[Field:(varExpr : haxe.macro.TypedExpr, ifExpr : haxe.macro.TypedExpr) -> Null<reflaxe.elixir.ast.NullCoalescingPattern>]
+															[TypeExpr reflaxe.elixir.ast.ElixirASTHelpers:Class<reflaxe.elixir.ast.ElixirASTHelpers>]
+															[FStatic:(varExpr : haxe.macro.TypedExpr, ifExpr : haxe.macro.TypedExpr) -> Null<reflaxe.elixir.ast.NullCoalescingPattern>]
+																reflaxe.elixir.ast.ElixirASTHelpers
+																checkNullCoalescingBlock:(varExpr : haxe.macro.TypedExpr, ifExpr : haxe.macro.TypedExpr) -> Null<reflaxe.elixir.ast.NullCoalescingPattern>
+														[Local varExpr(26965):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Local ifExpr(26966):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.ast.NullCoalescingPattern>] null
+						[Case:Void]
+							[Const:Int] 25
+							[Block:Void]
+								[Var `(26967):haxe.macro.MetadataEntry]
+									[EnumParameter:haxe.macro.MetadataEntry]
+										[Local `(26961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TMeta
+										0
+								[Var `(26968):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(26961):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TMeta
+										1
+								[Block:Void]
+									[Var `(26969):String]
+										[Field:String]
+											[Local `(26967):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:String] name:String
+									[Var `(26970):Null<Array<haxe.macro.Expr>>]
+										[Field:Null<Array<haxe.macro.Expr>>]
+											[Local `(26967):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:Null<Array<haxe.macro.Expr>>] params:Null<Array<haxe.macro.Expr>>
+									[Var `(26971):haxe.macro.Position]
+										[Field:haxe.macro.Position]
+											[Local `(26967):haxe.macro.MetadataEntry:haxe.macro.MetadataEntry]
+											[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+									[If:Void]
+										[Binop:Bool]
+											[Local `(26969):String:String]
+											==
+											[Const:String] ":mergeBlock"
+										[Then:Void] [Block:Void]
+											[Block:Void]
+												[Var `(26972):haxe.macro.TypedExprDef]
+													[Field:haxe.macro.TypedExprDef]
+														[Local `(26968):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+												[Var `(26973):haxe.macro.Position]
+													[Field:haxe.macro.Position]
+														[Local `(26968):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+												[Var `(26974):haxe.macro.Type]
+													[Field:haxe.macro.Type]
+														[Local `(26968):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.Type] t:haxe.macro.Type
+												[If:Void]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(26972):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														==
+														[Const:Int] 14
+													[Then:Void] [Block:Void]
+														[Var `(26975):Array<haxe.macro.TypedExpr>]
+															[EnumParameter:Array<haxe.macro.TypedExpr>]
+																[Local `(26972):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TBlock
+																0
+														[If:Void]
+															[Binop:Bool]
+																[Field:Int]
+																	[Local `(26975):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																	[FInstance:Int]
+																		Array<haxe.macro.TypedExpr>
+																		length:Int
+																==
+																[Const:Int] 2
+															[Then:Dynamic] [Block:Dynamic]
+																[Var `(26976):haxe.macro.TypedExpr]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local `(26975):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 0
+																[Var `(26977):haxe.macro.TypedExpr]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local `(26975):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Const:Int] 1
+																[Block:Dynamic]
+																	[Var varExpr(26978):haxe.macro.TypedExpr] [Local `(26976):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																	[Var ifExpr(26979):haxe.macro.TypedExpr] [Local `(26977):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																	[Block:Dynamic]
+																		[Return:Dynamic]
+																			[Call:Null<reflaxe.elixir.ast.NullCoalescingPattern>]
+																				[Field:(varExpr : haxe.macro.TypedExpr, ifExpr : haxe.macro.TypedExpr) -> Null<reflaxe.elixir.ast.NullCoalescingPattern>]
+																					[TypeExpr reflaxe.elixir.ast.ElixirASTHelpers:Class<reflaxe.elixir.ast.ElixirASTHelpers>]
+																					[FStatic:(varExpr : haxe.macro.TypedExpr, ifExpr : haxe.macro.TypedExpr) -> Null<reflaxe.elixir.ast.NullCoalescingPattern>]
+																						reflaxe.elixir.ast.ElixirASTHelpers
+																						checkNullCoalescingBlock:(varExpr : haxe.macro.TypedExpr, ifExpr : haxe.macro.TypedExpr) -> Null<reflaxe.elixir.ast.NullCoalescingPattern>
+																				[Local varExpr(26978):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																				[Local ifExpr(26979):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.ast.NullCoalescingPattern>] null
+													[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.ast.NullCoalescingPattern>] null
+										[Else:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.ast.NullCoalescingPattern>] null
+						[Default:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Null<reflaxe.elixir.ast.NullCoalescingPattern>] null
+
+	static function checkNullCoalescingBlock[Function:(varExpr : haxe.macro.TypedExpr, ifExpr : haxe.macro.TypedExpr) -> Null<reflaxe.elixir.ast.NullCoalescingPattern>]
+		[Arg:haxe.macro.TypedExpr] [Local varExpr(26792):haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local ifExpr(26793):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Meta:Void]
+				:ast(switch (varExpr.expr) {
+	case TVar(tmpVar, init) if (init != null):
+		switch (ifExpr.expr) {
+			case TIf(condition, thenBranch, elseBranch):
+				var isNullCheck = switch (condition.expr) {
+					case TParenthesis({ expr : TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }) }):
+						v.id == tmpVar.id;					
+					case TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }):
+						v.id == tmpVar.id;					
+					default:
+						false;					
+				};
+				if (isNullCheck) {
+					return { tempVar : tmpVar, initExpr : init, defaultExpr : elseBranch };
+				};			
+			default:
+		};	
+	default:
+})
+				[Block:Void]
+					[Var `(26902):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local varExpr(26792):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[If:Void]
+						[Binop:Bool]
+							[EnumIndex:Int] [Local `(26902):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+							==
+							[Const:Int] 13
+						[Then:Void] [Block:Void]
+							[Var `(26903):haxe.macro.TVar]
+								[EnumParameter:haxe.macro.TVar]
+									[Local `(26902):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TVar
+									0
+							[Var `(26904):Null<haxe.macro.TypedExpr>]
+								[EnumParameter:Null<haxe.macro.TypedExpr>]
+									[Local `(26902):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									TVar
+									1
+							[Block:Void]
+								[Var tmpVar(26905):haxe.macro.TVar] [Local `(26903):haxe.macro.TVar:haxe.macro.TVar]
+								[Var init(26906):Null<haxe.macro.TypedExpr>] [Local `(26904):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+								[If:Void]
+									[Binop:Bool]
+										[Local init(26906):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+										!=
+										[Const:Null<haxe.macro.TypedExpr>] null
+									[Then:Void] [Block:Void]
+										[Meta:Void]
+											:ast(switch (ifExpr.expr) {
+	case TIf(condition, thenBranch, elseBranch):
+		var isNullCheck = switch (condition.expr) {
+			case TParenthesis({ expr : TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }) }):
+				v.id == tmpVar.id;			
+			case TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }):
+				v.id == tmpVar.id;			
+			default:
+				false;			
+		};
+		if (isNullCheck) {
+			return { tempVar : tmpVar, initExpr : init, defaultExpr : elseBranch };
+		};	
+	default:
+})
+											[Block:Void]
+												[Var `(26907):haxe.macro.TypedExprDef]
+													[Field:haxe.macro.TypedExprDef]
+														[Local ifExpr(26793):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+												[If:Void]
+													[Binop:Bool]
+														[EnumIndex:Int] [Local `(26907):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+														==
+														[Const:Int] 16
+													[Then:Void] [Block:Void]
+														[Var `(26908):haxe.macro.TypedExpr]
+															[EnumParameter:haxe.macro.TypedExpr]
+																[Local `(26907):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TIf
+																0
+														[Var `(26909):haxe.macro.TypedExpr]
+															[EnumParameter:haxe.macro.TypedExpr]
+																[Local `(26907):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TIf
+																1
+														[Var `(26910):Null<haxe.macro.TypedExpr>]
+															[EnumParameter:Null<haxe.macro.TypedExpr>]
+																[Local `(26907):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																TIf
+																2
+														[Block:Void]
+															[Var condition(26911):haxe.macro.TypedExpr] [Local `(26908):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Var thenBranch(26912):haxe.macro.TypedExpr] [Local `(26909):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Var elseBranch(26913):Null<haxe.macro.TypedExpr>] [Local `(26910):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+															[Block:Void]
+																[Var isNullCheck(26914):Bool]
+																	[Meta:Bool]
+																		:ast(switch (condition.expr) {
+	case TParenthesis({ expr : TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }) }):
+		v.id == tmpVar.id;	
+	case TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }):
+		v.id == tmpVar.id;	
+	default:
+		false;	
+})
+																		[Block:Bool]
+																			[Var `(26915):haxe.macro.TypedExprDef]
+																				[Field:haxe.macro.TypedExprDef]
+																					[Local condition(26911):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																					[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																			[Switch:Bool]
+																				[EnumIndex:Int] [Local `(26915):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																				[Case:Bool]
+																					[Const:Int] 3
+																					[Block:Bool]
+																						[Var `(26916):haxe.macro.Binop]
+																							[EnumParameter:haxe.macro.Binop]
+																								[Local `(26915):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																								TBinop
+																								0
+																						[Var `(26917):haxe.macro.TypedExpr]
+																							[EnumParameter:haxe.macro.TypedExpr]
+																								[Local `(26915):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																								TBinop
+																								1
+																						[Var `(26918):haxe.macro.TypedExpr]
+																							[EnumParameter:haxe.macro.TypedExpr]
+																								[Local `(26915):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																								TBinop
+																								2
+																						[If:Bool]
+																							[Binop:Bool]
+																								[EnumIndex:Int] [Local `(26916):haxe.macro.Binop:haxe.macro.Binop]
+																								==
+																								[Const:Int] 6
+																							[Then:Bool] [Block:Bool]
+																								[Block:Bool]
+																									[Var `(26919):haxe.macro.TypedExprDef]
+																										[Field:haxe.macro.TypedExprDef]
+																											[Local `(26917):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																											[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																									[Var `(26920):haxe.macro.Position]
+																										[Field:haxe.macro.Position]
+																											[Local `(26917):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																											[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+																									[Var `(26921):haxe.macro.Type]
+																										[Field:haxe.macro.Type]
+																											[Local `(26917):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																											[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																									[If:Bool]
+																										[Binop:Bool]
+																											[EnumIndex:Int] [Local `(26919):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																											==
+																											[Const:Int] 1
+																										[Then:Bool] [Block:Bool]
+																											[Var `(26922):haxe.macro.TVar]
+																												[EnumParameter:haxe.macro.TVar]
+																													[Local `(26919):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																													TLocal
+																													0
+																											[Block:Bool]
+																												[Var `(26923):haxe.macro.TypedExprDef]
+																													[Field:haxe.macro.TypedExprDef]
+																														[Local `(26918):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																												[Var `(26924):haxe.macro.Position]
+																													[Field:haxe.macro.Position]
+																														[Local `(26918):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																														[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+																												[Var `(26925):haxe.macro.Type]
+																													[Field:haxe.macro.Type]
+																														[Local `(26918):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																														[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																												[If:Bool]
+																													[Binop:Bool]
+																														[EnumIndex:Int] [Local `(26923):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																														==
+																														[Const:Int] 0
+																													[Then:Bool] [Block:Bool]
+																														[Var `(26926):haxe.macro.TConstant]
+																															[EnumParameter:haxe.macro.TConstant]
+																																[Local `(26923):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																																TConst
+																																0
+																														[If:Bool]
+																															[Binop:Bool]
+																																[EnumIndex:Int] [Local `(26926):haxe.macro.TConstant:haxe.macro.TConstant]
+																																==
+																																[Const:Int] 4
+																															[Then:Bool] [Block:Bool]
+																																[Block:Bool]
+																																	[Var v(26927):haxe.macro.TVar] [Local `(26922):haxe.macro.TVar:haxe.macro.TVar]
+																																	[Block:Bool]
+																																		[Binop:Bool]
+																																			[Field:Int]
+																																				[Local v(26927):haxe.macro.TVar:haxe.macro.TVar]
+																																				[FAnon:Int] id:Int
+																																			==
+																																			[Field:Int]
+																																				[Local tmpVar(26905):haxe.macro.TVar:haxe.macro.TVar]
+																																				[FAnon:Int] id:Int
+																															[Else:Bool] [Block:Bool] [Const:Bool] false
+																													[Else:Bool] [Block:Bool] [Const:Bool] false
+																										[Else:Bool] [Block:Bool] [Const:Bool] false
+																							[Else:Bool] [Block:Bool] [Const:Bool] false
+																				[Case:Bool]
+																					[Const:Int] 6
+																					[Block:Bool]
+																						[Var `(26928):haxe.macro.TypedExpr]
+																							[EnumParameter:haxe.macro.TypedExpr]
+																								[Local `(26915):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																								TParenthesis
+																								0
+																						[Block:Bool]
+																							[Var `(26929):haxe.macro.TypedExprDef]
+																								[Field:haxe.macro.TypedExprDef]
+																									[Local `(26928):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																									[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																							[Var `(26930):haxe.macro.Position]
+																								[Field:haxe.macro.Position]
+																									[Local `(26928):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																									[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+																							[Var `(26931):haxe.macro.Type]
+																								[Field:haxe.macro.Type]
+																									[Local `(26928):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																									[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																							[If:Bool]
+																								[Binop:Bool]
+																									[EnumIndex:Int] [Local `(26929):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																									==
+																									[Const:Int] 3
+																								[Then:Bool] [Block:Bool]
+																									[Var `(26932):haxe.macro.Binop]
+																										[EnumParameter:haxe.macro.Binop]
+																											[Local `(26929):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																											TBinop
+																											0
+																									[Var `(26933):haxe.macro.TypedExpr]
+																										[EnumParameter:haxe.macro.TypedExpr]
+																											[Local `(26929):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																											TBinop
+																											1
+																									[Var `(26934):haxe.macro.TypedExpr]
+																										[EnumParameter:haxe.macro.TypedExpr]
+																											[Local `(26929):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																											TBinop
+																											2
+																									[If:Bool]
+																										[Binop:Bool]
+																											[EnumIndex:Int] [Local `(26932):haxe.macro.Binop:haxe.macro.Binop]
+																											==
+																											[Const:Int] 6
+																										[Then:Bool] [Block:Bool]
+																											[Block:Bool]
+																												[Var `(26935):haxe.macro.TypedExprDef]
+																													[Field:haxe.macro.TypedExprDef]
+																														[Local `(26933):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																														[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																												[Var `(26936):haxe.macro.Position]
+																													[Field:haxe.macro.Position]
+																														[Local `(26933):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																														[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+																												[Var `(26937):haxe.macro.Type]
+																													[Field:haxe.macro.Type]
+																														[Local `(26933):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																														[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																												[If:Bool]
+																													[Binop:Bool]
+																														[EnumIndex:Int] [Local `(26935):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																														==
+																														[Const:Int] 1
+																													[Then:Bool] [Block:Bool]
+																														[Var `(26938):haxe.macro.TVar]
+																															[EnumParameter:haxe.macro.TVar]
+																																[Local `(26935):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																																TLocal
+																																0
+																														[Block:Bool]
+																															[Var `(26939):haxe.macro.TypedExprDef]
+																																[Field:haxe.macro.TypedExprDef]
+																																	[Local `(26934):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+																															[Var `(26940):haxe.macro.Position]
+																																[Field:haxe.macro.Position]
+																																	[Local `(26934):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																																	[FAnon:haxe.macro.Position] pos:haxe.macro.Position
+																															[Var `(26941):haxe.macro.Type]
+																																[Field:haxe.macro.Type]
+																																	[Local `(26934):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																																	[FAnon:haxe.macro.Type] t:haxe.macro.Type
+																															[If:Bool]
+																																[Binop:Bool]
+																																	[EnumIndex:Int] [Local `(26939):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																																	==
+																																	[Const:Int] 0
+																																[Then:Bool] [Block:Bool]
+																																	[Var `(26942):haxe.macro.TConstant]
+																																		[EnumParameter:haxe.macro.TConstant]
+																																			[Local `(26939):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																																			TConst
+																																			0
+																																	[If:Bool]
+																																		[Binop:Bool]
+																																			[EnumIndex:Int] [Local `(26942):haxe.macro.TConstant:haxe.macro.TConstant]
+																																			==
+																																			[Const:Int] 4
+																																		[Then:Bool] [Block:Bool]
+																																			[Block:Bool]
+																																				[Var v(26943):haxe.macro.TVar] [Local `(26938):haxe.macro.TVar:haxe.macro.TVar]
+																																				[Block:Bool]
+																																					[Binop:Bool]
+																																						[Field:Int]
+																																							[Local v(26943):haxe.macro.TVar:haxe.macro.TVar]
+																																							[FAnon:Int] id:Int
+																																						==
+																																						[Field:Int]
+																																							[Local tmpVar(26905):haxe.macro.TVar:haxe.macro.TVar]
+																																							[FAnon:Int] id:Int
+																																		[Else:Bool] [Block:Bool] [Const:Bool] false
+																																[Else:Bool] [Block:Bool] [Const:Bool] false
+																													[Else:Bool] [Block:Bool] [Const:Bool] false
+																										[Else:Bool] [Block:Bool] [Const:Bool] false
+																								[Else:Bool] [Block:Bool] [Const:Bool] false
+																				[Default:Bool] [Block:Bool] [Const:Bool] false
+																[If:Void]
+																	[Local isNullCheck(26914):Bool:Bool]
+																	[Then:Dynamic] [Block:Dynamic]
+																		[Return:Dynamic]
+																			[ObjectDecl:{ tempVar : haxe.macro.TVar, initExpr : Null<haxe.macro.TypedExpr>, defaultExpr : Null<haxe.macro.TypedExpr> }]
+																				tempVar: [Local tmpVar(26905):haxe.macro.TVar:haxe.macro.TVar]
+																				initExpr: [Local init(26906):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+																				defaultExpr: [Local elseBranch(26913):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+													[Else:Void] [Block:Void]
+									[Else:Void] [Block:Void]
+						[Else:Void] [Block:Void]
+			[Return:Dynamic] [Const:Null<reflaxe.elixir.ast.NullCoalescingPattern>] null
+
+	public static function makeNullCoalescing[Function:(tempVarName : String, initExpr : reflaxe.elixir.ast.ElixirAST, defaultExpr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirAST]
+		[Arg:String] [Local tempVarName(26980):String]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local initExpr(26981):reflaxe.elixir.ast.ElixirAST]
+		[Arg:reflaxe.elixir.ast.ElixirAST] [Local defaultExpr(26982):reflaxe.elixir.ast.ElixirAST]
+		[Block:Dynamic]
+			[Var assignment(26987):reflaxe.elixir.ast.ElixirAST]
+				[Block:reflaxe.elixir.ast.ElixirAST]
+					[Var metadata(26986):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+					[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+						def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+							[Field:(pattern : reflaxe.elixir.ast.EPattern, expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+								[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+								[FEnum:(pattern : reflaxe.elixir.ast.EPattern, expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+									reflaxe.elixir.ast.ElixirASTDef
+									EMatch
+							[Call:reflaxe.elixir.ast.EPattern]
+								[Field:(name : String) -> reflaxe.elixir.ast.EPattern]
+									[TypeExpr reflaxe.elixir.ast.EPattern:Enum<reflaxe.elixir.ast.EPattern>]
+									[FEnum:(name : String) -> reflaxe.elixir.ast.EPattern]
+										reflaxe.elixir.ast.EPattern
+										PVar
+								[Local tempVarName(26980):String:String]
+							[Local initExpr(26981):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+						metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+							[Binop:Bool]
+								[Local metadata(26986):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+								!=
+								[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+							[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(26986):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+							[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+						pos: [Const:Null<haxe.macro.Position>] null
+			[Var condition(27000):reflaxe.elixir.ast.ElixirAST]
+				[Block:reflaxe.elixir.ast.ElixirAST]
+					[Var metadata(26999):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+					[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+						def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+							[Field:(op : reflaxe.elixir.ast.EBinaryOp, left : reflaxe.elixir.ast.ElixirAST, right : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+								[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+								[FEnum:(op : reflaxe.elixir.ast.EBinaryOp, left : reflaxe.elixir.ast.ElixirAST, right : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+									reflaxe.elixir.ast.ElixirASTDef
+									EBinary
+							[Field:reflaxe.elixir.ast.EBinaryOp]
+								[TypeExpr reflaxe.elixir.ast.EBinaryOp:Enum<reflaxe.elixir.ast.EBinaryOp>]
+								[FEnum:reflaxe.elixir.ast.EBinaryOp]
+									reflaxe.elixir.ast.EBinaryOp
+									NotEqual
+							[Block:reflaxe.elixir.ast.ElixirAST]
+								[Var metadata(26991):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+								[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+									def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+										[Field:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+											[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+											[FEnum:(expr : reflaxe.elixir.ast.ElixirAST) -> reflaxe.elixir.ast.ElixirASTDef]
+												reflaxe.elixir.ast.ElixirASTDef
+												EParen
+										[Local assignment(26987):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+									metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+										[Parenthesis:Bool]
+											[Binop:Bool]
+												[Local metadata(26991):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+												!=
+												[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+										[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(26991):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+										[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+									pos: [Const:Null<haxe.macro.Position>] null
+							[Block:reflaxe.elixir.ast.ElixirAST]
+								[Var metadata(26995):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+								[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+									def: [Field:reflaxe.elixir.ast.ElixirASTDef]
+										[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+										[FEnum:reflaxe.elixir.ast.ElixirASTDef]
+											reflaxe.elixir.ast.ElixirASTDef
+											ENil
+									metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+										[Parenthesis:Bool]
+											[Binop:Bool]
+												[Local metadata(26995):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+												!=
+												[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+										[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(26995):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+										[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+									pos: [Const:Null<haxe.macro.Position>] null
+						metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+							[Binop:Bool]
+								[Local metadata(26999):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+								!=
+								[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+							[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(26999):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+							[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+						pos: [Const:Null<haxe.macro.Position>] null
+			[Var thenBranch(27005):reflaxe.elixir.ast.ElixirAST]
+				[Block:reflaxe.elixir.ast.ElixirAST]
+					[Var metadata(27004):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+					[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+						def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+							[Field:(name : String) -> reflaxe.elixir.ast.ElixirASTDef]
+								[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+								[FEnum:(name : String) -> reflaxe.elixir.ast.ElixirASTDef]
+									reflaxe.elixir.ast.ElixirASTDef
+									EVar
+							[Local tempVarName(26980):String:String]
+						metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+							[Binop:Bool]
+								[Local metadata(27004):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+								!=
+								[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+							[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(27004):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+							[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+						pos: [Const:Null<haxe.macro.Position>] null
+			[Var ifExpr(27010):reflaxe.elixir.ast.ElixirAST]
+				[Block:reflaxe.elixir.ast.ElixirAST]
+					[Var metadata(27009):Null<reflaxe.elixir.ast.ElixirMetadata>] [Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+					[ObjectDecl:{ pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }]
+						def: [Call:reflaxe.elixir.ast.ElixirASTDef]
+							[Field:(condition : reflaxe.elixir.ast.ElixirAST, thenBranch : reflaxe.elixir.ast.ElixirAST, elseBranch : Null<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+								[TypeExpr reflaxe.elixir.ast.ElixirASTDef:Enum<reflaxe.elixir.ast.ElixirASTDef>]
+								[FEnum:(condition : reflaxe.elixir.ast.ElixirAST, thenBranch : reflaxe.elixir.ast.ElixirAST, elseBranch : Null<reflaxe.elixir.ast.ElixirAST>) -> reflaxe.elixir.ast.ElixirASTDef]
+									reflaxe.elixir.ast.ElixirASTDef
+									EIf
+							[Local condition(27000):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+							[Local thenBranch(27005):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+							[Local defaultExpr(26982):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+						metadata: [If:reflaxe.elixir.ast.ElixirMetadata]
+							[Binop:Bool]
+								[Local metadata(27009):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+								!=
+								[Const:Null<reflaxe.elixir.ast.ElixirMetadata>] null
+							[Then:Null<reflaxe.elixir.ast.ElixirMetadata>] [Block:Null<reflaxe.elixir.ast.ElixirMetadata>] [Local metadata(27009):Null<reflaxe.elixir.ast.ElixirMetadata>:Null<reflaxe.elixir.ast.ElixirMetadata>]
+							[Else:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }] [ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+						pos: [Const:Null<haxe.macro.Position>] null
+			[If:Void]
+				[Binop:Bool]
+					[Field:reflaxe.elixir.ast.ElixirMetadata]
+						[Local ifExpr(27010):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+						[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+					==
+					[Const:reflaxe.elixir.ast.ElixirMetadata] null
+				[Then:reflaxe.elixir.ast.ElixirMetadata] [Block:reflaxe.elixir.ast.ElixirMetadata]
+					[Binop:reflaxe.elixir.ast.ElixirMetadata]
+						[Field:reflaxe.elixir.ast.ElixirMetadata]
+							[Local ifExpr(27010):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+							[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+						=
+						[ObjectDecl:{ ?variableScope : Null<String>, ?type : Null<haxe.macro.Type>, ?tailPosition : Null<Bool>, ?tableName : Null<String>, ?sourceLine : Null<Int>, ?sourceFile : Null<String>, ?sourceExpr : Null<haxe.macro.TypedExpr>, ?sideEffects : Null<Bool>, ?requiresTempVar : Null<Bool>, ?requiresReturn : Null<Bool>, ?requiresIdiomaticTransform : Null<Bool>, ?purity : Null<Bool>, ?phoenixContext : Null<reflaxe.elixir.ast.PhoenixContext>, ?keepInlineInAssignment : Null<Bool>, ?isSchema : Null<Bool>, ?isRouter : Null<Bool>, ?isPresence : Null<Bool>, ?isPhoenixWeb : Null<Bool>, ?isLiveView : Null<Bool>, ?isGenServer : Null<Bool>, ?isEndpoint : Null<Bool>, ?isController : Null<Bool>, ?isConstant : Null<Bool>, ?isApplication : Null<Bool>, ?inPipeline : Null<Bool>, ?inGuard : Null<Bool>, ?inComprehension : Null<Bool>, ?idiomaticEnumType : Null<String>, ?errorContext : Null<String>, ?elixirType : Null<String>, ?ectoContext : Null<reflaxe.elixir.ast.EctoContext>, ?documentation : Null<String>, ?capturedVars : Null<Array<String>>, ?canRaise : Null<Bool>, ?canInline : Null<Bool>, ?async : Null<Bool>, ?appName : Null<String>, ?annotations : Null<Array<String>>, ?accessPattern : Null<reflaxe.elixir.ast.AccessPattern> }]
+			[Binop:Null<Bool>]
+				[Field:Null<Bool>]
+					[Field:reflaxe.elixir.ast.ElixirMetadata]
+						[Local ifExpr(27010):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+						[FAnon:reflaxe.elixir.ast.ElixirMetadata] metadata:reflaxe.elixir.ast.ElixirMetadata
+					[FAnon:Null<Bool>] keepInlineInAssignment:Null<Bool>
+				=
+				[Const:Bool] true
+			[Return:Dynamic] [Local ifExpr(27010):reflaxe.elixir.ast.ElixirAST:reflaxe.elixir.ast.ElixirAST]
+
+	public static function toElixirVarName[Function:(name : String) -> String]
+		[Arg:String] [Local name(27011):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local name(27011):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Const:Int] 0
+						==
+						[Const:String] "_"
+					&&
+					[Binop:Bool]
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local name(27011):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Const:Int] 1
+						==
+						[Const:String] "g"
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local name(27011):String:String]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Call:String]
+							[Field:(index : Int) -> String]
+								[Local name(27011):String:String]
+								[FInstance:(index : Int) -> String]
+									String
+									charAt:(index : Int) -> String
+							[Const:Int] 0
+						==
+						[Const:String] "_"
+					&&
+					[Binop:Bool]
+						[Field:Int]
+							[Local name(27011):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						>
+						[Const:Int] 1
+				[Then:String] [Block:String]
+					[Binop:String]
+						[Local name(27011):String:String]
+						=
+						[Call:String]
+							[Field:(pos : Int, ?len : Null<Int>) -> String]
+								[Local name(27011):String:String]
+								[FInstance:(pos : Int, ?len : Null<Int>) -> String]
+									String
+									substr:(pos : Int, ?len : Null<Int>) -> String
+							[Const:Int] 1
+							[Const:Null<Int>] null
+			[Var result(27012):String] [Const:String] ""
+			[Block:Void]
+				[Var `(27015):Int] [Const:Int] 0
+				[Var `(27016):Int]
+					[Field:Int]
+						[Local name(27011):String:String]
+						[FInstance:Int]
+							String
+							length:Int
+				[While:Void]
+					[Binop:Bool]
+						[Local `(27015):Int:Int]
+						<
+						[Local `(27016):Int:Int]
+					[Block:Void]
+						[Var i(27013):Int]
+							[Unop:Int]
+								++
+								Postfix
+								[Local `(27015):Int:Int]
+						[Var char(27014):String]
+							[Call:String]
+								[Field:(index : Int) -> String]
+									[Local name(27011):String:String]
+									[FInstance:(index : Int) -> String]
+										String
+										charAt:(index : Int) -> String
+								[Local i(27013):Int:Int]
+						[If:Void]
+							[Binop:Bool]
+								[Binop:Bool]
+									[Binop:Bool]
+										[Binop:Bool]
+											[Local i(27013):Int:Int]
+											>
+											[Const:Int] 0
+										&&
+										[Binop:Bool]
+											[Local char(27014):String:String]
+											==
+											[Call:String]
+												[Field:() -> String]
+													[Local char(27014):String:String]
+													[FInstance:() -> String]
+														String
+														toUpperCase:() -> String
+									&&
+									[Binop:Bool]
+										[Local char(27014):String:String]
+										!=
+										[Const:String] "_"
+								&&
+								[Binop:Bool]
+									[Local char(27014):String:String]
+									!=
+									[Call:String]
+										[Field:() -> String]
+											[Local char(27014):String:String]
+											[FInstance:() -> String]
+												String
+												toLowerCase:() -> String
+							[Then:String] [Block:String]
+								[Binop:String]
+									[Local result(27012):String:String]
+									+=
+									[Binop:String]
+										[Const:String] "_"
+										+
+										[Call:String]
+											[Field:() -> String]
+												[Local char(27014):String:String]
+												[FInstance:() -> String]
+													String
+													toLowerCase:() -> String
+							[Else:String] [Block:String]
+								[Binop:String]
+									[Local result(27012):String:String]
+									+=
+									[Call:String]
+										[Field:() -> String]
+											[Local char(27014):String:String]
+											[FInstance:() -> String]
+												String
+												toLowerCase:() -> String
+			[Return:Dynamic] [Local result(27012):String:String]
+}

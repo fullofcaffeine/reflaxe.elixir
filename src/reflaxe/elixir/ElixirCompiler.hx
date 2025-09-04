@@ -471,8 +471,12 @@ class ElixirCompiler extends GenericCompiler<
      * HOW: Delegates to ElixirASTBuilder for AST generation
      */
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<reflaxe.elixir.ast.ElixirAST> {
-        // Build AST for the expression
-        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr);
+        // Analyze variable usage before building AST
+        // This enables context-aware naming to prevent Elixir compilation warnings
+        var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
+        
+        // Build AST for the expression with usage information
+        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, usageMap);
     }
     
     /**
@@ -639,6 +643,9 @@ class ElixirCompiler extends GenericCompiler<
                         // Extract field assignments from the constructor body
                         var fieldAssignments = [];
                         
+                        // Analyze variable usage for the entire constructor body
+                        var constructorUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                        
                         // Analyze the constructor body to find field assignments
                         switch(tfunc.expr.expr) {
                             case TBlock(exprs):
@@ -652,7 +659,7 @@ class ElixirCompiler extends GenericCompiler<
                                                         case TConst(TThis):
                                                             // This is a this.field assignment
                                                             var fieldName = reflaxe.elixir.ast.ElixirASTBuilder.extractFieldName(fa);
-                                                            var value = buildFromTypedExpr(e2);
+                                                            var value = buildFromTypedExpr(e2, constructorUsageMap);
                                                             fieldAssignments.push({
                                                                 key: reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(fieldName)),
                                                                 value: value
@@ -674,7 +681,7 @@ class ElixirCompiler extends GenericCompiler<
                                                 switch(ethis.expr) {
                                                     case TConst(TThis):
                                                         var fieldName = reflaxe.elixir.ast.ElixirASTBuilder.extractFieldName(fa);
-                                                        var value = buildFromTypedExpr(e2);
+                                                        var value = buildFromTypedExpr(e2, constructorUsageMap);
                                                         fieldAssignments.push({
                                                             key: reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(fieldName)),
                                                             value: value
@@ -783,7 +790,10 @@ class ElixirCompiler extends GenericCompiler<
                             var previousContext = reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext;
                             reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = true;
                             
-                            body = buildFromTypedExpr(tfunc.expr);
+                            // Analyze variable usage in the function body BEFORE building AST
+                            var functionUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                            
+                            body = buildFromTypedExpr(tfunc.expr, functionUsageMap);
                             
                             // Restore previous context
                             reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = previousContext;
@@ -793,12 +803,16 @@ class ElixirCompiler extends GenericCompiler<
                     reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = previousContext;
                 default:
                     // Not a function expression, use as-is
-                    body = buildFromTypedExpr(funcExpr);
+                    // Still need to analyze usage even for non-function expressions
+                    var exprUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(funcExpr);
+                    body = buildFromTypedExpr(funcExpr, exprUsageMap);
             }
             
             // Use the body we built above
             if (body == null) {
-                body = buildFromTypedExpr(funcExpr);
+                // Analyze usage if we haven't already
+                var fallbackUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(funcExpr);
+                body = buildFromTypedExpr(funcExpr, fallbackUsageMap);
             }
             
             // Apply transformations to the function body before using it
@@ -834,8 +848,8 @@ class ElixirCompiler extends GenericCompiler<
     /**
      * Helper to build AST from TypedExpr (delegates to builder)
      */
-    function buildFromTypedExpr(expr: TypedExpr): reflaxe.elixir.ast.ElixirAST {
-        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr);
+    function buildFromTypedExpr(expr: TypedExpr, ?usageMap: Map<Int, Bool>): reflaxe.elixir.ast.ElixirAST {
+        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, usageMap);
     }
     
     /**

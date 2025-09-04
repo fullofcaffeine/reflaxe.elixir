@@ -1,7 +1,7 @@
 # Elixir Compilation Warnings - Analysis & Solutions Report
 
 ## Executive Summary
-Investigated and partially resolved compilation warnings in the todo-app example. Reduced warnings from 85 to 47 through implementation of state threading for mutable variables in while loops. Remaining 47 warnings require deeper architectural changes to properly track variable usage across compilation phases.
+Investigated and partially resolved compilation warnings in the todo-app example. Reduced warnings from 85 to 43 through implementation of state threading for mutable variables in while loops. Remaining 43 warnings require deeper architectural changes to properly track variable usage across compilation phases.
 
 ## Issues Identified
 

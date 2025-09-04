@@ -1,0 +1,8 @@
+enum haxe.macro.TypeDefKind {
+	TDEnum;
+	TDStructure;
+	TDClass(?superClass:Null<haxe.macro.TypePath>, ?interfaces:Null<Array<haxe.macro.TypePath>>, ?isInterface:Null<Bool>, ?isFinal:Null<Bool>, ?isAbstract:Null<Bool>);
+	TDAlias(t:haxe.macro.ComplexType);
+	TDAbstract(tthis:Null<haxe.macro.ComplexType>, ?flags:Null<Array<haxe.macro.AbstractFlag>>, ?from:Null<Array<haxe.macro.ComplexType>>, ?to:Null<Array<haxe.macro.ComplexType>>);
+	TDField(kind:haxe.macro.FieldType, ?access:Null<Array<haxe.macro.Access>>);
+}

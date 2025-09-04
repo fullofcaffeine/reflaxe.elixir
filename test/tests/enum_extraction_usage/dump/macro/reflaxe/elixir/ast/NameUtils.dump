@@ -1,0 +1,174 @@
+class reflaxe.elixir.ast.NameUtils {
+
+	public static function toSnakeCase[Function:(name : String) -> String]
+		[Arg:String] [Local name(13307):String]
+		[Block:Dynamic]
+			[If:Void]
+				[Binop:Bool]
+					[Binop:Bool]
+						[Local name(13307):String:String]
+						==
+						[Const:String] null
+					||
+					[Binop:Bool]
+						[Field:Int]
+							[Local name(13307):String:String]
+							[FInstance:Int]
+								String
+								length:Int
+						==
+						[Const:Int] 0
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Local name(13307):String:String]
+			[Var result(13308):String]
+				[Call:String]
+					[Field:(s : String, by : String) -> String]
+						[New:EReg]
+							EReg
+							[Const:String] "([A-Z]+)([A-Z][a-z])"
+							[Const:String] "g"
+						[FInstance:(s : String, by : String) -> String]
+							EReg
+							replace:(s : String, by : String) -> String
+					[Local name(13307):String:String]
+					[Const:String] "$1_$2"
+			[Binop:String]
+				[Local result(13308):String:String]
+				=
+				[Call:String]
+					[Field:(s : String, by : String) -> String]
+						[New:EReg]
+							EReg
+							[Const:String] "([a-z\\d])([A-Z])"
+							[Const:String] "g"
+						[FInstance:(s : String, by : String) -> String]
+							EReg
+							replace:(s : String, by : String) -> String
+					[Local result(13308):String:String]
+					[Const:String] "$1_$2"
+			[Return:Dynamic]
+				[Call:String]
+					[Field:() -> String]
+						[Local result(13308):String:String]
+						[FInstance:() -> String]
+							String
+							toLowerCase:() -> String
+
+	public static function getElixirModuleName[Function:(typeName : String) -> String]
+		[Arg:String] [Local typeName(13309):String]
+		[Block:Dynamic]
+			[Var parts(13310):Array<String>]
+				[Call:Array<String>]
+					[Field:(delimiter : String) -> Array<String>]
+						[Local typeName(13309):String:String]
+						[FInstance:(delimiter : String) -> Array<String>]
+							String
+							split:(delimiter : String) -> Array<String>
+					[Const:String] "."
+			[Return:Dynamic]
+				[Array:String]
+					[Local parts(13310):Array<String>:Array<String>]
+					[Binop:Int]
+						[Field:Int]
+							[Local parts(13310):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+						-
+						[Const:Int] 1
+
+	public static inline function toElixirName[Function:(name : String) -> String]
+		[Arg:String] [Local name(13311):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:String]
+					[Field:(name : String) -> String]
+						[TypeExpr reflaxe.elixir.ast.NameUtils:Class<reflaxe.elixir.ast.NameUtils>]
+						[FStatic:(name : String) -> String]
+							reflaxe.elixir.ast.NameUtils
+							toSnakeCase:(name : String) -> String
+					[Local name(13311):String:String]
+
+	public static function isElixirReserved[Function:(name : String) -> Bool]
+		[Arg:String] [Local name(13312):String]
+		[Block:Dynamic]
+			[Var reserved(13313):Array<String>]
+				[ArrayDecl:Array<String>]
+					[Const:String] "after"
+					[Const:String] "and"
+					[Const:String] "catch"
+					[Const:String] "cond"
+					[Const:String] "do"
+					[Const:String] "else"
+					[Const:String] "end"
+					[Const:String] "false"
+					[Const:String] "fn"
+					[Const:String] "in"
+					[Const:String] "nil"
+					[Const:String] "not"
+					[Const:String] "or"
+					[Const:String] "rescue"
+					[Const:String] "true"
+					[Const:String] "when"
+					[Const:String] "with"
+					[Const:String] "alias"
+					[Const:String] "case"
+					[Const:String] "def"
+					[Const:String] "defp"
+					[Const:String] "defmodule"
+					[Const:String] "defmacro"
+					[Const:String] "defmacrop"
+					[Const:String] "defstruct"
+					[Const:String] "defdelegate"
+					[Const:String] "defprotocol"
+					[Const:String] "defimpl"
+					[Const:String] "for"
+					[Const:String] "if"
+					[Const:String] "import"
+					[Const:String] "quote"
+					[Const:String] "receive"
+					[Const:String] "require"
+					[Const:String] "super"
+					[Const:String] "try"
+					[Const:String] "unless"
+					[Const:String] "unquote"
+					[Const:String] "use"
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:Int]
+						[Field:(x : String, ?fromIndex : Null<Int>) -> Int]
+							[Local reserved(13313):Array<String>:Array<String>]
+							[FInstance:(x : String, ?fromIndex : Null<Int>) -> Int]
+								Array<String>
+								indexOf:(x : Array.T, ?fromIndex : Null<Int>) -> Int
+						[Local name(13312):String:String]
+						[Const:Null<Int>] null
+					>=
+					[Const:Int] 0
+
+	public static function toSafeElixirFunctionName[Function:(name : String) -> String]
+		[Arg:String] [Local name(13314):String]
+		[Block:Dynamic]
+			[Var snakeName(13315):String]
+				[Call:String]
+					[Field:(name : String) -> String]
+						[TypeExpr reflaxe.elixir.ast.NameUtils:Class<reflaxe.elixir.ast.NameUtils>]
+						[FStatic:(name : String) -> String]
+							reflaxe.elixir.ast.NameUtils
+							toSnakeCase:(name : String) -> String
+					[Local name(13314):String:String]
+			[If:Void]
+				[Call:Bool]
+					[Field:(name : String) -> Bool]
+						[TypeExpr reflaxe.elixir.ast.NameUtils:Class<reflaxe.elixir.ast.NameUtils>]
+						[FStatic:(name : String) -> Bool]
+							reflaxe.elixir.ast.NameUtils
+							isElixirReserved:(name : String) -> Bool
+					[Local snakeName(13315):String:String]
+				[Then:Dynamic] [Block:Dynamic]
+					[Return:Dynamic]
+						[Binop:String]
+							[Local snakeName(13315):String:String]
+							+
+							[Const:String] "_fn"
+			[Return:Dynamic] [Local snakeName(13315):String:String]
+}
