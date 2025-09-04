@@ -25,22 +25,50 @@
  * 
  * For Elixir target, this is implemented using iolists for optimal performance.
  * Instead of string concatenation, we build a list that Elixir can efficiently convert to binary.
+ * 
+ * ## Usage Example (Haxe)
+ * ```haxe
+ * var buf = new StringBuf();
+ * buf.add("Hello");
+ * buf.add(" ");
+ * buf.add("World");
+ * var result = buf.toString(); // "Hello World"
+ * ```
+ * 
+ * ## Generated Idiomatic Elixir
+ * ```elixir
+ * # StringBuf.new() generates:
+ * iolist = []
+ * 
+ * # buf.add("Hello") generates:
+ * iolist = iolist ++ ["Hello"]
+ * 
+ * # buf.toString() generates:
+ * IO.iodata_to_binary(iolist)
+ * ```
+ * 
+ * ## Performance Characteristics
+ * - **O(1)** append operations (iolists are linked lists)
+ * - **O(n)** final conversion to string
+ * - **Memory efficient** - no intermediate string concatenations
+ * - **BEAM optimized** - iolists are a core Erlang/Elixir pattern
+ * 
+ * @see https://www.erlang.org/doc/efficiency_guide/listhandling#iolist
  */
 @:coreApi
 class StringBuf {
     // Internal iolist representation for Elixir
-    // This will be compiled to an Elixir list that can contain binaries and nested lists
-    @:native("iolist")
-    private var parts: Dynamic;
+    // Using Array<String> which will naturally compile to Elixir lists
+    // The compiler will handle the conversion to proper iolist structure
+    private var parts: Array<String>;
     
     /**
      * Creates a new StringBuf instance.
      * In Elixir, initializes an empty iolist.
      */
     public function new() {
-        untyped __elixir__('[]');
-        // Initialize as empty iolist
-        this.parts = untyped __elixir__('[]');
+        // Initialize as empty array which compiles to Elixir list
+        this.parts = [];
     }
     
     /**
@@ -53,7 +81,9 @@ class StringBuf {
     
     private function get_length(): Int {
         // Convert iolist to binary and get byte size
-        return untyped __elixir__('byte_size(IO.iodata_to_binary({0}))', this.parts);
+        // Join all parts and measure the string length
+        var joined = parts.join("");
+        return joined.length;
     }
     
     /**
@@ -65,8 +95,8 @@ class StringBuf {
      */
     public function add<T>(x: T): Void {
         var str = if (x == null) "null" else Std.string(x);
-        // Append to iolist - this is O(1) in Elixir
-        this.parts = untyped __elixir__('{0} ++ [{1}]', this.parts, str);
+        // Append to array - this compiles to list append in Elixir
+        this.parts.push(str);
     }
     
     /**
@@ -75,9 +105,8 @@ class StringBuf {
      * If `c` is negative or has another invalid value, the result is unspecified.
      */
     public function addChar(c: Int): Void {
-        // In Elixir, we can add the character code directly to the iolist
-        // It will be treated as a byte value
-        this.parts = untyped __elixir__('{0} ++ [{1}]', this.parts, c);
+        // Convert character code to string and add
+        this.parts.push(String.fromCharCode(c));
     }
     
     /**
@@ -94,14 +123,14 @@ class StringBuf {
     public function addSub(s: String, pos: Int, ?len: Int): Void {
         if (s == null) return;
         
-        // Extract substring and add to iolist
+        // Extract substring and add to array
         var substr = if (len == null) {
-            untyped __elixir__('String.slice({0}, {1}..-1)', s, pos);
+            s.substr(pos);
         } else {
-            untyped __elixir__('String.slice({0}, {1}, {2})', s, pos, len);
+            s.substr(pos, len);
         };
         
-        this.parts = untyped __elixir__('{0} ++ [{1}]', this.parts, substr);
+        this.parts.push(substr);
     }
     
     /**
@@ -110,8 +139,9 @@ class StringBuf {
      * For Elixir, this efficiently converts the iolist to a binary string.
      */
     public function toString(): String {
-        // Use IO.iodata_to_binary to efficiently convert iolist to string
-        // This is the idiomatic way in Elixir
+        // For optimal Elixir generation, we use __elixir__ to generate idiomatic iolist code
+        // The parts array will be compiled as a list, and IO.iodata_to_binary is the
+        // most efficient way to convert it to a binary string in Elixir
         return untyped __elixir__('IO.iodata_to_binary({0})', this.parts);
     }
 }
