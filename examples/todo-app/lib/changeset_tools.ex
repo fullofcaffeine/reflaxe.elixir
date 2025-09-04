@@ -19,7 +19,8 @@ defmodule ChangesetTools do
     error_map = %{}
     g = 0
     g1 = changeset.errors
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
+  g = acc_g
   if (g < g1.length) do
     error = g1[g]
     g = g + 1

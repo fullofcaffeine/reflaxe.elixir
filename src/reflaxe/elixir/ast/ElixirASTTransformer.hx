@@ -314,6 +314,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.AssignmentExtractionTransforms.assignmentExtractionPass
         });
         
+        // Reduce while accumulator transformation (must run after assignment extraction)
+        passes.push({
+            name: "ReduceWhileAccumulator",
+            description: "Fix variable shadowing in reduce_while loops by proper accumulator threading",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.reduceWhileAccumulatorPass
+        });
+        
         // Idiomatic enum pattern matching transformation (must run before underscore cleanup)
         passes.push({
             name: "IdiomaticEnumPatternMatching",
