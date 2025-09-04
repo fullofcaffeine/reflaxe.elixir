@@ -1423,14 +1423,91 @@ class ElixirASTTransformer {
      * Example: struct.count = 5 → %{struct | count: 5}
      */
     static function structFieldAssignmentTransformPass(ast: ElixirAST): ElixirAST {
+        // Need to track the original struct variable for field assignments
+        var structVarTracking: Map<String, String> = new Map();
+        
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
-                case EMatch(pattern, value):
-                    // Pattern matching for struct field assignment not implemented yet
-                    // EPattern is a different type from ElixirAST, would need separate handling
+                case EBlock(expressions):
+                    // Process block expressions looking for field assignment patterns
+                    var transformed = [];
+                    var i = 0;
+                    
+                    while (i < expressions.length) {
+                        var expr = expressions[i];
+                        
+                        // Look for pattern: spec = worker(...) followed by fieldName = value
+                        switch(expr.def) {
+                            case EMatch(PVar(varName), rhs):
+                                // Track struct variable assignments from known constructors
+                                switch(rhs.def) {
+                                    case ECall(_, funcName, _) if (funcName == "worker" || funcName == "supervisor" || funcName == "temp_worker"):
+                                        structVarTracking.set(varName, varName);
+                                    case ERemoteCall(_, funcName, _) if (funcName == "worker" || funcName == "supervisor" || funcName == "temp_worker"):
+                                        structVarTracking.set(varName, varName);
+                                    default:
+                                }
+                                
+                                // Check if this is a field assignment pattern
+                                // Look ahead for the next expression to see if it's a field assignment
+                                if (i + 1 < expressions.length) {
+                                    var nextExpr = expressions[i + 1];
+                                    switch(nextExpr.def) {
+                                        case EMatch(PVar(fieldName), fieldValue):
+                                            // Check if previous expression was a struct assignment we're tracking
+                                            // and the field name matches common struct field patterns
+                                            if (structVarTracking.exists(varName) && 
+                                                (fieldName == "restart" || fieldName == "shutdown" || fieldName == "type" || 
+                                                 fieldName == "strategy" || fieldName == "max_restarts" || fieldName == "max_seconds")) {
+                                                // This looks like a struct field assignment pattern
+                                                // Transform: fieldName = value → spec = Map.put(spec, :fieldName, value)
+                                                #if debug_ast_transformer
+                                                trace('[XRay StructFieldAssignment] Found field assignment pattern: $fieldName = ...');
+                                                trace('[XRay StructFieldAssignment] Transforming to Map.put($varName, :$fieldName, ...)');
+                                                #end
+                                                
+                                                // Add the original struct assignment
+                                                transformed.push(expr);
+                                                
+                                                // Transform the field assignment to Map.put
+                                                var mapPut = makeAST(EMatch(
+                                                    PVar(varName),
+                                                    makeAST(ERemoteCall(
+                                                        makeAST(EVar("Map")),
+                                                        "put",
+                                                        [
+                                                            makeAST(EVar(varName)),
+                                                            makeAST(EAtom(fieldName)),
+                                                            fieldValue
+                                                        ]
+                                                    ))
+                                                ));
+                                                transformed.push(mapPut);
+                                                
+                                                // Skip the original field assignment
+                                                i += 2;
+                                                continue;
+                                            }
+                                        default:
+                                    }
+                                }
+                                
+                                // Not a field assignment pattern, keep as-is
+                                transformed.push(expr);
+                            default:
+                                transformed.push(expr);
+                        }
+                        i++;
+                    }
+                    
+                    // Return transformed block if we made changes
+                    if (transformed.length > 0) {
+                        return makeASTWithMeta(EBlock(transformed), node.metadata, node.pos);
+                    }
                     return node;
+                    
                 default:
-                    // Not a match, continue traversal
+                    // Not a block, continue traversal
                     return node;
             }
         });

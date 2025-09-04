@@ -11,7 +11,7 @@ defmodule Input do
       throw("Invalid parameters")
     end
     k = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, pos, :ok}, fn _, {k, pos, acc_state} ->
   if (k > 0) do
     byte = struct.readByte()
     if (byte < 0) do
@@ -20,9 +20,9 @@ defmodule Input do
     b.set(pos, byte)
     pos = pos + 1
     k = (k - 1)
-    {:cont, acc}
+    {:cont, {k, pos, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {k, pos, acc_state}}
   end
 end)
     (len - k)
@@ -34,7 +34,7 @@ end)
     buf = Bytes.alloc(bufsize)
     total = Bytes.alloc(0)
     len = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len, :ok}, fn _, {total, len, acc_state} ->
   if true do
     n = struct.readBytes(buf, 0, bufsize)
     if (n == 0) do
@@ -45,9 +45,9 @@ end)
     new_total.blit(len, buf, 0, n)
     total = new_total
     len = len + n
-    {:cont, acc}
+    {:cont, {total, len, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {total, len, acc_state}}
   end
 end)
     total
@@ -65,7 +65,7 @@ end)
   def read_line(struct) do
     buf_b = ""
     last = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf_b, :ok}, fn _, {buf_b, acc_state} ->
   last = struct.readByte()
   if (last >= 0) do
     if (last == 10) do
@@ -74,9 +74,9 @@ end)
     if (last != 13) do
       buf_b = buf_b <> String.from_char_code(last)
     end
-    {:cont, acc}
+    {:cont, {buf_b, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {buf_b, acc_state}}
   end
 end)
     buf_b

@@ -19,7 +19,7 @@ defmodule ChangesetTools do
     error_map = %{}
     g = 0
     g1 = changeset.errors
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {g, acc_state} ->
   if (g < g1.length) do
     error = g1[g]
     g = g + 1
@@ -30,9 +30,9 @@ defmodule ChangesetTools do
     end
     key = error.field
     Map.get(error_map, key).push(error.message)
-    {:cont, acc}
+    {:cont, {g, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {g, acc_state}}
   end
 end)
     error_map
