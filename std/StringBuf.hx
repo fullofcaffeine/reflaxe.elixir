@@ -26,31 +26,34 @@
  * For Elixir target, this is implemented using iolists for optimal performance.
  * Instead of string concatenation, we build a list that Elixir can efficiently convert to binary.
  */
+@:coreApi
 class StringBuf {
-    // Store strings in a list for efficient iolist conversion
-    private var parts: Array<String>;
+    // Internal iolist representation for Elixir
+    // This will be compiled to an Elixir list that can contain binaries and nested lists
+    @:native("iolist")
+    private var parts: Dynamic;
     
     /**
      * Creates a new StringBuf instance.
+     * In Elixir, initializes an empty iolist.
      */
     public function new() {
-        parts = [];
+        untyped __elixir__('[]');
+        // Initialize as empty iolist
+        this.parts = untyped __elixir__('[]');
     }
     
     /**
      * Returns the length of `this` StringBuf in characters.
      * 
-     * Note: This requires iterating through all parts to calculate total length.
+     * Note: This requires converting iolist to binary and measuring.
      * For performance-critical code, avoid calling this frequently.
      */
     public var length(get, never): Int;
     
     private function get_length(): Int {
-        var len = 0;
-        for (part in parts) {
-            len += part.length;
-        }
-        return len;
+        // Convert iolist to binary and get byte size
+        return untyped __elixir__('byte_size(IO.iodata_to_binary({0}))', this.parts);
     }
     
     /**
@@ -61,11 +64,9 @@ class StringBuf {
      * If `x` is null, the String "null" is appended.
      */
     public function add<T>(x: T): Void {
-        if (x == null) {
-            parts.push("null");
-        } else {
-            parts.push(Std.string(x));
-        }
+        var str = if (x == null) "null" else Std.string(x);
+        // Append to iolist - this is O(1) in Elixir
+        this.parts = untyped __elixir__('{0} ++ [{1}]', this.parts, str);
     }
     
     /**
@@ -74,7 +75,9 @@ class StringBuf {
      * If `c` is negative or has another invalid value, the result is unspecified.
      */
     public function addChar(c: Int): Void {
-        parts.push(String.fromCharCode(c));
+        // In Elixir, we can add the character code directly to the iolist
+        // It will be treated as a byte value
+        this.parts = untyped __elixir__('{0} ++ [{1}]', this.parts, c);
     }
     
     /**
@@ -91,11 +94,14 @@ class StringBuf {
     public function addSub(s: String, pos: Int, ?len: Int): Void {
         if (s == null) return;
         
-        if (len == null) {
-            parts.push(s.substr(pos));
+        // Extract substring and add to iolist
+        var substr = if (len == null) {
+            untyped __elixir__('String.slice({0}, {1}..-1)', s, pos);
         } else {
-            parts.push(s.substr(pos, len));
-        }
+            untyped __elixir__('String.slice({0}, {1}, {2})', s, pos, len);
+        };
+        
+        this.parts = untyped __elixir__('{0} ++ [{1}]', this.parts, substr);
     }
     
     /**
@@ -104,8 +110,8 @@ class StringBuf {
      * For Elixir, this efficiently converts the iolist to a binary string.
      */
     public function toString(): String {
-        // Join all parts into a single string
-        // In Elixir, this will be optimized to use iolist_to_binary
-        return parts.join("");
+        // Use IO.iodata_to_binary to efficiently convert iolist to string
+        // This is the idiomatic way in Elixir
+        return untyped __elixir__('IO.iodata_to_binary({0})', this.parts);
     }
 }

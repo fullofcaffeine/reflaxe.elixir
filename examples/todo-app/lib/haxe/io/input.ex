@@ -34,7 +34,7 @@ end)
     buf = Bytes.alloc(bufsize)
     total = Bytes.alloc(0)
     len = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len, :ok}, fn _, {acc_total, acc_len, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {len, total, :ok}, fn _, {acc_len, acc_total, acc_state} ->
   if true do
     n = struct.readBytes(buf, 0, bufsize)
     if (n == 0) do
@@ -45,9 +45,9 @@ end)
     new_total.blit(acc_len, buf, 0, n)
     acc_total = new_total
     acc_len = acc_len + n
-    {:cont, {acc_total, acc_len, acc_state}}
+    {:cont, {acc_len, acc_total, acc_state}}
   else
-    {:halt, {acc_total, acc_len, acc_state}}
+    {:halt, {acc_len, acc_total, acc_state}}
   end
 end)
     total
@@ -63,22 +63,20 @@ end)
     b.toString()
   end
   def read_line(struct) do
-    buf_b = ""
+    buf = StringBuf.new()
     last = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {last, buf_b, :ok}, fn _, {acc_last, acc_buf_b, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {last, :ok}, fn _, {acc_last, acc_state} ->
   if (acc_last >= 0) do
     if (acc_last == 10) do
       throw(:break)
     end
-    if (acc_last != 13) do
-      acc_buf_b = acc_buf_b <> String.from_char_code(acc_last)
-    end
-    {:cont, {acc_last, acc_buf_b, acc_state}}
+    if (acc_last != 13), do: buf.addChar(acc_last)
+    {:cont, {acc_last, acc_state}}
   else
-    {:halt, {acc_last, acc_buf_b, acc_state}}
+    {:halt, {acc_last, acc_state}}
   end
 end)
-    buf_b
+    IO.iodata_to_binary(buf)
   end
   def close(_struct) do
     nil
