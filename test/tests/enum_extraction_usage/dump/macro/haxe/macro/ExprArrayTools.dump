@@ -1,0 +1,66 @@
+class haxe.macro.ExprArrayTools {
+
+	public static function map[Function:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> haxe.macro.Expr)) -> Array<haxe.macro.Expr>]
+		[Arg:Array<haxe.macro.Expr>] [Local el(2125):Array<haxe.macro.Expr>]
+		[Arg:haxe.macro.Expr -> haxe.macro.Expr] [Local f(2126):haxe.macro.Expr -> haxe.macro.Expr]
+		[Block:Dynamic]
+			[Var ret(2127):Array<haxe.macro.Expr>] [ArrayDecl:Array<haxe.macro.Expr>]
+			[Block:Void]
+				[Var `(2129):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(2129):Int:Int]
+						<
+						[Field:Int]
+							[Local el(2125):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+							[FInstance:Int]
+								Array<haxe.macro.Expr>
+								length:Int
+					[Block:Void]
+						[Var e(2128):haxe.macro.Expr]
+							[Array:haxe.macro.Expr]
+								[Local el(2125):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+								[Local `(2129):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(2129):Int:Int]
+						[Call:Int]
+							[Field:(x : haxe.macro.Expr) -> Int]
+								[Local ret(2127):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+								[FInstance:(x : haxe.macro.Expr) -> Int]
+									Array<haxe.macro.Expr>
+									push:(x : Array.T) -> Int
+							[Call:haxe.macro.Expr]
+								[Local f(2126):haxe.macro.Expr -> haxe.macro.Expr:haxe.macro.Expr -> haxe.macro.Expr]
+								[Local e(2128):haxe.macro.Expr:haxe.macro.Expr]
+			[Return:Dynamic] [Local ret(2127):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+
+	public static function iter[Function:(el : Array<haxe.macro.Expr>, f : (haxe.macro.Expr -> Void)) -> Void]
+		[Arg:Array<haxe.macro.Expr>] [Local el(1910):Array<haxe.macro.Expr>]
+		[Arg:haxe.macro.Expr -> Void] [Local f(1911):haxe.macro.Expr -> Void]
+		[Block:Void]
+			[Block:Void]
+				[Var `(1913):Int] [Const:Int] 0
+				[While:Void]
+					[Binop:Bool]
+						[Local `(1913):Int:Int]
+						<
+						[Field:Int]
+							[Local el(1910):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+							[FInstance:Int]
+								Array<haxe.macro.Expr>
+								length:Int
+					[Block:Void]
+						[Var e(1912):haxe.macro.Expr]
+							[Array:haxe.macro.Expr]
+								[Local el(1910):Array<haxe.macro.Expr>:Array<haxe.macro.Expr>]
+								[Local `(1913):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(1913):Int:Int]
+						[Call:Void]
+							[Local f(1911):haxe.macro.Expr -> Void:haxe.macro.Expr -> Void]
+							[Local e(1912):haxe.macro.Expr:haxe.macro.Expr]
+}

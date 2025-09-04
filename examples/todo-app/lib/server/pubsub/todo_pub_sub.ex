@@ -111,15 +111,15 @@ end
         "delete_completed"
       2 ->
         g = action.elem(1)
-        priority = g
+        _priority = g
         "set_priority"
       3 ->
         g = action.elem(1)
-        tag = g
+        _tag = g
         "add_tag"
       4 ->
         g = action.elem(1)
-        tag = g
+        _tag = g
         "remove_tag"
     end
   end

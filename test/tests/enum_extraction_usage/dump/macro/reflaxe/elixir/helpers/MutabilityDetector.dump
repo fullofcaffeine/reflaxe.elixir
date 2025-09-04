@@ -1,0 +1,1284 @@
+@:nullSafety(Off)
+class reflaxe.elixir.helpers.MutabilityDetector {
+
+	public static function detectMutatedVariables[Function:(expr : haxe.macro.TypedExpr) -> Map<Int, haxe.macro.TVar>]
+		[Arg:haxe.macro.TypedExpr] [Local expr(19258):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var mutatedVars(19259):haxe.ds.Map<Int, haxe.macro.TVar>]
+				[Block:haxe.ds.IntMap<haxe.macro.TVar>]
+					[Block:Void]
+					[New:haxe.ds.IntMap<haxe.macro.TVar>] haxe.ds.IntMap<haxe.macro.TVar>
+			[Call:Void]
+				[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+					[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+					[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+						reflaxe.elixir.helpers.MutabilityDetector
+						detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+				[Local expr(19258):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+				[Local mutatedVars(19259):haxe.ds.Map<Int, haxe.macro.TVar>:haxe.ds.Map<Int, haxe.macro.TVar>]
+			[Return:Dynamic] [Local mutatedVars(19259):haxe.ds.Map<Int, haxe.macro.TVar>:haxe.ds.Map<Int, haxe.macro.TVar>]
+
+	public static function isVariableMutated[Function:(varId : Int, expr : haxe.macro.TypedExpr) -> Bool]
+		[Arg:Int] [Local varId(26763):Int]
+		[Arg:haxe.macro.TypedExpr] [Local expr(26764):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var mutatedVars(26765):Map<Int, haxe.macro.TVar>]
+				[Call:Map<Int, haxe.macro.TVar>]
+					[Field:(expr : haxe.macro.TypedExpr) -> Map<Int, haxe.macro.TVar>]
+						[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+						[FStatic:(expr : haxe.macro.TypedExpr) -> Map<Int, haxe.macro.TVar>]
+							reflaxe.elixir.helpers.MutabilityDetector
+							detectMutatedVariables:(expr : haxe.macro.TypedExpr) -> Map<Int, haxe.macro.TVar>
+					[Local expr(26764):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Return:Dynamic]
+				[Call:Bool]
+					[Field:(key : Int) -> Bool]
+						[Local mutatedVars(26765):Map<Int, haxe.macro.TVar>:haxe.ds.IntMap<haxe.macro.TVar>]
+						[FInstance:(key : Int) -> Bool]
+							haxe.ds.IntMap<haxe.macro.TVar>
+							exists:(key : Int) -> Bool
+					[Local varId(26763):Int:Int]
+
+	static function detectMutationsRecursive[Function:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local expr(19260):haxe.macro.TypedExpr]
+		[Arg:Map<Int, haxe.macro.TVar>] [Local mutatedVars(19261):Map<Int, haxe.macro.TVar>]
+		[Block:Void]
+			[If:Void]
+				[Binop:Bool]
+					[Local expr(19260):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					==
+					[Const:haxe.macro.TypedExpr] null
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TBinop(OpAssign, e1, e2):
+		switch (e1.expr) {
+			case TLocal(v):
+				mutatedVars.set(v.id, v);			
+			default:
+				detectMutationsRecursive(e1, mutatedVars);			
+		};
+		detectMutationsRecursive(e2, mutatedVars);	
+	case TBinop(OpAssignOp(_), e1, e2):
+		switch (e1.expr) {
+			case TLocal(v):
+				mutatedVars.set(v.id, v);			
+			default:
+				detectMutationsRecursive(e1, mutatedVars);			
+		};
+		detectMutationsRecursive(e2, mutatedVars);	
+	case TUnop(OpIncrement | OpDecrement, _, e):
+		switch (e.expr) {
+			case TLocal(v):
+				mutatedVars.set(v.id, v);			
+			default:
+				detectMutationsRecursive(e, mutatedVars);			
+		};	
+	case TCall(e, el):
+		detectMutationsRecursive(e, mutatedVars);
+		for (arg  in  el) {
+			detectMutationsRecursive(arg, mutatedVars);
+		};	
+	case TBlock(el):
+		for (e  in  el) {
+			detectMutationsRecursive(e, mutatedVars);
+		};	
+	case TIf(econd, eif, eelse):
+		detectMutationsRecursive(econd, mutatedVars);
+		detectMutationsRecursive(eif, mutatedVars);
+		if (eelse != null) {
+			detectMutationsRecursive(eelse, mutatedVars);
+		};	
+	case TSwitch(e, cases, edef):
+		detectMutationsRecursive(e, mutatedVars);
+		for (c  in  cases) {
+			for (v  in  c.values) {
+				detectMutationsRecursive(v, mutatedVars);
+			};
+			detectMutationsRecursive(c.expr, mutatedVars);
+		};
+		if (edef != null) {
+			detectMutationsRecursive(edef, mutatedVars);
+		};	
+	case TWhile(econd, e, _):
+		detectMutationsRecursive(econd, mutatedVars);
+		detectMutationsRecursive(e, mutatedVars);	
+	case TFor(v, e1, e2):
+		detectMutationsRecursive(e1, mutatedVars);
+		detectMutationsRecursive(e2, mutatedVars);	
+	case TTry(e, catches):
+		detectMutationsRecursive(e, mutatedVars);
+		for (c  in  catches) {
+			detectMutationsRecursive(c.expr, mutatedVars);
+		};	
+	case TVar(v, expr):
+		if (expr != null) {
+			detectMutationsRecursive(expr, mutatedVars);
+		};	
+	case TReturn(e):
+		if (e != null) {
+			detectMutationsRecursive(e, mutatedVars);
+		};	
+	case TThrow(e):
+		detectMutationsRecursive(e, mutatedVars);	
+	case TArrayDecl(el):
+		for (e  in  el) {
+			detectMutationsRecursive(e, mutatedVars);
+		};	
+	case TObjectDecl(fields):
+		for (f  in  fields) {
+			detectMutationsRecursive(f.expr, mutatedVars);
+		};	
+	case TFunction(tfunc):
+		if (tfunc.expr != null) {
+			detectMutationsRecursive(tfunc.expr, mutatedVars);
+		};	
+	case TField(e, _):
+		detectMutationsRecursive(e, mutatedVars);	
+	case TParenthesis(e):
+		detectMutationsRecursive(e, mutatedVars);	
+	case TCast(e, _):
+		detectMutationsRecursive(e, mutatedVars);	
+	case TMeta(_, e):
+		detectMutationsRecursive(e, mutatedVars);	
+	case TContinue | TBreak:
+	case TLocal(_) | TIdent(_) | TConst(_):
+	case TNew(_, _, el):
+		for (e  in  el) {
+			detectMutationsRecursive(e, mutatedVars);
+		};	
+	case TEnumParameter(e, _, _):
+		detectMutationsRecursive(e, mutatedVars);	
+	case TEnumIndex(e):
+		detectMutationsRecursive(e, mutatedVars);	
+	case TBinop(_, e1, e2):
+		detectMutationsRecursive(e1, mutatedVars);
+		detectMutationsRecursive(e2, mutatedVars);	
+	case TUnop(_, _, e):
+		detectMutationsRecursive(e, mutatedVars);	
+	case TArray(e1, e2):
+		detectMutationsRecursive(e1, mutatedVars);
+		detectMutationsRecursive(e2, mutatedVars);	
+	case TTypeExpr(_):
+})
+				[Block:Void]
+					[Var `(19407):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(19260):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[Meta:Int]
+							:exhaustive
+							[EnumIndex:Int] [Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Void]
+							[Const:Int] 0
+							[Block:Void]
+								[Var `(19408):haxe.macro.TConstant]
+									[EnumParameter:haxe.macro.TConstant]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TConst
+										0
+								[Block:Void]
+						[Case:Void]
+							[Const:Int] 1
+							[Block:Void]
+								[Var `(19409):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TLocal
+										0
+								[Block:Void]
+						[Case:Void]
+							[Const:Int] 2
+							[Block:Void]
+								[Var `(19410):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TArray
+										0
+								[Var `(19411):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TArray
+										1
+								[Block:Void]
+									[Var e1(19412):haxe.macro.TypedExpr] [Local `(19410):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var e2(19413):haxe.macro.TypedExpr] [Local `(19411):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e1(19412):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e2(19413):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 3
+							[Block:Void]
+								[Var `(19414):haxe.macro.Binop]
+									[EnumParameter:haxe.macro.Binop]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										0
+								[Var `(19415):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										1
+								[Var `(19416):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBinop
+										2
+								[Switch:Void]
+									[EnumIndex:Int] [Local `(19414):haxe.macro.Binop:haxe.macro.Binop]
+									[Case:Void]
+										[Const:Int] 4
+										[Block:Void]
+											[Block:Void]
+												[Var e1(19417):haxe.macro.TypedExpr] [Local `(19415):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Var e2(19418):haxe.macro.TypedExpr] [Local `(19416):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Block:Void]
+													[Meta:Void]
+														:ast(switch (e1.expr) {
+	case TLocal(v):
+		mutatedVars.set(v.id, v);	
+	default:
+		detectMutationsRecursive(e1, mutatedVars);	
+})
+														[Block:Void]
+															[Var `(19419):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Local e1(19417):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:Void]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(19419):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 1
+																[Then:Void] [Block:Void]
+																	[Var `(19420):haxe.macro.TVar]
+																		[EnumParameter:haxe.macro.TVar]
+																			[Local `(19419):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TLocal
+																			0
+																	[Block:Void]
+																		[Var v(19421):haxe.macro.TVar] [Local `(19420):haxe.macro.TVar:haxe.macro.TVar]
+																		[Block:Void]
+																			[Block:Void]
+																				[Var key(19422):Int]
+																					[Field:Int]
+																						[Local v(19421):haxe.macro.TVar:haxe.macro.TVar]
+																						[FAnon:Int] id:Int
+																				[Call:Void]
+																					[Field:(key : Int, value : haxe.macro.TVar) -> Void]
+																						[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:haxe.ds.IntMap<haxe.macro.TVar>]
+																						[FInstance:(key : Int, value : haxe.macro.TVar) -> Void]
+																							haxe.ds.IntMap<haxe.macro.TVar>
+																							set:(key : Int, value : haxe.ds.IntMap.T) -> Void
+																					[Local key(19422):Int:Int]
+																					[Local v(19421):haxe.macro.TVar:haxe.macro.TVar]
+																[Else:Void] [Block:Void]
+																	[Call:Void]
+																		[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																			[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+																			[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																				reflaxe.elixir.helpers.MutabilityDetector
+																				detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+																		[Local e1(19417):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																		[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+															[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																reflaxe.elixir.helpers.MutabilityDetector
+																detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+														[Local e2(19418):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+									[Case:Void]
+										[Const:Int] 20
+										[Block:Void]
+											[Var `(19423):haxe.macro.Binop]
+												[EnumParameter:haxe.macro.Binop]
+													[Local `(19414):haxe.macro.Binop:haxe.macro.Binop]
+													OpAssignOp
+													0
+											[Block:Void]
+												[Var e1(19424):haxe.macro.TypedExpr] [Local `(19415):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Var e2(19425):haxe.macro.TypedExpr] [Local `(19416):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Block:Void]
+													[Meta:Void]
+														:ast(switch (e1.expr) {
+	case TLocal(v):
+		mutatedVars.set(v.id, v);	
+	default:
+		detectMutationsRecursive(e1, mutatedVars);	
+})
+														[Block:Void]
+															[Var `(19426):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Local e1(19424):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:Void]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(19426):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 1
+																[Then:Void] [Block:Void]
+																	[Var `(19427):haxe.macro.TVar]
+																		[EnumParameter:haxe.macro.TVar]
+																			[Local `(19426):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TLocal
+																			0
+																	[Block:Void]
+																		[Var v(19428):haxe.macro.TVar] [Local `(19427):haxe.macro.TVar:haxe.macro.TVar]
+																		[Block:Void]
+																			[Block:Void]
+																				[Var key(19429):Int]
+																					[Field:Int]
+																						[Local v(19428):haxe.macro.TVar:haxe.macro.TVar]
+																						[FAnon:Int] id:Int
+																				[Call:Void]
+																					[Field:(key : Int, value : haxe.macro.TVar) -> Void]
+																						[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:haxe.ds.IntMap<haxe.macro.TVar>]
+																						[FInstance:(key : Int, value : haxe.macro.TVar) -> Void]
+																							haxe.ds.IntMap<haxe.macro.TVar>
+																							set:(key : Int, value : haxe.ds.IntMap.T) -> Void
+																					[Local key(19429):Int:Int]
+																					[Local v(19428):haxe.macro.TVar:haxe.macro.TVar]
+																[Else:Void] [Block:Void]
+																	[Call:Void]
+																		[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																			[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+																			[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																				reflaxe.elixir.helpers.MutabilityDetector
+																				detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+																		[Local e1(19424):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																		[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+															[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																reflaxe.elixir.helpers.MutabilityDetector
+																detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+														[Local e2(19425):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+									[Default:Void]
+										[Block:Void]
+											[Var e1(19430):haxe.macro.TypedExpr] [Local `(19415):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Var e2(19431):haxe.macro.TypedExpr] [Local `(19416):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+														[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+														[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															reflaxe.elixir.helpers.MutabilityDetector
+															detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+													[Local e1(19430):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+														[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+														[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															reflaxe.elixir.helpers.MutabilityDetector
+															detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+													[Local e2(19431):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 4
+							[Block:Void]
+								[Var `(19432):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										0
+								[Var `(19433):haxe.macro.FieldAccess]
+									[EnumParameter:haxe.macro.FieldAccess]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TField
+										1
+								[Block:Void]
+									[Var e(19434):haxe.macro.TypedExpr] [Local `(19432):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19434):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 5
+							[Block:Void]
+								[Var `(19435):haxe.macro.ModuleType]
+									[EnumParameter:haxe.macro.ModuleType]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TTypeExpr
+										0
+								[Block:Void]
+						[Case:Void]
+							[Const:Int] 6
+							[Block:Void]
+								[Var `(19436):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TParenthesis
+										0
+								[Block:Void]
+									[Var e(19437):haxe.macro.TypedExpr] [Local `(19436):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19437):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 7
+							[Block:Void]
+								[Var `(19438):Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+									[EnumParameter:Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TObjectDecl
+										0
+								[Block:Void]
+									[Var fields(19439):Array<{ name : String, expr : haxe.macro.TypedExpr }>] [Local `(19438):Array<{ name : String, expr : haxe.macro.TypedExpr }>:Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(19440):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(19440):Int:Int]
+													<
+													[Field:Int]
+														[Local fields(19439):Array<{ name : String, expr : haxe.macro.TypedExpr }>:Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+														[FInstance:Int]
+															Array<{ name : String, expr : haxe.macro.TypedExpr }>
+															length:Int
+												[Block:Void]
+													[Var f(19441):{ name : String, expr : haxe.macro.TypedExpr }]
+														[Array:{ name : String, expr : haxe.macro.TypedExpr }]
+															[Local fields(19439):Array<{ name : String, expr : haxe.macro.TypedExpr }>:Array<{ name : String, expr : haxe.macro.TypedExpr }>]
+															[Local `(19440):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(19440):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+															[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																reflaxe.elixir.helpers.MutabilityDetector
+																detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+														[Field:haxe.macro.TypedExpr]
+															[Local f(19441):{ name : String, expr : haxe.macro.TypedExpr }:{ name : String, expr : haxe.macro.TypedExpr }]
+															[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+														[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 8
+							[Block:Void]
+								[Var `(19442):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TArrayDecl
+										0
+								[Block:Void]
+									[Var el(19443):Array<haxe.macro.TypedExpr>] [Local `(19442):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(19444):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(19444):Int:Int]
+													<
+													[Field:Int]
+														[Local el(19443):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+												[Block:Void]
+													[Var e(19445):haxe.macro.TypedExpr]
+														[Array:haxe.macro.TypedExpr]
+															[Local el(19443):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Local `(19444):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(19444):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+															[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																reflaxe.elixir.helpers.MutabilityDetector
+																detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+														[Local e(19445):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 9
+							[Block:Void]
+								[Var `(19446):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCall
+										0
+								[Var `(19447):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCall
+										1
+								[Block:Void]
+									[Var e(19448):haxe.macro.TypedExpr] [Local `(19446):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var el(19449):Array<haxe.macro.TypedExpr>] [Local `(19447):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19448):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+										[Block:Void]
+											[Var `(19450):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(19450):Int:Int]
+													<
+													[Field:Int]
+														[Local el(19449):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+												[Block:Void]
+													[Var arg(19451):haxe.macro.TypedExpr]
+														[Array:haxe.macro.TypedExpr]
+															[Local el(19449):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Local `(19450):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(19450):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+															[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																reflaxe.elixir.helpers.MutabilityDetector
+																detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+														[Local arg(19451):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 10
+							[Block:Void]
+								[Var `(19452):haxe.macro.Ref<haxe.macro.ClassType>]
+									[EnumParameter:haxe.macro.Ref<haxe.macro.ClassType>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TNew
+										0
+								[Var `(19453):Array<haxe.macro.Type>]
+									[EnumParameter:Array<haxe.macro.Type>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TNew
+										1
+								[Var `(19454):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TNew
+										2
+								[Block:Void]
+									[Var el(19455):Array<haxe.macro.TypedExpr>] [Local `(19454):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(19456):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(19456):Int:Int]
+													<
+													[Field:Int]
+														[Local el(19455):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+												[Block:Void]
+													[Var e(19457):haxe.macro.TypedExpr]
+														[Array:haxe.macro.TypedExpr]
+															[Local el(19455):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Local `(19456):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(19456):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+															[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																reflaxe.elixir.helpers.MutabilityDetector
+																detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+														[Local e(19457):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 11
+							[Block:Void]
+								[Var `(19458):haxe.macro.Unop]
+									[EnumParameter:haxe.macro.Unop]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TUnop
+										0
+								[Var `(19459):Bool]
+									[EnumParameter:Bool]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TUnop
+										1
+								[Var `(19460):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TUnop
+										2
+								[Switch:Void]
+									[EnumIndex:Int] [Local `(19458):haxe.macro.Unop:haxe.macro.Unop]
+									[Case:Void]
+										[Const:Int] 0
+										[Const:Int] 1
+										[Block:Void]
+											[Block:Void]
+												[Var e(19461):haxe.macro.TypedExpr] [Local `(19460):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+												[Block:Void]
+													[Meta:Void]
+														:ast(switch (e.expr) {
+	case TLocal(v):
+		mutatedVars.set(v.id, v);	
+	default:
+		detectMutationsRecursive(e, mutatedVars);	
+})
+														[Block:Void]
+															[Var `(19462):haxe.macro.TypedExprDef]
+																[Field:haxe.macro.TypedExprDef]
+																	[Local e(19461):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																	[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+															[If:Void]
+																[Binop:Bool]
+																	[EnumIndex:Int] [Local `(19462):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																	==
+																	[Const:Int] 1
+																[Then:Void] [Block:Void]
+																	[Var `(19463):haxe.macro.TVar]
+																		[EnumParameter:haxe.macro.TVar]
+																			[Local `(19462):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+																			TLocal
+																			0
+																	[Block:Void]
+																		[Var v(19464):haxe.macro.TVar] [Local `(19463):haxe.macro.TVar:haxe.macro.TVar]
+																		[Block:Void]
+																			[Block:Void]
+																				[Var key(19465):Int]
+																					[Field:Int]
+																						[Local v(19464):haxe.macro.TVar:haxe.macro.TVar]
+																						[FAnon:Int] id:Int
+																				[Call:Void]
+																					[Field:(key : Int, value : haxe.macro.TVar) -> Void]
+																						[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:haxe.ds.IntMap<haxe.macro.TVar>]
+																						[FInstance:(key : Int, value : haxe.macro.TVar) -> Void]
+																							haxe.ds.IntMap<haxe.macro.TVar>
+																							set:(key : Int, value : haxe.ds.IntMap.T) -> Void
+																					[Local key(19465):Int:Int]
+																					[Local v(19464):haxe.macro.TVar:haxe.macro.TVar]
+																[Else:Void] [Block:Void]
+																	[Call:Void]
+																		[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																			[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+																			[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																				reflaxe.elixir.helpers.MutabilityDetector
+																				detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+																		[Local e(19461):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																		[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+									[Default:Void]
+										[Block:Void]
+											[Var e(19466):haxe.macro.TypedExpr] [Local `(19460):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+														[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+														[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															reflaxe.elixir.helpers.MutabilityDetector
+															detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+													[Local e(19466):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 12
+							[Block:Void]
+								[Var `(19467):haxe.macro.TFunc]
+									[EnumParameter:haxe.macro.TFunc]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFunction
+										0
+								[Block:Void]
+									[Var tfunc(19468):haxe.macro.TFunc] [Local `(19467):haxe.macro.TFunc:haxe.macro.TFunc]
+									[Block:Void]
+										[If:Void]
+											[Binop:Bool]
+												[Field:haxe.macro.TypedExpr]
+													[Local tfunc(19468):haxe.macro.TFunc:haxe.macro.TFunc]
+													[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+												!=
+												[Const:haxe.macro.TypedExpr] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+														[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+														[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															reflaxe.elixir.helpers.MutabilityDetector
+															detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+													[Field:haxe.macro.TypedExpr]
+														[Local tfunc(19468):haxe.macro.TFunc:haxe.macro.TFunc]
+														[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+													[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 13
+							[Block:Void]
+								[Var `(19469):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										0
+								[Var `(19470):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TVar
+										1
+								[Block:Void]
+									[Var v(19471):haxe.macro.TVar] [Local `(19469):haxe.macro.TVar:haxe.macro.TVar]
+									[Var expr(19472):Null<haxe.macro.TypedExpr>] [Local `(19470):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[If:Void]
+											[Binop:Bool]
+												[Local expr(19472):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												!=
+												[Const:Null<haxe.macro.TypedExpr>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+														[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+														[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															reflaxe.elixir.helpers.MutabilityDetector
+															detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+													[Local expr(19472):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+													[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 14
+							[Block:Void]
+								[Var `(19473):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBlock
+										0
+								[Block:Void]
+									[Var el(19474):Array<haxe.macro.TypedExpr>] [Local `(19473):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Block:Void]
+											[Var `(19475):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(19475):Int:Int]
+													<
+													[Field:Int]
+														[Local el(19474):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:Int]
+															Array<haxe.macro.TypedExpr>
+															length:Int
+												[Block:Void]
+													[Var e(19476):haxe.macro.TypedExpr]
+														[Array:haxe.macro.TypedExpr]
+															[Local el(19474):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[Local `(19475):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(19475):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+															[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																reflaxe.elixir.helpers.MutabilityDetector
+																detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+														[Local e(19476):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 15
+							[Block:Void]
+								[Var `(19477):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										0
+								[Var `(19478):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										1
+								[Var `(19479):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TFor
+										2
+								[Block:Void]
+									[Var v(19480):haxe.macro.TVar] [Local `(19477):haxe.macro.TVar:haxe.macro.TVar]
+									[Var e1(19481):haxe.macro.TypedExpr] [Local `(19478):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var e2(19482):haxe.macro.TypedExpr] [Local `(19479):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e1(19481):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e2(19482):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 16
+							[Block:Void]
+								[Var `(19483):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIf
+										0
+								[Var `(19484):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIf
+										1
+								[Var `(19485):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIf
+										2
+								[Block:Void]
+									[Var econd(19486):haxe.macro.TypedExpr] [Local `(19483):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var eif(19487):haxe.macro.TypedExpr] [Local `(19484):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var eelse(19488):Null<haxe.macro.TypedExpr>] [Local `(19485):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local econd(19486):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local eif(19487):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+										[If:Void]
+											[Binop:Bool]
+												[Local eelse(19488):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												!=
+												[Const:Null<haxe.macro.TypedExpr>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+														[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+														[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															reflaxe.elixir.helpers.MutabilityDetector
+															detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+													[Local eelse(19488):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+													[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 17
+							[Block:Void]
+								[Var `(19489):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										0
+								[Var `(19490):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										1
+								[Var `(19491):Bool]
+									[EnumParameter:Bool]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TWhile
+										2
+								[Block:Void]
+									[Var econd(19492):haxe.macro.TypedExpr] [Local `(19489):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var e(19493):haxe.macro.TypedExpr] [Local `(19490):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local econd(19492):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19493):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 18
+							[Block:Void]
+								[Var `(19494):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TSwitch
+										0
+								[Var `(19495):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+									[EnumParameter:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TSwitch
+										1
+								[Var `(19496):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TSwitch
+										2
+								[Block:Void]
+									[Var e(19497):haxe.macro.TypedExpr] [Local `(19494):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var cases(19498):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>] [Local `(19495):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+									[Var edef(19499):Null<haxe.macro.TypedExpr>] [Local `(19496):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19497):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+										[Block:Void]
+											[Var `(19500):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(19500):Int:Int]
+													<
+													[Field:Int]
+														[Local cases(19498):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+														[FInstance:Int]
+															Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>
+															length:Int
+												[Block:Void]
+													[Var c(19501):{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }]
+														[Array:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }]
+															[Local cases(19498):Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>]
+															[Local `(19500):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(19500):Int:Int]
+													[Block:Void]
+														[Var `(19502):Int] [Const:Int] 0
+														[Var `(19503):Array<haxe.macro.TypedExpr>]
+															[Field:Array<haxe.macro.TypedExpr>]
+																[Local c(19501):{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }]
+																[FAnon:Array<haxe.macro.TypedExpr>] values:Array<haxe.macro.TypedExpr>
+														[While:Void]
+															[Binop:Bool]
+																[Local `(19502):Int:Int]
+																<
+																[Field:Int]
+																	[Local `(19503):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																	[FInstance:Int]
+																		Array<haxe.macro.TypedExpr>
+																		length:Int
+															[Block:Void]
+																[Var v(19504):haxe.macro.TypedExpr]
+																	[Array:haxe.macro.TypedExpr]
+																		[Local `(19503):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[Local `(19502):Int:Int]
+																[Unop:Int]
+																	++
+																	Prefix
+																	[Local `(19502):Int:Int]
+																[Call:Void]
+																	[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																		[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+																		[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																			reflaxe.elixir.helpers.MutabilityDetector
+																			detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+																	[Local v(19504):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																	[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+															[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																reflaxe.elixir.helpers.MutabilityDetector
+																detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+														[Field:haxe.macro.TypedExpr]
+															[Local c(19501):{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }]
+															[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+														[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+										[If:Void]
+											[Binop:Bool]
+												[Local edef(19499):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												!=
+												[Const:Null<haxe.macro.TypedExpr>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+														[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+														[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															reflaxe.elixir.helpers.MutabilityDetector
+															detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+													[Local edef(19499):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+													[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 19
+							[Block:Void]
+								[Var `(19505):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TTry
+										0
+								[Var `(19506):Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>]
+									[EnumParameter:Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TTry
+										1
+								[Block:Void]
+									[Var e(19507):haxe.macro.TypedExpr] [Local `(19505):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Var catches(19508):Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>] [Local `(19506):Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>:Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19507):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+										[Block:Void]
+											[Var `(19509):Int] [Const:Int] 0
+											[While:Void]
+												[Binop:Bool]
+													[Local `(19509):Int:Int]
+													<
+													[Field:Int]
+														[Local catches(19508):Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>:Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>]
+														[FInstance:Int]
+															Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>
+															length:Int
+												[Block:Void]
+													[Var c(19510):{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }]
+														[Array:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }]
+															[Local catches(19508):Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>:Array<{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }>]
+															[Local `(19509):Int:Int]
+													[Unop:Int]
+														++
+														Prefix
+														[Local `(19509):Int:Int]
+													[Call:Void]
+														[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+															[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+																reflaxe.elixir.helpers.MutabilityDetector
+																detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+														[Field:haxe.macro.TypedExpr]
+															[Local c(19510):{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }]
+															[FAnon:haxe.macro.TypedExpr] expr:haxe.macro.TypedExpr
+														[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 20
+							[Block:Void]
+								[Var `(19511):Null<haxe.macro.TypedExpr>]
+									[EnumParameter:Null<haxe.macro.TypedExpr>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TReturn
+										0
+								[Block:Void]
+									[Var e(19512):Null<haxe.macro.TypedExpr>] [Local `(19511):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+									[Block:Void]
+										[If:Void]
+											[Binop:Bool]
+												[Local e(19512):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												!=
+												[Const:Null<haxe.macro.TypedExpr>] null
+											[Then:Void] [Block:Void]
+												[Call:Void]
+													[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+														[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+														[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+															reflaxe.elixir.helpers.MutabilityDetector
+															detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+													[Local e(19512):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+													[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 21
+							[Const:Int] 22
+							[Block:Void] [Block:Void]
+						[Case:Void]
+							[Const:Int] 23
+							[Block:Void]
+								[Var `(19513):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TThrow
+										0
+								[Block:Void]
+									[Var e(19514):haxe.macro.TypedExpr] [Local `(19513):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19514):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 24
+							[Block:Void]
+								[Var `(19515):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCast
+										0
+								[Var `(19516):Null<haxe.macro.ModuleType>]
+									[EnumParameter:Null<haxe.macro.ModuleType>]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TCast
+										1
+								[Block:Void]
+									[Var e(19517):haxe.macro.TypedExpr] [Local `(19515):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19517):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 25
+							[Block:Void]
+								[Var `(19518):haxe.macro.MetadataEntry]
+									[EnumParameter:haxe.macro.MetadataEntry]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TMeta
+										0
+								[Var `(19519):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TMeta
+										1
+								[Block:Void]
+									[Var e(19520):haxe.macro.TypedExpr] [Local `(19519):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19520):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 26
+							[Block:Void]
+								[Var `(19521):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TEnumParameter
+										0
+								[Var `(19522):haxe.macro.EnumField]
+									[EnumParameter:haxe.macro.EnumField]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TEnumParameter
+										1
+								[Var `(19523):Int]
+									[EnumParameter:Int]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TEnumParameter
+										2
+								[Block:Void]
+									[Var e(19524):haxe.macro.TypedExpr] [Local `(19521):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19524):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 27
+							[Block:Void]
+								[Var `(19525):haxe.macro.TypedExpr]
+									[EnumParameter:haxe.macro.TypedExpr]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TEnumIndex
+										0
+								[Block:Void]
+									[Var e(19526):haxe.macro.TypedExpr] [Local `(19525):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Block:Void]
+										[Call:Void]
+											[Field:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+												[TypeExpr reflaxe.elixir.helpers.MutabilityDetector:Class<reflaxe.elixir.helpers.MutabilityDetector>]
+												[FStatic:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void]
+													reflaxe.elixir.helpers.MutabilityDetector
+													detectMutationsRecursive:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Void
+											[Local e(19526):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+											[Local mutatedVars(19261):Map<Int, haxe.macro.TVar>:Map<Int, haxe.macro.TVar>]
+						[Case:Void]
+							[Const:Int] 28
+							[Block:Void]
+								[Var `(19527):String]
+									[EnumParameter:String]
+										[Local `(19407):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TIdent
+										0
+								[Block:Void]
+
+	public static function extractAccumulatorVariables[Function:(expr : haxe.macro.TypedExpr, mutatedVars : Map<Int, haxe.macro.TVar>) -> Array<haxe.macro.TVar>]
+		[Arg:haxe.macro.TypedExpr] [Local expr(26770):haxe.macro.TypedExpr]
+		[Arg:Map<Int, haxe.macro.TVar>] [Local mutatedVars(26771):Map<Int, haxe.macro.TVar>]
+		[Block:Dynamic]
+			[Var result(26772):Array<haxe.macro.TVar>] [ArrayDecl:Array<haxe.macro.TVar>]
+			[For:Void]
+				[Local v(26777):haxe.macro.TVar]
+				[Call:Iterator<haxe.macro.TVar>]
+					[Field:() -> Iterator<haxe.macro.TVar>]
+						[Local mutatedVars(26771):Map<Int, haxe.macro.TVar>:haxe.ds.IntMap<haxe.macro.TVar>]
+						[FInstance:() -> Iterator<haxe.macro.TVar>]
+							haxe.ds.IntMap<haxe.macro.TVar>
+							iterator:() -> Iterator<haxe.ds.IntMap.T>
+				[Block:Int]
+					[Call:Int]
+						[Field:(x : haxe.macro.TVar) -> Int]
+							[Local result(26772):Array<haxe.macro.TVar>:Array<haxe.macro.TVar>]
+							[FInstance:(x : haxe.macro.TVar) -> Int]
+								Array<haxe.macro.TVar>
+								push:(x : Array.T) -> Int
+						[Local v(26777):haxe.macro.TVar:haxe.macro.TVar]
+			[Return:Dynamic] [Local result(26772):Array<haxe.macro.TVar>:Array<haxe.macro.TVar>]
+}

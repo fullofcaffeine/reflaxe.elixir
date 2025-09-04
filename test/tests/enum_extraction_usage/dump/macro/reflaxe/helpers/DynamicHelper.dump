@@ -1,0 +1,74 @@
+class reflaxe.helpers.DynamicHelper {
+
+	public static function isString[Function:(d : Dynamic) -> Bool]
+		[Arg:Dynamic] [Local d(832):Dynamic]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Binop:Bool]
+					[Call:String]
+						[Field:(value : ValueType) -> String]
+							[TypeExpr Std:Class<Std>]
+							[FStatic:(value : ValueType) -> String]
+								Std
+								string:(value : string.T) -> String
+						[Call:ValueType]
+							[Field:(v : Dynamic) -> ValueType]
+								[TypeExpr Type:Class<Type>]
+								[FStatic:(v : Dynamic) -> ValueType]
+									Type
+									typeof:(v : Dynamic) -> ValueType
+							[Local d(832):Dynamic:Dynamic]
+					==
+					[Const:String] "TClass(Class<String>)"
+
+	public static function with[Function:(d : Dynamic, props : Dynamic) -> Dynamic]
+		[Arg:Dynamic] [Local d(833):Dynamic]
+		[Arg:Dynamic] [Local props(834):Dynamic]
+		[Block:Dynamic]
+			[Var result(838):Unknown<94>] [Cast:Unknown<94>] [Cast:Unknown<94>] [Local d(833):Dynamic:Dynamic]
+			[Block:Void]
+				[Var `(840):Int] [Const:Int] 0
+				[Var `(841):Array<String>]
+					[Call:Array<String>]
+						[Field:(obj : Unknown<95>) -> Array<String>]
+							[TypeExpr Reflect:Class<Reflect>]
+							[FStatic:(obj : Unknown<95>) -> Array<String>]
+								Reflect
+								fields:(obj : fields.T) -> Array<String>
+						[Local props(834):Dynamic:Dynamic]
+				[While:Void]
+					[Binop:Bool]
+						[Local `(840):Int:Int]
+						<
+						[Field:Int]
+							[Local `(841):Array<String>:Array<String>]
+							[FInstance:Int]
+								Array<String>
+								length:Int
+					[Block:Void]
+						[Var prop(839):String]
+							[Array:String]
+								[Local `(841):Array<String>:Array<String>]
+								[Local `(840):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(840):Int:Int]
+						[Call:Unknown<94>]
+							[Field:(obj : Unknown<94>, field : String, value : Null<Unknown<97>>) -> Unknown<94>]
+								[TypeExpr Reflect:Class<Reflect>]
+								[FStatic:(obj : Unknown<94>, field : String, value : Null<Unknown<97>>) -> Unknown<94>]
+									Reflect
+									setField:(obj : setField.T, field : String, value : setField.V) -> setField.T
+							[Local result(838):Unknown<94>:Unknown<94>]
+							[Local prop(839):String:String]
+							[Call:Null<Unknown<97>>]
+								[Field:(obj : Unknown<96>, field : String) -> Null<Unknown<97>>]
+									[TypeExpr Reflect:Class<Reflect>]
+									[FStatic:(obj : Unknown<96>, field : String) -> Null<Unknown<97>>]
+										Reflect
+										field:(obj : field.T, field : String) -> Null<field.R>
+								[Local props(834):Dynamic:Dynamic]
+								[Local prop(839):String:String]
+			[Return:Dynamic] [Local result(838):Unknown<94>:Unknown<94>]
+}

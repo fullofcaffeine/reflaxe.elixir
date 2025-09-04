@@ -1,0 +1,768 @@
+class reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl {
+
+	@:value({ initVarNames : null, parent : null })
+	public function new[Function:(expr : haxe.macro.TypedExpr, ?parent : Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>, ?initVarNames : Null<Array<String>>) -> Void]
+		[Arg:haxe.macro.TypedExpr] [Local expr(5862):haxe.macro.TypedExpr]
+		[Arg:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+			[Local parent(5863):Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+			[Const:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>] null
+		[Arg:Null<Array<String>>]
+			[Local initVarNames(5864):Null<Array<String>>]
+			[Const:Null<Array<String>>] null
+		[Block:Map<Int, haxe.macro.TVar>]
+			[Binop:haxe.macro.TypedExpr]
+				[Field:haxe.macro.TypedExpr]
+					[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+					[FInstance:haxe.macro.TypedExpr]
+						reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+						expr:haxe.macro.TypedExpr
+				=
+				[Local expr(5862):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Binop:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+				[Field:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+					[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+					[FInstance:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+						reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+						parent:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>
+				=
+				[Local parent(5863):Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+			[Binop:Array<haxe.macro.TypedExpr>]
+				[Field:Array<haxe.macro.TypedExpr>]
+					[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+					[FInstance:Array<haxe.macro.TypedExpr>]
+						reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+						exprList:Array<haxe.macro.TypedExpr>
+				=
+				[Meta:Array<haxe.macro.TypedExpr>]
+					:ast(switch (expr.expr) {
+	case TBlock(exprs):
+		exprs.map(function(e) ->  @:implicitReturn return e.copy());	
+	case _:
+		[expr.copy()];	
+})
+					[Block:Array<haxe.macro.TypedExpr>]
+						[Var `(5869):haxe.macro.TypedExprDef]
+							[Field:haxe.macro.TypedExprDef]
+								[Local expr(5862):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+								[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+						[If:Array<haxe.macro.TypedExpr>]
+							[Binop:Bool]
+								[EnumIndex:Int] [Local `(5869):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+								==
+								[Const:Int] 14
+							[Then:Array<haxe.macro.TypedExpr>] [Block:Array<haxe.macro.TypedExpr>]
+								[Var `(5870):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(5869):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBlock
+										0
+								[Block:Array<haxe.macro.TypedExpr>]
+									[Var exprs(5871):Array<haxe.macro.TypedExpr>] [Local `(5870):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+									[Block:Array<haxe.macro.TypedExpr>]
+										[Call:Array<haxe.macro.TypedExpr>]
+											[Field:(f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> Array<haxe.macro.TypedExpr>]
+												[Local exprs(5871):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+												[FInstance:(f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> Array<haxe.macro.TypedExpr>]
+													Array<haxe.macro.TypedExpr>
+													map:(f : (Array.T -> map.S)) -> Array<map.S>
+											[Function:(e : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+												[Arg:haxe.macro.TypedExpr] [Local e(5872):haxe.macro.TypedExpr]
+												[Return:Dynamic]
+													[Call:haxe.macro.TypedExpr]
+														[Field:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+															[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+															[FStatic:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+																reflaxe.helpers.TypedExprHelper
+																copy:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr
+														[Local e(5872):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+														[Const:Null<haxe.macro.TypedExprDef>] null
+							[Else:Array<haxe.macro.TypedExpr>] [Block:Array<haxe.macro.TypedExpr>]
+								[ArrayDecl:Array<haxe.macro.TypedExpr>]
+									[Call:haxe.macro.TypedExpr]
+										[Field:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+											[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+											[FStatic:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+												reflaxe.helpers.TypedExprHelper
+												copy:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr
+										[Local expr(5862):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[Const:Null<haxe.macro.TypedExprDef>] null
+			[Binop:Map<String, Bool>]
+				[Field:Map<String, Bool>]
+					[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+					[FInstance:Map<String, Bool>]
+						reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+						varNames:Map<String, Bool>
+				=
+				[Block:haxe.ds.StringMap<Bool>]
+					[Block:Void]
+					[New:haxe.ds.StringMap<Bool>] haxe.ds.StringMap<Bool>
+			[If:Void]
+				[Binop:Bool]
+					[Local initVarNames(5864):Null<Array<String>>:Null<Array<String>>]
+					!=
+					[Const:Null<Array<String>>] null
+				[Then:Void] [Block:Void]
+					[Block:Void]
+						[Var `(5879):Int] [Const:Int] 0
+						[While:Void]
+							[Binop:Bool]
+								[Local `(5879):Int:Int]
+								<
+								[Field:Int]
+									[Local initVarNames(5864):Null<Array<String>>:Null<Array<String>>]
+									[FInstance:Int]
+										Array<String>
+										length:Int
+							[Block:Void]
+								[Var name(5873):String]
+									[Array:String]
+										[Local initVarNames(5864):Null<Array<String>>:Null<Array<String>>]
+										[Local `(5879):Int:Int]
+								[Unop:Int]
+									++
+									Prefix
+									[Local `(5879):Int:Int]
+								[Block:Void]
+									[Var this(5876):haxe.IMap<String, Bool>]
+										[Field:Map<String, Bool>]
+											[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+											[FInstance:Map<String, Bool>]
+												reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+												varNames:Map<String, Bool>
+									[Call:Void]
+										[Field:(key : String, value : Bool) -> Void]
+											[Cast:haxe.ds.StringMap<Bool>] [Local this(5876):haxe.IMap<String, Bool>:haxe.IMap<String, Bool>]
+											[FInstance:(key : String, value : Bool) -> Void]
+												haxe.ds.StringMap<Bool>
+												set:(key : String, value : haxe.ds.StringMap.T) -> Void
+										[Local name(5873):String:String]
+										[Const:Bool] true
+			[Binop:Map<Int, haxe.macro.TVar>]
+				[Field:Map<Int, haxe.macro.TVar>]
+					[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+					[FInstance:Map<Int, haxe.macro.TVar>]
+						reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+						varReplacements:Map<Int, haxe.macro.TVar>
+				=
+				[Block:haxe.ds.IntMap<haxe.macro.TVar>]
+					[Block:Void]
+					[New:haxe.ds.IntMap<haxe.macro.TVar>] haxe.ds.IntMap<haxe.macro.TVar>
+
+	var expr:haxe.macro.TypedExpr;
+
+	var exprList:Array<haxe.macro.TypedExpr>;
+
+	var parent:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>;
+
+	var varNames:Map<String, Bool>;
+
+	var varReplacements:Map<Int, haxe.macro.TVar>;
+
+	public function registerVarReplacement[Function:(newName : String, previousTVar : haxe.macro.TVar) -> Void]
+		[Arg:String] [Local newName(5880):String]
+		[Arg:haxe.macro.TVar] [Local previousTVar(5881):haxe.macro.TVar]
+		[Block:Void]
+			[Block:Void]
+				[Var this(5884):haxe.IMap<Int, haxe.macro.TVar>]
+					[Field:Map<Int, haxe.macro.TVar>]
+						[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+						[FInstance:Map<Int, haxe.macro.TVar>]
+							reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+							varReplacements:Map<Int, haxe.macro.TVar>
+				[Var key(5885):Int]
+					[Field:Int]
+						[Local previousTVar(5881):haxe.macro.TVar:haxe.macro.TVar]
+						[FAnon:Int] id:Int
+				[Var value(5886):haxe.macro.TVar]
+					[Call:haxe.macro.TVar]
+						[Field:(tvar : haxe.macro.TVar, ?newName : Null<String>) -> haxe.macro.TVar]
+							[TypeExpr reflaxe.helpers.TVarHelper:{ Statics reflaxe.helpers.TVarHelper }]
+							[FStatic:(tvar : haxe.macro.TVar, ?newName : Null<String>) -> haxe.macro.TVar]
+								reflaxe.helpers.TVarHelper
+								copy:(tvar : haxe.macro.TVar, ?newName : Null<String>) -> haxe.macro.TVar
+						[Local previousTVar(5881):haxe.macro.TVar:haxe.macro.TVar]
+						[Local newName(5880):String:String]
+				[Call:Void]
+					[Field:(key : Int, value : haxe.macro.TVar) -> Void]
+						[Cast:haxe.ds.IntMap<haxe.macro.TVar>] [Local this(5884):haxe.IMap<Int, haxe.macro.TVar>:haxe.IMap<Int, haxe.macro.TVar>]
+						[FInstance:(key : Int, value : haxe.macro.TVar) -> Void]
+							haxe.ds.IntMap<haxe.macro.TVar>
+							set:(key : Int, value : haxe.ds.IntMap.T) -> Void
+					[Local key(5885):Int:Int]
+					[Local value(5886):haxe.macro.TVar:haxe.macro.TVar]
+			[Block:Void]
+				[Var this(5889):haxe.IMap<String, Bool>]
+					[Field:Map<String, Bool>]
+						[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+						[FInstance:Map<String, Bool>]
+							reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+							varNames:Map<String, Bool>
+				[Call:Void]
+					[Field:(key : String, value : Bool) -> Void]
+						[Cast:haxe.ds.StringMap<Bool>] [Local this(5889):haxe.IMap<String, Bool>:haxe.IMap<String, Bool>]
+						[FInstance:(key : String, value : Bool) -> Void]
+							haxe.ds.StringMap<Bool>
+							set:(key : String, value : haxe.ds.StringMap.T) -> Void
+					[Local newName(5880):String:String]
+					[Const:Bool] true
+
+	public function fixRepeatVariables[Function:() -> haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var result(5892):Array<haxe.macro.TypedExpr>] [ArrayDecl:Array<haxe.macro.TypedExpr>]
+			[Block:Void]
+				[Var `(5960):Int] [Const:Int] 0
+				[Var `(5961):Array<haxe.macro.TypedExpr>]
+					[Field:Array<haxe.macro.TypedExpr>]
+						[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+						[FInstance:Array<haxe.macro.TypedExpr>]
+							reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+							exprList:Array<haxe.macro.TypedExpr>
+				[While:Void]
+					[Binop:Bool]
+						[Local `(5960):Int:Int]
+						<
+						[Field:Int]
+							[Local `(5961):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+							[FInstance:Int]
+								Array<haxe.macro.TypedExpr>
+								length:Int
+					[Block:Void]
+						[Var expr(5893):haxe.macro.TypedExpr]
+							[Array:haxe.macro.TypedExpr]
+								[Local `(5961):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+								[Local `(5960):Int:Int]
+						[Unop:Int]
+							++
+							Prefix
+							[Local `(5960):Int:Int]
+						[Meta:Void]
+							:ast(switch (expr.expr) {
+	case TVar(tvar, maybeExpr):
+		{
+			var name = tvar.name;
+			while (varExists(name)) {
+				var regex = ~/[\w\d_]+(\d+)/;
+				if (regex.match(name)) {
+					var m = regex.matched(1);
+					var num = Std.parseInt(m);
+					if (num != null) {
+						name = name.substring(0, name.length - m.length) + (num + 1);
+					};
+				} else {
+					name += "2";
+				};
+			};
+			varNames.set(name, true);
+			if (name != tvar.name) {
+				var copyTVar = tvar.copy(name);
+				varReplacements.set(copyTVar.id, copyTVar);
+				var modifiedExpr = maybeExpr != null ? handleExpression(maybeExpr) : null;
+				var temp = expr.copy(TVar(copyTVar, modifiedExpr));
+				result.push(temp);
+				continue;
+			} else {
+				result.push(handleExpression(expr));
+			};
+		};	
+	case TBlock(_):
+		{
+			result.push(handleBlock(expr));
+			continue;
+		};	
+	case _:
+		{
+			result.push(handleExpression(expr));
+		};	
+})
+							[Block:Void]
+								[Var `(5944):haxe.macro.TypedExprDef]
+									[Field:haxe.macro.TypedExprDef]
+										[Local expr(5893):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+										[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+								[Switch:Void]
+									[EnumIndex:Int] [Local `(5944):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+									[Case:Void]
+										[Const:Int] 13
+										[Block:Void]
+											[Var `(5945):haxe.macro.TVar]
+												[EnumParameter:haxe.macro.TVar]
+													[Local `(5944):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TVar
+													0
+											[Var `(5946):Null<haxe.macro.TypedExpr>]
+												[EnumParameter:Null<haxe.macro.TypedExpr>]
+													[Local `(5944):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TVar
+													1
+											[Block:Void]
+												[Var tvar(5947):haxe.macro.TVar] [Local `(5945):haxe.macro.TVar:haxe.macro.TVar]
+												[Var maybeExpr(5948):Null<haxe.macro.TypedExpr>] [Local `(5946):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+												[Block:Void]
+													[Block:Void]
+														[Var name(5949):String]
+															[Field:String]
+																[Local tvar(5947):haxe.macro.TVar:haxe.macro.TVar]
+																[FAnon:String] name:String
+														[While:Void]
+															[Call:Bool]
+																[Field:(name : String) -> Bool]
+																	[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+																	[FInstance:(name : String) -> Bool]
+																		reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+																		varExists:(name : String) -> Bool
+																[Local name(5949):String:String]
+															[Block:Void]
+																[Var regex(5950):EReg]
+																	[New:EReg]
+																		EReg
+																		[Const:String] "[\\w\\d_]+(\\d+)"
+																		[Const:String] "i"
+																[If:Void]
+																	[Call:Bool]
+																		[Field:(s : String) -> Bool]
+																			[Local regex(5950):EReg:EReg]
+																			[FInstance:(s : String) -> Bool]
+																				EReg
+																				match:(s : String) -> Bool
+																		[Local name(5949):String:String]
+																	[Then:Void] [Block:Void]
+																		[Var m(5951):String]
+																			[Call:String]
+																				[Field:(n : Int) -> String]
+																					[Local regex(5950):EReg:EReg]
+																					[FInstance:(n : Int) -> String]
+																						EReg
+																						matched:(n : Int) -> String
+																				[Const:Int] 1
+																		[Var num(5952):Null<Int>]
+																			[Call:Null<Int>]
+																				[Field:(str : String) -> Null<Int>]
+																					[TypeExpr Std:Class<Std>]
+																					[FStatic:(str : String) -> Null<Int>]
+																						Std
+																						parseInt:(str : String) -> Null<Int>
+																				[Local m(5951):String:String]
+																		[If:Void]
+																			[Binop:Bool]
+																				[Local num(5952):Null<Int>:Null<Int>]
+																				!=
+																				[Const:Null<Int>] null
+																			[Then:String] [Block:String]
+																				[Binop:String]
+																					[Local name(5949):String:String]
+																					=
+																					[Binop:String]
+																						[Call:String]
+																							[Field:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+																								[Local name(5949):String:String]
+																								[FInstance:(startIndex : Int, ?endIndex : Null<Int>) -> String]
+																									String
+																									substring:(startIndex : Int, ?endIndex : Null<Int>) -> String
+																							[Const:Int] 0
+																							[Binop:Int]
+																								[Field:Int]
+																									[Local name(5949):String:String]
+																									[FInstance:Int]
+																										String
+																										length:Int
+																								-
+																								[Field:Int]
+																									[Local m(5951):String:String]
+																									[FInstance:Int]
+																										String
+																										length:Int
+																						+
+																						[Parenthesis:Int]
+																							[Binop:Int]
+																								[Local num(5952):Null<Int>:Null<Int>]
+																								+
+																								[Const:Int] 1
+																	[Else:String] [Block:String]
+																		[Binop:String]
+																			[Local name(5949):String:String]
+																			+=
+																			[Const:String] "2"
+														[Block:Void]
+															[Var this(5953):haxe.IMap<String, Bool>]
+																[Field:Map<String, Bool>]
+																	[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+																	[FInstance:Map<String, Bool>]
+																		reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+																		varNames:Map<String, Bool>
+															[Call:Void]
+																[Field:(key : String, value : Bool) -> Void]
+																	[Cast:haxe.ds.StringMap<Bool>] [Local this(5953):haxe.IMap<String, Bool>:haxe.IMap<String, Bool>]
+																	[FInstance:(key : String, value : Bool) -> Void]
+																		haxe.ds.StringMap<Bool>
+																		set:(key : String, value : haxe.ds.StringMap.T) -> Void
+																[Local name(5949):String:String]
+																[Const:Bool] true
+														[If:Void]
+															[Binop:Bool]
+																[Local name(5949):String:String]
+																!=
+																[Field:String]
+																	[Local tvar(5947):haxe.macro.TVar:haxe.macro.TVar]
+																	[FAnon:String] name:String
+															[Then:Dynamic] [Block:Dynamic]
+																[Var copyTVar(5954):haxe.macro.TVar]
+																	[Call:haxe.macro.TVar]
+																		[Field:(tvar : haxe.macro.TVar, ?newName : Null<String>) -> haxe.macro.TVar]
+																			[TypeExpr reflaxe.helpers.TVarHelper:{ Statics reflaxe.helpers.TVarHelper }]
+																			[FStatic:(tvar : haxe.macro.TVar, ?newName : Null<String>) -> haxe.macro.TVar]
+																				reflaxe.helpers.TVarHelper
+																				copy:(tvar : haxe.macro.TVar, ?newName : Null<String>) -> haxe.macro.TVar
+																		[Local tvar(5947):haxe.macro.TVar:haxe.macro.TVar]
+																		[Local name(5949):String:String]
+																[Block:Void]
+																	[Var this(5955):haxe.IMap<Int, haxe.macro.TVar>]
+																		[Field:Map<Int, haxe.macro.TVar>]
+																			[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+																			[FInstance:Map<Int, haxe.macro.TVar>]
+																				reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+																				varReplacements:Map<Int, haxe.macro.TVar>
+																	[Var key(5956):Int]
+																		[Field:Int]
+																			[Local copyTVar(5954):haxe.macro.TVar:haxe.macro.TVar]
+																			[FAnon:Int] id:Int
+																	[Call:Void]
+																		[Field:(key : Int, value : haxe.macro.TVar) -> Void]
+																			[Cast:haxe.ds.IntMap<haxe.macro.TVar>] [Local this(5955):haxe.IMap<Int, haxe.macro.TVar>:haxe.IMap<Int, haxe.macro.TVar>]
+																			[FInstance:(key : Int, value : haxe.macro.TVar) -> Void]
+																				haxe.ds.IntMap<haxe.macro.TVar>
+																				set:(key : Int, value : haxe.ds.IntMap.T) -> Void
+																		[Local key(5956):Int:Int]
+																		[Local copyTVar(5954):haxe.macro.TVar:haxe.macro.TVar]
+																[Var modifiedExpr(5957):Null<Null<haxe.macro.TypedExpr>>]
+																	[If:Null<haxe.macro.TypedExpr>]
+																		[Binop:Bool]
+																			[Local maybeExpr(5948):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+																			!=
+																			[Const:Null<haxe.macro.TypedExpr>] null
+																		[Then:haxe.macro.TypedExpr] [Block:haxe.macro.TypedExpr]
+																			[Call:haxe.macro.TypedExpr]
+																				[Field:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																					[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+																					[FInstance:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																						reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+																						handleExpression:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+																				[Local maybeExpr(5948):Null<haxe.macro.TypedExpr>:Null<haxe.macro.TypedExpr>]
+																		[Else:Null<Null<haxe.macro.TypedExpr>>] [Block:Null<Null<haxe.macro.TypedExpr>>] [Const:Null<Null<haxe.macro.TypedExpr>>] null
+																[Var temp(5958):haxe.macro.TypedExpr]
+																	[Call:haxe.macro.TypedExpr]
+																		[Field:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+																			[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+																			[FStatic:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+																				reflaxe.helpers.TypedExprHelper
+																				copy:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr
+																		[Local expr(5893):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																		[Call:haxe.macro.TypedExprDef]
+																			[Field:(v : haxe.macro.TVar, expr : Null<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+																				[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+																				[FEnum:(v : haxe.macro.TVar, expr : Null<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+																					haxe.macro.TypedExprDef
+																					TVar
+																			[Local copyTVar(5954):haxe.macro.TVar:haxe.macro.TVar]
+																			[Local modifiedExpr(5957):Null<Null<haxe.macro.TypedExpr>>:Null<Null<haxe.macro.TypedExpr>>]
+																[Call:Int]
+																	[Field:(x : haxe.macro.TypedExpr) -> Int]
+																		[Local result(5892):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+																			Array<haxe.macro.TypedExpr>
+																			push:(x : Array.T) -> Int
+																	[Local temp(5958):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+																[Continue:Dynamic]
+															[Else:Int] [Block:Int]
+																[Call:Int]
+																	[Field:(x : haxe.macro.TypedExpr) -> Int]
+																		[Local result(5892):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+																		[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+																			Array<haxe.macro.TypedExpr>
+																			push:(x : Array.T) -> Int
+																	[Call:haxe.macro.TypedExpr]
+																		[Field:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																			[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+																			[FInstance:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																				reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+																				handleExpression:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+																		[Local expr(5893):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+									[Case:Dynamic]
+										[Const:Int] 14
+										[Block:Dynamic]
+											[Var `(5959):Array<haxe.macro.TypedExpr>]
+												[EnumParameter:Array<haxe.macro.TypedExpr>]
+													[Local `(5944):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+													TBlock
+													0
+											[Block:Dynamic]
+												[Block:Dynamic]
+													[Call:Int]
+														[Field:(x : haxe.macro.TypedExpr) -> Int]
+															[Local result(5892):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+															[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+																Array<haxe.macro.TypedExpr>
+																push:(x : Array.T) -> Int
+														[Call:haxe.macro.TypedExpr]
+															[Field:(subExpr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+																[FInstance:(subExpr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																	reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+																	handleBlock:(subExpr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+															[Local expr(5893):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+													[Continue:Dynamic]
+									[Default:Int]
+										[Block:Int]
+											[Block:Int]
+												[Call:Int]
+													[Field:(x : haxe.macro.TypedExpr) -> Int]
+														[Local result(5892):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+														[FInstance:(x : haxe.macro.TypedExpr) -> Int]
+															Array<haxe.macro.TypedExpr>
+															push:(x : Array.T) -> Int
+													[Call:haxe.macro.TypedExpr]
+														[Field:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+															[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+															[FInstance:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+																reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+																handleExpression:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+														[Local expr(5893):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+			[Return:Dynamic]
+				[Call:haxe.macro.TypedExpr]
+					[Field:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+						[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+						[FStatic:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+							reflaxe.helpers.TypedExprHelper
+							copy:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr
+					[Field:haxe.macro.TypedExpr]
+						[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+						[FInstance:haxe.macro.TypedExpr]
+							reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+							expr:haxe.macro.TypedExpr
+					[Call:haxe.macro.TypedExprDef]
+						[Field:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+							[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+							[FEnum:(el : Array<haxe.macro.TypedExpr>) -> haxe.macro.TypedExprDef]
+								haxe.macro.TypedExprDef
+								TBlock
+						[Local result(5892):Array<haxe.macro.TypedExpr>:Array<haxe.macro.TypedExpr>]
+
+	function handleExpression[Function:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local expr(5916):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Meta:Void]
+				:ast(switch (expr.expr) {
+	case TBlock(_):
+		{
+			return handleBlock(expr);
+		};	
+	case TLocal(tvar):
+		{
+			var replacement = varReplacement(tvar.id);
+			if (replacement != null) {
+				return expr.copy(TLocal(replacement));
+			};
+		};	
+	case _:
+})
+				[Block:Void]
+					[Var `(5933):haxe.macro.TypedExprDef]
+						[Field:haxe.macro.TypedExprDef]
+							[Local expr(5916):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+							[FAnon:haxe.macro.TypedExprDef] expr:haxe.macro.TypedExprDef
+					[Switch:Void]
+						[EnumIndex:Int] [Local `(5933):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+						[Case:Void]
+							[Const:Int] 1
+							[Block:Void]
+								[Var `(5934):haxe.macro.TVar]
+									[EnumParameter:haxe.macro.TVar]
+										[Local `(5933):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TLocal
+										0
+								[Block:Void]
+									[Var tvar(5935):haxe.macro.TVar] [Local `(5934):haxe.macro.TVar:haxe.macro.TVar]
+									[Block:Void]
+										[Block:Void]
+											[Var replacement(5936):Null<haxe.macro.TVar>]
+												[Call:Null<haxe.macro.TVar>]
+													[Field:(id : Int) -> Null<haxe.macro.TVar>]
+														[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+														[FInstance:(id : Int) -> Null<haxe.macro.TVar>]
+															reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+															varReplacement:(id : Int) -> Null<haxe.macro.TVar>
+													[Field:Int]
+														[Local tvar(5935):haxe.macro.TVar:haxe.macro.TVar]
+														[FAnon:Int] id:Int
+											[If:Void]
+												[Binop:Bool]
+													[Local replacement(5936):Null<haxe.macro.TVar>:Null<haxe.macro.TVar>]
+													!=
+													[Const:Null<haxe.macro.TVar>] null
+												[Then:Dynamic] [Block:Dynamic]
+													[Return:Dynamic]
+														[Call:haxe.macro.TypedExpr]
+															[Field:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+																[TypeExpr reflaxe.helpers.TypedExprHelper:{ Statics reflaxe.helpers.TypedExprHelper }]
+																[FStatic:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr]
+																	reflaxe.helpers.TypedExprHelper
+																	copy:(e : haxe.macro.TypedExpr, ?newDef : Null<haxe.macro.TypedExprDef>) -> haxe.macro.TypedExpr
+															[Local expr(5916):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+															[Call:haxe.macro.TypedExprDef]
+																[Field:(v : haxe.macro.TVar) -> haxe.macro.TypedExprDef]
+																	[TypeExpr haxe.macro.TypedExprDef:Enum<haxe.macro.TypedExprDef>]
+																	[FEnum:(v : haxe.macro.TVar) -> haxe.macro.TypedExprDef]
+																		haxe.macro.TypedExprDef
+																		TLocal
+																[Local replacement(5936):Null<haxe.macro.TVar>:Null<haxe.macro.TVar>]
+						[Case:Dynamic]
+							[Const:Int] 14
+							[Block:Dynamic]
+								[Var `(5937):Array<haxe.macro.TypedExpr>]
+									[EnumParameter:Array<haxe.macro.TypedExpr>]
+										[Local `(5933):haxe.macro.TypedExprDef:haxe.macro.TypedExprDef]
+										TBlock
+										0
+								[Block:Dynamic]
+									[Block:Dynamic]
+										[Return:Dynamic]
+											[Call:haxe.macro.TypedExpr]
+												[Field:(subExpr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+													[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+													[FInstance:(subExpr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+														reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+														handleBlock:(subExpr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+												[Local expr(5916):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+						[Default:Void] [Block:Void]
+			[Return:Dynamic]
+				[Call:haxe.macro.TypedExpr]
+					[Field:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> haxe.macro.TypedExpr]
+						[TypeExpr haxe.macro.TypedExprTools:Class<haxe.macro.TypedExprTools>]
+						[FStatic:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> haxe.macro.TypedExpr]
+							haxe.macro.TypedExprTools
+							map:(e : haxe.macro.TypedExpr, f : (haxe.macro.TypedExpr -> haxe.macro.TypedExpr)) -> haxe.macro.TypedExpr
+					[Local expr(5916):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Field:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+						[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+						[FClosure:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+							reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+							handleExpression:(expr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr
+
+	function handleBlock[Function:(subExpr : haxe.macro.TypedExpr) -> haxe.macro.TypedExpr]
+		[Arg:haxe.macro.TypedExpr] [Local subExpr(5917):haxe.macro.TypedExpr]
+		[Block:Dynamic]
+			[Var rvf(5918):reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl]
+				[New:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl]
+					reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+					[Local subExpr(5917):haxe.macro.TypedExpr:haxe.macro.TypedExpr]
+					[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+					[Const:Null<Array<String>>] null
+			[Return:Dynamic]
+				[Call:haxe.macro.TypedExpr]
+					[Field:() -> haxe.macro.TypedExpr]
+						[Local rvf(5918):reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl]
+						[FInstance:() -> haxe.macro.TypedExpr]
+							reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+							fixRepeatVariables:() -> haxe.macro.TypedExpr
+
+	function varExists[Function:(name : String) -> Bool]
+		[Arg:String] [Local name(5897):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:Bool]
+					[Block:Bool]
+						[Var this(5900):haxe.IMap<String, Bool>]
+							[Field:Map<String, Bool>]
+								[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+								[FInstance:Map<String, Bool>]
+									reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+									varNames:Map<String, Bool>
+						[Call:Bool]
+							[Field:(key : String) -> Bool]
+								[Cast:haxe.ds.StringMap<Bool>] [Local this(5900):haxe.IMap<String, Bool>:haxe.IMap<String, Bool>]
+								[FInstance:(key : String) -> Bool]
+									haxe.ds.StringMap<Bool>
+									exists:(key : String) -> Bool
+							[Local name(5897):String:String]
+					[Then:Bool] [Block:Bool] [Const:Bool] true
+					[Else:Bool] [Block:Bool]
+						[If:Bool]
+							[Binop:Bool]
+								[Field:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+									[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+									[FInstance:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+										reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+										parent:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>
+								!=
+								[Const:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>] null
+							[Then:Bool] [Block:Bool]
+								[Call:Bool]
+									[Field:(name : String) -> Bool]
+										[Field:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+											[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+											[FInstance:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+												reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+												parent:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>
+										[FInstance:(name : String) -> Bool]
+											reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+											varExists:(name : String) -> Bool
+									[Local name(5897):String:String]
+							[Else:Bool] [Block:Bool] [Const:Bool] false
+
+	function varReplacement[Function:(id : Int) -> Null<haxe.macro.TVar>]
+		[Arg:Int] [Local id(5920):Int]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[If:Null<haxe.macro.TVar>]
+					[Block:Bool]
+						[Var this(5923):haxe.IMap<Int, haxe.macro.TVar>]
+							[Field:Map<Int, haxe.macro.TVar>]
+								[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+								[FInstance:Map<Int, haxe.macro.TVar>]
+									reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+									varReplacements:Map<Int, haxe.macro.TVar>
+						[Call:Bool]
+							[Field:(key : Int) -> Bool]
+								[Cast:haxe.ds.IntMap<haxe.macro.TVar>] [Local this(5923):haxe.IMap<Int, haxe.macro.TVar>:haxe.IMap<Int, haxe.macro.TVar>]
+								[FInstance:(key : Int) -> Bool]
+									haxe.ds.IntMap<haxe.macro.TVar>
+									exists:(key : Int) -> Bool
+							[Local id(5920):Int:Int]
+					[Then:Null<haxe.macro.TVar>] [Block:Null<haxe.macro.TVar>]
+						[Block:Null<haxe.macro.TVar>]
+							[Var this(5927):haxe.IMap<Int, haxe.macro.TVar>]
+								[Field:Map<Int, haxe.macro.TVar>]
+									[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+									[FInstance:Map<Int, haxe.macro.TVar>]
+										reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+										varReplacements:Map<Int, haxe.macro.TVar>
+							[Call:Null<haxe.macro.TVar>]
+								[Field:(key : Int) -> Null<haxe.macro.TVar>]
+									[Cast:haxe.ds.IntMap<haxe.macro.TVar>] [Local this(5927):haxe.IMap<Int, haxe.macro.TVar>:haxe.IMap<Int, haxe.macro.TVar>]
+									[FInstance:(key : Int) -> Null<haxe.macro.TVar>]
+										haxe.ds.IntMap<haxe.macro.TVar>
+										get:(key : Int) -> Null<haxe.ds.IntMap.T>
+								[Local id(5920):Int:Int]
+					[Else:Null<haxe.macro.TVar>] [Block:Null<haxe.macro.TVar>]
+						[If:Null<haxe.macro.TVar>]
+							[Binop:Bool]
+								[Field:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+									[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+									[FInstance:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+										reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+										parent:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>
+								!=
+								[Const:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>] null
+							[Then:Null<haxe.macro.TVar>] [Block:Null<haxe.macro.TVar>]
+								[Call:Null<haxe.macro.TVar>]
+									[Field:(id : Int) -> Null<haxe.macro.TVar>]
+										[Field:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+											[Const:reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl] this
+											[FInstance:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>]
+												reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+												parent:Null<reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl>
+										[FInstance:(id : Int) -> Null<haxe.macro.TVar>]
+											reflaxe.preprocessors.implementations.PreventRepeatVariablesImpl
+											varReplacement:(id : Int) -> Null<haxe.macro.TVar>
+									[Local id(5920):Int:Int]
+							[Else:Null<haxe.macro.TVar>] [Block:Null<haxe.macro.TVar>] [Const:Null<haxe.macro.TVar>] null
+}

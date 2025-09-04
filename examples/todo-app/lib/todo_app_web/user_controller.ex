@@ -67,12 +67,12 @@ defmodule TodoAppWeb.UserController do
     case (result.elem(0)) do
       0 ->
         g = result.elem(1)
-        deleted_user = g
+        _deleted_user = g
         data = %{:deleted => params.id, :success => true, :message => "User " <> params.id <> " deleted successfully"}
         Phoenix.Controller.json(conn, data)
       1 ->
         g = result.elem(1)
-        changeset = g
+        _changeset = g
         this1 = Plug.Conn.put_status(conn, 500)
         Phoenix.Controller.json(this1, %{:error => "Failed to delete user", :success => false})
     end

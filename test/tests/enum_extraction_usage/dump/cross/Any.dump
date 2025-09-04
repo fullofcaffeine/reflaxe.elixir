@@ -1,0 +1,2 @@
+@:forward.variance
+abstract Any from Dynamic {}

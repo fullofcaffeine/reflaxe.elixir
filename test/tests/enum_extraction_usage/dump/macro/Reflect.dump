@@ -1,0 +1,86 @@
+class Reflect {
+
+	@:has_untyped
+	public static function field<T, R>[Function:(obj : field.T, field : String) -> Null<field.R>]
+		[Arg:field.T] [Local obj(62):field.T]
+		[Arg:String] [Local field(63):String]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Null<field.R>]
+					[Ident:(String, field.T, String) -> Unknown<33>] __elixir__
+					[Const:String] "Map.get({0}, String.to_existing_atom({1}))"
+					[Local obj(62):field.T:field.T]
+					[Local field(63):String:String]
+
+	@:has_untyped
+	public static function setField<T, V>[Function:(obj : setField.T, field : String, value : setField.V) -> setField.T]
+		[Arg:setField.T] [Local obj(64):setField.T]
+		[Arg:String] [Local field(65):String]
+		[Arg:setField.V] [Local value(66):setField.V]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:setField.T]
+					[Ident:(String, setField.T, String, setField.V) -> Unknown<34>] __elixir__
+					[Const:String] "Map.put({0}, String.to_atom({1}), {2})"
+					[Local obj(64):setField.T:setField.T]
+					[Local field(65):String:String]
+					[Local value(66):setField.V:setField.V]
+
+	@:has_untyped
+	public static function fields<T>[Function:(obj : fields.T) -> Array<String>]
+		[Arg:fields.T] [Local obj(67):fields.T]
+		[Block:Dynamic]
+			[Return:Dynamic]
+				[Call:Array<String>]
+					[Ident:(String, fields.T) -> Unknown<35>] __elixir__
+					[Const:String] "Map.keys({0}) |> Enum.map(&Atom.to_string/1)"
+					[Local obj(67):fields.T:fields.T]
+
+	public static function hasField<T>
+
+	public static function deleteField<T>
+
+	public static function isObject<T>
+
+	public static inline function copy<T>[Function:(obj : copy.T) -> copy.T]
+		[Arg:copy.T] [Local obj(68):copy.T]
+		[Block:Dynamic] [Return:Dynamic] [Local obj(68):copy.T:copy.T]
+
+	public static function callMethod<T, R>
+
+	public static function compare<T>[Function:(a : compare.T, b : compare.T) -> Int]
+		[Arg:compare.T] [Local a(5):compare.T]
+		[Arg:compare.T] [Local b(6):compare.T]
+		[Block:Dynamic]
+			[Var sa(8):String]
+				[Call:String]
+					[Field:(value : compare.T) -> String]
+						[TypeExpr Std:Class<Std>]
+						[FStatic:(value : compare.T) -> String]
+							Std
+							string:(value : string.T) -> String
+					[Local a(5):compare.T:compare.T]
+			[Var sb(9):String]
+				[Call:String]
+					[Field:(value : compare.T) -> String]
+						[TypeExpr Std:Class<Std>]
+						[FStatic:(value : compare.T) -> String]
+							Std
+							string:(value : string.T) -> String
+					[Local b(6):compare.T:compare.T]
+			[If:Void]
+				[Binop:Bool]
+					[Local sa(8):String:String]
+					<
+					[Local sb(9):String:String]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Int] -1
+			[If:Void]
+				[Binop:Bool]
+					[Local sa(8):String:String]
+					>
+					[Local sb(9):String:String]
+				[Then:Dynamic] [Block:Dynamic] [Return:Dynamic] [Const:Int] 1
+			[Return:Dynamic] [Const:Int] 0
+
+	public static function isEnumValue<T>
+}

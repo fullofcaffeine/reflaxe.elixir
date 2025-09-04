@@ -1,0 +1,4 @@
+enum reflaxe.compiler.TypeOrModuleType {
+	EType(t:haxe.macro.Type);
+	EModuleType(mt:haxe.macro.ModuleType);
+}

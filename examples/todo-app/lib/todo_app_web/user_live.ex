@@ -56,7 +56,7 @@ defmodule TodoAppWeb.UserLive do
     case (result.elem(0)) do
       0 ->
         g = result.elem(1)
-        user = g
+        _user = g
         users = Users.list_users(nil)
         %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, %{:users => users, :show_form => false, :selected_user => nil, :changeset => Users.change_user(nil)})}
       1 ->
@@ -71,12 +71,12 @@ defmodule TodoAppWeb.UserLive do
     case (result.elem(0)) do
       0 ->
         g = result.elem(1)
-        deleted_user = g
+        _deleted_user = g
         users = Users.list_users(nil)
         %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, "users", users)}
       1 ->
         g = result.elem(1)
-        changeset = g
+        _changeset = g
         %{:status => "noreply", :socket => socket}
     end
   end

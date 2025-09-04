@@ -1,0 +1,29 @@
+private class haxe.io._BytesData.NativeBytesDataAbstract_Impl_ {
+
+	@:arrayAccess
+	public static inline function get[Function:(this : haxe.io.Bytes, i : Int) -> Int]
+		[Arg:haxe.io.Bytes] [Local this(8348):haxe.io.Bytes]
+		[Arg:Int] [Local i(8349):Int]
+		[Return:Dynamic]
+			[Call:Int]
+				[Field:(pos : Int) -> Int]
+					[Local this(8348):haxe.io.Bytes:haxe.io.Bytes]
+					[FInstance:(pos : Int) -> Int]
+						haxe.io.Bytes
+						get:(pos : Int) -> Int
+				[Local i(8349):Int:Int]
+
+	@:arrayAccess
+	public static inline function set[Function:(this : haxe.io.Bytes, i : Int, v : Dynamic) -> Void]
+		[Arg:haxe.io.Bytes] [Local this(8350):haxe.io.Bytes]
+		[Arg:Int] [Local i(8351):Int]
+		[Arg:Dynamic] [Local v(8352):Dynamic]
+		[Call:Void]
+			[Field:(pos : Int, v : Int) -> Void]
+				[Local this(8350):haxe.io.Bytes:haxe.io.Bytes]
+				[FInstance:(pos : Int, v : Int) -> Void]
+					haxe.io.Bytes
+					set:(pos : Int, v : Int) -> Void
+			[Local i(8351):Int:Int]
+			[Local v(8352):Dynamic:Dynamic]
+}

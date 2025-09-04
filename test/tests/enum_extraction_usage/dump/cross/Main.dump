@@ -1,0 +1,539 @@
+@:used
+class Main {
+
+	static function main[Function:() -> Void]
+		[Block:Int]
+			[Call:String]
+				[Field:() -> String]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> String]
+						Main
+						testUnusedExtraction:() -> String
+			[Call:String]
+				[Field:() -> String]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> String]
+						Main
+						testUsedExtraction:() -> String
+			[Call:String]
+				[Field:() -> String]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> String]
+						Main
+						testMixedUsage:() -> String
+			[Call:String]
+				[Field:() -> String]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> String]
+						Main
+						testNestedExtraction:() -> String
+			[Call:String]
+				[Field:() -> String]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> String]
+						Main
+						testMultipleExtractions:() -> String
+			[Call:Int]
+				[Field:() -> Int]
+					[TypeExpr Main:Class<Main>]
+					[FStatic:() -> Int]
+						Main
+						testTreeExtraction:() -> Int
+
+	static function testUnusedExtraction[Function:() -> String]
+		[Block:Dynamic]
+			[Var result(28871):Result<String, String>]
+				[Call:Result<String, String>]
+					[Field:(value : String) -> Result<String, String>]
+						[TypeExpr Result:Enum<Result><Unknown<32>, Unknown<33>>]
+						[FEnum:(value : String) -> Result<String, String>]
+							Result
+							Ok
+					[Const:String] "hello"
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (result) {
+	case Ok(value):
+		"success";	
+	case Error(msg):
+		"failure";	
+})
+					[Switch:String]
+						[Parenthesis:Int]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local result(28871):Result<String, String>:Result<String, String>]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Var _g(28876):String]
+									[EnumParameter:String]
+										[Local result(28871):Result<String, String>:Result<String, String>]
+										Ok
+										0
+								[Block:String]
+									[Var value(28877):String] [Local _g(28876):String:String]
+									[Const:String] "success"
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Var _g(28878):String]
+									[EnumParameter:String]
+										[Local result(28871):Result<String, String>:Result<String, String>]
+										Error
+										0
+								[Block:String]
+									[Var msg(28879):String] [Local _g(28878):String:String]
+									[Const:String] "failure"
+
+	static function testUsedExtraction[Function:() -> String]
+		[Block:Dynamic]
+			[Var result(28880):Result<String, String>]
+				[Call:Result<String, String>]
+					[Field:(value : String) -> Result<String, String>]
+						[TypeExpr Result:Enum<Result><Unknown<34>, Unknown<35>>]
+						[FEnum:(value : String) -> Result<String, String>]
+							Result
+							Ok
+					[Const:String] "world"
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (result) {
+	case Ok(value):
+		"Got: " + value;	
+	case Error(msg):
+		"Error: " + msg;	
+})
+					[Switch:String]
+						[Parenthesis:Int]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local result(28880):Result<String, String>:Result<String, String>]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Var _g(28885):String]
+									[EnumParameter:String]
+										[Local result(28880):Result<String, String>:Result<String, String>]
+										Ok
+										0
+								[Block:String]
+									[Var value(28886):String] [Local _g(28885):String:String]
+									[Binop:String]
+										[Const:String] "Got: "
+										+
+										[Local value(28886):String:String]
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Var _g(28887):String]
+									[EnumParameter:String]
+										[Local result(28880):Result<String, String>:Result<String, String>]
+										Error
+										0
+								[Block:String]
+									[Var msg(28888):String] [Local _g(28887):String:String]
+									[Binop:String]
+										[Const:String] "Error: "
+										+
+										[Local msg(28888):String:String]
+
+	static function testMixedUsage[Function:() -> String]
+		[Block:Dynamic]
+			[Var result(28889):Result<Int, String>]
+				[Call:Result<Int, String>]
+					[Field:(value : Int) -> Result<Int, String>]
+						[TypeExpr Result:Enum<Result><Unknown<36>, Unknown<37>>]
+						[FEnum:(value : Int) -> Result<Int, String>]
+							Result
+							Ok
+					[Const:Int] 42
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (result) {
+	case Ok(num):
+		"Number is " + Std.string(num);	
+	case Error(err):
+		"Got an error";	
+})
+					[Switch:String]
+						[Parenthesis:Int]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local result(28889):Result<Int, String>:Result<Int, String>]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Var _g(28894):Int]
+									[EnumParameter:Int]
+										[Local result(28889):Result<Int, String>:Result<Int, String>]
+										Ok
+										0
+								[Block:String]
+									[Var num(28895):Int] [Local _g(28894):Int:Int]
+									[Binop:String]
+										[Const:String] "Number is "
+										+
+										[Call:String]
+											[Field:(value : Int) -> String]
+												[TypeExpr Std:Class<Std>]
+												[FStatic:(value : Int) -> String]
+													Std
+													string:(value : string.T) -> String
+											[Local num(28895):Int:Int]
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Var _g(28896):String]
+									[EnumParameter:String]
+										[Local result(28889):Result<Int, String>:Result<Int, String>]
+										Error
+										0
+								[Block:String]
+									[Var err(28897):String] [Local _g(28896):String:String]
+									[Const:String] "Got an error"
+
+	static function testNestedExtraction[Function:() -> String]
+		[Block:Dynamic]
+			[Var opt(28898):Option<Result<Int, String>>]
+				[Call:Option<Result<Int, String>>]
+					[Field:(value : Result<Int, String>) -> Option<Result<Int, String>>]
+						[TypeExpr Option:Enum<Option><Unknown<40>>]
+						[FEnum:(value : Result<Int, String>) -> Option<Result<Int, String>>]
+							Option
+							Some
+					[Call:Result<Int, String>]
+						[Field:(value : Int) -> Result<Int, String>]
+							[TypeExpr Result:Enum<Result><Unknown<38>, Unknown<39>>]
+							[FEnum:(value : Int) -> Result<Int, String>]
+								Result
+								Ok
+						[Const:Int] 123
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (opt) {
+	case Some(result):
+		switch (result) {
+			case Ok(value):
+				"Nested value: " + Std.string(value);			
+			case Error(e):
+				"Nested error";			
+		};	
+	case None:
+		"Nothing";	
+})
+					[Switch:String]
+						[Parenthesis:Int]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local opt(28898):Option<Result<Int, String>>:Option<Result<Int, String>>]
+						[Case:String]
+							[Const:Int] 0
+							[Block:String]
+								[Var _g(28909):Result<Int, String>]
+									[EnumParameter:Result<Int, String>]
+										[Local opt(28898):Option<Result<Int, String>>:Option<Result<Int, String>>]
+										Some
+										0
+								[Block:String]
+									[Var result(28910):Result<Int, String>] [Local _g(28909):Result<Int, String>:Result<Int, String>]
+									[Meta:String]
+										:ast(switch (result) {
+	case Ok(value):
+		"Nested value: " + Std.string(value);	
+	case Error(e):
+		"Nested error";	
+})
+										[Switch:String]
+											[Parenthesis:Int]
+												[Meta:Int]
+													:exhaustive
+													[EnumIndex:Int] [Local result(28910):Result<Int, String>:Result<Int, String>]
+											[Case:String]
+												[Const:Int] 0
+												[Block:String]
+													[Var _g(28911):Int]
+														[EnumParameter:Int]
+															[Local result(28910):Result<Int, String>:Result<Int, String>]
+															Ok
+															0
+													[Block:String]
+														[Var value(28912):Int] [Local _g(28911):Int:Int]
+														[Binop:String]
+															[Const:String] "Nested value: "
+															+
+															[Call:String]
+																[Field:(value : Int) -> String]
+																	[TypeExpr Std:Class<Std>]
+																	[FStatic:(value : Int) -> String]
+																		Std
+																		string:(value : string.T) -> String
+																[Local value(28912):Int:Int]
+											[Case:String]
+												[Const:Int] 1
+												[Block:String]
+													[Var _g(28913):String]
+														[EnumParameter:String]
+															[Local result(28910):Result<Int, String>:Result<Int, String>]
+															Error
+															0
+													[Block:String]
+														[Var e(28914):String] [Local _g(28913):String:String]
+														[Const:String] "Nested error"
+						[Case:String]
+							[Const:Int] 1
+							[Const:String] "Nothing"
+
+	static function testMultipleExtractions[Function:() -> String]
+		[Block:Dynamic]
+			[Var node(28915):TreeNode<Int>]
+				[Call:TreeNode<Int>]
+					[Field:(left : TreeNode<Int>, value : Int, right : TreeNode<Int>) -> TreeNode<Int>]
+						[TypeExpr TreeNode:Enum<TreeNode><Unknown<43>>]
+						[FEnum:(left : TreeNode<Int>, value : Int, right : TreeNode<Int>) -> TreeNode<Int>]
+							TreeNode
+							Node
+					[Field:TreeNode<Int>]
+						[TypeExpr TreeNode:Enum<TreeNode><Unknown<41>>]
+						[FEnum:TreeNode<Int>]
+							TreeNode
+							Leaf
+					[Const:Int] 42
+					[Field:TreeNode<Int>]
+						[TypeExpr TreeNode:Enum<TreeNode><Unknown<42>>]
+						[FEnum:TreeNode<Int>]
+							TreeNode
+							Leaf
+			[Return:Dynamic]
+				[Meta:String]
+					:ast(switch (node) {
+	case Node(left, value, right):
+		"Value: " + Std.string(value);	
+	case Leaf:
+		"Empty";	
+})
+					[Switch:String]
+						[Parenthesis:Int]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local node(28915):TreeNode<Int>:TreeNode<Int>]
+						[Case:String]
+							[Const:Int] 0
+							[Const:String] "Empty"
+						[Case:String]
+							[Const:Int] 1
+							[Block:String]
+								[Var _g(28922):TreeNode<Int>]
+									[EnumParameter:TreeNode<Int>]
+										[Local node(28915):TreeNode<Int>:TreeNode<Int>]
+										Node
+										0
+								[Var _g1(28923):Int]
+									[EnumParameter:Int]
+										[Local node(28915):TreeNode<Int>:TreeNode<Int>]
+										Node
+										1
+								[Var _g2(28924):TreeNode<Int>]
+									[EnumParameter:TreeNode<Int>]
+										[Local node(28915):TreeNode<Int>:TreeNode<Int>]
+										Node
+										2
+								[Block:String]
+									[Var left(28925):TreeNode<Int>] [Local _g(28922):TreeNode<Int>:TreeNode<Int>]
+									[Var value(28926):Int] [Local _g1(28923):Int:Int]
+									[Var right(28927):TreeNode<Int>] [Local _g2(28924):TreeNode<Int>:TreeNode<Int>]
+									[Binop:String]
+										[Const:String] "Value: "
+										+
+										[Call:String]
+											[Field:(value : Int) -> String]
+												[TypeExpr Std:Class<Std>]
+												[FStatic:(value : Int) -> String]
+													Std
+													string:(value : string.T) -> String
+											[Local value(28926):Int:Int]
+
+	static function testTreeExtraction[Function:() -> Int]
+		[Block:Dynamic]
+			[Var tree(28928):TreeNode<Int>]
+				[Call:TreeNode<Int>]
+					[Field:(left : TreeNode<Int>, value : Int, right : TreeNode<Int>) -> TreeNode<Int>]
+						[TypeExpr TreeNode:Enum<TreeNode><Unknown<50>>]
+						[FEnum:(left : TreeNode<Int>, value : Int, right : TreeNode<Int>) -> TreeNode<Int>]
+							TreeNode
+							Node
+					[Call:TreeNode<Int>]
+						[Field:(left : TreeNode<Int>, value : Int, right : TreeNode<Int>) -> TreeNode<Int>]
+							[TypeExpr TreeNode:Enum<TreeNode><Unknown<46>>]
+							[FEnum:(left : TreeNode<Int>, value : Int, right : TreeNode<Int>) -> TreeNode<Int>]
+								TreeNode
+								Node
+						[Field:TreeNode<Int>]
+							[TypeExpr TreeNode:Enum<TreeNode><Unknown<44>>]
+							[FEnum:TreeNode<Int>]
+								TreeNode
+								Leaf
+						[Const:Int] 1
+						[Field:TreeNode<Int>]
+							[TypeExpr TreeNode:Enum<TreeNode><Unknown<45>>]
+							[FEnum:TreeNode<Int>]
+								TreeNode
+								Leaf
+					[Const:Int] 2
+					[Call:TreeNode<Int>]
+						[Field:(left : TreeNode<Int>, value : Int, right : TreeNode<Int>) -> TreeNode<Int>]
+							[TypeExpr TreeNode:Enum<TreeNode><Unknown<49>>]
+							[FEnum:(left : TreeNode<Int>, value : Int, right : TreeNode<Int>) -> TreeNode<Int>]
+								TreeNode
+								Node
+						[Field:TreeNode<Int>]
+							[TypeExpr TreeNode:Enum<TreeNode><Unknown<47>>]
+							[FEnum:TreeNode<Int>]
+								TreeNode
+								Leaf
+						[Const:Int] 3
+						[Field:TreeNode<Int>]
+							[TypeExpr TreeNode:Enum<TreeNode><Unknown<48>>]
+							[FEnum:TreeNode<Int>]
+								TreeNode
+								Leaf
+			[Return:Dynamic]
+				[Meta:Int]
+					:ast(switch (tree) {
+	case Node(Node(_, leftVal, _), centerVal, Node(_, rightVal, _)):
+		leftVal + centerVal + rightVal;	
+	case Node(left, value, right):
+		value;	
+	case Leaf:
+		0;	
+})
+					[Switch:Int]
+						[Parenthesis:Int]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local tree(28928):TreeNode<Int>:TreeNode<Int>]
+						[Case:Int]
+							[Const:Int] 0
+							[Const:Int] 0
+						[Case:Int]
+							[Const:Int] 1
+							[Block:Int]
+								[Var _g(28944):TreeNode<Int>]
+									[EnumParameter:TreeNode<Int>]
+										[Local tree(28928):TreeNode<Int>:TreeNode<Int>]
+										Node
+										0
+								[Var _g1(28945):Int]
+									[EnumParameter:Int]
+										[Local tree(28928):TreeNode<Int>:TreeNode<Int>]
+										Node
+										1
+								[Var _g2(28946):TreeNode<Int>]
+									[EnumParameter:TreeNode<Int>]
+										[Local tree(28928):TreeNode<Int>:TreeNode<Int>]
+										Node
+										2
+								[If:Int]
+									[Parenthesis:Bool]
+										[Binop:Bool]
+											[EnumIndex:Int] [Local _g(28944):TreeNode<Int>:TreeNode<Int>]
+											==
+											[Const:Int] 1
+									[Then:Int] [Block:Int]
+										[Var _g3(28947):TreeNode<Int>]
+											[EnumParameter:TreeNode<Int>]
+												[Local _g(28944):TreeNode<Int>:TreeNode<Int>]
+												Node
+												0
+										[Var _g3(28948):Int]
+											[EnumParameter:Int]
+												[Local _g(28944):TreeNode<Int>:TreeNode<Int>]
+												Node
+												1
+										[Var _g4(28949):TreeNode<Int>]
+											[EnumParameter:TreeNode<Int>]
+												[Local _g(28944):TreeNode<Int>:TreeNode<Int>]
+												Node
+												2
+										[If:Int]
+											[Parenthesis:Bool]
+												[Binop:Bool]
+													[EnumIndex:Int] [Local _g2(28946):TreeNode<Int>:TreeNode<Int>]
+													==
+													[Const:Int] 1
+											[Then:Int] [Block:Int]
+												[Var _g(28950):TreeNode<Int>]
+													[EnumParameter:TreeNode<Int>]
+														[Local _g2(28946):TreeNode<Int>:TreeNode<Int>]
+														Node
+														0
+												[Var _g(28951):Int]
+													[EnumParameter:Int]
+														[Local _g2(28946):TreeNode<Int>:TreeNode<Int>]
+														Node
+														1
+												[Var _g2(28952):TreeNode<Int>]
+													[EnumParameter:TreeNode<Int>]
+														[Local _g2(28946):TreeNode<Int>:TreeNode<Int>]
+														Node
+														2
+												[Block:Int]
+													[Var rightVal(28953):Int] [Local _g(28951):Int:Int]
+													[Var centerVal(28954):Int] [Local _g1(28945):Int:Int]
+													[Var leftVal(28955):Int] [Local _g3(28948):Int:Int]
+													[Binop:Int]
+														[Binop:Int]
+															[Local leftVal(28955):Int:Int]
+															+
+															[Local centerVal(28954):Int:Int]
+														+
+														[Local rightVal(28953):Int:Int]
+											[Else:Int] [Block:Int]
+												[Var left(28956):TreeNode<Int>] [Local _g(28944):TreeNode<Int>:TreeNode<Int>]
+												[Var right(28957):TreeNode<Int>] [Local _g2(28946):TreeNode<Int>:TreeNode<Int>]
+												[Var value(28958):Int] [Local _g1(28945):Int:Int]
+												[Local value(28958):Int:Int]
+									[Else:Int] [Block:Int]
+										[Var left(28959):TreeNode<Int>] [Local _g(28944):TreeNode<Int>:TreeNode<Int>]
+										[Var value(28960):Int] [Local _g1(28945):Int:Int]
+										[Var right(28961):TreeNode<Int>] [Local _g2(28946):TreeNode<Int>:TreeNode<Int>]
+										[Local value(28960):Int:Int]
+
+	static function testOptionExtraction[Function:() -> Bool]
+		[Block:Dynamic]
+			[Var opt(28962):Option<String>]
+				[Call:Option<String>]
+					[Field:(value : String) -> Option<String>]
+						[TypeExpr Option:Enum<Option><Unknown<51>>]
+						[FEnum:(value : String) -> Option<String>]
+							Option
+							Some
+					[Const:String] "test"
+			[Return:Dynamic]
+				[Meta:Bool]
+					:ast(switch (opt) {
+	case Some(val):
+		true;	
+	case None:
+		false;	
+})
+					[Switch:Bool]
+						[Parenthesis:Int]
+							[Meta:Int]
+								:exhaustive
+								[EnumIndex:Int] [Local opt(28962):Option<String>:Option<String>]
+						[Case:Bool]
+							[Const:Int] 0
+							[Block:Bool]
+								[Var _g(28965):String]
+									[EnumParameter:String]
+										[Local opt(28962):Option<String>:Option<String>]
+										Some
+										0
+								[Block:Bool]
+									[Var val(28966):String] [Local _g(28965):String:String]
+									[Const:Bool] true
+						[Case:Bool]
+							[Const:Int] 1
+							[Const:Bool] false
+}

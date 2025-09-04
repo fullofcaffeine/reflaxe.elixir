@@ -1,0 +1,19 @@
+private class _Any.Any_Impl_ {
+
+	@:noCompletion @:to
+	static inline function __promote<T>[Function:(this : Dynamic) -> __promote.T]
+		[Arg:Dynamic] [Local this(263):Dynamic]
+		[Return:Dynamic] [Local this(263):Dynamic:Dynamic]
+
+	@:noCompletion
+	static inline function toString[Function:(this : Dynamic) -> String]
+		[Arg:Dynamic] [Local this(264):Dynamic]
+		[Return:Dynamic]
+			[Call:String]
+				[Field:(value : Unknown<0>) -> String]
+					[TypeExpr Std:Class<Std>]
+					[FStatic:(value : Unknown<0>) -> String]
+						Std
+						string:(value : string.T) -> String
+				[Local this(264):Dynamic:Dynamic]
+}

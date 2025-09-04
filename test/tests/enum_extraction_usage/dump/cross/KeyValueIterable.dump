@@ -1,0 +1,1 @@
+typedef KeyValueIterable<K, V> = { keyValueIterator : () -> KeyValueIterator<KeyValueIterable.K, KeyValueIterable.V> }

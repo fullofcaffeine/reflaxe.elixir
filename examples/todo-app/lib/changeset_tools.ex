@@ -44,7 +44,7 @@ end)
         value = g
         {:Some, value}
       1 ->
-        g = result.elem(1)
+        _g = result.elem(1)
         :none
     end
   end
@@ -68,7 +68,7 @@ end)
         value = g
         value
       1 ->
-        g = result.elem(1)
+        _g = result.elem(1)
         default_value
     end
   end

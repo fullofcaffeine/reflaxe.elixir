@@ -1,0 +1,9 @@
+enum haxe.macro.AnonStatus {
+	AClosed;
+	AOpened;
+	AConst;
+	AExtend(tl:haxe.macro.Ref<Array<haxe.macro.Type>>);
+	AClassStatics(t:haxe.macro.Ref<haxe.macro.ClassType>);
+	AEnumStatics(t:haxe.macro.Ref<haxe.macro.EnumType>);
+	AAbstractStatics(t:haxe.macro.Ref<haxe.macro.AbstractType>);
+}
