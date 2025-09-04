@@ -1915,11 +1915,37 @@ class ElixirASTBuilder {
                 // Detect variables that are mutated in the loop body
                 var mutatedVars = reflaxe.elixir.helpers.MutabilityDetector.detectMutatedVariables(e);
                 
+                // ALSO check which variables are used in the condition!
+                // If the condition uses variables that are mutated in the body,
+                // we need to include them in state threading
+                var conditionVars = new Map<Int, TVar>();
+                function findConditionVars(expr: TypedExpr): Void {
+                    if (expr == null) return;
+                    switch(expr.expr) {
+                        case TLocal(v):
+                            conditionVars.set(v.id, v);
+                        default:
+                            haxe.macro.TypedExprTools.iter(expr, findConditionVars);
+                    }
+                }
+                findConditionVars(econd);
+                
+                // Add ALL condition variables to the state threading
+                // Even if they're not mutated, they need to be accessible in the reduce_while callback
+                for (v in conditionVars) {
+                    if (!mutatedVars.exists(v.id)) {
+                        #if debug_state_threading
+                        trace('[State Threading] Adding condition variable to state threading: ${v.name} (id: ${v.id})');
+                        #end
+                        mutatedVars.set(v.id, v);
+                    }
+                }
+                
                 #if debug_state_threading
-                trace('[State Threading] While loop detected, mutated vars: ${[for (v in mutatedVars) v.name]}');
+                trace('[State Threading] While loop detected, state-threaded vars: ${[for (v in mutatedVars) v.name]}');
                 #end
                 
-                // If there are mutated variables, we need to thread them through the accumulator
+                // If there are variables to thread (mutated or used in condition), use reduce_while
                 if (Lambda.count(mutatedVars) > 0) {
                     // Build the initial accumulator tuple with all mutable variables
                     var initialAccValues: Array<ElixirAST> = [];
@@ -1949,6 +1975,33 @@ class ElixirASTBuilder {
                     contAccValues.push(makeAST(EVar("acc_state")));
                     var contAccumulator = makeAST(ETuple(contAccValues));
                     
+                    // Build the variable mapping for transformations
+                    var varMapping = new Map<String, String>();
+                    for (varName in accVarNames) {
+                        varMapping.set(varName, "acc_" + varName);
+                    }
+                    
+                    #if debug_state_threading
+                    trace('[State Threading] Condition before transformation: ${ElixirASTPrinter.printAST(condition)}');
+                    if (condition != null) {
+                        trace('[State Threading] Condition AST def type: ${Type.typeof(condition.def)}');
+                    }
+                    trace('[State Threading] VarMapping: ${[for (k in varMapping.keys()) '$k => ${varMapping.get(k)}']}');
+                    #end
+                    
+                    // Transform condition and body to use acc_ variables BEFORE building the function
+                    var transformedCondition = transformVariableReferences(condition, varMapping);
+                    var transformedBody = transformVariableReferences(body, varMapping);
+                    
+                    #if debug_state_threading
+                    if (transformedCondition != null) {
+                        trace('[State Threading] Condition BEFORE transformation: ${ElixirASTPrinter.printAST(condition)}');
+                        trace('[State Threading] Condition AFTER transformation: ${ElixirASTPrinter.printAST(transformedCondition)}');
+                    } else {
+                        trace('[State Threading] ERROR: transformedCondition is null!');
+                    }
+                    #end
+                    
                     // Generate the reduce_while with state threading
                     var reduceResult = ERemoteCall(
                         makeAST(EVar("Enum")),
@@ -1973,27 +2026,23 @@ class ElixirASTBuilder {
                                     args: [PWildcard, accPatternTuple],
                                     guard: null,
                                     body: {
-                                        // Create reassignments from acc_ prefixed names to original names
-                                        var reassignments: Array<ElixirAST> = [];
+                                        // Build updated accumulator for continuation
+                                        // Use the acc_ prefixed variables which may have been updated in the body
+                                        var updatedContAccValues: Array<ElixirAST> = [];
                                         for (varName in accVarNames) {
-                                            reassignments.push(makeAST(EMatch(
-                                                PVar(varName),
-                                                makeAST(EVar("acc_" + varName))
-                                            )));
+                                            updatedContAccValues.push(makeAST(EVar("acc_" + varName)));
                                         }
+                                        updatedContAccValues.push(makeAST(EVar("acc_state")));
+                                        var updatedContAccumulator = makeAST(ETuple(updatedContAccValues));
                                         
-                                        // Build the body with reassignments first
-                                        makeAST(EBlock(
-                                            reassignments.concat([
-                                                makeAST(EIf(
-                                                    condition,
-                                                    makeAST(EBlock([
-                                                        body,
-                                                        makeAST(ETuple([makeAST(EAtom("cont")), contAccumulator]))
-                                                    ])),
-                                                    makeAST(ETuple([makeAST(EAtom("halt")), contAccumulator]))
-                                                ))
-                                            ])
+                                        // Build the body using the pre-transformed condition and body
+                                        makeAST(EIf(
+                                            transformedCondition,
+                                            makeAST(EBlock([
+                                                transformedBody,
+                                                makeAST(ETuple([makeAST(EAtom("cont")), updatedContAccumulator]))
+                                            ])),
+                                            makeAST(ETuple([makeAST(EAtom("halt")), updatedContAccumulator]))
                                         ));
                                     }
                                 }
@@ -2031,9 +2080,9 @@ class ElixirASTBuilder {
                                     args: [PWildcard, PVar("acc")],
                                     guard: null,
                                     body: makeAST(EIf(
-                                        condition,
+                                        condition,  // Use original condition - no mutations to transform
                                         makeAST(EBlock([
-                                            body,
+                                            body,    // Use original body - no mutations to transform
                                             makeAST(ETuple([makeAST(EAtom("cont")), makeAST(EVar("acc"))]))
                                         ])),
                                         makeAST(ETuple([makeAST(EAtom("halt")), makeAST(EVar("acc"))]))
@@ -3492,6 +3541,122 @@ class ElixirASTBuilder {
             case EBinary(_, left, right): 
                 usesVariableInNode(left, varName) || usesVariableInNode(right, varName);
             case _: false;
+        };
+    }
+    
+    /**
+     * Transform variable references in an AST node
+     * Replaces variable names according to the provided mapping
+     * Used to avoid variable shadowing in reduce_while loops
+     */
+    static function transformVariableReferences(ast: ElixirAST, varMapping: Map<String, String>): ElixirAST {
+        if (ast == null) return null;
+        
+        return switch(ast.def) {
+            case EVar(name):
+                if (varMapping.exists(name)) {
+                    // Replace with mapped name
+                    #if debug_state_threading
+                    trace('[Transform] Replacing variable: $name => ${varMapping.get(name)}');
+                    #end
+                    makeAST(EVar(varMapping.get(name)));
+                } else {
+                    #if debug_state_threading
+                    trace('[Transform] Variable not in mapping: $name');
+                    #end
+                    ast;
+                }
+                
+            case EMatch(pattern, value):
+                // Transform the value but be careful with patterns
+                // We need to handle assignments like "node = node.left"
+                var transformedValue = transformVariableReferences(value, varMapping);
+                
+                // For patterns, we need special handling
+                var transformedPattern = switch(pattern) {
+                    case PVar(name) if (varMapping.exists(name)):
+                        // This is an assignment to a tracked variable
+                        // Replace with acc_ version
+                        PVar(varMapping.get(name));
+                    case _:
+                        pattern;
+                };
+                
+                makeAST(EMatch(transformedPattern, transformedValue));
+                
+            case EBlock(exprs):
+                makeAST(EBlock([for (expr in exprs) transformVariableReferences(expr, varMapping)]));
+                
+            case EIf(cond, thenExpr, elseExpr):
+                makeAST(EIf(
+                    transformVariableReferences(cond, varMapping),
+                    transformVariableReferences(thenExpr, varMapping),
+                    elseExpr != null ? transformVariableReferences(elseExpr, varMapping) : null
+                ));
+                
+            case ECall(fn, name, args):
+                makeAST(ECall(
+                    fn != null ? transformVariableReferences(fn, varMapping) : null,
+                    name,
+                    [for (arg in args) transformVariableReferences(arg, varMapping)]
+                ));
+                
+            case ERemoteCall(module, fn, args):
+                makeAST(ERemoteCall(
+                    transformVariableReferences(module, varMapping),
+                    fn,
+                    [for (arg in args) transformVariableReferences(arg, varMapping)]
+                ));
+                
+            case EField(expr, field):
+                makeAST(EField(transformVariableReferences(expr, varMapping), field));
+                
+            case ETuple(items):
+                makeAST(ETuple([for (item in items) transformVariableReferences(item, varMapping)]));
+                
+            case EList(items):
+                makeAST(EList([for (item in items) transformVariableReferences(item, varMapping)]));
+                
+            case EMap(items):
+                makeAST(EMap([for (item in items) {
+                    key: transformVariableReferences(item.key, varMapping),
+                    value: transformVariableReferences(item.value, varMapping)
+                }]));
+                
+            case EBinary(op, left, right):
+                #if debug_state_threading
+                trace('[Transform] Processing EBinary: ${ElixirASTPrinter.printAST(left)} ${op} ${ElixirASTPrinter.printAST(right)}');
+                #end
+                makeAST(EBinary(
+                    op,
+                    transformVariableReferences(left, varMapping),
+                    transformVariableReferences(right, varMapping)
+                ));
+                
+            case EUnary(op, expr):
+                makeAST(EUnary(op, transformVariableReferences(expr, varMapping)));
+                
+            case EParen(expr):
+                // Handle parentheses - transform the inner expression
+                #if debug_state_threading
+                trace('[Transform] Processing EParen wrapper');
+                #end
+                makeAST(EParen(transformVariableReferences(expr, varMapping)));
+                
+            case ECase(expr, clauses):
+                makeAST(ECase(
+                    transformVariableReferences(expr, varMapping),
+                    [for (clause in clauses) {
+                        pattern: clause.pattern, // Don't transform patterns
+                        guard: clause.guard != null ? transformVariableReferences(clause.guard, varMapping) : null,
+                        body: transformVariableReferences(clause.body, varMapping)
+                    }]
+                ));
+                
+            case _:
+                // For other node types, return as-is
+                // This includes literals, atoms, etc.
+                ast;
         };
     }
 }

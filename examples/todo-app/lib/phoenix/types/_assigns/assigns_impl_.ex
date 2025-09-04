@@ -18,28 +18,26 @@ defmodule Assigns_Impl_ do
     result = %{}
     g = 0
     g1 = Reflect.fields(this1)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
-  g = acc_g
-  if (g < g1.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
+  if (acc_g < acc_g1.length) do
     field = g1[g]
-    g = g + 1
+    acc_g = acc_g + 1
     Reflect.set_field(result, field, Reflect.field(this1, field))
-    {:cont, {g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     g = 0
     g1 = Reflect.fields(to_dynamic(other))
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
-  g = acc_g
-  if (g < g1.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+  if (acc_g < acc_g1.length) do
     field = g1[g]
-    g = g + 1
+    acc_g = acc_g + 1
     Reflect.set_field(result, field, Reflect.field(to_dynamic(other), field))
-    {:cont, {g, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_state}}
   else
-    {:halt, {g, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
     from_dynamic(result)
@@ -48,15 +46,14 @@ end)
     result = %{}
     g = 0
     g1 = Reflect.fields(this1)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
-  g = acc_g
-  if (g < g1.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
+  if (acc_g < acc_g1.length) do
     existing_field = g1[g]
-    g = g + 1
+    acc_g = acc_g + 1
     Reflect.set_field(result, existing_field, Reflect.field(this1, existing_field))
-    {:cont, {g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     Reflect.set_field(result, field, value)

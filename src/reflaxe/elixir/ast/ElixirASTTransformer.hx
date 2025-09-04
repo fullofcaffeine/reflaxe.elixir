@@ -239,6 +239,14 @@ class ElixirASTTransformer {
             pass: removeRedundantNilInitPass
         });
         
+        // String method transformation pass (before pipeline optimization)
+        passes.push({
+            name: "StringMethodTransform",
+            description: "Convert string method calls to String module calls",
+            enabled: true,
+            pass: stringMethodTransformPass
+        });
+        
         // Pipeline optimization pass
         #if !disable_pipeline_optimization
         passes.push({
@@ -924,6 +932,80 @@ class ElixirASTTransformer {
                 default:
                     return node;
             }
+        });
+    }
+    
+    /**
+     * String method transformation pass
+     * 
+     * WHY: Strings in Elixir don't have methods - they use the String module
+     * WHAT: Transforms method calls on strings to String module calls
+     * HOW: Detects ECall with string targets and converts to ERemoteCall
+     * 
+     * Examples:
+     * - hex_chars.charAt(0) → String.at(hex_chars, 0)
+     * - str.toLowerCase() → String.downcase(str)
+     * - str.toUpperCase() → String.upcase(str)
+     */
+    static function stringMethodTransformPass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                // Handle method calls that look like string.method(args)
+                case ECall(target, methodName, args) if (target != null):
+                    // Check if this looks like a string method call
+                    var stringMethod = switch(methodName) {
+                        case "charAt": "at";
+                        case "charCodeAt": "to_charlist"; 
+                        case "toLowerCase": "downcase";
+                        case "toUpperCase": "upcase";
+                        case "indexOf": "index";
+                        case "substring" | "substr": "slice";
+                        case "split": "split";
+                        case _: null;
+                    };
+                    
+                    if (stringMethod != null) {
+                        // Transform to String module call
+                        #if debug_string_methods
+                        trace('[StringMethodTransform] Converting ${methodName} to String.${stringMethod}');
+                        if (target != null) {
+                            trace('[StringMethodTransform] Target exists');
+                        }
+                        trace('[StringMethodTransform] Args count: ${args.length}');
+                        #end
+                        
+                        // Special handling for charCodeAt - needs different function
+                        if (methodName == "charCodeAt") {
+                            // s.charCodeAt(pos) -> :binary.at(s, pos)
+                            makeASTWithMeta(
+                                ERemoteCall(
+                                    makeAST(EAtom("binary")),
+                                    "at",
+                                    [target].concat(args)
+                                ),
+                                node.metadata,
+                                node.pos
+                            );
+                        } else {
+                            // Prepend the target as the first argument
+                            var newArgs = [target].concat(args);
+                            makeASTWithMeta(
+                                ERemoteCall(
+                                    makeAST(EVar("String")),
+                                    stringMethod,
+                                    newArgs
+                                ),
+                                node.metadata,
+                                node.pos
+                            );
+                        }
+                    } else {
+                        node;
+                    }
+                    
+                default:
+                    node;
+            };
         });
     }
     

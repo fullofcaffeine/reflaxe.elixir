@@ -275,15 +275,14 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
   end
   defp find_todo(id, todos) do
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
-  g = acc_g
-  if (g < todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, :ok}, fn _, {acc_todos, acc_g, acc_state} ->
+  if (acc_g < acc_todos.length) do
     todo = todos[g]
-    g = g + 1
+    acc_g = acc_g + 1
     if (todo.id == id), do: todo
-    {:cont, {g, acc_state}}
+    {:cont, {acc_todos, acc_g, acc_state}}
   else
-    {:halt, {g, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_state}}
   end
 end)
     nil
@@ -291,16 +290,14 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, :ok}, fn _, {acc_g, acc_count, acc_state} ->
-  g = acc_g
-  count = acc_count
-  if (g < todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
+  if (acc_g < acc_todos.length) do
     todo = todos[g]
-    g = g + 1
-    if (todo.completed), do: count = count + 1
-    {:cont, {g, count, acc_state}}
+    acc_g = acc_g + 1
+    if (todo.completed), do: acc_count = acc_count + 1
+    {:cont, {acc_count, acc_todos, acc_g, acc_state}}
   else
-    {:halt, {g, count, acc_state}}
+    {:halt, {acc_count, acc_todos, acc_g, acc_state}}
   end
 end)
     count
@@ -308,23 +305,21 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, :ok}, fn _, {acc_count, acc_g, acc_state} ->
-  count = acc_count
-  g = acc_g
-  if (g < todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
+  if (acc_g < acc_todos.length) do
     todo = todos[g]
-    g = g + 1
-    if (not todo.completed), do: count = count + 1
-    {:cont, {count, g, acc_state}}
+    acc_g = acc_g + 1
+    if (not todo.completed), do: acc_count = acc_count + 1
+    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
   else
-    {:halt, {count, g, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
   end
 end)
     count
   end
   defp parse_tags(tags_string) do
     if (tags_string == nil || tags_string == ""), do: []
-    Enum.map(tags_string.split(","), fn t -> StringTools.trim(t) end)
+    Enum.map(tags_string.split(","), fn t -> StringTools.ltrim(StringTools.rtrim(t)) end)
   end
   defp get_user_from_session(session) do
     %{:id => (if (session.userId != nil), do: session.userId, else: 1), :name => "Demo User", :email => "demo@example.com", :passwordHash => "hashed_password", :confirmedAt => nil, :lastLoginAt => nil, :active => true}
@@ -352,26 +347,25 @@ end)
   defp complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
-  g = acc_g
-  if (g < pending.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} ->
+  if (acc_g < acc_pending.length) do
     todo = pending[g]
-    g = g + 1
+    acc_g = acc_g + 1
     updated_changeset = Todo.toggle_completed(todo)
-    g = {:Update, updated_changeset}
-    case (g.elem(0)) do
+    acc_g = {:Update, updated_changeset}
+    case (acc_g.elem(0)) do
       0 ->
-        g = g.elem(1)
-        updated_todo = g
+        acc_g = acc_g.elem(1)
+        updated_todo = acc_g
         nil
       1 ->
-        g = g.elem(1)
-        reason = g
+        acc_g = acc_g.elem(1)
+        reason = acc_g
         Log.trace("Failed to complete todo " <> todo.id <> ": " <> Std.string(reason), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 523, :className => "server.live.TodoLive", :methodName => "completeAllTodos"})
     end
-    {:cont, {g, acc_state}}
+    {:cont, {acc_pending, acc_g, acc_state}}
   else
-    {:halt, {g, acc_state}}
+    {:halt, {acc_pending, acc_g, acc_state}}
   end
 end)
     g = {:Broadcast, :todo_updates, {:BulkUpdate, :complete_all}}
@@ -393,15 +387,14 @@ end)
   defp delete_completed_todos(socket) do
     completed = Enum.filter(socket.assigns.todos, fn t -> t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
-  g = acc_g
-  if (g < completed.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {completed, g, :ok}, fn _, {acc_completed, acc_g, acc_state} ->
+  if (acc_g < acc_completed.length) do
     todo = completed[g]
-    g = g + 1
+    acc_g = acc_g + 1
     {:Delete, todo}
-    {:cont, {g, acc_state}}
+    {:cont, {acc_completed, acc_g, acc_state}}
   else
-    {:halt, {g, acc_state}}
+    {:halt, {acc_completed, acc_g, acc_state}}
   end
 end)
     {:Broadcast, :todo_updates, {:BulkUpdate, :delete_completed}}
@@ -527,22 +520,21 @@ end
     editing_indicators = []
     this1 = assigns.onlineUsers
     g = this1.keyValueIterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, :ok}, fn _, {acc_online_count, acc_state} ->
-  online_count = acc_online_count
-  if (g.hasNext()) do
-    g = g.next()
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, g, :ok}, fn _, {acc_online_count, acc_g, acc_state} ->
+  if (acc_g.hasNext()) do
+    acc_g = acc_g.next()
     _user_id = g[:key]
     entry = g[:value]
-    online_count = online_count + 1
+    acc_online_count = acc_online_count + 1
     if (entry.metas.length > 0) do
       meta = entry.metas[0]
       editing_badge = if (meta.editingTodoId != nil), do: " <span class=\"text-xs text-blue-500\">✏️</span>", else: ""
       online_users_list.push("<div class=\"flex items-center space-x-2\">\n\t\t\t\t\t<div class=\"w-2 h-2 bg-green-500 rounded-full animate-pulse\"></div>\n\t\t\t\t\t<span class=\"text-sm text-gray-700 dark:text-gray-300\">" <> meta.userName <> editing_badge <> "</span>\n\t\t\t\t</div>")
       if (meta.editingTodoId != nil), do: editing_indicators.push("<div class=\"text-xs text-gray-500 dark:text-gray-400 italic\">\n\t\t\t\t\t\t🖊️ " <> meta.userName <> " is editing todo #" <> meta.editingTodoId <> "\n\t\t\t\t\t</div>")
     end
-    {:cont, {online_count, acc_state}}
+    {:cont, {acc_online_count, acc_g, acc_state}}
   else
-    {:halt, {online_count, acc_state}}
+    {:halt, {acc_online_count, acc_g, acc_state}}
   end
 end)
     if (online_count == 0), do: ""
@@ -576,15 +568,14 @@ end) <> "\n\t\t</div>"
     filtered_todos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
     todo_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
-  g = acc_g
-  if (g < filtered_todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
+  if (acc_g < acc_filtered_todos.length) do
     todo = filtered_todos[g]
-    g = g + 1
+    acc_g = acc_g + 1
     todo_items.push(render_todo_item(todo, assigns.editingTodo))
-    {:cont, {g, acc_state}}
+    {:cont, {acc_filtered_todos, acc_g, acc_state}}
   else
-    {:halt, {g, acc_state}}
+    {:halt, {acc_filtered_todos, acc_g, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")
@@ -619,15 +610,14 @@ end) <> "\n\t\t\t\t\t\t\t\t" <> render_tags(todo.tags) <> "\n\t\t\t\t\t\t\t</div
     if (tags == nil || tags.length == 0), do: ""
     tag_elements = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
-  g = acc_g
-  if (g < tags.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tags, g, :ok}, fn _, {acc_tags, acc_g, acc_state} ->
+  if (acc_g < acc_tags.length) do
     tag = tags[g]
-    g = g + 1
+    acc_g = acc_g + 1
     tag_elements.push("<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>")
-    {:cont, {g, acc_state}}
+    {:cont, {acc_tags, acc_g, acc_state}}
   else
-    {:halt, {g, acc_state}}
+    {:halt, {acc_tags, acc_g, acc_state}}
   end
 end)
     Enum.join(tag_elements, "")
