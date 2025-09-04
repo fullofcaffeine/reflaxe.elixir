@@ -1,33 +1,8 @@
 defmodule LiveViewComponents do
-  @moduledoc """
-  Phoenix HEEx template module generated from Haxe @:template class
-  Template file: live_view_components.html.heex
-  """
-
-  use Phoenix.Component
-  import Phoenix.HTML
-  import Phoenix.HTML.Form
-
-  @doc """
-  Renders the live_view_components.html.heex template with the provided assigns
-  """
-  def render(assigns) do
-    ~H"""
-    <!-- Template content will be processed by hxx() function -->
-    <div class="haxe-template">
-      <%= assigns[:content] || "Template content" %>
-    </div>
-    """
+  def render_counter(count) do
+    "<div class='counter'><h3>Count: " <> count <> "</h3>" <> "<button phx-click='increment'>+</button>" <> "<button phx-click='decrement'>-</button>" <> "<button phx-click='reset'>Reset</button>" <> "</div>"
   end
-
-  @doc """
-  Template string processor - converts Haxe template strings to HEEx
-  """
-  def process_template_string(template_str) do
-    # Process template string interpolations and convert to HEEx syntax
-    template_str
-    |> String.replace(~r/\$\{([^}]+)\}/, "<%= \\1 %>")
-    |> String.replace(~r/<\.([^>]+)>/, "<.\\1>")
+  def render_live_data(data) do
+    "<div class='sensor-data' phx-update='replace'><div class='temperature'><span class='label'>Temperature:</span><span class='value'>" <> data[:temperature] <> "°C</span>" <> "</div>" <> "<div class='humidity'>" <> "<span class='label'>Humidity:</span>" <> "<span class='value'>" <> data[:humidity] <> "%</span>" <> "</div>" <> "</div>"
   end
-
 end

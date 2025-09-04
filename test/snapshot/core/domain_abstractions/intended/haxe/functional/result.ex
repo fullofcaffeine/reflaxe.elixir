@@ -1,4 +1,4 @@
-defmodule Result do
+defmodule Haxe.Functional.Result do
   def ok(arg0) do
     {:Ok, arg0}
   end

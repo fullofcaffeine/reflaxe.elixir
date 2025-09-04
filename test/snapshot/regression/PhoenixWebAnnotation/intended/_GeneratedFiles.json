@@ -3,6 +3,7 @@
   "value_type.ex",
   "test_app_web.ex",
   "string_buf.ex",
+  "std.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
   "haxe/iterators/array_key_value_iterator.ex",
@@ -12,7 +13,7 @@
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],
-  "id": 7,
+  "id": 0,
   "wasCached": false,
   "version": 1
 }

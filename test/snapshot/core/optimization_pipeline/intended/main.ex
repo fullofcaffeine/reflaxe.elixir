@@ -4,24 +4,24 @@ defmodule Main do
     case (test.elem(0)) do
       0 ->
         g = test.elem(1)
-        value = g
+        _value = g
         nil
       1 ->
         g = test.elem(1)
-        data = g
+        _data = g
         Log.trace("Option2", %{:fileName => "Main.hx", :lineNumber => 23, :className => "Main", :methodName => "main"})
       2 ->
         Log.trace("Option3", %{:fileName => "Main.hx", :lineNumber => 25, :className => "Main", :methodName => "main"})
     end
     Log.trace("This should remain", %{:fileName => "Main.hx", :lineNumber => 30, :className => "Main", :methodName => "main"})
-    unused = "This variable is never used"
+    _unused = "This variable is never used"
     used = "This is used"
     Log.trace(used, %{:fileName => "Main.hx", :lineNumber => 38, :className => "Main", :methodName => "main"})
-    temp_1 = 42
-    temp_2 = temp
+    temp1 = 42
+    temp2 = temp
     result = temp + 1
     Log.trace(result, %{:fileName => "Main.hx", :lineNumber => 44, :className => "Main", :methodName => "main"})
-    Main.dead_code_example()
+    dead_code_example()
   end
   defp dead_code_example() do
     42

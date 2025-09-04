@@ -2,7 +2,7 @@ defmodule Vehicle do
   def new() do
     %{:speed => 0}
   end
-  def accelerate(struct) do
+  def accelerate(_struct) do
     throw("Abstract method")
   end
 end

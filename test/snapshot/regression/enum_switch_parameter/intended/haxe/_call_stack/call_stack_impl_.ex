@@ -11,50 +11,51 @@ defmodule CallStack_Impl_ do
     b = StringBuf.new()
     g = 0
     g1 = stack
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  if (g < g1.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+  if (acc_g < acc_g1.length) do
     s = g1[g]
-    g = g + 1
-    b = item_to_string(b.b <> "\nCalled from ", s)
-    {:cont, acc}
+    acc_g = acc_g + 1
+    b.add("\nCalled from ")
+    item_to_string(b, s)
+    {:cont, {acc_g1, acc_g, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
-    b.b
+    IO.iodata_to_binary(b)
   end
   def subtract(this1, stack) do
     start_index = -1
     i = -1
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  if (i = i + 1 < this1.length) do
-    g = 0
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, this1, g, start_index, :ok}, fn _, {acc_i, acc_this1, acc_g, acc_start_index, acc_state} ->
+  if (acc_i = acc_i + 1 < acc_this1.length) do
+    acc_g = 0
     g1 = stack.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  if (g < g1) do
-    j = g = g + 1
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_i, g1, acc_g, acc_start_index, :ok}, fn _, {acc_i, acc_g1, acc_g, acc_start_index, acc_state} ->
+  if (acc_g < acc_g1) do
+    j = acc_g = acc_g + 1
     if (equal_items(this1[i], stack[j])) do
-      if (start_index < 0) do
-        start_index = i
+      if (acc_start_index < 0) do
+        acc_start_index = acc_i
       end
-      i = i + 1
-      if (i >= this1.length) do
+      acc_i = acc_i + 1
+      if (acc_i >= this1.length) do
         throw(:break)
       end
     else
-      start_index = -1
+      acc_start_index = -1
     end
-    {:cont, acc}
+    {:cont, {acc_i, acc_g1, acc_g, acc_start_index, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {acc_i, acc_g1, acc_g, acc_start_index, acc_state}}
   end
 end)
-    if (start_index >= 0) do
+    if (acc_start_index >= 0) do
       throw(:break)
     end
-    {:cont, acc}
+    {:cont, {acc_i, acc_this1, acc_g, acc_start_index, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {acc_i, acc_this1, acc_g, acc_start_index, acc_state}}
   end
 end)
     if (start_index >= 0) do
@@ -161,20 +162,20 @@ end)
     result = ""
     e = e
     prev = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-  if (e != nil) do
-    if (prev == nil) do
-      tmp = e.get_stack()
-      result = "Exception: " <> e.get_message() <> (if tmp == nil, do: "null", else: to_string(tmp)) <> result
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {prev, result, e, :ok}, fn _, {acc_prev, acc_result, acc_e, acc_state} ->
+  if (acc_e != nil) do
+    if (acc_prev == nil) do
+      tmp = acc_e.get_stack()
+      acc_result = "Exception: " <> acc_e.get_message() <> (if tmp == nil, do: "null", else: to_string(tmp)) <> acc_result
     else
-      prev_stack = subtract(e.get_stack(), prev.get_stack())
-      result = "Exception: " <> e.get_message() <> (if (prev_stack == nil), do: "null", else: to_string(prev_stack)) <> "\n\nNext " <> result
+      prev_stack = subtract(acc_e.get_stack(), acc_prev.get_stack())
+      acc_result = "Exception: " <> acc_e.get_message() <> (if (prev_stack == nil), do: "null", else: to_string(prev_stack)) <> "\n\nNext " <> acc_result
     end
-    prev = e
-    e = e.get_previous()
-    {:cont, acc}
+    acc_prev = acc_e
+    acc_e = acc_e.get_previous()
+    {:cont, {acc_prev, acc_result, acc_e, acc_state}}
   else
-    {:halt, acc}
+    {:halt, {acc_prev, acc_result, acc_e, acc_state}}
   end
 end)
     result
@@ -182,12 +183,12 @@ end)
   defp item_to_string(b, s) do
     case (s.elem(0)) do
       0 ->
-        b = b.b <> "a C function"
+        b.add("a C function")
       1 ->
         g = s.elem(1)
         m = g
-        b = b.b <> "module "
-        b = b.b <> Std.string(m)
+        b.add("module ")
+        b.add(m)
       2 ->
         g = s.elem(1)
         g1 = s.elem(2)
@@ -199,31 +200,29 @@ end)
         col = g3
         if (s != nil) do
           item_to_string(b, s)
-          b = b.b <> " ("
+          b.add(" (")
         end
-        b = b.b <> Std.string(file)
-        b = b.b <> " line "
-        b = b.b <> Std.string(line)
+        b.add(file)
+        b.add(" line ")
+        b.add(line)
         if (col != nil) do
-          b = b.b <> " column "
-          b = b.b <> Std.string(col)
+          b.add(" column ")
+          b.add(col)
         end
-        if (s != nil) do
-          b = b.b <> ")"
-        end
+        if (s != nil), do: b.add(")")
       3 ->
         g = s.elem(1)
         g1 = s.elem(2)
         cname = g
         meth = g1
-        b = b.b <> Std.string((if (cname == nil), do: "<unknown>", else: cname))
-        b = b.b <> "."
-        b = b.b <> Std.string(meth)
+        b.add((if (cname == nil), do: "<unknown>", else: cname))
+        b.add(".")
+        b.add(meth)
       4 ->
         g = s.elem(1)
         n = g
-        b = b.b <> "local function #"
-        b = b.b <> Std.string(n)
+        b.add("local function #")
+        b.add(n)
     end
   end
 end

@@ -1,11 +1,11 @@
 defmodule BasicModule do
-  defp hello(struct) do
+  defp hello(_struct) do
     "world"
   end
-  defp greet(struct, name) do
-    "Hello, " + name + "!"
+  defp greet(_struct, name) do
+    "Hello, " <> name <> "!"
   end
-  defp calculate(struct, x, y, operation) do
+  defp calculate(_struct, x, y, operation) do
     case (operation) do
       "add" ->
         x + y
@@ -18,15 +18,15 @@ defmodule BasicModule do
       "multiply" ->
         x * y
       "subtract" ->
-        x - y
+        (x - y)
       _ ->
         0
     end
   end
-  defp get_timestamp(struct) do
+  defp get_timestamp(_struct) do
     "2024-01-01T00:00:00Z"
   end
-  defp is_valid(struct, input) do
+  defp is_valid(_struct, input) do
     input != nil && input.length > 0
   end
   def main() do

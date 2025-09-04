@@ -1,11 +1,11 @@
 defmodule EReg do
-  def new(r, opt) do
+  def new(_r, _opt) do
     %{}
   end
-  def match(struct, s) do
+  def match(struct, _s) do
     false
   end
-  def matched(struct, n) do
+  def matched(struct, _n) do
     nil
   end
   def matched_left(struct) do
@@ -17,19 +17,19 @@ defmodule EReg do
   def matched_pos(struct) do
     nil
   end
-  def match_sub(struct, s, pos, len) do
+  def match_sub(struct, _s, _pos, _len) do
     false
   end
-  def split(struct, s) do
+  def split(struct, _s) do
     nil
   end
-  def replace(struct, s, by) do
+  def replace(struct, _s, _by) do
     nil
   end
-  def map(struct, s, f) do
+  def map(struct, _s, _f) do
     nil
   end
-  def escape(s) do
+  def escape(_s) do
     nil
   end
 end

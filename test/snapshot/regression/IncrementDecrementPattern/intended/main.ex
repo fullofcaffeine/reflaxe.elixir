@@ -6,14 +6,16 @@ defmodule Main do
   defp test_while_loop() do
     k = 10
     pos = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (k > 0) do
-  Log.trace("Processing at position: " <> pos, %{:fileName => "Main.hx", :lineNumber => 18, :className => "Main", :methodName => "testWhileLoop"})
-  pos = pos + 1
-  k = (k - 1)
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, pos, :ok}, fn _, {acc_k, acc_pos, acc_state} ->
+  if (acc_k > 0) do
+    Log.trace("Processing at position: " <> acc_pos, %{:fileName => "Main.hx", :lineNumber => 18, :className => "Main", :methodName => "testWhileLoop"})
+    acc_pos = acc_pos + 1
+    acc_k = (acc_k - 1)
+    {:cont, {acc_k, acc_pos, acc_state}}
+  else
+    {:halt, {acc_k, acc_pos, acc_state}}
+  end
+end)
     Log.trace("Final: k=" <> k <> ", pos=" <> pos, %{:fileName => "Main.hx", :lineNumber => 23, :className => "Main", :methodName => "testWhileLoop"})
   end
   defp test_for_loop() do
@@ -34,13 +36,15 @@ end end)
     data = [1, 2, 3, 4, 5]
     sum = 0
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc -> if (i < data.length) do
-  sum = sum + data[i]
-  i = i + 1
-  {:cont, acc}
-else
-  {:halt, acc}
-end end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, data, sum, :ok}, fn _, {acc_i, acc_data, acc_sum, acc_state} ->
+  if (acc_i < acc_data.length) do
+    acc_sum = acc_sum + data[i]
+    acc_i = acc_i + 1
+    {:cont, {acc_i, acc_data, acc_sum, acc_state}}
+  else
+    {:halt, {acc_i, acc_data, acc_sum, acc_state}}
+  end
+end)
     Log.trace("Sum: " <> sum, %{:fileName => "Main.hx", :lineNumber => 47, :className => "Main", :methodName => "testComplexLoop"})
   end
 end

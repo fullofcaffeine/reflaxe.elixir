@@ -14,7 +14,7 @@ defmodule PatternMatchingTest do
         r = g
         g = g1
         b = g2
-        "rgb(" + r + "," + g + "," + b + ")"
+        "rgb(" <> r <> "," <> g <> "," <> b <> ")"
     end
   end
   def match_option(option) do
@@ -24,7 +24,7 @@ defmodule PatternMatchingTest do
       1 ->
         g = option.elem(1)
         value = g
-        "some(" + Std.string(value) + ")"
+        "some(" <> Std.string(value) <> ")"
     end
   end
   def match_int(value) do
@@ -61,13 +61,13 @@ defmodule PatternMatchingTest do
       1 ->
         g = arr[0]
         x = g
-        "single(" + x + ")"
+        "single(" <> x <> ")"
       2 ->
         g = arr[0]
         g1 = arr[1]
         x = g
         y = g1
-        "pair(" + x + "," + y + ")"
+        "pair(" <> x <> "," <> y <> ")"
       3 ->
         g = arr[0]
         g1 = arr[1]
@@ -75,7 +75,7 @@ defmodule PatternMatchingTest do
         x = g
         y = g1
         z = g2
-        "triple(" + x + "," + y + "," + z + ")"
+        "triple(" <> x <> "," <> y <> "," <> z <> ")"
       _ ->
         "many"
     end
@@ -98,14 +98,14 @@ defmodule PatternMatchingTest do
             g2 = g.elem(2)
             g = g.elem(3)
             r = g1
-            g = g2
-            b = g
+            _g = g2
+            _b = g
             if (r > 128) do
               "bright rgb"
             else
-              r = g1
-              g = g2
-              b = g
+              _r = g1
+              _g = g2
+              _b = g
               "dark rgb"
             end
         end

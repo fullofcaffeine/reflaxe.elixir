@@ -1,33 +1,27 @@
 defmodule UserProfileTemplate do
-  @moduledoc """
-  Phoenix HEEx template module generated from Haxe @:template class
-  Template file: user_profile_template.html.heex
-  """
-
-  use Phoenix.Component
-  import Phoenix.HTML
-  import Phoenix.HTML.Form
-
-  @doc """
-  Renders the user_profile_template.html.heex template with the provided assigns
-  """
-  def render(assigns) do
-    ~H"""
-    <!-- Template content will be processed by hxx() function -->
-    <div class="haxe-template">
-      <%= assigns[:content] || "Template content" %>
-    </div>
-    """
+  def render_profile(user) do
+    "<div class='user-profile'><h1>" <> user[:name] <> "</h1><p>Age: " <> user[:age] <> "</p></div>"
   end
-
-  @doc """
-  Template string processor - converts Haxe template strings to HEEx
-  """
-  def process_template_string(template_str) do
-    # Process template string interpolations and convert to HEEx syntax
-    template_str
-    |> String.replace(~r/\$\{([^}]+)\}/, "<%= \\1 %>")
-    |> String.replace(~r/<\.([^>]+)>/, "<.\\1>")
+  def render_with_condition(user) do
+    badge = if (user[:isAdmin]), do: "Admin", else: "User"
+    "<div class='user-info'><h2>" <> user[:name] <> "</h2><span class='badge'>" <> badge <> "</span></div>"
   end
-
+  def render_user_list(users) do
+    items = []
+    g = 0
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, users, :ok}, fn _, {acc_g, acc_users, acc_state} ->
+  if (acc_g < acc_users.length) do
+    user = users[g]
+    acc_g = acc_g + 1
+    items.push("<li><strong>" <> user[:name] <> "</strong> - " <> user[:email] <> "</li>")
+    {:cont, {acc_g, acc_users, acc_state}}
+  else
+    {:halt, {acc_g, acc_users, acc_state}}
+  end
+end)
+    "<ul class='user-list'>" <> Enum.join(items, "") <> "</ul>"
+  end
+  def render_complex_layout(title, content) do
+    "<!DOCTYPE html><html><head><title>" <> title <> "</title></head><body><h1>" <> title <> "</h1><main>" <> content <> "</main></body></html>"
+  end
 end

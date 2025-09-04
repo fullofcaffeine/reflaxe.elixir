@@ -3,7 +3,7 @@ defmodule ArrayTools do
     Enum.reduce(array, initial, fn item, acc -> func.(acc, item) end)
   end
   def fold(array, func, initial) do
-    ArrayTools.reduce(array, func, initial)
+    reduce(array, func, initial)
   end
   def find(array, predicate) do
     Enum.find(array, fn item -> predicate.(item) end)
@@ -18,13 +18,13 @@ defmodule ArrayTools do
     Enum.any?(array, fn item -> predicate.(item) end)
   end
   def any(array, predicate) do
-    ArrayTools.exists(array, predicate)
+    exists(array, predicate)
   end
   def foreach(array, predicate) do
     Enum.all?(array, fn item -> predicate.(item) end)
   end
   def all(array, predicate) do
-    ArrayTools.foreach(array, predicate)
+    foreach(array, predicate)
   end
   def for_each(array, action) do
     Enum.each(array, fn item -> action.(item) end)

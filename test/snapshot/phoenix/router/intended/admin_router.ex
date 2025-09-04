@@ -1,4 +1,3 @@
 defmodule AdminRouter do
-  @moduledoc "AdminRouter module generated from Haxe"
-
+  nil
 end

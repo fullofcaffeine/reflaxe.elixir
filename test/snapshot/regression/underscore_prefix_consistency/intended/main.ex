@@ -1,25 +1,25 @@
 defmodule Main do
   defp main() do
-    Main.test_changeset_pattern()
-    result = Main.process_data("unused", 42)
+    test_changeset_pattern()
+    result = process_data("unused", 42)
     Log.trace(result, %{:fileName => "Main.hx", :lineNumber => 18, :className => "Main", :methodName => "main"})
-    Main.test_pattern_matching_unused()
-    Main.test_lambda_unused()
+    test_pattern_matching_unused()
+    test_lambda_unused()
   end
   defp test_changeset_pattern() do
     nil
   end
-  defp process_data(_unused, data) do
+  defp process_data(__unused, data) do
     data * 2
   end
   defp test_pattern_matching_unused() do
-    result = g = {:GetSomeValue}
-case (g.elem(0)) do
+    g = {:GetSomeValue}
+    result = case (g.elem(0)) do
   0 ->
     g = g.elem(1)
     g1 = g[:metadata]
     g = g[:value]
-    _meta = g1
+    __meta = g1
     v = g
     v
   1 ->

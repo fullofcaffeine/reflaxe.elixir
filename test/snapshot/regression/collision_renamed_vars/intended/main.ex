@@ -1,12 +1,12 @@
 defmodule Main do
   defp compare_params(p1, p2) do
-    p = p1
-    p = p2
+    _p = p1
+    _p = p2
     if (p1.length == 0 && p2.length == 0), do: 0
     compare_arrays(p1, p2)
   end
   defp compare_arrays(a1, a2) do
-    a1.length - a2.length
+    (a1.length - a2.length)
   end
   defp main() do
     result = compare_params([1, 2], [3, 4, 5])

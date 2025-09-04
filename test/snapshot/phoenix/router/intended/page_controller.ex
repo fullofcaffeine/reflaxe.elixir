@@ -1,4 +1,3 @@
 defmodule PageController do
-  @moduledoc "PageController module generated from Haxe"
-
+  nil
 end

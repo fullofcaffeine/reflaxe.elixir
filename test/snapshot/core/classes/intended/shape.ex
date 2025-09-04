@@ -3,7 +3,7 @@ defmodule Shape do
     %{:position => Point.new(x, y), :name => name}
   end
   def draw(struct) do
-    "" + struct.name + " at " + struct.position.toString()
+    "" <> struct.name <> " at " <> struct.position.toString()
   end
   def get_position(struct) do
     struct.position

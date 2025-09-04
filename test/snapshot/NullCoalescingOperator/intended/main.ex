@@ -1,96 +1,107 @@
 defmodule Main do
   defp main() do
-    Main.test_simple_assignment()
-    Main.test_function_arguments()
-    Main.test_object_literals()
-    Main.test_array_literals()
-    Main.test_nested_coalescing()
-    Main.test_method_calls()
+    test_simple_assignment()
+    test_function_arguments()
+    test_object_literals()
+    test_array_literals()
+    test_nested_coalescing()
+    test_method_calls()
   end
-  defp testSimpleAssignment() do
+  defp test_simple_assignment() do
     maybe_null = nil
     not_null = "value"
-    result_1 = if (tmp = maybe_null) != nil, do: tmp, else: "default"
-    result_2 = if (tmp = not_null) != nil, do: tmp, else: "default"
-    intermediate = Main.get_value()
-    result_3 = if (tmp = intermediate) != nil, do: tmp, else: "fallback"
+    tmp = maybe_null
+    _result1 = if tmp != nil, do: tmp, else: "default"
+    tmp = not_null
+    _result2 = if tmp != nil, do: tmp, else: "default"
+    intermediate = get_value()
+    tmp = intermediate
+    _result3 = if tmp != nil, do: tmp, else: "fallback"
   end
-  defp testFunctionArguments() do
+  defp test_function_arguments() do
     optional = nil
-    Main.do_something(if (tmp = optional) != nil, do: tmp, else: "default")
-    Main.do_multiple(if (tmp = optional) != nil, do: tmp, else: "first", if (tmp = Main.get_value()) != nil, do: tmp, else: "second")
+    tmp = optional
+    do_something((if tmp != nil, do: tmp, else: "default"))
+    tmp = optional
+    tmp = get_value()
+    do_multiple((if tmp != nil, do: tmp, else: "first"), (if tmp != nil, do: tmp, else: "second"))
   end
-  defp testObjectLiterals() do
+  defp test_object_literals() do
     optional = nil
     maybe_int = nil
     maybe_bool = nil
-    obj = %{
-      :name => if (tmp = optional) != nil, do: tmp, else: "defaultName",
-      :count => if (tmp = maybe_int) != nil, do: tmp, else: 0,
-      :enabled => if (tmp = maybe_bool) != nil, do: tmp, else: true,
-      :nested => %{
-        :value => if (tmp = optional) != nil, do: tmp, else: "nestedDefault",
-        :flag => if (tmp = maybe_bool) != nil, do: tmp, else: false
-      }
-    }
-    data = Main.get_data()
-    obj_2 = %{
-      :title => if (tmp = data[:title]) != nil, do: tmp, else: "Untitled",
-      :description => if (tmp = data[:description]) != nil, do: tmp, else: "No description",
-      :active => if (tmp = data[:active]) != nil, do: tmp, else: true
-    }
+    obj_nested_value = nil
+    obj_nested_flag = nil
+    obj_name = nil
+    obj_enabled = nil
+    obj_count = nil
+    tmp = optional
+    obj_name = if tmp != nil, do: tmp, else: "defaultName"
+    tmp = maybe_int
+    obj_count = if tmp != nil, do: tmp, else: 0
+    tmp = maybe_bool
+    obj_enabled = if tmp != nil, do: tmp, else: true
+    tmp = optional
+    obj_nested_value = if tmp != nil, do: tmp, else: "nestedDefault"
+    tmp = maybe_bool
+    obj_nested_flag = if tmp != nil, do: tmp, else: false
+    data = get_data()
+    obj2_title = nil
+    obj2_description = nil
+    obj2_active = nil
+    tmp = data[:title]
+    obj2_title = if tmp != nil, do: tmp, else: "Untitled"
+    tmp = data[:description]
+    obj2_description = if tmp != nil, do: tmp, else: "No description"
+    tmp = data[:active]
+    obj2_active = if tmp != nil, do: tmp, else: true
   end
-  defp testArrayLiterals() do
-    maybe_1 = nil
-    maybe_2 = nil
-    arr = [
-      if (tmp = maybe_1) != nil, do: tmp, else: "item1",
-      if (tmp = Main.get_value()) != nil, do: tmp, else: "item2",
-      if (tmp = maybe_2) != nil, do: tmp, else: "item3"
-    ]
+  defp test_array_literals() do
+    maybe1 = nil
+    maybe2 = nil
+    arr_2 = nil
+    arr_1 = nil
+    tmp = maybe
+    arr_0 = if tmp != nil, do: tmp, else: "item1"
+    tmp = get_value()
+    arr_1 = if tmp != nil, do: tmp, else: "item2"
+    tmp = maybe
+    arr_2 = if tmp != nil, do: tmp, else: "item3"
   end
-  defp testNestedCoalescing() do
+  defp test_nested_coalescing() do
     first = nil
     second = nil
     third = "final"
-    result = if (tmp = if (tmp2 = first) != nil, do: tmp2, else: second) != nil, do: tmp, else: third
-    complex = (if (tmp = first) != nil, do: tmp, else: "a") <> (if (tmp = second) != nil, do: tmp, else: "b")
+    tmp = first
+    tmp = if tmp != nil, do: tmp, else: second
+    _result = if tmp != nil, do: tmp, else: third
+    tmp = first
+    tmp = second
+    _complex = (if tmp != nil, do: tmp, else: "a") <> (if tmp != nil, do: tmp, else: "b")
   end
-  defp testMethodCalls() do
+  defp test_method_calls() do
     obj = nil
-    name = if (tmp = if (obj != nil), do: obj.getName(), else: nil) != nil, do: tmp, else: "Anonymous"
-    value = if (tmp = if (obj != nil), do: obj.getValue(), else: nil) != nil, do: tmp, else: 100
-    opt = Main.get_optional()
-    result = if (tmp = if (opt != nil), do: opt.process(), else: nil) != nil, do: tmp, else: "default"
+    tmp = if (obj != nil), do: obj.getName(), else: nil
+    _name = if tmp != nil, do: tmp, else: "Anonymous"
+    tmp = if (obj != nil), do: obj.getValue(), else: nil
+    _value = if tmp != nil, do: tmp, else: 100
+    opt = get_optional()
+    tmp = if (opt != nil), do: opt.process(), else: nil
+    _result = if tmp != nil, do: tmp, else: "default"
   end
-  defp getValue() do
+  defp get_value() do
     nil
   end
-  defp getData() do
+  defp get_data() do
     %{:title => nil, :description => "Has value", :active => nil}
   end
-  defp doSomething(value) do
+  defp do_something(_value) do
     nil
   end
-  defp doMultiple(a, b) do
+  defp do_multiple(_a, _b) do
     nil
   end
-  defp getOptional() do
+  defp get_optional() do
     nil
-  end
-end
-
-defmodule TestObject do
-  def new() do
-    %{}
-  end
-  def getName(_self) do
-    "TestName"
-  end
-  def getValue(_self) do
-    42
-  end
-  def process(_self) do
-    "processed"
   end
 end
