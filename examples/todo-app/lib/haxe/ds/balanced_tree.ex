@@ -7,7 +7,8 @@ defmodule BalancedTree do
   end
   def get(struct, key) do
     node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {node, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
+  node = acc_node
   if (node != nil) do
     c = struct.compare(key, node.key)
     if (c == 0), do: node.value
@@ -33,7 +34,8 @@ end)
   end
   def exists(struct, key) do
     node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {node, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
+  node = acc_node
   if (node != nil) do
     c = struct.compare(key, node.key)
     if (c == 0) do

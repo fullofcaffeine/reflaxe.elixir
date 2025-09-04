@@ -11,14 +11,16 @@ defmodule Output do
       throw("Invalid parameters")
     end
     k = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, pos, :ok}, fn _, {k, pos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, k, :ok}, fn _, {acc_pos, acc_k, acc_state} ->
+  pos = acc_pos
+  k = acc_k
   if (k > 0) do
     struct.writeByte(:binary.at(b, pos))
     pos = pos + 1
     k = (k - 1)
-    {:cont, {k, pos, acc_state}}
+    {:cont, {pos, k, acc_state}}
   else
-    {:halt, {k, pos, acc_state}}
+    {:halt, {pos, k, acc_state}}
   end
 end)
     len
