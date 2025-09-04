@@ -309,6 +309,7 @@ class ElixirASTBuilder {
                     trace('[AST Builder] Processing TVar: ${v.name} (id: ${v.id})');
                 }
                 #end
+                
                 #if debug_null_coalescing
                 trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
                 #end
@@ -434,6 +435,7 @@ class ElixirASTBuilder {
                     baseName;
                 };
                 
+                
                 // Handle variable initialization
                 var matchNode = if (init != null) {
                     // Check if init is a TBlock with null coalescing pattern
@@ -461,13 +463,19 @@ class ElixirASTBuilder {
                             
                         case _:
                             // Regular init expression
-                            buildFromTypedExpr(init, variableUsageMap);
+                            var builtInit = buildFromTypedExpr(init, variableUsageMap);
+                            
+                            
+                            builtInit;
                     };
                     
-                    makeAST(EMatch(
+                    var result = makeAST(EMatch(
                         PVar(finalVarName),
                         initValue
                     ));
+                    
+                    
+                    result;
                 } else {
                     // Uninitialized variable - use nil
                     makeAST(EMatch(
@@ -475,6 +483,7 @@ class ElixirASTBuilder {
                         makeAST(ENil)
                     ));
                 };
+                
                 
                 matchNode.def;
                 
@@ -751,6 +760,7 @@ class ElixirASTBuilder {
                     // Regular function call
                     var target = e != null ? buildFromTypedExpr(e, variableUsageMap) : null;
                     var args = [for (arg in el) buildFromTypedExpr(arg, variableUsageMap)];
+                    
                     
                     // Detect special call patterns
                     switch(e.expr) {

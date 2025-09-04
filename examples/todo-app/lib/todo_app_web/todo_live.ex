@@ -63,7 +63,8 @@ defmodule TodoAppWeb.TodoLive do
     g = event.elem(1)
     g1 = event.elem(2)
     id = g
-    priority = update_todo_priority(id, g1, socket)
+    priority = g1
+    update_todo_priority(id, priority, socket)
   11 ->
     SafeAssigns.set_show_form(socket, not socket.assigns.showForm)
   12 ->
@@ -290,16 +291,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, :ok}, fn _, {acc_g, acc_count, acc_state} ->
-  g = acc_g
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, :ok}, fn _, {acc_count, acc_g, acc_state} ->
   count = acc_count
+  g = acc_g
   if (g < todos.length) do
     todo = todos[g]
     g = g + 1
     if (todo.completed), do: count = count + 1
-    {:cont, {g, count, acc_state}}
+    {:cont, {count, g, acc_state}}
   else
-    {:halt, {g, count, acc_state}}
+    {:halt, {count, g, acc_state}}
   end
 end)
     count
@@ -307,16 +308,16 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, :ok}, fn _, {acc_count, acc_g, acc_state} ->
-  count = acc_count
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, :ok}, fn _, {acc_g, acc_count, acc_state} ->
   g = acc_g
+  count = acc_count
   if (g < todos.length) do
     todo = todos[g]
     g = g + 1
     if (not todo.completed), do: count = count + 1
-    {:cont, {count, g, acc_state}}
+    {:cont, {g, count, acc_state}}
   else
-    {:halt, {count, g, acc_state}}
+    {:halt, {g, count, acc_state}}
   end
 end)
     count
@@ -434,7 +435,8 @@ end)
             Log.trace("Failed to broadcast todo update: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 613, :className => "server.live.TodoLive", :methodName => "saveEditedTodoTyped"})
         end
         presence_socket = Presence.update_user_editing(socket, socket.assigns.currentUser, nil)
-        updated_socket = load_and_assign_todos(SafeAssigns.set_editing_todo(presence_socket, nil))
+        updated_socket = SafeAssigns.set_editing_todo(presence_socket, nil)
+        load_and_assign_todos(updated_socket)
       1 ->
         g = g.elem(1)
         _changeset = g
@@ -534,7 +536,8 @@ end
     online_count = online_count + 1
     if (entry.metas.length > 0) do
       meta = entry.metas[0]
-      editing_badge = online_users_list.push("<div class=\"flex items-center space-x-2\">\n\t\t\t\t\t<div class=\"w-2 h-2 bg-green-500 rounded-full animate-pulse\"></div>\n\t\t\t\t\t<span class=\"text-sm text-gray-700 dark:text-gray-300\">" <> meta.userName <> editing_badge <> "</span>\n\t\t\t\t</div>")
+      editing_badge = if (meta.editingTodoId != nil), do: " <span class=\"text-xs text-blue-500\">✏️</span>", else: ""
+      online_users_list.push("<div class=\"flex items-center space-x-2\">\n\t\t\t\t\t<div class=\"w-2 h-2 bg-green-500 rounded-full animate-pulse\"></div>\n\t\t\t\t\t<span class=\"text-sm text-gray-700 dark:text-gray-300\">" <> meta.userName <> editing_badge <> "</span>\n\t\t\t\t</div>")
       if (meta.editingTodoId != nil), do: editing_indicators.push("<div class=\"text-xs text-gray-500 dark:text-gray-400 italic\">\n\t\t\t\t\t\t🖊️ " <> meta.userName <> " is editing todo #" <> meta.editingTodoId <> "\n\t\t\t\t\t</div>")
     end
     {:cont, {online_count, acc_state}}
