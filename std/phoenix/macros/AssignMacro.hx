@@ -58,8 +58,10 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 		
-		// Generate Phoenix.LiveView.assign call
-		return macro phoenix.Phoenix.LiveView.assign($socketExpr, $v{snakeCaseName}, $value);
+		// Generate Phoenix.LiveView.assign call with atom key
+		// Build the complete code string as a constant
+		var codeStr = 'Phoenix.LiveView.assign({0}, :$snakeCaseName, {1})';
+		return macro untyped __elixir__($v{codeStr}, $socketExpr, $value);
 	}
 	
 	/**
@@ -90,13 +92,23 @@ class AssignMacro {
 					});
 				}
 				
-				// Generate map for assign_multiple
-				var mapExpr = {
-					expr: EObjectDecl(transformedFields),
-					pos: updates.pos
-				};
+				// Generate map for assign_multiple with atom keys
+				// Build the map string with atom keys
+				var mapPairs = [];
+				var values = [];
+				var i = 1; // Start from 1 since socket is {0}
+				for (field in transformedFields) {
+					mapPairs.push(':${field.field} => {${i}}');
+					values.push(field.expr);
+					i++;
+				}
+				var mapString = '%{' + mapPairs.join(', ') + '}';
 				
-				return macro phoenix.Phoenix.LiveView.assignMultiple($socketExpr, $mapExpr);
+				// Build complete code string as a constant
+				var codeStr = 'Phoenix.LiveView.assign({0}, $mapString)';
+				// Generate the call with all arguments
+				var args = [socketExpr].concat(values);
+				return macro untyped __elixir__($v{codeStr}, $a{args});
 				
 			case _:
 				Context.error("Expected object literal with fields to merge", updates.pos);
@@ -128,8 +140,10 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 		
-		// Generate Phoenix.LiveView.assign_new call
-		return macro phoenix.Phoenix.LiveView.assign_new($socketExpr, $v{snakeCaseName}, $defaultFn);
+		// Generate Phoenix.LiveView.assign_new call with atom key
+		// Build complete code string as a constant
+		var codeStr = 'Phoenix.LiveView.assign_new({0}, :$snakeCaseName, {1})';
+		return macro untyped __elixir__($v{codeStr}, $socketExpr, $defaultFn);
 	}
 	
 	/**
@@ -156,8 +170,10 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 		
-		// Generate Phoenix.LiveView.update call
-		return macro phoenix.Phoenix.LiveView.update($socketExpr, $v{snakeCaseName}, $updater);
+		// Generate Phoenix.LiveView.update call with atom key
+		// Build complete code string as a constant
+		var codeStr = 'Phoenix.LiveView.update({0}, :$snakeCaseName, {1})';
+		return macro untyped __elixir__($v{codeStr}, $socketExpr, $updater);
 	}
 	
 	/**
