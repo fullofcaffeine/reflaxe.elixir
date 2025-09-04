@@ -186,23 +186,29 @@ class InlineExpansionTransforms {
      * Checks if two expressions match the inline expansion split pattern
      * 
      * PATTERN REQUIREMENTS:
-     * 1. First expression must be an assignment chain (can be nested)
+     * 1. First expression must be an assignment chain (can be nested) with MULTIPLE assignments
+     *    OR an assignment with arithmetic operations
      * 2. Second expression must be a method call or field access
      * 3. The call/access must use ANY variable from the assignment chain
+     * 4. The assignment MUST be part of a chain or arithmetic pattern, not a simple assignment
      * 
      * EXAMPLES THAT MATCH:
      *   first:  c = index = i = i + 1
      *   second: s.cca(index)
-     *   → Matches because 'index' is used in the call (part of the chain)
+     *   → Matches because 'index' is used and there's a chain with arithmetic
      * 
      *   first:  result = pos = pos + 1
      *   second: array[pos]
-     *   → Matches because 'pos' is used in the access
+     *   → Matches because 'pos' is used and there's a chain with arithmetic
      * 
      * EXAMPLES THAT DON'T MATCH:
+     *   first:  editing_badge = if(condition, "value1", "value2")
+     *   second: push("..." <> editing_badge <> "...")
+     *   → Doesn't match because it's a simple assignment (not a chain)
+     * 
      *   first:  c = 5
-     *   second: s.cca(unrelated_var)
-     *   → Doesn't match because 'unrelated_var' wasn't assigned
+     *   second: s.cca(c)
+     *   → Doesn't match because it's a simple assignment
      * 
      *   first:  c = d = 10
      *   second: print("hello")
@@ -213,6 +219,14 @@ class InlineExpansionTransforms {
      * @return True if this is a split inline expansion
      */
     static function isInlineExpansionSplit(first: ElixirAST, second: ElixirAST): Bool {
+        // Check if this is actually an assignment chain with multiple assignments
+        // or involves arithmetic operations that need special handling
+        if (!isComplexAssignmentChain(first)) {
+            #if debug_inline_combiner
+            trace('[XRay InlineCombiner] Not a complex assignment chain - skipping');
+            #end
+            return false;
+        }
         // Extract ALL variables from the assignment chain
         var assignedVars = extractAllAssignedVars(first);
         
@@ -255,6 +269,43 @@ class InlineExpansionTransforms {
                 #if debug_inline_combiner
                 trace('[XRay InlineCombiner] Second expression is not a call: ${second.def}');
                 #end
+                false;
+        };
+    }
+    
+    /**
+     * Checks if an expression is a complex assignment chain that needs special handling
+     * 
+     * WHAT QUALIFIES AS COMPLEX:
+     * - Multiple chained assignments: a = b = c + 1
+     * - Assignments with arithmetic: i = i + 1
+     * - Nested assignment chains
+     * 
+     * WHAT DOESN'T QUALIFY:
+     * - Simple assignments: a = value
+     * - Ternary/if assignments: a = if(cond, val1, val2)
+     * - Function call assignments: a = func()
+     * 
+     * @param expr The expression to check
+     * @return True if this is a complex assignment chain needing inline expansion
+     */
+    static function isComplexAssignmentChain(expr: ElixirAST): Bool {
+        return switch(expr.def) {
+            case EMatch(_, right):
+                // Check if the right side is another assignment or arithmetic
+                switch(right.def) {
+                    case EBinary(Match, _, _): true; // Chained assignment
+                    case EBinary(Add | Subtract | Multiply | Divide, _, _): true; // Arithmetic
+                    default: false;
+                }
+            case EBinary(Match, _, right):
+                // Binary match - check if right is complex
+                switch(right.def) {
+                    case EBinary(Match, _, _): true; // Chained assignment
+                    case EBinary(Add | Subtract | Multiply | Divide, _, _): true; // Arithmetic
+                    default: false;
+                }
+            default:
                 false;
         };
     }

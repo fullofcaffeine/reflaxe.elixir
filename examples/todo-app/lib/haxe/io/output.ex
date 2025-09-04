@@ -47,7 +47,8 @@ end)
 end)
   end
   def write_string(struct, s) do
-    b = struct.write(Bytes.of_string(s))
+    b = Bytes.of_string(s)
+    struct.write(b)
   end
   def flush(struct) do
     nil

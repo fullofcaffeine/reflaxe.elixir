@@ -29,6 +29,7 @@ else
   []
 end
     tags.push(tag)
-    params = changeset(todo, %{:tags => tags})
+    params = %{:tags => tags}
+    changeset(todo, params)
   end
 end
