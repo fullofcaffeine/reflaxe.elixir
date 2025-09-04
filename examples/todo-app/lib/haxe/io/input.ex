@@ -3,7 +3,7 @@ defmodule Input do
     bigEndian = b
     b
   end
-  def read_byte(struct) do
+  def read_byte(_struct) do
     -1
   end
   def read_bytes(struct, b, pos, len) do
@@ -80,7 +80,7 @@ end)
 end)
     buf_b
   end
-  def close(struct) do
+  def close(_struct) do
     nil
   end
 end

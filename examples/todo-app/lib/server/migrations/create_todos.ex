@@ -1,8 +1,8 @@
 defmodule CreateTodos do
-  def migrate_add_indexes(struct) do
+  def migrate_add_indexes(_struct) do
     nil
   end
-  def rollback_custom_operation(struct) do
+  def rollback_custom_operation(_struct) do
     nil
   end
 end

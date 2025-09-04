@@ -608,9 +608,20 @@ class ElixirCompiler extends GenericCompiler<
             // Constructors don't need this since they create the instance
             if (!func.isStatic && !isConstructor) {
                 // Add instance parameter as first argument
-                // Use "struct" as the parameter name for regular classes
-                // This matches the convention in the generated code
-                args.push(EPattern.PVar("struct"));
+                // Check if "this" is actually used in the function body
+                var thisIsUsed = false;
+                switch(funcExpr.expr) {
+                    case TFunction(tfunc):
+                        // Analyze if "this" is referenced in the function body
+                        thisIsUsed = reflaxe.elixir.helpers.VariableUsageAnalyzer.containsThisReference(tfunc.expr);
+                    default:
+                        // Assume it's used if we can't analyze
+                        thisIsUsed = true;
+                }
+                
+                // Use underscore prefix if "this" is not used
+                var structParamName = thisIsUsed ? "struct" : "_struct";
+                args.push(EPattern.PVar(structParamName));
             }
             
             // Extract additional parameters from the function expression
