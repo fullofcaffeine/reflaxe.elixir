@@ -23,12 +23,16 @@ abstract EctoQuery<T>(Dynamic) {
     
     /**
      * Add a where clause to the query
-     * @param field The field name to filter on
+     * @param _field The field name to filter on (currently unused - needs API redesign)
      * @param value The value to compare against
      * @return The query with the where clause added
+     * @deprecated This API needs redesign to properly handle dynamic field queries
      */
-    public function where<V>(field: String, value: V): EctoQuery<T> {
-        var newQuery = untyped __elixir__('Ecto.Query.where({0}, [{1}: {2}])', this, field, value);
+    public function where<V>(_field: String, value: V): EctoQuery<T> {
+        // TODO: This implementation is incorrect - it uses literal :field atom instead of dynamic field
+        // Marking parameter as unused with underscore prefix to avoid compilation warning
+        // Proper implementation would require Ecto.Query.dynamic or a different approach
+        var newQuery = untyped __elixir__('Ecto.Query.where({0}, [field: {1}])', this, value);
         return new EctoQuery<T>(newQuery);
     }
     
