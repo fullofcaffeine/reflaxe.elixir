@@ -51,11 +51,11 @@ defmodule TodoPubSub do
     level = g1
     %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
 end
-    SafePubSub.add_timestamp(base_payload)
+    Phoenix.SafePubSub.add_timestamp(base_payload)
   end
   defp parse_message_impl(msg) do
-    if (not SafePubSub.is_valid_message(msg)) do
-      Log.trace(SafePubSub.create_malformed_message_error(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 188, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+    if (not Phoenix.SafePubSub.is_valid_message(msg)) do
+      Log.trace(Phoenix.SafePubSub.create_malformed_message_error(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 188, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
       :none
     end
     g = msg.type
@@ -99,7 +99,7 @@ end
       "user_online" ->
         if (msg.user_id != nil), do: {:Some, {:UserOnline, msg.user_id}}, else: :none
       _ ->
-        Log.trace(SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 220, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+        Log.trace(Phoenix.SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 220, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
         :none
     end
   end

@@ -1782,7 +1782,7 @@ class ElixirASTBuilder {
             case TFor(v, e1, e2):
                 #if debug_for_loop
                 trace('[XRay ForLoop] Processing TFor');
-                trace('[XRay ForLoop] Variable: ${v.name}');
+                trace('[XRay ForLoop] Variable: ${v.name} (id=${v.id})');
                 trace('[XRay ForLoop] Iteration expr type: ${Type.enumConstructor(e1.expr)}');
                 trace('[XRay ForLoop] Body expr type: ${Type.enumConstructor(e2.expr)}');
                 // Analyze body structure
@@ -1797,10 +1797,33 @@ class ElixirASTBuilder {
                 }
                 #end
                 
-                // For loop becomes comprehension
-                var pattern = PVar(toElixirVarName(v.name));
+                // Convert the loop variable name to Elixir conventions
+                var elixirVarName = toElixirVarName(v.name);
+                
+                // Track the variable renaming so TLocal references use the correct name
+                // This is critical for underscore variables like "_" which become "item"
+                var idKey = Std.string(v.id);
+                var oldMapping = tempVarRenameMap.get(idKey);
+                if (v.name != elixirVarName) {
+                    tempVarRenameMap.set(idKey, elixirVarName);
+                    #if debug_for_loop
+                    trace('[XRay ForLoop] Registering variable rename: ${v.name} (id=$idKey) -> $elixirVarName');
+                    #end
+                }
+                
+                // Build the pattern with the converted name
+                var pattern = PVar(elixirVarName);
                 var expr = buildFromTypedExpr(e1);
+                
+                // Build the body with the variable mapping active
                 var body = buildFromTypedExpr(e2);
+                
+                // Restore old mapping if it existed
+                if (oldMapping != null) {
+                    tempVarRenameMap.set(idKey, oldMapping);
+                } else {
+                    tempVarRenameMap.remove(idKey);
+                }
                 
                 EFor([{pattern: pattern, expr: expr}], [], body, null, false);
                 
@@ -3171,6 +3194,12 @@ class ElixirASTBuilder {
             return name;
         }
         
+        // Handle single underscore (common in for loops for ignored values)
+        // Convert to a meaningful name since Elixir doesn't allow single underscore as variable
+        if (name == "_") {
+            return "item"; // Convert single underscore to "item"
+        }
+        
         // Transform compiler-generated temporary variables like _g, _g1, etc.
         // These are created by Haxe's desugaring and should be cleaned up
         // to remove the underscore prefix ONLY if they're actually used variables
@@ -3179,6 +3208,24 @@ class ElixirASTBuilder {
             // Remove the underscore but keep the rest for uniqueness
             // _g -> g, _g1 -> g1, _g_1 -> g_1
             return name.substr(1);
+        }
+        
+        // Handle other underscore-prefixed variables (like _item)
+        // Keep them as-is since they indicate unused variables in Elixir
+        if (name.charAt(0) == "_" && name.length > 1) {
+            // Convert the part after underscore to snake_case
+            var baseName = name.substr(1);
+            var converted = "";
+            for (i in 0...baseName.length) {
+                var char = baseName.charAt(i);
+                var isUpperLetter = char == char.toUpperCase() && char != char.toLowerCase() && char != "_";
+                if (i > 0 && isUpperLetter) {
+                    converted += "_" + char.toLowerCase();
+                } else {
+                    converted += char.toLowerCase();
+                }
+            }
+            return "_" + converted;
         }
         
         // Simple snake_case conversion for regular variables
@@ -3278,14 +3325,43 @@ class ElixirASTBuilder {
     
     /**
      * Convert module type to string
+     * Handles package-based module naming (e.g., ecto.Query → Ecto.Query)
      */
     static function moduleTypeToString(m: ModuleType): String {
-        return switch(m) {
+        // Get the basic name first
+        var name = switch(m) {
             case TClassDecl(c): c.get().name;
             case TEnumDecl(e): e.get().name;
             case TTypeDecl(t): t.get().name;
             case TAbstract(a): a.get().name;
         }
+        
+        // Get the package information
+        var pack = switch(m) {
+            case TClassDecl(c): c.get().pack;
+            case TEnumDecl(e): e.get().pack;
+            case TTypeDecl(t): t.get().pack;
+            case TAbstract(a): a.get().pack;
+        }
+        
+        // Special handling for framework packages that should use proper Elixir module names
+        if (pack.length > 0) {
+            switch(pack[0]) {
+                case "ecto":
+                    // ecto.Query should become Ecto.Query (capitalize package name)
+                    return "Ecto." + name;
+                case "phoenix":
+                    // phoenix.LiveView should become Phoenix.LiveView
+                    return "Phoenix." + name;
+                case "plug":
+                    // plug.Conn should become Plug.Conn
+                    return "Plug." + name;
+                default:
+                    // Other packages keep their structure
+            }
+        }
+        
+        return name;
     }
     
     /**
