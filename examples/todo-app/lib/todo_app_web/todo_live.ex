@@ -178,7 +178,7 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
         end
         todos = [todo] ++ socket.assigns.todos
         live_socket = socket
-        updated_socket = Phoenix.LiveView.assign(live_socket, %{:todos => todos, :show_form => false})
+        updated_socket = Phoenix.LiveView.assign([live_socket, todos, false], %{:todos => {1}, :show_form => {2}})
         Phoenix.LiveView.put_flash(updated_socket, :success, "Todo created successfully!")
       1 ->
         g = g.elem(1)
@@ -267,7 +267,7 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
     if (todo.userId == socket.assigns.currentUser.id), do: socket
     todos = [todo] ++ socket.assigns.todos
     live_socket = socket
-    Phoenix.LiveView.assign(live_socket, %{:todos => todos})
+    Phoenix.LiveView.assign([live_socket, todos], %{:todos => {1}})
   end
   defp load_todos(user_id) do
     query = EctoQuery_Impl_.order_by(EctoQuery_Impl_.where(Query.from(Todo), "userId", user_id), "inserted_at", "asc")
@@ -291,16 +291,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, :ok}, fn _, {acc_count, acc_g, acc_state} ->
-  count = acc_count
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, :ok}, fn _, {acc_g, acc_count, acc_state} ->
   g = acc_g
+  count = acc_count
   if (g < todos.length) do
     todo = todos[g]
     g = g + 1
     if (todo.completed), do: count = count + 1
-    {:cont, {count, g, acc_state}}
+    {:cont, {g, count, acc_state}}
   else
-    {:halt, {count, g, acc_state}}
+    {:halt, {g, count, acc_state}}
   end
 end)
     count
@@ -308,16 +308,16 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, :ok}, fn _, {acc_g, acc_count, acc_state} ->
-  g = acc_g
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, :ok}, fn _, {acc_count, acc_g, acc_state} ->
   count = acc_count
+  g = acc_g
   if (g < todos.length) do
     todo = todos[g]
     g = g + 1
     if (not todo.completed), do: count = count + 1
-    {:cont, {g, count, acc_state}}
+    {:cont, {count, g, acc_state}}
   else
-    {:halt, {g, count, acc_state}}
+    {:halt, {count, g, acc_state}}
   end
 end)
     count
@@ -332,17 +332,17 @@ end)
   defp load_and_assign_todos(socket) do
     todos = load_todos(socket.assigns.currentUser.id)
     live_socket = socket
-    Phoenix.LiveView.assign(live_socket, %{:todos => todos, :total_todos => todos.length, :completed_todos => count_completed(todos), :pending_todos => count_pending(todos)})
+    Phoenix.LiveView.assign([live_socket, todos, todos.length, count_completed(todos), count_pending(todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
   defp update_todo_in_list(todo, socket) do
     todos = socket.assigns.todos
     updated_todos = Enum.map(todos, fn t -> if (t.id == todo.id), do: todo, else: t end)
-    Phoenix.LiveView.assign(socket, %{:todos => updated_todos, :total_todos => updated_todos.length, :completed_todos => count_completed(updated_todos), :pending_todos => count_pending(updated_todos)})
+    Phoenix.LiveView.assign([socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
   defp remove_todo_from_list(id, socket) do
     todos = socket.assigns.todos
     updated_todos = Enum.filter(todos, fn t -> t.id != id end)
-    Phoenix.LiveView.assign(socket, %{:todos => updated_todos, :total_todos => updated_todos.length, :completed_todos => count_completed(updated_todos), :pending_todos => count_pending(updated_todos)})
+    Phoenix.LiveView.assign([socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
   defp start_editing(id, socket) do
     todo = find_todo(id, socket.assigns.todos)
@@ -469,7 +469,7 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: nil),
         end
         updated_socket = update_todo_in_list(updated_todo, socket)
         live_socket = updated_socket
-        Phoenix.LiveView.assign(live_socket, "editing_todo", nil)
+        Phoenix.LiveView.assign(live_socket, :editing_todo, nil)
       1 ->
         g = g.elem(1)
         reason = g
@@ -481,11 +481,11 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: nil),
       0 ->
         updated_todos = load_todos(socket.assigns.currentUser.id)
         live_socket = socket
-        Phoenix.LiveView.assign(live_socket, %{:todos => updated_todos, :total_todos => updated_todos.length, :completed_todos => count_completed(updated_todos), :pending_todos => count_pending(updated_todos)})
+        Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
       1 ->
         updated_todos = load_todos(socket.assigns.currentUser.id)
         live_socket = socket
-        Phoenix.LiveView.assign(live_socket, %{:todos => updated_todos, :total_todos => updated_todos.length, :completed_todos => count_completed(updated_todos), :pending_todos => count_pending(updated_todos)})
+        Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
       2 ->
         g = action.elem(1)
         _priority = g

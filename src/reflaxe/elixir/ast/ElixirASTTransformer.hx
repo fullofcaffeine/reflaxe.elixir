@@ -1949,6 +1949,13 @@ class ElixirASTTransformer {
                     ast.pos
                 );
                 
+            // Raw Elixir code injection - NEVER transform
+            case ERaw(code):
+                // ERaw nodes are sacred - they contain direct Elixir code injection
+                // from __elixir__() calls and must NEVER be transformed
+                // Just return the node as-is, without calling the transformer
+                return ast;
+                
             // Literals and simple nodes - no children to transform
             default:
                 ast;
