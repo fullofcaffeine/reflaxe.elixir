@@ -51,114 +51,114 @@ extern class Enum {
     /**
      * Returns a list where each element is the result of invoking fun on each corresponding element of enumerable.
      */
-    static function map<T,R>(enumerable: Dynamic, fun: T -> R): Array<R>;
+    static function map<T,R>(enumerable: Array<T>, fun: T -> R): Array<R>;
     
     /**
      * Filters the enumerable, i.e. returns only those elements for which fun returns a truthy value.
      */
-    static function filter<T>(enumerable: Dynamic, fun: T -> Bool): Array<T>;
+    static function filter<T>(enumerable: Array<T>, fun: T -> Bool): Array<T>;
     
     /**
      * Returns true if all elements in enumerable are truthy.
      * If fun is given, it evaluates fun for each element.
      */
-    @:overload(function<T>(enumerable: Dynamic): Bool {})
-    static function all<T>(enumerable: Dynamic, fun: T -> Bool): Bool;
+    @:overload(function<T>(enumerable: Array<T>): Bool {})
+    static function all<T>(enumerable: Array<T>, fun: T -> Bool): Bool;
     
     /**
      * Returns true if at least one element in enumerable is truthy.
      * If fun is given, it evaluates fun for each element.
      */
-    @:overload(function<T>(enumerable: Dynamic): Bool {})
-    static function any<T>(enumerable: Dynamic, fun: T -> Bool): Bool;
+    @:overload(function<T>(enumerable: Array<T>): Bool {})
+    static function any<T>(enumerable: Array<T>, fun: T -> Bool): Bool;
     
     /**
      * Finds the element at the given index (zero-based).
      * Returns default if index is out of bounds.
      */
-    @:overload(function<T>(enumerable: Dynamic, index: Int): Null<T> {})
-    static function at<T>(enumerable: Dynamic, index: Int, defaultValue: T): T;
+    @:overload(function<T>(enumerable: Array<T>, index: Int): Null<T> {})
+    static function at<T>(enumerable: Array<T>, index: Int, defaultValue: T): T;
     
     /**
      * Returns a list with the elements of enumerable in reverse order.
      */
-    static function reverse<T>(enumerable: Dynamic): Array<T>;
+    static function reverse<T>(enumerable: Array<T>): Array<T>;
     
     /**
      * Sorts the enumerable according to Erlang's term ordering.
      */
-    static function sort<T>(enumerable: Dynamic): Array<T>;
+    static function sort<T>(enumerable: Array<T>): Array<T>;
     
     /**
      * Returns the size of the enumerable.
      */
-    static function count<T>(enumerable: Dynamic): Int;
+    static function count<T>(enumerable: Array<T>): Int;
     
     /**
      * Invokes the given fun for each element in the enumerable.
      * Returns :ok.
      */
-    static function each<T>(enumerable: Dynamic, fun: T -> Void): Void;
+    static function each<T>(enumerable: Array<T>, fun: T -> Void): Void;
     
     /**
      * Determines if the enumerable is empty.
      */
-    static function empty<T>(enumerable: Dynamic): Bool;
+    static function empty<T>(enumerable: Array<T>): Bool;
     
     /**
      * Returns the first element for which fun returns a truthy value.
      * Returns nil if no such element is found.
      */
-    @:overload(function<T>(enumerable: Dynamic, defaultValue: T, fun: T -> Bool): T {})
-    static function find<T>(enumerable: Dynamic, fun: T -> Bool): Null<T>;
+    @:overload(function<T>(enumerable: Array<T>, defaultValue: T, fun: T -> Bool): T {})
+    static function find<T>(enumerable: Array<T>, fun: T -> Bool): Null<T>;
     
     /**
      * Maps and flattens the enumerable in one pass.
      */
     @:native("flat_map")
-    static function flatMap<T,R>(enumerable: Dynamic, fun: T -> Dynamic): Array<R>;
+    static function flatMap<T,R>(enumerable: Array<T>, fun: T -> Array<R>): Array<R>;
     
     /**
      * Splits the enumerable into groups based on key_fun.
      */
     @:native("group_by")
-    static function groupBy<T,K>(enumerable: Dynamic, keyFun: T -> K): Dynamic;
+    static function groupBy<T,K>(enumerable: Array<T>, keyFun: T -> K): Map<K, Array<T>>;
     
     /**
      * Joins the given enumerable into a string using joiner as separator.
      */
-    @:overload(function<T>(enumerable: Dynamic): String {})
-    static function join<T>(enumerable: Dynamic, joiner: String): String;
+    @:overload(function<T>(enumerable: Array<T>): String {})
+    static function join<T>(enumerable: Array<T>, joiner: String): String;
     
     /**
      * Returns the maximal element in the enumerable.
      */
-    static function max<T>(enumerable: Dynamic): T;
+    static function max<T>(enumerable: Array<T>): T;
     
     /**
      * Returns the minimal element in the enumerable.
      */
-    static function min<T>(enumerable: Dynamic): T;
+    static function min<T>(enumerable: Array<T>): T;
     
     /**
      * Returns a random element of enumerable.
      */
-    static function random<T>(enumerable: Dynamic): T;
+    static function random<T>(enumerable: Array<T>): T;
     
     /**
      * Returns the sum of all elements.
      */
-    static function sum(enumerable: Dynamic): Float;
+    static function sum(enumerable: Array<Float>): Float;
     
     /**
      * Takes the first count elements from the enumerable.
      */
-    static function take<T>(enumerable: Dynamic, count: Int): Array<T>;
+    static function take<T>(enumerable: Array<T>, count: Int): Array<T>;
     
     /**
      * Enumerates the enumerable, removing all duplicates.
      */
-    static function uniq<T>(enumerable: Dynamic): Array<T>;
+    static function uniq<T>(enumerable: Array<T>): Array<T>;
     
     /**
      * Zips corresponding elements from two enumerables into a list of tuples.
@@ -207,11 +207,6 @@ extern class Enum {
     @:native("take_while")
     static function takeWhile<T>(enumerable: Dynamic, fun: T -> Bool): Array<T>;
     
-    /**
-     * Returns true if no element in enumerable is truthy.
-     */
-    @:overload(function<T>(enumerable: Dynamic): Bool {})
-    static function empty<T>(enumerable: Dynamic): Bool;
     
     /**
      * Returns true if enumerable has exactly count elements.
@@ -235,7 +230,7 @@ extern class Enum {
     /**
      * Checks if element is a member of enumerable.
      */
-    static function member<T>(enumerable: Dynamic, element: T): Bool;
+    static function member<T>(enumerable: Array<T>, element: T): Bool;
     
     /**
      * Applies fun on each element of enumerable and rejects the elements for which fun returns a truthy value.

@@ -11,8 +11,8 @@ defmodule Todo do
     timestamps()
   end
   def changeset(todo, params) do
-    cs = Changeset_Impl_._new(todo, params)
-    Changeset_Impl_.validate_length(Changeset_Impl_.validate_length(Changeset_Impl_.validate_required(cs, ["title", "userId"]), "title", %{:min => 3, :max => 200}), "description", %{:max => 1000})
+    cs = Ecto.Changeset_Impl_._new(todo, params)
+    Ecto.Changeset_Impl_.validate_length(Ecto.Changeset_Impl_.validate_length(Ecto.Changeset_Impl_.validate_required(cs, ["title", "userId"]), "title", %{:min => 3, :max => 200}), "description", %{:max => 1000})
   end
   def toggle_completed(todo) do
     params = %{:completed => not todo.completed}

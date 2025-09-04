@@ -1,19 +1,19 @@
 defmodule Users do
   def list_users(filter) do
     if (filter != nil) do
-      query = Query.from(User)
+      query = Ecto.Query.from(User)
       query = if (filter.name != nil) do
-  EctoQuery_Impl_.where(query, "name", "%" <> filter.name <> "%")
+  Ecto.EctoQuery_Impl_.where(query, "name", "%" <> filter.name <> "%")
 else
   query
 end
       query = if (filter.email != nil) do
-  EctoQuery_Impl_.where(query, "email", "%" <> filter.email <> "%")
+  Ecto.EctoQuery_Impl_.where(query, "email", "%" <> filter.email <> "%")
 else
   query
 end
       query = if (filter.isActive != nil) do
-  EctoQuery_Impl_.where(query, "active", filter.isActive)
+  Ecto.EctoQuery_Impl_.where(query, "active", filter.isActive)
 else
   query
 end
@@ -23,7 +23,7 @@ end
   end
   def change_user(user) do
     empty_params = %{}
-    Changeset_Impl_._new(user, empty_params)
+    Ecto.Changeset_Impl_._new(user, empty_params)
   end
   def main() do
     Log.trace("Users context with User schema compiled successfully!", %{:fileName => "src_haxe/server/contexts/Users.hx", :lineNumber => 107, :className => "contexts.Users", :methodName => "main"})
