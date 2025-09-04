@@ -4,7 +4,7 @@ defmodule TodoAppWeb.UserLive do
   defp mount(_params, _session, socket) do
     users = Users.list_users(nil)
     live_socket = socket
-    %{:status => "ok", :socket => Phoenix.LiveView.assign(live_socket, %{:users => users, :selected_user => nil, :changeset => Users.change_user(nil), :search_term => "", :show_form => false})}
+    %{:status => "ok", :socket => Phoenix.LiveView.assign([live_socket, users, nil, Users.change_user(nil), "", false], %{:users => {1}, :selected_user => {2}, :changeset => {3}, :search_term => {4}, :show_form => {5}})}
   end
   defp handle_event(event, socket) do
     live_socket = socket
@@ -41,13 +41,13 @@ defmodule TodoAppWeb.UserLive do
     changeset = Users.change_user(nil)
     selected_user = nil
     show_form = true
-    %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, %{:changeset => changeset, :selected_user => selected_user, :show_form => show_form})}
+    %{:status => "noreply", :socket => Phoenix.LiveView.assign([socket, changeset, selected_user, show_form], %{:changeset => {1}, :selected_user => {2}, :show_form => {3}})}
   end
   defp handle_edit_user(user_id, socket) do
     selected_user = Users.get_user(user_id)
     changeset = Users.change_user(selected_user)
     show_form = true
-    %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, %{:selected_user => selected_user, :changeset => changeset, :show_form => show_form})}
+    %{:status => "noreply", :socket => Phoenix.LiveView.assign([socket, selected_user, changeset, show_form], %{:selected_user => {1}, :changeset => {2}, :show_form => {3}})}
   end
   defp handle_save_user(params, socket) do
     user_params = params[:user]
@@ -58,11 +58,11 @@ defmodule TodoAppWeb.UserLive do
         g = result.elem(1)
         _user = g
         users = Users.list_users(nil)
-        %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, %{:users => users, :show_form => false, :selected_user => nil, :changeset => Users.change_user(nil)})}
+        %{:status => "noreply", :socket => Phoenix.LiveView.assign([socket, users, false, nil, Users.change_user(nil)], %{:users => {1}, :show_form => {2}, :selected_user => {3}, :changeset => {4}})}
       1 ->
         g = result.elem(1)
         changeset = g
-        %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, "changeset", changeset)}
+        %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, :changeset, changeset)}
     end
   end
   defp handle_delete_user(user_id, socket) do
@@ -73,7 +73,7 @@ defmodule TodoAppWeb.UserLive do
         g = result.elem(1)
         _deleted_user = g
         users = Users.list_users(nil)
-        %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, "users", users)}
+        %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, :users, users)}
       1 ->
         g = result.elem(1)
         _changeset = g
@@ -83,19 +83,19 @@ defmodule TodoAppWeb.UserLive do
   defp handle_search(search_term, socket) do
     filter = if (search_term.length > 0), do: %{:name => search_term, :email => search_term, :isActive => nil}, else: nil
     users = Users.list_users(filter)
-    %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, %{:users => users, :search_term => search_term})}
+    %{:status => "noreply", :socket => Phoenix.LiveView.assign([socket, users, search_term], %{:users => {1}, :search_term => {2}})}
   end
   defp handle_filter_status(status, socket) do
     filter = if (status.length > 0), do: %{:name => nil, :email => nil, :isActive => status == "active"}, else: nil
     users = Users.list_users(filter)
-    %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, "users", users)}
+    %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, :users, users)}
   end
   defp handle_clear_search(socket) do
     users = Users.list_users(nil)
-    %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, %{:users => users, :search_term => ""})}
+    %{:status => "noreply", :socket => Phoenix.LiveView.assign([socket, users, ""], %{:users => {1}, :search_term => {2}})}
   end
   defp handle_cancel(socket) do
-    %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, %{:show_form => false, :selected_user => nil, :changeset => Users.change_user(nil)})}
+    %{:status => "noreply", :socket => Phoenix.LiveView.assign([socket, false, nil, Users.change_user(nil)], %{:show_form => {1}, :selected_user => {2}, :changeset => {3}})}
   end
   defp render(assigns) do
     HXX.hxx("\n        <div class=\"min-h-screen bg-gray-50 py-8\">\n            <div class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8\">\n                <!-- Header with gradient background -->\n                <div class=\"bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 mb-8\">\n                    <div class=\"flex justify-between items-center\">\n                        <div>\n                            <h1 class=\"text-3xl font-bold text-white\">User Management</h1>\n                            <p class=\"text-blue-100 mt-1\">Manage your application users</p>\n                        </div>\n                        <button \n                            phx-click=\"new_user\" \n                            class=\"bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors shadow-md\"\n                        >\n                            <svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                                <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 6v6m0 0v6m0-6h6m-6 0H6\"></path>\n                            </svg>\n                            New User\n                        </button>\n                    </div>\n                </div>\n                \n                <!-- Search and Filter Section -->\n                <div class=\"bg-white rounded-lg shadow-md p-6 mb-6\">\n                    <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\">\n                        <div class=\"md:col-span-2\">\n                            <label class=\"block text-sm font-medium text-gray-700 mb-2\">Search Users</label>\n                            <form phx-change=\"search\" phx-submit=\"search\">\n                                <div class=\"relative\">\n                                    <input \n                                        name=\"search_term\"\n                                        value={@searchTerm}\n                                        placeholder=\"Search by name or email...\"\n                                        type=\"text\"\n                                        class=\"w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500\"\n                                    />\n                                    <svg class=\"absolute left-3 top-2.5 w-5 h-5 text-gray-400\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                                        <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z\"></path>\n                                    </svg>\n                                </div>\n                            </form>\n                        </div>\n                        <div>\n                            <label class=\"block text-sm font-medium text-gray-700 mb-2\">Filter by Status</label>\n                            <select phx-change=\"filter_status\" class=\"w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500\">\n                                <option value=\"\">All Users</option>\n                                <option value=\"active\">Active</option>\n                                <option value=\"inactive\">Inactive</option>\n                            </select>\n                        </div>\n                    </div>\n                    \n                    <%= if @searchTerm != \"\" do %>\n                        <div class=\"mt-4 flex items-center text-sm text-gray-600\">\n                            <span>Showing results for: <span class=\"font-semibold\">{@searchTerm}</span></span>\n                            <button phx-click=\"clear_search\" class=\"ml-2 text-blue-600 hover:text-blue-800\">Clear</button>\n                        </div>\n                    <% end %>\n                </div>\n                \n                " <> render_user_list(assigns) <> "\n                " <> render_user_form(assigns) <> "\n            </div>\n        </div>\n        ")

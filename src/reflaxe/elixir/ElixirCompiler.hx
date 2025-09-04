@@ -1012,7 +1012,7 @@ class ElixirCompiler extends GenericCompiler<
     private function isStandardLibraryClass(name: String): Bool {
         // Standard library classes handled elsewhere
         return switch(name) {
-            case "String" | "Array" | "Map" | "Date" | "Math" | "Std" | "List": true;
+            case "String" | "Array" | "Map" | "Date" | "Math" | "List": true;
             case "__Int64" | "Int64" | "Int64_Impl_": true; // Haxe Int64 internal types
             case _: false;
         }

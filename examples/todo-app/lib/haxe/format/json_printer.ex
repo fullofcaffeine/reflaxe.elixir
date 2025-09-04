@@ -85,9 +85,9 @@ end)
     result = "\""
     g = 0
     g1 = s.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, :ok}, fn _, {acc_result, acc_g, acc_state} ->
-  result = acc_result
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, :ok}, fn _, {acc_g, acc_result, acc_state} ->
   g = acc_g
+  result = acc_result
   if (g < g1) do
     i = g = g + 1
     c = s.charCodeAt(i)
@@ -123,9 +123,9 @@ end)
           end
       end
     end
-    {:cont, {result, g, acc_state}}
+    {:cont, {g, result, acc_state}}
   else
-    {:halt, {result, g, acc_state}}
+    {:halt, {g, result, acc_state}}
   end
 end)
     result = result <> "\""
