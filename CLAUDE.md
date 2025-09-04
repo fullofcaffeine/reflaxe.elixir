@@ -1305,6 +1305,36 @@ socket = assign(socket, :total, calculate_total(items))
 
 **The goal**: Maximum developer flexibility with complete type safety.
 
+## 📚 Layered API Architecture ⚡ **MAXIMUM FLEXIBILITY DESIGN**
+
+**FUNDAMENTAL PRINCIPLE**: Create faithful 1:1 Elixir/Phoenix externs first, then build Haxe stdlib abstractions on top. This gives users maximum flexibility - they can choose the Elixir-idiomatic API or the cross-platform Haxe API based on their needs.
+
+### Architecture Layers
+```
+┌─────────────────────────────────────┐
+│   Haxe Standard Library (Layer 3)   │  ← Cross-platform abstractions
+│  Lambda, StringBuf, Map, Array, etc. │     (uses Layer 2)
+└─────────────────────────────────────┘
+                  ↓ uses
+┌─────────────────────────────────────┐
+│    Elixir Externs (Layer 2)         │  ← 1:1 Elixir API mappings
+│  Enum, String, List, Map, etc.       │     (faithful to Elixir)
+└─────────────────────────────────────┘
+                  ↓ compiles to
+┌─────────────────────────────────────┐
+│    Elixir Runtime (Layer 1)         │  ← Native Elixir modules
+│  Actual BEAM modules and functions   │
+└─────────────────────────────────────┘
+```
+
+### Benefits of This Architecture
+- **User Choice**: Developers can choose Elixir-idiomatic APIs OR Haxe cross-platform APIs
+- **Better Code Generation**: Direct extern usage generates more idiomatic Elixir
+- **Maintainability**: Clear separation between Elixir bindings and Haxe abstractions
+- **Learning Curve**: Elixir developers can use familiar APIs while gaining type safety
+
+**See**: [`ELIXIR_EXTERN_ARCHITECTURE.md`](ELIXIR_EXTERN_ARCHITECTURE.md) - Complete layered architecture documentation and implementation guide
+
 ## Standard Library Philosophy ⚡ **PRAGMATIC NATIVE IMPLEMENTATION**
 
 ### The `__elixir__()` Function - Framework/Stdlib Only, NOT for Client Code
@@ -1355,6 +1385,94 @@ untyped __elixir__('Phoenix.Controller.json({0}, {1})', conn, data);  // WORKS!
 ### Pragmatic Stdlib Implementation Strategy
 
 **Philosophy**: Use the right tool for the job - combine Haxe's type safety with Elixir's native efficiency.
+
+## 📚 Standard Library Testing & Idiomatic Generation
+
+### Comprehensive Testing Strategy for Stdlib
+
+**FUNDAMENTAL PRINCIPLE**: Every standard library module MUST include:
+1. **Usage examples** showing Haxe API usage
+2. **Expected Elixir output** demonstrating idiomatic generation
+3. **Snapshot tests** validating compilation output
+4. **Integration tests** ensuring runtime behavior
+
+### Standard Library Module Documentation Pattern
+
+Every stdlib module should follow this documentation pattern:
+
+```haxe
+/**
+ * Module description and purpose
+ * 
+ * ## Usage Example (Haxe)
+ * ```haxe
+ * var example = new MyClass();
+ * example.doSomething();
+ * ```
+ * 
+ * ## Generated Idiomatic Elixir
+ * ```elixir
+ * # Shows exact Elixir code that will be generated
+ * example = MyModule.new()
+ * MyModule.do_something(example)
+ * ```
+ * 
+ * ## Layered Architecture
+ * - Layer 2 (Elixir Extern): Direct 1:1 mapping to Elixir APIs
+ * - Layer 3 (Haxe Stdlib): Cross-platform abstractions using Layer 2
+ * 
+ * ## Performance Characteristics
+ * - Time complexity for operations
+ * - Memory usage patterns
+ * - BEAM-specific optimizations
+ */
+```
+
+### Test Infrastructure Organization
+
+```
+test/tests/
+├── StdlibStringBuf/        # StringBuf tests
+│   └── Main.hx             # Test cases with expected output
+├── StdlibLambda/           # Lambda functional tests  
+│   └── Main.hx             # Validates Enum extern usage
+├── StdlibEnum/             # Elixir Enum extern tests
+│   └── Main.hx             # 1:1 mapping validation
+└── StdlibCommon/           # Shared test utilities
+    └── TestHelper.hx       # DRY test infrastructure
+```
+
+### Example: StringBuf Idiomatic Generation
+
+**Haxe Input:**
+```haxe
+var buf = new StringBuf();
+buf.add("Hello");
+buf.add(" World");
+var result = buf.toString();
+```
+
+**Expected Elixir Output:**
+```elixir
+iolist = []
+iolist = iolist ++ ["Hello"]
+iolist = iolist ++ [" World"]
+result = IO.iodata_to_binary(iolist)
+```
+
+### Example: Lambda with Enum Extern
+
+**Haxe Input:**
+```haxe
+var doubled = Lambda.map([1, 2, 3], x -> x * 2);
+var sum = Lambda.fold(doubled, (x, acc) -> x + acc, 0);
+```
+
+**Expected Elixir Output:**
+```elixir
+doubled = Enum.map([1, 2, 3], fn x -> x * 2 end)
+sum = Enum.reduce(doubled, 0, fn x, acc -> x + acc end)
+```
 
 1. **Type-Safe Interface**: Haxe provides the typed API surface
 2. **Native Implementation**: Use `__elixir__()` or `@:native` for efficient Elixir implementation  
