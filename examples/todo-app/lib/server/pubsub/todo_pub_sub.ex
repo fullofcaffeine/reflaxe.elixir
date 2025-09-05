@@ -67,7 +67,7 @@ end
             0 ->
               g = elem(bulk_action, 1)
               action = g
-              {:Some, {:BulkUpdate, action}}
+              action
             1 ->
               :none
           end
@@ -81,7 +81,7 @@ end
             0 ->
               g = elem(alert_level, 1)
               level = g
-              {:Some, {:SystemAlert, msg.message, level}}
+              {msg.message, level}
             1 ->
               :none
           end
@@ -89,15 +89,15 @@ end
           :none
         end
       "todo_created" ->
-        if (msg.todo != nil), do: {:Some, {:TodoCreated, msg.todo}}, else: :none
+        if (msg.todo != nil), do: msg.todo, else: :none
       "todo_deleted" ->
-        if (msg.todo_id != nil), do: {:Some, {:TodoDeleted, msg.todo_id}}, else: :none
+        if (msg.todo_id != nil), do: msg.todo_id, else: :none
       "todo_updated" ->
-        if (msg.todo != nil), do: {:Some, {:TodoUpdated, msg.todo}}, else: :none
+        if (msg.todo != nil), do: msg.todo, else: :none
       "user_offline" ->
-        if (msg.user_id != nil), do: {:Some, {:UserOffline, msg.user_id}}, else: :none
+        if (msg.user_id != nil), do: msg.user_id, else: :none
       "user_online" ->
-        if (msg.user_id != nil), do: {:Some, {:UserOnline, msg.user_id}}, else: :none
+        if (msg.user_id != nil), do: msg.user_id, else: :none
       _ ->
         Log.trace(Phoenix.SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 220, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
         :none
@@ -126,15 +126,15 @@ end
   defp parse_bulk_action(action) do
     case (action) do
       "add_tag" ->
-        {:Some, {:AddTag, ""}}
+        ""
       "complete_all" ->
-        {:Some, :complete_all}
+        :complete_all
       "delete_completed" ->
-        {:Some, :delete_completed}
+        :delete_completed
       "remove_tag" ->
-        {:Some, {:RemoveTag, ""}}
+        ""
       "set_priority" ->
-        {:Some, {:SetPriority, :medium}}
+        :medium
       _ ->
         :none
     end
@@ -154,13 +154,13 @@ end
   defp parse_alert_level(level) do
     case (level) do
       "critical" ->
-        {:Some, :critical}
+        :critical
       "error" ->
-        {:Some, :error}
+        :error
       "info" ->
-        {:Some, :info}
+        :info
       "warning" ->
-        {:Some, :warning}
+        :warning
       _ ->
         :none
     end

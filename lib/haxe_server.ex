@@ -167,6 +167,44 @@ defmodule HaxeServer do
   end
 
   @impl GenServer
+  def handle_info({port, {:data, data}}, %{server_pid: port} = state) when is_port(port) do
+    # Handle data from the Haxe server port
+    data_str = to_string(data)
+    
+    if String.contains?(data_str, "Fatal error") or String.contains?(data_str, "Couldn't wait") do
+      Logger.error("Haxe server error: #{data_str}")
+      # Server crashed, restart it
+      send(self(), :start_server)
+      {:noreply, %{state | server_pid: nil, status: :error}}
+    else
+      # Log other output from the server
+      Logger.debug("Haxe server output: #{data_str}")
+      {:noreply, state}
+    end
+  end
+
+  @impl GenServer
+  def handle_info({port, {:data, _data}}, state) when is_port(port) do
+    # Ignore data from other ports
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info({port, {:exit_status, status}}, %{server_pid: port} = state) when is_port(port) do
+    # Handle exit status from the Haxe server port
+    Logger.warning("Haxe server exited with status: #{status}")
+    # Server exited, try to restart it
+    send(self(), :start_server)
+    {:noreply, %{state | server_pid: nil, status: :error}}
+  end
+
+  @impl GenServer
+  def handle_info({port, {:exit_status, _status}}, state) when is_port(port) do
+    # Ignore exit status from other ports
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_call(:status, _from, state) do
     response = case state.status do
       :running -> {:ok, :running}
@@ -217,19 +255,59 @@ defmodule HaxeServer do
     args = state.haxe_args ++ ["--wait", to_string(state.port)]
     
     try do
-      port = Port.open(
-        {:spawn_executable, System.find_executable(cmd) || cmd},
-        [:binary, :exit_status, :stderr_to_stdout, args: args]
-      )
+      # Resolve the executable path
+      executable = cond do
+        # If it's already an absolute path and exists, use it
+        Path.absname(cmd) == cmd and File.exists?(cmd) ->
+          cmd
+        
+        # If it exists as a relative path, use the absolute path
+        File.exists?(cmd) ->
+          Path.absname(cmd)
+        
+        # Try to find it in the system PATH
+        exe = System.find_executable(cmd) ->
+          exe
+        
+        # Special handling for "npx haxe" command
+        String.starts_with?(cmd, "npx ") ->
+          npx = System.find_executable("npx")
+          if npx do
+            # Use npx directly and pass haxe as an argument
+            port = Port.open(
+              {:spawn_executable, npx},
+              [:binary, :exit_status, :stderr_to_stdout, 
+               args: ["haxe"] ++ args]
+            )
+            Process.sleep(500)
+            if Port.info(port), do: {:ok, port}, else: {:error, "Haxe server process exited immediately"}
+          else
+            {:error, "npx not found in PATH"}
+          end
+        
+        true ->
+          raise "Executable not found: #{cmd}"
+      end
       
-      # Give the server a moment to start
-      Process.sleep(500)
-      
-      # Check if port is still alive
-      if Port.info(port) do
-        {:ok, port}
+      # If we haven't already handled npx specially
+      if is_binary(executable) do
+        port = Port.open(
+          {:spawn_executable, executable},
+          [:binary, :exit_status, :stderr_to_stdout, args: args]
+        )
+        
+        # Give the server a moment to start
+        Process.sleep(500)
+        
+        # Check if port is still alive
+        if Port.info(port) do
+          {:ok, port}
+        else
+          {:error, "Haxe server process exited immediately"}
+        end
       else
-        {:error, "Haxe server process exited immediately"}
+        # Return the result from npx handling
+        executable
       end
     rescue
       error ->
