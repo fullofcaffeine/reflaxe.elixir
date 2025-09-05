@@ -97,13 +97,13 @@ end)
     n = 0
     if (pred == nil) do
       item = it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, item, :ok}, fn _, {acc_n, acc_item, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {item, n, :ok}, fn _, {acc_item, acc_n, acc_state} ->
   if (acc_item.hasNext()) do
     _item = acc_item.next()
     acc_n = acc_n + 1
-    {:cont, {acc_n, acc_item, acc_state}}
+    {:cont, {acc_item, acc_n, acc_state}}
   else
-    {:halt, {acc_n, acc_item, acc_state}}
+    {:halt, {acc_item, acc_n, acc_state}}
   end
 end)
     else
