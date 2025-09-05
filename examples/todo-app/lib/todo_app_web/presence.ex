@@ -33,8 +33,8 @@ defmodule TodoAppWeb.Presence do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
   if (acc_g.hasNext()) do
     acc_g = acc_g.next()
-    _user_id = g[:key]
-    entry = g[:value]
+    _user_id = acc_g.key
+    entry = acc_g.value
     if (entry.metas.length > 0) do
       meta = entry.metas[0]
       if (meta.editingTodoId == todo_id), do: editing_users ++ [meta]
