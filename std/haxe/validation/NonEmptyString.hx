@@ -3,44 +3,119 @@ package haxe.validation;
 import haxe.functional.Result;
 
 /**
- * Type-safe NonEmptyString domain abstraction with length constraints.
+ * Type-safe NonEmptyString domain abstraction preventing empty string bugs.
  * 
- * Inspired by Domain-Driven Design and Gleam's type philosophy:
- * - Parse, don't validate: once constructed, the string is guaranteed non-empty
- * - Runtime validation: ensures string validity with minimal performance impact
- * - Strong typing: NonEmptyString != String prevents accidental empty strings
+ * ## WHY This Type Exists
  * 
- * ## Design Principles
+ * Empty strings are a massive source of bugs in production systems:
  * 
- * 1. **Never Empty**: Strings must have at least one character
- * 2. **Whitespace Handling**: Configurable trimming and whitespace-only validation
- * 3. **Concatenation Safety**: Operations maintain non-empty invariant
- * 4. **Natural Usage**: Behaves like String where possible
+ * - **Database Constraints**: Empty names, titles, descriptions violate NOT NULL
+ * - **UI Disasters**: Empty labels, buttons, error messages confuse users
+ * - **Search Failures**: Empty search queries crash or return everything
+ * - **File System Issues**: Empty filenames are invalid on all systems
+ * - **API Errors**: Empty required fields cause mysterious 400/500 errors
+ * - **Security**: Empty passwords, tokens, or keys create vulnerabilities
  * 
- * ## Usage Examples
+ * Real bugs this prevents:
+ * - **Silent Failures**: `user.name = ""` displays as blank in UI
+ * - **Whitespace Bugs**: `"   "` passes `!= ""` check but is visually empty
+ * - **Trim Disasters**: `userInput.trim()` can produce empty from valid input
+ * - **Split Issues**: `"".split(",")` produces `[""]`, not `[]`
+ * - **Concatenation Errors**: `"" + "" + ""` is still empty
+ * 
+ * ## Design Philosophy
+ * 
+ * - **Never Empty**: Length always >= 1, no exceptions
+ * - **Whitespace Aware**: safeTrim() returns Result because `"  "` becomes `""`
+ * - **Operation Safety**: Only operations that preserve non-emptiness return NonEmptyString
+ * - **Explicit Failure**: Operations that might empty return Result<NonEmptyString, String>
+ * 
+ * ## Real-World Usage Examples
  * 
  * ```haxe
- * // Safe construction with validation
- * var nameResult = NonEmptyString.parse("Alice");
- * switch (nameResult) {
- *     case Ok(name): 
- *         var length = name.length();         // Always >= 1
- *         var upper = name.toUpperCase();     // Still non-empty
- *     case Error(reason): 
- *         trace("Invalid name: " + reason);
+ * // Example 1: Form Validation
+ * function validateForm(data: {name: String, bio: String}): Result<Profile, String> {
+ *     // Parse and trim in one step
+ *     var nameResult = NonEmptyString.parseAndTrim(data.name);
+ *     var bioResult = NonEmptyString.parseAndTrim(data.bio);
+ *     
+ *     return nameResult.flatMap(name -> 
+ *         bioResult.map(bio -> 
+ *             Profile.create(name, bio)
+ *         )
+ *     ).mapError(err -> "Please fill in all required fields");
  * }
  * 
- * // Direct construction (throws on invalid)
- * var name = new NonEmptyString("Bob");
+ * // Example 2: The Whitespace Problem - Why safeTrim Returns Result
+ * function processComment(comment: NonEmptyString): Result<NonEmptyString, String> {
+ *     // User typed "   " (only spaces) - safeTrim would produce empty!
+ *     return comment.safeTrim()
+ *         .mapError(_ -> "Comment cannot be only whitespace");
+ * }
  * 
- * // Safe operations
- * var fullName = name.concat(new NonEmptyString(" Smith")); // Always non-empty
- * var trimmed = name.safeTrim(); // Result<NonEmptyString, String>
+ * // Example 3: Safe String Operations
+ * function buildFullName(first: NonEmptyString, last: NonEmptyString): NonEmptyString {
+ *     // Guaranteed non-empty result
+ *     return first.concat(new NonEmptyString(" ")).concat(last);
+ * }
  * 
- * // Functional composition
- * var result = NonEmptyString.parse(userInput)
- *     .flatMap(s -> s.safeTrim())
- *     .map(s -> s.toUpperCase());
+ * // Example 4: Search Query Processing
+ * function searchProducts(query: String): Result<Array<Product>, String> {
+ *     return NonEmptyString.parseAndTrim(query)
+ *         .map(q -> {
+ *             // Split and keep only non-empty terms
+ *             var terms = q.splitNonEmpty(" ");
+ *             return ProductRepo.searchByTerms(terms);
+ *         })
+ *         .mapError(_ -> "Please enter a search query");
+ * }
+ * 
+ * // Example 5: File Path Safety
+ * function createFile(dir: NonEmptyString, name: NonEmptyString): Result<File, String> {
+ *     // Both dir and name guaranteed non-empty
+ *     var ext = NonEmptyString.parse(".txt").unwrap();
+ *     var fullPath = dir.concat(new NonEmptyString("/"))
+ *                      .concat(name)
+ *                      .concat(ext);
+ *     return File.create(fullPath.toString());
+ * }
+ * 
+ * // Example 6: Why safeReplace Returns Result
+ * function censorBadWords(text: NonEmptyString): Result<NonEmptyString, String> {
+ *     // If text is only bad words, replacement could be empty!
+ *     return text.safeReplace("badword", "")
+ *         .mapError(_ -> "Message contains only inappropriate content");
+ * }
+ * ```
+ * 
+ * ## Common Patterns
+ * 
+ * ```haxe
+ * // Pattern 1: Parse and validate at boundaries
+ * @:post("/articles")
+ * function createArticle(params: {title: String, content: String}): Response {
+ *     var titleResult = NonEmptyString.parseAndTrim(params.title);
+ *     var contentResult = NonEmptyString.parseAndTrim(params.content);
+ *     
+ *     return Result.map2(titleResult, contentResult, 
+ *         (title, content) -> Article.create(title, content)
+ *     ).map(article -> Response.created(article))
+ *      .unwrapOr(Response.badRequest("Title and content required"));
+ * }
+ * 
+ * // Pattern 2: Join with guaranteed non-empty result
+ * function formatTags(tags: Array<NonEmptyString>): Result<NonEmptyString, String> {
+ *     if (tags.length == 0) {
+ *         return Error("At least one tag required");
+ *     }
+ *     return NonEmptyString.join(tags, ", ");
+ * }
+ * 
+ * // Pattern 3: Character access that's always safe
+ * function getInitials(name: NonEmptyString): String {
+ *     // firstChar() always succeeds because string is non-empty!
+ *     return name.firstChar().toUpperCase().toString();
+ * }
  * ```
  * 
  * @see Email, UserId, PositiveInt for other domain abstractions
@@ -133,7 +208,31 @@ abstract NonEmptyString(String) from String to String {
     /**
      * Safe trim operation that returns Result to handle empty results.
      * 
-     * @return Ok(NonEmptyString) if trimmed result is non-empty, Error if empty
+     * ## WHY safeTrim Returns Result (Not Just NonEmptyString)
+     * 
+     * This is one of the most important methods because whitespace-only strings
+     * are a common source of bugs:
+     * 
+     * ```haxe
+     * // The Problem:
+     * var userInput = new NonEmptyString("   ");  // Valid - has 3 characters!
+     * var trimmed = userInput.trim();             // Returns "" - EMPTY!
+     * ```
+     * 
+     * By returning Result, we force explicit handling of this edge case:
+     * 
+     * ```haxe
+     * switch (userInput.safeTrim()) {
+     *     case Ok(trimmed): 
+     *         // User entered real content
+     *         saveComment(trimmed);
+     *     case Error(_):
+     *         // User entered only whitespace
+     *         showError("Please enter a comment");
+     * }
+     * ```
+     * 
+     * @return Ok(NonEmptyString) if trimmed result is non-empty, Error if only whitespace
      */
     public function safeTrim(): Result<NonEmptyString, String> {
         var trimmed = StringTools.trim(this);
