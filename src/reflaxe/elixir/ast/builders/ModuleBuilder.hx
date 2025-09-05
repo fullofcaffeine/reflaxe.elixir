@@ -419,22 +419,28 @@ class ModuleBuilder {
                             makeAST(ENil);
                         }
                         
-                        // For test functions (annotated with @:test), create test macro blocks
-                        // Otherwise create regular functions
+                        // Check if this is a test function
                         var isTestFunction = func.meta.has(":test");
                         #if debug_module_builder
                         trace('[XRay ModuleBuilder] Function ${funcName} has metadata: ${[for (m in func.meta.get()) m.name].join(", ")}');
                         trace('[XRay ModuleBuilder] isTestFunction: $isTestFunction');
                         #end
-                        if (isTestFunction) {
-                            // Create a test macro block: test "function_name" do ... end
-                            var testName = StringTools.replace(StringTools.replace(funcName, "test_", ""), "_", " ");
-                            statements.push(makeAST(EMacroCall("test", [makeAST(EString(testName))], body)));
-                        } else if (func.isPublic) {
-                            statements.push(makeAST(EDef(funcName, args, null, body)));
+                        
+                        // Create function definition with metadata
+                        var funcAst = if (func.isPublic) {
+                            makeAST(EDef(funcName, args, null, body));
                         } else {
-                            statements.push(makeAST(EDefp(funcName, args, null, body)));
+                            makeAST(EDefp(funcName, args, null, body));
                         }
+                        
+                        // Add test metadata if this is a test function
+                        if (isTestFunction) {
+                            var metadata = funcAst.metadata != null ? funcAst.metadata : {};
+                            metadata.isTest = true;
+                            funcAst = makeASTWithMeta(funcAst.def, metadata, funcAst.pos);
+                        }
+                        
+                        statements.push(funcAst);
                         
                     default:
                         // Not a function, skip
