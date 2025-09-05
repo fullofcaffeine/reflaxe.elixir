@@ -795,8 +795,14 @@ class ElixirASTBuilder {
                             var fieldName = extractFieldName(fa);
                             var objAst = buildFromTypedExpr(obj, variableUsageMap);
                             
+                            // Check for Assert class calls (ExUnit assertions)
+                            if (isAssertClass(obj)) {
+                                // This is an Assert.method() call - compile to ExUnit assertion
+                                var assertAst = reflaxe.elixir.ast.builders.ExUnitCompiler.compileAssertion(fieldName, args);
+                                return assertAst.def;
+                            }
                             // Check for HXX.hxx() template calls
-                            if (fieldName == "hxx" && isHXXModule(obj)) {
+                            else if (fieldName == "hxx" && isHXXModule(obj)) {
                                 // HXX.hxx() returns a processed template string that needs ~H sigil
                                 // The macro already processed the template, we just need to wrap it
                                 if (args.length == 1) {
@@ -3298,6 +3304,21 @@ class ElixirASTBuilder {
             case TTypeExpr(m):
                 // Check if this is the HXX module
                 moduleTypeToString(m) == "HXX";
+            default: false;
+        }
+    }
+    
+    /**
+     * Check if expression is the Assert class (for ExUnit assertions)
+     */
+    static function isAssertClass(expr: TypedExpr): Bool {
+        return switch(expr.expr) {
+            case TTypeExpr(TClassDecl(classRef)):
+                // Check if this is haxe.test.Assert
+                var classType = classRef.get();
+                var pack = classType.pack.join(".");
+                var name = classType.name;
+                pack == "haxe.test" && name == "Assert";
             default: false;
         }
     }
