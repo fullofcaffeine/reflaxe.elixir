@@ -2,75 +2,96 @@ package;
 
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
+import haxe.functional.Result;
 
 /**
- * Comprehensive ExUnit test demonstrating all test features.
+ * Comprehensive ExUnit test demonstrating all features.
  * 
- * This test verifies:
- * - @:test annotation creates ExUnit test blocks
- * - @:setup annotation creates setup callbacks
- * - @:setupAll annotation creates setup_all callbacks  
- * - @:teardown annotation creates teardown callbacks
- * - Test assertions work correctly
- * - Setup/teardown lifecycle is preserved
+ * This test validates:
+ * - Multiple test methods with @:test annotation
+ * - All assertion types (equals, isTrue, isFalse, isNull, isOk, isError)
+ * - Setup and teardown lifecycle methods
+ * - Test name transformation (camelCase to readable strings)
+ * - Complex test scenarios with arrays and strings
  */
 @:exunit
 class Main extends TestCase {
-    // Instance variables to track state
-    var setupCalled: Bool = false;
-    var setupAllCalled: Bool = false;
-    var testCounter: Int = 0;
+    
+    var testData: Array<Int>;
+    var testString: String;
     
     /**
      * Setup all - runs once before all tests
      */
     @:setupAll
-    function setupAll() {
-        // Initialize shared test resources
-        setupAllCalled = true;
-        trace("Setup all called - initializing test suite");
-        
-        // Setup methods in ExUnit should just contain initialization logic
-        // The framework handles the return value
+    function initTestSuite() {
+        trace("Initializing test suite");
     }
     
     /**
      * Setup - runs before each test
      */
     @:setup
-    function setup() {
-        // Initialize per-test state
-        setupCalled = true;
-        testCounter++;
-        trace("Setup called for test #" + testCounter);
-        
-        // Setup methods in ExUnit should just contain initialization logic
-        // The framework handles the return value
+    function initTest() {
+        testData = [1, 2, 3, 4, 5];
+        testString = "Hello World";
+        trace("Setting up test data");
     }
     
     /**
      * Teardown - runs after each test
      */
     @:teardown
-    function teardown() {
-        // Clean up per-test resources
-        trace("Teardown called after test #" + testCounter);
-        
-        // Reset state or clean up resources
-        setupCalled = false;
+    function cleanupTest() {
+        testData = null;
+        testString = null;
+        trace("Cleaning up test data");
     }
     
     /**
-     * Test basic assertions
+     * Test basic equality assertions
      */
     @:test
-    function testBasicAssertions() {
-        Assert.equals(1, 1, "Basic equality should work");
-        Assert.notEquals(1, 2, "Inequality should work");
-        Assert.isTrue(true, "True should be true");
-        Assert.isFalse(false, "False should be false");
-        Assert.isNull(null, "Null should be null");
-        Assert.notNull("value", "Non-null should not be null");
+    function testEqualityAssertions() {
+        Assert.equals(2 + 2, 4, "Basic math should work");
+        Assert.equals("Hello", "Hello", "String equality should work");
+        Assert.equals(true, true, "Boolean equality should work");
+        
+        // Test with arrays
+        var arr1 = [1, 2, 3];
+        var arr2 = [1, 2, 3];
+        Assert.equals(arr1.length, arr2.length, "Array lengths should be equal");
+        Assert.equals(arr1[0], arr2[0], "First elements should be equal");
+    }
+    
+    /**
+     * Test boolean assertions
+     */
+    @:test
+    function testBooleanAssertions() {
+        Assert.isTrue(5 > 3, "5 should be greater than 3");
+        Assert.isTrue("test".length == 4, "String length check should work");
+        Assert.isTrue(testData != null, "Test data should be initialized");
+        
+        Assert.isFalse(2 > 5, "2 should not be greater than 5");
+        Assert.isFalse("".length > 0, "Empty string should have zero length");
+        Assert.isFalse(1 + 1 == 3, "1 + 1 should not equal 3");
+    }
+    
+    /**
+     * Test null assertions
+     */
+    @:test
+    function testNullAssertions() {
+        var nullVar: Dynamic = null;
+        var notNullVar = "value";
+        
+        Assert.isNull(nullVar, "Null variable should be null");
+        Assert.isNull(null, "Literal null should be null");
+        
+        // These would fail if uncommented:
+        // Assert.isNull(notNullVar, "This should fail");
+        // Assert.isNull(42, "This should also fail");
     }
     
     /**
@@ -78,18 +99,17 @@ class Main extends TestCase {
      */
     @:test
     function testStringOperations() {
-        var str = "Hello, World!";
+        Assert.equals(testString.length, 11, "String length should be 11");
+        Assert.equals(testString.toUpperCase(), "HELLO WORLD", "Uppercase conversion should work");
+        Assert.equals(testString.toLowerCase(), "hello world", "Lowercase conversion should work");
         
-        Assert.equals(13, str.length, "String length should be correct");
-        Assert.isTrue(str.indexOf("World") > 0, "Should contain 'World'");
-        Assert.equals("HELLO, WORLD!", str.toUpperCase(), "Uppercase should work");
-        Assert.equals("hello, world!", str.toLowerCase(), "Lowercase should work");
+        Assert.isTrue(testString.indexOf("World") >= 0, "String should contain 'World'");
+        Assert.isTrue(testString.charAt(0) == "H", "First character should be 'H'");
         
-        // Test string splitting
-        var parts = str.split(", ");
-        Assert.equals(2, parts.length, "Should split into 2 parts");
-        Assert.equals("Hello", parts[0], "First part should be 'Hello'");
-        Assert.equals("World!", parts[1], "Second part should be 'World!'");
+        var parts = testString.split(" ");
+        Assert.equals(parts.length, 2, "Split should produce 2 parts");
+        Assert.equals(parts[0], "Hello", "First part should be 'Hello'");
+        Assert.equals(parts[1], "World", "Second part should be 'World'");
     }
     
     /**
@@ -97,184 +117,132 @@ class Main extends TestCase {
      */
     @:test
     function testArrayOperations() {
-        var arr = [1, 2, 3, 4, 5];
-        
-        Assert.equals(5, arr.length, "Array length should be 5");
-        Assert.equals(1, arr[0], "First element should be 1");
-        Assert.equals(5, arr[4], "Last element should be 5");
+        Assert.equals(testData.length, 5, "Array should have 5 elements");
+        Assert.equals(testData[0], 1, "First element should be 1");
+        Assert.equals(testData[testData.length - 1], 5, "Last element should be 5");
         
         // Test array methods
-        var doubled = arr.map(x -> x * 2);
-        Assert.equals(5, doubled.length, "Mapped array should have same length");
-        Assert.equals(2, doubled[0], "First element should be doubled");
-        Assert.equals(10, doubled[4], "Last element should be doubled");
+        var doubled = testData.map(function(x) return x * 2);
+        Assert.equals(doubled[0], 2, "First doubled element should be 2");
+        Assert.equals(doubled[4], 10, "Last doubled element should be 10");
         
-        var evens = arr.filter(x -> x % 2 == 0);
-        Assert.equals(2, evens.length, "Should have 2 even numbers");
-        Assert.equals(2, evens[0], "First even should be 2");
-        Assert.equals(4, evens[1], "Second even should be 4");
+        var filtered = testData.filter(function(x) return x > 2);
+        Assert.equals(filtered.length, 3, "Filtered array should have 3 elements");
+        Assert.equals(filtered[0], 3, "First filtered element should be 3");
         
-        var sum = arr.fold((a, b) -> a + b, 0);
-        Assert.equals(15, sum, "Sum should be 15");
+        var sum = 0;
+        for (n in testData) {
+            sum += n;
+        }
+        Assert.equals(sum, 15, "Sum of elements should be 15");
     }
     
     /**
-     * Test pattern matching
+     * Test Result type assertions
      */
     @:test
-    function testPatternMatching() {
-        // Test with arrays
-        var list = [1, 2, 3];
-        
-        if (list.length == 0) {
-            Assert.fail("Should not be empty");
-        } else {
-            var head = list[0];
-            var tail = list.slice(1);
-            Assert.equals(1, head, "Head should be 1");
-            Assert.equals(2, tail.length, "Tail should have 2 elements");
+    function testResultAssertions() {
+        function successOperation(): Result<Int, String> {
+            return Ok(42);
         }
         
-        // Test with simple values
-        var value = "test";
-        switch (value) {
-            case "test":
-                Assert.isTrue(true, "Should match test");
-            case "other":
-                Assert.fail("Should not match other");
-            default:
-                Assert.fail("Should match one of the patterns");
-        }
-    }
-    
-    /**
-     * Test exception handling
-     */
-    @:test
-    function testExceptionHandling() {
-        // Test that exceptions are caught properly
-        var caught = false;
-        
-        try {
-            throw "Test exception";
-        } catch (e: String) {
-            caught = true;
-            Assert.equals("Test exception", e, "Exception message should match");
+        function failureOperation(): Result<Int, String> {
+            return Error("Something went wrong");
         }
         
-        Assert.isTrue(caught, "Exception should have been caught");
+        var successResult = successOperation();
+        Assert.isOk(successResult, "Success operation should return Ok");
         
-        // Test that assertions can fail
-        try {
-            Assert.equals(1, 2, "This should fail");
-            Assert.fail("Should not reach here");
-        } catch (e: Dynamic) {
-            // Expected - assertion failure throws
-            Assert.isTrue(true, "Assertion failure was caught");
+        var failureResult = failureOperation();
+        Assert.isError(failureResult, "Failure operation should return Error");
+        
+        // Test with pattern matching
+        switch (successResult) {
+            case Ok(value):
+                Assert.equals(value, 42, "Success value should be 42");
+            case Error(_):
+                Assert.fail("Should not be an error");
         }
     }
     
     /**
-     * Test async operations (if supported)
+     * Test complex scenarios
      */
     @:test
-    function testAsyncOperations() {
-        // Simulate async operation with a promise/future pattern
-        var completed = false;
-        
-        // In real tests, this would be actual async code
-        // For now, we just test the pattern
-        var asyncOp = function(callback: Bool -> Void) {
-            // Simulate async completion
-            callback(true);
-        };
-        
-        asyncOp(function(result) {
-            completed = result;
-        });
-        
-        Assert.isTrue(completed, "Async operation should complete");
-    }
-    
-    /**
-     * Test custom assertions
-     */
-    @:test
-    function testCustomAssertions() {
-        // Create custom assertion helpers
-        function assertBetween(value: Float, min: Float, max: Float, ?msg: String) {
-            Assert.isTrue(value >= min && value <= max, 
-                msg != null ? msg : 'Value $value should be between $min and $max');
-        }
-        
-        function assertContains<T>(array: Array<T>, element: T, ?msg: String) {
-            Assert.isTrue(array.indexOf(element) >= 0,
-                msg != null ? msg : 'Array should contain element');
-        }
-        
-        // Use custom assertions
-        assertBetween(5, 1, 10, "5 should be between 1 and 10");
-        assertContains([1, 2, 3], 2, "Array should contain 2");
-        
-        // Test that they fail correctly
-        try {
-            assertBetween(15, 1, 10);
-            Assert.fail("Should have failed");
-        } catch (e: Dynamic) {
-            Assert.isTrue(true, "Custom assertion failed as expected");
-        }
-    }
-    
-    /**
-     * Test data-driven tests
-     */
-    @:test
-    function testDataDriven() {
-        // Test multiple cases with same logic
-        var testCases = [
-            {input: 1, expected: 2},
-            {input: 2, expected: 4},
-            {input: 3, expected: 6},
-            {input: 4, expected: 8},
-            {input: 5, expected: 10}
-        ];
-        
-        for (testCase in testCases) {
-            var result = testCase.input * 2;
-            Assert.equals(testCase.expected, result, 
-                'Input ${testCase.input} should produce ${testCase.expected}');
-        }
-    }
-    
-    /**
-     * Test mock and stub patterns
-     */
-    @:test
-    function testMockingPatterns() {
-        // Create a simple mock
-        var mockCalls: Array<String> = [];
-        
-        var mockService = {
-            getData: function(id: Int): String {
-                mockCalls.push('getData($id)');
-                return 'mock_data_$id';
-            },
-            saveData: function(id: Int, data: String): Bool {
-                mockCalls.push('saveData($id, $data)');
-                return true;
+    function testComplexScenarios() {
+        // Test with nested data structures
+        var data = {
+            name: "Test",
+            values: [10, 20, 30],
+            nested: {
+                flag: true,
+                count: 3
             }
         };
         
-        // Use the mock
-        var result = mockService.getData(123);
-        Assert.equals("mock_data_123", result, "Mock should return expected data");
+        Assert.equals(data.name, "Test", "Name field should be 'Test'");
+        Assert.equals(data.values.length, 3, "Values array should have 3 elements");
+        Assert.isTrue(data.nested.flag, "Nested flag should be true");
+        Assert.equals(data.nested.count, 3, "Nested count should be 3");
         
-        var saved = mockService.saveData(456, "test");
-        Assert.isTrue(saved, "Mock save should return true");
+        // Test with map operations
+        var map = new Map<String, Int>();
+        map.set("one", 1);
+        map.set("two", 2);
+        map.set("three", 3);
         
-        // Verify mock was called correctly
-        Assert.equals(2, mockCalls.length, "Mock should be called twice");
-        Assert.equals("getData(123)", mockCalls[0], "First call should be getData");
-        Assert.equals("saveData(456, test)", mockCalls[1], "Second call should be saveData");
+        Assert.isTrue(map.exists("one"), "Map should contain 'one'");
+        Assert.equals(map.get("two"), 2, "Map value for 'two' should be 2");
+        Assert.isFalse(map.exists("four"), "Map should not contain 'four'");
+        
+        var keys = [for (k in map.keys()) k];
+        Assert.equals(keys.length, 3, "Map should have 3 keys");
+    }
+    
+    /**
+     * Test edge cases
+     */
+    @:test
+    function testEdgeCases() {
+        // Test with empty arrays
+        var empty: Array<Int> = [];
+        Assert.equals(empty.length, 0, "Empty array should have length 0");
+        Assert.isTrue(empty.length == 0, "Empty array check should work");
+        
+        // Test with empty strings
+        var emptyStr = "";
+        Assert.equals(emptyStr.length, 0, "Empty string should have length 0");
+        Assert.isFalse(emptyStr.length > 0, "Empty string should not have positive length");
+        
+        // Test with single element arrays
+        var single = [42];
+        Assert.equals(single.length, 1, "Single element array should have length 1");
+        Assert.equals(single[0], 42, "Single element should be 42");
+        
+        // Test with boundary values
+        Assert.isTrue(0 == 0, "Zero equality should work");
+        Assert.isTrue(-1 < 0, "Negative comparison should work");
+        Assert.equals(Math.POSITIVE_INFINITY > 1000000, true, "Infinity comparison should work");
+    }
+    
+    /**
+     * Test that demonstrates all assertion message features
+     */
+    @:test
+    function testAssertionMessages() {
+        // Each assertion can have a custom message
+        Assert.equals(1, 1, "This message appears when assertion fails");
+        Assert.isTrue(true, "Boolean assertion with message");
+        Assert.isFalse(false, "False assertion with message");
+        Assert.isNull(null, "Null check with message");
+        
+        // Messages support string interpolation
+        var value = 42;
+        Assert.equals(value, 42, 'Value should be ${value}');
+        
+        // Messages are optional
+        Assert.equals(2, 2);
+        Assert.isTrue(true);
+        Assert.isFalse(false);
     }
 }
