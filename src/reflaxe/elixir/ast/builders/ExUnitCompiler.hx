@@ -49,6 +49,10 @@ class ExUnitCompiler {
     public static function compileAssertion(methodName: String, args: Array<ElixirAST>): ElixirAST {
         #if debug_exunit_compiler
         trace('[XRay ExUnit] Compiling assertion: $methodName with ${args.length} args');
+        for (i in 0...args.length) {
+            var argStr = ElixirASTPrinter.printAST(args[i]);
+            trace('[XRay ExUnit] Arg[$i]: $argStr');
+        }
         #end
         
         // Handle different Assert methods

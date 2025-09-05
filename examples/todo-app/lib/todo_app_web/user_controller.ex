@@ -23,14 +23,14 @@ defmodule TodoAppWeb.UserController do
   end
   def create(conn, params) do
     result = {:CreateUser, params}
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         user = g
         this1 = Plug.Conn.put_status(conn, 201)
         Phoenix.Controller.json(this1, %{:user => user, :created => true, :message => "User created successfully"})
       1 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         changeset = g
         this1 = Plug.Conn.put_status(conn, 422)
         Phoenix.Controller.json(this1, %{:error => "Failed to create user", :changeset => changeset})
@@ -45,14 +45,14 @@ defmodule TodoAppWeb.UserController do
     end
     update_attrs = %{:name => params.name, :email => params.email, :age => params.age, :active => params.active}
     result = {:UpdateUser, user, update_attrs}
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         updated_user = g
         data = %{:user => updated_user, :updated => true, :message => "User " <> params.id <> " updated successfully"}
         Phoenix.Controller.json(conn, data)
       1 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         changeset = g
         this1 = Plug.Conn.put_status(conn, 422)
         Phoenix.Controller.json(this1, %{:error => "Failed to update user", :changeset => changeset})
@@ -66,14 +66,14 @@ defmodule TodoAppWeb.UserController do
       Phoenix.Controller.json(this1, %{:error => "User not found"})
     end
     result = {:DeleteUser, user}
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         _deleted_user = g
         data = %{:deleted => params.id, :success => true, :message => "User " <> params.id <> " deleted successfully"}
         Phoenix.Controller.json(conn, data)
       1 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         _changeset = g
         this1 = Plug.Conn.put_status(conn, 500)
         Phoenix.Controller.json(this1, %{:error => "Failed to delete user", :success => false})

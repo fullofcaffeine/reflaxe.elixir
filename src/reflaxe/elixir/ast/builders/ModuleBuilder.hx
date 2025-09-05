@@ -578,15 +578,34 @@ class ModuleBuilder {
         
         // Add functions
         for (func in funcFields) {
-            if (func.expr() != null) {
+            var funcExpr = func.expr();
+            if (funcExpr != null) {
                 var funcName = NameUtils.toSnakeCase(func.name);
-                var isPrivate = !func.isPublic;
                 
-                // Build function (simplified - would use FunctionBuilder)
-                if (isPrivate) {
-                    statements.push(makeAST(EDefp(funcName, [], null, makeAST(ENil))));
-                } else {
-                    statements.push(makeAST(EDef(funcName, [], null, makeAST(ENil))));
+                // Get usage map for proper parameter naming
+                var functionUsageMap = switch(funcExpr.expr) {
+                    case TFunction(tfunc) if (tfunc.expr != null):
+                        reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                    case _:
+                        null;
+                };
+                
+                // Build the entire function using ElixirASTBuilder which handles reserved keywords
+                var funcAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(funcExpr, functionUsageMap);
+                
+                // The AST builder returns a function, extract it and wrap in def/defp
+                switch(funcAst.def) {
+                    case EFn(clauses) if (clauses.length > 0):
+                        // Extract the first clause (functions typically have one clause)
+                        var clause = clauses[0];
+                        // Create the function definition (use defp for private functions)
+                        if (func.isPublic) {
+                            statements.push(makeAST(EDef(funcName, clause.args, null, clause.body)));
+                        } else {
+                            statements.push(makeAST(EDefp(funcName, clause.args, null, clause.body)));
+                        }
+                    case _:
+                        // If it's not a function AST, something went wrong, skip it
                 }
             }
         }

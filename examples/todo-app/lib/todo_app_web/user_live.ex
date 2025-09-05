@@ -8,27 +8,27 @@ defmodule TodoAppWeb.UserLive do
   end
   defp handle_event(event, socket) do
     live_socket = socket
-    case (event.elem(0)) do
+    case (elem(event, 0)) do
       0 ->
         handle_new_user(live_socket)
       1 ->
-        g = event.elem(1)
+        g = elem(event, 1)
         id = g
         handle_edit_user(id, live_socket)
       2 ->
-        g = event.elem(1)
+        g = elem(event, 1)
         params = g
         handle_save_user(params, live_socket)
       3 ->
-        g = event.elem(1)
+        g = elem(event, 1)
         id = g
         handle_delete_user(id, live_socket)
       4 ->
-        g = event.elem(1)
+        g = elem(event, 1)
         params = g
         handle_search(params[:search_term], live_socket)
       5 ->
-        g = event.elem(1)
+        g = elem(event, 1)
         params = g
         handle_filter_status(params[:status], live_socket)
       6 ->
@@ -53,14 +53,14 @@ defmodule TodoAppWeb.UserLive do
     user_params = params[:user]
     selected_user = socket.assigns.selectedUser
     result = if (selected_user == nil), do: {:CreateUser, user_params}, else: {:UpdateUser, selected_user, user_params}
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         _user = g
         users = Users.list_users(nil)
         %{:status => "noreply", :socket => Phoenix.LiveView.assign([socket, users, false, nil, Users.change_user(nil)], %{:users => {1}, :show_form => {2}, :selected_user => {3}, :changeset => {4}})}
       1 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         changeset = g
         %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, :changeset, changeset)}
     end
@@ -68,14 +68,14 @@ defmodule TodoAppWeb.UserLive do
   defp handle_delete_user(user_id, socket) do
     user = Users.get_user(user_id)
     result = {:DeleteUser, user}
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         _deleted_user = g
         users = Users.list_users(nil)
         %{:status => "noreply", :socket => Phoenix.LiveView.assign(socket, :users, users)}
       1 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         _changeset = g
         %{:status => "noreply", :socket => socket}
     end
