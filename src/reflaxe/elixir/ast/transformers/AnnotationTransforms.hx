@@ -1089,10 +1089,10 @@ class AnnotationTransforms {
         
         // use ExUnit.Case with async option if needed
         if (hasAsyncTests) {
+            // Create keyword list [async: true] for ExUnit.Case options
             statements.push(makeAST(EUse("ExUnit.Case", [
-                makeAST(ETuple([
-                    makeAST(EAtom("async")),
-                    makeAST(EAtom("true"))
+                makeAST(EKeywordList([
+                    {key: "async", value: makeAST(EAtom("true"))}
                 ]))
             ])));
         } else {

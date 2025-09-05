@@ -275,14 +275,14 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
   end
   defp find_todo(id, todos) do
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, :ok}, fn _, {acc_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, :ok}, fn _, {acc_g, acc_todos, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.id == id), do: todo
-    {:cont, {acc_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_state}}
   else
-    {:halt, {acc_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_state}}
   end
 end)
     nil
@@ -290,16 +290,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
+    {:cont, {acc_count, acc_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
+    {:halt, {acc_count, acc_todos, acc_g, acc_state}}
   end
 end)
     count
@@ -307,16 +307,16 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
+    {:cont, {acc_count, acc_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
+    {:halt, {acc_count, acc_todos, acc_g, acc_state}}
   end
 end)
     count
@@ -351,7 +351,7 @@ end)
   defp complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, pending, :ok}, fn _, {acc_g, acc_pending, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} ->
   if (acc_g < acc_pending.length) do
     todo = pending[g]
     acc_g = acc_g + 1
@@ -367,9 +367,9 @@ end)
         reason = acc_g
         Log.trace("Failed to complete todo " <> todo.id <> ": " <> Std.string(reason), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 523, :className => "server.live.TodoLive", :methodName => "completeAllTodos"})
     end
-    {:cont, {acc_g, acc_pending, acc_state}}
+    {:cont, {acc_pending, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_pending, acc_state}}
+    {:halt, {acc_pending, acc_g, acc_state}}
   end
 end)
     g = TodoPubSub.broadcast(:todo_updates, {:BulkUpdate, :complete_all})
@@ -391,14 +391,14 @@ end)
   defp delete_completed_todos(socket) do
     completed = Enum.filter(socket.assigns.todos, fn t -> t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, completed, :ok}, fn _, {acc_g, acc_completed, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {completed, g, :ok}, fn _, {acc_completed, acc_g, acc_state} ->
   if (acc_g < acc_completed.length) do
     todo = completed[g]
     acc_g = acc_g + 1
     TodoApp.Repo.delete(todo)
-    {:cont, {acc_g, acc_completed, acc_state}}
+    {:cont, {acc_completed, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_completed, acc_state}}
+    {:halt, {acc_completed, acc_g, acc_state}}
   end
 end)
     TodoPubSub.broadcast(:todo_updates, {:BulkUpdate, :delete_completed})
@@ -572,14 +572,14 @@ end) <> "\n\t\t</div>"
     filtered_todos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
     todo_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, filtered_todos, :ok}, fn _, {acc_g, acc_filtered_todos, acc_state} ->
   if (acc_g < acc_filtered_todos.length) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
     todo_items ++ [render_todo_item(todo, assigns.editingTodo)]
-    {:cont, {acc_filtered_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_filtered_todos, acc_state}}
   else
-    {:halt, {acc_filtered_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_filtered_todos, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")
