@@ -23,7 +23,7 @@ end)
   def url_decode(s) do
     result = ""
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, s, result, :ok}, fn _, {acc_i, acc_s, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, i, result, :ok}, fn _, {acc_s, acc_i, acc_result, acc_state} ->
   if (acc_i < acc_s.length) do
     c = acc_s.charAt(acc_i)
     if (c == "%") do
@@ -39,9 +39,9 @@ end)
     end
     acc_result = acc_result <> c
     acc_i = acc_i + 1
-    {:cont, {acc_i, acc_s, acc_result, acc_state}}
+    {:cont, {acc_s, acc_i, acc_result, acc_state}}
   else
-    {:halt, {acc_i, acc_s, acc_result, acc_state}}
+    {:halt, {acc_s, acc_i, acc_result, acc_state}}
   end
 end)
     result
@@ -67,12 +67,12 @@ end)
   def ltrim(s) do
     l = s.length
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {r, s, l, :ok}, fn _, {acc_r, acc_s, acc_l, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r, :ok}, fn _, {acc_s, acc_l, acc_r, acc_state} ->
   if (acc_r < acc_l && is_space(acc_s, acc_r)) do
     acc_r = acc_r + 1
-    {:cont, {acc_r, acc_s, acc_l, acc_state}}
+    {:cont, {acc_s, acc_l, acc_r, acc_state}}
   else
-    {:halt, {acc_r, acc_s, acc_l, acc_state}}
+    {:halt, {acc_s, acc_l, acc_r, acc_state}}
   end
 end)
     if (r > 0) do
@@ -140,12 +140,12 @@ end)
   end
 end)
     if (digits != nil) do
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digits, s, :ok}, fn _, {acc_digits, acc_s, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, digits, :ok}, fn _, {acc_s, acc_digits, acc_state} ->
   if (acc_s.length < acc_digits) do
     acc_s = "0" <> acc_s
-    {:cont, {acc_digits, acc_s, acc_state}}
+    {:cont, {acc_s, acc_digits, acc_state}}
   else
-    {:halt, {acc_digits, acc_s, acc_state}}
+    {:halt, {acc_s, acc_digits, acc_state}}
   end
 end)
     end
@@ -160,14 +160,14 @@ end)
   def quote_regexp_meta(s) do
     special_chars = ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {special_chars, s, g, :ok}, fn _, {acc_special_chars, acc_s, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, special_chars, s, :ok}, fn _, {acc_g, acc_special_chars, acc_s, acc_state} ->
   if (acc_g < acc_special_chars.length) do
     char = special_chars[g]
     acc_g = acc_g + 1
     acc_s = replace(acc_s, char, "\\" <> char)
-    {:cont, {acc_special_chars, acc_s, acc_g, acc_state}}
+    {:cont, {acc_g, acc_special_chars, acc_s, acc_state}}
   else
-    {:halt, {acc_special_chars, acc_s, acc_g, acc_state}}
+    {:halt, {acc_g, acc_special_chars, acc_s, acc_state}}
   end
 end)
     s
@@ -178,7 +178,7 @@ end)
       result = 0
       g = 0
       g1 = hex.length
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, result, :ok}, fn _, {acc_g1, acc_g, acc_result, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, g1, :ok}, fn _, {acc_g, acc_result, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = hex.charCodeAt(i)
@@ -196,9 +196,9 @@ end)
         end
       end
     end
-    {:cont, {acc_g1, acc_g, acc_result, acc_state}}
+    {:cont, {acc_g, acc_result, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_result, acc_state}}
+    {:halt, {acc_g, acc_result, acc_g1, acc_state}}
   end
 end)
       result
@@ -216,7 +216,7 @@ end)
     end
     g = start
     g1 = str.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, result, :ok}, fn _, {acc_g1, acc_g, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, g1, :ok}, fn _, {acc_g, acc_result, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = str.charCodeAt(i)
@@ -225,9 +225,9 @@ end)
     else
       nil
     end
-    {:cont, {acc_g1, acc_g, acc_result, acc_state}}
+    {:cont, {acc_g, acc_result, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_result, acc_state}}
+    {:halt, {acc_g, acc_result, acc_g1, acc_state}}
   end
 end)
     if negative do
