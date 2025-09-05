@@ -728,6 +728,17 @@ class ElixirASTBuilder {
                     // This ensures Result.Ok becomes :ok and Result.Error becomes :error
                     if (hasIdiomaticMetadata(e)) {
                         tag = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
+                        
+                        // TODO: Add special handling for Option<T> to map Some→ok and None→error
+                        // Currently just lowercases to :some/:none which isn't fully idiomatic.
+                        // Should check if the enum type is haxe.ds.Option and apply mapping:
+                        // if (isOptionType(e)) {
+                        //     tag = switch(tag) {
+                        //         case "some": "ok";
+                        //         case "none": "error";
+                        //         case _: tag;
+                        //     }
+                        // }
                     }
                     
                     var args = [for (arg in el) buildFromTypedExpr(arg, variableUsageMap)];
