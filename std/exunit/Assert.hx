@@ -42,56 +42,56 @@ class Assert {
     /**
      * Assert that two values are equal
      */
-    public static function assertEqual<T>(expected: T, actual: T, ?message: String): Void {
+    extern inline public static function assertEqual<T>(expected: T, actual: T, ?message: String): Void {
         untyped __elixir__('assert {0} == {1}', actual, expected);
     }
     
     /**
      * Assert that two values are not equal
      */
-    public static function assertNotEqual<T>(expected: T, actual: T, ?message: String): Void {
+    extern inline public static function assertNotEqual<T>(expected: T, actual: T, ?message: String): Void {
         untyped __elixir__('assert {0} != {1}', actual, expected);
     }
     
     /**
      * Assert that a condition is true
      */
-    public static function assertTrue(condition: Bool, ?message: String): Void {
+    extern inline public static function assertTrue(condition: Bool, ?message: String): Void {
         untyped __elixir__('assert {0}', condition);
     }
     
     /**
      * Assert that a condition is false
      */
-    public static function assertFalse(condition: Bool, ?message: String): Void {
+    extern inline public static function assertFalse(condition: Bool, ?message: String): Void {
         untyped __elixir__('assert not {0}', condition);
     }
     
     /**
      * Assert that a value is null/nil
      */
-    public static function assertNull<T>(value: Null<T>, ?message: String): Void {
+    extern inline public static function assertNull<T>(value: Null<T>, ?message: String): Void {
         untyped __elixir__('assert {0} == nil', value);
     }
     
     /**
      * Assert that a value is not null/nil
      */
-    public static function assertNotNull<T>(value: Null<T>, ?message: String): Void {
+    extern inline public static function assertNotNull<T>(value: Null<T>, ?message: String): Void {
         untyped __elixir__('assert {0} != nil', value);
     }
     
     /**
      * Assert that a function raises an exception
      */
-    public static function assertRaises(fn: () -> Void, ?message: String): Void {
+    extern inline public static function assertRaises(fn: () -> Void, ?message: String): Void {
         untyped __elixir__('assert_raise RuntimeError, {0}', fn);
     }
     
     /**
      * Fail the test with a message
      */
-    public static function fail(message: String): Void {
+    extern inline public static function fail(message: String): Void {
         untyped __elixir__('flunk({0})', message);
     }
     
@@ -106,7 +106,7 @@ class Assert {
      * @param result The Result to check
      * @param message Optional failure message
      */
-    public static function assertIsOk<T,E>(result: Dynamic, ?message: String): Void {
+    extern inline public static function assertIsOk<T,E>(result: Dynamic, ?message: String): Void {
         untyped __elixir__('assert match?({:ok, _}, {0})', result);
     }
     
@@ -119,7 +119,7 @@ class Assert {
      * @param result The Result to check
      * @param message Optional failure message
      */
-    public static function assertIsError<T,E>(result: Dynamic, ?message: String): Void {
+    extern inline public static function assertIsError<T,E>(result: Dynamic, ?message: String): Void {
         untyped __elixir__('assert match?({:error, _}, {0})', result);
     }
     
@@ -132,7 +132,7 @@ class Assert {
      * @param option The Option to check
      * @param message Optional failure message
      */
-    public static function assertIsSome<T>(option: Dynamic, ?message: String): Void {
+    extern inline public static function assertIsSome<T>(option: Dynamic, ?message: String): Void {
         untyped __elixir__('assert match?({:some, _}, {0})', option);
     }
     
@@ -145,7 +145,7 @@ class Assert {
      * @param option The Option to check
      * @param message Optional failure message
      */
-    public static function assertIsNone<T>(option: Dynamic, ?message: String): Void {
+    extern inline public static function assertIsNone<T>(option: Dynamic, ?message: String): Void {
         untyped __elixir__('assert {0} == :none', option);
     }
 }
