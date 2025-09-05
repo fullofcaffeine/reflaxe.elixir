@@ -275,14 +275,14 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
   end
   defp find_todo(id, todos) do
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, :ok}, fn _, {acc_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, :ok}, fn _, {acc_g, acc_todos, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.id == id), do: todo
-    {:cont, {acc_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_state}}
   else
-    {:halt, {acc_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_state}}
   end
 end)
     nil
@@ -290,16 +290,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, todos, :ok}, fn _, {acc_g, acc_count, acc_todos, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
+    {:cont, {acc_g, acc_count, acc_todos, acc_state}}
   else
-    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
+    {:halt, {acc_g, acc_count, acc_todos, acc_state}}
   end
 end)
     count
@@ -391,14 +391,14 @@ end)
   defp delete_completed_todos(socket) do
     completed = Enum.filter(socket.assigns.todos, fn t -> t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {completed, g, :ok}, fn _, {acc_completed, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, completed, :ok}, fn _, {acc_g, acc_completed, acc_state} ->
   if (acc_g < acc_completed.length) do
     todo = completed[g]
     acc_g = acc_g + 1
     {:Delete, todo}
-    {:cont, {acc_completed, acc_g, acc_state}}
+    {:cont, {acc_g, acc_completed, acc_state}}
   else
-    {:halt, {acc_completed, acc_g, acc_state}}
+    {:halt, {acc_g, acc_completed, acc_state}}
   end
 end)
     {:Broadcast, :todo_updates, {:BulkUpdate, :delete_completed}}
@@ -572,14 +572,14 @@ end) <> "\n\t\t</div>"
     filtered_todos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
     todo_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, filtered_todos, :ok}, fn _, {acc_g, acc_filtered_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
   if (acc_g < acc_filtered_todos.length) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
     todo_items ++ [render_todo_item(todo, assigns.editingTodo)]
-    {:cont, {acc_g, acc_filtered_todos, acc_state}}
+    {:cont, {acc_filtered_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_filtered_todos, acc_state}}
+    {:halt, {acc_filtered_todos, acc_g, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")
@@ -614,14 +614,14 @@ end) <> "\n\t\t\t\t\t\t\t\t" <> render_tags(todo.tags) <> "\n\t\t\t\t\t\t\t</div
     if (tags == nil || tags.length == 0), do: ""
     tag_elements = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tags, g, :ok}, fn _, {acc_tags, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, tags, :ok}, fn _, {acc_g, acc_tags, acc_state} ->
   if (acc_g < acc_tags.length) do
     tag = tags[g]
     acc_g = acc_g + 1
     tag_elements ++ ["<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>"]
-    {:cont, {acc_tags, acc_g, acc_state}}
+    {:cont, {acc_g, acc_tags, acc_state}}
   else
-    {:halt, {acc_tags, acc_g, acc_state}}
+    {:halt, {acc_g, acc_tags, acc_state}}
   end
 end)
     Enum.join(tag_elements, "")

@@ -1,13 +1,13 @@
 defmodule Main do
   defp main() do
     test = {:Option1, "test"}
-    case (test.elem(0)) do
+    case (elem(test, 0)) do
       0 ->
-        g = test.elem(1)
+        g = elem(test, 1)
         _value = g
         nil
       1 ->
-        g = test.elem(1)
+        g = elem(test, 1)
         _data = g
         Log.trace("Option2", %{:fileName => "Main.hx", :lineNumber => 23, :className => "Main", :methodName => "main"})
       2 ->
@@ -18,8 +18,8 @@ defmodule Main do
     used = "This is used"
     Log.trace(used, %{:fileName => "Main.hx", :lineNumber => 38, :className => "Main", :methodName => "main"})
     temp1 = 42
-    temp2 = temp
-    result = temp + 1
+    temp2 = temp1
+    result = temp2 + 1
     Log.trace(result, %{:fileName => "Main.hx", :lineNumber => 44, :className => "Main", :methodName => "main"})
     dead_code_example()
   end

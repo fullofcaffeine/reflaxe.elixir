@@ -14,9 +14,9 @@ defmodule Main do
   end
   defp test_pattern_matching_unused() do
     g = {:GetSomeValue}
-    result = case (g.elem(0)) do
+    result = case (elem(g, 0)) do
   0 ->
-    g = g.elem(1)
+    g = elem(g, 1)
     g1 = g[:metadata]
     g = g[:value]
     __meta = g1

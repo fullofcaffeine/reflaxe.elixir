@@ -76,12 +76,12 @@ defmodule Main do
   end
   defp test_slice_function() do
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    from_third = if (end == nil) do
+    from_third = if (end_param == nil) do
   Enum.slice(numbers, 2..-1)
 else
   Enum.slice(numbers, 2..{2})
 end
-    middle = if (end == nil) do
+    middle = if (end_param == nil) do
   Enum.slice(numbers, 2..-1)
 else
   Enum.slice(numbers, 2..5)
@@ -93,14 +93,14 @@ end
     numbers = [1, 2, 3]
     Log.trace("Iterating with for loop:", %{:fileName => "Main.hx", :lineNumber => 149, :className => "Main", :methodName => "testIteratorFunction"})
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, numbers, :ok}, fn _, {acc_g, acc_numbers, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
   if (acc_g < acc_numbers.length) do
     n = numbers[g]
     acc_g = acc_g + 1
     Log.trace("  Number: " <> n, %{:fileName => "Main.hx", :lineNumber => 151, :className => "Main", :methodName => "testIteratorFunction"})
-    {:cont, {acc_g, acc_numbers, acc_state}}
+    {:cont, {acc_numbers, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_numbers, acc_state}}
+    {:halt, {acc_numbers, acc_g, acc_state}}
   end
 end)
     iter_current = nil

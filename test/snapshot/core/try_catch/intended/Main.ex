@@ -149,7 +149,7 @@ rescue
   e ->
     -1
 end
-    Log.trace("Failed parse value: " <> value, %{:fileName => "Main.hx", :lineNumber => 176, :className => "Main", :methodName => "tryAsExpression"})
+    Log.trace("Failed parse value: " <> value2, %{:fileName => "Main.hx", :lineNumber => 176, :className => "Main", :methodName => "tryAsExpression"})
   end
   def main() do
     Log.trace("=== Basic Try-Catch ===", %{:fileName => "Main.hx", :lineNumber => 180, :className => "Main", :methodName => "main"})

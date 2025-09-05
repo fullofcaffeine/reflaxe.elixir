@@ -26,7 +26,7 @@ end)
     k = Map.keys(map)
     Log.trace("After clear, keys: " <> Std.string(Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
   if acc_k.hasNext() do
-    g.push(acc_k)
+    g ++ [acc_k]
     {:cont, {acc_k, acc_state}}
   else
     {:halt, {acc_k, acc_state}}
@@ -55,7 +55,7 @@ end)
     k = Map.keys(map)
     keys = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
   if (acc_k.hasNext()) do
-    g.push(acc_k)
+    g ++ [acc_k]
     {:cont, {acc_k, acc_state}}
   else
     {:halt, {acc_k, acc_state}}
@@ -66,7 +66,7 @@ g
     k = Map.keys(map)
     values = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
   if (acc_k.hasNext()) do
-    g.push(Map.get(map, acc_k))
+    g ++ [Map.get(map, acc_k)]
     {:cont, {acc_k, acc_state}}
   else
     {:halt, {acc_k, acc_state}}
@@ -80,12 +80,12 @@ g
     map = %{}
     obj1 = %{:id => 1}
     obj2 = %{:id => 2}
-    map = Map.put(map, obj, "Object 1")
-    map = Map.put(map, obj, "Object 2")
-    Log.trace("Object 1 value: " <> Map.get(map, obj), %{:fileName => "Main.hx", :lineNumber => 71, :className => "Main", :methodName => "objectMap"})
-    Log.trace("Object 2 value: " <> Map.get(map, obj), %{:fileName => "Main.hx", :lineNumber => 72, :className => "Main", :methodName => "objectMap"})
+    map = Map.put(map, obj1, "Object 1")
+    map = Map.put(map, obj2, "Object 2")
+    Log.trace("Object 1 value: " <> Map.get(map, obj1), %{:fileName => "Main.hx", :lineNumber => 71, :className => "Main", :methodName => "objectMap"})
+    Log.trace("Object 2 value: " <> Map.get(map, obj2), %{:fileName => "Main.hx", :lineNumber => 72, :className => "Main", :methodName => "objectMap"})
     obj3 = %{:id => 1}
-    Log.trace("New {id: 1} value: " <> Map.get(map, obj), %{:fileName => "Main.hx", :lineNumber => 76, :className => "Main", :methodName => "objectMap"})
+    Log.trace("New {id: 1} value: " <> Map.get(map, obj3), %{:fileName => "Main.hx", :lineNumber => 76, :className => "Main", :methodName => "objectMap"})
   end
   def map_literals() do
     g = %{}
@@ -224,22 +224,22 @@ end)
     g = Map.put(g, "a", 10)
     map2 = g
     merged = %{}
-    key = Map.keys(map)
+    key = Map.keys(map1)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {key, :ok}, fn _, {acc_key, acc_state} ->
   if (acc_key.hasNext()) do
     acc_key = acc_key.next()
-    value = Map.get(map, acc_key)
+    value = Map.get(map1, acc_key)
     Map.put(merged, acc_key, value)
     {:cont, {acc_key, acc_state}}
   else
     {:halt, {acc_key, acc_state}}
   end
 end)
-    key = Map.keys(map)
+    key = Map.keys(map2)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {key, :ok}, fn _, {acc_key, acc_state} ->
   if (acc_key.hasNext()) do
     acc_key = acc_key.next()
-    value = Map.get(map, acc_key)
+    value = Map.get(map2, acc_key)
     Map.put(merged, acc_key, value)
     {:cont, {acc_key, acc_state}}
   else

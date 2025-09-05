@@ -662,7 +662,12 @@ typedef ElixirMetadata = {
     
     // Error Handling
     ?canRaise: Bool,              // Can raise exceptions
-    ?errorContext: String        // Error handling context
+    ?errorContext: String,        // Error handling context
+    
+    // Static Extern Method Handling (Added 2025-09-05)
+    ?isStaticExternMethod: Bool,  // Marks a static method on an extern class
+    ?nativeModule: String,        // The full module path from @:native annotation
+    ?methodName: String          // The method name being called
 }
 
 // ============================================================================

@@ -33,9 +33,9 @@ defmodule Main do
     results = []
     level1 = true
     level2 = true
-    if level do
+    if level1 do
       results = results ++ ["Level 1"]
-      if level do
+      if level2 do
         results = results ++ ["Level 2"]
       end
     end

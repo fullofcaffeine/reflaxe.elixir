@@ -52,28 +52,28 @@ defmodule Main do
     Log.trace("Values iterator: " <> Std.string(values), %{:fileName => "Main.hx", :lineNumber => 103, :className => "Main", :methodName => "testMapQueries"})
     has_keys = false
     key = Map.keys(map)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {key, has_keys, :ok}, fn _, {acc_key, acc_has_keys, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {has_keys, key, :ok}, fn _, {acc_has_keys, acc_key, acc_state} ->
   if (acc_key.hasNext()) do
     _key = acc_key.next()
     acc_has_keys = true
     throw(:break)
-    {:cont, {acc_key, acc_has_keys, acc_state}}
+    {:cont, {acc_has_keys, acc_key, acc_state}}
   else
-    {:halt, {acc_key, acc_has_keys, acc_state}}
+    {:halt, {acc_has_keys, acc_key, acc_state}}
   end
 end)
     Log.trace("Map has keys: " <> Std.string(has_keys), %{:fileName => "Main.hx", :lineNumber => 112, :className => "Main", :methodName => "testMapQueries"})
     empty_map = %{}
     empty_has_keys = false
     key = Map.keys(empty_map)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {empty_has_keys, key, :ok}, fn _, {acc_empty_has_keys, acc_key, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {key, empty_has_keys, :ok}, fn _, {acc_key, acc_empty_has_keys, acc_state} ->
   if (acc_key.hasNext()) do
     _key = acc_key.next()
     acc_empty_has_keys = true
     throw(:break)
-    {:cont, {acc_empty_has_keys, acc_key, acc_state}}
+    {:cont, {acc_key, acc_empty_has_keys, acc_state}}
   else
-    {:halt, {acc_empty_has_keys, acc_key, acc_state}}
+    {:halt, {acc_key, acc_empty_has_keys, acc_state}}
   end
 end)
     Log.trace("Empty map has keys: " <> Std.string(empty_has_keys), %{:fileName => "Main.hx", :lineNumber => 120, :className => "Main", :methodName => "testMapQueries"})

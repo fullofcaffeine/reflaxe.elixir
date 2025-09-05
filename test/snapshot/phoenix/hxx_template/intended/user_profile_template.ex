@@ -13,7 +13,7 @@ defmodule UserProfileTemplate do
   if (acc_g < acc_users.length) do
     user = users[g]
     acc_g = acc_g + 1
-    items.push("<li><strong>" <> user[:name] <> "</strong> - " <> user[:email] <> "</li>")
+    items ++ ["<li><strong>" <> user[:name] <> "</strong> - " <> user[:email] <> "</li>"]
     {:cont, {acc_users, acc_g, acc_state}}
   else
     {:halt, {acc_users, acc_g, acc_state}}

@@ -21,14 +21,14 @@ defmodule Main do
     Log.trace("Index: " <> 9, %{:fileName => "Main.hx", :lineNumber => 32, :className => "Main", :methodName => "testBasicForLoops"})
     fruits = ["apple", "banana", "orange"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, fruits, :ok}, fn _, {acc_g, acc_fruits, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, g, :ok}, fn _, {acc_fruits, acc_g, acc_state} ->
   if (acc_g < acc_fruits.length) do
     fruit = fruits[g]
     acc_g = acc_g + 1
     Log.trace("Fruit: " <> fruit, %{:fileName => "Main.hx", :lineNumber => 38, :className => "Main", :methodName => "testBasicForLoops"})
-    {:cont, {acc_g, acc_fruits, acc_state}}
+    {:cont, {acc_fruits, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_fruits, acc_state}}
+    {:halt, {acc_fruits, acc_g, acc_state}}
   end
 end)
     g = %{}
@@ -218,7 +218,7 @@ end)
     if (n rem 3 == 0) do
       throw(:continue)
     end
-    processed.push(n * 2)
+    processed ++ [n * 2]
     {:cont, {acc_numbers, acc_g, acc_state}}
   else
     {:halt, {acc_numbers, acc_g, acc_state}}
@@ -228,13 +228,13 @@ end)
     find_first = fn arr, target ->
   g = 0
   g1 = arr.length
-  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     if (arr[i] == target), do: i
-    {:cont, {acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
   -1
@@ -273,7 +273,7 @@ end)
     current_state = 0
     events = ["begin", "work", "work", "finish"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, current_state, events, :ok}, fn _, {acc_g, acc_current_state, acc_events, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {events, current_state, g, :ok}, fn _, {acc_events, acc_current_state, acc_g, acc_state} ->
   if (acc_g < acc_events.length) do
     event = events[g]
     acc_g = acc_g + 1
@@ -290,9 +290,9 @@ end)
         nil
     end
     Log.trace("State after " <> event <> ": " <> states[current_state], %{:fileName => "Main.hx", :lineNumber => 259, :className => "Main", :methodName => "testComplexPatterns"})
-    {:cont, {acc_g, acc_current_state, acc_events, acc_state}}
+    {:cont, {acc_events, acc_current_state, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_current_state, acc_events, acc_state}}
+    {:halt, {acc_events, acc_current_state, acc_g, acc_state}}
   end
 end)
     items = ["valid1", "error", "valid2", "valid3"]
@@ -304,10 +304,10 @@ end)
     item = items[g]
     acc_g = acc_g + 1
     if (item.indexOf("error") >= 0) do
-      errors.push("Failed: " <> item)
+      errors ++ ["Failed: " <> item]
       throw(:continue)
     end
-    results.push("Processed: " <> item)
+    results ++ ["Processed: " <> item]
     {:cont, {acc_items, acc_g, acc_state}}
   else
     {:halt, {acc_items, acc_g, acc_state}}

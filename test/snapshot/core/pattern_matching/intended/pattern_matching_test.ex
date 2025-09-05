@@ -1,6 +1,6 @@
 defmodule PatternMatchingTest do
   def match_color(color) do
-    case (color.elem(0)) do
+    case (elem(color, 0)) do
       0 ->
         "red"
       1 ->
@@ -8,9 +8,9 @@ defmodule PatternMatchingTest do
       2 ->
         "blue"
       3 ->
-        g = color.elem(1)
-        g1 = color.elem(2)
-        g2 = color.elem(3)
+        g = elem(color, 1)
+        g1 = elem(color, 2)
+        g2 = elem(color, 3)
         r = g
         g = g1
         b = g2
@@ -18,11 +18,11 @@ defmodule PatternMatchingTest do
     end
   end
   def match_option(option) do
-    case (option.elem(0)) do
+    case (elem(option, 0)) do
       0 ->
         "none"
       1 ->
-        g = option.elem(1)
+        g = elem(option, 1)
         value = g
         "some(" <> Std.string(value) <> ")"
     end
@@ -81,12 +81,12 @@ defmodule PatternMatchingTest do
     end
   end
   def match_nested(option) do
-    case (option.elem(0)) do
+    case (elem(option, 0)) do
       0 ->
         "no color"
       1 ->
-        g = option.elem(1)
-        case (g.elem(0)) do
+        g = elem(option, 1)
+        case (elem(g, 0)) do
           0 ->
             "red color"
           1 ->
@@ -94,9 +94,9 @@ defmodule PatternMatchingTest do
           2 ->
             "blue color"
           3 ->
-            g1 = g.elem(1)
-            g2 = g.elem(2)
-            g = g.elem(3)
+            g1 = elem(g, 1)
+            g2 = elem(g, 2)
+            g = elem(g, 3)
             r = g1
             _g = g2
             _b = g

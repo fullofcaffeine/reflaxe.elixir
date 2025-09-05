@@ -19,22 +19,22 @@ defmodule Main do
   end
   defp test_pattern_matching() do
     user_opt = 42
-    case (user_opt.elem(0)) do
+    case (elem(user_opt, 0)) do
       0 ->
-        g = user_opt.elem(1)
+        g = elem(user_opt, 1)
         value = g
         Log.trace("Got value: " <> value, %{:fileName => "Main.hx", :lineNumber => 79, :className => "Main", :methodName => "testPatternMatching"})
       1 ->
         Log.trace("Got none", %{:fileName => "Main.hx", :lineNumber => 81, :className => "Main", :methodName => "testPatternMatching"})
     end
     result = "data"
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         data = g
         Log.trace("Success: " <> data, %{:fileName => "Main.hx", :lineNumber => 88, :className => "Main", :methodName => "testPatternMatching"})
       1 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         reason = g
         Log.trace("Error: " <> reason, %{:fileName => "Main.hx", :lineNumber => 90, :className => "Main", :methodName => "testPatternMatching"})
     end

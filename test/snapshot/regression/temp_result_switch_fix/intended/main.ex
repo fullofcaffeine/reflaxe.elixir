@@ -1,6 +1,6 @@
 defmodule Main do
   defp topic_to_string(topic) do
-    case (topic.elem(0)) do
+    case (elem(topic, 0)) do
       0 ->
         "topic_a"
       1 ->

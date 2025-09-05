@@ -10,7 +10,7 @@ defmodule Main do
   end
   defp test_simple_enum_pattern() do
     color = :red
-    result = case (color.elem(0)) do
+    result = case (elem(color, 0)) do
   0 ->
     "red"
   1 ->
@@ -18,16 +18,16 @@ defmodule Main do
   2 ->
     "blue"
   3 ->
-    _g = color.elem(1)
-    _g = color.elem(2)
-    _g = color.elem(3)
+    _g = elem(color, 1)
+    _g = elem(color, 2)
+    _g = elem(color, 3)
     "custom"
 end
     Log.trace("Simple enum result: " <> result, %{:fileName => "Main.hx", :lineNumber => 54, :className => "Main", :methodName => "testSimpleEnumPattern"})
   end
   defp test_complex_enum_pattern() do
     color = {:RGB, 255, 128, 0}
-    brightness = case (color.elem(0)) do
+    brightness = case (elem(color, 0)) do
   0 ->
     "primary"
   1 ->
@@ -35,9 +35,9 @@ end
   2 ->
     "primary"
   3 ->
-    g = color.elem(1)
-    g1 = color.elem(2)
-    g2 = color.elem(3)
+    g = elem(color, 1)
+    g1 = elem(color, 2)
+    g2 = elem(color, 3)
     r = g
     g = g1
     b = g2
@@ -61,13 +61,13 @@ end
   end
   defp test_result_pattern() do
     result = {:Ok, "success"}
-    message = case (result.elem(0)) do
+    message = case (elem(result, 0)) do
   0 ->
-    g = result.elem(1)
+    g = elem(result, 1)
     value = g
     "Got value: " <> value
   1 ->
-    g = result.elem(1)
+    g = elem(result, 1)
     error = g
     "Got error: " <> error
 end
@@ -76,7 +76,7 @@ end
   defp test_guard_patterns() do
     numbers = [1, 5, 10, 15, 20]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, numbers, :ok}, fn _, {acc_g, acc_numbers, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
   if (acc_g < acc_numbers.length) do
     num = numbers[g]
     acc_g = acc_g + 1
@@ -93,16 +93,16 @@ else
   end
 end
     Log.trace("Number " <> num <> " is " <> category, %{:fileName => "Main.hx", :lineNumber => 98, :className => "Main", :methodName => "testGuardPatterns"})
-    {:cont, {acc_g, acc_numbers, acc_state}}
+    {:cont, {acc_numbers, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_numbers, acc_state}}
+    {:halt, {acc_numbers, acc_g, acc_state}}
   end
 end)
   end
   defp test_array_patterns() do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arrays, g, :ok}, fn _, {acc_arrays, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, arrays, :ok}, fn _, {acc_g, acc_arrays, acc_state} ->
   if (acc_g < acc_arrays.length) do
     arr = arrays[g]
     acc_g = acc_g + 1
@@ -135,9 +135,9 @@ else
 end)
 end
     Log.trace("Array pattern: " <> description, %{:fileName => "Main.hx", :lineNumber => 119, :className => "Main", :methodName => "testArrayPatterns"})
-    {:cont, {acc_arrays, acc_g, acc_state}}
+    {:cont, {acc_g, acc_arrays, acc_state}}
   else
-    {:halt, {acc_arrays, acc_g, acc_state}}
+    {:halt, {acc_g, acc_arrays, acc_state}}
   end
 end)
   end

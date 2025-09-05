@@ -98,10 +98,10 @@ defmodule Main do
     str = "not an enum"
     obj = %{:field => "value"}
     num = 123
-    opt1_is_enum = Reflect.is_enum_value(opt)
-    opt2_is_enum = Reflect.is_enum_value(opt)
-    res1_is_enum = Reflect.is_enum_value(res)
-    res2_is_enum = Reflect.is_enum_value(res)
+    opt1_is_enum = Reflect.is_enum_value(opt1)
+    opt2_is_enum = Reflect.is_enum_value(opt2)
+    res1_is_enum = Reflect.is_enum_value(res1)
+    res2_is_enum = Reflect.is_enum_value(res2)
     str_is_enum = Reflect.is_enum_value(str)
     obj_is_enum = Reflect.is_enum_value(obj)
     num_is_enum = Reflect.is_enum_value(num)
