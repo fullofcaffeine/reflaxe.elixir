@@ -103,6 +103,9 @@ class ExUnitBuilder {
         var hasSetupAll = false;
         var hasTeardown = false;
         var hasTeardownAll = false;
+        var describeBlock: String = null;
+        var isAsync = false;
+        var tags: Array<String> = [];
         
         if (field.meta != null) {
             for (meta in field.meta) {
@@ -116,6 +119,24 @@ class ExUnitBuilder {
                     hasTeardown = true;
                 } else if (meta.name == ":teardownAll" || meta.name == "teardownAll") {
                     hasTeardownAll = true;
+                } else if (meta.name == ":describe" || meta.name == "describe") {
+                    // Extract describe block name from metadata params
+                    if (meta.params != null && meta.params.length > 0) {
+                        switch(meta.params[0].expr) {
+                            case EConst(CString(s)): describeBlock = s;
+                            default:
+                        }
+                    }
+                } else if (meta.name == ":async" || meta.name == "async") {
+                    isAsync = true;
+                } else if (meta.name == ":tag" || meta.name == "tag") {
+                    // Extract tag value from metadata params
+                    if (meta.params != null && meta.params.length > 0) {
+                        switch(meta.params[0].expr) {
+                            case EConst(CString(s)): tags.push(s);
+                            default:
+                        }
+                    }
                 }
             }
         }
@@ -123,6 +144,15 @@ class ExUnitBuilder {
         if (hasTest) {
             #if debug_exunit
             trace('[XRay ExUnit] ✓ Found @:test on method: ${field.name}');
+            if (describeBlock != null) {
+                trace('[XRay ExUnit]   - In describe block: ${describeBlock}');
+            }
+            if (isAsync) {
+                trace('[XRay ExUnit]   - Async test');
+            }
+            if (tags.length > 0) {
+                trace('[XRay ExUnit]   - Tags: ${tags.join(", ")}');
+            }
             #end
             
             // Add metadata to help the compiler generate proper ExUnit test
@@ -132,6 +162,33 @@ class ExUnitBuilder {
                 params: [],
                 pos: field.pos
             });
+            
+            // Add describe block metadata if present
+            if (describeBlock != null) {
+                field.meta.push({
+                    name: ":elixir.describe",
+                    params: [{expr: EConst(CString(describeBlock)), pos: field.pos}],
+                    pos: field.pos
+                });
+            }
+            
+            // Add async metadata if present
+            if (isAsync) {
+                field.meta.push({
+                    name: ":elixir.async",
+                    params: [],
+                    pos: field.pos
+                });
+            }
+            
+            // Add tag metadata if present
+            for (tag in tags) {
+                field.meta.push({
+                    name: ":elixir.tag",
+                    params: [{expr: EConst(CString(tag)), pos: field.pos}],
+                    pos: field.pos
+                });
+            }
         }
         
         if (hasSetup) {
