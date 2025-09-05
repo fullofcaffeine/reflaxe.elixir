@@ -3,6 +3,6 @@ defmodule MyWorker do
     %{:config => config}
   end
   def start_link(_args) do
-    %{:_0 => "ok", :_1 => "worker_pid"}
+    {"ok", "worker_pid"}
   end
 end

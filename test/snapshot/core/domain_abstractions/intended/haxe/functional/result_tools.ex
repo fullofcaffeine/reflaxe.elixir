@@ -129,7 +129,7 @@ defmodule ResultTools do
   def sequence(results) do
     values = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, results, :ok}, fn _, {acc_g, acc_results, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {results, g, :ok}, fn _, {acc_results, acc_g, acc_state} ->
   if (acc_g < acc_results.length) do
     result = results[g]
     acc_g = acc_g + 1
@@ -143,9 +143,9 @@ defmodule ResultTools do
         error = acc_g
         {:Error, error}
     end
-    {:cont, {acc_g, acc_results, acc_state}}
+    {:cont, {acc_results, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_results, acc_state}}
+    {:halt, {acc_results, acc_g, acc_state}}
   end
 end)
     {:Ok, values}

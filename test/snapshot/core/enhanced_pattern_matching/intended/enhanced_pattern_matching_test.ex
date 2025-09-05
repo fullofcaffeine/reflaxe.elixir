@@ -275,9 +275,9 @@ end
     end
   end
   def match_object_patterns(data) do
-    g = data[:name]
-    g1 = data[:age]
-    g2 = data[:active]
+    g = data.name
+    g1 = data.age
+    g2 = data.active
     case (g2) do
       false ->
         age = g1

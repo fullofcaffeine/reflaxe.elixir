@@ -57,7 +57,7 @@ end)
   end
 end)
     outer = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {outer, inner, :ok}, fn _, {acc_outer, acc_inner, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner, outer, :ok}, fn _, {acc_inner, acc_outer, acc_state} ->
   if (acc_outer < 3) do
     acc_inner = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_inner, :ok}, fn _, {acc_inner, acc_state} ->
@@ -70,9 +70,9 @@ end)
   end
 end)
     acc_outer = acc_outer + 1
-    {:cont, {acc_outer, acc_inner, acc_state}}
+    {:cont, {acc_inner, acc_outer, acc_state}}
   else
-    {:halt, {acc_outer, acc_inner, acc_state}}
+    {:halt, {acc_inner, acc_outer, acc_state}}
   end
 end)
     a = 0
