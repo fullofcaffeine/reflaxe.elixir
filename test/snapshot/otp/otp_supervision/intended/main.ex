@@ -18,7 +18,7 @@ defmodule Main do
     new_child = %{:id => "dynamic", :start => {DynamicWorker, :start_link, [%{}]}, :restart => :transient, :type => :worker}
     Supervisor.start_child(supervisor, new_child)
     stats = Supervisor.count_children(supervisor)
-    Log.trace("Active workers: " <> stats[:workers] <> ", Supervisors: " <> stats[:supervisors], %{:fileName => "Main.hx", :lineNumber => 89, :className => "Main", :methodName => "testSupervisor"})
+    Log.trace("Active workers: " <> stats.workers <> ", Supervisors: " <> stats.supervisors, %{:fileName => "Main.hx", :lineNumber => 89, :className => "Main", :methodName => "testSupervisor"})
     if (Process.Process.alive?(supervisor)) do
       Log.trace("Supervisor is running", %{:fileName => "Main.hx", :lineNumber => 93, :className => "Main", :methodName => "testSupervisor"})
     end
@@ -45,16 +45,16 @@ end)
     tasks = [Task.Task.async(fn -> 1 end), Task.Task.async(fn -> 2 end), Task.Task.async(fn -> 3 end)]
     results = Task.Task.yield_many(tasks)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {results, g, :ok}, fn _, {acc_results, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, results, :ok}, fn _, {acc_g, acc_results, acc_state} ->
   if (acc_g < acc_results.length) do
     task_result = results[g]
     acc_g = acc_g + 1
-    if (task_result[:result] != nil) do
-      Log.trace("Task result: " <> Std.string(task_result[:result]), %{:fileName => "Main.hx", :lineNumber => 148, :className => "Main", :methodName => "testTask"})
+    if (task_result.result != nil) do
+      Log.trace("Task result: " <> Std.string(task_result.result), %{:fileName => "Main.hx", :lineNumber => 148, :className => "Main", :methodName => "testTask"})
     end
-    {:cont, {acc_results, acc_g, acc_state}}
+    {:cont, {acc_g, acc_results, acc_state}}
   else
-    {:halt, {acc_results, acc_g, acc_state}}
+    {:halt, {acc_g, acc_results, acc_state}}
   end
 end)
     task = Task.Task.async(fn -> "quick" end)
@@ -62,14 +62,14 @@ end)
     funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
     g = []
     g1 = 0
-    tasks = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {funs, g1, :ok}, fn _, {acc_funs, acc_g1, acc_state} ->
+    tasks = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, funs, :ok}, fn _, {acc_g1, acc_funs, acc_state} ->
   fun = funs[g1]
   if acc_g1 < acc_funs.length do
     acc_g1 = acc_g1 + 1
     g ++ [Task.Task.async(fun)]
-    {:cont, {acc_funs, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_funs, acc_state}}
   else
-    {:halt, {acc_funs, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_funs, acc_state}}
   end
 end)
 g
@@ -111,8 +111,8 @@ end
   end
   defp test_task_supervisor() do
     supervisor_result = Task.Supervisor.Task.Supervisor.start_link()
-    if (supervisor_result[:_0] == "ok") do
-      supervisor = supervisor_result[:_1]
+    if (elem(supervisor_result, -1) == "ok") do
+      supervisor = elem(supervisor_result, 0)
       task = Task.Supervisor.Task.Supervisor.async(supervisor, fn -> "supervised" end)
       result = Task.Task.await(task)
       Log.trace("Supervised task result: " <> result, %{:fileName => "Main.hx", :lineNumber => 192, :className => "Main", :methodName => "testTaskSupervisor"})
@@ -128,28 +128,28 @@ end
       funs = [fn -> 100 end, fn -> 200 end, fn -> 300 end]
       g = []
       g1 = 0
-      tasks = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {funs, g1, :ok}, fn _, {acc_funs, acc_g1, acc_state} ->
+      tasks = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, funs, :ok}, fn _, {acc_g1, acc_funs, acc_state} ->
   fun = funs[g1]
   if acc_g1 < acc_funs.length do
     acc_g1 = acc_g1 + 1
     g ++ [Task.Supervisor.Task.Supervisor.async(supervisor, fun)]
-    {:cont, {acc_funs, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_funs, acc_state}}
   else
-    {:halt, {acc_funs, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_funs, acc_state}}
   end
 end)
 g
       g = []
       g1 = 0
       concurrent_results = tasks
-Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, tasks, :ok}, fn _, {acc_g1, acc_tasks, acc_state} ->
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tasks, g1, :ok}, fn _, {acc_tasks, acc_g1, acc_state} ->
   task = tasks[g1]
   if (acc_g1 < acc_tasks.length) do
     acc_g1 = acc_g1 + 1
     g ++ [Task.Task.await(task)]
-    {:cont, {acc_g1, acc_tasks, acc_state}}
+    {:cont, {acc_tasks, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_tasks, acc_state}}
+    {:halt, {acc_tasks, acc_g1, acc_state}}
   end
 end)
 g
@@ -162,7 +162,7 @@ g
     result = Supervisor.start_link(children, options)
     supervisor = result
     stats = Supervisor.count_children(supervisor)
-    Log.trace("Supervisor - Workers: " <> stats[:workers] <> ", Supervisors: " <> stats[:supervisors], %{:fileName => "Main.hx", :lineNumber => 271, :className => "Main", :methodName => "testSupervisionTree"})
+    Log.trace("Supervisor - Workers: " <> stats.workers <> ", Supervisors: " <> stats.supervisors, %{:fileName => "Main.hx", :lineNumber => 271, :className => "Main", :methodName => "testSupervisionTree"})
     children_list = Supervisor.which_children(supervisor)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {children_list, g, :ok}, fn _, {acc_children_list, acc_g, acc_state} ->

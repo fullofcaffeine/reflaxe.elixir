@@ -4,7 +4,7 @@ defmodule StringTools do
     result = ""
     g = 0
     g1 = s.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g1, g, :ok}, fn _, {acc_result, acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.charCodeAt(i)
@@ -13,9 +13,9 @@ defmodule StringTools do
     else
       acc_result = acc_result <> "%" <> hex(c, 2).toUpperCase()
     end
-    {:cont, {acc_result, acc_g, acc_g1, acc_state}}
+    {:cont, {acc_result, acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_result, acc_g, acc_g1, acc_state}}
+    {:halt, {acc_result, acc_g1, acc_g, acc_state}}
   end
 end)
     result
@@ -84,12 +84,12 @@ end)
   def rtrim(s) do
     l = s.length
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {r, s, l, :ok}, fn _, {acc_r, acc_s, acc_l, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r, :ok}, fn _, {acc_s, acc_l, acc_r, acc_state} ->
   if (acc_r < acc_l && is_space(acc_s, ((acc_l - acc_r) - 1))) do
     acc_r = acc_r + 1
-    {:cont, {acc_r, acc_s, acc_l, acc_state}}
+    {:cont, {acc_s, acc_l, acc_r, acc_state}}
   else
-    {:halt, {acc_r, acc_s, acc_l, acc_state}}
+    {:halt, {acc_s, acc_l, acc_r, acc_state}}
   end
 end)
     if (r > 0) do
@@ -130,22 +130,22 @@ end)
   def hex(n, digits) do
     s = ""
     hex_chars = "0123456789ABCDEF"
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s, :ok}, fn _, {acc_n, acc_s, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, n, :ok}, fn _, {acc_s, acc_n, acc_state} ->
   if (acc_n > 0) do
     acc_s = hex_chars.charAt(acc_n &&& 15) <> acc_s
     acc_n = acc_n + 4
-    {:cont, {acc_n, acc_s, acc_state}}
+    {:cont, {acc_s, acc_n, acc_state}}
   else
-    {:halt, {acc_n, acc_s, acc_state}}
+    {:halt, {acc_s, acc_n, acc_state}}
   end
 end)
     if (digits != nil) do
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digits, s, :ok}, fn _, {acc_digits, acc_s, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, digits, :ok}, fn _, {acc_s, acc_digits, acc_state} ->
   if (acc_s.length < acc_digits) do
     acc_s = "0" <> acc_s
-    {:cont, {acc_digits, acc_s, acc_state}}
+    {:cont, {acc_s, acc_digits, acc_state}}
   else
-    {:halt, {acc_digits, acc_s, acc_state}}
+    {:halt, {acc_s, acc_digits, acc_state}}
   end
 end)
     end
@@ -216,7 +216,7 @@ end)
     end
     g = start
     g1 = str.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g1, g, :ok}, fn _, {acc_result, acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = str.charCodeAt(i)
@@ -225,9 +225,9 @@ end)
     else
       nil
     end
-    {:cont, {acc_g, acc_g1, acc_result, acc_state}}
+    {:cont, {acc_result, acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_result, acc_state}}
+    {:halt, {acc_result, acc_g1, acc_g, acc_state}}
   end
 end)
     if negative do

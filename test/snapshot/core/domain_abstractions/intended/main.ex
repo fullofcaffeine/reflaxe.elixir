@@ -102,7 +102,7 @@ end)
 g), "")
 )]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_ids, g, :ok}, fn _, {acc_invalid_ids, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_ids, :ok}, fn _, {acc_g, acc_invalid_ids, acc_state} ->
   if (acc_g < acc_invalid_ids.length) do
     invalid_id = invalid_ids[g]
     acc_g = acc_g + 1
@@ -116,9 +116,9 @@ g), "")
         reason = acc_g
         Log.trace("Correctly rejected \"" <> invalid_id <> "\": " <> reason, %{:fileName => "Main.hx", :lineNumber => 137, :className => "Main", :methodName => "testUserIdValidation"})
     end
-    {:cont, {acc_invalid_ids, acc_g, acc_state}}
+    {:cont, {acc_g, acc_invalid_ids, acc_state}}
   else
-    {:halt, {acc_invalid_ids, acc_g, acc_state}}
+    {:halt, {acc_g, acc_invalid_ids, acc_state}}
   end
 end)
     id1_result = {:Parse, "User123"}
@@ -135,7 +135,7 @@ end)
     Log.trace("=== PositiveInt Arithmetic Tests ===", %{:fileName => "Main.hx", :lineNumber => 158, :className => "Main", :methodName => "testPositiveIntArithmetic"})
     valid_numbers = [1, 5, 42, 100, 999]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, valid_numbers, :ok}, fn _, {acc_g, acc_valid_numbers, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {valid_numbers, g, :ok}, fn _, {acc_valid_numbers, acc_g, acc_state} ->
   if (acc_g < acc_valid_numbers.length) do
     valid_num = valid_numbers[g]
     acc_g = acc_g + 1
@@ -169,14 +169,14 @@ end)
         reason = acc_g
         Log.trace("Unexpected PositiveInt validation failure for " <> valid_num <> ": " <> reason, %{:fileName => "Main.hx", :lineNumber => 190, :className => "Main", :methodName => "testPositiveIntArithmetic"})
     end
-    {:cont, {acc_g, acc_valid_numbers, acc_state}}
+    {:cont, {acc_valid_numbers, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_valid_numbers, acc_state}}
+    {:halt, {acc_valid_numbers, acc_g, acc_state}}
   end
 end)
     invalid_numbers = [0, -1, -42, -100]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_numbers, :ok}, fn _, {acc_g, acc_invalid_numbers, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_numbers, g, :ok}, fn _, {acc_invalid_numbers, acc_g, acc_state} ->
   if (acc_g < acc_invalid_numbers.length) do
     invalid_num = invalid_numbers[g]
     acc_g = acc_g + 1
@@ -190,9 +190,9 @@ end)
         reason = acc_g
         Log.trace("Correctly rejected " <> invalid_num <> ": " <> reason, %{:fileName => "Main.hx", :lineNumber => 202, :className => "Main", :methodName => "testPositiveIntArithmetic"})
     end
-    {:cont, {acc_g, acc_invalid_numbers, acc_state}}
+    {:cont, {acc_invalid_numbers, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_invalid_numbers, acc_state}}
+    {:halt, {acc_invalid_numbers, acc_g, acc_state}}
   end
 end)
     five = ResultTools.unwrap({:Parse, 5})
@@ -339,14 +339,14 @@ end)
     parts = NonEmptyString_Impl_.split_non_empty(test_str, " ")
     Log.trace("Split by space: " <> parts.length <> " parts", %{:fileName => "Main.hx", :lineNumber => 319, :className => "Main", :methodName => "testNonEmptyStringOperations"})
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, parts, :ok}, fn _, {acc_g, acc_parts, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {parts, g, :ok}, fn _, {acc_parts, acc_g, acc_state} ->
   if (acc_g < acc_parts.length) do
     part = parts[g]
     acc_g = acc_g + 1
     Log.trace("  Part: " <> NonEmptyString_Impl_.to_string(part), %{:fileName => "Main.hx", :lineNumber => 321, :className => "Main", :methodName => "testNonEmptyStringOperations"})
-    {:cont, {acc_g, acc_parts, acc_state}}
+    {:cont, {acc_parts, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_parts, acc_state}}
+    {:halt, {acc_parts, acc_g, acc_state}}
   end
 end)
   end
@@ -383,7 +383,7 @@ end)
   if (acc_g < acc_invalid_inputs.length) do
     input = invalid_inputs[g]
     acc_g = acc_g + 1
-    acc_g = {:BuildUserProfile, input[:userId], input[:email], input[:score]}
+    acc_g = {:BuildUserProfile, input.userId, input.email, input.score}
     case (elem(acc_g, 0)) do
       0 ->
         _g = elem(acc_g, 1)
@@ -405,7 +405,7 @@ end)
   if (acc_g < acc_edge_cases.length) do
     edge_case = edge_cases[g]
     acc_g = acc_g + 1
-    acc_g = {:BuildUserProfile, edge_case[:userId], edge_case[:email], edge_case[:score]}
+    acc_g = {:BuildUserProfile, edge_case.userId, edge_case.email, edge_case.score}
     case (elem(acc_g, 0)) do
       0 ->
         acc_g = elem(acc_g, 1)
@@ -427,11 +427,11 @@ end)
     registration_data = [%{:userId => "alice123", :email => "alice@example.com", :preferredName => "Alice Smith"}, %{:userId => "bob456", :email => "bob.jones@company.org", :preferredName => "Bob"}, %{:userId => "charlie", :email => "charlie@test.dev", :preferredName => "Charlie Brown"}]
     valid_users = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, registration_data, :ok}, fn _, {acc_g, acc_registration_data, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {registration_data, g, :ok}, fn _, {acc_registration_data, acc_g, acc_state} ->
   if (acc_g < acc_registration_data.length) do
     user_data = registration_data[g]
     acc_g = acc_g + 1
-    user_result = {:CreateUser, user_data[:userId], user_data[:email], user_data[:preferredName]}
+    user_result = {:CreateUser, user_data.userId, user_data.email, user_data.preferredName}
     case (elem(user_result, 0)) do
       0 ->
         acc_g = elem(user_result, 1)
@@ -443,19 +443,19 @@ end)
         reason = acc_g
         Log.trace("User creation failed: " <> reason, %{:fileName => "Main.hx", :lineNumber => 435, :className => "Main", :methodName => "testRealWorldScenarios"})
     end
-    {:cont, {acc_g, acc_registration_data, acc_state}}
+    {:cont, {acc_registration_data, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_registration_data, acc_state}}
+    {:halt, {acc_registration_data, acc_g, acc_state}}
   end
 end)
     Log.trace("Successfully created " <> valid_users.length <> " users", %{:fileName => "Main.hx", :lineNumber => 439, :className => "Main", :methodName => "testRealWorldScenarios"})
     config_data = [%{:timeout => "30", :retries => "3", :name => "production"}, %{:timeout => "0", :retries => "5", :name => ""}, %{:timeout => "60", :retries => "-1", :name => "test"}]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, config_data, :ok}, fn _, {acc_g, acc_config_data, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {config_data, g, :ok}, fn _, {acc_config_data, acc_g, acc_state} ->
   if (acc_g < acc_config_data.length) do
     config = config_data[g]
     acc_g = acc_g + 1
-    config_result = {:ValidateConfiguration, config[:timeout], config[:retries], config[:name]}
+    config_result = {:ValidateConfiguration, config.timeout, config.retries, config.name}
     case (elem(config_result, 0)) do
       0 ->
         acc_g = elem(config_result, 1)
@@ -466,9 +466,9 @@ end)
         reason = acc_g
         Log.trace("Config invalid: " <> reason, %{:fileName => "Main.hx", :lineNumber => 454, :className => "Main", :methodName => "testRealWorldScenarios"})
     end
-    {:cont, {acc_g, acc_config_data, acc_state}}
+    {:cont, {acc_config_data, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_config_data, acc_state}}
+    {:halt, {acc_config_data, acc_g, acc_state}}
   end
 end)
   end

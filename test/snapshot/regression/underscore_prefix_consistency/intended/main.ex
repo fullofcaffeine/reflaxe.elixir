@@ -17,8 +17,8 @@ defmodule Main do
     result = case (elem(g, 0)) do
   0 ->
     g = elem(g, 1)
-    g1 = g[:metadata]
-    g = g[:value]
+    g1 = g.metadata
+    g = g.value
     __meta = g1
     v = g
     v

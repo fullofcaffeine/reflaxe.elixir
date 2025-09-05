@@ -28,14 +28,14 @@ defmodule Main do
     var_args = fn args ->
   sum = 0
   g = 0
-  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, sum, args, :ok}, fn _, {acc_g, acc_sum, acc_args, acc_state} ->
+  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, args, sum, :ok}, fn _, {acc_g, acc_args, acc_sum, acc_state} ->
   if (acc_g < acc_args.length) do
     arg = args[g]
     acc_g = acc_g + 1
     acc_sum = acc_sum + arg
-    {:cont, {acc_g, acc_sum, acc_args, acc_state}}
+    {:cont, {acc_g, acc_args, acc_sum, acc_state}}
   else
-    {:halt, {acc_g, acc_sum, acc_args, acc_state}}
+    {:halt, {acc_g, acc_args, acc_sum, acc_state}}
   end
 end)
   sum

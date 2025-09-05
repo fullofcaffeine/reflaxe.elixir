@@ -102,7 +102,7 @@ end)
   defp test_array_patterns() do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, arrays, :ok}, fn _, {acc_g, acc_arrays, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arrays, g, :ok}, fn _, {acc_arrays, acc_g, acc_state} ->
   if (acc_g < acc_arrays.length) do
     arr = arrays[g]
     acc_g = acc_g + 1
@@ -135,9 +135,9 @@ else
 end)
 end
     Log.trace("Array pattern: " <> description, %{:fileName => "Main.hx", :lineNumber => 119, :className => "Main", :methodName => "testArrayPatterns"})
-    {:cont, {acc_g, acc_arrays, acc_state}}
+    {:cont, {acc_arrays, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_arrays, acc_state}}
+    {:halt, {acc_arrays, acc_g, acc_state}}
   end
 end)
   end

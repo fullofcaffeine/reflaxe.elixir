@@ -40,8 +40,8 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
   if (acc_g.hasNext()) do
     acc_g = acc_g.next()
-    name = g[:key]
-    score = g[:value]
+    name = acc_g.key
+    score = acc_g.value
     Log.trace("" <> name <> " scored " <> score, %{:fileName => "Main.hx", :lineNumber => 44, :className => "Main", :methodName => "testBasicForLoops"})
     {:cont, {acc_g, acc_state}}
   else
@@ -132,7 +132,7 @@ end)
     Log.trace("Nested for: " <> 2 <> ", " <> 0, %{:fileName => "Main.hx", :lineNumber => 153, :className => "Main", :methodName => "testNestedLoops"})
     Log.trace("Nested for: " <> 2 <> ", " <> 1, %{:fileName => "Main.hx", :lineNumber => 153, :className => "Main", :methodName => "testNestedLoops"})
     outer = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner, outer, :ok}, fn _, {acc_inner, acc_outer, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {outer, inner, :ok}, fn _, {acc_outer, acc_inner, acc_state} ->
   if (acc_outer < 2) do
     acc_inner = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_inner, :ok}, fn _, {acc_inner, acc_state} ->
@@ -145,9 +145,9 @@ end)
   end
 end)
     acc_outer = acc_outer + 1
-    {:cont, {acc_inner, acc_outer, acc_state}}
+    {:cont, {acc_outer, acc_inner, acc_state}}
   else
-    {:halt, {acc_inner, acc_outer, acc_state}}
+    {:halt, {acc_outer, acc_inner, acc_state}}
   end
 end)
     j = 0
@@ -211,7 +211,7 @@ end)
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     processed = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, numbers, :ok}, fn _, {acc_g, acc_numbers, acc_state} ->
   if (acc_g < acc_numbers.length) do
     n = numbers[g]
     acc_g = acc_g + 1
@@ -219,9 +219,9 @@ end)
       throw(:continue)
     end
     processed ++ [n * 2]
-    {:cont, {acc_numbers, acc_g, acc_state}}
+    {:cont, {acc_g, acc_numbers, acc_state}}
   else
-    {:halt, {acc_numbers, acc_g, acc_state}}
+    {:halt, {acc_g, acc_numbers, acc_state}}
   end
 end)
     Log.trace("Processed with continue: " <> Std.string(processed), %{:fileName => "Main.hx", :lineNumber => 204, :className => "Main", :methodName => "testLoopControlFlow"})
@@ -256,16 +256,16 @@ end
     data = [1, 2, 3, 4, 5]
     acc = %{:sum => 0, :count => 0, :product => 1}
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {data, g, :ok}, fn _, {acc_data, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, data, :ok}, fn _, {acc_g, acc_data, acc_state} ->
   if (acc_g < acc_data.length) do
     n = data[g]
     acc_g = acc_g + 1
-    sum = acc[:sum] + n
-    acc[:count] + 1
-    product = acc[:product] * n
-    {:cont, {acc_data, acc_g, acc_state}}
+    sum = acc.sum + n
+    acc.count + 1
+    product = acc.product * n
+    {:cont, {acc_g, acc_data, acc_state}}
   else
-    {:halt, {acc_data, acc_g, acc_state}}
+    {:halt, {acc_g, acc_data, acc_state}}
   end
 end)
     Log.trace("Accumulator: " <> Std.string(acc), %{:fileName => "Main.hx", :lineNumber => 243, :className => "Main", :methodName => "testComplexPatterns"})

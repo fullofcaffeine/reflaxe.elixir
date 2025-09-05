@@ -80,23 +80,15 @@ if label != "", do: label <> ": " <> result, else: result
     _copy_result = File.File.copy("source.txt", "dest.txt")
     _rename_result = File.File.rename("old.txt", "new.txt")
     result = File.File.read("text_file.txt")
-    _text_content = if result[:_0] == "ok" do
-  result[:_1]
-else
-  nil
-end
+    _text_content = if elem(result, -1) == "ok", do: elem(result, 0), else: nil
     result = File.File.write("output.txt", "content")
-    _write_success = result[:_0] == "ok"
+    _write_success = elem(result, -1) == "ok"
     result = File.File.read("multi_line.txt")
-    content = if result[:_0] == "ok" do
-  result[:_1]
-else
-  nil
-end
+    content = if elem(result, -1) == "ok", do: elem(result, 0), else: nil
     _lines = content
 if content != nil, do: content.split("\n"), else: nil
     result = File.File.mkdir_p("new_dir")
-    _dir_created = result[:_0] == "ok"
+    _dir_created = elem(result, -1) == "ok"
   end
   defp test_path_externs() do
     _joined = Path.Path.join(["home", "user", "documents"])

@@ -49,11 +49,11 @@ defmodule Main do
     obj2_title = nil
     obj2_description = nil
     obj2_active = nil
-    tmp = data[:title]
+    tmp = data.title
     obj2_title = if tmp != nil, do: tmp, else: "Untitled"
-    tmp = data[:description]
+    tmp = data.description
     obj2_description = if tmp != nil, do: tmp, else: "No description"
-    tmp = data[:active]
+    tmp = data.active
     obj2_active = if tmp != nil, do: tmp, else: true
   end
   defp test_array_literals() do

@@ -82,13 +82,13 @@ end)
   def fold(it, f, first) do
     acc = first
     v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc, v, :ok}, fn _, {acc_acc, acc_v, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, acc, :ok}, fn _, {acc_v, acc_acc, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
     acc_acc = f.(acc_v, acc_acc)
-    {:cont, {acc_acc, acc_v, acc_state}}
+    {:cont, {acc_v, acc_acc, acc_state}}
   else
-    {:halt, {acc_acc, acc_v, acc_state}}
+    {:halt, {acc_v, acc_acc, acc_state}}
   end
 end)
     acc
@@ -97,26 +97,26 @@ end)
     n = 0
     if (pred == nil) do
       item = it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, item, :ok}, fn _, {acc_n, acc_item, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {item, n, :ok}, fn _, {acc_item, acc_n, acc_state} ->
   if (acc_item.hasNext()) do
     _item = acc_item.next()
     acc_n = acc_n + 1
-    {:cont, {acc_n, acc_item, acc_state}}
+    {:cont, {acc_item, acc_n, acc_state}}
   else
-    {:halt, {acc_n, acc_item, acc_state}}
+    {:halt, {acc_item, acc_n, acc_state}}
   end
 end)
     else
       v = it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, v, :ok}, fn _, {acc_n, acc_v, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, n, :ok}, fn _, {acc_v, acc_n, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
     if (pred.(acc_v)) do
       acc_n = acc_n + 1
     end
-    {:cont, {acc_n, acc_v, acc_state}}
+    {:cont, {acc_v, acc_n, acc_state}}
   else
-    {:halt, {acc_n, acc_v, acc_state}}
+    {:halt, {acc_v, acc_n, acc_state}}
   end
 end)
     end
@@ -177,14 +177,14 @@ end)
   def index_of(it, v) do
     i = 0
     x = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, x, :ok}, fn _, {acc_i, acc_x, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x, i, :ok}, fn _, {acc_x, acc_i, acc_state} ->
   if (acc_x.hasNext()) do
     acc_x = acc_x.next()
     if (acc_x == v), do: acc_i
     acc_i = acc_i + 1
-    {:cont, {acc_i, acc_x, acc_state}}
+    {:cont, {acc_x, acc_i, acc_state}}
   else
-    {:halt, {acc_i, acc_x, acc_state}}
+    {:halt, {acc_x, acc_i, acc_state}}
   end
 end)
     -1
