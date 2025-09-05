@@ -1035,6 +1035,9 @@ class ElixirASTPrinter {
             case EBinary(_, left, right):
                 // Simple binary operations
                 isSimpleExpression(left) && isSimpleExpression(right);
+            case EMatch(_, _):
+                // Assignments cannot be used in inline if-statements
+                false;
             case _:
                 false;
         };
