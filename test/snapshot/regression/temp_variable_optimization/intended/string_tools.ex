@@ -84,12 +84,12 @@ end)
   def rtrim(s) do
     l = s.length
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {r, s, l, :ok}, fn _, {acc_r, acc_s, acc_l, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, r, s, :ok}, fn _, {acc_l, acc_r, acc_s, acc_state} ->
   if (acc_r < acc_l && is_space(acc_s, ((acc_l - acc_r) - 1))) do
     acc_r = acc_r + 1
-    {:cont, {acc_r, acc_s, acc_l, acc_state}}
+    {:cont, {acc_l, acc_r, acc_s, acc_state}}
   else
-    {:halt, {acc_r, acc_s, acc_l, acc_state}}
+    {:halt, {acc_l, acc_r, acc_s, acc_state}}
   end
 end)
     if (r > 0) do
@@ -101,12 +101,12 @@ end)
   def lpad(s, c, l) do
     if (c.length <= 0), do: s
     buf = ""
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, buf, l, :ok}, fn _, {acc_s, acc_buf, acc_l, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, s, buf, :ok}, fn _, {acc_l, acc_s, acc_buf, acc_state} ->
   if (acc_buf.length + acc_s.length < acc_l) do
     acc_buf = acc_buf <> c
-    {:cont, {acc_s, acc_buf, acc_l, acc_state}}
+    {:cont, {acc_l, acc_s, acc_buf, acc_state}}
   else
-    {:halt, {acc_s, acc_buf, acc_l, acc_state}}
+    {:halt, {acc_l, acc_s, acc_buf, acc_state}}
   end
 end)
     buf <> s
@@ -130,22 +130,22 @@ end)
   def hex(n, digits) do
     s = ""
     hex_chars = "0123456789ABCDEF"
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s, :ok}, fn _, {acc_n, acc_s, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, n, :ok}, fn _, {acc_s, acc_n, acc_state} ->
   if (acc_n > 0) do
     acc_s = hex_chars.charAt(acc_n &&& 15) <> acc_s
     acc_n = acc_n + 4
-    {:cont, {acc_n, acc_s, acc_state}}
+    {:cont, {acc_s, acc_n, acc_state}}
   else
-    {:halt, {acc_n, acc_s, acc_state}}
+    {:halt, {acc_s, acc_n, acc_state}}
   end
 end)
     if (digits != nil) do
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digits, s, :ok}, fn _, {acc_digits, acc_s, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, digits, :ok}, fn _, {acc_s, acc_digits, acc_state} ->
   if (acc_s.length < acc_digits) do
     acc_s = "0" <> acc_s
-    {:cont, {acc_digits, acc_s, acc_state}}
+    {:cont, {acc_s, acc_digits, acc_state}}
   else
-    {:halt, {acc_digits, acc_s, acc_state}}
+    {:halt, {acc_s, acc_digits, acc_state}}
   end
 end)
     end
@@ -160,14 +160,14 @@ end)
   def quote_regexp_meta(s) do
     special_chars = ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, special_chars, g, :ok}, fn _, {acc_s, acc_special_chars, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, special_chars, s, :ok}, fn _, {acc_g, acc_special_chars, acc_s, acc_state} ->
   if (acc_g < acc_special_chars.length) do
     char = special_chars[g]
     acc_g = acc_g + 1
     acc_s = replace(acc_s, char, "\\" <> char)
-    {:cont, {acc_s, acc_special_chars, acc_g, acc_state}}
+    {:cont, {acc_g, acc_special_chars, acc_s, acc_state}}
   else
-    {:halt, {acc_s, acc_special_chars, acc_g, acc_state}}
+    {:halt, {acc_g, acc_special_chars, acc_s, acc_state}}
   end
 end)
     s
@@ -178,7 +178,7 @@ end)
       result = 0
       g = 0
       g1 = hex.length
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = hex.charCodeAt(i)
@@ -196,9 +196,9 @@ end)
         end
       end
     end
-    {:cont, {acc_g, acc_g1, acc_result, acc_state}}
+    {:cont, {acc_result, acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_result, acc_state}}
+    {:halt, {acc_result, acc_g, acc_g1, acc_state}}
   end
 end)
       result
