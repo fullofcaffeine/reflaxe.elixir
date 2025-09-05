@@ -40,14 +40,14 @@ end
   end
   def create_user(attrs) do
     changeset = UserChangeset.changeset(nil, attrs)
-    {:Insert, changeset}
+    TodoApp.Repo.insert(changeset)
   end
   def update_user(user, attrs) do
     changeset = UserChangeset.changeset(user, attrs)
-    {:Update, changeset}
+    TodoApp.Repo.update(changeset)
   end
   def delete_user(user) do
-    {:Delete, user}
+    TodoApp.Repo.delete(user)
   end
   def search_users(_term) do
     []

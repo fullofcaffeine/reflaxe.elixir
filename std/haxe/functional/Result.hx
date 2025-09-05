@@ -17,6 +17,7 @@ package haxe.functional;
  * 
  * @see ResultTools for functional operations (map, flatMap, fold, etc.)
  */
+@:elixirIdiomatic
 enum Result<T, E> {
     /**
      * Successful result containing a value of type T

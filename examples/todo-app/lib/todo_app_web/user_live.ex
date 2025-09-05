@@ -52,7 +52,11 @@ defmodule TodoAppWeb.UserLive do
   defp handle_save_user(params, socket) do
     user_params = params.user
     selected_user = socket.assigns.selectedUser
-    result = if (selected_user == nil), do: {:CreateUser, user_params}, else: {:UpdateUser, selected_user, user_params}
+    result = if (selected_user == nil) do
+  Users.create_user(user_params)
+else
+  Users.update_user(selected_user, user_params)
+end
     case (elem(result, 0)) do
       0 ->
         g = elem(result, 1)
@@ -67,7 +71,7 @@ defmodule TodoAppWeb.UserLive do
   end
   defp handle_delete_user(user_id, socket) do
     user = Users.get_user(user_id)
-    result = {:DeleteUser, user}
+    result = Users.delete_user(user)
     case (elem(result, 0)) do
       0 ->
         g = elem(result, 1)

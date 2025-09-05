@@ -14,7 +14,7 @@ defmodule OptionTools do
       0 ->
         g = elem(option, 1)
         value = g
-        {:ModuleRef, value}
+        transform.(value)
       1 ->
         :none
     end
@@ -74,7 +74,7 @@ defmodule OptionTools do
         _g = elem(first, 1)
         first
       1 ->
-        {:ModuleRef}
+        fn_param.()
     end
   end
   def is_some(option) do
@@ -120,7 +120,7 @@ end)
   def values(options) do
     result = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, options, :ok}, fn _, {acc_g, acc_options, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {options, g, :ok}, fn _, {acc_options, acc_g, acc_state} ->
   if (acc_g < acc_options.length) do
     option = options[g]
     acc_g = acc_g + 1
@@ -132,9 +132,9 @@ end)
       1 ->
         nil
     end
-    {:cont, {acc_g, acc_options, acc_state}}
+    {:cont, {acc_options, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_options, acc_state}}
+    {:halt, {acc_options, acc_g, acc_state}}
   end
 end)
     result
@@ -144,9 +144,9 @@ end)
       0 ->
         g = elem(option, 1)
         value = g
-        {:Ok, value}
+        value
       1 ->
-        {:Error, error}
+        error
     end
   end
   def from_result(result) do

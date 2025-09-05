@@ -63,19 +63,19 @@ end)
 end)
     sum = 0
     k = 1
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, k, :ok}, fn _, {acc_sum, acc_k, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, sum, :ok}, fn _, {acc_k, acc_sum, acc_state} ->
   if (acc_k <= 5) do
     acc_sum = acc_sum + acc_k
     acc_k = acc_k + 1
-    {:cont, {acc_sum, acc_k, acc_state}}
+    {:cont, {acc_k, acc_sum, acc_state}}
   else
-    {:halt, {acc_sum, acc_k, acc_state}}
+    {:halt, {acc_k, acc_sum, acc_state}}
   end
 end)
     Log.trace("Sum: " <> sum, %{:fileName => "Main.hx", :lineNumber => 91, :className => "Main", :methodName => "testLoopCounters"})
     total = 0
     x = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {y, x, total, :ok}, fn _, {acc_y, acc_x, acc_total, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {y, total, x, :ok}, fn _, {acc_y, acc_total, acc_x, acc_state} ->
   if (acc_x < 3) do
     acc_y = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_y, acc_total, :ok}, fn _, {acc_y, acc_total, acc_state} ->
@@ -88,9 +88,9 @@ end)
   end
 end)
     acc_x = acc_x + 1
-    {:cont, {acc_y, acc_x, acc_total, acc_state}}
+    {:cont, {acc_y, acc_total, acc_x, acc_state}}
   else
-    {:halt, {acc_y, acc_x, acc_total, acc_state}}
+    {:halt, {acc_y, acc_total, acc_x, acc_state}}
   end
 end)
     Log.trace("Total from nested loops: " <> total, %{:fileName => "Main.hx", :lineNumber => 104, :className => "Main", :methodName => "testLoopCounters"})

@@ -1,12 +1,12 @@
 defmodule TodoPubSub do
   def subscribe(topic) do
-    {:SubscribeWithConverter, topic, TodoPubSub.topicToString}
+    Phoenix.SafePubSub.subscribe_with_converter(topic, TodoPubSub.topicToString)
   end
   def broadcast(topic, message) do
-    {:BroadcastWithConverters, topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir}
+    Phoenix.SafePubSub.broadcast_with_converters(topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir)
   end
   def parse_message(msg) do
-    {:ParseWithConverter, msg, TodoPubSub.parseMessageImpl}
+    Phoenix.SafePubSub.parse_with_converter(msg, TodoPubSub.parseMessageImpl)
   end
   defp topic_to_string(topic) do
     case (elem(topic, 0)) do
@@ -62,7 +62,7 @@ end
     case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
-          bulk_action = {:ParseBulkAction, msg.action}
+          bulk_action = parse_bulk_action(msg.action)
           case (elem(bulk_action, 0)) do
             0 ->
               g = elem(bulk_action, 1)
@@ -76,7 +76,7 @@ end
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
-          alert_level = {:ParseAlertLevel, msg.level}
+          alert_level = parse_alert_level(msg.level)
           case (elem(alert_level, 0)) do
             0 ->
               g = elem(alert_level, 1)

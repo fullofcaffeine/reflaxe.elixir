@@ -10,14 +10,14 @@ defmodule Main do
     results = []
     g = 0
     g1 = items.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     item = items[i]
     results ++ ["" <> i <> ": " <> item]
-    {:cont, {acc_g, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
     Log.trace(results, %{:fileName => "Main.hx", :lineNumber => 20, :className => "Main", :methodName => "testBasicIndexedIteration"})
@@ -27,13 +27,13 @@ end)
     indexed = []
     g = 0
     g1 = items.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     indexed ++ ["Item #" <> (i + 1) <> ": " <> items[i]]
-    {:cont, {acc_g, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
     indexed
@@ -43,13 +43,13 @@ end)
     even_indexed = []
     g = 0
     g1 = items.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     if (i rem 2 == 0), do: even_indexed ++ [items[i]]
-    {:cont, {acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     even_indexed

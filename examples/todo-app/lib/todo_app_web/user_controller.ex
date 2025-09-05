@@ -22,7 +22,7 @@ defmodule TodoAppWeb.UserController do
     end
   end
   def create(conn, params) do
-    result = {:CreateUser, params}
+    result = Users.create_user(params)
     case (elem(result, 0)) do
       0 ->
         g = elem(result, 1)
@@ -44,7 +44,7 @@ defmodule TodoAppWeb.UserController do
       Phoenix.Controller.json(this1, %{:error => "User not found"})
     end
     update_attrs = %{:name => params.name, :email => params.email, :age => params.age, :active => params.active}
-    result = {:UpdateUser, user, update_attrs}
+    result = Users.update_user(user, update_attrs)
     case (elem(result, 0)) do
       0 ->
         g = elem(result, 1)
@@ -65,7 +65,7 @@ defmodule TodoAppWeb.UserController do
       this1 = Plug.Conn.put_status(conn, 404)
       Phoenix.Controller.json(this1, %{:error => "User not found"})
     end
-    result = {:DeleteUser, user}
+    result = Users.delete_user(user)
     case (elem(result, 0)) do
       0 ->
         g = elem(result, 1)

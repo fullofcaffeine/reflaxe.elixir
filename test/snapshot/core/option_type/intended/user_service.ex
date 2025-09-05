@@ -15,10 +15,10 @@ end)
     :none
   end
   def get_user_email(name) do
-    {:Then, {:FindUser, name}, fn user -> user.email end}
+    OptionTools.then(find_user(name), fn user -> user.email end)
   end
   def notify_user(name, message) do
-    OptionTools.unwrap({:Map, {:GetUserEmail, name}, fn email -> send_email(email, message) end}, false)
+    OptionTools.unwrap(OptionTools.map(get_user_email(name), fn email -> send_email(email, message) end), false)
   end
   defp send_email(email, message) do
     Log.trace("Sending email to " <> email <> ": " <> message, %{:fileName => "Main.hx", :lineNumber => 225, :className => "UserService", :methodName => "sendEmail"})

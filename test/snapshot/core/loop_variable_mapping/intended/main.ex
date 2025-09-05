@@ -15,7 +15,7 @@ defmodule Main do
 end)
     g = 0
     g1 = array.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, g, :ok}, fn _, {acc_g, acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, g, :ok}, fn _, {acc_g1, acc_g, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     acc_g = 0
@@ -29,9 +29,9 @@ end)
     {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
-    {:cont, {acc_g, acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_g, acc_state}}
   end
 end)
     filtered = []
@@ -57,25 +57,25 @@ end)
     result = result ++ [i]
     sum = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, array, sum, :ok}, fn _, {acc_g, acc_array, acc_sum, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, array, g, :ok}, fn _, {acc_sum, acc_array, acc_g, acc_state} ->
   if (acc_g < acc_array.length) do
     n = array[g]
     acc_g = acc_g + 1
     acc_sum = acc_sum + n
-    {:cont, {acc_g, acc_array, acc_sum, acc_state}}
+    {:cont, {acc_sum, acc_array, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_array, acc_sum, acc_state}}
+    {:halt, {acc_sum, acc_array, acc_g, acc_state}}
   end
 end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, array, sum, :ok}, fn _, {acc_g, acc_array, acc_sum, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, g, array, :ok}, fn _, {acc_sum, acc_g, acc_array, acc_state} ->
   if (acc_g < acc_array.length) do
     n = array[g]
     acc_g = acc_g + 1
     acc_sum = (acc_sum - n)
-    {:cont, {acc_g, acc_array, acc_sum, acc_state}}
+    {:cont, {acc_sum, acc_g, acc_array, acc_state}}
   else
-    {:halt, {acc_g, acc_array, acc_sum, acc_state}}
+    {:halt, {acc_sum, acc_g, acc_array, acc_state}}
   end
 end)
     Log.trace(result, %{:fileName => "Main.hx", :lineNumber => 54, :className => "Main", :methodName => "main"})
