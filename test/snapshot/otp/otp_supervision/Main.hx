@@ -58,22 +58,22 @@ class Main {
         };
         
         // Start supervisor
-        var result = SupervisorExtern.start_link(children, options);
+        var result = SupervisorExtern.startLink(children, options);
         // For now, just assume it succeeds and returns the supervisor
         var supervisor = result;
             
             // Test child management
-            var childrenList = SupervisorExtern.which_children(supervisor);
-            var counts = SupervisorExtern.count_children(supervisor);
+            var childrenList = SupervisorExtern.whichChildren(supervisor);
+            var counts = SupervisorExtern.countChildren(supervisor);
             
             // Test restart
-            SupervisorExtern.restart_child(supervisor, "worker1");
+            SupervisorExtern.restartChild(supervisor, "worker1");
             
             // Test terminate
-            SupervisorExtern.terminate_child(supervisor, "worker2");
+            SupervisorExtern.terminateChild(supervisor, "worker2");
             
             // Test delete
-            SupervisorExtern.delete_child(supervisor, "worker2");
+            SupervisorExtern.deleteChild(supervisor, "worker2");
             
             // Test dynamic child addition
             var newChild = {
@@ -82,10 +82,10 @@ class Main {
                 restart: RestartType.Transient,
                 type: ChildType.Worker
             };
-            SupervisorExtern.start_child(supervisor, newChild);
+            SupervisorExtern.startChild(supervisor, newChild);
             
             // Test supervisor stats
-            var stats = SupervisorExtern.count_children(supervisor);
+            var stats = SupervisorExtern.countChildren(supervisor);
             trace('Active workers: ${stats.workers}, Supervisors: ${stats.supervisors}');
             
             // Check if alive
@@ -97,7 +97,6 @@ class Main {
             // SupervisorExtern doesn't have stop, use Process.exit
             Process.exit(supervisor, "normal");
         }
-    }
     
     /**
      * Test Task extern functions
@@ -263,25 +262,24 @@ class Main {
             max_seconds: 60
         };
         
-        var result = SupervisorExtern.start_link(children, options);
+        var result = SupervisorExtern.startLink(children, options);
         // Assume success for test
         var supervisor = result;
             
             // Verify tree structure
-            var stats = SupervisorExtern.count_children(supervisor);
+            var stats = SupervisorExtern.countChildren(supervisor);
             trace('Supervisor - Workers: ${stats.workers}, Supervisors: ${stats.supervisors}');
             
             // Test child management
-            var childrenList = SupervisorExtern.which_children(supervisor);
+            var childrenList = SupervisorExtern.whichChildren(supervisor);
             for (child in childrenList) {
                 trace('Child: ${child._0}, Type: ${child._2}');
             }
             
             // Test restart behavior
-            SupervisorExtern.restart_child(supervisor, "worker1");
+            SupervisorExtern.restartChild(supervisor, "worker1");
             
             // Clean shutdown
-            SupervisorExtern.terminate_child(supervisor, "normal");
-        }
+            SupervisorExtern.terminateChild(supervisor, "normal");
     }
 }

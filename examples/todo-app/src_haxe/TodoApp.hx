@@ -46,7 +46,7 @@ class TodoApp {
         };
         
         // Start the supervisor and return proper ApplicationResult
-        var supervisorResult = SupervisorExtern.start_link(children, opts);
+        var supervisorResult = SupervisorExtern.startLink(children, opts);
         
         // Return the supervisor result directly - it's already {:ok, pid} format
         return supervisorResult;

@@ -1,213 +1,302 @@
 defmodule Main do
   use ExUnit.Case
-
-  @moduledoc """
-  
- * Comprehensive ExUnit tests for domain abstractions.
- * 
- * This test suite validates that our domain abstractions:
- * - Compile to proper Elixir ExUnit tests
- * - Provide type-safe validation and operations
- * - Generate idiomatic Elixir code with proper pattern matching
- * - Work correctly with Result and Option types
- * 
- * These tests are written in Haxe and compile to ExUnit tests,
- * maintaining the "write once in Haxe" philosophy.
- 
-  """
-
   test "email validation" do
-    valid_email = Email_Impl_.parse("user@example.com")
-    # Unknown assertion: is_ok
-    case valid_email do
-      0 -> g_param_0 = elem(valid_email, 1)
-    email = g_param_0
-    assert Email_Impl_.get_domain(email) == "example.com"
-    assert Email_Impl_.get_local_part(email) == "user"
-    # Unknown assertion: is_true
-    # Unknown assertion: is_false
-    normalized = Email_Impl_.normalize(email)
-    assert Email_Impl_.to_string(normalized) == "user@example.com"
-      1 -> g_param_0 = elem(valid_email, 1)
-    reason = g_param_0
-    flunk("Valid email should not fail: " <> reason)
+    valid_email = {:Parse, "user@example.com"}
+    assert match?({:ok, _}, valid_email) do
+      "Valid email should parse successfully"
     end
-    invalid_email = Email_Impl_.parse("not-an-email")
-    # Unknown assertion: is_error
-    empty_email = Email_Impl_.parse("")
-    # Unknown assertion: is_error
-  end
-
-  test "user id validation" do
-    user_id = UserId_Impl_.parse("User123")
-    # Unknown assertion: is_ok
-    case user_id do
-      0 -> g_param_0 = elem(user_id, 1)
-    id = g_param_0
-    Assert.equals("user123", UserId_Impl_.to_string(UserId_Impl_.normalize(id)), "User ID should normalize to lowercase")
-    # Unknown assertion: is_true
-    # Unknown assertion: is_true
-    assert length(UserId_Impl_) == 7
-      1 -> g_param_0 = elem(user_id, 1)
-    reason = g_param_0
-    flunk("Valid user ID should not fail: " <> reason)
-    end
-    empty_user_id = UserId_Impl_.parse("")
-    # Unknown assertion: is_error
-    invalid_user_id = UserId_Impl_.parse("user@123")
-    # Unknown assertion: is_error
-  end
-
-  test "positive int arithmetic" do
-    pos1 = PositiveInt_Impl_.parse(5)
-    pos2 = PositiveInt_Impl_.parse(3)
-    # Unknown assertion: is_ok
-    # Unknown assertion: is_ok
-    if ((case pos1 do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end == 0)) do
-      g_param_0 = elem(pos1, 1)
-      if ((case pos2 do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end == 0)) do
-        g_param_0 = elem(pos2, 1)
-        b = g_param_0
-        a = g_param_0
-        sum = PositiveInt_Impl_.add(a, b)
-        assert PositiveInt_Impl_.to_int(sum) == 8
-        product = PositiveInt_Impl_.multiply(a, b)
-        assert PositiveInt_Impl_.to_int(product) == 15
-        diff = PositiveInt_Impl_.safe_sub(a, b)
-        # Unknown assertion: is_ok
-        case diff do
-          0 -> g_param_0 = elem(diff, 1)
-        result = g_param_0
-        assert PositiveInt_Impl_.to_int(result) == 2
-          1 -> g_param_0 = elem(diff, 1)
-        reason = g_param_0
-        flunk("Subtraction should not fail: " <> reason)
+    case (valid_email.elem(0)) do
+      0 ->
+        g = valid_email.elem(1)
+        email = g
+        assert "example.com" == Email_Impl_.get_domain(email) do
+          "Domain extraction should work"
         end
-        invalid_diff = PositiveInt_Impl_.safe_sub(b, a)
-        # Unknown assertion: is_error
+        assert "user" == Email_Impl_.get_local_part(email) do
+          "Local part extraction should work"
+        end
+        assert Email_Impl_.has_domain(email, "example.com") do
+          "Domain check should return true"
+        end
+        refute Email_Impl_.has_domain(email, "other.com") do
+          "Domain check should return false for different domain"
+        end
+        normalized = Email_Impl_.normalize(email)
+        assert "user@example.com" == Email_Impl_.to_string(normalized) do
+          "Normalization should lowercase"
+        end
+      1 ->
+        g = valid_email.elem(1)
+        reason = g
+        flunk("Valid email should not fail: " <> reason)
+    end
+    invalid_email = {:Parse, "not-an-email"}
+    assert match?({:error, _}, invalid_email) do
+      "Invalid email should be rejected"
+    end
+    empty_email = {:Parse, ""}
+    assert match?({:error, _}, empty_email) do
+      "Empty email should be rejected"
+    end
+  end
+  test "user id validation" do
+    user_id = {:Parse, "User123"}
+    assert match?({:ok, _}, user_id) do
+      "Valid user ID should parse"
+    end
+    case (user_id.elem(0)) do
+      0 ->
+        g = user_id.elem(1)
+        id = g
+        assert "user123" == UserId_Impl_.to_string(UserId_Impl_.normalize(id)) do
+          "User ID should normalize to lowercase"
+        end
+        assert UserId_Impl_.starts_with(id, "User") do
+          "User ID should support startsWith check"
+        end
+        assert UserId_Impl_.starts_with_ignore_case(id, "user") do
+          "User ID should support case-insensitive startsWith"
+        end
+        assert 7 == UserId_Impl_.length(id) do
+          "User ID length should be preserved"
+        end
+      1 ->
+        g = user_id.elem(1)
+        reason = g
+        flunk("Valid user ID should not fail: " <> reason)
+    end
+    empty_user_id = {:Parse, ""}
+    assert match?({:error, _}, empty_user_id) do
+      "Empty user ID should be rejected"
+    end
+    invalid_user_id = {:Parse, "user@123"}
+    assert match?({:error, _}, invalid_user_id) do
+      "User ID with special characters should be rejected"
+    end
+  end
+  test "positive int arithmetic" do
+    pos1 = {:Parse, 5}
+    pos2 = {:Parse, 3}
+    assert match?({:ok, _}, pos) do
+      "Positive integer 5 should parse"
+    end
+    assert match?({:ok, _}, pos) do
+      "Positive integer 3 should parse"
+    end
+    if (pos.elem(0) == 0) do
+      g = pos.elem(1)
+      if (pos.elem(0) == 0) do
+        g1 = pos.elem(1)
+        b = g1
+        a = g
+        sum = PositiveInt_Impl_.add(a, b)
+        assert 8 == PositiveInt_Impl_.to_int(sum) do
+          "5 + 3 should equal 8"
+        end
+        product = PositiveInt_Impl_.multiply(a, b)
+        assert 15 == PositiveInt_Impl_.to_int(product) do
+          "5 * 3 should equal 15"
+        end
+        diff = {:SafeSub, a, b}
+        assert match?({:ok, _}, diff) do
+          "5 - 3 should succeed"
+        end
+        case (diff.elem(0)) do
+          0 ->
+            g = diff.elem(1)
+            result = g
+            assert 2 == PositiveInt_Impl_.to_int(result) do
+              "5 - 3 should equal 2"
+            end
+          1 ->
+            g = diff.elem(1)
+            reason = g
+            flunk("Subtraction should not fail: " <> reason)
+        end
+        invalid_diff = {:SafeSub, b, a}
+        assert match?({:error, _}, invalid_diff) do
+          "3 - 5 should fail (non-positive result)"
+        end
       else
         flunk("Valid positive integers should parse")
       end
     else
       flunk("Valid positive integers should parse")
     end
-    zero = PositiveInt_Impl_.parse(0)
-    # Unknown assertion: is_error
-    negative = PositiveInt_Impl_.parse(-5)
-    # Unknown assertion: is_error
+    zero = {:Parse, 0}
+    assert match?({:error, _}, zero) do
+      "Zero should be rejected"
+    end
+    negative = {:Parse, -5}
+    assert match?({:error, _}, negative) do
+      "Negative number should be rejected"
+    end
   end
-
   test "non empty string operations" do
-    str = NonEmptyString_Impl_.parse("  hello world  ")
-    # Unknown assertion: is_ok
-    case str do
-      0 -> g_param_0 = elem(str, 1)
-    s = g_param_0
-    trimmed = NonEmptyString_Impl_.safe_trim(s)
-    # Unknown assertion: is_ok
-    case trimmed do
-      0 -> g_param_0 = elem(trimmed, 1)
-    trimmed_str = g_param_0
-    assert NonEmptyString_Impl_.to_string(trimmed_str) == "hello world"
-      1 -> g_param_0 = elem(trimmed, 1)
-    reason = g_param_0
-    flunk("Trim should not fail: " <> reason)
+    str = {:Parse, "  hello world  "}
+    assert match?({:ok, _}, str) do
+      "Non-empty string should parse"
     end
-    upper = NonEmptyString_Impl_.to_upper_case(s)
-    assert NonEmptyString_Impl_.to_string(upper) == "  HELLO WORLD  "
-    lower = NonEmptyString_Impl_.to_lower_case(s)
-    assert NonEmptyString_Impl_.to_string(lower) == "  hello world  "
-    assert length(NonEmptyString_Impl_) == 15
-      1 -> g_param_0 = elem(str, 1)
-    reason = g_param_0
-    flunk("Valid non-empty string should not fail: " <> reason)
+    case (str.elem(0)) do
+      0 ->
+        g = str.elem(1)
+        s = g
+        trimmed = {:SafeTrim, s}
+        assert match?({:ok, _}, trimmed) do
+          "Trimming non-empty content should succeed"
+        end
+        case (trimmed.elem(0)) do
+          0 ->
+            g = trimmed.elem(1)
+            trimmed_str = g
+            assert "hello world" == NonEmptyString_Impl_.to_string(trimmed_str) do
+              "Trim should remove whitespace"
+            end
+          1 ->
+            g = trimmed.elem(1)
+            reason = g
+            flunk("Trim should not fail: " <> reason)
+        end
+        upper = NonEmptyString_Impl_.to_upper_case(s)
+        assert "  HELLO WORLD  " == NonEmptyString_Impl_.to_string(upper) do
+          "toUpperCase should work"
+        end
+        lower = NonEmptyString_Impl_.to_lower_case(s)
+        assert "  hello world  " == NonEmptyString_Impl_.to_string(lower) do
+          "toLowerCase should work"
+        end
+        assert 15 == NonEmptyString_Impl_.length(s) do
+          "Length should be preserved"
+        end
+      1 ->
+        g = str.elem(1)
+        reason = g
+        flunk("Valid non-empty string should not fail: " <> reason)
     end
-    empty = NonEmptyString_Impl_.parse("")
-    # Unknown assertion: is_error
-    whitespace_only = NonEmptyString_Impl_.parse("   ")
-    # Unknown assertion: is_ok
-    case whitespace_only do
-      0 -> g_param_0 = elem(whitespace_only, 1)
-    ws = g_param_0
-    trimmed = NonEmptyString_Impl_.safe_trim(ws)
-    # Unknown assertion: is_error
-      1 -> g_param_0 = elem(whitespace_only, 1)
-    flunk("Whitespace-only should parse")
+    empty = {:Parse, ""}
+    assert match?({:error, _}, empty) do
+      "Empty string should be rejected"
+    end
+    whitespace_only = {:Parse, "   "}
+    assert match?({:ok, _}, whitespace_only) do
+      "Whitespace-only string should parse"
+    end
+    case (whitespace_only.elem(0)) do
+      0 ->
+        g = whitespace_only.elem(1)
+        ws = g
+        trimmed = {:SafeTrim, ws}
+        assert match?({:error, _}, trimmed) do
+          "Trimming whitespace-only should fail"
+        end
+      1 ->
+        _g = whitespace_only.elem(1)
+        flunk("Whitespace-only should parse")
     end
   end
-
   test "result chaining" do
-    domain_result = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@example.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> (domain == "example.com") end, "Wrong domain")
-    # Unknown assertion: is_ok
-    case domain_result do
-      0 -> g_param_0 = elem(domain_result, 1)
-    domain = g_param_0
-    assert domain == "example.com"
-      1 -> g_param_0 = elem(domain_result, 1)
-    reason = g_param_0
-    flunk("Domain extraction should not fail: " <> reason)
+    domain_result = {:Filter, {:Map, {:Parse, "test@example.com"}, fn email -> Email_Impl_.get_domain(email) end}, fn domain -> domain == "example.com" end, "Wrong domain"}
+    assert match?({:ok, _}, domain_result) do
+      "Email domain chain should succeed"
     end
-    failed_filter = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@wrong.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> (domain == "example.com") end, "Wrong domain")
-    # Unknown assertion: is_error
+    case (domain_result.elem(0)) do
+      0 ->
+        g = domain_result.elem(1)
+        domain = g
+        assert "example.com" == domain do
+          "Domain should be extracted correctly"
+        end
+      1 ->
+        g = domain_result.elem(1)
+        reason = g
+        flunk("Domain extraction should not fail: " <> reason)
+    end
+    failed_filter = {:Filter, {:Map, {:Parse, "test@wrong.com"}, fn email -> Email_Impl_.get_domain(email) end}, fn domain -> domain == "example.com" end, "Wrong domain"}
+    assert match?({:error, _}, failed_filter) do
+      "Filter should reject wrong domain"
+    end
   end
-
   test "option conversion" do
-    email_result = Email_Impl_.parse("user@example.com")
-    email_option = ResultTools.to_option(email_result)
-    # Unknown assertion: is_some
-    case email_option do
-      0 -> g_param_0 = elem(email_option, 1)
-    email = g_param_0
-    assert Email_Impl_.get_domain(email) == "example.com"
-      1 -> flunk("Valid email should not be :none")
+    email_result = {:Parse, "user@example.com"}
+    email_option = {:ToOption, email_result}
+    assert match?({:some, _}, email_option) do
+      "Valid email should convert to Some"
     end
-    invalid_email_result = Email_Impl_.parse("invalid")
-    invalid_email_option = ResultTools.to_option(invalid_email_result)
-    # Unknown assertion: is_none
+    case (email_option.elem(0)) do
+      0 ->
+        g = email_option.elem(1)
+        email = g
+        assert "example.com" == Email_Impl_.get_domain(email) do
+          "Option content should be preserved"
+        end
+      1 ->
+        flunk("Valid email should not be None")
+    end
+    invalid_email_result = {:Parse, "invalid"}
+    invalid_email_option = {:ToOption, invalid_email_result}
+    assert invalid_email_option == :none do
+      "Invalid email should convert to None"
+    end
   end
-
   test "error handling" do
-    invalid_email = Email_Impl_.parse("invalid-email")
-    case invalid_email do
-      0 -> g_param_0 = elem(invalid_email, 1)
-    flunk("Invalid email should not parse")
-      1 -> g_param_0 = elem(invalid_email, 1)
-    message = g_param_0
-    Assert.is_true((message.index_of("Invalid email") >= 0), "Error message should be descriptive")
+    invalid_email = {:Parse, "invalid-email"}
+    case (invalid_email.elem(0)) do
+      0 ->
+        _g = invalid_email.elem(1)
+        flunk("Invalid email should not parse")
+      1 ->
+        g = invalid_email.elem(1)
+        message = g
+        assert message.indexOf("Invalid email") >= 0 do
+          "Error message should be descriptive"
+        end
     end
-    large_int = PositiveInt_Impl_.parse(1000000)
-    # Unknown assertion: is_ok
-    case large_int do
-      0 -> g_param_0 = elem(large_int, 1)
-    large = g_param_0
-    doubled = PositiveInt_Impl_.multiply(large, large)
-    Assert.is_true((PositiveInt_Impl_.to_int(doubled) > 0), "Large multiplication should remain positive")
-      1 -> g_param_0 = elem(large_int, 1)
-    flunk("Large integer should parse")
+    large_int = {:Parse, 1000000}
+    assert match?({:ok, _}, large_int) do
+      "Large positive integer should parse"
+    end
+    case (large_int.elem(0)) do
+      0 ->
+        g = large_int.elem(1)
+        large = g
+        doubled = PositiveInt_Impl_.multiply(large, large)
+        assert PositiveInt_Impl_.to_int(doubled) > 0 do
+          "Large multiplication should remain positive"
+        end
+      1 ->
+        _g = large_int.elem(1)
+        flunk("Large integer should parse")
     end
   end
-
   test "real world scenario" do
-    user_email = Email_Impl_.parse("john.doe@company.com")
-    user_id = UserId_Impl_.parse("johndoe123")
-    user_age = PositiveInt_Impl_.parse(25)
-    user_name = NonEmptyString_Impl_.parse("John Doe")
-    # Unknown assertion: is_ok
-    # Unknown assertion: is_ok
-    # Unknown assertion: is_ok
-    # Unknown assertion: is_ok
-    if ((case user_email do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end == 0)) do
-      g_param_0 = elem(user_email, 1)
-      if ((case user_id do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end == 0)) do
-        g_param_0 = elem(user_id, 1)
-        if ((case user_age do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end == 0)) do
-          g_param_0 = elem(user_age, 1)
-          if ((case user_name do {:ok, _} -> 0; {:error, _} -> 1; _ -> -1 end == 0)) do
-            g_param_0 = elem(user_name, 1)
-            name = g_param_0
-            id = g_param_0
-            email = g_param_0
-            age = g_param_0
+    user_email = {:Parse, "john.doe@company.com"}
+    user_id = {:Parse, "johndoe123"}
+    user_age = {:Parse, 25}
+    user_name = {:Parse, "John Doe"}
+    assert match?({:ok, _}, user_email) do
+      "User email should be valid"
+    end
+    assert match?({:ok, _}, user_id) do
+      "User ID should be valid"
+    end
+    assert match?({:ok, _}, user_age) do
+      "User age should be valid"
+    end
+    assert match?({:ok, _}, user_name) do
+      "User name should be valid"
+    end
+    if (user_email.elem(0) == 0) do
+      g = user_email.elem(1)
+      if (user_id.elem(0) == 0) do
+        g1 = user_id.elem(1)
+        if (user_age.elem(0) == 0) do
+          g2 = user_age.elem(1)
+          if (user_name.elem(0) == 0) do
+            g3 = user_name.elem(1)
+            name = g3
+            id = g1
+            email = g
+            age = g2
             profile_normalized_id = nil
             profile_is_company_email = nil
             profile_email = nil
@@ -216,12 +305,20 @@ defmodule Main do
             profile_email = Email_Impl_.to_string(email)
             profile_normalized_id = UserId_Impl_.to_string(UserId_Impl_.normalize(id))
             profile_is_company_email = Email_Impl_.has_domain(email, "company.com")
-            profile_age_in_months = (PositiveInt_Impl_.to_int(age) * 12)
+            profile_age_in_months = PositiveInt_Impl_.to_int(age) * 12
             profile_display_name = NonEmptyString_Impl_.to_string(name)
-            assert profile_email == "john.doe@company.com"
-            assert profile_normalized_id == "johndoe123"
-            # Unknown assertion: is_true
-            assert profile_display_name == "John Doe"
+            assert "john.doe@company.com" == profile_email do
+              "Email should be preserved"
+            end
+            assert "johndoe123" == profile_normalized_id do
+              "ID should be normalized"
+            end
+            assert profile_is_company_email do
+              "Company email should be detected"
+            end
+            assert "John Doe" == profile_display_name do
+              "Name should be preserved"
+            end
           else
             flunk("All user data should be valid")
           end
@@ -235,5 +332,4 @@ defmodule Main do
       flunk("All user data should be valid")
     end
   end
-
 end

@@ -26,13 +26,13 @@ defmodule Main do
 end)
     g = 0
     g1 = fruits.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     Log.trace("" <> i <> ": " <> fruits[i], %{:fileName => "Main.hx", :lineNumber => 40, :className => "Main", :methodName => "arrayIteration"})
-    {:cont, {acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     i = 0
@@ -101,7 +101,7 @@ g
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     Log.trace("Matrix element [1][2]: " <> matrix[1][2], %{:fileName => "Main.hx", :lineNumber => 108, :className => "Main", :methodName => "multiDimensional"})
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {matrix, g, g, :ok}, fn _, {acc_matrix, acc_g, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g, matrix, :ok}, fn _, {acc_g, acc_g, acc_matrix, acc_state} ->
   if (acc_g < acc_matrix.length) do
     row = matrix[g]
     acc_g = acc_g + 1
@@ -116,9 +116,9 @@ g
     {:halt, {acc_g, acc_row, acc_state}}
   end
 end)
-    {:cont, {acc_matrix, acc_g, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g, acc_matrix, acc_state}}
   else
-    {:halt, {acc_matrix, acc_g, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g, acc_matrix, acc_state}}
   end
 end)
     g = []

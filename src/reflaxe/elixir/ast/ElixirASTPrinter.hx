@@ -193,6 +193,13 @@ class ElixirASTPrinter {
                 var isInline = isSimpleExpression(thenBranch) && 
                                (elseBranch == null || isSimpleExpression(elseBranch));
                 
+                #if debug_inline_if
+                trace('[XRay InlineIf] Checking if statement');
+                trace('[XRay InlineIf] Then branch def: ${thenBranch.def}');
+                trace('[XRay InlineIf] isSimpleExpression(thenBranch): ${isSimpleExpression(thenBranch)}');
+                trace('[XRay InlineIf] isInline decision: $isInline');
+                #end
+                
                 // Print condition without unnecessary parentheses
                 var conditionStr = printIfCondition(condition);
                 
@@ -1032,9 +1039,14 @@ class ElixirASTPrinter {
             case ECall(_, _, args):
                 // Simple function calls with few arguments
                 args.length <= 2;
-            case EBinary(_, left, right):
-                // Simple binary operations
-                isSimpleExpression(left) && isSimpleExpression(right);
+            case EBinary(op, left, right):
+                // Assignment operations cannot be used in inline if-statements
+                if (op == Match) {
+                    false;
+                } else {
+                    // Other binary operations are simple if both operands are simple
+                    isSimpleExpression(left) && isSimpleExpression(right);
+                }
             case EMatch(_, _):
                 // Assignments cannot be used in inline if-statements
                 false;
