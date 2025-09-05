@@ -347,9 +347,58 @@ class TodoAppTest extends TestCase {
 }
 ```
 
+## Technical Implementation: Extern Inline Architecture
+
+### Why Extern Inline for Assert Functions
+
+ExUnit's assertion system poses a unique challenge: `assert`, `refute`, and other ExUnit assertions are **macros** that must be expanded at compile-time in the test module's context. They cannot be wrapped in regular functions in another module.
+
+**The Problem:**
+```haxe
+// This approach DOESN'T work - generates wrong code
+class Assert {
+    public static function assertEqual<T>(expected: T, actual: T): Void {
+        untyped __elixir__('assert {0} == {1}', actual, expected);
+    }
+}
+// Generates: Assert.assert_equal(5, result) // WRONG - assert isn't available!
+```
+
+**The Solution - Extern Inline:**
+```haxe
+// This approach WORKS - inlines at call site
+class Assert {
+    extern inline public static function assertEqual<T>(expected: T, actual: T): Void {
+        untyped __elixir__('assert {0} == {1}', actual, expected);
+    }
+}
+// Generates: assert result == 5 // CORRECT - macro expanded in test context!
+```
+
+### How It Works
+
+1. **`extern`** - Tells Haxe this function has no body to compile
+2. **`inline`** - Forces the function body to be copied to the call site
+3. **Result** - The `__elixir__()` code is injected directly where called
+
+This means when you write:
+```haxe
+assertEqual(5, calculateSum(2, 3));
+```
+
+It compiles to:
+```elixir
+assert calculate_sum(2, 3) == 5
+```
+
+Not to:
+```elixir
+Assert.assert_equal(5, calculate_sum(2, 3))  # This wouldn't work!
+```
+
 ## Assertions Reference
 
-The `exunit.Assert` class provides type-safe assertion methods:
+The `exunit.Assert` class provides type-safe assertion methods (all using `extern inline`):
 
 | Method | Purpose | Example |
 |--------|---------|---------|
@@ -360,6 +409,20 @@ The `exunit.Assert` class provides type-safe assertion methods:
 | `assertNull(value)` | Assert value is null/nil | `assertNull(user.deletedAt)` |
 | `assertNotNull(value)` | Assert value is not null/nil | `assertNotNull(user.id)` |
 | `assertRaises(fn)` | Assert function raises exception | `assertRaises(() -> divide(1, 0))` |
+| `fail(message)` | Fail test with message | `fail("Should not reach here")` |
+
+### Domain-Specific Assertions
+
+For functional types like `Result<T,E>` and `Option<T>`:
+
+| Method | Purpose | Example |
+|--------|---------|---------|
+| `assertIsOk(result)` | Assert Result is Ok | `assertIsOk(Email.parse("test@example.com"))` |
+| `assertIsError(result)` | Assert Result is Error | `assertIsError(Email.parse("invalid"))` |
+| `assertIsSome(option)` | Assert Option is Some | `assertIsSome(findUser(id))` |
+| `assertIsNone(option)` | Assert Option is None | `assertIsNone(findUser(-1))` |
+
+These use Elixir's `match?/2` macro for pattern matching against tagged tuples.
 
 ## Running Tests
 
