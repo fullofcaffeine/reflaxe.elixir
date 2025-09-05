@@ -26,11 +26,11 @@ defmodule TodoAppWeb.UserLive do
       4 ->
         g = elem(event, 1)
         params = g
-        handle_search(params[:search_term], live_socket)
+        handle_search(params.search_term, live_socket)
       5 ->
         g = elem(event, 1)
         params = g
-        handle_filter_status(params[:status], live_socket)
+        handle_filter_status(params.status, live_socket)
       6 ->
         handle_clear_search(live_socket)
       7 ->
@@ -50,7 +50,7 @@ defmodule TodoAppWeb.UserLive do
     %{:status => "noreply", :socket => Phoenix.LiveView.assign([socket, selected_user, changeset, show_form], %{:selected_user => {1}, :changeset => {2}, :show_form => {3}})}
   end
   defp handle_save_user(params, socket) do
-    user_params = params[:user]
+    user_params = params.user
     selected_user = socket.assigns.selectedUser
     result = if (selected_user == nil), do: {:CreateUser, user_params}, else: {:UpdateUser, selected_user, user_params}
     case (elem(result, 0)) do
@@ -201,7 +201,7 @@ defmodule TodoAppWeb.UserLive do
   end
   defp render_user_row(assigns) do
     user = assigns.user
-    HXX.hxx("\n        <tr>\n            <td>" <> user[:name] <> "</td>\n            <td>" <> user[:email] <> "</td>\n            <td>" <> user[:age] <> "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " <> get_status_text(user[:active]) <> "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        ")
+    HXX.hxx("\n        <tr>\n            <td>" <> user.name <> "</td>\n            <td>" <> user.email <> "</td>\n            <td>" <> user.age <> "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " <> get_status_text(user.active) <> "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        ")
   end
   defp get_status_class(active) do
     if active, do: "status active", else: "status inactive"

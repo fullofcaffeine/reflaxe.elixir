@@ -1208,25 +1208,6 @@ class ElixirCompiler extends GenericCompiler<
     
     
     /**
-     * Helper: Compile struct definition from class variables
-     */
-    private function compileStruct(varFields: Array<ClassVarData>): String {
-        var result = '  defstruct [';
-        var fieldNames = [];
-        
-        for (field in varFields) {
-            var fieldName = toElixirName(field.field.name);
-            fieldNames.push('${fieldName}: nil');
-        }
-        
-        result += fieldNames.join(', ');
-        result += ']\n\n';
-        
-        return result;
-    }
-    
-    
-    /**
      * Check if a parameter is used anywhere in an expression
      * Recursively traverses the AST to find references to the parameter
      */
@@ -1995,41 +1976,8 @@ class ElixirCompiler extends GenericCompiler<
         };
     }
     
-    // DEPRECATED: extractFieldUpdate removed - handled by AST pipeline
-    
-    // DEPRECATED: Temp variable optimization functions removed
-    // These were part of the old string-based compilation approach
-    // The AST-based pipeline handles temp variables more elegantly
-    
-    /**
-     * Check if expression uses a temp variable (like v = temp_var)
-     */
-    private function isTempVariableUsage(expr: TypedExpr, tempVarName: String): Bool {
-        return switch (expr.expr) {
-            case TBinop(OpAssign, lhs, rhs):
-                // Check if right side uses our temp variable
-                switch (rhs.expr) {
-                    case TLocal(v):
-                        var varName = getOriginalVarName(v);
-                        return varName == tempVarName;
-                    case _:
-                        return false;
-                }
-            case _:
-                return false;
-        };
-    }
-    
-    
-    /**
-     * Extract the variable name from an assignment expression
-     */
-    private function getAssignmentVariable(expr: TypedExpr): Null<String> {
-        return null; // Pattern analysis now handled by AST pipeline
-    }
-    
-    // DEPRECATED: extractAssignmentValue and getTargetVariableFromAssignment removed
-    // These string-based compilation functions are replaced by AST pipeline
+    // All temp variable optimization and assignment extraction functions
+    // have been removed - now handled by the AST pipeline
     
     /**
      * Check if expression is nil
