@@ -862,11 +862,32 @@ class ElixirCompiler extends GenericCompiler<
             }
             #end
             
+            // Check for test-related metadata
+            var metadata: Dynamic = {};
+            if (func.field.meta != null) {
+                if (func.field.meta.has(":test")) {
+                    metadata.isTest = true;
+                }
+                if (func.field.meta.has(":setup")) {
+                    metadata.isSetup = true;
+                }
+                if (func.field.meta.has(":setupAll")) {
+                    metadata.isSetupAll = true;
+                }
+                if (func.field.meta.has(":teardown")) {
+                    metadata.isTeardown = true;
+                }
+            }
+            
             var funcDef = func.field.isPublic 
                 ? ElixirASTDef.EDef(funcName, args, null, body)
                 : ElixirASTDef.EDefp(funcName, args, null, body);
-                
-            functions.push(reflaxe.elixir.ast.ElixirAST.makeAST(funcDef));
+            
+            var funcAST = reflaxe.elixir.ast.ElixirAST.makeAST(funcDef);
+            if (Reflect.fields(metadata).length > 0) {
+                funcAST.metadata = metadata;
+            }
+            functions.push(funcAST);
         }
         
         // Create module AST
@@ -1192,27 +1213,6 @@ class ElixirCompiler extends GenericCompiler<
         return result;
     }
     
-    /**
-     * Helper: Compile function definition
-     */
-    /**
-     * DELEGATION: Function compilation (moved to FunctionCompiler.hx)
-     * 
-     * ARCHITECTURAL DECISION: This function was moved to FunctionCompiler.hx as part of 
-     * function compilation logic consolidation. Function-specific compilation including
-     * parameter mapping, pipeline optimization, and LiveView callback handling belongs
-     * in a specialized compiler, not in the main compiler.
-     * 
-     * @param funcField The Haxe function data including name, parameters, and body  
-     * @param isStatic Whether this is a static function (currently unused)
-     * @return Complete Elixir function definition string
-     */
-    public function compileFunction(funcField: ClassFuncData, isStatic: Bool = false): String {
-        // COORDINATION: Reset temp variable declarations for each function
-        // This ensures variables from one function don't affect another
-        
-        return ""; // Function compilation now handled by AST pipeline
-    }
     
     /**
      * Check if a parameter is used anywhere in an expression
@@ -1742,39 +1742,10 @@ class ElixirCompiler extends GenericCompiler<
         return false;
     }
 
-    /**
-     * Compile expression with aggressive substitution for all likely loop variables
-     * Used when normal loop variable detection fails
-     */
-
-    /**
-     * Simple approach: Always substitute all TLocal variables with the target variable
-     * This replaces the complex __AGGRESSIVE__ marker system with a straightforward solution
-     */
-    private function extractTransformationFromBodyWithAggressiveSubstitution(expr: TypedExpr, targetVar: String): String {
-        return ""; // Variable substitution now handled by AST pipeline
-    }
     
     /**
      * Compile expression with variable substitution using TVar object comparison
      */
-
-
-    /**
-     * Compile while loop with variable renamings applied (DELEGATED)
-     * This handles variable collisions in desugared loop code
-     */
-    private function compileWhileLoopWithRenamings(econd: TypedExpr, ebody: TypedExpr, normalWhile: Bool, renamings: Map<String, String>): String {
-        return ""; // While loop compilation now handled by AST pipeline
-    }
-    
-    /**
-     * Compile expression with multiple variable renamings applied
-     * This is used to handle variable collisions in desugared loop code
-     */
-    
-    
-
     
     
     
@@ -1972,17 +1943,6 @@ class ElixirCompiler extends GenericCompiler<
         var fieldNames = fields.map(f -> f.name);
         return fieldNames.indexOf("strategy") != -1;
     }
-    
-    /**
-     * Compile supervisor options object to proper Elixir keyword list format
-     * Converts from Haxe objects to Elixir keyword lists as expected by Supervisor.start_link
-     */
-    public function compileSupervisorOptions(fields: Array<{name: String, expr: TypedExpr}>, classType: Null<ClassType>): String {
-        // Delegate to OTPCompiler for specialized supervisor options handling
-        return ""; // Supervisor options now handled by AST pipeline
-    }
-    
-    /**
     
     /**
      * Check if this is a call to elixir.Syntax static methods

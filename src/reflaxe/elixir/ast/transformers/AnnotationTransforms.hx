@@ -1069,12 +1069,57 @@ class AnnotationTransforms {
                             );
                             statements.push(testBlock);
                             
+                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetup == true):
+                            // Transform @:setup function into ExUnit setup callback
+                            var setupBlock = makeAST(
+                                EMacroCall(
+                                    "setup",
+                                    [makeAST(EVar("context"))],
+                                    body
+                                )
+                            );
+                            statements.push(setupBlock);
+                            
+                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetupAll == true):
+                            // Transform @:setupAll function into ExUnit setup_all callback
+                            var setupAllBlock = makeAST(
+                                EMacroCall(
+                                    "setup_all",
+                                    [makeAST(EVar("context"))],
+                                    body
+                                )
+                            );
+                            statements.push(setupAllBlock);
+                            
+                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTeardown == true):
+                            // Transform @:teardown function into ExUnit on_exit callback
+                            var teardownBody = makeAST(
+                                EBlock([
+                                    makeAST(
+                                        EMacroCall(
+                                            "on_exit",
+                                            [makeAST(EFn([{args: [], guard: null, body: body}]))],
+                                            null
+                                        )
+                                    ),
+                                    makeAST(EAtom("ok"))
+                                ])
+                            );
+                            var teardownBlock = makeAST(
+                                EMacroCall(
+                                    "setup",
+                                    [makeAST(EVar("context"))],
+                                    teardownBody
+                                )
+                            );
+                            statements.push(teardownBlock);
+                            
                         case EDef(name, _, _, _) if (name == "setup" || name == "setupAll"):
-                            // Keep setup functions as-is
+                            // Keep setup functions as-is for backward compatibility
                             statements.push(expr);
                             
                         case EDefp(name, _, _, _) if (name == "setup" || name == "setupAll"):
-                            // Keep private setup functions as-is
+                            // Keep private setup functions as-is for backward compatibility
                             statements.push(expr);
                             
                         default:
