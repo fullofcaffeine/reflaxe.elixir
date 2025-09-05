@@ -16,13 +16,13 @@ defmodule Main do
     sum = 0
     g = start
     g1 = end_param
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, sum, g1, :ok}, fn _, {acc_g, acc_sum, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, sum, :ok}, fn _, {acc_g1, acc_g, acc_sum, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     acc_sum = acc_sum + i
-    {:cont, {acc_g, acc_sum, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_sum, acc_state}}
   else
-    {:halt, {acc_g, acc_sum, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_sum, acc_state}}
   end
 end)
     sum
@@ -30,13 +30,13 @@ end)
   def factorial(_struct, n) do
     result = 1
     i = n
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, result, :ok}, fn _, {acc_i, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i, :ok}, fn _, {acc_result, acc_i, acc_state} ->
   if (acc_i > 1) do
     acc_result = acc_result * acc_i
     acc_i = (acc_i - 1)
-    {:cont, {acc_i, acc_result, acc_state}}
+    {:cont, {acc_result, acc_i, acc_state}}
   else
-    {:halt, {acc_i, acc_result, acc_state}}
+    {:halt, {acc_result, acc_i, acc_state}}
   end
 end)
     result

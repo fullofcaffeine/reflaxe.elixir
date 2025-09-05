@@ -267,7 +267,7 @@ end)
     color = Map.keys(map)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {color, :ok}, fn _, {acc_color, acc_state} ->
   if (acc_color.hasNext()) do
-    acc_color = {:ModuleRef}
+    acc_color = acc_color.next()
     Log.trace("  " <> Std.string(acc_color) <> " => #" <> Map.get(map, acc_color), %{:fileName => "Main.hx", :lineNumber => 200, :className => "Main", :methodName => "enumMap"})
     {:cont, {acc_color, acc_state}}
   else

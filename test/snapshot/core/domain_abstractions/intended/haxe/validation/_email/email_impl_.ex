@@ -8,8 +8,8 @@ defmodule Email_Impl_ do
     this1
   end
   def parse(email) do
-    if (not is_valid_email(email)), do: {:Error, "Invalid email address: " <> email}
-    {:Ok, email}
+    if (not is_valid_email(email)), do: {:error, "Invalid email address: " <> email}
+    {:ok, email}
   end
   def get_domain(this1) do
     at_index = this1.lastIndexOf("@")

@@ -4,11 +4,11 @@ defmodule ResultTools do
       0 ->
         g = elem(result, 1)
         value = g
-        {:Ok, transform.(value)}
+        transform.(value)
       1 ->
         g = elem(result, 1)
         error = g
-        {:Error, error}
+        error
     end
   end
   def flat_map(result, transform) do
@@ -16,11 +16,11 @@ defmodule ResultTools do
       0 ->
         g = elem(result, 1)
         value = g
-        {:ModuleRef, value}
+        transform.(value)
       1 ->
         g = elem(result, 1)
         error = g
-        {:Error, error}
+        error
     end
   end
   def fold(result, on_success, on_error) do
@@ -95,11 +95,11 @@ defmodule ResultTools do
       0 ->
         g = elem(result, 1)
         value = g
-        if (predicate.(value)), do: {:Ok, value}, else: {:Error, error_value}
+        if (predicate.(value)), do: value, else: error_value
       1 ->
         g = elem(result, 1)
         error = g
-        {:Error, error}
+        error
     end
   end
   def map_error(result, transform) do
@@ -107,11 +107,11 @@ defmodule ResultTools do
       0 ->
         g = elem(result, 1)
         value = g
-        {:Ok, value}
+        value
       1 ->
         g = elem(result, 1)
         error = g
-        {:Error, transform.(error)}
+        transform.(error)
     end
   end
   def bimap(result, on_success, on_error) do
@@ -119,11 +119,11 @@ defmodule ResultTools do
       0 ->
         g = elem(result, 1)
         value = g
-        {:Ok, on_success.(value)}
+        on_success.(value)
       1 ->
         g = elem(result, 1)
         error = g
-        {:Error, on_error.(error)}
+        on_error.(error)
     end
   end
   def sequence(results) do
@@ -141,18 +141,18 @@ defmodule ResultTools do
       1 ->
         acc_g = elem(result, 1)
         error = acc_g
-        {:Error, error}
+        {:error, error}
     end
     {:cont, {acc_results, acc_g, acc_state}}
   else
     {:halt, {acc_results, acc_g, acc_state}}
   end
 end)
-    {:Ok, values}
+    {:ok, values}
   end
   def traverse(array, transform) do
     results = Enum.map(array, transform)
-    {:Sequence, results}
+    sequence(results)
   end
   def to_option(result) do
     case (elem(result, 0)) do

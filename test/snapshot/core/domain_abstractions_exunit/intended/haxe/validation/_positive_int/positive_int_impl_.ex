@@ -8,8 +8,8 @@ defmodule PositiveInt_Impl_ do
     this1
   end
   def parse(value) do
-    if (value <= 0), do: {:Error, "Value must be positive, got: " <> value}
-    {:Ok, value}
+    if (value <= 0), do: {:error, "Value must be positive, got: " <> value}
+    {:ok, value}
   end
   def add(this1, other) do
     this1 + to_int(other)
@@ -25,20 +25,20 @@ defmodule PositiveInt_Impl_ do
   end
   def safe_sub(this1, other) do
     result = (this1 - to_int(other))
-    if (result <= 0), do: {:Error, "Subtraction result would be non-positive: " <> this1 <> " - " <> to_int(other) <> " = " <> result}
-    {:Ok, result}
+    if (result <= 0), do: {:error, "Subtraction result would be non-positive: " <> this1 <> " - " <> to_int(other) <> " = " <> result}
+    {:ok, result}
   end
   def safe_sub_int(this1, value) do
     result = (this1 - value)
-    if (result <= 0), do: {:Error, "Subtraction result would be non-positive: " <> this1 <> " - " <> value <> " = " <> result}
-    {:Ok, result}
+    if (result <= 0), do: {:error, "Subtraction result would be non-positive: " <> this1 <> " - " <> value <> " = " <> result}
+    {:ok, result}
   end
   def safe_div(this1, divisor) do
     divisor_int = to_int(divisor)
-    if (this1 rem divisor_int != 0), do: {:Error, "Division not exact: " <> this1 <> " / " <> divisor_int <> " has remainder " <> this1 rem divisor_int}
+    if (this1 rem divisor_int != 0), do: {:error, "Division not exact: " <> this1 <> " / " <> divisor_int <> " has remainder " <> this1 rem divisor_int}
     result = Std.int(this1 / divisor_int)
-    if (result <= 0), do: {:Error, "Division result would be non-positive: " <> this1 <> " / " <> divisor_int <> " = " <> result}
-    {:Ok, result}
+    if (result <= 0), do: {:error, "Division result would be non-positive: " <> this1 <> " / " <> divisor_int <> " = " <> result}
+    {:ok, result}
   end
   def div(this1, divisor) do
     Std.int(this1 / to_int(divisor))
@@ -85,6 +85,6 @@ defmodule PositiveInt_Impl_ do
 else
   value
 end
-    {:Parse, abs}
+    parse(abs)
   end
 end

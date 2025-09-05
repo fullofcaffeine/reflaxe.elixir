@@ -11,7 +11,7 @@ defmodule SafePubSub do
     Phoenix.PubSub.broadcast(pubsub_module, topic_string, message_payload)
   end
   def parse_with_converter(msg, message_parser) do
-    {:ModuleRef, msg}
+    message_parser.(msg)
   end
   def add_timestamp(payload) do
     if (payload == nil) do
