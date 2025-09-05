@@ -28,7 +28,7 @@ defmodule Todo do
 else
   []
 end
-    tags.push(tag)
+    tags = tags ++ [tag]
     params = %{:tags => tags}
     changeset(todo, params)
   end
