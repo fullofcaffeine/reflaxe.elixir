@@ -40,6 +40,7 @@ TEST_TARGETS := $(shell echo "$(TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|
 # Default target runs all tests with default parallelism
 .PHONY: all
 all:
+	@rm -f test-results.tmp
 	@$(MAKE) -f $(MAKEFILE_LIST) -j4 summary
 
 # Summary target that depends on all tests
@@ -47,8 +48,8 @@ all:
 summary: $(TEST_TARGETS)
 	@echo ""
 	@echo "========================================"
-	@passed=$$(grep -c "✅" test-results.tmp 2>/dev/null || echo 0); \
-	failed=$$(grep -c "❌" test-results.tmp 2>/dev/null || echo 0); \
+	@passed=$$(grep -c "✅" test-results.tmp 2>/dev/null) || passed=0; \
+	failed=$$(grep -c "❌" test-results.tmp 2>/dev/null) || failed=0; \
 	total=$$((passed + failed)); \
 	echo "Test Results $(PIPELINE_MODE): $$passed/$$total passed"; \
 	if [ $$failed -gt 0 ]; then \
