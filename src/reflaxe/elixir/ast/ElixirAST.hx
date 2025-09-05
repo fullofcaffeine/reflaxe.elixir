@@ -639,6 +639,9 @@ typedef ElixirMetadata = {
     ?isPhoenixWeb: Bool,          // @:phoenixWeb AppNameWeb module with macros
     ?isExunit: Bool,              // @:exunit ExUnit.Case test module
     ?isTest: Bool,                // @:test on a method in ExUnit module
+    ?isSetup: Bool,               // @:setup on a method in ExUnit module
+    ?isSetupAll: Bool,            // @:setupAll on a method in ExUnit module
+    ?isTeardown: Bool,            // @:teardown on a method in ExUnit module
     ?appName: String,             // Application name for OTP/Phoenix
     ?tableName: String,           // Table name for Ecto schemas
     
