@@ -419,8 +419,18 @@ class ModuleBuilder {
                             makeAST(ENil);
                         }
                         
-                        // Create the function definition (use defp for private functions)
-                        if (func.isPublic) {
+                        // For test functions (annotated with @:test), create test macro blocks
+                        // Otherwise create regular functions
+                        var isTestFunction = func.meta.has(":test");
+                        #if debug_module_builder
+                        trace('[XRay ModuleBuilder] Function ${funcName} has metadata: ${[for (m in func.meta.get()) m.name].join(", ")}');
+                        trace('[XRay ModuleBuilder] isTestFunction: $isTestFunction');
+                        #end
+                        if (isTestFunction) {
+                            // Create a test macro block: test "function_name" do ... end
+                            var testName = StringTools.replace(StringTools.replace(funcName, "test_", ""), "_", " ");
+                            statements.push(makeAST(EMacroCall("test", [makeAST(EString(testName))], body)));
+                        } else if (func.isPublic) {
                             statements.push(makeAST(EDef(funcName, args, null, body)));
                         } else {
                             statements.push(makeAST(EDefp(funcName, args, null, body)));
@@ -590,9 +600,9 @@ class ModuleBuilder {
         
         // Add functions with test metadata
         for (func in funcFields) {
-            if (func.expr() != null) {
+            var funcExpr = func.expr();
+            if (funcExpr != null) {
                 var funcName = NameUtils.toSnakeCase(func.name);
-                var isPrivate = !func.isPublic;
                 
                 // Check if this function has @:test or :elixir.test metadata
                 var isTest = false;
@@ -600,23 +610,51 @@ class ModuleBuilder {
                     isTest = func.meta.has(":test") || func.meta.has("test") || func.meta.has(":elixir.test");
                 }
                 
-                // Create function AST with metadata if it's a test
-                var funcAST = if (isPrivate) {
-                    makeAST(EDefp(funcName, [], null, makeAST(ENil)));
-                } else {
-                    makeAST(EDef(funcName, [], null, makeAST(ENil)));
+                // Extract the function body from the TypedExpr
+                switch(funcExpr.expr) {
+                    case TFunction(tfunc):
+                        // Extract arguments
+                        var args = [];
+                        for (arg in tfunc.args) {
+                            var paramName = NameUtils.toSnakeCase(arg.v.name);
+                            args.push(PVar(paramName));
+                        }
+                        
+                        // Build the function body using ElixirASTBuilder
+                        // First analyze variable usage for proper underscore prefixing
+                        var functionUsageMap = if (tfunc.expr != null) {
+                            reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                        } else {
+                            null;
+                        };
+                        
+                        var body = if (tfunc.expr != null) {
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
+                        } else {
+                            makeAST(ENil);
+                        }
+                        
+                        // Create the function definition (use defp for private functions)
+                        var funcAST = if (func.isPublic) {
+                            makeAST(EDef(funcName, args, null, body));
+                        } else {
+                            makeAST(EDefp(funcName, args, null, body));
+                        }
+                        
+                        // Add test metadata to the AST node if it's a test function
+                        if (isTest) {
+                            funcAST = makeASTWithMeta(
+                                funcAST.def,
+                                {isTest: true},
+                                funcAST.pos
+                            );
+                        }
+                        
+                        statements.push(funcAST);
+                        
+                    default:
+                        // Not a function, skip
                 }
-                
-                // Add test metadata to the AST node if it's a test function
-                if (isTest) {
-                    funcAST = makeASTWithMeta(
-                        funcAST.def,
-                        {isTest: true},
-                        funcAST.pos
-                    );
-                }
-                
-                statements.push(funcAST);
             }
         }
         
