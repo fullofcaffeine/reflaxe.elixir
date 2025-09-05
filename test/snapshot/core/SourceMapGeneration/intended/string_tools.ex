@@ -4,7 +4,7 @@ defmodule StringTools do
     result = ""
     g = 0
     g1 = s.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, result, g, :ok}, fn _, {acc_g1, acc_result, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.charCodeAt(i)
@@ -13,9 +13,9 @@ defmodule StringTools do
     else
       acc_result = acc_result <> "%" <> hex(c, 2).toUpperCase()
     end
-    {:cont, {acc_result, acc_g, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_result, acc_g, acc_state}}
   else
-    {:halt, {acc_result, acc_g, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_result, acc_g, acc_state}}
   end
 end)
     result
@@ -23,7 +23,7 @@ end)
   def url_decode(s) do
     result = ""
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, result, i, :ok}, fn _, {acc_s, acc_result, acc_i, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, s, i, :ok}, fn _, {acc_result, acc_s, acc_i, acc_state} ->
   if (acc_i < acc_s.length) do
     c = acc_s.charAt(acc_i)
     if (c == "%") do
@@ -39,9 +39,9 @@ end)
     end
     acc_result = acc_result <> c
     acc_i = acc_i + 1
-    {:cont, {acc_s, acc_result, acc_i, acc_state}}
+    {:cont, {acc_result, acc_s, acc_i, acc_state}}
   else
-    {:halt, {acc_s, acc_result, acc_i, acc_state}}
+    {:halt, {acc_result, acc_s, acc_i, acc_state}}
   end
 end)
     result
@@ -101,12 +101,12 @@ end)
   def lpad(s, c, l) do
     if (c.length <= 0), do: s
     buf = ""
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf, l, s, :ok}, fn _, {acc_buf, acc_l, acc_s, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf, s, l, :ok}, fn _, {acc_buf, acc_s, acc_l, acc_state} ->
   if (acc_buf.length + acc_s.length < acc_l) do
     acc_buf = acc_buf <> c
-    {:cont, {acc_buf, acc_l, acc_s, acc_state}}
+    {:cont, {acc_buf, acc_s, acc_l, acc_state}}
   else
-    {:halt, {acc_buf, acc_l, acc_s, acc_state}}
+    {:halt, {acc_buf, acc_s, acc_l, acc_state}}
   end
 end)
     buf <> s
@@ -114,12 +114,12 @@ end)
   def rpad(s, c, l) do
     if (c.length <= 0), do: s
     buf = s
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf, l, :ok}, fn _, {acc_buf, acc_l, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, buf, :ok}, fn _, {acc_l, acc_buf, acc_state} ->
   if (acc_buf.length < acc_l) do
     acc_buf = acc_buf <> c
-    {:cont, {acc_buf, acc_l, acc_state}}
+    {:cont, {acc_l, acc_buf, acc_state}}
   else
-    {:halt, {acc_buf, acc_l, acc_state}}
+    {:halt, {acc_l, acc_buf, acc_state}}
   end
 end)
     buf
@@ -178,7 +178,7 @@ end)
       result = 0
       g = 0
       g1 = hex.length
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g1, g, :ok}, fn _, {acc_result, acc_g1, acc_g, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, g1, :ok}, fn _, {acc_g, acc_result, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = hex.charCodeAt(i)
@@ -196,9 +196,9 @@ end)
         end
       end
     end
-    {:cont, {acc_result, acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_result, acc_g1, acc_state}}
   else
-    {:halt, {acc_result, acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_result, acc_g1, acc_state}}
   end
 end)
       result
@@ -216,7 +216,7 @@ end)
     end
     g = start
     g1 = str.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, result, g, :ok}, fn _, {acc_g1, acc_result, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = str.charCodeAt(i)
@@ -225,9 +225,9 @@ end)
     else
       nil
     end
-    {:cont, {acc_g, acc_g1, acc_result, acc_state}}
+    {:cont, {acc_g1, acc_result, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_result, acc_state}}
+    {:halt, {acc_g1, acc_result, acc_g, acc_state}}
   end
 end)
     if negative do

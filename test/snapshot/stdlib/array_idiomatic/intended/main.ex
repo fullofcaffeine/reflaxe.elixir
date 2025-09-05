@@ -93,14 +93,14 @@ end
     numbers = [1, 2, 3]
     Log.trace("Iterating with for loop:", %{:fileName => "Main.hx", :lineNumber => 149, :className => "Main", :methodName => "testIteratorFunction"})
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, numbers, :ok}, fn _, {acc_g, acc_numbers, acc_state} ->
   if (acc_g < acc_numbers.length) do
     n = numbers[g]
     acc_g = acc_g + 1
     Log.trace("  Number: " <> n, %{:fileName => "Main.hx", :lineNumber => 151, :className => "Main", :methodName => "testIteratorFunction"})
-    {:cont, {acc_numbers, acc_g, acc_state}}
+    {:cont, {acc_g, acc_numbers, acc_state}}
   else
-    {:halt, {acc_numbers, acc_g, acc_state}}
+    {:halt, {acc_g, acc_numbers, acc_state}}
   end
 end)
     iter_current = nil

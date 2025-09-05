@@ -21,7 +21,7 @@ defmodule Int64Helper do
     len = s.length
     g = 0
     g1 = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {p01, this1, this1, digit_high, current, b_low, g, p10, g1, low, p01, p10, b_low, multiplier, high, low, low, high, p01, digit_low, high, high, b_high, p10, b_high, high, this1, :ok}, fn _, {acc_p01, acc_this1, acc_this1, acc_digit_high, acc_current, acc_b_low, acc_g, acc_p10, acc_g1, acc_low, acc_p01, acc_p10, acc_b_low, acc_multiplier, acc_high, acc_low, acc_low, acc_high, acc_p01, acc_digit_low, acc_high, acc_high, acc_b_high, acc_p10, acc_b_high, acc_high, acc_this1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {low, this1, p10, low, g1, digit_low, p10, high, digit_high, low, this1, g, this1, p10, current, high, b_low, high, p01, p01, b_high, b_low, high, b_high, multiplier, high, p01, :ok}, fn _, {acc_low, acc_this1, acc_p10, acc_low, acc_g1, acc_digit_low, acc_p10, acc_high, acc_digit_high, acc_low, acc_this1, acc_g, acc_this1, acc_p10, acc_current, acc_high, acc_b_low, acc_high, acc_p01, acc_p01, acc_b_high, acc_b_low, acc_high, acc_b_high, acc_multiplier, acc_high, acc_p01, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     digit_int = (s.charCodeAt(((len - 1) - i)) - 48)
@@ -139,9 +139,9 @@ acc_this1
     acc_multiplier = if Int32_Impl_.ucompare(acc_low, acc_p01) < 0, do: ret
 if Int32_Impl_.ucompare(acc_low, acc_p10) < 0, do: ret
 acc_this1
-    {:cont, {acc_p01, acc_this1, acc_this1, acc_digit_high, acc_current, acc_b_low, acc_g, acc_p10, acc_g1, acc_low, acc_p01, acc_p10, acc_b_low, acc_multiplier, acc_high, acc_low, acc_low, acc_high, acc_p01, acc_digit_low, acc_high, acc_high, acc_b_high, acc_p10, acc_b_high, acc_high, acc_this1, acc_state}}
+    {:cont, {acc_low, acc_this1, acc_p10, acc_low, acc_g1, acc_digit_low, acc_p10, acc_high, acc_digit_high, acc_low, acc_this1, acc_g, acc_this1, acc_p10, acc_current, acc_high, acc_b_low, acc_high, acc_p01, acc_p01, acc_b_high, acc_b_low, acc_high, acc_b_high, acc_multiplier, acc_high, acc_p01, acc_state}}
   else
-    {:halt, {acc_p01, acc_this1, acc_this1, acc_digit_high, acc_current, acc_b_low, acc_g, acc_p10, acc_g1, acc_low, acc_p01, acc_p10, acc_b_low, acc_multiplier, acc_high, acc_low, acc_low, acc_high, acc_p01, acc_digit_low, acc_high, acc_high, acc_b_high, acc_p10, acc_b_high, acc_high, acc_this1, acc_state}}
+    {:halt, {acc_low, acc_this1, acc_p10, acc_low, acc_g1, acc_digit_low, acc_p10, acc_high, acc_digit_high, acc_low, acc_this1, acc_g, acc_this1, acc_p10, acc_current, acc_high, acc_b_low, acc_high, acc_p01, acc_p01, acc_b_high, acc_b_low, acc_high, acc_b_high, acc_multiplier, acc_high, acc_p01, acc_state}}
   end
 end)
     current
@@ -168,7 +168,7 @@ else
   no_fractions
 end
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {a_high, high, rest, this1, this1, i, this1, a_low, result, this1, b, :ok}, fn _, {acc_a_high, acc_high, acc_rest, acc_this1, acc_this1, acc_i, acc_this1, acc_a_low, acc_result, acc_this1, acc_b, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {a_low, b, this1, this1, high, a_high, result, this1, rest, i, this1, :ok}, fn _, {acc_a_low, acc_b, acc_this1, acc_this1, acc_high, acc_a_high, acc_result, acc_this1, acc_rest, acc_i, acc_this1, acc_state} ->
   if (acc_rest >= 1) do
     curr = acc_rest rem 2
     acc_rest = acc_rest / 2
@@ -210,9 +210,9 @@ if Int32_Impl_.ucompare(low, acc_result.low) < 0, do: ret
 acc_this1
     end
     acc_i = acc_i + 1
-    {:cont, {acc_a_high, acc_high, acc_rest, acc_this1, acc_this1, acc_i, acc_this1, acc_a_low, acc_result, acc_this1, acc_b, acc_state}}
+    {:cont, {acc_a_low, acc_b, acc_this1, acc_this1, acc_high, acc_a_high, acc_result, acc_this1, acc_rest, acc_i, acc_this1, acc_state}}
   else
-    {:halt, {acc_a_high, acc_high, acc_rest, acc_this1, acc_this1, acc_i, acc_this1, acc_a_low, acc_result, acc_this1, acc_b, acc_state}}
+    {:halt, {acc_a_low, acc_b, acc_this1, acc_this1, acc_high, acc_a_high, acc_result, acc_this1, acc_rest, acc_i, acc_this1, acc_state}}
   end
 end)
     if neg do
