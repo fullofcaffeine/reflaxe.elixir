@@ -1,10 +1,10 @@
 defmodule UserProfileTemplate do
   def render_profile(user) do
-    "<div class='user-profile'><h1>" <> user[:name] <> "</h1><p>Age: " <> user[:age] <> "</p></div>"
+    "<div class='user-profile'><h1>" <> user.name <> "</h1><p>Age: " <> user.age <> "</p></div>"
   end
   def render_with_condition(user) do
-    badge = if (user[:isAdmin]), do: "Admin", else: "User"
-    "<div class='user-info'><h2>" <> user[:name] <> "</h2><span class='badge'>" <> badge <> "</span></div>"
+    badge = if (user.isAdmin), do: "Admin", else: "User"
+    "<div class='user-info'><h2>" <> user.name <> "</h2><span class='badge'>" <> badge <> "</span></div>"
   end
   def render_user_list(users) do
     items = []
@@ -13,7 +13,7 @@ defmodule UserProfileTemplate do
   if (acc_g < acc_users.length) do
     user = users[g]
     acc_g = acc_g + 1
-    items ++ ["<li><strong>" <> user[:name] <> "</strong> - " <> user[:email] <> "</li>"]
+    items ++ ["<li><strong>" <> user.name <> "</strong> - " <> user.email <> "</li>"]
     {:cont, {acc_users, acc_g, acc_state}}
   else
     {:halt, {acc_users, acc_g, acc_state}}

@@ -120,7 +120,7 @@ end)
   def values(options) do
     result = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {options, g, :ok}, fn _, {acc_options, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, options, :ok}, fn _, {acc_g, acc_options, acc_state} ->
   if (acc_g < acc_options.length) do
     option = options[g]
     acc_g = acc_g + 1
@@ -132,9 +132,9 @@ end)
       1 ->
         nil
     end
-    {:cont, {acc_options, acc_g, acc_state}}
+    {:cont, {acc_g, acc_options, acc_state}}
   else
-    {:halt, {acc_options, acc_g, acc_state}}
+    {:halt, {acc_g, acc_options, acc_state}}
   end
 end)
     result

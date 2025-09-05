@@ -34,7 +34,7 @@ end)
     buf = Bytes.alloc(bufsize)
     total = Bytes.alloc(0)
     len = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {len, total, :ok}, fn _, {acc_len, acc_total, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len, :ok}, fn _, {acc_total, acc_len, acc_state} ->
   if true do
     n = struct.readBytes(buf, 0, bufsize)
     if (n == 0) do
@@ -45,9 +45,9 @@ end)
     new_total.blit(acc_len, buf, 0, n)
     acc_total = new_total
     acc_len = acc_len + n
-    {:cont, {acc_len, acc_total, acc_state}}
+    {:cont, {acc_total, acc_len, acc_state}}
   else
-    {:halt, {acc_len, acc_total, acc_state}}
+    {:halt, {acc_total, acc_len, acc_state}}
   end
 end)
     total

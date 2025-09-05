@@ -33,7 +33,7 @@ defmodule Main do
     value = ResultTools.unwrap_or(result, "default")
   end
   def process_user(user_data) do
-    {:Map, {:ParseNumber, user_data[:age]}, fn parsed_age -> %{:name => user_data[:name], :age => parsed_age} end}
+    {:Map, {:ParseNumber, user_data.age}, fn parsed_age -> %{:name => user_data.name, :age => parsed_age} end}
   end
   def demonstrate_utilities() do
     success = {:Ok, 42}
