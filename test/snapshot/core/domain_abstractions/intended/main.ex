@@ -31,7 +31,7 @@ defmodule Main do
     end
     invalid_emails = ["invalid-email", "@example.com", "user@", "user@@example.com", "", "user space@example.com"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_emails, g, :ok}, fn _, {acc_invalid_emails, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_emails, :ok}, fn _, {acc_g, acc_invalid_emails, acc_state} ->
   if (acc_g < acc_invalid_emails.length) do
     invalid_email = invalid_emails[g]
     acc_g = acc_g + 1
@@ -45,9 +45,9 @@ defmodule Main do
         reason = acc_g
         Log.trace("Correctly rejected \"" <> invalid_email <> "\": " <> reason, %{:fileName => "Main.hx", :lineNumber => 81, :className => "Main", :methodName => "testEmailValidation"})
     end
-    {:cont, {acc_invalid_emails, acc_g, acc_state}}
+    {:cont, {acc_g, acc_invalid_emails, acc_state}}
   else
-    {:halt, {acc_invalid_emails, acc_g, acc_state}}
+    {:halt, {acc_g, acc_invalid_emails, acc_state}}
   end
 end)
     email1_result = {:Parse, "Test@Example.Com"}
@@ -63,7 +63,7 @@ end)
     Log.trace("=== UserId Validation Tests ===", %{:fileName => "Main.hx", :lineNumber => 101, :className => "Main", :methodName => "testUserIdValidation"})
     valid_ids = ["user123", "Alice", "Bob42", "testUser"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {valid_ids, g, :ok}, fn _, {acc_valid_ids, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, valid_ids, :ok}, fn _, {acc_g, acc_valid_ids, acc_state} ->
   if (acc_g < acc_valid_ids.length) do
     valid_id = valid_ids[g]
     acc_g = acc_g + 1
@@ -82,9 +82,9 @@ end)
         reason = acc_g
         Log.trace("Unexpected UserId validation failure for \"" <> valid_id <> "\": " <> reason, %{:fileName => "Main.hx", :lineNumber => 118, :className => "Main", :methodName => "testUserIdValidation"})
     end
-    {:cont, {acc_valid_ids, acc_g, acc_state}}
+    {:cont, {acc_g, acc_valid_ids, acc_state}}
   else
-    {:halt, {acc_valid_ids, acc_g, acc_state}}
+    {:halt, {acc_g, acc_valid_ids, acc_state}}
   end
 end)
     invalid_ids = ["ab", "user@123", "user 123", "user-123", "", (
@@ -102,7 +102,7 @@ end)
 g), "")
 )]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_ids, g, :ok}, fn _, {acc_invalid_ids, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_ids, :ok}, fn _, {acc_g, acc_invalid_ids, acc_state} ->
   if (acc_g < acc_invalid_ids.length) do
     invalid_id = invalid_ids[g]
     acc_g = acc_g + 1
@@ -116,9 +116,9 @@ g), "")
         reason = acc_g
         Log.trace("Correctly rejected \"" <> invalid_id <> "\": " <> reason, %{:fileName => "Main.hx", :lineNumber => 137, :className => "Main", :methodName => "testUserIdValidation"})
     end
-    {:cont, {acc_invalid_ids, acc_g, acc_state}}
+    {:cont, {acc_g, acc_invalid_ids, acc_state}}
   else
-    {:halt, {acc_invalid_ids, acc_g, acc_state}}
+    {:halt, {acc_g, acc_invalid_ids, acc_state}}
   end
 end)
     id1_result = {:Parse, "User123"}
@@ -135,7 +135,7 @@ end)
     Log.trace("=== PositiveInt Arithmetic Tests ===", %{:fileName => "Main.hx", :lineNumber => 158, :className => "Main", :methodName => "testPositiveIntArithmetic"})
     valid_numbers = [1, 5, 42, 100, 999]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {valid_numbers, g, :ok}, fn _, {acc_valid_numbers, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, valid_numbers, :ok}, fn _, {acc_g, acc_valid_numbers, acc_state} ->
   if (acc_g < acc_valid_numbers.length) do
     valid_num = valid_numbers[g]
     acc_g = acc_g + 1
@@ -169,9 +169,9 @@ end)
         reason = acc_g
         Log.trace("Unexpected PositiveInt validation failure for " <> valid_num <> ": " <> reason, %{:fileName => "Main.hx", :lineNumber => 190, :className => "Main", :methodName => "testPositiveIntArithmetic"})
     end
-    {:cont, {acc_valid_numbers, acc_g, acc_state}}
+    {:cont, {acc_g, acc_valid_numbers, acc_state}}
   else
-    {:halt, {acc_valid_numbers, acc_g, acc_state}}
+    {:halt, {acc_g, acc_valid_numbers, acc_state}}
   end
 end)
     invalid_numbers = [0, -1, -42, -100]
@@ -300,7 +300,7 @@ end)
 end)
     whitespace_strings = ["  hello  ", "\tworld\n", "  test  "]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {whitespace_strings, g, :ok}, fn _, {acc_whitespace_strings, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, whitespace_strings, :ok}, fn _, {acc_g, acc_whitespace_strings, acc_state} ->
   if (acc_g < acc_whitespace_strings.length) do
     whitespace_str = whitespace_strings[g]
     acc_g = acc_g + 1
@@ -315,9 +315,9 @@ end)
         reason = acc_g
         Log.trace("Trim and parse failed for \"" <> whitespace_str <> "\": " <> reason, %{:fileName => "Main.hx", :lineNumber => 298, :className => "Main", :methodName => "testNonEmptyStringOperations"})
     end
-    {:cont, {acc_whitespace_strings, acc_g, acc_state}}
+    {:cont, {acc_g, acc_whitespace_strings, acc_state}}
   else
-    {:halt, {acc_whitespace_strings, acc_g, acc_state}}
+    {:halt, {acc_g, acc_whitespace_strings, acc_state}}
   end
 end)
     test_str = ResultTools.unwrap({:Parse, "Hello World"})
@@ -339,14 +339,14 @@ end)
     parts = NonEmptyString_Impl_.split_non_empty(test_str, " ")
     Log.trace("Split by space: " <> parts.length <> " parts", %{:fileName => "Main.hx", :lineNumber => 319, :className => "Main", :methodName => "testNonEmptyStringOperations"})
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, parts, :ok}, fn _, {acc_g, acc_parts, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {parts, g, :ok}, fn _, {acc_parts, acc_g, acc_state} ->
   if (acc_g < acc_parts.length) do
     part = parts[g]
     acc_g = acc_g + 1
     Log.trace("  Part: " <> NonEmptyString_Impl_.to_string(part), %{:fileName => "Main.hx", :lineNumber => 321, :className => "Main", :methodName => "testNonEmptyStringOperations"})
-    {:cont, {acc_g, acc_parts, acc_state}}
+    {:cont, {acc_parts, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_parts, acc_state}}
+    {:halt, {acc_parts, acc_g, acc_state}}
   end
 end)
   end

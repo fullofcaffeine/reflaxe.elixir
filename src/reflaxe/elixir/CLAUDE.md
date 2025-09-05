@@ -45,7 +45,6 @@ src/reflaxe/elixir/
     ├── SchemaCompiler.hx         # @:schema Ecto models
     ├── StringMethodCompiler.hx   # String method → Elixir String module
     ├── TestCompiler.hx           # @:test ExUnit test generation
-    ├── UnifiedLoopCompiler.hx    # For/while loop optimization
     └── VariableCompiler.hx       # Variable naming and tracking
 ```
 

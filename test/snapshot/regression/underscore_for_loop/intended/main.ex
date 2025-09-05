@@ -18,7 +18,7 @@ defmodule Main do
     matrix = [[1, 2], [3, 4], [5, 6]]
     rows = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {rows, cols, matrix, g, :ok}, fn _, {acc_rows, acc_cols, acc_matrix, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {rows, g, cols, matrix, :ok}, fn _, {acc_rows, acc_g, acc_cols, acc_matrix, acc_state} ->
   if (acc_g < acc_matrix.length) do
     _item = matrix[g]
     acc_g = acc_g + 1
@@ -29,9 +29,9 @@ defmodule Main do
     _item = 2
     acc_cols = acc_cols + 1
     Log.trace("Columns: " <> acc_cols, %{:fileName => "Main.hx", :lineNumber => 43, :className => "Main", :methodName => "main"})
-    {:cont, {acc_rows, acc_cols, acc_matrix, acc_g, acc_state}}
+    {:cont, {acc_rows, acc_g, acc_cols, acc_matrix, acc_state}}
   else
-    {:halt, {acc_rows, acc_cols, acc_matrix, acc_g, acc_state}}
+    {:halt, {acc_rows, acc_g, acc_cols, acc_matrix, acc_state}}
   end
 end)
     Log.trace("Rows: " <> rows, %{:fileName => "Main.hx", :lineNumber => 45, :className => "Main", :methodName => "main"})

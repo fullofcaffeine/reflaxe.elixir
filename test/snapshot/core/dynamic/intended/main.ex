@@ -28,14 +28,14 @@ defmodule Main do
     var_args = fn args ->
   sum = 0
   g = 0
-  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, args, g, :ok}, fn _, {acc_sum, acc_args, acc_g, acc_state} ->
+  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, sum, args, :ok}, fn _, {acc_g, acc_sum, acc_args, acc_state} ->
   if (acc_g < acc_args.length) do
     arg = args[g]
     acc_g = acc_g + 1
     acc_sum = acc_sum + arg
-    {:cont, {acc_sum, acc_args, acc_g, acc_state}}
+    {:cont, {acc_g, acc_sum, acc_args, acc_state}}
   else
-    {:halt, {acc_sum, acc_args, acc_g, acc_state}}
+    {:halt, {acc_g, acc_sum, acc_args, acc_state}}
   end
 end)
   sum
@@ -67,14 +67,14 @@ end
   def dynamic_collections() do
     dyn_array = [1, "two", 3, true, %{:x => 10}]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, dyn_array, :ok}, fn _, {acc_g, acc_dyn_array, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {dyn_array, g, :ok}, fn _, {acc_dyn_array, acc_g, acc_state} ->
   if (acc_g < acc_dyn_array.length) do
     item = dyn_array[g]
     acc_g = acc_g + 1
     Log.trace("Item: " <> Std.string(item), %{:fileName => "Main.hx", :lineNumber => 103, :className => "Main", :methodName => "dynamicCollections"})
-    {:cont, {acc_g, acc_dyn_array, acc_state}}
+    {:cont, {acc_dyn_array, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_dyn_array, acc_state}}
+    {:halt, {acc_dyn_array, acc_g, acc_state}}
   end
 end)
     dyn_obj = %{}
