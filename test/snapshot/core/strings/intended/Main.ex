@@ -2,11 +2,11 @@ defmodule Main do
   def string_basics() do
     str1 = "Hello"
     str2 = "World"
-    str3 = str <> " " <> str
-    Log.trace(str, %{:fileName => "Main.hx", :lineNumber => 15, :className => "Main", :methodName => "stringBasics"})
+    str3 = str1 <> " " <> str2
+    Log.trace(str3, %{:fileName => "Main.hx", :lineNumber => 15, :className => "Main", :methodName => "stringBasics"})
     multiline = "This is\na multi-line\nstring"
     Log.trace(multiline, %{:fileName => "Main.hx", :lineNumber => 21, :className => "Main", :methodName => "stringBasics"})
-    Log.trace("Length of \"" <> str <> "\": " <> str.length, %{:fileName => "Main.hx", :lineNumber => 24, :className => "Main", :methodName => "stringBasics"})
+    Log.trace("Length of \"" <> str3 <> "\": " <> str3.length, %{:fileName => "Main.hx", :lineNumber => 24, :className => "Main", :methodName => "stringBasics"})
   end
   def string_interpolation() do
     name = "Alice"
@@ -49,13 +49,13 @@ defmodule Main do
     str2 = "Apple"
     str3 = "apple"
     str4 = "banana"
-    Log.trace("str1 == str3: " <> Std.string(str == str), %{:fileName => "Main.hx", :lineNumber => 94, :className => "Main", :methodName => "stringComparison"})
-    Log.trace("str1 == str2: " <> Std.string(str == str), %{:fileName => "Main.hx", :lineNumber => 95, :className => "Main", :methodName => "stringComparison"})
-    if (str < str) do
-      Log.trace("" <> str <> " comes before " <> str, %{:fileName => "Main.hx", :lineNumber => 99, :className => "Main", :methodName => "stringComparison"})
+    Log.trace("str1 == str3: " <> Std.string(str1 == str3), %{:fileName => "Main.hx", :lineNumber => 94, :className => "Main", :methodName => "stringComparison"})
+    Log.trace("str1 == str2: " <> Std.string(str1 == str2), %{:fileName => "Main.hx", :lineNumber => 95, :className => "Main", :methodName => "stringComparison"})
+    if (str1 < str4) do
+      Log.trace("" <> str1 <> " comes before " <> str4, %{:fileName => "Main.hx", :lineNumber => 99, :className => "Main", :methodName => "stringComparison"})
     end
-    if (str.toLowerCase() == str.toLowerCase()) do
-      Log.trace("" <> str <> " and " <> str <> " are equal (case-insensitive)", %{:fileName => "Main.hx", :lineNumber => 104, :className => "Main", :methodName => "stringComparison"})
+    if (str1.toLowerCase() == str2.toLowerCase()) do
+      Log.trace("" <> str1 <> " and " <> str2 <> " are equal (case-insensitive)", %{:fileName => "Main.hx", :lineNumber => 104, :className => "Main", :methodName => "stringComparison"})
     end
   end
   def string_building() do
@@ -89,7 +89,7 @@ defmodule Main do
     temp = text
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {temp, all_numbers, :ok}, fn _, {acc_temp, acc_all_numbers, acc_state} ->
   if (acc_all_numbers.match(acc_temp)) do
-    numbers.push(acc_all_numbers.matched(0))
+    numbers ++ [acc_all_numbers.matched(0)]
     acc_temp = acc_all_numbers.matchedRight()
     {:cont, {acc_temp, acc_all_numbers, acc_state}}
   else
@@ -124,8 +124,8 @@ end)
     Log.trace("Length: " <> unicode.length, %{:fileName => "Main.hx", :lineNumber => 190, :className => "Main", :methodName => "unicodeStrings"})
     escaped = "Line 1\nLine 2\tTabbed\r\nLine 3"
     Log.trace("Escaped: " <> escaped, %{:fileName => "Main.hx", :lineNumber => 194, :className => "Main", :methodName => "unicodeStrings"})
-    quote = "She said \"Hello\""
-    Log.trace("Quote: " <> quote, %{:fileName => "Main.hx", :lineNumber => 197, :className => "Main", :methodName => "unicodeStrings"})
+    quote_param = "She said \"Hello\""
+    Log.trace("Quote: " <> quote_param, %{:fileName => "Main.hx", :lineNumber => 197, :className => "Main", :methodName => "unicodeStrings"})
     backslash = "Path: C:\\Users\\Name"
     Log.trace("Backslash: " <> backslash, %{:fileName => "Main.hx", :lineNumber => 200, :className => "Main", :methodName => "unicodeStrings"})
   end

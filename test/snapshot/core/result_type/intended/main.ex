@@ -10,13 +10,13 @@ defmodule Main do
     {:Map, {:ParseNumber, input}, fn num -> num * 2 end}
   end
   def handle_result(result) do
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         value = g
         "Success: " <> value
       1 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         message = g
         "Error: " <> message
     end
@@ -60,17 +60,17 @@ defmodule Main do
     div_result = {:DivideNumbers, "10", "2"}
     _div_error = {:DivideNumbers, "10", "0"}
     doubled = {:DoubleIfValid, "21"}
-    message1 = handle_result(result)
-    message2 = handle_result(result)
-    _value1 = get_value_or_default(result)
-    _value2 = get_value_or_default(result)
+    message1 = handle_result(result1)
+    message2 = handle_result(result2)
+    _value1 = get_value_or_default(result1)
+    _value2 = get_value_or_default(result2)
     _user = {:ProcessUser, %{:name => "Alice", :age => "25"}}
     _utils = demonstrate_utilities()
     numbers = {:ProcessMultipleNumbers, ["1", "2", "3"]}
     _numbers_error = {:ProcessMultipleNumbers, ["1", "x", "3"]}
     _doubled_numbers = {:ValidateAndDouble, ["5", "10", "15"]}
-    Log.trace("Parse \"123\": " <> message, %{:fileName => "Main.hx", :lineNumber => 190, :className => "Main", :methodName => "main"})
-    Log.trace("Parse \"abc\": " <> message, %{:fileName => "Main.hx", :lineNumber => 191, :className => "Main", :methodName => "main"})
+    Log.trace("Parse \"123\": " <> message1, %{:fileName => "Main.hx", :lineNumber => 190, :className => "Main", :methodName => "main"})
+    Log.trace("Parse \"abc\": " <> message2, %{:fileName => "Main.hx", :lineNumber => 191, :className => "Main", :methodName => "main"})
     Log.trace("Divide 10/2: " <> Std.string(div_result), %{:fileName => "Main.hx", :lineNumber => 192, :className => "Main", :methodName => "main"})
     Log.trace("Double 21: " <> Std.string(doubled), %{:fileName => "Main.hx", :lineNumber => 193, :className => "Main", :methodName => "main"})
     Log.trace("Numbers [1,2,3]: " <> Std.string(numbers), %{:fileName => "Main.hx", :lineNumber => 194, :className => "Main", :methodName => "main"})

@@ -26,13 +26,13 @@ defmodule Main do
 end)
     g = 0
     g1 = fruits.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     Log.trace("" <> i <> ": " <> fruits[i], %{:fileName => "Main.hx", :lineNumber => 40, :className => "Main", :methodName => "arrayIteration"})
-    {:cont, {acc_g, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
     i = 0
@@ -67,32 +67,44 @@ end)
   end
   def array_comprehensions() do
     g = []
-    squares = g.push(1)
-g.push(4)
-g.push(9)
-g.push(16)
-g.push(25)
+    g = g ++ [1]
+    g = g ++ [4]
+    g = g ++ [9]
+    g = g ++ [16]
+    g = g ++ [25]
+    squares = g
 g
     Log.trace("Squares: " <> Std.string(squares), %{:fileName => "Main.hx", :lineNumber => 88, :className => "Main", :methodName => "arrayComprehensions"})
     g = []
-    even_squares = if 1 rem 2 == 0, do: g.push(1)
-if 2 rem 2 == 0, do: g.push(4)
-if 3 rem 2 == 0, do: g.push(9)
-if 4 rem 2 == 0, do: g.push(16)
-if 5 rem 2 == 0, do: g.push(25)
-if 6 rem 2 == 0, do: g.push(36)
-if 7 rem 2 == 0, do: g.push(49)
-if 8 rem 2 == 0, do: g.push(64)
-if 9 rem 2 == 0, do: g.push(81)
+    g = g ++ [1]
+    g = g ++ [4]
+    g = g ++ [9]
+    g = g ++ [16]
+    g = g ++ [25]
+    g = g ++ [36]
+    g = g ++ [49]
+    g = g ++ [64]
+    g = g ++ [81]
+    even_squares = if 1 rem 2 == 0, do: g
+if 2 rem 2 == 0, do: g
+if 3 rem 2 == 0, do: g
+if 4 rem 2 == 0, do: g
+if 5 rem 2 == 0, do: g
+if 6 rem 2 == 0, do: g
+if 7 rem 2 == 0, do: g
+if 8 rem 2 == 0, do: g
+if 9 rem 2 == 0, do: g
 g
     Log.trace("Even squares: " <> Std.string(even_squares), %{:fileName => "Main.hx", :lineNumber => 92, :className => "Main", :methodName => "arrayComprehensions"})
     g = []
-    pairs = g.push(%{:x => 1, :y => 2})
-g.push(%{:x => 1, :y => 3})
-g.push(%{:x => 2, :y => 1})
-g.push(%{:x => 2, :y => 3})
-g.push(%{:x => 3, :y => 1})
-g.push(%{:x => 3, :y => 2})
+    g = g ++ [%{:x => 1, :y => 2}]
+    g = g ++ [%{:x => 1, :y => 3}]
+    g = g ++ [%{:x => 2, :y => 1}]
+    g = g ++ [%{:x => 2, :y => 3}]
+    g = g ++ [%{:x => 3, :y => 1}]
+    g = g ++ [%{:x => 3, :y => 2}]
+    pairs = g
+g
 nil
 g
     Log.trace("Pairs: " <> Std.string(pairs), %{:fileName => "Main.hx", :lineNumber => 96, :className => "Main", :methodName => "arrayComprehensions"})
@@ -122,21 +134,22 @@ end)
   end
 end)
     g = []
-    g = []
-    g = []
-    g = []
-    grid = g.push(g.push(0)
-g.push(1)
-g.push(2)
-g)
-g.push(g.push(3)
-g.push(4)
-g.push(5)
-g)
-g.push(g.push(6)
-g.push(7)
-g.push(8)
-g)
+    g = g ++ [g = []
+g ++ [0]
+g ++ [1]
+g ++ [2]
+g]
+    g = g ++ [g = []
+g ++ [3]
+g ++ [4]
+g ++ [5]
+g]
+    g = g ++ [g = []
+g ++ [6]
+g ++ [7]
+g ++ [8]
+g]
+    grid = g
 g
     Log.trace("Grid: " <> Std.string(grid), %{:fileName => "Main.hx", :lineNumber => 119, :className => "Main", :methodName => "multiDimensional"})
   end
@@ -151,7 +164,7 @@ g
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g2, :ok}, fn _, {acc_g1, acc_g2, acc_state} ->
   if (acc_g1 < acc_g2) do
     i = acc_g1 = acc_g1 + 1
-    g.push(arr[i])
+    g ++ [arr[i]]
     {:cont, {acc_g1, acc_g2, acc_state}}
   else
     {:halt, {acc_g1, acc_g2, acc_state}}
@@ -185,9 +198,9 @@ end)
     Log.trace("Numbers via forEach:", %{:fileName => "Main.hx", :lineNumber => 173, :className => "Main", :methodName => "functionalMethods"})
     ArrayTools.for_each(numbers, fn n -> Log.trace("  - " <> n, %{:fileName => "Main.hx", :lineNumber => 174, :className => "Main", :methodName => "functionalMethods"}) end)
     first3 = ArrayTools.take(numbers, 3)
-    Log.trace("First 3 numbers: " <> Std.string(first), %{:fileName => "Main.hx", :lineNumber => 178, :className => "Main", :methodName => "functionalMethods"})
+    Log.trace("First 3 numbers: " <> Std.string(first3), %{:fileName => "Main.hx", :lineNumber => 178, :className => "Main", :methodName => "functionalMethods"})
     skip2 = ArrayTools.drop(numbers, 2)
-    Log.trace("Skip first 2: " <> Std.string(skip), %{:fileName => "Main.hx", :lineNumber => 182, :className => "Main", :methodName => "functionalMethods"})
+    Log.trace("Skip first 2: " <> Std.string(skip2), %{:fileName => "Main.hx", :lineNumber => 182, :className => "Main", :methodName => "functionalMethods"})
     nested_arrays = [[1, 2], [3, 4], [5]]
     flattened = ArrayTools.flat_map(nested_arrays, fn arr -> Enum.map(arr, fn x -> x * 2 end) end)
     Log.trace("FlatMap doubled: " <> Std.string(flattened), %{:fileName => "Main.hx", :lineNumber => 187, :className => "Main", :methodName => "functionalMethods"})
@@ -209,7 +222,7 @@ end)
     result = process_array([1, 2, 3, 4, 5])
     Log.trace("Processed: " <> Std.string(result), %{:fileName => "Main.hx", :lineNumber => 216, :className => "Main", :methodName => "main"})
     first3 = first_n(["a", "b", "c", "d", "e"], 3)
-    Log.trace("First 3: " <> Std.string(first), %{:fileName => "Main.hx", :lineNumber => 219, :className => "Main", :methodName => "main"})
+    Log.trace("First 3: " <> Std.string(first3), %{:fileName => "Main.hx", :lineNumber => 219, :className => "Main", :methodName => "main"})
     Log.trace("\n=== NEW: Functional Array Methods ===", %{:fileName => "Main.hx", :lineNumber => 221, :className => "Main", :methodName => "main"})
     functional_methods()
   end

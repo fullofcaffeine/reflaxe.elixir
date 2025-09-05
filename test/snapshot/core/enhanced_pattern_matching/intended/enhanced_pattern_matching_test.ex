@@ -1,32 +1,32 @@
 defmodule EnhancedPatternMatchingTest do
   def match_status(status) do
-    case (status.elem(0)) do
+    case (elem(status, 0)) do
       0 ->
         "Currently idle"
       1 ->
-        g = status.elem(1)
+        g = elem(status, 1)
         task = g
         "Working on: " <> task
       2 ->
-        g = status.elem(1)
-        g1 = status.elem(2)
+        g = elem(status, 1)
+        g1 = elem(status, 2)
         result = g
         duration = g1
         "Completed \"" <> result <> "\" in " <> duration <> "ms"
       3 ->
-        g = status.elem(1)
-        g1 = status.elem(2)
+        g = elem(status, 1)
+        g1 = elem(status, 2)
         error = g
         retries = g1
         "Failed with \"" <> error <> "\" after " <> retries <> " retries"
     end
   end
   def incomplete_match(status) do
-    case (status.elem(0)) do
+    case (elem(status, 0)) do
       0 ->
         "idle"
       1 ->
-        g = status.elem(1)
+        g = elem(status, 1)
         task = g
         "working: " <> task
       _ ->
@@ -34,35 +34,35 @@ defmodule EnhancedPatternMatchingTest do
     end
   end
   def match_nested_result(result) do
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
-        case (g.elem(0)) do
+        g = elem(result, 1)
+        case (elem(g, 0)) do
           0 ->
-            g = g.elem(1)
+            g = elem(g, 1)
             value = g
             "Double success: " <> Std.string(value)
           1 ->
-            g1 = g.elem(1)
-            g = g.elem(2)
+            g1 = elem(g, 1)
+            g = elem(g, 2)
             inner_error = g1
             inner_context = g
             "Outer success, inner error: " <> inner_error <> " (context: " <> inner_context <> ")"
         end
       1 ->
-        g = result.elem(1)
-        g1 = result.elem(2)
+        g = elem(result, 1)
+        g1 = elem(result, 2)
         outer_error = g
         outer_context = g1
         "Outer error: " <> outer_error <> " (context: " <> outer_context <> ")"
     end
   end
   def match_with_complex_guards(status, priority, is_urgent) do
-    case (status.elem(0)) do
+    case (elem(status, 0)) do
       0 ->
         "idle"
       1 ->
-        g = status.elem(1)
+        g = elem(status, 1)
         task = g
         if (priority > 5 && is_urgent) do
           "High priority urgent task: " <> task
@@ -81,8 +81,8 @@ defmodule EnhancedPatternMatchingTest do
           end
         end
       2 ->
-        g = status.elem(1)
-        g1 = status.elem(2)
+        g = elem(status, 1)
+        g1 = elem(status, 2)
         result = g
         duration = g1
         if (duration < 1000) do
@@ -99,8 +99,8 @@ defmodule EnhancedPatternMatchingTest do
           end
         end
       3 ->
-        g = status.elem(1)
-        g1 = status.elem(2)
+        g = elem(status, 1)
+        g1 = elem(status, 2)
         error = g
         retries = g1
         if (retries < 3) do
@@ -170,14 +170,14 @@ defmodule EnhancedPatternMatchingTest do
   end
   def chain_result_operations(input) do
     step1 = validate_input(input)
-    step2 = case (step.elem(0)) do
+    step2 = case (elem(step1, 0)) do
   0 ->
-    g = step.elem(1)
+    g = elem(step1, 1)
     validated = g
     process_data(validated)
   1 ->
-    g = step.elem(1)
-    g1 = step.elem(2)
+    g = elem(step1, 1)
+    g1 = elem(step1, 2)
     error = g
     context = g1
     context = context
@@ -189,14 +189,14 @@ defmodule EnhancedPatternMatchingTest do
     this1 = result
     this1
 end
-    step3 = case (step.elem(0)) do
+    step3 = case (elem(step2, 0)) do
   0 ->
-    g = step.elem(1)
+    g = elem(step2, 1)
     processed = g
     format_output(processed)
   1 ->
-    g = step.elem(1)
-    g1 = step.elem(2)
+    g = elem(step2, 1)
+    g1 = elem(step2, 2)
     error = g
     context = g1
     context = context
@@ -208,7 +208,7 @@ end
     this1 = result
     this1
 end
-    step
+    step3
   end
   def match_array_patterns(arr) do
     case (arr.length) do
@@ -298,11 +298,11 @@ end
     end
   end
   def match_validation_state(state) do
-    case (state.elem(0)) do
+    case (elem(state, 0)) do
       0 ->
         "Data is valid"
       1 ->
-        g = state.elem(1)
+        g = elem(state, 1)
         errors = g
         if (errors.length == 1) do
           "Single error: " <> errors[0]
@@ -316,7 +316,7 @@ end
           end
         end
       2 ->
-        g = state.elem(1)
+        g = elem(state, 1)
         validator = g
         "Validation pending by: " <> validator
     end

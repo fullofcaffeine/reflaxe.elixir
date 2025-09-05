@@ -7,14 +7,14 @@ defmodule FormTemplate do
     if (errors.length == 0), do: "<div class='no-errors'></div>"
     error_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, errors, :ok}, fn _, {acc_g, acc_errors, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {errors, g, :ok}, fn _, {acc_errors, acc_g, acc_state} ->
   if (acc_g < acc_errors.length) do
     error = errors[g]
     acc_g = acc_g + 1
-    error_items.push("<li class='error-item'>" <> error <> "</li>")
-    {:cont, {acc_g, acc_errors, acc_state}}
+    error_items ++ ["<li class='error-item'>" <> error <> "</li>"]
+    {:cont, {acc_errors, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_errors, acc_state}}
+    {:halt, {acc_errors, acc_g, acc_state}}
   end
 end)
     "<div class='form-errors'><ul class='error-list'>" <> Enum.join(error_items, "") <> "</ul></div>"

@@ -25,7 +25,7 @@ defmodule MemoryStorage do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
   if (acc_k.hasNext()) do
     acc_k = acc_k.next()
-    g.push(acc_k)
+    g ++ [acc_k]
     {:cont, {acc_k, acc_state}}
   else
     {:halt, {acc_k, acc_state}}
