@@ -1,7 +1,5 @@
 package example_migrations;
 
-import reflaxe.elixir.helpers.MigrationDSL;
-
 /**
  * Example migration using Haxe→Elixir Migration DSL
  * Tests @:migration annotation with table creation and basic operations

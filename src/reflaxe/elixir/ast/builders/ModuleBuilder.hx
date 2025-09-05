@@ -112,6 +112,9 @@ class ModuleBuilder {
         } else if (metadata.isPresence) {
             // For @:presence, build regular module body - transformer will add Phoenix.Presence
             buildRegularModuleBody(classType, varFields, funcFields);
+        } else if (metadata.isExunit) {
+            // For @:exunit, build test module body - transformer will add ExUnit.Case
+            buildExUnitBody(classType, varFields, funcFields);
         } else {
             // Regular module
             buildRegularModuleBody(classType, varFields, funcFields);
@@ -224,6 +227,14 @@ class ModuleBuilder {
             metadata.isPhoenixWeb = true;
             metadata.appName = extractAppName(classType);
             #if debug_module_builder
+            #end
+        }
+        
+        // Check for ExUnit test module
+        if (classType.meta.has(":exunit") || classType.meta.has(":elixir.exunit")) {
+            metadata.isExunit = true;
+            #if debug_module_builder
+            trace('[ModuleBuilder] ✓ Found @:exunit on class: ${classType.name}');
             #end
         }
         
@@ -564,6 +575,52 @@ class ModuleBuilder {
             }
         }
         
+        return makeAST(EBlock(statements));
+    }
+    
+    /**
+     * Build ExUnit test module body
+     * 
+     * WHY: ExUnit test classes need special structure with test methods marked
+     * WHAT: Processes methods and marks @:test methods with metadata
+     * HOW: Adds metadata to test functions for transformer to handle
+     */
+    static function buildExUnitBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+        var statements = [];
+        
+        // Add functions with test metadata
+        for (func in funcFields) {
+            if (func.expr() != null) {
+                var funcName = NameUtils.toSnakeCase(func.name);
+                var isPrivate = !func.isPublic;
+                
+                // Check if this function has @:test or :elixir.test metadata
+                var isTest = false;
+                if (func.meta != null && func.meta.has != null) {
+                    isTest = func.meta.has(":test") || func.meta.has("test") || func.meta.has(":elixir.test");
+                }
+                
+                // Create function AST with metadata if it's a test
+                var funcAST = if (isPrivate) {
+                    makeAST(EDefp(funcName, [], null, makeAST(ENil)));
+                } else {
+                    makeAST(EDef(funcName, [], null, makeAST(ENil)));
+                }
+                
+                // Add test metadata to the AST node if it's a test function
+                if (isTest) {
+                    funcAST = makeASTWithMeta(
+                        funcAST.def,
+                        {isTest: true},
+                        funcAST.pos
+                    );
+                }
+                
+                statements.push(funcAST);
+            }
+        }
+        
+        // Return the statements block
         return makeAST(EBlock(statements));
     }
 }

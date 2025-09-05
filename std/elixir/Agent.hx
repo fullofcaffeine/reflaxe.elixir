@@ -112,29 +112,9 @@ extern class Agent {
         return get(agent, (count: Int) -> count);
     }
     
-    // Map agent helpers with proper generics
-    public static inline function mapAgent<K, V>(): Result<AgentRef, String> {
-        return startLink(() -> new Map<K, V>());
-    }
-    
-    public static inline function putValue<K, V>(agent: AgentRef, key: K, value: V): String {
-        return update(agent, (state: Map<K, V>) -> {
-            state.set(key, value);
-            return state;
-        });
-    }
-    
-    public static inline function getValue<K, V>(agent: AgentRef, key: K): Null<V> {
-        return get(agent, (state: Map<K, V>) -> state.get(key));
-    }
-    
-    public static inline function deleteKey<K, V>(agent: AgentRef, key: K): Bool {
-        return getAndUpdate(agent, (state: Map<K, V>) -> {
-            var existed = state.exists(key);
-            state.remove(key);
-            return {_0: existed, _1: state};
-        });
-    }
+    // Note: Map-based Agent helpers removed due to Haxe Map type limitations in lambdas
+    // Users should use the basic Agent.get/update/getAndUpdate functions directly
+    // with their own map handling logic
 }
 
 #end

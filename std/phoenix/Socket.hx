@@ -4,22 +4,9 @@ package phoenix;
  * Phoenix Socket types - Server-side and client-side
  */
 
-/**
- * Phoenix.LiveView.Socket for managing LiveView state (Server-side)
- */
-@:native("Phoenix.LiveView.Socket")
-extern class LiveViewSocket {
-	var assigns: Dynamic;
-	var changed: Dynamic;
-	var connected: Bool;
-	var endpoint: Dynamic;
-	var id: String;
-	var parent_pid: Dynamic;
-	var root_pid: Dynamic;
-	var router: Dynamic;
-	var transport_pid: Dynamic;
-	var view: Dynamic;
-}
+// DEPRECATED: LiveViewSocket has been removed
+// Use phoenix.Phoenix.Socket<T> instead for type-safe LiveView sockets
+// See Phoenix.hx for the three-layer socket design documentation
 
 /**
  * Phoenix Socket for client-side WebSocket connections (JavaScript)

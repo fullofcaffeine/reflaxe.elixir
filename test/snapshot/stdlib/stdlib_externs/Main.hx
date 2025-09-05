@@ -7,6 +7,8 @@ import elixir.Path;
 import elixir.ElixirEnum;
 import elixir.ElixirString;
 import elixir.GenServer;
+import elixir.types.RegistryOptions.RegistryOptionsBuilder;
+import elixir.types.GenServerRef;
 
 /**
  * Test suite for essential standard library extern definitions
@@ -47,7 +49,7 @@ class Main {
     
     static function testRegistryExterns() {
         // Test Registry startup and registration
-        var registrySpec = Registry.startLink("unique", "MyRegistry");
+        var registrySpec = Registry.startLink(RegistryOptionsBuilder.unique("MyRegistry"));
         
         // Test process registration
         var registerResult = Registry.register("MyRegistry", "user:123", "user_data");
@@ -58,10 +60,6 @@ class Main {
         // Test registry information
         var count = Registry.count("MyRegistry");
         var keys = Registry.keys("MyRegistry", Process.self());
-        
-        // Test helper functions
-        var uniqueOptions = Registry.uniqueRegistry("TestRegistry");
-        var foundProcess = Registry.findProcess("MyRegistry", "user:123");
     }
     
     static function testAgentExterns() {
@@ -78,10 +76,9 @@ class Main {
         Agent.increment(null, 5);
         var currentCount = Agent.getCount(null);
         
-        // Test map agent
-        var mapAgent = Agent.mapAgent();
-        Agent.putValue(null, "key", "value");
-        var value = Agent.getValue(null, "key");
+        // Test map agent with specific type
+        // Note: Map operations removed as Agent helpers for Map types
+        // would need special handling in compiler
     }
     
     static function testIOExterns() {
@@ -256,18 +253,19 @@ class Main {
         var startResult = GenServer.startLink("MyGenServer", "init_arg");
         
         // Test GenServer communication
-        var callResult = GenServer.call(null, "get_state");
-        GenServer.sendCast(null, "update_state");
+        var serverRef: elixir.types.GenServerRef = null;
+        var callResult = GenServer.call(serverRef, "get_state");
+        GenServer.sendCast(serverRef, "update_state");
         
         // Test GenServer lifecycle
-        GenServer.stop(null);
+        GenServer.stop(serverRef);
         
-        // Test callback return tuples
-        var replyTuple = GenServer.replyTuple("response", "new_state");
-        var noreplyTuple = GenServer.noreplyTuple("state");
-        var stopTuple = GenServer.stopTuple("normal", "final_state");
+        // Test process discovery  
+        var pid = GenServer.whereis(serverRef);
         
-        // Test process discovery
-        var pid = GenServer.whereis("MyGenServer");
+        // Test GenServer helper constants
+        var infinity = GenServer.infinity();
+        var normal = GenServer.normal();
+        var shutdown = GenServer.shutdown();
     }
 }
