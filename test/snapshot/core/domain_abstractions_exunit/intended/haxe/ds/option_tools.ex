@@ -14,7 +14,7 @@ defmodule OptionTools do
       0 ->
         g = elem(option, 1)
         value = g
-        {:ModuleRef, value}
+        transform.(value)
       1 ->
         :none
     end
@@ -74,7 +74,7 @@ defmodule OptionTools do
         _g = elem(first, 1)
         first
       1 ->
-        {:ModuleRef}
+        fn_param.()
     end
   end
   def is_some(option) do
@@ -144,9 +144,9 @@ end)
       0 ->
         g = elem(option, 1)
         value = g
-        {:Ok, value}
+        value
       1 ->
-        {:Error, error}
+        error
     end
   end
   def from_result(result) do

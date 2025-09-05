@@ -1,7 +1,7 @@
 defmodule TodoAppWeb.TodoLive do
   use TodoAppWeb, :live_view
   def mount(_params, session, socket) do
-    g = {:Subscribe, :todo_updates}
+    g = TodoPubSub.subscribe(:todo_updates)
     case (elem(g, 0)) do
       0 ->
         _g = elem(g, 1)
@@ -75,7 +75,7 @@ end
     {:NoReply, result_socket}
   end
   def handle_info(msg, socket) do
-    g = {:ParseMessage, msg}
+    g = TodoPubSub.parse_message(msg)
     result_socket = case (elem(g, 0)) do
   0 ->
     g = elem(g, 1)
@@ -131,12 +131,12 @@ end
   defp create_todo_typed(params, socket) do
     userId = socket.assigns.currentUser.id
     changeset = Todo.changeset(Todo.new(), params)
-    g = {:Insert, changeset}
+    g = TodoApp.Repo.insert(changeset)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         todo = g
-        g = {:Broadcast, :todo_updates, {:TodoCreated, todo}}
+        g = TodoPubSub.broadcast(:todo_updates, {:TodoCreated, todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -161,12 +161,12 @@ else
   nil
 end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), :userId => socket.assigns.currentUser.id}
     changeset = Todo.changeset(Todo.new(), todo_params)
-    g = {:Insert, changeset}
+    g = TodoApp.Repo.insert(changeset)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         todo = g
-        g = {:Broadcast, :todo_updates, {:TodoCreated, todo}}
+        g = TodoPubSub.broadcast(:todo_updates, {:TodoCreated, todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -190,12 +190,12 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
     todo = find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
     updated_changeset = Todo.toggle_completed(todo)
-    g = {:Update, updated_changeset}
+    g = TodoApp.Repo.update(updated_changeset)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         updated_todo = g
-        g = {:Broadcast, :todo_updates, {:TodoUpdated, updated_todo}}
+        g = TodoPubSub.broadcast(:todo_updates, {:TodoUpdated, updated_todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -215,12 +215,12 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
   defp delete_todo(id, socket) do
     todo = find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
-    g = {:Delete, todo}
+    g = TodoApp.Repo.delete(todo)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         _deleted_todo = g
-        g = {:Broadcast, :todo_updates, {:TodoDeleted, id}}
+        g = TodoPubSub.broadcast(:todo_updates, {:TodoDeleted, id})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -241,12 +241,12 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
     todo = find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
     updated_changeset = Todo.update_priority(todo, priority)
-    g = {:Update, updated_changeset}
+    g = TodoApp.Repo.update(updated_changeset)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         updated_todo = g
-        g = {:Broadcast, :todo_updates, {:TodoUpdated, updated_todo}}
+        g = TodoPubSub.broadcast(:todo_updates, {:TodoUpdated, updated_todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -275,14 +275,14 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
   end
   defp find_todo(id, todos) do
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, :ok}, fn _, {acc_g, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, :ok}, fn _, {acc_todos, acc_g, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.id == id), do: todo
-    {:cont, {acc_g, acc_todos, acc_state}}
+    {:cont, {acc_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_state}}
   end
 end)
     nil
@@ -290,16 +290,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, todos, :ok}, fn _, {acc_g, acc_count, acc_todos, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
+    {:cont, {acc_g, acc_count, acc_todos, acc_state}}
   else
-    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
+    {:halt, {acc_g, acc_count, acc_todos, acc_state}}
   end
 end)
     count
@@ -307,16 +307,16 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, todos, :ok}, fn _, {acc_count, acc_g, acc_todos, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_todos, acc_count, acc_g, acc_state}}
+    {:cont, {acc_count, acc_g, acc_todos, acc_state}}
   else
-    {:halt, {acc_todos, acc_count, acc_g, acc_state}}
+    {:halt, {acc_count, acc_g, acc_todos, acc_state}}
   end
 end)
     count
@@ -356,7 +356,7 @@ end)
     todo = pending[g]
     acc_g = acc_g + 1
     updated_changeset = Todo.toggle_completed(todo)
-    acc_g = {:Update, updated_changeset}
+    acc_g = TodoApp.Repo.update(updated_changeset)
     case (elem(acc_g, 0)) do
       0 ->
         acc_g = elem(acc_g, 1)
@@ -372,7 +372,7 @@ end)
     {:halt, {acc_g, acc_pending, acc_state}}
   end
 end)
-    g = {:Broadcast, :todo_updates, {:BulkUpdate, :complete_all}}
+    g = TodoPubSub.broadcast(:todo_updates, {:BulkUpdate, :complete_all})
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
@@ -395,13 +395,13 @@ end)
   if (acc_g < acc_completed.length) do
     todo = completed[g]
     acc_g = acc_g + 1
-    {:Delete, todo}
+    TodoApp.Repo.delete(todo)
     {:cont, {acc_g, acc_completed, acc_state}}
   else
     {:halt, {acc_g, acc_completed, acc_state}}
   end
 end)
-    {:Broadcast, :todo_updates, {:BulkUpdate, :delete_completed}}
+    TodoPubSub.broadcast(:todo_updates, {:BulkUpdate, :delete_completed})
     remaining = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     current_assigns = socket.assigns
     complete_assigns = %{:todos => remaining, :filter => current_assigns.filter, :sortBy => current_assigns.sortBy, :currentUser => current_assigns.currentUser, :editingTodo => current_assigns.editingTodo, :showForm => current_assigns.showForm, :searchQuery => current_assigns.searchQuery, :selectedTags => current_assigns.selectedTags, :totalTodos => remaining.length, :completedTodos => 0, :pendingTodos => remaining.length, :onlineUsers => current_assigns.onlineUsers}
@@ -416,12 +416,12 @@ end)
     if (socket.assigns.editingTodo == nil), do: socket
     todo = socket.assigns.editingTodo
     changeset = Todo.changeset(todo, params)
-    g = {:Update, changeset}
+    g = TodoApp.Repo.update(changeset)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         updated_todo = g
-        g = {:Broadcast, :todo_updates, {:TodoUpdated, updated_todo}}
+        g = TodoPubSub.broadcast(:todo_updates, {:TodoUpdated, updated_todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -449,12 +449,12 @@ else
   nil
 end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: nil), :completed => params.completed}
     changeset = Todo.changeset(todo, todo_params)
-    g = {:Update, changeset}
+    g = TodoApp.Repo.update(changeset)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         updated_todo = g
-        g = {:Broadcast, :todo_updates, {:TodoUpdated, updated_todo}}
+        g = TodoPubSub.broadcast(:todo_updates, {:TodoUpdated, updated_todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -572,14 +572,14 @@ end) <> "\n\t\t</div>"
     filtered_todos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
     todo_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, filtered_todos, :ok}, fn _, {acc_g, acc_filtered_todos, acc_state} ->
   if (acc_g < acc_filtered_todos.length) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
     todo_items ++ [render_todo_item(todo, assigns.editingTodo)]
-    {:cont, {acc_filtered_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_filtered_todos, acc_state}}
   else
-    {:halt, {acc_filtered_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_filtered_todos, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")

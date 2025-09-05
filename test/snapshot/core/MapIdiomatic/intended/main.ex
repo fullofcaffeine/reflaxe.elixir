@@ -66,14 +66,14 @@ end)
     empty_map = %{}
     empty_has_keys = false
     key = Map.keys(empty_map)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {key, empty_has_keys, :ok}, fn _, {acc_key, acc_empty_has_keys, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {empty_has_keys, key, :ok}, fn _, {acc_empty_has_keys, acc_key, acc_state} ->
   if (acc_key.hasNext()) do
     _key = acc_key.next()
     acc_empty_has_keys = true
     throw(:break)
-    {:cont, {acc_key, acc_empty_has_keys, acc_state}}
+    {:cont, {acc_empty_has_keys, acc_key, acc_state}}
   else
-    {:halt, {acc_key, acc_empty_has_keys, acc_state}}
+    {:halt, {acc_empty_has_keys, acc_key, acc_state}}
   end
 end)
     Log.trace("Empty map has keys: " <> Std.string(empty_has_keys), %{:fileName => "Main.hx", :lineNumber => 120, :className => "Main", :methodName => "testMapQueries"})

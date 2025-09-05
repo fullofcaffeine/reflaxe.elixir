@@ -723,6 +723,13 @@ class ElixirASTBuilder {
                 if (e != null && isEnumConstructor(e)) {
                     // ONLY BUILD - NO TRANSFORMATION!
                     var tag = extractEnumTag(e);
+                    
+                    // For idiomatic enums, convert constructor names to snake_case
+                    // This ensures Result.Ok becomes :ok and Result.Error becomes :error
+                    if (hasIdiomaticMetadata(e)) {
+                        tag = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
+                    }
+                    
                     var args = [for (arg in el) buildFromTypedExpr(arg, variableUsageMap)];
                     
                     // Create the tuple AST definition
@@ -2837,25 +2844,35 @@ class ElixirASTBuilder {
             case TCall(e, el) if (isEnumConstructor(e)):
                 // Enum constructor pattern
                 var tag = extractEnumTag(e);
+                
+                // For idiomatic enums, convert to snake_case
+                if (hasIdiomaticMetadata(e)) {
+                    tag = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
+                }
+                
                 var args = [for (arg in el) convertPattern(arg)];
                 // Create tuple pattern {:tag, arg1, arg2, ...}
-                // Keep original name - conversion happens at print time
                 PTuple([PLiteral(makeAST(EAtom(tag)))].concat(args));
                 
             // Field access (for enum constructors)
-            case TField(e, FEnum(_, ef)):
+            case TField(e, FEnum(enumRef, ef)):
                 // Direct enum constructor reference
+                var atomName = ef.name;
+                
+                // Check if the enum is idiomatic
+                var isIdiomatic = enumRef.get().meta.has(":elixirIdiomatic");
+                if (isIdiomatic) {
+                    atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+                }
+                
                 if (ef.params.length == 0) {
                     // No-argument constructor
-                    // Convert CamelCase to snake_case for Elixir atoms
-                    var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
                     PLiteral(makeAST(EAtom(atomName)));
                 } else {
                     // Constructor with arguments - needs to be a tuple pattern
                     // This will be {:Constructor, _, _, ...} with wildcards for args
                     var wildcards = [for (i in 0...ef.params.length) PWildcard];
-                    // Keep original name - conversion happens at print time
-                    PTuple([PLiteral(makeAST(EAtom(ef.name)))].concat(wildcards));
+                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
                 }
                 
             // Default/wildcard
@@ -2874,21 +2891,23 @@ class ElixirASTBuilder {
      */
     static function isEnumConstructor(expr: TypedExpr): Bool {
         return switch(expr.expr) {
-            case TField(_, FEnum(_, _)): true;
+            case TField(_, FEnum(_, _)): true;  // Actual enum constructor field
             case TTypeExpr(TEnumDecl(_)): true;  // Direct enum type reference
+            
+            // DO NOT treat static methods that return enums as enum constructors!
+            // Email.parse() returns Result but parse is NOT an enum constructor
+            case TField(_, FStatic(_, _)): false;
+            
             case TConst(TString(s)) if (s.charAt(0) >= 'A' && s.charAt(0) <= 'Z'): 
                 // Heuristic: capitalized identifiers might be enum constructors
                 // This is a fallback for cases where Haxe doesn't provide clear type info
                 true;
             default: 
-                // Check the type - if it's an enum function type, it's a constructor
+                // Only check for enum types that aren't function types
+                // This avoids treating regular functions that return enums as constructors
                 switch(expr.t) {
-                    case TFun(_, ret):
-                        switch(ret) {
-                            case TEnum(_, _): true;
-                            default: false;
-                        }
-                    case TEnum(_, _): true;
+                    case TEnum(_, _): true;  // Direct enum value
+                    case TFun(_, _): false;  // Functions are NOT enum constructors
                     default: false;
                 }
         }

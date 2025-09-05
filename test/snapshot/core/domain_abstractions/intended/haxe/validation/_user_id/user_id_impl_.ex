@@ -1,7 +1,7 @@
 defmodule UserId_Impl_ do
   def _new(user_id) do
     this1 = nil
-    g = {:Validate, user_id}
+    g = validate(user_id)
     case (elem(g, 0)) do
       0 ->
         _g = elem(g, 1)
@@ -14,15 +14,15 @@ defmodule UserId_Impl_ do
     this1
   end
   def parse(user_id) do
-    g = {:Validate, user_id}
+    g = validate(user_id)
     case (elem(g, 0)) do
       0 ->
         _g = elem(g, 1)
-        {:Ok, user_id}
+        user_id
       1 ->
         g = elem(g, 1)
         reason = g
-        {:Error, reason}
+        reason
     end
   end
   def length(this1) do
@@ -50,23 +50,23 @@ defmodule UserId_Impl_ do
     this1 < to_string(other)
   end
   defp validate(user_id) do
-    if (user_id == nil), do: {:Error, "User ID cannot be null"}
-    if (user_id.length == 0), do: {:Error, "User ID cannot be empty"}
-    if (user_id.length < 3), do: {:Error, "User ID too short: minimum " <> 3 <> " characters, got " <> user_id.length}
-    if (user_id.length > 50), do: {:Error, "User ID too long: maximum " <> 50 <> " characters, got " <> user_id.length}
+    if (user_id == nil), do: {:error, "User ID cannot be null"}
+    if (user_id.length == 0), do: {:error, "User ID cannot be empty"}
+    if (user_id.length < 3), do: {:error, "User ID too short: minimum " <> 3 <> " characters, got " <> user_id.length}
+    if (user_id.length > 50), do: {:error, "User ID too long: maximum " <> 50 <> " characters, got " <> user_id.length}
     g = 0
     g1 = user_id.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     char = user_id.charAt(i)
-    if (not is_alpha_numeric(char)), do: {:Error, "User ID contains invalid character: \"" <> char <> "\" at position " <> i <> ". Only alphanumeric characters allowed."}
-    {:cont, {acc_g1, acc_g, acc_state}}
+    if (not is_alpha_numeric(char)), do: {:error, "User ID contains invalid character: \"" <> char <> "\" at position " <> i <> ". Only alphanumeric characters allowed."}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
-    {:Ok, nil}
+    {:ok, nil}
   end
   defp is_alpha_numeric(char) do
     if (char.length != 1), do: false

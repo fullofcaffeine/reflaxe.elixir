@@ -5,7 +5,7 @@ defmodule JsonPrinter do
   defp write_value(struct, v, key) do
     v = if (struct.replacer != nil), do: struct.replacer(key, v), else: v
     if (v == nil), do: "null"
-    g = {:Typeof, v}
+    g = Type.typeof(v)
     case (elem(g, 0)) do
       0 ->
         "null"
@@ -83,7 +83,7 @@ end)
     result = "\""
     g = 0
     g1 = s.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, result, g, :ok}, fn _, {acc_g1, acc_result, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.charCodeAt(i)
@@ -119,9 +119,9 @@ end)
           end
       end
     end
-    {:cont, {acc_g, acc_g1, acc_result, acc_state}}
+    {:cont, {acc_g1, acc_result, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_result, acc_state}}
+    {:halt, {acc_g1, acc_result, acc_g, acc_state}}
   end
 end)
     result = result <> "\""

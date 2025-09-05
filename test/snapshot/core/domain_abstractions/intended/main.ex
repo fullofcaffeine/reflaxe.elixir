@@ -12,7 +12,7 @@ defmodule Main do
   end
   defp test_email_validation() do
     Log.trace("=== Email Validation Tests ===", %{:fileName => "Main.hx", :lineNumber => 44, :className => "Main", :methodName => "testEmailValidation"})
-    email_result = {:Parse, "user@example.com"}
+    email_result = Email_Impl_.parse("user@example.com")
     case (elem(email_result, 0)) do
       0 ->
         g = elem(email_result, 1)
@@ -35,7 +35,7 @@ defmodule Main do
   if (acc_g < acc_invalid_emails.length) do
     invalid_email = invalid_emails[g]
     acc_g = acc_g + 1
-    acc_g = {:Parse, invalid_email}
+    acc_g = Email_Impl_.parse(invalid_email)
     case (elem(acc_g, 0)) do
       0 ->
         _g = elem(acc_g, 1)
@@ -50,8 +50,8 @@ defmodule Main do
     {:halt, {acc_invalid_emails, acc_g, acc_state}}
   end
 end)
-    email1_result = {:Parse, "Test@Example.Com"}
-    email2_result = {:Parse, "test@example.com"}
+    email1_result = Email_Impl_.parse("Test@Example.Com")
+    email2_result = Email_Impl_.parse("test@example.com")
     if (ResultTools.is_ok(email1_result) && ResultTools.is_ok(email2_result)) do
       email1 = ResultTools.unwrap(email1_result)
       email2 = ResultTools.unwrap(email2_result)
@@ -63,11 +63,11 @@ end)
     Log.trace("=== UserId Validation Tests ===", %{:fileName => "Main.hx", :lineNumber => 101, :className => "Main", :methodName => "testUserIdValidation"})
     valid_ids = ["user123", "Alice", "Bob42", "testUser"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {valid_ids, g, :ok}, fn _, {acc_valid_ids, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, valid_ids, :ok}, fn _, {acc_g, acc_valid_ids, acc_state} ->
   if (acc_g < acc_valid_ids.length) do
     valid_id = valid_ids[g]
     acc_g = acc_g + 1
-    acc_g = {:Parse, valid_id}
+    acc_g = UserId_Impl_.parse(valid_id)
     case (elem(acc_g, 0)) do
       0 ->
         acc_g = elem(acc_g, 1)
@@ -82,9 +82,9 @@ end)
         reason = acc_g
         Log.trace("Unexpected UserId validation failure for \"" <> valid_id <> "\": " <> reason, %{:fileName => "Main.hx", :lineNumber => 118, :className => "Main", :methodName => "testUserIdValidation"})
     end
-    {:cont, {acc_valid_ids, acc_g, acc_state}}
+    {:cont, {acc_g, acc_valid_ids, acc_state}}
   else
-    {:halt, {acc_valid_ids, acc_g, acc_state}}
+    {:halt, {acc_g, acc_valid_ids, acc_state}}
   end
 end)
     invalid_ids = ["ab", "user@123", "user 123", "user-123", "", (
@@ -102,11 +102,11 @@ end)
 g), "")
 )]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_ids, :ok}, fn _, {acc_g, acc_invalid_ids, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_ids, g, :ok}, fn _, {acc_invalid_ids, acc_g, acc_state} ->
   if (acc_g < acc_invalid_ids.length) do
     invalid_id = invalid_ids[g]
     acc_g = acc_g + 1
-    acc_g = {:Parse, invalid_id}
+    acc_g = UserId_Impl_.parse(invalid_id)
     case (elem(acc_g, 0)) do
       0 ->
         _g = elem(acc_g, 1)
@@ -116,13 +116,13 @@ g), "")
         reason = acc_g
         Log.trace("Correctly rejected \"" <> invalid_id <> "\": " <> reason, %{:fileName => "Main.hx", :lineNumber => 137, :className => "Main", :methodName => "testUserIdValidation"})
     end
-    {:cont, {acc_g, acc_invalid_ids, acc_state}}
+    {:cont, {acc_invalid_ids, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_invalid_ids, acc_state}}
+    {:halt, {acc_invalid_ids, acc_g, acc_state}}
   end
 end)
-    id1_result = {:Parse, "User123"}
-    id2_result = {:Parse, "user123"}
+    id1_result = UserId_Impl_.parse("User123")
+    id2_result = UserId_Impl_.parse("user123")
     if (ResultTools.is_ok(id1_result) && ResultTools.is_ok(id2_result)) do
       id1 = ResultTools.unwrap(id1_result)
       id2 = ResultTools.unwrap(id2_result)
@@ -139,16 +139,16 @@ end)
   if (acc_g < acc_valid_numbers.length) do
     valid_num = valid_numbers[g]
     acc_g = acc_g + 1
-    acc_g = {:Parse, valid_num}
+    acc_g = PositiveInt_Impl_.parse(valid_num)
     case (elem(acc_g, 0)) do
       0 ->
         acc_g = elem(acc_g, 1)
         pos_int = acc_g
         Log.trace("Valid PositiveInt: " <> PositiveInt_Impl_.to_string(pos_int), %{:fileName => "Main.hx", :lineNumber => 166, :className => "Main", :methodName => "testPositiveIntArithmetic"})
-        doubled = PositiveInt_Impl_.multiply(pos_int, ResultTools.unwrap({:Parse, 2}))
-        added = PositiveInt_Impl_.add(pos_int, ResultTools.unwrap({:Parse, 10}))
+        doubled = PositiveInt_Impl_.multiply(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(2)))
+        added = PositiveInt_Impl_.add(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(10)))
         Log.trace("Doubled: " <> PositiveInt_Impl_.to_string(doubled) <> ", Added 10: " <> PositiveInt_Impl_.to_string(added), %{:fileName => "Main.hx", :lineNumber => 171, :className => "Main", :methodName => "testPositiveIntArithmetic"})
-        subtract_result = {:SafeSub, pos_int, ResultTools.unwrap({:Parse, 1})}
+        subtract_result = PositiveInt_Impl_.safe_sub(pos_int, ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
         case (elem(subtract_result, 0)) do
           0 ->
             acc_g = elem(subtract_result, 1)
@@ -159,7 +159,7 @@ end)
             reason = acc_g
             Log.trace("Safe subtraction failed: " <> reason, %{:fileName => "Main.hx", :lineNumber => 179, :className => "Main", :methodName => "testPositiveIntArithmetic"})
         end
-        five = ResultTools.unwrap({:Parse, 5})
+        five = ResultTools.unwrap(PositiveInt_Impl_.parse(5))
         is_greater = PositiveInt_Impl_.greater_than(pos_int, five)
         min = PositiveInt_Impl_.min(pos_int, five)
         max = PositiveInt_Impl_.max(pos_int, five)
@@ -176,11 +176,11 @@ end)
 end)
     invalid_numbers = [0, -1, -42, -100]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_numbers, g, :ok}, fn _, {acc_invalid_numbers, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_numbers, :ok}, fn _, {acc_g, acc_invalid_numbers, acc_state} ->
   if (acc_g < acc_invalid_numbers.length) do
     invalid_num = invalid_numbers[g]
     acc_g = acc_g + 1
-    acc_g = {:Parse, invalid_num}
+    acc_g = PositiveInt_Impl_.parse(invalid_num)
     case (elem(acc_g, 0)) do
       0 ->
         _g = elem(acc_g, 1)
@@ -190,14 +190,14 @@ end)
         reason = acc_g
         Log.trace("Correctly rejected " <> invalid_num <> ": " <> reason, %{:fileName => "Main.hx", :lineNumber => 202, :className => "Main", :methodName => "testPositiveIntArithmetic"})
     end
-    {:cont, {acc_invalid_numbers, acc_g, acc_state}}
+    {:cont, {acc_g, acc_invalid_numbers, acc_state}}
   else
-    {:halt, {acc_invalid_numbers, acc_g, acc_state}}
+    {:halt, {acc_g, acc_invalid_numbers, acc_state}}
   end
 end)
-    five = ResultTools.unwrap({:Parse, 5})
-    ten = ResultTools.unwrap({:Parse, 10})
-    g = {:SafeSub, five, ten}
+    five = ResultTools.unwrap(PositiveInt_Impl_.parse(5))
+    ten = ResultTools.unwrap(PositiveInt_Impl_.parse(10))
+    g = PositiveInt_Impl_.safe_sub(five, ten)
     case (elem(g, 0)) do
       0 ->
         _g = elem(g, 1)
@@ -207,10 +207,10 @@ end)
         reason = g
         Log.trace("Correctly prevented invalid subtraction: " <> reason, %{:fileName => "Main.hx", :lineNumber => 215, :className => "Main", :methodName => "testPositiveIntArithmetic"})
     end
-    twenty = ResultTools.unwrap({:Parse, 20})
-    four = ResultTools.unwrap({:Parse, 4})
-    three = ResultTools.unwrap({:Parse, 3})
-    g = {:SafeDiv, twenty, four}
+    twenty = ResultTools.unwrap(PositiveInt_Impl_.parse(20))
+    four = ResultTools.unwrap(PositiveInt_Impl_.parse(4))
+    three = ResultTools.unwrap(PositiveInt_Impl_.parse(3))
+    g = PositiveInt_Impl_.safe_div(twenty, four)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
@@ -221,7 +221,7 @@ end)
         reason = g
         Log.trace("Division failed: " <> reason, %{:fileName => "Main.hx", :lineNumber => 227, :className => "Main", :methodName => "testPositiveIntArithmetic"})
     end
-    g = {:SafeDiv, twenty, three}
+    g = PositiveInt_Impl_.safe_div(twenty, three)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
@@ -241,7 +241,7 @@ end)
   if (acc_g < acc_valid_strings.length) do
     valid_str = valid_strings[g]
     acc_g = acc_g + 1
-    acc_g = {:Parse, valid_str}
+    acc_g = NonEmptyString_Impl_.parse(valid_str)
     case (elem(acc_g, 0)) do
       0 ->
         acc_g = elem(acc_g, 1)
@@ -250,13 +250,13 @@ end)
         upper = NonEmptyString_Impl_.to_upper_case(non_empty_str)
         lower = NonEmptyString_Impl_.to_lower_case(non_empty_str)
         Log.trace("Valid NonEmptyString \"" <> valid_str <> "\" - Length: " <> length <> ", Upper: " <> NonEmptyString_Impl_.to_string(upper) <> ", Lower: " <> NonEmptyString_Impl_.to_string(lower), %{:fileName => "Main.hx", :lineNumber => 253, :className => "Main", :methodName => "testNonEmptyStringOperations"})
-        other = ResultTools.unwrap({:Parse, "!"})
+        other = ResultTools.unwrap(NonEmptyString_Impl_.parse("!"))
         concatenated = NonEmptyString_Impl_.concat(non_empty_str, other)
         Log.trace("Concatenated with \"!\": " <> NonEmptyString_Impl_.to_string(concatenated), %{:fileName => "Main.hx", :lineNumber => 258, :className => "Main", :methodName => "testNonEmptyStringOperations"})
         first_char = NonEmptyString_Impl_.first_char(non_empty_str)
         last_char = NonEmptyString_Impl_.last_char(non_empty_str)
         Log.trace("First char: " <> NonEmptyString_Impl_.to_string(first_char) <> ", Last char: " <> NonEmptyString_Impl_.to_string(last_char), %{:fileName => "Main.hx", :lineNumber => 263, :className => "Main", :methodName => "testNonEmptyStringOperations"})
-        acc_g = {:SafeSubstring, non_empty_str, 1}
+        acc_g = NonEmptyString_Impl_.safe_substring(non_empty_str, 1)
         case (elem(acc_g, 0)) do
           0 ->
             acc_g = elem(acc_g, 1)
@@ -283,7 +283,7 @@ end)
   if (acc_g < acc_invalid_strings.length) do
     invalid_str = invalid_strings[g]
     acc_g = acc_g + 1
-    acc_g = {:Parse, invalid_str}
+    acc_g = NonEmptyString_Impl_.parse(invalid_str)
     case (elem(acc_g, 0)) do
       0 ->
         _g = elem(acc_g, 1)
@@ -300,11 +300,11 @@ end)
 end)
     whitespace_strings = ["  hello  ", "\tworld\n", "  test  "]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {whitespace_strings, g, :ok}, fn _, {acc_whitespace_strings, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, whitespace_strings, :ok}, fn _, {acc_g, acc_whitespace_strings, acc_state} ->
   if (acc_g < acc_whitespace_strings.length) do
     whitespace_str = whitespace_strings[g]
     acc_g = acc_g + 1
-    acc_g = {:ParseAndTrim, whitespace_str}
+    acc_g = NonEmptyString_Impl_.parse_and_trim(whitespace_str)
     case (elem(acc_g, 0)) do
       0 ->
         acc_g = elem(acc_g, 1)
@@ -315,17 +315,17 @@ end)
         reason = acc_g
         Log.trace("Trim and parse failed for \"" <> whitespace_str <> "\": " <> reason, %{:fileName => "Main.hx", :lineNumber => 298, :className => "Main", :methodName => "testNonEmptyStringOperations"})
     end
-    {:cont, {acc_whitespace_strings, acc_g, acc_state}}
+    {:cont, {acc_g, acc_whitespace_strings, acc_state}}
   else
-    {:halt, {acc_whitespace_strings, acc_g, acc_state}}
+    {:halt, {acc_g, acc_whitespace_strings, acc_state}}
   end
 end)
-    test_str = ResultTools.unwrap({:Parse, "Hello World"})
+    test_str = ResultTools.unwrap(NonEmptyString_Impl_.parse("Hello World"))
     starts_with_hello = NonEmptyString_Impl_.starts_with(test_str, "Hello")
     ends_with_world = NonEmptyString_Impl_.ends_with(test_str, "World")
     contains_space = NonEmptyString_Impl_.contains(test_str, " ")
     Log.trace("String operations - Starts with \"Hello\": " <> Std.string(starts_with_hello) <> ", Ends with \"World\": " <> Std.string(ends_with_world) <> ", Contains space: " <> Std.string(contains_space), %{:fileName => "Main.hx", :lineNumber => 307, :className => "Main", :methodName => "testNonEmptyStringOperations"})
-    g = {:SafeReplace, test_str, "World", "Universe"}
+    g = NonEmptyString_Impl_.safe_replace(test_str, "World", "Universe")
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
@@ -339,28 +339,28 @@ end)
     parts = NonEmptyString_Impl_.split_non_empty(test_str, " ")
     Log.trace("Split by space: " <> parts.length <> " parts", %{:fileName => "Main.hx", :lineNumber => 319, :className => "Main", :methodName => "testNonEmptyStringOperations"})
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {parts, g, :ok}, fn _, {acc_parts, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, parts, :ok}, fn _, {acc_g, acc_parts, acc_state} ->
   if (acc_g < acc_parts.length) do
     part = parts[g]
     acc_g = acc_g + 1
     Log.trace("  Part: " <> NonEmptyString_Impl_.to_string(part), %{:fileName => "Main.hx", :lineNumber => 321, :className => "Main", :methodName => "testNonEmptyStringOperations"})
-    {:cont, {acc_parts, acc_g, acc_state}}
+    {:cont, {acc_g, acc_parts, acc_state}}
   else
-    {:halt, {acc_parts, acc_g, acc_state}}
+    {:halt, {acc_g, acc_parts, acc_state}}
   end
 end)
   end
   defp test_functional_composition() do
     Log.trace("=== Functional Composition Tests ===", %{:fileName => "Main.hx", :lineNumber => 329, :className => "Main", :methodName => "testFunctionalComposition"})
-    email_chain = ResultTools.unwrap_or({:Map, {:Map, {:Parse, "USER@EXAMPLE.COM"}, fn email -> Email_Impl_.normalize(email) end}, fn email -> Email_Impl_.get_domain(email) end}, "unknown")
+    email_chain = ResultTools.unwrap_or(ResultTools.map(ResultTools.map(Email_Impl_.parse("USER@EXAMPLE.COM"), fn email -> Email_Impl_.normalize(email) end), fn email -> Email_Impl_.get_domain(email) end), "unknown")
     Log.trace("Email chain result: " <> email_chain, %{:fileName => "Main.hx", :lineNumber => 336, :className => "Main", :methodName => "testFunctionalComposition"})
-    user_id_chain = ResultTools.unwrap_or({:Filter, {:Map, {:Parse, "TestUser123"}, fn user_id -> UserId_Impl_.normalize(user_id) end}, fn user_id -> UserId_Impl_.starts_with(user_id, "test") end, "UserId does not start with 'test'"}, ResultTools.unwrap({:Parse, "defaultuser"}))
+    user_id_chain = ResultTools.unwrap_or(ResultTools.filter(ResultTools.map(UserId_Impl_.parse("TestUser123"), fn user_id -> UserId_Impl_.normalize(user_id) end), fn user_id -> UserId_Impl_.starts_with(user_id, "test") end, "UserId does not start with 'test'"), ResultTools.unwrap(UserId_Impl_.parse("defaultuser")))
     Log.trace("UserId chain result: " <> UserId_Impl_.to_string(user_id_chain), %{:fileName => "Main.hx", :lineNumber => 343, :className => "Main", :methodName => "testFunctionalComposition"})
-    math_chain = ResultTools.unwrap_or({:Map, {:FlatMap, {:Parse, 10}, fn n -> {:SafeSub, n, ResultTools.unwrap({:Parse, 3})} end}, fn n -> PositiveInt_Impl_.multiply(n, ResultTools.unwrap({:Parse, 2})) end}, ResultTools.unwrap({:Parse, 1}))
+    math_chain = ResultTools.unwrap_or(ResultTools.map(ResultTools.flat_map(PositiveInt_Impl_.parse(10), fn n -> PositiveInt_Impl_.safe_sub(n, ResultTools.unwrap(PositiveInt_Impl_.parse(3))) end), fn n -> PositiveInt_Impl_.multiply(n, ResultTools.unwrap(PositiveInt_Impl_.parse(2))) end), ResultTools.unwrap(PositiveInt_Impl_.parse(1)))
     Log.trace("Math chain result: " <> PositiveInt_Impl_.to_string(math_chain), %{:fileName => "Main.hx", :lineNumber => 350, :className => "Main", :methodName => "testFunctionalComposition"})
-    string_chain = ResultTools.unwrap_or({:FlatMap, {:Map, {:FlatMap, {:ParseAndTrim, "  hello world  "}, fn s -> {:SafeTrim, s} end}, fn s -> NonEmptyString_Impl_.to_upper_case(s) end}, fn s -> {:SafeReplace, s, "WORLD", "UNIVERSE"} end}, ResultTools.unwrap({:Parse, "fallback"}))
+    string_chain = ResultTools.unwrap_or(ResultTools.flat_map(ResultTools.map(ResultTools.flat_map(NonEmptyString_Impl_.parse_and_trim("  hello world  "), fn s -> NonEmptyString_Impl_.safe_trim(s) end), fn s -> NonEmptyString_Impl_.to_upper_case(s) end), fn s -> NonEmptyString_Impl_.safe_replace(s, "WORLD", "UNIVERSE") end), ResultTools.unwrap(NonEmptyString_Impl_.parse("fallback")))
     Log.trace("String chain result: " <> NonEmptyString_Impl_.to_string(string_chain), %{:fileName => "Main.hx", :lineNumber => 358, :className => "Main", :methodName => "testFunctionalComposition"})
-    composition_result = {:BuildUserProfile, "user123", "  alice@example.com  ", "5"}
+    composition_result = build_user_profile("user123", "  alice@example.com  ", "5")
     case (elem(composition_result, 0)) do
       0 ->
         g = elem(composition_result, 1)
@@ -383,7 +383,7 @@ end)
   if (acc_g < acc_invalid_inputs.length) do
     input = invalid_inputs[g]
     acc_g = acc_g + 1
-    acc_g = {:BuildUserProfile, input.userId, input.email, input.score}
+    acc_g = build_user_profile(input.userId, input.email, input.score)
     case (elem(acc_g, 0)) do
       0 ->
         _g = elem(acc_g, 1)
@@ -401,11 +401,11 @@ end)
     Log.trace("Testing edge cases that should succeed:", %{:fileName => "Main.hx", :lineNumber => 396, :className => "Main", :methodName => "testErrorHandling"})
     edge_cases = [%{:email => "a@b.co", :userId => "usr", :score => "1"}, %{:email => "very.long.email.address@very.long.domain.name.example.com", :userId => "user123456789", :score => "999"}]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, edge_cases, :ok}, fn _, {acc_g, acc_edge_cases, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {edge_cases, g, :ok}, fn _, {acc_edge_cases, acc_g, acc_state} ->
   if (acc_g < acc_edge_cases.length) do
     edge_case = edge_cases[g]
     acc_g = acc_g + 1
-    acc_g = {:BuildUserProfile, edge_case.userId, edge_case.email, edge_case.score}
+    acc_g = build_user_profile(edge_case.userId, edge_case.email, edge_case.score)
     case (elem(acc_g, 0)) do
       0 ->
         acc_g = elem(acc_g, 1)
@@ -416,9 +416,9 @@ end)
         reason = acc_g
         Log.trace("Edge case failed: " <> reason, %{:fileName => "Main.hx", :lineNumber => 408, :className => "Main", :methodName => "testErrorHandling"})
     end
-    {:cont, {acc_g, acc_edge_cases, acc_state}}
+    {:cont, {acc_edge_cases, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_edge_cases, acc_state}}
+    {:halt, {acc_edge_cases, acc_g, acc_state}}
   end
 end)
   end
@@ -427,11 +427,11 @@ end)
     registration_data = [%{:userId => "alice123", :email => "alice@example.com", :preferredName => "Alice Smith"}, %{:userId => "bob456", :email => "bob.jones@company.org", :preferredName => "Bob"}, %{:userId => "charlie", :email => "charlie@test.dev", :preferredName => "Charlie Brown"}]
     valid_users = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {registration_data, g, :ok}, fn _, {acc_registration_data, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, registration_data, :ok}, fn _, {acc_g, acc_registration_data, acc_state} ->
   if (acc_g < acc_registration_data.length) do
     user_data = registration_data[g]
     acc_g = acc_g + 1
-    user_result = {:CreateUser, user_data.userId, user_data.email, user_data.preferredName}
+    user_result = create_user(user_data.userId, user_data.email, user_data.preferredName)
     case (elem(user_result, 0)) do
       0 ->
         acc_g = elem(user_result, 1)
@@ -443,9 +443,9 @@ end)
         reason = acc_g
         Log.trace("User creation failed: " <> reason, %{:fileName => "Main.hx", :lineNumber => 435, :className => "Main", :methodName => "testRealWorldScenarios"})
     end
-    {:cont, {acc_registration_data, acc_g, acc_state}}
+    {:cont, {acc_g, acc_registration_data, acc_state}}
   else
-    {:halt, {acc_registration_data, acc_g, acc_state}}
+    {:halt, {acc_g, acc_registration_data, acc_state}}
   end
 end)
     Log.trace("Successfully created " <> valid_users.length <> " users", %{:fileName => "Main.hx", :lineNumber => 439, :className => "Main", :methodName => "testRealWorldScenarios"})
@@ -455,7 +455,7 @@ end)
   if (acc_g < acc_config_data.length) do
     config = config_data[g]
     acc_g = acc_g + 1
-    config_result = {:ValidateConfiguration, config.timeout, config.retries, config.name}
+    config_result = validate_configuration(config.timeout, config.retries, config.name)
     case (elem(config_result, 0)) do
       0 ->
         acc_g = elem(config_result, 1)
@@ -473,22 +473,22 @@ end)
 end)
   end
   defp build_user_profile(user_id_str, email_str, score_str) do
-    {:FlatMap, {:MapError, {:Parse, user_id_str}, fn e -> "Invalid UserId: " <> e end}, fn _user_id ->
-  {:FlatMap, {:MapError, {:Parse, StringTools.ltrim(StringTools.rtrim(email_str))}, fn e -> "Invalid Email: " <> e end}, fn _email ->
+    ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), fn _user_id ->
+  ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(StringTools.ltrim(StringTools.rtrim(email_str))), fn e -> "Invalid Email: " <> e end), fn _email ->
   score_int = Std.parse_int(score_str)
-  if (score_int == nil), do: {:Error, "Invalid score: " <> score_str}
-  {:Map, {:MapError, {:Parse, score_int}, fn e -> "Invalid score: " <> e end}, fn score -> %{:userId => _user_id, :email => _email, :score => score} end}
-end}
-end}
+  if (score_int == nil), do: {:error, "Invalid score: " <> score_str}
+  ResultTools.map(ResultTools.map_error(PositiveInt_Impl_.parse(score_int), fn e -> "Invalid score: " <> e end), fn score -> %{:userId => _user_id, :email => _email, :score => score} end)
+end)
+end)
   end
   defp create_user(user_id_str, email_str, name_str) do
-    {:FlatMap, {:MapError, {:Parse, user_id_str}, fn e -> "Invalid UserId: " <> e end}, fn _user_id -> {:FlatMap, {:MapError, {:Parse, email_str}, fn e -> "Invalid Email: " <> e end}, fn _email -> {:Map, {:MapError, {:ParseAndTrim, name_str}, fn e -> "Invalid Name: " <> e end}, fn display_name -> %{:userId => _user_id, :email => _email, :displayName => display_name} end} end} end}
+    ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), fn _user_id -> ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(email_str), fn e -> "Invalid Email: " <> e end), fn _email -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(name_str), fn e -> "Invalid Name: " <> e end), fn display_name -> %{:userId => _user_id, :email => _email, :displayName => display_name} end) end) end)
   end
   defp validate_configuration(timeout_str, retries_str, name_str) do
     timeout_int = Std.parse_int(timeout_str)
     retries_int = Std.parse_int(retries_str)
-    if (timeout_int == nil), do: {:Error, "Timeout must be a number: " <> timeout_str}
-    if (retries_int == nil), do: {:Error, "Retries must be a number: " <> retries_str}
-    {:FlatMap, {:MapError, {:Parse, timeout_int}, fn e -> "Invalid timeout: " <> e end}, fn _timeout -> {:FlatMap, {:MapError, {:Parse, retries_int}, fn e -> "Invalid retries: " <> e end}, fn _retries -> {:Map, {:MapError, {:ParseAndTrim, name_str}, fn e -> "Invalid name: " <> e end}, fn name -> %{:timeout => _timeout, :retries => _retries, :name => name} end} end} end}
+    if (timeout_int == nil), do: {:error, "Timeout must be a number: " <> timeout_str}
+    if (retries_int == nil), do: {:error, "Retries must be a number: " <> retries_str}
+    ResultTools.flat_map(ResultTools.map_error(PositiveInt_Impl_.parse(timeout_int), fn e -> "Invalid timeout: " <> e end), fn _timeout -> ResultTools.flat_map(ResultTools.map_error(PositiveInt_Impl_.parse(retries_int), fn e -> "Invalid retries: " <> e end), fn _retries -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(name_str), fn e -> "Invalid name: " <> e end), fn name -> %{:timeout => _timeout, :retries => _retries, :name => name} end) end) end)
   end
 end

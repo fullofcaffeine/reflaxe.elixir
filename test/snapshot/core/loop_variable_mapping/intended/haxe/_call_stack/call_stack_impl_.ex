@@ -27,11 +27,11 @@ end)
   def subtract(this1, stack) do
     start_index = -1
     i = -1
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {this1, i, start_index, g, :ok}, fn _, {acc_this1, acc_i, acc_start_index, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, this1, g, start_index, :ok}, fn _, {acc_i, acc_this1, acc_g, acc_start_index, acc_state} ->
   if (acc_i = acc_i + 1 < acc_this1.length) do
     acc_g = 0
     g1 = stack.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_i, acc_start_index, acc_g, g1, :ok}, fn _, {acc_i, acc_start_index, acc_g, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_i, acc_g, g1, acc_start_index, :ok}, fn _, {acc_i, acc_g, acc_g1, acc_start_index, acc_state} ->
   if (acc_g < acc_g1) do
     j = acc_g = acc_g + 1
     if (equal_items(this1[i], stack[j])) do
@@ -45,17 +45,17 @@ end)
     else
       acc_start_index = -1
     end
-    {:cont, {acc_i, acc_start_index, acc_g, acc_g1, acc_state}}
+    {:cont, {acc_i, acc_g, acc_g1, acc_start_index, acc_state}}
   else
-    {:halt, {acc_i, acc_start_index, acc_g, acc_g1, acc_state}}
+    {:halt, {acc_i, acc_g, acc_g1, acc_start_index, acc_state}}
   end
 end)
     if (acc_start_index >= 0) do
       throw(:break)
     end
-    {:cont, {acc_this1, acc_i, acc_start_index, acc_g, acc_state}}
+    {:cont, {acc_i, acc_this1, acc_g, acc_start_index, acc_state}}
   else
-    {:halt, {acc_this1, acc_i, acc_start_index, acc_g, acc_state}}
+    {:halt, {acc_i, acc_this1, acc_g, acc_start_index, acc_state}}
   end
 end)
     if (start_index >= 0) do
@@ -162,7 +162,7 @@ end)
     result = ""
     e = e
     prev = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {prev, e, result, :ok}, fn _, {acc_prev, acc_e, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {prev, result, e, :ok}, fn _, {acc_prev, acc_result, acc_e, acc_state} ->
   if (acc_e != nil) do
     if (acc_prev == nil) do
       tmp = acc_e.get_stack()
@@ -173,9 +173,9 @@ end)
     end
     acc_prev = acc_e
     acc_e = acc_e.get_previous()
-    {:cont, {acc_prev, acc_e, acc_result, acc_state}}
+    {:cont, {acc_prev, acc_result, acc_e, acc_state}}
   else
-    {:halt, {acc_prev, acc_e, acc_result, acc_state}}
+    {:halt, {acc_prev, acc_result, acc_e, acc_state}}
   end
 end)
     result

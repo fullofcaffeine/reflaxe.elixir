@@ -1,7 +1,7 @@
 defmodule Main do
   use ExUnit.Case
   test "email validation" do
-    valid_email = {:Parse, "user@example.com"}
+    valid_email = Email_Impl_.parse("user@example.com")
     assert match?({:ok, _}, valid_email) do
       "Valid email should parse successfully"
     end
@@ -30,17 +30,17 @@ defmodule Main do
         reason = g
         flunk("Valid email should not fail: " <> reason)
     end
-    invalid_email = {:Parse, "not-an-email"}
+    invalid_email = Email_Impl_.parse("not-an-email")
     assert match?({:error, _}, invalid_email) do
       "Invalid email should be rejected"
     end
-    empty_email = {:Parse, ""}
+    empty_email = Email_Impl_.parse("")
     assert match?({:error, _}, empty_email) do
       "Empty email should be rejected"
     end
   end
   test "user id validation" do
-    user_id = {:Parse, "User123"}
+    user_id = UserId_Impl_.parse("User123")
     assert match?({:ok, _}, user_id) do
       "Valid user ID should parse"
     end
@@ -65,18 +65,18 @@ defmodule Main do
         reason = g
         flunk("Valid user ID should not fail: " <> reason)
     end
-    empty_user_id = {:Parse, ""}
+    empty_user_id = UserId_Impl_.parse("")
     assert match?({:error, _}, empty_user_id) do
       "Empty user ID should be rejected"
     end
-    invalid_user_id = {:Parse, "user@123"}
+    invalid_user_id = UserId_Impl_.parse("user@123")
     assert match?({:error, _}, invalid_user_id) do
       "User ID with special characters should be rejected"
     end
   end
   test "positive int arithmetic" do
-    pos1 = {:Parse, 5}
-    pos2 = {:Parse, 3}
+    pos1 = PositiveInt_Impl_.parse(5)
+    pos2 = PositiveInt_Impl_.parse(3)
     assert match?({:ok, _}, pos1) do
       "Positive integer 5 should parse"
     end
@@ -97,7 +97,7 @@ defmodule Main do
         assert 15 == PositiveInt_Impl_.to_int(product) do
           "5 * 3 should equal 15"
         end
-        diff = {:SafeSub, a, b}
+        diff = PositiveInt_Impl_.safe_sub(a, b)
         assert match?({:ok, _}, diff) do
           "5 - 3 should succeed"
         end
@@ -113,7 +113,7 @@ defmodule Main do
             reason = g
             flunk("Subtraction should not fail: " <> reason)
         end
-        invalid_diff = {:SafeSub, b, a}
+        invalid_diff = PositiveInt_Impl_.safe_sub(b, a)
         assert match?({:error, _}, invalid_diff) do
           "3 - 5 should fail (non-positive result)"
         end
@@ -123,17 +123,17 @@ defmodule Main do
     else
       flunk("Valid positive integers should parse")
     end
-    zero = {:Parse, 0}
+    zero = PositiveInt_Impl_.parse(0)
     assert match?({:error, _}, zero) do
       "Zero should be rejected"
     end
-    negative = {:Parse, -5}
+    negative = PositiveInt_Impl_.parse(-5)
     assert match?({:error, _}, negative) do
       "Negative number should be rejected"
     end
   end
   test "non empty string operations" do
-    str = {:Parse, "  hello world  "}
+    str = NonEmptyString_Impl_.parse("  hello world  ")
     assert match?({:ok, _}, str) do
       "Non-empty string should parse"
     end
@@ -141,7 +141,7 @@ defmodule Main do
       0 ->
         g = elem(str, 1)
         s = g
-        trimmed = {:SafeTrim, s}
+        trimmed = NonEmptyString_Impl_.safe_trim(s)
         assert match?({:ok, _}, trimmed) do
           "Trimming non-empty content should succeed"
         end
@@ -173,11 +173,11 @@ defmodule Main do
         reason = g
         flunk("Valid non-empty string should not fail: " <> reason)
     end
-    empty = {:Parse, ""}
+    empty = NonEmptyString_Impl_.parse("")
     assert match?({:error, _}, empty) do
       "Empty string should be rejected"
     end
-    whitespace_only = {:Parse, "   "}
+    whitespace_only = NonEmptyString_Impl_.parse("   ")
     assert match?({:ok, _}, whitespace_only) do
       "Whitespace-only string should parse"
     end
@@ -185,7 +185,7 @@ defmodule Main do
       0 ->
         g = elem(whitespace_only, 1)
         ws = g
-        trimmed = {:SafeTrim, ws}
+        trimmed = NonEmptyString_Impl_.safe_trim(ws)
         assert match?({:error, _}, trimmed) do
           "Trimming whitespace-only should fail"
         end
@@ -195,7 +195,7 @@ defmodule Main do
     end
   end
   test "result chaining" do
-    domain_result = {:Filter, {:Map, {:Parse, "test@example.com"}, fn email -> Email_Impl_.get_domain(email) end}, fn domain -> domain == "example.com" end, "Wrong domain"}
+    domain_result = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@example.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
     assert match?({:ok, _}, domain_result) do
       "Email domain chain should succeed"
     end
@@ -211,14 +211,14 @@ defmodule Main do
         reason = g
         flunk("Domain extraction should not fail: " <> reason)
     end
-    failed_filter = {:Filter, {:Map, {:Parse, "test@wrong.com"}, fn email -> Email_Impl_.get_domain(email) end}, fn domain -> domain == "example.com" end, "Wrong domain"}
+    failed_filter = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@wrong.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
     assert match?({:error, _}, failed_filter) do
       "Filter should reject wrong domain"
     end
   end
   test "option conversion" do
-    email_result = {:Parse, "user@example.com"}
-    email_option = {:ToOption, email_result}
+    email_result = Email_Impl_.parse("user@example.com")
+    email_option = ResultTools.to_option(email_result)
     assert match?({:some, _}, email_option) do
       "Valid email should convert to Some"
     end
@@ -232,14 +232,14 @@ defmodule Main do
       1 ->
         flunk("Valid email should not be None")
     end
-    invalid_email_result = {:Parse, "invalid"}
-    invalid_email_option = {:ToOption, invalid_email_result}
+    invalid_email_result = Email_Impl_.parse("invalid")
+    invalid_email_option = ResultTools.to_option(invalid_email_result)
     assert invalid_email_option == :none do
       "Invalid email should convert to None"
     end
   end
   test "error handling" do
-    invalid_email = {:Parse, "invalid-email"}
+    invalid_email = Email_Impl_.parse("invalid-email")
     case (elem(invalid_email, 0)) do
       0 ->
         _g = elem(invalid_email, 1)
@@ -251,7 +251,7 @@ defmodule Main do
           "Error message should be descriptive"
         end
     end
-    large_int = {:Parse, 1000000}
+    large_int = PositiveInt_Impl_.parse(1000000)
     assert match?({:ok, _}, large_int) do
       "Large positive integer should parse"
     end
@@ -269,10 +269,10 @@ defmodule Main do
     end
   end
   test "real world scenario" do
-    user_email = {:Parse, "john.doe@company.com"}
-    user_id = {:Parse, "johndoe123"}
-    user_age = {:Parse, 25}
-    user_name = {:Parse, "John Doe"}
+    user_email = Email_Impl_.parse("john.doe@company.com")
+    user_id = UserId_Impl_.parse("johndoe123")
+    user_age = PositiveInt_Impl_.parse(25)
+    user_name = NonEmptyString_Impl_.parse("John Doe")
     assert match?({:ok, _}, user_email) do
       "User email should be valid"
     end
