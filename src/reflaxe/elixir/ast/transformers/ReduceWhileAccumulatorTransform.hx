@@ -51,6 +51,11 @@ class ReduceWhileAccumulatorTransform {
         // First recursively transform children
         var transformedNode = ElixirASTTransformer.transformAST(node, transformReduceWhile);
         
+        // Handle null nodes (which can indicate removed nodes)
+        if (transformedNode == null) {
+            return null;
+        }
+        
         // Then check if this is a reduce_while that needs transformation
         switch(transformedNode.def) {
             case ERemoteCall(module, "reduce_while", args) if (isEnumModule(module)):

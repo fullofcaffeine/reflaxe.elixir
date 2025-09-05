@@ -75,6 +75,11 @@ class AssignmentExtractionTransforms {
         // First, recursively transform children
         var transformedNode = ElixirASTTransformer.transformAST(node, transformAssignments);
         
+        // Handle null nodes (which can indicate removed nodes)
+        if (transformedNode == null) {
+            return null;
+        }
+        
         // Then check if this node itself needs transformation
         switch(transformedNode.def) {
             // Look for assignments that are direct statements

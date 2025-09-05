@@ -290,16 +290,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, todos, :ok}, fn _, {acc_g, acc_count, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_g, acc_count, acc_todos, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
   else
-    {:halt, {acc_g, acc_count, acc_todos, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
   end
 end)
     count
@@ -307,16 +307,16 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, todos, :ok}, fn _, {acc_count, acc_g, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_count, acc_g, acc_todos, acc_state}}
+    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
   else
-    {:halt, {acc_count, acc_g, acc_todos, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
   end
 end)
     count
@@ -524,7 +524,7 @@ end
     editing_indicators = []
     this1 = assigns.onlineUsers
     g = this1.keyValueIterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, g, :ok}, fn _, {acc_online_count, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, online_count, :ok}, fn _, {acc_g, acc_online_count, acc_state} ->
   if (acc_g.hasNext()) do
     acc_g = acc_g.next()
     _user_id = acc_g.key
@@ -536,9 +536,9 @@ end
       online_users_list ++ ["<div class=\"flex items-center space-x-2\">\n\t\t\t\t\t<div class=\"w-2 h-2 bg-green-500 rounded-full animate-pulse\"></div>\n\t\t\t\t\t<span class=\"text-sm text-gray-700 dark:text-gray-300\">" <> meta.userName <> editing_badge <> "</span>\n\t\t\t\t</div>"]
       if (meta.editingTodoId != nil), do: editing_indicators ++ ["<div class=\"text-xs text-gray-500 dark:text-gray-400 italic\">\n\t\t\t\t\t\t🖊️ " <> meta.userName <> " is editing todo #" <> meta.editingTodoId <> "\n\t\t\t\t\t</div>"]
     end
-    {:cont, {acc_online_count, acc_g, acc_state}}
+    {:cont, {acc_g, acc_online_count, acc_state}}
   else
-    {:halt, {acc_online_count, acc_g, acc_state}}
+    {:halt, {acc_g, acc_online_count, acc_state}}
   end
 end)
     if (online_count == 0), do: ""
@@ -572,14 +572,14 @@ end) <> "\n\t\t</div>"
     filtered_todos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
     todo_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, filtered_todos, :ok}, fn _, {acc_g, acc_filtered_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
   if (acc_g < acc_filtered_todos.length) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
     todo_items ++ [render_todo_item(todo, assigns.editingTodo)]
-    {:cont, {acc_g, acc_filtered_todos, acc_state}}
+    {:cont, {acc_filtered_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_filtered_todos, acc_state}}
+    {:halt, {acc_filtered_todos, acc_g, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")
@@ -614,14 +614,14 @@ end) <> "\n\t\t\t\t\t\t\t\t" <> render_tags(todo.tags) <> "\n\t\t\t\t\t\t\t</div
     if (tags == nil || tags.length == 0), do: ""
     tag_elements = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tags, g, :ok}, fn _, {acc_tags, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, tags, :ok}, fn _, {acc_g, acc_tags, acc_state} ->
   if (acc_g < acc_tags.length) do
     tag = tags[g]
     acc_g = acc_g + 1
     tag_elements ++ ["<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>"]
-    {:cont, {acc_tags, acc_g, acc_state}}
+    {:cont, {acc_g, acc_tags, acc_state}}
   else
-    {:halt, {acc_tags, acc_g, acc_state}}
+    {:halt, {acc_g, acc_tags, acc_state}}
   end
 end)
     Enum.join(tag_elements, "")

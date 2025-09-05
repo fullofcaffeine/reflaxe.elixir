@@ -998,8 +998,11 @@ class AnnotationTransforms {
     public static function exunitTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
         trace("[XRay ExUnit Transform] PASS START");
+        trace('[XRay ExUnit Transform] AST type: ${Type.enumConstructor(ast.def)}');
         if (ast.metadata != null) {
             trace('[XRay ExUnit Transform] AST has metadata: isExunit=${ast.metadata.isExunit}');
+        } else {
+            trace('[XRay ExUnit Transform] AST has NO metadata');
         }
         #end
         
@@ -1007,9 +1010,39 @@ class AnnotationTransforms {
         switch(ast.def) {
             case EDefmodule(name, body):
                 #if debug_annotation_transforms
-                trace('[XRay ExUnit Transform] Found module: $name, isExunit=${ast.metadata?.isExunit}');
+                trace('[XRay ExUnit Transform] Found EDefmodule: $name');
+                if (ast.metadata != null) {
+                    trace('[XRay ExUnit Transform] Module metadata exists, isExunit=${ast.metadata.isExunit}');
+                } else {
+                    trace('[XRay ExUnit Transform] Module has NO metadata!');
+                }
                 #end
-                if (ast.metadata?.isExunit == true) {
+                
+                // Check if metadata indicates ExUnit module
+                var isExunit = ast.metadata?.isExunit == true;
+                
+                // WORKAROUND: If metadata is missing, detect ExUnit module by checking for test functions
+                if (!isExunit) {
+                    switch(body.def) {
+                        case EBlock(exprs):
+                            for (expr in exprs) {
+                                if (expr.metadata?.isTest == true || 
+                                    expr.metadata?.isSetup == true || 
+                                    expr.metadata?.isSetupAll == true ||
+                                    expr.metadata?.isTeardown == true ||
+                                    expr.metadata?.isTeardownAll == true) {
+                                    #if debug_annotation_transforms
+                                    trace('[XRay ExUnit Transform] ✓ Detected ExUnit module by test function metadata');
+                                    #end
+                                    isExunit = true;
+                                    break;
+                                }
+                            }
+                        default:
+                    }
+                }
+                
+                if (isExunit) {
                     #if debug_annotation_transforms
                     trace('[XRay ExUnit Transform] ✓ Processing @:exunit module: $name');
                     #end
@@ -1096,10 +1129,10 @@ class AnnotationTransforms {
                             var teardownBody = makeAST(
                                 EBlock([
                                     makeAST(
-                                        EMacroCall(
+                                        ECall(
+                                            null,  // No target needed for on_exit
                                             "on_exit",
-                                            [makeAST(EFn([{args: [], guard: null, body: body}]))],
-                                            null
+                                            [makeAST(EFn([{args: [], guard: null, body: body}]))]
                                         )
                                     ),
                                     makeAST(EAtom("ok"))
@@ -1113,6 +1146,29 @@ class AnnotationTransforms {
                                 )
                             );
                             statements.push(teardownBlock);
+                            
+                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTeardownAll == true):
+                            // Transform @:teardownAll function into ExUnit on_exit callback in setup_all
+                            var teardownAllBody = makeAST(
+                                EBlock([
+                                    makeAST(
+                                        ECall(
+                                            null,  // No target needed for on_exit
+                                            "on_exit",
+                                            [makeAST(EFn([{args: [], guard: null, body: body}]))]
+                                        )
+                                    ),
+                                    makeAST(EAtom("ok"))
+                                ])
+                            );
+                            var teardownAllBlock = makeAST(
+                                EMacroCall(
+                                    "setup_all",
+                                    [makeAST(EVar("context"))],
+                                    teardownAllBody
+                                )
+                            );
+                            statements.push(teardownAllBlock);
                             
                         case EDef(name, _, _, _) if (name == "setup" || name == "setupAll"):
                             // Keep setup functions as-is for backward compatibility
