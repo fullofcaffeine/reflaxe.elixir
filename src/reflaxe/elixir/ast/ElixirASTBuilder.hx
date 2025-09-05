@@ -1070,6 +1070,20 @@ class ElixirASTBuilder {
                         var target = buildFromTypedExpr(e, variableUsageMap);
                         var fieldName = extractFieldName(fa);
                         EField(target, fieldName);
+                    case FAnon(cf):
+                        // Anonymous field access - check for tuple pattern
+                        var fieldName = cf.get().name;
+                        var target = buildFromTypedExpr(e, variableUsageMap);
+                        
+                        if (~/^_\d+$/.match(fieldName)) {
+                            // This is a tuple field access like tuple._1, tuple._2
+                            // Convert to elem(tuple, index) where index is 0-based
+                            var index = Std.parseInt(fieldName.substr(1)) - 1; // _1 -> 0, _2 -> 1
+                            ECall(null, "elem", [target, makeAST(EInteger(index))]);
+                        } else {
+                            // Regular anonymous field access
+                            EField(target, fieldName);
+                        }
                     default:
                         // Regular field access
                         var target = buildFromTypedExpr(e, variableUsageMap);
@@ -1573,6 +1587,41 @@ class ElixirASTBuilder {
              * @return Either EKeywordList for supervisor options or EMap for regular objects
              */
             case TObjectDecl(fields):
+                // First, check if this is a tuple pattern (anonymous structure with _1, _2, etc. fields)
+                var isTuplePattern = true;
+                var maxTupleIndex = 0;
+                
+                // Check if all fields follow the tuple naming pattern _1, _2, _3...
+                for (field in fields) {
+                    if (!~/^_\d+$/.match(field.name)) {
+                        isTuplePattern = false;
+                        break;
+                    }
+                    var index = Std.parseInt(field.name.substr(1));
+                    if (index > maxTupleIndex) {
+                        maxTupleIndex = index;
+                    }
+                }
+                
+                // If it's a tuple pattern, generate an Elixir tuple
+                if (isTuplePattern && fields.length > 0) {
+                    // Sort fields by index to ensure correct order
+                    var sortedFields = fields.copy();
+                    sortedFields.sort(function(a, b) {
+                        var aIndex = Std.parseInt(a.name.substr(1));
+                        var bIndex = Std.parseInt(b.name.substr(1));
+                        return aIndex - bIndex;
+                    });
+                    
+                    // Build tuple elements in order
+                    var tupleElements = [];
+                    for (field in sortedFields) {
+                        tupleElements.push(buildFromTypedExpr(field.expr));
+                    }
+                    
+                    return ETuple(tupleElements);
+                }
+                
                 // Detect supervisor options pattern by checking for characteristic fields
                 var hasStrategy = false;
                 var hasMaxRestarts = false; 
