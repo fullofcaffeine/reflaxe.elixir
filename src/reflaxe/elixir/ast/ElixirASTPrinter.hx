@@ -1050,8 +1050,39 @@ class ElixirASTPrinter {
             case EMatch(_, _):
                 // Assignments cannot be used in inline if-statements
                 false;
+            case EBlock(expressions):
+                // A block is not simple if it contains any assignments
+                // This prevents inline if with blocks containing assignments
+                for (expr in expressions) {
+                    if (containsAssignment(expr)) {
+                        return false;
+                    }
+                }
+                // Even without assignments, blocks with multiple statements aren't simple
+                expressions.length <= 1 && (expressions.length == 0 || isSimpleExpression(expressions[0]));
             case _:
                 false;
+        };
+    }
+    
+    /**
+     * Check if an expression contains any assignment operations
+     */
+    static function containsAssignment(ast: ElixirAST): Bool {
+        if (ast == null) return false;
+        
+        return switch(ast.def) {
+            case EMatch(_, _): true;
+            case EBinary(op, _, _) if (op == Match): true;
+            case EBlock(expressions):
+                for (expr in expressions) {
+                    if (containsAssignment(expr)) return true;
+                }
+                false;
+            case EIf(_, thenBranch, elseBranch):
+                containsAssignment(thenBranch) || 
+                (elseBranch != null && containsAssignment(elseBranch));
+            case _: false;
         };
     }
     
