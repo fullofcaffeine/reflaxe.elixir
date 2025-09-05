@@ -97,24 +97,24 @@ end)
     n = 0
     if (pred == nil) do
       item = it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {item, n, :ok}, fn _, {acc_item, acc_n, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, item, :ok}, fn _, {acc_n, acc_item, acc_state} ->
   if (acc_item.hasNext()) do
     _item = acc_item.next()
     acc_n = acc_n + 1
-    {:cont, {acc_item, acc_n, acc_state}}
+    {:cont, {acc_n, acc_item, acc_state}}
   else
-    {:halt, {acc_item, acc_n, acc_state}}
+    {:halt, {acc_n, acc_item, acc_state}}
   end
 end)
     else
       v = it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, n, :ok}, fn _, {acc_v, acc_n, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, v, :ok}, fn _, {acc_n, acc_v, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
     if (pred(acc_v)), do: acc_n = acc_n + 1
-    {:cont, {acc_v, acc_n, acc_state}}
+    {:cont, {acc_n, acc_v, acc_state}}
   else
-    {:halt, {acc_v, acc_n, acc_state}}
+    {:halt, {acc_n, acc_v, acc_state}}
   end
 end)
     end
@@ -175,14 +175,14 @@ end)
   def index_of(it, v) do
     i = 0
     x = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x, i, :ok}, fn _, {acc_x, acc_i, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, x, :ok}, fn _, {acc_i, acc_x, acc_state} ->
   if (acc_x.hasNext()) do
     acc_x = acc_x.next()
     if (acc_x == v), do: acc_i
     acc_i = acc_i + 1
-    {:cont, {acc_x, acc_i, acc_state}}
+    {:cont, {acc_i, acc_x, acc_state}}
   else
-    {:halt, {acc_x, acc_i, acc_state}}
+    {:halt, {acc_i, acc_x, acc_state}}
   end
 end)
     -1
