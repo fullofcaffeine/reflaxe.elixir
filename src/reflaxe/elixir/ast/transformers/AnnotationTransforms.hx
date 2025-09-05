@@ -1049,10 +1049,17 @@ class AnnotationTransforms {
             case EBlock(exprs):
                 for (expr in exprs) {
                     switch(expr.def) {
-                        case EDef(name, params, guards, body) if (expr.metadata?.isTest == true):
+                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTest == true):
                             // Transform function into test block
-                            var testName = StringTools.replace(name, "test", "");
-                            testName = extractAppName(testName);
+                            var testName = name;
+                            // Remove "test" prefix if present
+                            if (StringTools.startsWith(testName, "test_")) {
+                                testName = testName.substring(5);
+                            } else if (StringTools.startsWith(testName, "test")) {
+                                testName = testName.substring(4);
+                            }
+                            // Convert to readable name (snake_case to spaces)
+                            testName = StringTools.replace(testName, "_", " ");
                             var testBlock = makeAST(
                                 EMacroCall(
                                     "test",
