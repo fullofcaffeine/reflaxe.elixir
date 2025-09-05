@@ -4,7 +4,7 @@ defmodule OptionTools do
       0 ->
         g = elem(option, 1)
         value = g
-        {:Some, transform.(value)}
+        transform.(value)
       1 ->
         :none
     end
@@ -34,7 +34,7 @@ defmodule OptionTools do
       0 ->
         g = elem(option, 1)
         value = g
-        if (predicate.(value)), do: {:Some, value}, else: :none
+        if (predicate.(value)), do: value, else: :none
       1 ->
         :none
     end
@@ -115,7 +115,7 @@ defmodule OptionTools do
     {:halt, {acc_options, acc_g, acc_state}}
   end
 end)
-    {:Some, values}
+    {:some, values}
   end
   def values(options) do
     result = []
@@ -154,14 +154,14 @@ end)
       0 ->
         g = elem(result, 1)
         value = g
-        {:Some, value}
+        value
       1 ->
         _g = elem(result, 1)
         :none
     end
   end
   def from_nullable(value) do
-    if (value != nil), do: {:Some, value}, else: :none
+    if (value != nil), do: value, else: :none
   end
   def to_nullable(option) do
     case (elem(option, 0)) do

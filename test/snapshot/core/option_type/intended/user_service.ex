@@ -6,7 +6,7 @@ defmodule UserService do
   if (acc_g < acc_g1.length) do
     user = g1[g]
     acc_g = acc_g + 1
-    if (user.name == name), do: {:Some, user}
+    if (user.name == name), do: {:some, user}
     {:cont, {acc_g, acc_g1, acc_state}}
   else
     {:halt, {acc_g, acc_g1, acc_state}}
