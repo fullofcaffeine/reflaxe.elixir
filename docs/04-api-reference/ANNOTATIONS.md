@@ -857,6 +857,260 @@ end
 - Enables creating reusable Phoenix application templates
 - Makes project renaming and rebranding straightforward
 
+### @:exunit - ExUnit Test Module
+
+Marks a class as an ExUnit test module for unit and integration testing.
+
+**Purpose**: ExUnit is Elixir's built-in testing framework. The `@:exunit` annotation transforms your class into a proper ExUnit test module with all the testing capabilities.
+
+**Basic Usage**:
+```haxe
+import exunit.TestCase;
+import exunit.Assert.*;
+
+@:exunit
+class UserTest extends TestCase {
+    @:test
+    function testUserCreation(): Void {
+        var user = new User("Alice", 30);
+        assertEqual("Alice", user.name);
+        assertEqual(30, user.age);
+    }
+    
+    @:test
+    function testUserValidation(): Void {
+        var user = new User("", -5);
+        assertFalse(user.isValid());
+    }
+}
+```
+
+**Generated Elixir**:
+```elixir
+defmodule UserTest do
+  use ExUnit.Case
+  
+  test "user creation" do
+    user = User.new("Alice", 30)
+    assert user.name == "Alice"
+    assert user.age == 30
+  end
+  
+  test "user validation" do
+    user = User.new("", -5)
+    assert not user.is_valid()
+  end
+end
+```
+
+### ExUnit Test Annotations
+
+These annotations work within `@:exunit` classes to provide full testing capabilities:
+
+#### @:test - Mark Test Method
+
+**Purpose**: Identifies a method as a test case that should be executed by ExUnit.
+
+**How it works**: Test method names are automatically cleaned up:
+- `testUserLogin` → `test "user login"`
+- `testCreateOrder` → `test "create order"`
+- `shouldValidateEmail` → `test "should validate email"`
+
+```haxe
+@:test
+function testCalculation(): Void {
+    assertEqual(4, 2 + 2);
+}
+```
+
+#### @:describe - Group Related Tests
+
+**Purpose**: Groups related tests together in describe blocks for better organization and readability.
+
+**Why use it**: 
+- Improves test output readability
+- Allows running specific groups of tests
+- Provides logical structure to test suites
+
+```haxe
+@:describe("User validation")
+@:test
+function testEmailFormat(): Void {
+    assertTrue(User.isValidEmail("test@example.com"));
+    assertFalse(User.isValidEmail("invalid-email"));
+}
+
+@:describe("User validation")
+@:test
+function testAgeRange(): Void {
+    assertTrue(User.isValidAge(25));
+    assertFalse(User.isValidAge(-1));
+}
+```
+
+Generates:
+```elixir
+describe "User validation" do
+  test "email format" do
+    assert User.is_valid_email("test@example.com")
+    assert not User.is_valid_email("invalid-email")
+  end
+  
+  test "age range" do
+    assert User.is_valid_age(25)
+    assert not User.is_valid_age(-1)
+  end
+end
+```
+
+#### @:async - Run Tests Asynchronously
+
+**Purpose**: Marks tests to run concurrently with other async tests for faster test execution.
+
+**When to use**: For tests that don't share state or resources and can safely run in parallel.
+
+```haxe
+@:async
+@:test
+function testIndependentCalculation(): Void {
+    var result = complexCalculation();
+    assertNotNull(result);
+}
+```
+
+**Note**: If any test in a module is marked `@:async`, the entire module becomes async: `use ExUnit.Case, async: true`
+
+#### @:tag - Tag Tests for Selective Execution
+
+**Purpose**: Tags tests for conditional execution, allowing you to include or exclude specific tests.
+
+**Common uses**:
+- Skip slow tests in CI: `@:tag("slow")`
+- Mark integration tests: `@:tag("integration")`
+- Flag external dependencies: `@:tag("external")`
+- Multiple tags supported: `@:tag("slow") @:tag("database")`
+
+```haxe
+@:tag("slow")
+@:test
+function testDatabaseMigration(): Void {
+    Database.runMigrations();
+    assertTrue(Database.isReady());
+}
+
+@:tag("integration")
+@:tag("external")
+@:test
+function testThirdPartyAPI(): Void {
+    var response = ExternalAPI.fetch();
+    assertNotNull(response);
+}
+```
+
+Run with tags:
+```bash
+mix test --only slow           # Run only slow tests
+mix test --exclude integration # Skip integration tests
+mix test --only tag:external   # Run only external tests
+```
+
+#### @:setup - Run Before Each Test
+
+**Purpose**: Executes setup code before each test in the module to ensure clean state.
+
+```haxe
+@:setup
+function prepareDatabase(): Void {
+    Database.beginTransaction();
+    insertTestData();
+}
+```
+
+#### @:setupAll - Run Once Before All Tests
+
+**Purpose**: Executes expensive one-time setup before any tests in the module run.
+
+```haxe
+@:setupAll
+function startServices(): Void {
+    TestServer.start();
+    Database.createTestDatabase();
+}
+```
+
+#### @:teardown - Run After Each Test
+
+**Purpose**: Executes cleanup code after each test to prevent test interference.
+
+```haxe
+@:teardown
+function cleanupDatabase(): Void {
+    Database.rollbackTransaction();
+    clearTempFiles();
+}
+```
+
+#### @:teardownAll - Run Once After All Tests
+
+**Purpose**: Executes final cleanup after all tests in the module complete.
+
+```haxe
+@:teardownAll
+function stopServices(): Void {
+    TestServer.stop();
+    Database.dropTestDatabase();
+}
+```
+
+**Complete ExUnit Example**:
+```haxe
+@:exunit
+class TodoTest extends TestCase {
+    @:setupAll
+    function startApp(): Void {
+        TodoApp.start();
+    }
+    
+    @:setup
+    function beginTransaction(): Void {
+        Database.beginTransaction();
+    }
+    
+    @:describe("Todo CRUD")
+    @:test
+    function testCreateTodo(): Void {
+        var todo = Todo.create("Buy milk");
+        assertNotNull(todo.id);
+    }
+    
+    @:describe("Todo CRUD")
+    @:async
+    @:test
+    function testUpdateTodo(): Void {
+        var todo = Todo.create("Buy milk");
+        todo.update({completed: true});
+        assertTrue(todo.completed);
+    }
+    
+    @:tag("slow")
+    @:test
+    function testBulkImport(): Void {
+        var todos = Todo.bulkImport(largeDataset);
+        assertEqual(10000, todos.length);
+    }
+    
+    @:teardown
+    function rollback(): Void {
+        Database.rollbackTransaction();
+    }
+    
+    @:teardownAll
+    function stopApp(): Void {
+        TodoApp.stop();
+    }
+}
+```
+
 ## Usage Guidelines
 
 1. **One primary annotation per class** - Choose the main purpose of your class

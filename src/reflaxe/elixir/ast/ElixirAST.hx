@@ -643,6 +643,9 @@ typedef ElixirMetadata = {
     ?isSetupAll: Bool,            // @:setupAll on a method in ExUnit module
     ?isTeardown: Bool,            // @:teardown on a method in ExUnit module
     ?isTeardownAll: Bool,         // @:teardownAll on a method in ExUnit module
+    ?describeBlock: String,       // @:describe block name for grouping tests
+    ?isAsync: Bool,               // @:async for async ExUnit tests
+    ?testTags: Array<String>,     // @:tag values for test tagging
     ?appName: String,             // Application name for OTP/Phoenix
     ?tableName: String,           // Table name for Ecto schemas
     

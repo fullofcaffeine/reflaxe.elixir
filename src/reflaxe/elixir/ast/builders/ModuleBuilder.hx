@@ -640,6 +640,9 @@ class ModuleBuilder {
                 var isSetupAll = false;
                 var isTeardown = false;
                 var isTeardownAll = false;
+                var describeBlock: String = null;
+                var isAsync = false;
+                var testTags: Array<String> = [];
                 
                 if (func.meta != null && func.meta.has != null) {
                     isTest = func.meta.has(":test") || func.meta.has("test") || func.meta.has(":elixir.test");
@@ -653,6 +656,37 @@ class ModuleBuilder {
                         isTeardown = true;
                     } else if (func.meta.has(":elixir.teardownAll") || func.name == "teardownAll") {
                         isTeardownAll = true;
+                    }
+                    
+                    // Check for describe block metadata
+                    if (func.meta.has(":elixir.describe")) {
+                        var describeMeta = func.meta.extract(":elixir.describe");
+                        if (describeMeta != null && describeMeta.length > 0 && describeMeta[0].params != null && describeMeta[0].params.length > 0) {
+                            switch(describeMeta[0].params[0].expr) {
+                                case EConst(CString(s, _)): describeBlock = s;
+                                default:
+                            }
+                        }
+                    }
+                    
+                    // Check for async metadata
+                    if (func.meta.has(":elixir.async")) {
+                        isAsync = true;
+                    }
+                    
+                    // Check for tag metadata (can have multiple tags)
+                    if (func.meta.has(":elixir.tag")) {
+                        var tagMetas = func.meta.extract(":elixir.tag");
+                        if (tagMetas != null) {
+                            for (tagMeta in tagMetas) {
+                                if (tagMeta.params != null && tagMeta.params.length > 0) {
+                                    switch(tagMeta.params[0].expr) {
+                                        case EConst(CString(s, _)): testTags.push(s);
+                                        default:
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 
@@ -694,9 +728,12 @@ class ModuleBuilder {
                         if (isSetupAll) metadata.isSetupAll = true;
                         if (isTeardown) metadata.isTeardown = true;
                         if (isTeardownAll) metadata.isTeardownAll = true;
+                        if (describeBlock != null) metadata.describeBlock = describeBlock;
+                        if (isAsync) metadata.isAsync = true;
+                        if (testTags.length > 0) metadata.testTags = testTags;
                         
                         // Only add metadata if we have any flags set
-                        if (isTest || isSetup || isSetupAll || isTeardown || isTeardownAll) {
+                        if (isTest || isSetup || isSetupAll || isTeardown || isTeardownAll || describeBlock != null || isAsync || testTags.length > 0) {
                             funcAST = makeASTWithMeta(
                                 funcAST.def,
                                 metadata,

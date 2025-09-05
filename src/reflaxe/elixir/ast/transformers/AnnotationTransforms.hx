@@ -1068,14 +1068,40 @@ class AnnotationTransforms {
      * Build ExUnit.Case module body
      * 
      * WHY: ExUnit modules need use ExUnit.Case and test macros
-     * WHAT: Transforms regular functions into test blocks
-     * HOW: Adds use statement and transforms @:test methods
+     * WHAT: Transforms regular functions into test blocks with support for describe blocks, async, and tags
+     * HOW: Adds use statement, groups tests by describe blocks, and transforms @:test methods with proper attributes
      */
     static function buildExUnitBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
         var statements = [];
         
-        // use ExUnit.Case
-        statements.push(makeAST(EUse("ExUnit.Case", [])));
+        // Check if module should be async by scanning for any async tests
+        var hasAsyncTests = false;
+        switch(existingBody.def) {
+            case EBlock(exprs):
+                for (expr in exprs) {
+                    if (expr.metadata?.isAsync == true) {
+                        hasAsyncTests = true;
+                        break;
+                    }
+                }
+            default:
+        }
+        
+        // use ExUnit.Case with async option if needed
+        if (hasAsyncTests) {
+            statements.push(makeAST(EUse("ExUnit.Case", [
+                makeAST(ETuple([
+                    makeAST(EAtom("async")),
+                    makeAST(EAtom("true"))
+                ]))
+            ])));
+        } else {
+            statements.push(makeAST(EUse("ExUnit.Case", [])));
+        }
+        
+        // Group tests by describe blocks
+        var testsWithoutDescribe = [];
+        var describeGroups = new Map<String, Array<ElixirAST>>();
         
         // Process existing body to transform test methods
         switch(existingBody.def) {
@@ -1093,6 +1119,17 @@ class AnnotationTransforms {
                             }
                             // Convert to readable name (snake_case to spaces)
                             testName = StringTools.replace(testName, "_", " ");
+                            
+                            // Check for tags
+                            var testTags = expr.metadata?.testTags;
+                            var taggedTestName = testName;
+                            if (testTags != null && testTags.length > 0) {
+                                // Add tags as @tag annotations before the test
+                                for (tag in testTags) {
+                                    taggedTestName = '@tag $tag\n  $taggedTestName';
+                                }
+                            }
+                            
                             var testBlock = makeAST(
                                 EMacroCall(
                                     "test",
@@ -1100,7 +1137,17 @@ class AnnotationTransforms {
                                     body
                                 )
                             );
-                            statements.push(testBlock);
+                            
+                            // Check if this test belongs to a describe block
+                            var describeBlock = expr.metadata?.describeBlock;
+                            if (describeBlock != null) {
+                                if (!describeGroups.exists(describeBlock)) {
+                                    describeGroups.set(describeBlock, []);
+                                }
+                                describeGroups.get(describeBlock).push(testBlock);
+                            } else {
+                                testsWithoutDescribe.push(testBlock);
+                            }
                             
                         case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetup == true):
                             // Transform @:setup function into ExUnit setup callback
@@ -1179,8 +1226,45 @@ class AnnotationTransforms {
                             statements.push(expr);
                             
                         default:
+                            // Keep other expressions (but not in main statements yet)
+                            // They'll be added after describe blocks
+                    }
+                }
+                
+                // First add setup/teardown blocks
+                for (expr in exprs) {
+                    switch(expr.def) {
+                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetup == true || 
+                                                                                                       expr.metadata?.isSetupAll == true ||
+                                                                                                       expr.metadata?.isTeardown == true ||
+                                                                                                       expr.metadata?.isTeardownAll == true):
+                            // Already processed above, skip
+                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTest == true):
+                            // Already processed above, skip
+                        default:
                             // Keep other expressions
                             statements.push(expr);
+                    }
+                }
+                
+                // Add tests without describe blocks
+                for (test in testsWithoutDescribe) {
+                    statements.push(test);
+                }
+                
+                // Add describe blocks with their grouped tests
+                for (describeName in describeGroups.keys()) {
+                    var tests = describeGroups.get(describeName);
+                    if (tests.length > 0) {
+                        // Create describe block containing all tests in this group
+                        var describeBlock = makeAST(
+                            EMacroCall(
+                                "describe",
+                                [makeAST(EString(describeName))],
+                                makeAST(EBlock(tests))
+                            )
+                        );
+                        statements.push(describeBlock);
                     }
                 }
                 
