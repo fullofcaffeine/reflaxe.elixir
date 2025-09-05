@@ -10,6 +10,40 @@ import phoenix.Ecto.Changeset;
  * 
  * Provides strongly-typed interfaces for Phoenix controllers, LiveView, HTML helpers,
  * PubSub messaging, and routing - eliminating all Dynamic types for compile-time safety.
+ * 
+ * ## Three-Layer LiveView Socket Design
+ * 
+ * This module provides three related types for LiveView socket handling:
+ * 
+ * 1. **Socket<T>** - The base Phoenix.LiveView.Socket struct
+ *    - Direct mapping to Elixir's Phoenix.LiveView.Socket
+ *    - What Phoenix functions expect and return
+ *    - Contains assigns, connection state, etc.
+ * 
+ * 2. **LiveSocket<T>** (in LiveSocket.hx) - Type-safe Haxe wrapper
+ *    - Abstract type wrapping Socket<T> with zero runtime overhead
+ *    - Provides compile-time validated assign operations
+ *    - Implicitly converts to/from Socket<T>
+ *    - Prevents typos in assign keys at compile time
+ * 
+ * 3. **LiveView** (below) - Static functions module
+ *    - Maps to Phoenix.LiveView module functions
+ *    - Provides assign/3, push_patch/2, etc.
+ *    - Traditional Phoenix operations
+ * 
+ * ## Usage Pattern
+ * ```haxe
+ * function mount(params, session, socket: Socket<MyAssigns>) {
+ *     // Option 1: Use LiveView functions (mirrors Elixir)
+ *     socket = LiveView.assign(socket, "count", 0);
+ *     
+ *     // Option 2: Convert to LiveSocket for type safety
+ *     var liveSocket: LiveSocket<MyAssigns> = socket;
+ *     liveSocket = liveSocket.assign(_.count, 0);  // Compile-time validated!
+ *     
+ *     return Ok(socket);
+ * }
+ * ```
  */
 
 /**

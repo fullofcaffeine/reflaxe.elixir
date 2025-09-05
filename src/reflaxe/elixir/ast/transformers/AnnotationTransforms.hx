@@ -38,6 +38,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - @:phoenixWeb - Phoenix Web module with router/controller/live_view macros
  * - @:controller - Phoenix.Controller with action functions
  * - @:presence - Phoenix.Presence with tracking and listing callbacks
+ * - @:exunit - ExUnit.Case test modules with test functions
  * 
  * TRANSFORMATION PASSES:
  * 1. phoenixWebTransformPass - Adds defmacro definitions for Phoenix DSL
@@ -48,6 +49,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * 6. controllerTransformPass - Sets up Phoenix.Controller use statement
  * 7. routerTransformPass - Sets up Phoenix.Router with pipelines and routes
  * 8. presenceTransformPass - Sets up Phoenix.Presence use statement
+ * 9. exunitTransformPass - Sets up ExUnit.Case with test functions
  * 
  * METADATA FLOW:
  * 1. ModuleBuilder detects annotations and sets metadata flags
@@ -984,6 +986,102 @@ class AnnotationTransforms {
         }
         
         return result;
+    }
+    
+    /**
+     * Transform @:exunit modules into ExUnit.Case test modules
+     * 
+     * WHY: ExUnit tests require specific structure with use statement and test macros
+     * WHAT: Transforms classes marked with @:exunit into proper ExUnit test modules
+     * HOW: Detects isExunit metadata and transforms methods with @:test into test blocks
+     */
+    public static function exunitTransformPass(ast: ElixirAST): ElixirAST {
+        #if debug_annotation_transforms
+        trace("[XRay ExUnit Transform] PASS START");
+        if (ast.metadata != null) {
+            trace('[XRay ExUnit Transform] AST has metadata: isExunit=${ast.metadata.isExunit}');
+        }
+        #end
+        
+        // Check the top-level node first for ExUnit modules
+        switch(ast.def) {
+            case EDefmodule(name, body):
+                #if debug_annotation_transforms
+                trace('[XRay ExUnit Transform] Found module: $name, isExunit=${ast.metadata?.isExunit}');
+                #end
+                if (ast.metadata?.isExunit == true) {
+                    #if debug_annotation_transforms
+                    trace('[XRay ExUnit Transform] ✓ Processing @:exunit module: $name');
+                    #end
+                    
+                    var exunitBody = buildExUnitBody(name, body);
+                    
+                    return makeASTWithMeta(
+                        EDefmodule(name, exunitBody),
+                        ast.metadata,
+                        ast.pos
+                    );
+                }
+                // Not an ExUnit module, return as-is
+                return ast;
+                
+            default:
+                // Not a module, just pass through
+                return ast;
+        }
+    }
+    
+    /**
+     * Build ExUnit.Case module body
+     * 
+     * WHY: ExUnit modules need use ExUnit.Case and test macros
+     * WHAT: Transforms regular functions into test blocks
+     * HOW: Adds use statement and transforms @:test methods
+     */
+    static function buildExUnitBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
+        var statements = [];
+        
+        // use ExUnit.Case
+        statements.push(makeAST(EUse("ExUnit.Case", [])));
+        
+        // Process existing body to transform test methods
+        switch(existingBody.def) {
+            case EBlock(exprs):
+                for (expr in exprs) {
+                    switch(expr.def) {
+                        case EDef(name, params, guards, body) if (expr.metadata?.isTest == true):
+                            // Transform function into test block
+                            var testName = StringTools.replace(name, "test", "");
+                            testName = extractAppName(testName);
+                            var testBlock = makeAST(
+                                EMacroCall(
+                                    "test",
+                                    [makeAST(EString(testName))],
+                                    body
+                                )
+                            );
+                            statements.push(testBlock);
+                            
+                        case EDef(name, _, _, _) if (name == "setup" || name == "setupAll"):
+                            // Keep setup functions as-is
+                            statements.push(expr);
+                            
+                        case EDefp(name, _, _, _) if (name == "setup" || name == "setupAll"):
+                            // Keep private setup functions as-is
+                            statements.push(expr);
+                            
+                        default:
+                            // Keep other expressions
+                            statements.push(expr);
+                    }
+                }
+                
+            default:
+                // Single expression body
+                statements.push(existingBody);
+        }
+        
+        return makeAST(EBlock(statements));
     }
 }
 

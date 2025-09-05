@@ -510,7 +510,8 @@ class ElixirCompiler extends GenericCompiler<
                classType.meta.has(":controller") ||
                classType.meta.has(":presence") ||
                classType.meta.has(":phoenixWeb") ||
-               classType.meta.has(":phoenixWebModule");
+               classType.meta.has(":phoenixWebModule") ||
+               classType.meta.has(":exunit");
     }
     
     /**

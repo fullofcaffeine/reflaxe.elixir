@@ -3,8 +3,10 @@ package;
 import elixir.otp.TypeSafeChildSpec;
 // import elixir.otp.TypeSafeChildSpecBuilder; // Not used in this test
 import elixir.otp.Supervisor.ChildSpec;
+import elixir.otp.Supervisor.ChildSpecFormat;
 import elixir.otp.Supervisor.RestartType;
 import elixir.otp.Supervisor.ShutdownType;
+import elixir.otp.Supervisor.ChildType;
 
 /**
  * TypeSafeChildSpec Compilation Test
@@ -31,31 +33,29 @@ class Main {
      */
     static function testTypeSafeChildSpecs() {
         // Test modern Phoenix.PubSub tuple format
-        var pubsubChildren: Array<TypeSafeChildSpec> = [
-            TypeSafeChildSpec.PubSub("TestApp.PubSub"),
-            TypeSafeChildSpec.PubSub("CustomName.PubSub")
+        var pubsubChildren: Array<ChildSpecFormat> = [
+            TypeSafeChildSpec.pubSub("TestApp.PubSub"),
+            TypeSafeChildSpec.pubSub("CustomName.PubSub")
         ];
         
         // Test simple module references
-        var moduleChildren: Array<TypeSafeChildSpec> = [
-            TypeSafeChildSpec.Repo(),
-            TypeSafeChildSpec.Endpoint(),
-            TypeSafeChildSpec.Telemetry()
+        var moduleChildren: Array<ChildSpecFormat> = [
+            TypeSafeChildSpec.repo("TestApp.Repo"),
+            TypeSafeChildSpec.endpoint("TestAppWeb.Endpoint"),
+            TypeSafeChildSpec.telemetry("TestApp.Telemetry")
         ];
         
         // Test with configuration
-        var configuredChildren: Array<TypeSafeChildSpec> = [
-            TypeSafeChildSpec.Repo({
-                database: "test_db",
-                pool_size: 5
-            }),
-            TypeSafeChildSpec.Endpoint(4000, {
-                ip: "127.0.0.1"
-            }),
-            TypeSafeChildSpec.Presence({
-                name: "TestApp.Presence",
-                pubsub_server: "TestApp.PubSub"
-            })
+        var configuredChildren: Array<ChildSpecFormat> = [
+            TypeSafeChildSpec.repo("TestApp.Repo", [
+                {key: "database", value: "test_db"},
+                {key: "pool_size", value: 5}
+            ]),
+            TypeSafeChildSpec.endpoint("TestAppWeb.Endpoint"),
+            // Presence method not in TypeSafeChildSpec, using worker
+            TypeSafeChildSpec.worker("TestApp.Presence", [
+                {name: "TestApp.Presence", pubsub_server: "TestApp.PubSub"}
+            ])
         ];
         
         trace("Basic TypeSafeChildSpec compilation test completed");
@@ -69,10 +69,10 @@ class Main {
     static function testChildSpecBuilders() {
         // Test simple enum usage instead of builders for now
         var directChildren = [
-            TypeSafeChildSpec.PubSub("TestApp.PubSub"),
-            TypeSafeChildSpec.Repo(),
-            TypeSafeChildSpec.Endpoint(4000),
-            TypeSafeChildSpec.Telemetry()
+            TypeSafeChildSpec.pubSub("TestApp.PubSub"),
+            TypeSafeChildSpec.repo("TestApp.Repo"),
+            TypeSafeChildSpec.endpoint("TestAppWeb.Endpoint"),
+            TypeSafeChildSpec.telemetry("TestApp.Telemetry")
         ];
         
         trace("Direct TypeSafeChildSpec test completed");
@@ -81,23 +81,25 @@ class Main {
     /**
      * Test complex child specs with custom modules and configurations
      * 
-     * Tests the Custom variant that handles arbitrary worker modules
+     * Tests using FullSpec for arbitrary worker modules
      * with proper type safety and restart/shutdown policies.
      */
     static function testComplexChildSpecs() {
-        var complexChildren: Array<TypeSafeChildSpec> = [
-            TypeSafeChildSpec.Custom(
-                MyComplexWorker,
-                new MyComplexWorker("complex_worker_args"),
-                RestartType.Permanent,
-                ShutdownType.Timeout(5000)
-            ),
-            TypeSafeChildSpec.Custom(
-                AnotherWorker,
-                new AnotherWorker("another_worker_args"),
-                RestartType.Transient,
-                ShutdownType.Infinity
-            )
+        var complexChildren: Array<ChildSpecFormat> = [
+            FullSpec({
+                id: "MyComplexWorker",
+                start: {module: "MyComplexWorker", func: "start_link", args: ["complex_worker_args"]},
+                restart: Permanent,
+                shutdown: Timeout(5000),
+                type: Worker
+            }),
+            FullSpec({
+                id: "AnotherWorker",
+                start: {module: "AnotherWorker", func: "start_link", args: ["another_worker_args"]},
+                restart: Transient,
+                shutdown: Infinity,
+                type: Worker
+            })
         ];
         
         trace("Complex TypeSafeChildSpec test completed");
@@ -110,63 +112,60 @@ class Main {
      * that should compile to proper modern Elixir child spec formats.
      */
     static function testApplicationChildren() {
-        var typeSafeChildren: Array<TypeSafeChildSpec> = [
+        var typeSafeChildren: Array<ChildSpecFormat> = [
             // Phoenix.PubSub with modern tuple format
-            TypeSafeChildSpec.PubSub("TestApp.PubSub"),
+            TypeSafeChildSpec.pubSub("TestApp.PubSub"),
             
-            // Ecto repository
-            TypeSafeChildSpec.Repo({
-                database: "test_app_dev",
-                pool_size: 10,
-                timeout: 15000
-            }),
+            // Ecto repository with configuration
+            TypeSafeChildSpec.repo("TestApp.Repo", [
+                {key: "database", value: "test_app_dev"},
+                {key: "pool_size", value: 10},
+                {key: "timeout", value: 15000}
+            ]),
             
             // Phoenix endpoint  
-            TypeSafeChildSpec.Endpoint(4000, {
-                ip: "0.0.0.0",
-                protocol_options: {port: 4000}
-            }),
+            TypeSafeChildSpec.endpoint("TestAppWeb.Endpoint"),
             
             // Telemetry supervisor
-            TypeSafeChildSpec.Telemetry({
-                metrics: [{name: "http.request.duration"}]
+            TypeSafeChildSpec.telemetry("TestApp.Telemetry"),
+            
+            // Phoenix Presence using generic worker
+            TypeSafeChildSpec.worker("TestApp.Presence", [
+                {name: "TestApp.Presence", pubsub_server: "TestApp.PubSub"}
+            ]),
+            
+            // Custom worker with specific restart policy using FullSpec
+            FullSpec({
+                id: "BackgroundWorker",
+                start: {module: "BackgroundWorker", func: "start_link", args: ["background_worker_args"]},
+                restart: Permanent,
+                shutdown: Timeout(10000),
+                type: Worker
             }),
             
-            // Phoenix Presence
-            TypeSafeChildSpec.Presence({
-                name: "TestApp.Presence",
-                pubsub_server: "TestApp.PubSub"
-            }),
-            
-            // Custom worker with specific restart policy
-            TypeSafeChildSpec.Custom(
-                BackgroundWorker,
-                new BackgroundWorker("background_worker_args"),
-                RestartType.Permanent,
-                ShutdownType.Timeout(10000)
-            ),
-            
-            // Custom supervisor
-            TypeSafeChildSpec.Custom(
-                TaskSupervisor,
-                new TaskSupervisor("task_supervisor_args"),
-                RestartType.Permanent,
-                ShutdownType.Infinity
-            )
+            // Custom supervisor using FullSpec
+            FullSpec({
+                id: "TaskSupervisor",
+                start: {module: "TaskSupervisor", func: "start_link", args: ["task_supervisor_args"]},
+                restart: Permanent,
+                shutdown: Infinity,
+                type: Supervisor
+            })
         ];
         
-        // Test mixed array with legacy specs
-        var mixedChildren: Array<TypeSafeChildSpec> = [
-            TypeSafeChildSpec.PubSub("TestApp.PubSub"),
-            TypeSafeChildSpec.Legacy({
+        // Test mixed array with manual specs
+        var mixedChildren: Array<ChildSpecFormat> = [
+            TypeSafeChildSpec.pubSub("TestApp.PubSub"),
+            FullSpec({
                 id: "legacy_worker",
                 start: {
                     module: "LegacyWorker",
                     func: "start_link",
                     args: [{}]
                 },
-                restart: RestartType.Temporary,
-                shutdown: ShutdownType.Timeout(1000)
+                restart: Temporary,
+                shutdown: Timeout(1000),
+                type: Worker
             })
         ];
         

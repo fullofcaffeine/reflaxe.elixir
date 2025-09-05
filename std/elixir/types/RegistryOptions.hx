@@ -69,7 +69,7 @@ class RegistryOptionsBuilder {
     public static inline function unique(name: String): RegistryOptions {
         return {
             keys: Unique,
-            name: untyped __elixir__('String.to_atom($name)')
+            name: untyped __elixir__('String.to_atom({0})', name)
         };
     }
     
@@ -79,7 +79,7 @@ class RegistryOptionsBuilder {
     public static inline function duplicate(name: String): RegistryOptions {
         return {
             keys: Duplicate,
-            name: untyped __elixir__('String.to_atom($name)')
+            name: untyped __elixir__('String.to_atom({0})', name)
         };
     }
     
