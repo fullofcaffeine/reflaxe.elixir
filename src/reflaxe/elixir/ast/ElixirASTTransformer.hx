@@ -213,6 +213,13 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.applicationTransformPass
         });
         
+        passes.push({
+            name: "ExUnitTransform",
+            description: "Transform @:exunit modules into ExUnit.Case test structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.exunitTransformPass
+        });
+        
         // Constant folding pass
         #if !disable_constant_folding
         passes.push({

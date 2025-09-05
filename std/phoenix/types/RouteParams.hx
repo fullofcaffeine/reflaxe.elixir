@@ -16,7 +16,7 @@ package phoenix.types;
  * }
  * 
  * // Type-safe route parameter access
- * function handle_params(params: RouteParams<UserRouteParams>, url: String, socket: LiveViewSocket<MyState>) {
+ * function handle_params(params: RouteParams<UserRouteParams>, url: String, socket: Socket<MyState>) {
  *     var userId = params.id;      // Compile-time type checking
  *     var activeTab = params.tab;  // Optional parameter, can be null
  * }

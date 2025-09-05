@@ -1,28 +1,35 @@
 package;
 
-import phoenix.Socket.LiveViewSocket;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.Socket;
+import phoenix.Phoenix.LiveView;
+
+typedef CounterAssigns = {
+	var count: Int;
+}
 
 /**
- * Basic LiveView test case
+ * Basic LiveView test case using current Phoenix API
  * Tests @:liveview annotation compilation
  */
 @:liveview
 class CounterLive {
 	
-	public function mount(params: Dynamic, session: Dynamic, socket: LiveViewSocket): Dynamic {
-		socket = phoenix.LiveView.assign(socket, "count", 0);
+	public function mount(params: Dynamic, session: Dynamic, socket: Socket<CounterAssigns>): Dynamic {
+		// Use LiveView.assign like todo-app does
+		socket = LiveView.assign(socket, "count", 0);
 		return {ok: socket};
 	}
 	
-	public function handle_event_increment(params: Dynamic, socket: LiveViewSocket): Dynamic {
+	public function handle_event_increment(params: Dynamic, socket: Socket<CounterAssigns>): Dynamic {
 		var count = socket.assigns.count;
-		socket = phoenix.LiveView.assign(socket, "count", count + 1);
+		socket = LiveView.assign(socket, "count", count + 1);
 		return {noreply: socket};
 	}
 	
-	public function handle_event_decrement(params: Dynamic, socket: LiveViewSocket): Dynamic {
+	public function handle_event_decrement(params: Dynamic, socket: Socket<CounterAssigns>): Dynamic {
 		var count = socket.assigns.count;
-		socket = phoenix.LiveView.assign(socket, "count", count - 1);
+		socket = LiveView.assign(socket, "count", count - 1);
 		return {noreply: socket};
 	}
 	
