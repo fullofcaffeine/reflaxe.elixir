@@ -154,7 +154,12 @@ class ElixirASTHelpers {
         var result = "";
         for (i in 0...name.length) {
             var char = name.charAt(i);
-            if (i > 0 && char == char.toUpperCase() && char != "_" && char != char.toLowerCase()) {
+            var charCode = char.charCodeAt(0);
+            
+            // Check if it's an uppercase letter (A-Z = 65-90)
+            var isUppercaseLetter = (charCode >= 65 && charCode <= 90);
+            
+            if (i > 0 && isUppercaseLetter) {
                 result += "_" + char.toLowerCase();
             } else {
                 result += char.toLowerCase();
