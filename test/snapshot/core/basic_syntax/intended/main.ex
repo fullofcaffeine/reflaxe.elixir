@@ -16,13 +16,13 @@ defmodule Main do
     sum = 0
     g = start
     g1 = end
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, sum, g1, :ok}, fn _, {acc_g, acc_sum, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, sum, :ok}, fn _, {acc_g, acc_g1, acc_sum, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     acc_sum = acc_sum + i
-    {:cont, {acc_g, acc_sum, acc_g1, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_sum, acc_state}}
   else
-    {:halt, {acc_g, acc_sum, acc_g1, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_sum, acc_state}}
   end
 end)
     sum

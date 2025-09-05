@@ -7,7 +7,7 @@ defmodule StringUtils do
     parts = StringTools.ltrim(StringTools.rtrim(name)).split(" ")
     formatted = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, parts, :ok}, fn _, {acc_g, acc_parts, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {parts, g, :ok}, fn _, {acc_parts, acc_g, acc_state} ->
   if (acc_g < acc_parts.length) do
     part = parts[g]
     acc_g = acc_g + 1
@@ -15,9 +15,9 @@ defmodule StringUtils do
       capitalized = part.charAt(0).toUpperCase() <> part.substr(1).toLowerCase()
       formatted.push(capitalized)
     end
-    {:cont, {acc_g, acc_parts, acc_state}}
+    {:cont, {acc_parts, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_parts, acc_state}}
+    {:halt, {acc_parts, acc_g, acc_state}}
   end
 end)
     Enum.join(formatted, " ")
@@ -46,13 +46,13 @@ end)
       result = ""
       g = 0
       g1 = repeat_count
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g1, g, :ok}, fn _, {acc_result, acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     _i = acc_g = acc_g + 1
     acc_result = acc_result <> "*"
-    {:cont, {acc_result, acc_g, acc_g1, acc_state}}
+    {:cont, {acc_result, acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_result, acc_g, acc_g1, acc_state}}
+    {:halt, {acc_result, acc_g1, acc_g, acc_state}}
   end
 end)
       result
@@ -62,13 +62,13 @@ end)
     masked = ""
     g = 0
     g1 = masked_count
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, masked, :ok}, fn _, {acc_g1, acc_g, acc_masked, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, masked, :ok}, fn _, {acc_g, acc_g1, acc_masked, acc_state} ->
   if (acc_g < acc_g1) do
     _i = acc_g = acc_g + 1
     acc_masked = acc_masked <> "*"
-    {:cont, {acc_g1, acc_g, acc_masked, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_masked, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_masked, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_masked, acc_state}}
   end
 end)
     visible <> masked

@@ -1778,10 +1778,8 @@ class ElixirCompiler extends GenericCompiler<
     
     
     
-    // NOTE: Loop-related methods previously delegated to WhileLoopCompiler have been removed.
-    // All loop compilation is now handled internally by UnifiedLoopCompiler and its components.
-    // Methods removed: detectArrayBuildingPattern, compileArrayBuildingLoop, extractArrayTransformation,
-    // compileWhileLoopGeneric, extractModifiedVariables, transformLoopBodyMutations
+    // Loop compilation is handled through AST transformation to Elixir's functional constructs.
+    // Loops are transformed into recursive functions or Enum operations as appropriate.
     
     
     

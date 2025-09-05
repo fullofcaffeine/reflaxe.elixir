@@ -28,7 +28,7 @@ defmodule PosException do
   # Instance functions
   @doc "Generated from Haxe toString"
   def format(%__MODULE__{} = struct) do
-    "" <> "Exception" <> " in " <> struct.pos_infos.class_name <> "." <> struct.pos_infos.method_name <> " at " <> struct.pos_infos.file_name <> ":" <> to_string(struct.pos_infos.line_number)
+    "" + nil.toString() + " in " + struct.posInfos.className + "." + struct.posInfos.methodName + " at " + struct.posInfos.fileName + ":" + struct.posInfos.lineNumber
   end
 
 end

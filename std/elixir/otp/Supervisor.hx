@@ -203,40 +203,48 @@ extern class SupervisorExtern {
      * @param children Array of child specifications in any accepted format
      * @param options Supervisor options
      */
-    static function start_link(children: Array<ChildSpecFormat>, options: SupervisorOptions): Dynamic;
+    @:native("start_link")
+    static function startLink(children: Array<ChildSpecFormat>, options: SupervisorOptions): Dynamic;
     
     /**
      * Start a child dynamically
      */
-    static function start_child(supervisor: Dynamic, child_spec: ChildSpec): Dynamic;
+    @:native("start_child")
+    static function startChild(supervisor: Dynamic, child_spec: ChildSpec): Dynamic;
     
     /**
      * Terminate a child
      */
-    static function terminate_child(supervisor: Dynamic, child_id: String): Dynamic;
+    @:native("terminate_child")
+    static function terminateChild(supervisor: Dynamic, child_id: String): Dynamic;
     
     /**
      * Delete a child specification
      */
-    static function delete_child(supervisor: Dynamic, child_id: String): Dynamic;
+    @:native("delete_child")
+    static function deleteChild(supervisor: Dynamic, child_id: String): Dynamic;
     
     /**
      * Restart a child
      */
-    static function restart_child(supervisor: Dynamic, child_id: String): Dynamic;
+    @:native("restart_child")
+    static function restartChild(supervisor: Dynamic, child_id: String): Dynamic;
     
     /**
      * Get child specification
      */
-    static function get_childspec(supervisor: Dynamic, child_id: String): Dynamic;
+    @:native("get_childspec")
+    static function getChildspec(supervisor: Dynamic, child_id: String): Dynamic;
     
     /**
      * Count children
      */
-    static function count_children(supervisor: Dynamic): Dynamic;
+    @:native("count_children")
+    static function countChildren(supervisor: Dynamic): Dynamic;
     
     /**
      * List children
      */
-    static function which_children(supervisor: Dynamic): Array<Dynamic>;
+    @:native("which_children")
+    static function whichChildren(supervisor: Dynamic): Array<Dynamic>;
 }

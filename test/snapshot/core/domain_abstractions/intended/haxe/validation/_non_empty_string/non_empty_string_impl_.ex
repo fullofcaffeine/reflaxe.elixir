@@ -71,14 +71,14 @@ defmodule NonEmptyString_Impl_ do
     parts = this1.split(delimiter)
     result = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {parts, g, :ok}, fn _, {acc_parts, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, parts, :ok}, fn _, {acc_g, acc_parts, acc_state} ->
   if (acc_g < acc_parts.length) do
     part = parts[g]
     acc_g = acc_g + 1
     if (part.length > 0), do: result.push(part)
-    {:cont, {acc_parts, acc_g, acc_state}}
+    {:cont, {acc_g, acc_parts, acc_state}}
   else
-    {:halt, {acc_parts, acc_g, acc_state}}
+    {:halt, {acc_g, acc_parts, acc_state}}
   end
 end)
     result

@@ -76,7 +76,7 @@ end
   defp test_guard_patterns() do
     numbers = [1, 5, 10, 15, 20]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, numbers, :ok}, fn _, {acc_g, acc_numbers, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
   if (acc_g < acc_numbers.length) do
     num = numbers[g]
     acc_g = acc_g + 1
@@ -93,16 +93,16 @@ else
   end
 end
     Log.trace("Number " <> num <> " is " <> category, %{:fileName => "Main.hx", :lineNumber => 98, :className => "Main", :methodName => "testGuardPatterns"})
-    {:cont, {acc_g, acc_numbers, acc_state}}
+    {:cont, {acc_numbers, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_numbers, acc_state}}
+    {:halt, {acc_numbers, acc_g, acc_state}}
   end
 end)
   end
   defp test_array_patterns() do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, arrays, :ok}, fn _, {acc_g, acc_arrays, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arrays, g, :ok}, fn _, {acc_arrays, acc_g, acc_state} ->
   if (acc_g < acc_arrays.length) do
     arr = arrays[g]
     acc_g = acc_g + 1
@@ -135,9 +135,9 @@ else
 end)
 end
     Log.trace("Array pattern: " <> description, %{:fileName => "Main.hx", :lineNumber => 119, :className => "Main", :methodName => "testArrayPatterns"})
-    {:cont, {acc_g, acc_arrays, acc_state}}
+    {:cont, {acc_arrays, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_arrays, acc_state}}
+    {:halt, {acc_arrays, acc_g, acc_state}}
   end
 end)
   end

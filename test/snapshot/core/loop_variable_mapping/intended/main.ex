@@ -3,19 +3,19 @@ defmodule Main do
     array = [1, 2, 3, 4, 5]
     result = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array, g, :ok}, fn _, {acc_array, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, array, :ok}, fn _, {acc_g, acc_array, acc_state} ->
   if (acc_g < acc_array.length) do
     item = array[g]
     acc_g = acc_g + 1
     if (item > 2), do: result.push(item * 2)
-    {:cont, {acc_array, acc_g, acc_state}}
+    {:cont, {acc_g, acc_array, acc_state}}
   else
-    {:halt, {acc_array, acc_g, acc_state}}
+    {:halt, {acc_g, acc_array, acc_state}}
   end
 end)
     g = 0
     g1 = array.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g, g1, :ok}, fn _, {acc_g, acc_g, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, g, :ok}, fn _, {acc_g, acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     acc_g = 0
@@ -29,21 +29,21 @@ end)
     {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
-    {:cont, {acc_g, acc_g, acc_g1, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g, acc_g1, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_g, acc_state}}
   end
 end)
     filtered = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array, g, :ok}, fn _, {acc_array, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, array, :ok}, fn _, {acc_g, acc_array, acc_state} ->
   if (acc_g < acc_array.length) do
     x = array[g]
     acc_g = acc_g + 1
     if (x rem 2 == 0), do: filtered.push(x)
-    {:cont, {acc_array, acc_g, acc_state}}
+    {:cont, {acc_g, acc_array, acc_state}}
   else
-    {:halt, {acc_array, acc_g, acc_state}}
+    {:halt, {acc_g, acc_array, acc_state}}
   end
 end)
     functions = []
