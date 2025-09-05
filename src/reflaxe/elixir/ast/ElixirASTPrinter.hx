@@ -58,6 +58,11 @@ class ElixirASTPrinter {
      * HOW: Delegates to specific handlers based on node type
      */
     public static function print(ast: ElixirAST, indent: Int = 0): String {
+        // Handle null nodes
+        if (ast == null) {
+            return "";
+        }
+        
         #if debug_ast_printer
         trace('[XRay AST Printer] Printing node: ${ast.def}');
         #end

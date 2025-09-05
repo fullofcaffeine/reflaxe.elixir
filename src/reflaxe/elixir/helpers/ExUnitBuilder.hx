@@ -99,11 +99,23 @@ class ExUnitBuilder {
         
         // Check if this field has @:test metadata
         var hasTest = false;
+        var hasSetup = false;
+        var hasSetupAll = false;
+        var hasTeardown = false;
+        var hasTeardownAll = false;
+        
         if (field.meta != null) {
             for (meta in field.meta) {
                 if (meta.name == ":test" || meta.name == "test") {
                     hasTest = true;
-                    break;
+                } else if (meta.name == ":setup" || meta.name == "setup") {
+                    hasSetup = true;
+                } else if (meta.name == ":setupAll" || meta.name == "setupAll") {
+                    hasSetupAll = true;
+                } else if (meta.name == ":teardown" || meta.name == "teardown") {
+                    hasTeardown = true;
+                } else if (meta.name == ":teardownAll" || meta.name == "teardownAll") {
+                    hasTeardownAll = true;
                 }
             }
         }
@@ -122,20 +134,90 @@ class ExUnitBuilder {
             });
         }
         
-        // Check for setup/teardown methods
-        switch (field.name) {
-            case "setup", "setupAll", "teardown", "teardownAll":
-                #if debug_exunit
-                trace('[XRay ExUnit] ✓ Found lifecycle method: ${field.name}');
-                #end
-                
-                // Mark as ExUnit lifecycle method
-                if (field.meta == null) field.meta = [];
-                field.meta.push({
-                    name: ':elixir.${field.name}',
-                    params: [],
-                    pos: field.pos
-                });
+        if (hasSetup) {
+            #if debug_exunit
+            trace('[XRay ExUnit] ✓ Found @:setup on method: ${field.name}');
+            #end
+            
+            if (field.meta == null) field.meta = [];
+            field.meta.push({
+                name: ":elixir.setup",
+                params: [],
+                pos: field.pos
+            });
+        }
+        
+        if (hasSetupAll) {
+            #if debug_exunit
+            trace('[XRay ExUnit] ✓ Found @:setupAll on method: ${field.name}');
+            #end
+            
+            if (field.meta == null) field.meta = [];
+            field.meta.push({
+                name: ":elixir.setupAll",
+                params: [],
+                pos: field.pos
+            });
+        }
+        
+        if (hasTeardown) {
+            #if debug_exunit
+            trace('[XRay ExUnit] ✓ Found @:teardown on method: ${field.name}');
+            #end
+            
+            if (field.meta == null) field.meta = [];
+            field.meta.push({
+                name: ":elixir.teardown",
+                params: [],
+                pos: field.pos
+            });
+        }
+        
+        if (hasTeardownAll) {
+            #if debug_exunit
+            trace('[XRay ExUnit] ✓ Found @:teardownAll on method: ${field.name}');
+            #end
+            
+            if (field.meta == null) field.meta = [];
+            field.meta.push({
+                name: ":elixir.teardownAll",
+                params: [],
+                pos: field.pos
+            });
+        }
+        
+        // Also check for setup/teardown methods by name (for backward compatibility)
+        if (!hasSetup && !hasSetupAll && !hasTeardown && !hasTeardownAll) {
+            switch (field.name) {
+                case "setup":
+                    if (field.meta == null) field.meta = [];
+                    field.meta.push({
+                        name: ":elixir.setup",
+                        params: [],
+                        pos: field.pos
+                    });
+                case "setupAll":
+                    if (field.meta == null) field.meta = [];
+                    field.meta.push({
+                        name: ":elixir.setupAll",
+                        params: [],
+                        pos: field.pos
+                    });
+                case "teardown":
+                    if (field.meta == null) field.meta = [];
+                    field.meta.push({
+                        name: ":elixir.teardown",
+                        params: [],
+                        pos: field.pos
+                    });
+                case "teardownAll":
+                    if (field.meta == null) field.meta = [];
+                    field.meta.push({
+                        name: ":elixir.teardownAll",
+                        params: [],
+                        pos: field.pos
+                    });
+            }
         }
     }
 }

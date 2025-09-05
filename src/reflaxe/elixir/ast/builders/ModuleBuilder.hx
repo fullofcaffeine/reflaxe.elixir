@@ -121,6 +121,9 @@ class ModuleBuilder {
         }
         
         // Create the module AST with metadata
+        #if debug_module_builder
+        trace('[ModuleBuilder] About to create module AST with metadata: ${metadata}');
+        #end
         var moduleAST = makeASTWithMeta(
             EDefmodule(moduleName, moduleBody),
             metadata,
@@ -131,6 +134,8 @@ class ModuleBuilder {
         reflaxe.elixir.ast.ElixirASTBuilder.currentModule = previousModule;
         
         #if debug_module_builder
+        trace('[ModuleBuilder] Created module AST for ${moduleName} with metadata: ${metadata}');
+        trace('[ModuleBuilder] Module AST metadata check: ${moduleAST.metadata}');
         #end
         
         return moduleAST;
@@ -631,8 +636,24 @@ class ModuleBuilder {
                 
                 // Check if this function has @:test or :elixir.test metadata
                 var isTest = false;
+                var isSetup = false;
+                var isSetupAll = false;
+                var isTeardown = false;
+                var isTeardownAll = false;
+                
                 if (func.meta != null && func.meta.has != null) {
                     isTest = func.meta.has(":test") || func.meta.has("test") || func.meta.has(":elixir.test");
+                    
+                    // Check for setup/teardown metadata added by ExUnitBuilder
+                    if (func.meta.has(":elixir.setup") || func.name == "setup") {
+                        isSetup = true;
+                    } else if (func.meta.has(":elixir.setupAll") || func.name == "setupAll") {
+                        isSetupAll = true;
+                    } else if (func.meta.has(":elixir.teardown") || func.name == "teardown") {
+                        isTeardown = true;
+                    } else if (func.meta.has(":elixir.teardownAll") || func.name == "teardownAll") {
+                        isTeardownAll = true;
+                    }
                 }
                 
                 // Extract the function body from the TypedExpr
@@ -666,11 +687,19 @@ class ModuleBuilder {
                             makeAST(EDefp(funcName, args, null, body));
                         }
                         
-                        // Add test metadata to the AST node if it's a test function
-                        if (isTest) {
+                        // Add appropriate metadata to the AST node
+                        var metadata: Dynamic = {};
+                        if (isTest) metadata.isTest = true;
+                        if (isSetup) metadata.isSetup = true;
+                        if (isSetupAll) metadata.isSetupAll = true;
+                        if (isTeardown) metadata.isTeardown = true;
+                        if (isTeardownAll) metadata.isTeardownAll = true;
+                        
+                        // Only add metadata if we have any flags set
+                        if (isTest || isSetup || isSetupAll || isTeardown || isTeardownAll) {
                             funcAST = makeASTWithMeta(
                                 funcAST.def,
-                                {isTest: true},
+                                metadata,
                                 funcAST.pos
                             );
                         }

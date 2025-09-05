@@ -642,6 +642,7 @@ typedef ElixirMetadata = {
     ?isSetup: Bool,               // @:setup on a method in ExUnit module
     ?isSetupAll: Bool,            // @:setupAll on a method in ExUnit module
     ?isTeardown: Bool,            // @:teardown on a method in ExUnit module
+    ?isTeardownAll: Bool,         // @:teardownAll on a method in ExUnit module
     ?appName: String,             // Application name for OTP/Phoenix
     ?tableName: String,           // Table name for Ecto schemas
     

@@ -63,7 +63,8 @@ class ElixirASTTransformer {
     public static function transform(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
         trace('[XRay AST Transformer] Starting transformation pipeline');
-        trace('[XRay AST Transformer] AST type: ${ast.def}');
+        trace('[XRay AST Transformer] AST type: ${Type.enumConstructor(ast.def)}');
+        trace('[XRay AST Transformer] AST metadata: ${ast.metadata}');
         #end
         
         #if debug_ast_structure
@@ -2700,6 +2701,9 @@ class ElixirASTTransformer {
      * Helper function to transform AST nodes recursively
      */
     public static function transformAST(node: ElixirAST, transformer: ElixirAST -> ElixirAST): ElixirAST {
+        if (node == null) {
+            return null;
+        }
         var transformed = switch(node.def) {
             case EBlock(expressions):
                 makeASTWithMeta(EBlock(expressions.map(transformer)), node.metadata, node.pos);
@@ -2875,6 +2879,11 @@ class ElixirASTTransformer {
             // First, recursively transform children
             var nodeWithTransformedChildren = transformAST(node, transformIdiomaticNode);
             
+            // Handle null nodes
+            if (nodeWithTransformedChildren == null) {
+                return null;
+            }
+            
             // Then check if this node itself needs transformation
             if (nodeWithTransformedChildren.metadata != null && nodeWithTransformedChildren.metadata.requiresIdiomaticTransform == true) {
                 #if debug_otp_child_spec
@@ -2959,6 +2968,11 @@ class ElixirASTTransformer {
         trace('[XRay TupleElemField] Starting tuple elem field to function transformation');
         #end
         
+        // Handle null nodes
+        if (ast == null) {
+            return null;
+        }
+        
         return switch(ast.def) {
             case EField(target, "elem"):
                 // This is a tuple.elem field access that needs to become elem(tuple, N)
@@ -3036,6 +3050,11 @@ class ElixirASTTransformer {
         #if debug_ast_transformer
         trace('[XRay EnumPatternMatching] Starting idiomatic enum pattern matching pass');
         #end
+        
+        // Handle null nodes
+        if (ast == null) {
+            return null;
+        }
         
         return switch(ast.def) {
             case ECase(expr, clauses):
@@ -3417,6 +3436,11 @@ class ElixirASTTransformer {
         }
         
         function collectVariables(node: ElixirAST): Void {
+            // Handle null nodes
+            if (node == null) {
+                return;
+            }
+            
             switch(node.def) {
                 case EMatch(pattern, expr):
                     // Track variable declarations in patterns

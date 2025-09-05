@@ -104,6 +104,16 @@ class ElixirOutputIterator {
         trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
         trace('[ElixirOutputIterator] AST data type: ${astData.data.def}');
         trace('[ElixirOutputIterator] AST metadata: ${astData.data.metadata}');
+        // Check if it's a module and print the exact metadata fields
+        switch(astData.data.def) {
+            case EDefmodule(name, _):
+                trace('[ElixirOutputIterator] Module name: $name');
+                if (astData.data.metadata != null) {
+                    trace('[ElixirOutputIterator] Module metadata.isExunit: ${astData.data.metadata.isExunit}');
+                    trace('[ElixirOutputIterator] Module metadata fields: ${Reflect.fields(astData.data.metadata)}');
+                }
+            default:
+        }
         #end
         
         // Apply transformation passes to the AST

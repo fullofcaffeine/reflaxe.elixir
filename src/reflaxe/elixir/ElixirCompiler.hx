@@ -547,8 +547,20 @@ class ElixirCompiler extends GenericCompiler<
             trace('[ElixirCompiler] Filtered: ${varFields.length} var fields, ${funcFields.length} func fields');
             #end
             
-            return reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, 
+            var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, 
                 varFields, funcFields);
+            
+            #if debug_module_builder
+            if (classType.name == "Main") {
+                trace('[ElixirCompiler] Received module AST for Main from ModuleBuilder');
+                trace('[ElixirCompiler] Main module metadata: ${moduleAST.metadata}');
+                if (moduleAST.metadata != null) {
+                    trace('[ElixirCompiler] Main module metadata.isExunit: ${moduleAST.metadata.isExunit}');
+                }
+            }
+            #end
+            
+            return moduleAST;
         }
         
         // Get module name - check for @:native annotation first
