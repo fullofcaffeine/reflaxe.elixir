@@ -75,7 +75,7 @@ defmodule NonEmptyString_Impl_ do
   if (acc_g < acc_parts.length) do
     part = parts[g]
     acc_g = acc_g + 1
-    if (part.length > 0), do: result.push(part)
+    if (part.length > 0), do: result ++ [part]
     {:cont, {acc_g, acc_parts, acc_state}}
   else
     {:halt, {acc_g, acc_parts, acc_state}}

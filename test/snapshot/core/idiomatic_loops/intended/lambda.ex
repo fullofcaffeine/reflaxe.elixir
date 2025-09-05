@@ -5,7 +5,7 @@ defmodule Lambda do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
-    arr.push(acc_v)
+    arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
     {:halt, {acc_v, acc_state}}
@@ -19,7 +19,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
-    arr.push(acc_v)
+    arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
     {:halt, {acc_v, acc_state}}
@@ -33,7 +33,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
-    arr.push(acc_v)
+    arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
     {:halt, {acc_v, acc_state}}
@@ -43,7 +43,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
-    arr.push(acc_v)
+    arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
     {:halt, {acc_v, acc_state}}
@@ -57,7 +57,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
-    arr.push(f.(acc_v))
+    arr ++ [f.(acc_v)]
     {:cont, {acc_v, acc_state}}
   else
     {:halt, {acc_v, acc_state}}
@@ -71,7 +71,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
-    if (f.(acc_v)), do: arr.push(acc_v)
+    if (f.(acc_v)), do: arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
     {:halt, {acc_v, acc_state}}
@@ -111,7 +111,7 @@ end)
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, v, :ok}, fn _, {acc_n, acc_v, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
-    if (pred(acc_v)) do
+    if (pred.(acc_v)) do
       acc_n = acc_n + 1
     end
     {:cont, {acc_n, acc_v, acc_state}}

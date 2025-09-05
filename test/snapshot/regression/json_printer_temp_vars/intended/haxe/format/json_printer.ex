@@ -6,7 +6,7 @@ defmodule JsonPrinter do
     v = if (struct.replacer != nil), do: struct.replacer(key, v), else: v
     if (v == nil), do: "null"
     g = {:Typeof, v}
-    case (g.elem(0)) do
+    case (elem(g, 0)) do
       0 ->
         "null"
       1 ->
@@ -22,7 +22,7 @@ defmodule JsonPrinter do
       5 ->
         "null"
       6 ->
-        g = g.elem(1)
+        g = elem(g, 1)
         c = g
         class_name = Type.get_class_name(c)
         if (class_name == "String") do
@@ -31,7 +31,7 @@ defmodule JsonPrinter do
           if (class_name == "Array"), do: struct.writeArray(v), else: struct.writeObject(v)
         end
       7 ->
-        _g = g.elem(1)
+        _g = elem(g, 1)
         "null"
       8 ->
         "null"
@@ -44,7 +44,7 @@ defmodule JsonPrinter do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
-    items.push(struct.writeValue(arr[i], Std.string(i)))
+    items ++ [struct.writeValue(arr[i], Std.string(i))]
     {:cont, {acc_g1, acc_g, acc_state}}
   else
     {:halt, {acc_g1, acc_g, acc_state}}
@@ -67,7 +67,7 @@ end)
     value = Reflect.field(obj, field)
     key = struct.quoteString(field)
     val = struct.writeValue(value, field)
-    if (struct.space != nil), do: pairs.push(key <> ": " <> val), else: pairs.push(key <> ":" <> val)
+    if (struct.space != nil), do: pairs ++ [key <> ": " <> val], else: pairs ++ [key <> ":" <> val]
     {:cont, {acc_g, acc_fields, acc_state}}
   else
     {:halt, {acc_g, acc_fields, acc_state}}
@@ -83,7 +83,7 @@ end)
     result = "\""
     g = 0
     g1 = s.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, g1, :ok}, fn _, {acc_g, acc_result, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.charCodeAt(i)
@@ -119,9 +119,9 @@ end)
           end
       end
     end
-    {:cont, {acc_g, acc_g1, acc_result, acc_state}}
+    {:cont, {acc_g, acc_result, acc_g1, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_result, acc_state}}
+    {:halt, {acc_g, acc_result, acc_g1, acc_state}}
   end
 end)
     result = result <> "\""

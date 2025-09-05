@@ -108,15 +108,15 @@ end)
 end)
     else
       v = it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, n, :ok}, fn _, {acc_v, acc_n, acc_state} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, v, :ok}, fn _, {acc_n, acc_v, acc_state} ->
   if (acc_v.hasNext()) do
     acc_v = acc_v.next()
     if (pred.(acc_v)) do
       acc_n = acc_n + 1
     end
-    {:cont, {acc_v, acc_n, acc_state}}
+    {:cont, {acc_n, acc_v, acc_state}}
   else
-    {:halt, {acc_v, acc_n, acc_state}}
+    {:halt, {acc_n, acc_v, acc_state}}
   end
 end)
     end

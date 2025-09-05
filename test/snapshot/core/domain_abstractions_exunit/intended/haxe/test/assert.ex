@@ -29,10 +29,10 @@ defmodule Assert do
   def is_error(_result, _message) do
     throw("Assert.isError should be compiled by ExUnitCompiler")
   end
-  def raises(_fn, _exception_type, _message) do
+  def raises(_fn_param, _exception_type, _message) do
     throw("Assert.raises should be compiled by ExUnitCompiler")
   end
-  def does_not_raise(_fn, _message) do
+  def does_not_raise(_fn_param, _message) do
     throw("Assert.doesNotRaise should be compiled by ExUnitCompiler")
   end
   def contains(_collection, _item, _message) do

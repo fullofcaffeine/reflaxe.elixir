@@ -20,14 +20,14 @@ defmodule Main do
   defp test_loop() do
     items = [1, 2, 3, 4, 5]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {items, g, :ok}, fn _, {acc_items, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, items, :ok}, fn _, {acc_g, acc_items, acc_state} ->
   if (acc_g < acc_items.length) do
     item = items[g]
     acc_g = acc_g + 1
     Log.trace("Item: " <> item, %{:fileName => "Main.hx", :lineNumber => 36, :className => "Main", :methodName => "testLoop"})
-    {:cont, {acc_items, acc_g, acc_state}}
+    {:cont, {acc_g, acc_items, acc_state}}
   else
-    {:halt, {acc_items, acc_g, acc_state}}
+    {:halt, {acc_g, acc_items, acc_state}}
   end
 end)
   end

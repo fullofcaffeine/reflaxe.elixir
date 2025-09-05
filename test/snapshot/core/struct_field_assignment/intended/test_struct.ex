@@ -4,7 +4,7 @@ defmodule TestStruct do
   end
   def write(struct, value) do
     g = {:Typeof, value}
-    case (g.elem(0)) do
+    case (elem(g, 0)) do
       0 ->
         field = struct.field <> "null"
       1 ->

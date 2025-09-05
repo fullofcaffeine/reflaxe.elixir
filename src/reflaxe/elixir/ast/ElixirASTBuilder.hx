@@ -739,9 +739,56 @@ class ElixirASTBuilder {
                     tupleDef;
                 } else {
                     // Regular function call
-                    var target = e != null ? buildFromTypedExpr(e, variableUsageMap) : null;
                     var args = [for (arg in el) buildFromTypedExpr(arg, variableUsageMap)];
                     
+                    /**
+                     * CRITICAL FIX PART 2: Handle Static Extern Method Calls (2025-09-05)
+                     * 
+                     * This is the second part of the fix for static methods on extern classes.
+                     * When we detect a call to a static method on an extern class with @:native,
+                     * we generate a proper ERemoteCall instead of a regular ECall.
+                     * 
+                     * DETECTION: Check if the target is TField with FStatic on an extern class
+                     * - The class must be extern
+                     * - The class must have @:native annotation with module name
+                     * - The field access must be FStatic
+                     * 
+                     * TRANSFORMATION:
+                     * Instead of: ECall(EField(...), args) which would print as "list(args)"  
+                     * We generate: ERemoteCall(module, method, args) which prints as "Module.method(args)"
+                     * 
+                     * This ensures all static methods on extern classes with @:native annotations
+                     * are properly qualified with their module names in the generated Elixir code.
+                     */
+                    // Check if this is a static method call on an extern class
+                    if (e != null) {
+                        switch(e.expr) {
+                            case TField(_, FStatic(classRef, cf)):
+                                var classType = classRef.get();
+                                if (classType.isExtern && classType.meta.has(":native")) {
+                                    // Extract the native module name
+                                    var nativeModuleName = "";
+                                    var nativeMeta = classType.meta.extract(":native");
+                                    if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                                        switch(nativeMeta[0].params[0].expr) {
+                                            case EConst(CString(s, _)):
+                                                nativeModuleName = s;
+                                            default:
+                                        }
+                                    }
+                                    
+                                    if (nativeModuleName != "") {
+                                        // Generate remote call with full module qualification
+                                        var methodName = cf.get().name;
+                                        return ERemoteCall(makeAST(EVar(nativeModuleName)), methodName, args);
+                                    }
+                                }
+                            default:
+                        }
+                    }
+                    
+                    // Build target normally for other cases
+                    var target = e != null ? buildFromTypedExpr(e, variableUsageMap) : null;
                     
                     // Detect special call patterns
                     switch(e.expr) {
@@ -1017,6 +1064,12 @@ class ElixirASTBuilder {
                         // Convert CamelCase to snake_case for Elixir atoms
                         var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
                         EAtom(atomName);
+                    case FStatic(classRef, cf):
+                        // Regular static field access
+                        // The TCall handler will detect if this needs special handling for extern classes
+                        var target = buildFromTypedExpr(e, variableUsageMap);
+                        var fieldName = extractFieldName(fa);
+                        EField(target, fieldName);
                     default:
                         // Regular field access
                         var target = buildFromTypedExpr(e, variableUsageMap);

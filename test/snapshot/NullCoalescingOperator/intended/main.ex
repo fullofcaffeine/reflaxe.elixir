@@ -61,11 +61,11 @@ defmodule Main do
     maybe2 = nil
     arr_2 = nil
     arr_1 = nil
-    tmp = maybe
+    tmp = maybe1
     arr_0 = if tmp != nil, do: tmp, else: "item1"
     tmp = get_value()
     arr_1 = if tmp != nil, do: tmp, else: "item2"
-    tmp = maybe
+    tmp = maybe2
     arr_2 = if tmp != nil, do: tmp, else: "item3"
   end
   defp test_nested_coalescing() do

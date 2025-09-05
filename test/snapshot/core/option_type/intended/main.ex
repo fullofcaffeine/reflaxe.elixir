@@ -19,18 +19,18 @@ defmodule Main do
   end
   defp test_pattern_matching() do
     user = {:Some, "Bob"}
-    _result = case (user.elem(0)) do
+    _result = case (elem(user, 0)) do
   0 ->
-    g = user.elem(1)
+    g = elem(user, 1)
     name = g
     "Hello, " <> name
   1 ->
     "Hello, anonymous"
 end
     scores = {:Some, [1, 2, 3]}
-    _total = case (scores.elem(0)) do
+    _total = case (elem(scores, 0)) do
   0 ->
-    g = scores.elem(1)
+    g = elem(scores, 1)
     score_list = g
     score_list.length
   1 ->
@@ -40,9 +40,9 @@ end
     process_user(:none)
   end
   defp process_user(user) do
-    case (user.elem(0)) do
+    case (elem(user, 0)) do
       0 ->
-        g = user.elem(1)
+        g = elem(user, 1)
         name = g
         Log.trace("Processing user: " <> name, %{:fileName => "Main.hx", :lineNumber => 68, :className => "Main", :methodName => "processUser"})
       1 ->

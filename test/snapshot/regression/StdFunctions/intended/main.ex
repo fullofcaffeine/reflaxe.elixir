@@ -74,14 +74,14 @@ defmodule Main do
     truncated4 = -2
     truncated5 = 0
     Log.trace("Random numbers (0-1):", %{:fileName => "Main.hx", :lineNumber => 125, :className => "Main", :methodName => "testRandomAndInt"})
-    Log.trace("  Random 1: " <> rand, %{:fileName => "Main.hx", :lineNumber => 126, :className => "Main", :methodName => "testRandomAndInt"})
-    Log.trace("  Random 2: " <> rand, %{:fileName => "Main.hx", :lineNumber => 127, :className => "Main", :methodName => "testRandomAndInt"})
-    Log.trace("  Random 3: " <> rand, %{:fileName => "Main.hx", :lineNumber => 128, :className => "Main", :methodName => "testRandomAndInt"})
+    Log.trace("  Random 1: " <> rand1, %{:fileName => "Main.hx", :lineNumber => 126, :className => "Main", :methodName => "testRandomAndInt"})
+    Log.trace("  Random 2: " <> rand2, %{:fileName => "Main.hx", :lineNumber => 127, :className => "Main", :methodName => "testRandomAndInt"})
+    Log.trace("  Random 3: " <> rand3, %{:fileName => "Main.hx", :lineNumber => 128, :className => "Main", :methodName => "testRandomAndInt"})
     Log.trace("Float truncation with Std.int():", %{:fileName => "Main.hx", :lineNumber => 130, :className => "Main", :methodName => "testRandomAndInt"})
-    Log.trace("  3.14 -> " <> truncated, %{:fileName => "Main.hx", :lineNumber => 131, :className => "Main", :methodName => "testRandomAndInt"})
-    Log.trace("  3.99 -> " <> truncated, %{:fileName => "Main.hx", :lineNumber => 132, :className => "Main", :methodName => "testRandomAndInt"})
-    Log.trace("  -2.5 -> " <> truncated, %{:fileName => "Main.hx", :lineNumber => 133, :className => "Main", :methodName => "testRandomAndInt"})
-    Log.trace("  -2.1 -> " <> truncated, %{:fileName => "Main.hx", :lineNumber => 134, :className => "Main", :methodName => "testRandomAndInt"})
-    Log.trace("  0.0 -> " <> truncated, %{:fileName => "Main.hx", :lineNumber => 135, :className => "Main", :methodName => "testRandomAndInt"})
+    Log.trace("  3.14 -> " <> truncated1, %{:fileName => "Main.hx", :lineNumber => 131, :className => "Main", :methodName => "testRandomAndInt"})
+    Log.trace("  3.99 -> " <> truncated2, %{:fileName => "Main.hx", :lineNumber => 132, :className => "Main", :methodName => "testRandomAndInt"})
+    Log.trace("  -2.5 -> " <> truncated3, %{:fileName => "Main.hx", :lineNumber => 133, :className => "Main", :methodName => "testRandomAndInt"})
+    Log.trace("  -2.1 -> " <> truncated4, %{:fileName => "Main.hx", :lineNumber => 134, :className => "Main", :methodName => "testRandomAndInt"})
+    Log.trace("  0.0 -> " <> truncated5, %{:fileName => "Main.hx", :lineNumber => 135, :className => "Main", :methodName => "testRandomAndInt"})
   end
 end

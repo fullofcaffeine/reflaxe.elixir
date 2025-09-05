@@ -55,10 +55,10 @@ else
 end
     query
   end
-  defp from(_table, _alias, _opts) do
+  defp from(_table, _alias_param, _opts) do
     nil
   end
-  defp where(_query, _alias, _condition) do
+  defp where(_query, _alias_param, _condition) do
     nil
   end
 end

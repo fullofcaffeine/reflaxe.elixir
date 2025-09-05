@@ -5,9 +5,9 @@ defmodule Main do
     assert match?({:ok, _}, valid_email) do
       "Valid email should parse successfully"
     end
-    case (valid_email.elem(0)) do
+    case (elem(valid_email, 0)) do
       0 ->
-        g = valid_email.elem(1)
+        g = elem(valid_email, 1)
         email = g
         assert "example.com" == Email_Impl_.get_domain(email) do
           "Domain extraction should work"
@@ -26,7 +26,7 @@ defmodule Main do
           "Normalization should lowercase"
         end
       1 ->
-        g = valid_email.elem(1)
+        g = elem(valid_email, 1)
         reason = g
         flunk("Valid email should not fail: " <> reason)
     end
@@ -44,9 +44,9 @@ defmodule Main do
     assert match?({:ok, _}, user_id) do
       "Valid user ID should parse"
     end
-    case (user_id.elem(0)) do
+    case (elem(user_id, 0)) do
       0 ->
-        g = user_id.elem(1)
+        g = elem(user_id, 1)
         id = g
         assert "user123" == UserId_Impl_.to_string(UserId_Impl_.normalize(id)) do
           "User ID should normalize to lowercase"
@@ -61,7 +61,7 @@ defmodule Main do
           "User ID length should be preserved"
         end
       1 ->
-        g = user_id.elem(1)
+        g = elem(user_id, 1)
         reason = g
         flunk("Valid user ID should not fail: " <> reason)
     end
@@ -77,16 +77,16 @@ defmodule Main do
   test "positive int arithmetic" do
     pos1 = {:Parse, 5}
     pos2 = {:Parse, 3}
-    assert match?({:ok, _}, pos) do
+    assert match?({:ok, _}, pos1) do
       "Positive integer 5 should parse"
     end
-    assert match?({:ok, _}, pos) do
+    assert match?({:ok, _}, pos2) do
       "Positive integer 3 should parse"
     end
-    if (pos.elem(0) == 0) do
-      g = pos.elem(1)
-      if (pos.elem(0) == 0) do
-        g1 = pos.elem(1)
+    if (elem(pos1, 0) == 0) do
+      g = elem(pos1, 1)
+      if (elem(pos2, 0) == 0) do
+        g1 = elem(pos2, 1)
         b = g1
         a = g
         sum = PositiveInt_Impl_.add(a, b)
@@ -101,15 +101,15 @@ defmodule Main do
         assert match?({:ok, _}, diff) do
           "5 - 3 should succeed"
         end
-        case (diff.elem(0)) do
+        case (elem(diff, 0)) do
           0 ->
-            g = diff.elem(1)
+            g = elem(diff, 1)
             result = g
             assert 2 == PositiveInt_Impl_.to_int(result) do
               "5 - 3 should equal 2"
             end
           1 ->
-            g = diff.elem(1)
+            g = elem(diff, 1)
             reason = g
             flunk("Subtraction should not fail: " <> reason)
         end
@@ -137,23 +137,23 @@ defmodule Main do
     assert match?({:ok, _}, str) do
       "Non-empty string should parse"
     end
-    case (str.elem(0)) do
+    case (elem(str, 0)) do
       0 ->
-        g = str.elem(1)
+        g = elem(str, 1)
         s = g
         trimmed = {:SafeTrim, s}
         assert match?({:ok, _}, trimmed) do
           "Trimming non-empty content should succeed"
         end
-        case (trimmed.elem(0)) do
+        case (elem(trimmed, 0)) do
           0 ->
-            g = trimmed.elem(1)
+            g = elem(trimmed, 1)
             trimmed_str = g
             assert "hello world" == NonEmptyString_Impl_.to_string(trimmed_str) do
               "Trim should remove whitespace"
             end
           1 ->
-            g = trimmed.elem(1)
+            g = elem(trimmed, 1)
             reason = g
             flunk("Trim should not fail: " <> reason)
         end
@@ -169,7 +169,7 @@ defmodule Main do
           "Length should be preserved"
         end
       1 ->
-        g = str.elem(1)
+        g = elem(str, 1)
         reason = g
         flunk("Valid non-empty string should not fail: " <> reason)
     end
@@ -181,16 +181,16 @@ defmodule Main do
     assert match?({:ok, _}, whitespace_only) do
       "Whitespace-only string should parse"
     end
-    case (whitespace_only.elem(0)) do
+    case (elem(whitespace_only, 0)) do
       0 ->
-        g = whitespace_only.elem(1)
+        g = elem(whitespace_only, 1)
         ws = g
         trimmed = {:SafeTrim, ws}
         assert match?({:error, _}, trimmed) do
           "Trimming whitespace-only should fail"
         end
       1 ->
-        _g = whitespace_only.elem(1)
+        _g = elem(whitespace_only, 1)
         flunk("Whitespace-only should parse")
     end
   end
@@ -199,15 +199,15 @@ defmodule Main do
     assert match?({:ok, _}, domain_result) do
       "Email domain chain should succeed"
     end
-    case (domain_result.elem(0)) do
+    case (elem(domain_result, 0)) do
       0 ->
-        g = domain_result.elem(1)
+        g = elem(domain_result, 1)
         domain = g
         assert "example.com" == domain do
           "Domain should be extracted correctly"
         end
       1 ->
-        g = domain_result.elem(1)
+        g = elem(domain_result, 1)
         reason = g
         flunk("Domain extraction should not fail: " <> reason)
     end
@@ -222,9 +222,9 @@ defmodule Main do
     assert match?({:some, _}, email_option) do
       "Valid email should convert to Some"
     end
-    case (email_option.elem(0)) do
+    case (elem(email_option, 0)) do
       0 ->
-        g = email_option.elem(1)
+        g = elem(email_option, 1)
         email = g
         assert "example.com" == Email_Impl_.get_domain(email) do
           "Option content should be preserved"
@@ -240,12 +240,12 @@ defmodule Main do
   end
   test "error handling" do
     invalid_email = {:Parse, "invalid-email"}
-    case (invalid_email.elem(0)) do
+    case (elem(invalid_email, 0)) do
       0 ->
-        _g = invalid_email.elem(1)
+        _g = elem(invalid_email, 1)
         flunk("Invalid email should not parse")
       1 ->
-        g = invalid_email.elem(1)
+        g = elem(invalid_email, 1)
         message = g
         assert message.indexOf("Invalid email") >= 0 do
           "Error message should be descriptive"
@@ -255,16 +255,16 @@ defmodule Main do
     assert match?({:ok, _}, large_int) do
       "Large positive integer should parse"
     end
-    case (large_int.elem(0)) do
+    case (elem(large_int, 0)) do
       0 ->
-        g = large_int.elem(1)
+        g = elem(large_int, 1)
         large = g
         doubled = PositiveInt_Impl_.multiply(large, large)
         assert PositiveInt_Impl_.to_int(doubled) > 0 do
           "Large multiplication should remain positive"
         end
       1 ->
-        _g = large_int.elem(1)
+        _g = elem(large_int, 1)
         flunk("Large integer should parse")
     end
   end
@@ -285,14 +285,14 @@ defmodule Main do
     assert match?({:ok, _}, user_name) do
       "User name should be valid"
     end
-    if (user_email.elem(0) == 0) do
-      g = user_email.elem(1)
-      if (user_id.elem(0) == 0) do
-        g1 = user_id.elem(1)
-        if (user_age.elem(0) == 0) do
-          g2 = user_age.elem(1)
-          if (user_name.elem(0) == 0) do
-            g3 = user_name.elem(1)
+    if (elem(user_email, 0) == 0) do
+      g = elem(user_email, 1)
+      if (elem(user_id, 0) == 0) do
+        g1 = elem(user_id, 1)
+        if (elem(user_age, 0) == 0) do
+          g2 = elem(user_age, 1)
+          if (elem(user_name, 0) == 0) do
+            g3 = elem(user_name, 1)
             name = g3
             id = g1
             email = g
