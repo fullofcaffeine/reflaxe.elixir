@@ -240,30 +240,11 @@ class ElixirASTBuilder {
                     // to ensure consistency
                     varName = varName.substr(1); // Remove the underscore
                 }
-                // Handle collision-renamed variables (priority2 -> priority) 
-                // BUT NEVER for function parameters or abstract method parameters (this1, struct1)
-                // Also skip single-letter variables with digits (p1, p2, i1, i2, etc.) as these are 
-                // commonly used in standard library code and are NOT collision renames
-                else if (!functionParameterIds.exists(idKey) && 
-                         varName != "this1" && varName != "struct1" && // Never rename these
-                         ~/^(.+?)(\d+)$/.match(varName)) {
-                    var regex = ~/^(.+?)(\d+)$/;
-                    if (regex.match(varName)) {
-                        var baseName = regex.matched(1);
-                        var suffix = regex.matched(2);
-                        
-                        // Only strip suffix if:
-                        // 1. It's a small number (1-9) which indicates collision renaming
-                        // 2. The base name is longer than 1 character (skip p1, p2, i1, etc.)
-                        // 3. It's not a special g-variable (_g)
-                        if (suffix.length == 1 && baseName.length > 1 && baseName != "_g") {
-                            #if debug_ast_pipeline  
-                            trace('[AST Builder] Collision-renamed variable detected: ${varName} -> ${baseName}');
-                            #end
-                            varName = baseName;
-                        }
-                    }
-                }
+                // REMOVED: Collision-rename detection was incorrectly stripping suffixes from
+                // user-defined variables like pos1, pos2. Since we cannot reliably distinguish
+                // between user-defined variables with numbers (pos1, test2) and compiler-generated
+                // collision renames, we're removing this logic entirely. 
+                // Variables should keep their original names unless explicitly mapped.
                 
                 // Only apply toElixirVarName if the variable wasn't already mapped
                 // Mapped variables are already in Elixir format (e.g., "this_1")
@@ -795,6 +776,12 @@ class ElixirASTBuilder {
                             var fieldName = extractFieldName(fa);
                             var objAst = buildFromTypedExpr(obj, variableUsageMap);
                             
+                            // Special handling for tuple.elem(N) -> elem(tuple, N)
+                            if (fieldName == "elem" && args.length == 1) {
+                                // Transform to Elixir's elem(tuple, index) function
+                                return ECall(null, "elem", [objAst, args[0]]);
+                            }
+                            
                             // Check for Assert class calls (ExUnit assertions)
                             if (isAssertClass(obj)) {
                                 // This is an Assert.method() call - compile to ExUnit assertion
@@ -932,6 +919,12 @@ class ElixirASTBuilder {
                                             // Transform: array.map(fn) → Enum.map(array, fn)
                                             ERemoteCall(makeAST(EVar("Enum")), "map", [objAst, args[0]]);
                                             
+                                        case "push" if (args.length == 1):
+                                            // Array push operations from comprehension desugaring
+                                            // Transform: array.push(value) → array ++ [value]
+                                            // Note: This creates a new list, doesn't mutate
+                                            EBinary(Concat, objAst, makeAST(EList([args[0]])));
+                                            
                                         default:
                                             // All other array methods use standard call generation
                                             ECall(objAst, fieldName, args);
@@ -973,11 +966,26 @@ class ElixirASTBuilder {
                             // Function variables in Elixir require .() syntax for invocation
                             var isFunctionVar = switch(v.t) {
                                 case TFun(_, _): true;
-                                case TAbstract(t, _):
+                                case TAbstract(t, params):
                                     var abs = t.get();
-                                    abs.name == "Function" || abs.name == "Fn";
+                                    // Check for Function or Fn abstracts
+                                    if (abs.name == "Function" || abs.name == "Fn") {
+                                        true;
+                                    } else if (abs.name == "Null" && params.length == 1) {
+                                        // Check for Null<Function> (optional function parameters)
+                                        switch(params[0]) {
+                                            case TFun(_, _): true;
+                                            default: false;
+                                        }
+                                    } else {
+                                        false;
+                                    }
                                 default: false;
                             };
+                            
+                            #if debug_lambda_function_calls
+                            trace('[AST Builder] TLocal call: ${v.name}, type: ${v.t}, isFunctionVar: ${isFunctionVar}');
+                            #end
                             
                             if (isFunctionVar) {
                                 // Function variable call - needs special handling for .() syntax
@@ -1023,8 +1031,15 @@ class ElixirASTBuilder {
                         }
                         #end
                         
-                        // Detect map/struct access patterns
-                        if (isMapAccess(e.t)) {
+                        // Special handling for tuple.elem(N) field access
+                        // This occurs when switch statements on Result enums generate field access
+                        // We need to prepare for transformation to elem(tuple, N) function calls
+                        if (fieldName == "elem") {
+                            // Mark this as a tuple element access for later transformation
+                            // The transformer will convert this to proper elem() calls
+                            EField(target, fieldName);
+                        } else if (isMapAccess(e.t)) {
+                            // Detect map/struct access patterns
                             EAccess(target, makeAST(EAtom(fieldName)));
                         } else {
                             EField(target, fieldName);
@@ -1384,7 +1399,14 @@ class ElixirASTBuilder {
                     };
                     
                     // Convert to snake_case for Elixir conventions
-                    var baseName = toElixirVarName(originalName);
+                    var baseName = ElixirASTHelpers.toElixirVarName(originalName);
+                    
+                    // Debug: Check if reserved keyword
+                    #if debug_reserved_keywords
+                    if (isElixirReservedKeyword(baseName)) {
+                        trace('[AST Builder] Reserved keyword detected in parameter: $baseName -> ${baseName}_param');
+                    }
+                    #end
                     
                     // Apply underscore prefix only if our comprehensive check confirms it's unused
                     var finalName = if (isActuallyUnused && !baseName.startsWith("_")) {
@@ -3260,7 +3282,49 @@ class ElixirASTBuilder {
                 result += char.toLowerCase();
             }
         }
+        
+        // Check if the result is a reserved keyword and escape it
+        if (isElixirReservedKeyword(result)) {
+            // Append underscore to escape reserved keywords
+            result = result + "_param";
+            #if debug_ast_pipeline
+            trace('[toElixirVarName] Escaped reserved keyword: ${name} -> ${result}');
+            #end
+        }
+        
         return result;
+    }
+    
+    /**
+     * Check if a name is an Elixir reserved keyword
+     * 
+     * WHY: Elixir has reserved keywords that cannot be used as variable/parameter names
+     * WHAT: Returns true if the name is a reserved keyword in Elixir
+     * HOW: Checks against a complete list of Elixir reserved words
+     */
+    public static function isElixirReservedKeyword(name: String): Bool {
+        // Complete list of Elixir reserved keywords
+        var reservedKeywords = [
+            "true", "false", "nil",           // Boolean/null atoms
+            "and", "or", "not", "in", "when", // Operators
+            "fn",                              // Anonymous function definition
+            "do", "end",                       // Block delimiters
+            "catch", "rescue", "after", "else", // Exception handling
+            "__MODULE__", "__FILE__", "__DIR__", "__ENV__", "__CALLER__", // Special forms
+            "alias", "case", "cond",           // Control structures
+            "def", "defp", "defmodule",        // Module/function definition
+            "defmacro", "defmacrop",           // Macro definition
+            "defprotocol", "defimpl",          // Protocol definition
+            "defstruct", "defexception",       // Struct/exception definition
+            "defoverridable", "defdelegate",   // Override/delegation
+            "for", "if", "import",              // Control/import
+            "quote", "unquote", "unquote_splicing", // Metaprogramming
+            "receive", "require",               // Process/module loading
+            "super", "throw", "try", "unless",  // Control flow
+            "use", "with"                       // Module/context management
+        ];
+        
+        return reservedKeywords.indexOf(name) >= 0;
     }
     
     /**

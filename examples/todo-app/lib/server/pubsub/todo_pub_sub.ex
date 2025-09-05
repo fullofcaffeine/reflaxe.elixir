@@ -9,7 +9,7 @@ defmodule TodoPubSub do
     {:ParseWithConverter, msg, TodoPubSub.parseMessageImpl}
   end
   defp topic_to_string(topic) do
-    case (topic.elem(0)) do
+    case (elem(topic, 0)) do
       0 ->
         "todo:updates"
       1 ->
@@ -19,34 +19,34 @@ defmodule TodoPubSub do
     end
   end
   defp message_to_elixir(message) do
-    base_payload = case (message.elem(0)) do
+    base_payload = case (elem(message, 0)) do
   0 ->
-    g = message.elem(1)
+    g = elem(message, 1)
     todo = g
     %{:type => "todo_created", :todo => todo}
   1 ->
-    g = message.elem(1)
+    g = elem(message, 1)
     todo = g
     %{:type => "todo_updated", :todo => todo}
   2 ->
-    g = message.elem(1)
+    g = elem(message, 1)
     id = g
     %{:type => "todo_deleted", :todo_id => id}
   3 ->
-    g = message.elem(1)
+    g = elem(message, 1)
     action = g
     %{:type => "bulk_update", :action => bulk_action_to_string(action)}
   4 ->
-    g = message.elem(1)
+    g = elem(message, 1)
     user_id = g
     %{:type => "user_online", :user_id => user_id}
   5 ->
-    g = message.elem(1)
+    g = elem(message, 1)
     user_id = g
     %{:type => "user_offline", :user_id => user_id}
   6 ->
-    g = message.elem(1)
-    g1 = message.elem(2)
+    g = elem(message, 1)
+    g1 = elem(message, 2)
     message = g
     level = g1
     %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
@@ -63,9 +63,9 @@ end
       "bulk_update" ->
         if (msg.action != nil) do
           bulk_action = {:ParseBulkAction, msg.action}
-          case (bulk_action.elem(0)) do
+          case (elem(bulk_action, 0)) do
             0 ->
-              g = bulk_action.elem(1)
+              g = elem(bulk_action, 1)
               action = g
               {:Some, {:BulkUpdate, action}}
             1 ->
@@ -77,9 +77,9 @@ end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
           alert_level = {:ParseAlertLevel, msg.level}
-          case (alert_level.elem(0)) do
+          case (elem(alert_level, 0)) do
             0 ->
-              g = alert_level.elem(1)
+              g = elem(alert_level, 1)
               level = g
               {:Some, {:SystemAlert, msg.message, level}}
             1 ->
@@ -104,21 +104,21 @@ end
     end
   end
   defp bulk_action_to_string(action) do
-    case (action.elem(0)) do
+    case (elem(action, 0)) do
       0 ->
         "complete_all"
       1 ->
         "delete_completed"
       2 ->
-        g = action.elem(1)
+        g = elem(action, 1)
         _priority = g
         "set_priority"
       3 ->
-        g = action.elem(1)
+        g = elem(action, 1)
         _tag = g
         "add_tag"
       4 ->
-        g = action.elem(1)
+        g = elem(action, 1)
         _tag = g
         "remove_tag"
     end
@@ -140,7 +140,7 @@ end
     end
   end
   defp alert_level_to_string(level) do
-    case (level.elem(0)) do
+    case (elem(level, 0)) do
       0 ->
         "info"
       1 ->

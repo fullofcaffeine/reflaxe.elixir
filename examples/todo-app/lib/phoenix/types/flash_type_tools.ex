@@ -1,6 +1,6 @@
 defmodule FlashTypeTools do
   def to_string(type) do
-    case (type.elem(0)) do
+    case (elem(type, 0)) do
       0 ->
         "info"
       1 ->
@@ -27,7 +27,7 @@ defmodule FlashTypeTools do
     end
   end
   def get_css_class(type) do
-    case (type.elem(0)) do
+    case (elem(type, 0)) do
       0 ->
         "bg-blue-50 border-blue-200 text-blue-800"
       1 ->
@@ -39,7 +39,7 @@ defmodule FlashTypeTools do
     end
   end
   def get_icon_name(type) do
-    case (type.elem(0)) do
+    case (elem(type, 0)) do
       0 ->
         "information-circle"
       1 ->

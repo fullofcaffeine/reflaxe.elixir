@@ -38,37 +38,37 @@ end)
     error_map
   end
   def to_option(result) do
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         value = g
         {:Some, value}
       1 ->
-        _g = result.elem(1)
+        _g = elem(result, 1)
         :none
     end
   end
   def unwrap(result) do
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         value = g
         value
       1 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         changeset = g
         errors = get_errors_map(changeset)
         throw("Changeset has errors: " <> (if (errors == nil), do: "null", else: errors.toString()))
     end
   end
   def unwrap_or(result, default_value) do
-    case (result.elem(0)) do
+    case (elem(result, 0)) do
       0 ->
-        g = result.elem(1)
+        g = elem(result, 1)
         value = g
         value
       1 ->
-        _g = result.elem(1)
+        _g = elem(result, 1)
         default_value
     end
   end

@@ -640,8 +640,14 @@ class ElixirCompiler extends GenericCompiler<
                     // Add the function's actual parameters
                     // AND register them to prevent snake_case conversion in the body
                     for (arg in tfunc.args) {
-                        // Convert parameter names to snake_case for Elixir
-                        var baseName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                        // Convert parameter names to snake_case for Elixir, handling reserved keywords
+                        var snakeName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                        // Check if it's a reserved keyword and add suffix if needed
+                        var baseName = if (reflaxe.elixir.ast.NameUtils.isElixirReserved(snakeName)) {
+                            snakeName + "_param";  // Add suffix for reserved keywords
+                        } else {
+                            snakeName;
+                        };
                         
                         // Special case: Phoenix components require 'assigns' parameter without underscore
                         // even if it appears unused, because the ~H sigil macro uses it
@@ -805,10 +811,16 @@ class ElixirCompiler extends GenericCompiler<
                         
                         if (!needsSpecialHandling) {
                             // Re-register parameters RIGHT before building body
-                            // Map them to their snake_case names
+                            // Map them to their snake_case names, handling reserved keywords
                             for (arg in tfunc.args) {
                                 var idKey = Std.string(arg.v.id);
-                                var elixirParamName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                                var snakeName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                                // Check if it's a reserved keyword and add suffix if needed
+                                var elixirParamName = if (reflaxe.elixir.ast.NameUtils.isElixirReserved(snakeName)) {
+                                    snakeName + "_param";  // Add suffix for reserved keywords
+                                } else {
+                                    snakeName;
+                                };
                                 reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, elixirParamName);
                             }
                             

@@ -3,6 +3,7 @@ package reflaxe.elixir.ast;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirASTBuilder;
 import haxe.macro.Type;
 import haxe.macro.TypedExprTools;
 import haxe.macro.Expr.Position;
@@ -131,7 +132,11 @@ class ElixirASTHelpers {
     }
     
     /**
-     * Convert variable name to Elixir snake_case
+     * Convert variable name to Elixir snake_case and escape reserved keywords
+     * 
+     * WHY: Elixir has reserved keywords that cannot be used as variable names
+     * WHAT: Converts camelCase to snake_case and escapes reserved keywords
+     * HOW: Applies snake_case transformation, then checks against reserved keywords
      */
     public static function toElixirVarName(name: String): String {
         // Don't modify compiler-generated temporary variables like _g, _g1, etc.
@@ -154,6 +159,24 @@ class ElixirASTHelpers {
             } else {
                 result += char.toLowerCase();
             }
+        }
+        
+        // Check if the result is a reserved keyword and escape if needed
+        // Inline the reserved keyword check to avoid dependency issues
+        var reservedKeywords = [
+            "true", "false", "nil",           // Boolean/null atoms
+            "and", "or", "not", "in", "when", // Operators
+            "fn",                              // Anonymous function definition
+            "do", "end",                       // Block delimiters
+            "catch", "rescue", "after", "else", // Exception handling
+            "__MODULE__", "__FILE__", "__DIR__", "__ENV__", "__CALLER__" // Special forms
+        ];
+        
+        if (reservedKeywords.indexOf(result) >= 0) {
+            #if debug_reserved_keywords
+            trace('[ElixirASTHelpers] Reserved keyword detected: $result -> ${result}_param');
+            #end
+            result = result + "_param"; // Add suffix to escape reserved keyword
         }
         
         return result;
