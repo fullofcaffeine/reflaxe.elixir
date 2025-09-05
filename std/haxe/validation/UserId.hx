@@ -5,38 +5,111 @@ import haxe.functional.Result;
 /**
  * Type-safe UserId domain abstraction with alphanumeric validation.
  * 
- * Inspired by Domain-Driven Design and Gleam's type philosophy:
- * - Parse, don't validate: once constructed, the UserId is guaranteed valid
- * - Runtime validation: ensures ID validity with minimal performance impact
- * - Strong typing: UserId != String prevents accidental mixing
+ * ## WHY This Type Exists
  * 
- * ## Design Principles
+ * User IDs are critical security and data integrity components that appear everywhere:
  * 
- * 1. **Alphanumeric Only**: No special characters, spaces, or symbols
- * 2. **Length Constraints**: Between 3-50 characters for practical use
- * 3. **Case Sensitivity**: Preserves case but allows case-insensitive comparison
- * 4. **Database Safe**: Safe for use as primary keys and in URLs
+ * - **Security Vulnerabilities**: Special characters in user IDs enable injection attacks
+ * - **URL Safety**: User IDs often appear in URLs - spaces and symbols break routing
+ * - **Database Keys**: Many databases have restrictions on primary key characters
+ * - **Cross-System Integration**: Different systems have different ID requirements
+ * - **User Experience**: Confusing IDs (O vs 0, l vs 1) cause support issues
  * 
- * ## Usage Examples
+ * Common bugs this type prevents:
+ * - **SQL Injection**: "admin'; DROP TABLE users;--" cannot be a UserId
+ * - **Path Traversal**: "../../etc/passwd" is rejected
+ * - **XSS Attacks**: "<script>alert('xss')</script>" is invalid
+ * - **Case Confusion**: Handling "JohnDoe" vs "johndoe" consistently
+ * - **Whitespace Issues**: Trailing spaces causing authentication failures
+ * 
+ * ## Design Philosophy
+ * 
+ * - **Alphanumeric Only**: Letters and numbers only - universally safe
+ * - **Length Constraints**: 3-50 chars balances security and usability
+ * - **Case Preservation**: Store original case but compare case-insensitively
+ * - **No All-Digit IDs**: Prevents confusion with numeric database IDs
+ * 
+ * ## Real-World Usage Examples
  * 
  * ```haxe
- * // Safe construction with validation
- * var userIdResult = UserId.parse("user123");
- * switch (userIdResult) {
- *     case Ok(userId): 
- *         var normalized = userId.normalize(); // Lowercase version
- *         var length = userId.length();        // Character count
- *     case Error(reason): 
- *         trace("Invalid user ID: " + reason);
+ * // Example 1: User Authentication
+ * function authenticate(inputId: String, password: String): Result<User, String> {
+ *     // Parse validates the ID format
+ *     return UserId.parse(inputId)
+ *         .flatMap(userId -> {
+ *             // Normalized for consistent database lookup
+ *             var user = UserRepo.findByUserId(userId.normalize());
+ *             if (user != null && user.checkPassword(password)) {
+ *                 return Ok(user);
+ *             }
+ *             return Error("Invalid credentials");
+ *         });
  * }
  * 
- * // Direct construction (throws on invalid)
- * var userId = new UserId("validUser42");
+ * // Example 2: Admin Detection with Prefix Checking
+ * function hasAdminPrivileges(userId: UserId): Bool {
+ *     // Case-insensitive prefix checking
+ *     return userId.startsWithIgnoreCase("admin") || 
+ *            userId.startsWithIgnoreCase("sudo");
+ * }
  * 
- * // Equality comparison
- * var id1 = UserId.parse("User123").unwrap();
- * var id2 = UserId.parse("user123").unwrap();
- * var areEqual = id1.equalsIgnoreCase(id2); // true
+ * // Example 3: URL Generation
+ * function generateUserProfileUrl(userId: UserId): String {
+ *     // UserId is guaranteed URL-safe - no encoding needed!
+ *     return 'https://example.com/users/${userId.toString()}';
+ * }
+ * 
+ * // Example 4: Preventing Username Enumeration Attacks
+ * function userExists(inputId: String): Bool {
+ *     // Invalid IDs return false without database query
+ *     // This prevents attackers from detecting valid ID patterns
+ *     return UserId.parse(inputId)
+ *         .map(id -> UserRepo.exists(id.normalize()))
+ *         .unwrapOr(false);
+ * }
+ * 
+ * // Example 5: Case-Insensitive Uniqueness
+ * function registerUser(desiredId: String, email: Email): Result<User, String> {
+ *     return UserId.parse(desiredId)
+ *         .flatMap(userId -> {
+ *             // Check if normalized version already exists
+ *             if (UserRepo.exists(userId.normalize())) {
+ *                 // Show the conflicting ID to user
+ *                 var existing = UserRepo.findByUserId(userId.normalize());
+ *                 return Error('Username "${existing.id}" already taken');
+ *             }
+ *             return Ok(User.create(userId, email));
+ *         });
+ * }
+ * ```
+ * 
+ * ## Common Patterns
+ * 
+ * ```haxe
+ * // Pattern 1: Parse at API boundaries
+ * @:get("/users/:id")
+ * function getUser(id: String): Response {
+ *     return UserId.parse(id)
+ *         .flatMap(userId -> UserService.findUser(userId))
+ *         .map(user -> Response.json(user))
+ *         .unwrapOr(Response.notFound());
+ * }
+ * 
+ * // Pattern 2: Normalize for storage, preserve for display
+ * class User {
+ *     var id: UserId;           // Original case for display
+ *     var normalizedId: String; // Lowercase for lookups
+ *     
+ *     public function new(id: UserId) {
+ *         this.id = id;
+ *         this.normalizedId = id.normalize().toString();
+ *     }
+ * }
+ * 
+ * // Pattern 3: Batch validation
+ * function validateUserIds(ids: Array<String>): Array<UserId> {
+ *     return ids.filterMap(id -> UserId.parse(id).toOption());
+ * }
  * ```
  * 
  * @see Email, PositiveInt, NonEmptyString for other domain abstractions
@@ -165,8 +238,21 @@ abstract UserId(String) from String to String {
     /**
      * Validate a user ID string according to our domain rules.
      * 
+     * ## WHY These Specific Validation Rules
+     * 
+     * Each rule exists to prevent real security and usability issues:
+     * 
+     * - **Alphanumeric only**: Prevents ALL injection attacks (SQL, XSS, command)
+     * - **3+ characters**: Prevents single-char IDs that are easily guessed
+     * - **50 char limit**: Prevents DoS via massive IDs, fits in database columns
+     * - **No all-digits**: "12345" looks like a database ID, causes confusion
+     * 
+     * We explicitly allow:
+     * - **Mixed case**: "JohnDoe123" is valid (preserved for display)
+     * - **Numbers anywhere**: "123abc", "abc123", "a1b2c3" all valid
+     * 
      * @param userId User ID string to validate
-     * @return Ok(()) if valid, Error(String) with reason if invalid
+     * @return Ok(()) if valid, Error(String) with specific failure reason
      */
     private static function validate(userId: String): Result<Void, String> {
         if (userId == null) {
