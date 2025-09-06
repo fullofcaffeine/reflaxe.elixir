@@ -3,7 +3,7 @@ defmodule BalancedTree do
     %{}
   end
   def set(struct, key, value) do
-    %{struct | root: struct.setLoop(key, value, struct.root)}
+    %{struct | root: struct.set_loop(key, value, struct.root)}
   end
   def get(struct, key) do
     node = struct.root
@@ -20,7 +20,7 @@ end)
     nil
   end
   def remove(struct, key) do
-    result = struct.removeLoop(key, struct.root)
+    result = struct.remove_loop(key, struct.root)
     if (result != nil), do: result.found
     false
   end
@@ -39,12 +39,12 @@ end)
   end
   def iterator(struct) do
     ret = []
-    struct.iteratorLoop(struct.root, ret)
+    struct.iterator_loop(struct.root, ret)
     ArrayIterator.new(ret)
   end
   def keys(struct) do
     ret = []
-    struct.keysLoop(struct.root, ret)
+    struct.keys_loop(struct.root, ret)
     ArrayIterator.new(ret)
   end
   def copy(struct) do
@@ -61,10 +61,10 @@ end)
       TreeNode.new(node.left, k, v, node.right, node.get_height())
     else
       if (c < 0) do
-        nl = struct.setLoop(k, v, node.left)
+        nl = struct.set_loop(k, v, node.left)
         struct.balance(nl, node.key, node.value, node.right)
       else
-        nr = struct.setLoop(k, v, node.right)
+        nr = struct.set_loop(k, v, node.right)
         struct.balance(node.left, node.key, node.value, nr)
       end
     end
@@ -76,11 +76,11 @@ end)
       %{:node => struct.merge(node.left, node.right), :found => true}
     else
       if (c < 0) do
-        result = struct.removeLoop(k, node.left)
+        result = struct.remove_loop(k, node.left)
         if (result != nil && result.found), do: %{:node => struct.balance(result.node, node.key, node.value, node.right), :found => true}
         %{:node => node, :found => false}
       else
-        result = struct.removeLoop(k, node.right)
+        result = struct.remove_loop(k, node.right)
         if (result != nil && result.found), do: %{:node => struct.balance(node.left, node.key, node.value, result.node), :found => true}
         %{:node => node, :found => false}
       end
@@ -88,34 +88,34 @@ end)
   end
   defp iterator_loop(struct, node, acc) do
     if (node != nil) do
-      struct.iteratorLoop(node.left, acc)
+      struct.iterator_loop(node.left, acc)
       acc = acc ++ [node.value]
-      struct.iteratorLoop(node.right, acc)
+      struct.iterator_loop(node.right, acc)
     end
   end
   defp keys_loop(struct, node, acc) do
     if (node != nil) do
-      struct.keysLoop(node.left, acc)
+      struct.keys_loop(node.left, acc)
       acc = acc ++ [node.key]
-      struct.keysLoop(node.right, acc)
+      struct.keys_loop(node.right, acc)
     end
   end
   defp merge(struct, t1, t2) do
     if (t1 == nil), do: t2
     if (t2 == nil), do: t1
-    t = struct.minBinding(t2)
+    t = struct.min_binding(t2)
     if (t == nil), do: t1
-    struct.balance(t1, t.key, t.value, struct.removeMinBinding(t2))
+    struct.balance(t1, t.key, t.value, struct.remove_min_binding(t2))
   end
   defp min_binding(struct, t) do
     if (t == nil), do: nil
     if (t.left == nil), do: t
-    struct.minBinding(t.left)
+    struct.min_binding(t.left)
   end
   defp remove_min_binding(struct, t) do
     if (t == nil), do: nil
     if (t.left == nil), do: t.right
-    struct.balance(struct.removeMinBinding(t.left), t.key, t.value, t.right)
+    struct.balance(struct.remove_min_binding(t.left), t.key, t.value, t.right)
   end
   defp balance(_struct, l, k, v, r) do
     hl = l.get_height()
@@ -149,7 +149,7 @@ end)
     end
   end
   def to_string(struct) do
-    if (struct.root == nil), do: "[]", else: "[" <> struct.root.toString() <> "]"
+    if (struct.root == nil), do: "[]", else: "[" <> struct.root.to_string() <> "]"
   end
   def clear(struct) do
     nil

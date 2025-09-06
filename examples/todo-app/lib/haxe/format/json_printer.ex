@@ -16,21 +16,21 @@ defmodule JsonPrinter do
       if (s == "NaN" || s == "Infinity" || s == "-Infinity"), do: "null"
       s
     end
-    if (Std.is(v, String)), do: struct.quoteString(v)
-    if (Std.is(v, Array)), do: struct.writeArray(v)
-    struct.writeObject(v)
+    if (Std.is(v, String)), do: struct.quote_string(v)
+    if (Std.is(v, Array)), do: struct.write_array(v)
+    struct.write_object(v)
   end
   defp write_array(struct, arr) do
     items = []
     g = 0
     g1 = arr.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
-    items ++ [struct.writeValue(arr[i], Std.string(i))]
-    {:cont, {acc_g1, acc_g, acc_state}}
+    items ++ [struct.write_value(arr[i], Std.string(i))]
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     if (struct.space != nil && items.length > 0) do
@@ -43,17 +43,17 @@ end)
     fields = Map.keys(obj)
     pairs = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, fields, :ok}, fn _, {acc_g, acc_fields, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fields, g, :ok}, fn _, {acc_fields, acc_g, acc_state} ->
   if (acc_g < acc_fields.length) do
     field = fields[g]
     acc_g = acc_g + 1
     value = Map.get(obj, field)
-    key = struct.quoteString(field)
-    val = struct.writeValue(value, field)
+    key = struct.quote_string(field)
+    val = struct.write_value(value, field)
     if (struct.space != nil), do: pairs ++ [key <> ": " <> val], else: pairs ++ [key <> ":" <> val]
-    {:cont, {acc_g, acc_fields, acc_state}}
+    {:cont, {acc_fields, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_fields, acc_state}}
+    {:halt, {acc_fields, acc_g, acc_state}}
   end
 end)
     if (struct.space != nil && pairs.length > 0) do
@@ -66,24 +66,24 @@ end)
     result = "\""
     g = 0
     g1 = s.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g1, g, :ok}, fn _, {acc_result, acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
-    c = s.charCodeAt(i)
+    c = s.char_code_at(i)
     if (c == nil), do: nil, else: nil
-    {:cont, {acc_result, acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_result, acc_state}}
   else
-    {:halt, {acc_result, acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_result, acc_state}}
   end
 end)
     result = result <> "\""
     result
   end
   def write(struct, k, v) do
-    struct.writeValue(v, k)
+    struct.write_value(v, k)
   end
   def print(o, replacer, space) do
     printer = JsonPrinter.new(replacer, space)
-    printer.writeValue(o, "")
+    printer.write_value(o, "")
   end
 end

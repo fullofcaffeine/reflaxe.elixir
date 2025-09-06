@@ -12,7 +12,7 @@ defmodule FlashTypeTools do
     end
   end
   def from_string(str) do
-    g = str.toLowerCase()
+    g = str.to_lower_case()
     case (g) do
       "error" ->
         {3}

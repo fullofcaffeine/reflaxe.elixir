@@ -41,7 +41,7 @@ defmodule TodoAppWeb.TodoLive do
     params = g
     TodoAppWeb.TodoLive.save_edited_todo_typed(params, socket)
   5 ->
-    presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.currentUser, nil)
+    presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.current_user, nil)
     SafeAssigns.set_editing_todo(presence_socket, nil)
   6 ->
     g = elem(event, 1)
@@ -66,7 +66,7 @@ defmodule TodoAppWeb.TodoLive do
     priority = g1
     TodoAppWeb.TodoLive.update_todo_priority(id, priority, socket)
   11 ->
-    SafeAssigns.set_show_form(socket, not socket.assigns.showForm)
+    SafeAssigns.set_show_form(socket, not socket.assigns.show_form)
   12 ->
     TodoAppWeb.TodoLive.complete_all_todos(socket)
   13 ->
@@ -129,7 +129,7 @@ end
     {:NoReply, result_socket}
   end
   defp create_todo_typed(params, socket) do
-    userId = socket.assigns.currentUser.id
+    userId = socket.assigns.current_user.id
     changeset = Todo.changeset(Todo.new(), params)
     g = TodoApp.Repo.insert(changeset)
     case (elem(g, 0)) do
@@ -155,15 +155,15 @@ end
     end
   end
   defp create_new_todo(params, socket) do
-    todo_params = %{:title => params.title, :description => params.description, :completed => false, :priority => (if (params.priority != nil), do: params.priority, else: "medium"), :dueDate => if (params.dueDate != nil) do
-  Date.from_string(params.dueDate)
+    todo_params = %{:title => params.title, :description => params.description, :completed => false, :priority => (if (params.priority != nil), do: params.priority, else: "medium"), :dueDate => if (params.due_date != nil) do
+  Date.from_string(params.due_date)
 else
   nil
 end, :tags => if (params.tags != nil) do
   TodoAppWeb.TodoLive.parse_tags(params.tags)
 else
   []
-end, :userId => socket.assigns.currentUser.id}
+end, :userId => socket.assigns.current_user.id}
     changeset = Todo.changeset(Todo.new(), todo_params)
     g = TodoApp.Repo.insert(changeset)
     case (elem(g, 0)) do
@@ -268,7 +268,7 @@ end, :userId => socket.assigns.currentUser.id}
     end
   end
   defp add_todo_to_list(todo, socket) do
-    if (todo.userId == socket.assigns.currentUser.id), do: socket
+    if (todo.user_id == socket.assigns.current_user.id), do: socket
     todos = [todo] ++ socket.assigns.todos
     live_socket = socket
     Phoenix.LiveView.assign([live_socket, todos], %{:todos => {1}})
@@ -279,14 +279,14 @@ end, :userId => socket.assigns.currentUser.id}
   end
   defp find_todo(id, todos) do
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, :ok}, fn _, {acc_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, :ok}, fn _, {acc_g, acc_todos, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.id == id), do: todo
-    {:cont, {acc_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_state}}
   else
-    {:halt, {acc_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_state}}
   end
 end)
     nil
@@ -294,16 +294,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, todos, :ok}, fn _, {acc_count, acc_g, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_count, acc_g, acc_todos, acc_state}}
+    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
   else
-    {:halt, {acc_count, acc_g, acc_todos, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
   end
 end)
     count
@@ -330,10 +330,10 @@ end)
     Enum.map(tags_string.split(","), fn t -> StringTools.ltrim(StringTools.rtrim(t)) end)
   end
   defp get_user_from_session(session) do
-    %{:id => (if (session.userId != nil), do: session.userId, else: 1), :name => "Demo User", :email => "demo@example.com", :passwordHash => "hashed_password", :confirmedAt => nil, :lastLoginAt => nil, :active => true}
+    %{:id => (if (session.user_id != nil), do: session.user_id, else: 1), :name => "Demo User", :email => "demo@example.com", :passwordHash => "hashed_password", :confirmedAt => nil, :lastLoginAt => nil, :active => true}
   end
   defp load_and_assign_todos(socket) do
-    todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.currentUser.id)
+    todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
     live_socket = socket
     Phoenix.LiveView.assign([live_socket, todos, todos.length, TodoAppWeb.TodoLive.count_completed(todos), TodoAppWeb.TodoLive.count_pending(todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
@@ -349,13 +349,13 @@ end)
   end
   defp start_editing(id, socket) do
     todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
-    presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.currentUser, id)
+    presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.current_user, id)
     SafeAssigns.set_editing_todo(presence_socket, todo)
   end
   defp complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, pending, :ok}, fn _, {acc_g, acc_pending, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} -> nil end)
     g = TodoPubSub.broadcast({0}, {:BulkUpdate, {0}})
     case (elem(g, 0)) do
       0 ->
@@ -366,29 +366,29 @@ end)
         reason = g
         Log.trace("Failed to broadcast bulk complete: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 532, :className => "server.live.TodoLive", :methodName => "completeAllTodos"})
     end
-    updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.currentUser.id)
+    updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
     current_assigns = socket.assigns
-    complete_assigns = %{:todos => updated_todos, :filter => current_assigns.filter, :sortBy => current_assigns.sortBy, :currentUser => current_assigns.currentUser, :editingTodo => current_assigns.editingTodo, :showForm => current_assigns.showForm, :searchQuery => current_assigns.searchQuery, :selectedTags => current_assigns.selectedTags, :totalTodos => updated_todos.length, :completedTodos => updated_todos.length, :pendingTodos => 0, :onlineUsers => current_assigns.onlineUsers}
+    complete_assigns = %{:todos => updated_todos, :filter => current_assigns.filter, :sortBy => current_assigns.sort_by, :currentUser => current_assigns.current_user, :editingTodo => current_assigns.editing_todo, :showForm => current_assigns.show_form, :searchQuery => current_assigns.search_query, :selectedTags => current_assigns.selected_tags, :totalTodos => updated_todos.length, :completedTodos => updated_todos.length, :pendingTodos => 0, :onlineUsers => current_assigns.online_users}
     updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, {0}, "All todos marked as completed!")
   end
   defp delete_completed_todos(socket) do
     completed = Enum.filter(socket.assigns.todos, fn t -> t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {completed, g, :ok}, fn _, {acc_completed, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, completed, :ok}, fn _, {acc_g, acc_completed, acc_state} ->
   if (acc_g < acc_completed.length) do
     todo = completed[g]
     acc_g = acc_g + 1
     TodoApp.Repo.delete(todo)
-    {:cont, {acc_completed, acc_g, acc_state}}
+    {:cont, {acc_g, acc_completed, acc_state}}
   else
-    {:halt, {acc_completed, acc_g, acc_state}}
+    {:halt, {acc_g, acc_completed, acc_state}}
   end
 end)
     TodoPubSub.broadcast({0}, {:BulkUpdate, {1}})
     remaining = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     current_assigns = socket.assigns
-    complete_assigns = %{:todos => remaining, :filter => current_assigns.filter, :sortBy => current_assigns.sortBy, :currentUser => current_assigns.currentUser, :editingTodo => current_assigns.editingTodo, :showForm => current_assigns.showForm, :searchQuery => current_assigns.searchQuery, :selectedTags => current_assigns.selectedTags, :totalTodos => remaining.length, :completedTodos => 0, :pendingTodos => remaining.length, :onlineUsers => current_assigns.onlineUsers}
+    complete_assigns = %{:todos => remaining, :filter => current_assigns.filter, :sortBy => current_assigns.sort_by, :currentUser => current_assigns.current_user, :editingTodo => current_assigns.editing_todo, :showForm => current_assigns.show_form, :searchQuery => current_assigns.search_query, :selectedTags => current_assigns.selected_tags, :totalTodos => remaining.length, :completedTodos => 0, :pendingTodos => remaining.length, :onlineUsers => current_assigns.online_users}
     updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, {0}, "Completed todos deleted!")
   end
@@ -397,8 +397,8 @@ end)
     SafeAssigns.set_editing_todo(socket, todo)
   end
   defp save_edited_todo_typed(params, socket) do
-    if (socket.assigns.editingTodo == nil), do: socket
-    todo = socket.assigns.editingTodo
+    if (socket.assigns.editing_todo == nil), do: socket
+    todo = socket.assigns.editing_todo
     changeset = Todo.changeset(todo, params)
     g = TodoApp.Repo.update(changeset)
     case (elem(g, 0)) do
@@ -415,7 +415,7 @@ end)
             reason = g
             Log.trace("Failed to broadcast todo update: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 613, :className => "server.live.TodoLive", :methodName => "saveEditedTodoTyped"})
         end
-        presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.currentUser, nil)
+        presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.current_user, nil)
         updated_socket = SafeAssigns.set_editing_todo(presence_socket, nil)
         TodoAppWeb.TodoLive.load_and_assign_todos(updated_socket)
       1 ->
@@ -425,10 +425,10 @@ end)
     end
   end
   defp save_edited_todo(params, socket) do
-    todo = socket.assigns.editingTodo
+    todo = socket.assigns.editing_todo
     if (todo == nil), do: socket
-    todo_params = %{:title => params.title, :description => params.description, :priority => params.priority, :dueDate => if (params.dueDate != nil) do
-  Date.from_string(params.dueDate)
+    todo_params = %{:title => params.title, :description => params.description, :priority => params.priority, :dueDate => if (params.due_date != nil) do
+  Date.from_string(params.due_date)
 else
   nil
 end, :tags => if (params.tags != nil) do
@@ -464,11 +464,11 @@ end, :completed => params.completed}
   defp handle_bulk_update(action, socket) do
     case (elem(action, 0)) do
       0 ->
-        updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.currentUser.id)
+        updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
         live_socket = socket
         Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
       1 ->
-        updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.currentUser.id)
+        updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
         live_socket = socket
         Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
       2 ->
@@ -486,7 +486,7 @@ end, :completed => params.completed}
     end
   end
   defp toggle_tag_filter(tag, socket) do
-    selected_tags = socket.assigns.selectedTags
+    selected_tags = socket.assigns.selected_tags
     updated_tags = if (Enum.member?(selected_tags, tag)) do
   Enum.filter(selected_tags, fn t -> t != tag end)
 else
@@ -511,8 +511,8 @@ end
     online_count = 0
     online_users_list = []
     editing_indicators = []
-    this1 = assigns.onlineUsers
-    g = this1.keyValueIterator()
+    this1 = assigns.online_users
+    g = this1.key_value_iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, g, :ok}, fn _, {acc_online_count, acc_g, acc_state} -> nil end)
     if (online_count == 0), do: ""
     "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6\">\n\t\t\t<div class=\"flex items-center justify-between mb-2\">\n\t\t\t\t<h3 class=\"text-sm font-semibold text-gray-700 dark:text-gray-300\">\n\t\t\t\t\t👥 Online Users (" <> Kernel.to_string(online_count) <> ")\n\t\t\t\t</h3>\n\t\t\t</div>\n\t\t\t<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">\n\t\t\t\t" <> Enum.join(online_users_list, "") <> "\n\t\t\t</div>\n\t\t\t" <> (if (editing_indicators.length > 0) do
@@ -523,22 +523,22 @@ end) <> "\n\t\t</div>"
   end
   defp render_bulk_actions(assigns) do
     if (assigns.todos.length == 0), do: ""
-    filtered_count = TodoAppWeb.TodoLive.filter_todos(assigns.todos, assigns.filter, assigns.searchQuery).length
-    "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center\">\n\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">\n\t\t\t\t\tShowing " <> Kernel.to_string(filtered_count) <> " of " <> Kernel.to_string(assigns.totalTodos) <> " todos\n\t\t\t\t</div>\n\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t<button phx-click=\"bulk_complete\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm\">\n\t\t\t\t\t\t✅ Complete All\n\t\t\t\t\t</button>\n\t\t\t\t\t<button phx-click=\"bulk_delete_completed\" \n\t\t\t\t\t\tdata-confirm=\"Are you sure you want to delete all completed todos?\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm\">\n\t\t\t\t\t\t🗑️ Delete Completed\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>"
+    filtered_count = TodoAppWeb.TodoLive.filter_todos(assigns.todos, assigns.filter, assigns.search_query).length
+    "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center\">\n\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">\n\t\t\t\t\tShowing " <> Kernel.to_string(filtered_count) <> " of " <> Kernel.to_string(assigns.total_todos) <> " todos\n\t\t\t\t</div>\n\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t<button phx-click=\"bulk_complete\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm\">\n\t\t\t\t\t\t✅ Complete All\n\t\t\t\t\t</button>\n\t\t\t\t\t<button phx-click=\"bulk_delete_completed\" \n\t\t\t\t\t\tdata-confirm=\"Are you sure you want to delete all completed todos?\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm\">\n\t\t\t\t\t\t🗑️ Delete Completed\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>"
   end
   defp render_todo_list(assigns) do
     if (assigns.todos.length == 0), do: "\n\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center\">\n\t\t\t\t\t<div class=\"text-6xl mb-4\">📋</div>\n\t\t\t\t\t<h3 class=\"text-xl font-semibold text-gray-800 dark:text-white mb-2\">\n\t\t\t\t\t\tNo todos yet!\n\t\t\t\t\t</h3>\n\t\t\t\t\t<p class=\"text-gray-600 dark:text-gray-400\">\n\t\t\t\t\t\tClick \"Add New Todo\" to get started.\n\t\t\t\t\t</p>\n\t\t\t\t</div>\n\t\t\t"
-    filtered_todos = TodoAppWeb.TodoLive.filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
+    filtered_todos = TodoAppWeb.TodoLive.filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query)
     todo_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, filtered_todos, :ok}, fn _, {acc_g, acc_filtered_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
   if (acc_g < acc_filtered_todos.length) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
-    todo_items ++ [TodoAppWeb.TodoLive.render_todo_item(todo, assigns.editingTodo)]
-    {:cont, {acc_g, acc_filtered_todos, acc_state}}
+    todo_items ++ [TodoAppWeb.TodoLive.render_todo_item(todo, assigns.editing_todo)]
+    {:cont, {acc_filtered_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_filtered_todos, acc_state}}
+    {:halt, {acc_filtered_todos, acc_g, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")
@@ -562,8 +562,8 @@ end
       completed_class = if (todo.completed), do: "opacity-60", else: ""
       text_decoration = if (todo.completed), do: "line-through", else: ""
       checkmark = if (todo.completed), do: "<span class=\"text-green-500\">✓</span>", else: ""
-      "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 " <> priority_color <> " " <> completed_class <> " transition-all hover:shadow-xl\">\n\t\t\t\t\t<div class=\"flex items-start space-x-4\">\n\t\t\t\t\t\t<!-- Checkbox -->\n\t\t\t\t\t\t<button phx-click=\"toggle_todo\" phx-value-id=\"" <> Kernel.to_string(todo.id) <> "\"\n\t\t\t\t\t\t\tclass=\"mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors\">\n\t\t\t\t\t\t\t" <> checkmark <> "\n\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<!-- Content -->\n\t\t\t\t\t\t<div class=\"flex-1\">\n\t\t\t\t\t\t\t<h3 class=\"text-lg font-semibold text-gray-800 dark:text-white " <> text_decoration <> "\">\n\t\t\t\t\t\t\t\t" <> todo.title <> "\n\t\t\t\t\t\t\t</h3>\n\t\t\t\t\t\t\t" <> (if (todo.description != nil && todo.description != ""), do: "<p class=\"text-gray-600 dark:text-gray-400 mt-1 " <> text_decoration <> "\">" <> todo.description <> "</p>", else: "") <> "\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Meta info -->\n\t\t\t\t\t\t\t<div class=\"flex flex-wrap gap-2 mt-3\">\n\t\t\t\t\t\t\t\t<span class=\"px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs\">\n\t\t\t\t\t\t\t\t\tPriority: " <> todo.priority <> "\n\t\t\t\t\t\t\t\t</span>\n\t\t\t\t\t\t\t\t" <> (if (todo.dueDate != nil) do
-  "<span class=\"px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs\">Due: " <> Std.string(todo.dueDate) <> "</span>"
+      "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 " <> priority_color <> " " <> completed_class <> " transition-all hover:shadow-xl\">\n\t\t\t\t\t<div class=\"flex items-start space-x-4\">\n\t\t\t\t\t\t<!-- Checkbox -->\n\t\t\t\t\t\t<button phx-click=\"toggle_todo\" phx-value-id=\"" <> Kernel.to_string(todo.id) <> "\"\n\t\t\t\t\t\t\tclass=\"mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors\">\n\t\t\t\t\t\t\t" <> checkmark <> "\n\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<!-- Content -->\n\t\t\t\t\t\t<div class=\"flex-1\">\n\t\t\t\t\t\t\t<h3 class=\"text-lg font-semibold text-gray-800 dark:text-white " <> text_decoration <> "\">\n\t\t\t\t\t\t\t\t" <> todo.title <> "\n\t\t\t\t\t\t\t</h3>\n\t\t\t\t\t\t\t" <> (if (todo.description != nil && todo.description != ""), do: "<p class=\"text-gray-600 dark:text-gray-400 mt-1 " <> text_decoration <> "\">" <> todo.description <> "</p>", else: "") <> "\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Meta info -->\n\t\t\t\t\t\t\t<div class=\"flex flex-wrap gap-2 mt-3\">\n\t\t\t\t\t\t\t\t<span class=\"px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs\">\n\t\t\t\t\t\t\t\t\tPriority: " <> todo.priority <> "\n\t\t\t\t\t\t\t\t</span>\n\t\t\t\t\t\t\t\t" <> (if (todo.due_date != nil) do
+  "<span class=\"px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs\">Due: " <> Std.string(todo.due_date) <> "</span>"
 else
   ""
 end) <> "\n\t\t\t\t\t\t\t\t" <> TodoAppWeb.TodoLive.render_tags(todo.tags) <> "\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<!-- Actions -->\n\t\t\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t\t\t<button phx-click=\"edit_todo\" phx-value-id=\"" <> Kernel.to_string(todo.id) <> "\"\n\t\t\t\t\t\t\t\tclass=\"p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors\">\n\t\t\t\t\t\t\t\t✏️\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t<button phx-click=\"delete_todo\" phx-value-id=\"" <> Kernel.to_string(todo.id) <> "\"\n\t\t\t\t\t\t\t\tdata-confirm=\"Are you sure?\"\n\t\t\t\t\t\t\t\tclass=\"p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors\">\n\t\t\t\t\t\t\t\t🗑️\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>"
@@ -596,8 +596,8 @@ end)
     filtered
 end
     if (search_query != nil && search_query != "") do
-      query = search_query.toLowerCase()
-      filtered = Enum.filter(filtered, fn t -> t.title.toLowerCase().indexOf(query) >= 0 || t.description != nil && t.description.toLowerCase().indexOf(query) >= 0 end)
+      query = search_query.to_lower_case()
+      filtered = Enum.filter(filtered, fn t -> t.title.to_lower_case().index_of(query) >= 0 || t.description != nil && t.description.to_lower_case().index_of(query) >= 0 end)
     end
     filtered
   end

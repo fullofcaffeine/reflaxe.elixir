@@ -961,31 +961,8 @@ class ElixirASTBuilder {
                             }
                         case TField(obj, fa):
                             var fieldName = extractFieldName(fa);
-                            
-                            // Special handling for getTime() called on Date.now()
-                            // Date.now().getTime() should generate DateTime.utc_now() |> DateTime.to_unix(:millisecond)
-                            if (fieldName == "getTime") {
-                                #if debug_date_compilation
-                                trace('[Date] Checking getTime() call on: ${obj.expr}');
-                                #end
-                                switch(obj.expr) {
-                                    case TCall({expr: TField(_, FStatic(classRef, cf))}, _):
-                                        var classType = classRef.get();
-                                        var methodName = cf.get().name;
-                                        #if debug_date_compilation
-                                        trace('[Date] Found static call: ${classType.name}.${methodName}()');
-                                        #end
-                                        if (classType.name == "Date" && methodName == "now") {
-                                            // Generate DateTime.utc_now() |> DateTime.to_unix(:millisecond)
-                                            var dateTimeCall = ERemoteCall(makeAST(EVar("DateTime")), "utc_now", []);
-                                            return EPipe(makeAST(dateTimeCall), makeAST(ERemoteCall(makeAST(EVar("DateTime")), "to_unix", [makeAST(EAtom("millisecond"))])));
-                                        }
-                                    default:
-                                        #if debug_date_compilation
-                                        trace('[Date] Not a static call pattern, got: ${obj.expr}');
-                                        #end
-                                }
-                            }
+                            // Convert to snake_case for Elixir method names
+                            fieldName = toSnakeCase(fieldName);
                             
                             var objAst = buildFromTypedExpr(obj, variableUsageMap);
                             
@@ -1248,13 +1225,25 @@ class ElixirASTBuilder {
                             var index = Std.parseInt(fieldName.substr(1)) - 1; // _1 -> 0, _2 -> 1
                             ECall(null, "elem", [target, makeAST(EInteger(index))]);
                         } else {
-                            // Regular anonymous field access
+                            // Regular anonymous field access - convert to snake_case
+                            fieldName = toSnakeCase(fieldName);
                             EField(target, fieldName);
                         }
                     default:
-                        // Regular field access
+                        // Regular field access (includes FInstance for instance methods)
                         var target = buildFromTypedExpr(e, variableUsageMap);
                         var fieldName = extractFieldName(fa);
+                        
+                        // Convert to snake_case for Elixir method names
+                        // This ensures struct.setLoop becomes struct.set_loop
+                        var originalFieldName = fieldName;
+                        fieldName = toSnakeCase(fieldName);
+                        
+                        #if debug_field_names
+                        if (originalFieldName != fieldName) {
+                            trace('[AST Builder] Converting field name: $originalFieldName -> $fieldName');
+                        }
+                        #end
                         
                         #if debug_ast_pipeline
                         // Debug field access on p1/p2 variables
