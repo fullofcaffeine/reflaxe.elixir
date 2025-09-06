@@ -1,122 +1,35 @@
 defmodule TodoAppWeb.CoreComponents do
-  use Phoenix.Component
   def modal(assigns) do
-    ~H"""
-<div id={@id} class="modal" phx-show={@show}>
-            <%= @inner_content %>
-        </div>
-"""
+    "<div id={@id} class=\"modal\" phx-show={@show}>\n            <%= @inner_content %>\n        </div>"
   end
   def button(assigns) do
-    ~H"""
-<button type={@type || "button"} class={@className} disabled={@disabled}>
-            <%= @inner_content %>
-        </button>
-"""
+    "<button type={@type || \"button\"} class={@className} disabled={@disabled}>\n            <%= @inner_content %>\n        </button>"
   end
   def input(assigns) do
-    ~H"""
-<div class="form-group">
-            <label for={@field.id}><%= @label %></label>
-            <input 
-                type={@type || "text"} 
-                id={@field.id}
-                name={@field.name}
-                value={@field.value}
-                placeholder={@placeholder}
-                class="form-control"
-                required={@required}
-            />
-            <%= if @field.errors && length(@field.errors) > 0 do %>
-                <span class="error"><%= Enum.join(@field.errors, ", ") %></span>
-            <% end %>
-        </div>
-"""
+    "<div class=\"form-group\">\n            <label for={@field.id}><%= @label %></label>\n            <input \n                type={@type || \"text\"} \n                id={@field.id}\n                name={@field.name}\n                value={@field.value}\n                placeholder={@placeholder}\n                class=\"form-control\"\n                required={@required}\n            />\n            <%= if @field.errors && length(@field.errors) > 0 do %>\n                <span class=\"error\"><%= Enum.join(@field.errors, \", \") %></span>\n            <% end %>\n        </div>"
   end
   def error(assigns) do
-    ~H"""
-<%= if @field && @field.errors && length(@field.errors) > 0 do %>
-            <div class="error-message">
-                <%= Enum.join(@field.errors, ", ") %>
-            </div>
-        <% end %>
-"""
+    "<%= if @field && @field.errors && length(@field.errors) > 0 do %>\n            <div class=\"error-message\">\n                <%= Enum.join(@field.errors, \", \") %>\n            </div>\n        <% end %>"
   end
   def simple_form(assigns) do
-    ~H"""
-<.form :let={f} for={@formFor} action={@action} method={@method || "post"}>
-            <%= @inner_content %>
-        </.form>
-"""
+    "<.form :let={f} for={@formFor} action={@action} method={@method || \"post\"}>\n            <%= @inner_content %>\n        </.form>"
   end
   def header(assigns) do
-    ~H"""
-<header class="header">
-            <h1><%= @title %></h1>
-            <%= if @actions do %>
-                <div class="actions">
-                    <%= @actions %>
-                </div>
-            <% end %>
-        </header>
-"""
+    "<header class=\"header\">\n            <h1><%= @title %></h1>\n            <%= if @actions do %>\n                <div class=\"actions\">\n                    <%= @actions %>\n                </div>\n            <% end %>\n        </header>"
   end
   def table(assigns) do
-    ~H"""
-<table class="table">
-            <thead>
-                <tr>
-                    <%= for col <- @columns do %>
-                        <th><%= col.label %></th>
-                    <% end %>
-                </tr>
-            </thead>
-            <tbody>
-                <%= for row <- @rows do %>
-                    <tr>
-                        <%= for col <- @columns do %>
-                            <td><%= Map.get(row, col.field) %></td>
-                        <% end %>
-                    </tr>
-                <% end %>
-            </tbody>
-        </table>
-"""
+    "<table class=\"table\">\n            <thead>\n                <tr>\n                    <%= for col <- @columns do %>\n                        <th><%= col.label %></th>\n                    <% end %>\n                </tr>\n            </thead>\n            <tbody>\n                <%= for row <- @rows do %>\n                    <tr>\n                        <%= for col <- @columns do %>\n                            <td><%= Map.get(row, col.field) %></td>\n                        <% end %>\n                    </tr>\n                <% end %>\n            </tbody>\n        </table>"
   end
   def list(assigns) do
-    ~H"""
-<ul class="list">
-            <%= for item <- @items do %>
-                <li><%= item %></li>
-            <% end %>
-        </ul>
-"""
+    "<ul class=\"list\">\n            <%= for item <- @items do %>\n                <li><%= item %></li>\n            <% end %>\n        </ul>"
   end
   def back(assigns) do
-    ~H"""
-<div class="back-link">
-            <.link navigate={@navigate}>
-                ← Back
-            </.link>
-        </div>
-"""
+    "<div class=\"back-link\">\n            <.link navigate={@navigate}>\n                ← Back\n            </.link>\n        </div>"
   end
   def icon(assigns) do
-    ~H"""
-<%= if @className do %>
-            <span class={"icon icon-" <> @name <> " " <> @className}></span>
-        <% else %>
-            <span class={"icon icon-" <> @name}></span>
-        <% end %>
-"""
+    "<%= if @className do %>\n            <span class={\"icon icon-\" <> @name <> \" \" <> @className}></span>\n        <% else %>\n            <span class={\"icon icon-\" <> @name}></span>\n        <% end %>"
   end
   def label(assigns) do
-    ~H"""
-<%= if @htmlFor do %>
-            <label for={@htmlFor} class={@className}><%= @inner_content %></label>
-        <% else %>
-            <label class={@className}><%= @inner_content %></label>
-        <% end %>
-"""
+    "<%= if @htmlFor do %>\n            <label for={@htmlFor} class={@className}><%= @inner_content %></label>\n        <% else %>\n            <label class={@className}><%= @inner_content %></label>\n        <% end %>"
   end
 end

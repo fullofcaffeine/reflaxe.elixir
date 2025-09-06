@@ -14,6 +14,7 @@
   "todo_app_web/endpoint.ex",
   "todo_app_web/core_components.ex",
   "todo_app_web.ex",
+  "todo_app/repo.ex",
   "todo_app/application.ex",
   "test_injection.ex",
   "string_tools.ex",

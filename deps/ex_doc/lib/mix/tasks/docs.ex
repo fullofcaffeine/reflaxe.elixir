@@ -165,11 +165,16 @@ defmodule Mix.Tasks.Docs do
        See the "Changing documentation over time" section below for more.
 
     * `:skip_undefined_reference_warnings_on` - ExDoc warns when it can't create a `Mod.fun/arity`
-      reference in the current project docs e.g. because of a typo. This list controls where to
-      skip the warnings, for a given module/function/callback/type (e.g.: `["Foo", "Bar.baz/0"]`)
-      or on a given file (e.g.: `["pages/deprecations.md"]`). This option can also be a function
-      from a reference string to a boolean (e.g.: `&String.match?(&1, ~r/Foo/)`);
-      default is nothing to be skipped.
+      reference in the current project docs (for example, because of a typo). This option controls when to
+      skip such warnings. This option can be a list of strings that will be checked for exact matches,
+      or a function that takes a *reference* and must return a boolean (`true` means "skip this").
+      *References* that are checked against this option (either whether they're in the given
+      list or whether they match the given function) are the relative filename, the "ID" of
+      the node (like `User.exists?/1`), or the module name. Examples for this option:
+        * `["Foo", "Bar.baz/0"]` - skip warnings for `Foo` and `Bar.baz/0`
+        * `&String.match?(&1, ~r/Foo/)` - skip warnings for any reference that matches the regex
+        * `["pages/deprecations.md"]` - skip warnings for any reference in the
+          `pages/deprecations.md` file
 
     * `:skip_code_autolink_to` - Similar to `:skip_undefined_reference_warnings_on`, this option
       controls which terms will be skipped by ExDoc when building documentation.
@@ -296,15 +301,18 @@ defmodule Mix.Tasks.Docs do
   ### Grouping functions, types, and callbacks
 
   Types, functions, and callbacks inside a module can also be organized in groups.
-  By default, ExDoc respects the `:group` metadata field:
+
+  #### Group metadata
+
+  By default, ExDoc respects the `:group` metadata field to determine in which
+  group an element belongs:
 
       @doc group: "Queries"
       def get_by(schema, fields)
 
   The function above will be automatically listed under the "Queries" section in
   the sidebar. The benefit of using `:group` is that it can also be used by tools
-  such as IEx during autocompletion. These groups are then ordered alphabetically
-  in the sidebar.
+  such as IEx during autocompletion. These groups are then displayed in the sidebar.
 
   It is also possible to tell ExDoc to either enrich the group metadata or lookup a
   different field via the `:default_group_for_doc` configuration. The default is:
@@ -322,9 +330,8 @@ defmodule Mix.Tasks.Docs do
         end
       end
 
-  Whenever using the `:group` key, the groups will be ordered alphabetically.
-  If you also want control over the group order, you can also use the `:groups_for_docs`
-  which works similarly as the one for modules/extra pages.
+  Finally, you can also use the `:groups_for_docs` which works similarly as the
+  one for modules/extra pages.
 
   `:groups_for_docs` is a keyword list of group titles and filtering functions
   that receive the documentation metadata and must return a boolean.
@@ -358,12 +365,60 @@ defmodule Mix.Tasks.Docs do
   then falls back to the appropriate "Functions", "Types" or "Callbacks"
   section respectively.
 
+  #### Group descriptions
+
+  It is possible to display a description for each group under its respective section
+  in a module's page. This helps to better explain what is the intended usage of each
+  group elements instead of describing everything in the displayed `@moduledoc`.
+
+  Descriptions can be provided as `@moduledoc` metadata. Groups without descriptions are
+  also supported to define group ordering.
+
+      @moduledoc groups: [
+        "Main API",
+        %{title: "Helpers", description: "Functions shared with other modules."}
+      ]
+
+  Descriptions can also be given in the `:default_group_for_doc` configuration:
+
+      default_group_for_doc: fn metadata ->
+        case metadata[:group] do
+          :main_api -> "Main API"
+          :helpers -> [title: "Helpers", description: "Functions shared with other modules."]
+          _ -> nil
+        end
+      end
+
+  Keyword lists or maps are supported in either case.
+
+  When using `:groups_for_docs`, if all the elements for a given group are matched then the
+  `:default_group_for_doc` is never invoked and ExDoc will not know about the description.
+  In that case, the description should be provided in the `@moduledoc` `:groups` metadata.
+
+  Whenever using the `:group` key, the groups will be ordered alphabetically.
+  If you also want control over the group order, you can also use the `:groups_for_docs`
+  which works similarly as the one for modules/extra pages.
+
+  #### Group ordering
+
+  Groups in the sidebar and main page body are ordered according to the following
+  rules:
+
+  * First, groups defined as `@moduledoc groups: [...]` in the given order.
+  * Then groups defined as keys in the `:groups_for_docs` configuration.
+  * Then default groups: Types, Callbacks and Functions.
+  * Finally, other groups returned by `:default_group_for_doc` by alphabetical
+    order.
+
   ## Meta-tags configuration
 
   It is also possible to configure some of ExDoc behaviour using meta tags.
   These meta tags can be inserted using `before_closing_head_tag`.
 
     * `exdoc:autocomplete` - when set to "off", it disables autocompletion.
+
+    * `exdoc:autocomplete-limit` - Set to an integer to configure how many results
+      appear in the autocomplete dropdown. Defaults to 10.
 
     * `exdoc:full-text-search-url` - the URL to use when performing full text
       search. The search string will be appended to the URL as an encoded

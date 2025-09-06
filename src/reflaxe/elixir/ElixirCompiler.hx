@@ -190,6 +190,26 @@ class ElixirCompiler extends GenericCompiler<
     }
     
     /**
+     * Override shouldGenerateClass to allow extern classes with special annotations
+     * 
+     * WHY: By default, GenericCompiler ignores all extern classes, but we need to
+     * generate modules for extern classes with framework annotations like @:repo
+     * 
+     * @param classType The class to check
+     * @return True if the class should be compiled
+     */
+    public override function shouldGenerateClass(classType: ClassType): Bool {
+        // Check if this is an extern class with special annotations
+        if (classType.isExtern && hasSpecialAnnotations(classType)) {
+            // Force generation for extern classes with framework annotations
+            return true;
+        }
+        
+        // Otherwise use default behavior
+        return super.shouldGenerateClass(classType);
+    }
+    
+    /**
      * Get the current app name from the class being compiled
      * 
      * @:appName annotation is crucial for Phoenix applications because:
@@ -504,6 +524,7 @@ class ElixirCompiler extends GenericCompiler<
         return classType.meta.has(":endpoint") ||
                classType.meta.has(":liveview") ||
                classType.meta.has(":schema") ||
+               classType.meta.has(":repo") ||
                classType.meta.has(":application") ||
                classType.meta.has(":genserver") ||
                classType.meta.has(":router") ||

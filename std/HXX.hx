@@ -24,22 +24,29 @@
  * @see documentation/guides/HXX_GUIDE.md - Complete usage guide
  * @see documentation/HXX_ARCHITECTURE.md - Architecture and implementation details
  */
-@:noRuntime
-extern class HXX {
+/**
+ * HXX Template System
+ * 
+ * Temporary workaround: Since the macro transformation isn't working with
+ * string interpolation, we provide a simple passthrough implementation that
+ * returns the template string directly for now.
+ * 
+ * TODO: Implement proper compile-time transformation to ~H sigils
+ */
+@:extern
+class HXX {
     /**
      * Process an HXX template string into Phoenix HEEx format.
      * 
-     * This function is never actually called at runtime - it serves as a marker
-     * for the Reflaxe.Elixir compiler to detect and transform template calls.
+     * Currently acts as a passthrough, returning the template string as-is.
+     * The templates are already in valid HEEx format, so this works for now.
      * 
-     * Features:
-     * - JSX-like syntax with type-safe interpolation
-     * - Automatic conversion from ${} to {} (HEEx format)  
-     * - Compile-time template validation
-     * - Phoenix LiveView integration
-     * 
-     * @param templateStr The template string containing JSX-like markup
-     * @return String The processed template (at compile-time, becomes ~H sigil)
+     * @param templateStr The template string containing HEEx markup
+     * @return String The template string (unchanged)
      */
-    public static function hxx(templateStr: String): String;
+    extern inline public static function hxx(templateStr: String): String {
+        // For now, just return the string as-is
+        // We'll need to manually wrap in ~H sigil in the generated code
+        return templateStr;
+    }
 }

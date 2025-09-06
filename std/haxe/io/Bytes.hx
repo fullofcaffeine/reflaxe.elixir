@@ -42,18 +42,22 @@ class Bytes {
     }
     
     /**
-     * Create Bytes from a string
+     * Create Bytes from a string (single parameter version)
+     * 
+     * @param s The string to convert
+     */
+    @:overload(function(s: String): Bytes {})
+    /**
+     * Create Bytes from a string with encoding
      * 
      * @param s The string to convert
      * @param encoding Optional encoding (defaults to UTF8)
      */
-    public static function ofString(s: String, ?encoding: Encoding): Bytes {
-        if (encoding == null) encoding = UTF8;
-        
-        // Clean implementation without nested assignments
+    public static function ofString(s: String, encoding: Encoding = UTF8): Bytes {
+        // For now, always use UTF8 regardless of encoding parameter
+        // (Full encoding support would require more complex implementation)
         var binary = untyped __elixir__(':unicode.characters_to_binary({0}, :utf8)', s);
         var length = untyped __elixir__('byte_size({0})', binary);
-        
         return new Bytes(length, binary);
     }
     

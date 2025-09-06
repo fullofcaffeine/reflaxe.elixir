@@ -24,7 +24,8 @@ class Output {
     public var bigEndian(default, set): Bool;
     
     function set_bigEndian(b: Bool): Bool {
-        bigEndian = b;
+        // In Elixir, we need to return the value being set
+        // The actual struct update will be handled by the compiler
         return b;
     }
     
@@ -76,7 +77,7 @@ class Output {
      * Write a string to the output stream.
      */
     public function writeString(s: String): Void {
-        var b = Bytes.ofString(s);
+        var b = Bytes.ofString(s, null);
         write(b);
     }
     

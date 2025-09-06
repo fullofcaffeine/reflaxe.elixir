@@ -124,8 +124,9 @@ class TodoPubSub {
     
     /**
      * Convert TodoPubSubTopic enum to string for Elixir compatibility
+     * Note: Must be public to be passed as function reference in Elixir
      */
-    private static function topicToString(topic: TodoPubSubTopic): String {
+    public static function topicToString(topic: TodoPubSubTopic): String {
         return switch (topic) {
             case TodoUpdates: "todo:updates";
             case UserActivity: "user:activity";
@@ -135,8 +136,9 @@ class TodoPubSub {
     
     /**
      * Convert typed message to Dynamic object for Elixir PubSub
+     * Note: Must be public to be passed as function reference in Elixir
      */
-    private static function messageToElixir(message: TodoPubSubMessage): Dynamic {
+    public static function messageToElixir(message: TodoPubSubMessage): Dynamic {
         var basePayload = switch (message) {
             case TodoCreated(todo):
                 {
@@ -182,8 +184,9 @@ class TodoPubSub {
     
     /**
      * Parse Dynamic message to typed enum (implementation)
+     * Note: Must be public to be passed as function reference in Elixir
      */
-    private static function parseMessageImpl(msg: Dynamic): Option<TodoPubSubMessage> {
+    public static function parseMessageImpl(msg: Dynamic): Option<TodoPubSubMessage> {
         if (!SafePubSub.isValidMessage(msg)) {
             trace(SafePubSub.createMalformedMessageError(msg));
             return None;

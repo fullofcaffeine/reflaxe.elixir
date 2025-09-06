@@ -1,13 +1,19 @@
 defmodule TodoAppWeb.Presence do
-  use Phoenix.Presence, [otp_app: :todo_app]
+  use Phoenix.Presence, otp_app: :todo_app
   def track_user(socket, user) do
-    meta = %{:onlineAt => Date.now().getTime(), :userName => user.name, :userEmail => user.email, :avatar => nil, :editingTodoId => nil, :editingStartedAt => nil}
+    meta = %{:onlineAt => DateTime.utc_now() |> DateTime.to_unix(:millisecond), :userName => user.name, :userEmail => user.email, :avatar => nil, :editingTodoId => nil, :editingStartedAt => nil}
     Phoenix.Presence.track(socket, "users", Std.string(user.id), meta)
   end
   def update_user_editing(socket, user, todo_id) do
-    current_meta = get_user_presence(socket, user.id)
-    if (current_meta == nil), do: track_user(socket, user)
-    updated_meta = %{:onlineAt => current_meta.onlineAt, :userName => current_meta.userName, :userEmail => current_meta.userEmail, :avatar => current_meta.avatar, :editingTodoId => todo_id, :editingStartedAt => (if (todo_id != nil), do: Date.now().getTime(), else: nil)}
+    current_meta = TodoAppWeb.Presence.get_user_presence(socket, user.id)
+    if (current_meta == nil) do
+      TodoAppWeb.Presence.track_user(socket, user)
+    end
+    updated_meta = %{:onlineAt => current_meta.onlineAt, :userName => current_meta.userName, :userEmail => current_meta.userEmail, :avatar => current_meta.avatar, :editingTodoId => todo_id, :editingStartedAt => if (todo_id != nil) do
+  DateTime.utc_now() |> DateTime.to_unix(:millisecond)
+else
+  nil
+end}
     Phoenix.Presence.update(socket, "users", Std.string(user.id), updated_meta)
   end
   defp get_user_presence(socket, user_id) do
@@ -32,7 +38,6 @@ defmodule TodoAppWeb.Presence do
     g = all_users.keyValueIterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} ->
   if (acc_g.hasNext()) do
-    acc_g = acc_g.next()
     _user_id = acc_g.key
     entry = acc_g.value
     if (entry.metas.length > 0) do

@@ -208,8 +208,8 @@ enum ElixirASTDef {
     /** Anonymous function fn -> end */
     EFn(clauses: Array<EFnClause>);
     
-    /** Capture operator & */
-    ECapture(expr: ElixirAST);
+    /** Capture operator & with optional arity for function references */
+    ECapture(expr: ElixirAST, ?arity: Int);
     
     // ========================================================================
     // Module Directives
@@ -631,6 +631,7 @@ typedef ElixirMetadata = {
     ?isEndpoint: Bool,            // @:endpoint Phoenix.Endpoint
     ?isLiveView: Bool,            // @:liveview Phoenix.LiveView
     ?isSchema: Bool,              // @:schema Ecto.Schema
+    ?isRepo: Bool,                // @:repo Ecto.Repo
     ?isApplication: Bool,         // @:application OTP Application
     ?isGenServer: Bool,           // @:genserver GenServer behavior
     ?isRouter: Bool,              // @:router Phoenix.Router
@@ -671,7 +672,11 @@ typedef ElixirMetadata = {
     // Static Extern Method Handling (Added 2025-09-05)
     ?isStaticExternMethod: Bool,  // Marks a static method on an extern class
     ?nativeModule: String,        // The full module path from @:native annotation
-    ?methodName: String          // The method name being called
+    ?methodName: String,          // The method name being called
+    
+    // Function Reference Handling (Added 2025-09-05)
+    ?isFunctionReference: Bool,   // Marks a function being passed as a reference
+    ?arity: Int                   // Function arity for capture operator
 }
 
 // ============================================================================
@@ -816,11 +821,20 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
                                 }
                                 
                                 if (keyName != null && keyValue != null) {
-                                    // For certain keys like "name", convert module-like strings to atoms
+                                    // For certain keys, convert strings to atoms
                                     var finalValue = if (keyName == "name") {
                                         switch(keyValue.def) {
                                             case EString(s) if (isModuleName(s)):
                                                 // Convert module name string to atom
+                                                makeAST(EAtom(s), keyValue.pos);
+                                            default:
+                                                keyValue;
+                                        }
+                                    } else if (keyName == "keys") {
+                                        // Registry keys option should be an atom (:unique or :duplicate)
+                                        switch(keyValue.def) {
+                                            case EString(s) if (s == "unique" || s == "duplicate"):
+                                                // Convert to atom for Registry configuration
                                                 makeAST(EAtom(s), keyValue.pos);
                                             default:
                                                 keyValue;

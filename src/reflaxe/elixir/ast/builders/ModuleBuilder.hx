@@ -37,6 +37,7 @@ import reflaxe.elixir.ast.NameUtils;
  * - @:endpoint - Phoenix.Endpoint module with web server configuration
  * - @:liveview - Phoenix.LiveView module with mount/handle_event/render
  * - @:schema - Ecto.Schema module with database field definitions
+ * - @:repo - Ecto.Repo module with database access functions
  * - @:application - OTP Application module with supervision tree
  * - @:phoenixWeb - Phoenix Web helper module with DSL macros
  * - @:genserver - GenServer behavior module
@@ -48,13 +49,14 @@ import reflaxe.elixir.ast.NameUtils;
  * - isEndpoint: Boolean flag for @:endpoint annotation
  * - isLiveView: Boolean flag for @:liveview annotation  
  * - isSchema: Boolean flag for @:schema annotation
+ * - isRepo: Boolean flag for @:repo annotation
  * - isApplication: Boolean flag for @:application annotation
  * - isPhoenixWeb: Boolean flag for @:phoenixWeb annotation
  * - isGenServer: Boolean flag for @:genserver annotation
  * - isRouter: Boolean flag for @:router annotation
  * - isController: Boolean flag for @:controller annotation
  * - isPresence: Boolean flag for @:presence annotation
- * - appName: String with application name (for endpoint/application)
+ * - appName: String with application name (for endpoint/application/repo)
  * - tableName: String with database table name (for schema)
  * 
  * USAGE:
@@ -106,6 +108,9 @@ class ModuleBuilder {
         } else if (metadata.isSchema) {
             // For @:schema, build schema structure
             buildSchemaBody(classType, varFields, funcFields);
+        } else if (metadata.isRepo) {
+            // For @:repo, build minimal structure - transformer will add Ecto.Repo
+            buildMinimalBody(classType, varFields, funcFields);
         } else if (metadata.isApplication) {
             // For @:application, build OTP application structure
             buildApplicationBody(classType, varFields, funcFields);
@@ -188,6 +193,15 @@ class ModuleBuilder {
             metadata.isSchema = true;
             metadata.tableName = extractTableName(classType);
             #if debug_module_builder
+            #end
+        }
+        
+        // Check for Ecto Repo
+        if (classType.meta.has(":repo")) {
+            metadata.isRepo = true;
+            metadata.appName = extractAppName(classType);
+            #if debug_module_builder
+            trace('[ModuleBuilder] ✓ Found @:repo annotation on class: ${classType.name}');
             #end
         }
         

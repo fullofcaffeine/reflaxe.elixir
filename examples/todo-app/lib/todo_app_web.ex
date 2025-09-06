@@ -12,14 +12,14 @@ defmodule TodoAppWeb do
   end
   def controller() do
     quote do
-      use Phoenix.Controller, [formats: [:html, :json], layouts: [html: {TodoAppWeb.Layouts, :app}]]
+      use Phoenix.Controller, formats: [:html, :json], layouts: [html: {TodoAppWeb.Layouts, :app}]
       import Plug.Conn
       unquote(verified_routes())
     end
   end
   def live_view() do
     quote do
-      use Phoenix.LiveView, [layout: {TodoAppWeb.Layouts, :app}]
+      use Phoenix.LiveView, layout: {TodoAppWeb.Layouts, :app}
       unquote(html_helpers())
       _ = nil
     end
@@ -48,7 +48,7 @@ defmodule TodoAppWeb do
   end
   def verified_routes() do
     quote do
-      use Phoenix.VerifiedRoutes, [endpoint: :"TodoAppWeb.Endpoint", router: :"TodoAppWeb.Router", statics: TodoAppWeb.static_paths()]
+      use Phoenix.VerifiedRoutes, endpoint: :"TodoAppWeb.Endpoint", router: :"TodoAppWeb.Router", statics: TodoAppWeb.static_paths()
     end
   end
   def channel() do

@@ -1,0 +1,9 @@
+-cp .
+--no-output
+-lib reflaxe
+-cp ../../../src
+-cp ../../../std
+-D reflaxe.no_attributes_mode
+-D elixir_output=out
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

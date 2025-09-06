@@ -104,12 +104,16 @@ typedef SupervisorOptions = {
 
 /**
  * Supervisor restart strategy
+ * 
+ * @:elixirIdiomatic indicates these should compile to atoms like :one_for_one
+ * instead of tuples like {0}
  */
+@:elixirIdiomatic
 enum SupervisorStrategy {
-    OneForOne;    // Restart only failed child
-    OneForAll;    // Restart all children
-    RestForOne;   // Restart failed child and later siblings
-    SimpleOneForOne;  // Dynamic children
+    OneForOne;    // Restart only failed child → :one_for_one
+    OneForAll;    // Restart all children → :one_for_all
+    RestForOne;   // Restart failed child and later siblings → :rest_for_one
+    SimpleOneForOne;  // Dynamic children → :simple_one_for_one
 }
 
 /**

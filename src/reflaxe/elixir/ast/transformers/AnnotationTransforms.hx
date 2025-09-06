@@ -34,6 +34,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - @:endpoint - Phoenix.Endpoint with plugs, sockets, and static configuration
  * - @:liveview - Phoenix.LiveView with mount/handle_event/render callbacks
  * - @:schema - Ecto.Schema with field definitions and changeset functions
+ * - @:repo - Ecto.Repo with database access functions
  * - @:application - OTP Application with supervision tree configuration
  * - @:phoenixWeb - Phoenix Web module with router/controller/live_view macros
  * - @:controller - Phoenix.Controller with action functions
@@ -45,11 +46,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * 2. endpointTransformPass - Configures Phoenix.Endpoint module structure
  * 3. liveViewTransformPass - Sets up Phoenix.LiveView use statement
  * 4. schemaTransformPass - Adds Ecto.Schema use and schema block
- * 5. applicationTransformPass - Configures OTP Application callbacks
- * 6. controllerTransformPass - Sets up Phoenix.Controller use statement
- * 7. routerTransformPass - Sets up Phoenix.Router with pipelines and routes
- * 8. presenceTransformPass - Sets up Phoenix.Presence use statement
- * 9. exunitTransformPass - Sets up ExUnit.Case with test functions
+ * 5. repoTransformPass - Adds Ecto.Repo use with otp_app and adapter
+ * 6. applicationTransformPass - Configures OTP Application callbacks
+ * 7. controllerTransformPass - Sets up Phoenix.Controller use statement
+ * 8. routerTransformPass - Sets up Phoenix.Router with pipelines and routes
+ * 9. presenceTransformPass - Sets up Phoenix.Presence use statement
+ * 10. exunitTransformPass - Sets up ExUnit.Case with test functions
  * 
  * METADATA FLOW:
  * 1. ModuleBuilder detects annotations and sets metadata flags
@@ -624,6 +626,65 @@ class AnnotationTransforms {
   end';
             statements.push(makeAST(ERaw(changesetCode)));
         }
+        
+        return makeAST(EBlock(statements));
+    }
+    
+    /**
+     * Transform @:repo modules into Ecto.Repo structure
+     * 
+     * WHY: Ecto repositories need use Ecto.Repo with otp_app and adapter configuration
+     * WHAT: Adds use statement to enable database access functions (all/2, get/3, insert/2, etc.)
+     * HOW: Detects isRepo metadata and adds Ecto.Repo use statement with configuration
+     */
+    public static function repoTransformPass(ast: ElixirAST): ElixirAST {
+        #if debug_annotation_transforms
+        trace("[XRay Repo Transform] PASS START");
+        #end
+        
+        // Check the top-level node first for Repo modules
+        switch(ast.def) {
+            case EDefmodule(name, body) if (ast.metadata?.isRepo == true):
+                #if debug_annotation_transforms
+                trace('[XRay Repo Transform] ✓ Processing @:repo module: $name');
+                #end
+                
+                var appName = extractAppName(name);
+                var repoBody = buildRepoBody(name, appName);
+                
+                return makeASTWithMeta(
+                    EDefmodule(name, repoBody),
+                    ast.metadata,
+                    ast.pos
+                );
+                
+            default:
+                // Not a Repo module, just pass through
+                return ast;
+        }
+    }
+    
+    /**
+     * Build Ecto.Repo module body
+     * 
+     * WHY: Ecto repositories need use statement to inject database functions
+     * WHAT: Creates minimal module with use Ecto.Repo and configuration
+     * HOW: Generates use statement with otp_app and adapter options
+     */
+    static function buildRepoBody(moduleName: String, appName: String): ElixirAST {
+        var statements = [];
+        
+        // use Ecto.Repo, otp_app: :app_name, adapter: Ecto.Adapters.Postgres
+        var useOptions = makeAST(EKeywordList([
+            {key: "otp_app", value: makeAST(EAtom(appName))},
+            {key: "adapter", value: makeAST(EField(
+                makeAST(EField(makeAST(EVar("Ecto")), "Adapters")),
+                "Postgres"
+            ))}
+        ]));
+        
+        // EUse expects an array of options, with the keyword list as one element
+        statements.push(makeAST(EUse("Ecto.Repo", [useOptions])));
         
         return makeAST(EBlock(statements));
     }

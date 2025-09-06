@@ -3,6 +3,6 @@ defmodule PosException do
     %{}
   end
   def to_string(struct) do
-    "" <> nil.toString() <> " in " <> struct.posInfos.className <> "." <> struct.posInfos.methodName <> " at " <> struct.posInfos.fileName <> ":" <> struct.posInfos.lineNumber
+    "" <> nil.toString() <> " in " <> struct.posInfos.className <> "." <> struct.posInfos.methodName <> " at " <> struct.posInfos.fileName <> ":" <> Kernel.to_string(struct.posInfos.lineNumber)
   end
 end

@@ -681,8 +681,14 @@ class ElixirASTPrinter {
                     indentStr(indent) + 'end';
                 }
                 
-            case ECapture(expr):
-                '&' + print(expr, 0);
+            case ECapture(expr, arity):
+                // Function reference with arity: &Module.function/arity
+                if (arity != null) {
+                    '&' + print(expr, 0) + '/' + arity;
+                } else {
+                    // Regular capture without arity
+                    '&' + print(expr, 0);
+                }
                 
             // ================================================================
             // Module Directives
@@ -706,8 +712,29 @@ class ElixirASTPrinter {
                 result;
                 
             case EUse(module, options):
-                'use ' + module + 
-                    (options.length > 0 ? ', ' + [for (o in options) print(o, 0)].join(', ') : '');
+                // Special handling for keyword lists in use statements
+                if (options.length == 1) {
+                    switch(options[0].def) {
+                        case EKeywordList(pairs):
+                            // Print keyword list without brackets for use statement
+                            'use ' + module + ', ' + [for (p in pairs) {
+                                var value = switch(p.value.def) {
+                                    case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
+                                        isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+                                        '(' + print(p.value, 0) + ')';
+                                    case _:
+                                        print(p.value, 0);
+                                };
+                                p.key + ': ' + value;
+                            }].join(', ');
+                        case _:
+                            'use ' + module + ', ' + print(options[0], 0);
+                    }
+                } else if (options.length > 0) {
+                    'use ' + module + ', ' + [for (o in options) print(o, 0)].join(', ');
+                } else {
+                    'use ' + module;
+                }
                 
             case ERequire(module, as):
                 if (as != null) {

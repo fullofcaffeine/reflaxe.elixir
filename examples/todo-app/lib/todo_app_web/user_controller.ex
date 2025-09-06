@@ -1,11 +1,11 @@
 defmodule TodoAppWeb.UserController do
   use TodoAppWeb, :controller
   defp generate_unique_id() do
-    timestamp = Date.now().getTime()
+    timestamp = DateTime.utc_now() |> DateTime.to_unix(:millisecond)
     v = Math.random() * 10000
     i = Std.int(v)
     random = if v < 0 && v != i, do: (i - 1), else: i
-    "" <> timestamp <> "_" <> random
+    "" <> Kernel.to_string(timestamp) <> "_" <> Kernel.to_string(random)
   end
   def index(conn, params) do
     users = Users.list_users(nil)
