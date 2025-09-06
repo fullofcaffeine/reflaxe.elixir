@@ -5,37 +5,20 @@ defmodule JsonPrinter do
   defp write_value(struct, v, key) do
     v = if (struct.replacer != nil), do: struct.replacer(key, v), else: v
     if (v == nil), do: "null"
-    g = Type.typeof(v)
-    case (elem(g, 0)) do
-      0 ->
-        "null"
-      1 ->
-        Std.string(v)
-      2 ->
-        s = Std.string(v)
-        if (s == "NaN" || s == "Infinity" || s == "-Infinity"), do: "null"
-        s
-      3 ->
-        if v, do: "true", else: "false"
-      4 ->
-        struct.writeObject(v)
-      5 ->
-        "null"
-      6 ->
-        g = elem(g, 1)
-        c = g
-        class_name = Type.get_class_name(c)
-        if (class_name == "String") do
-          struct.quoteString(v)
-        else
-          if (class_name == "Array"), do: struct.writeArray(v), else: struct.writeObject(v)
-        end
-      7 ->
-        _g = elem(g, 1)
-        "null"
-      8 ->
-        "null"
+    if (Std.is(v, Bool)) do
+      if v, do: "true", else: "false"
     end
+    if (Std.is(v, Int)) do
+      Std.string(v)
+    end
+    if (Std.is(v, Float)) do
+      s = Std.string(v)
+      if (s == "NaN" || s == "Infinity" || s == "-Infinity"), do: "null"
+      s
+    end
+    if (Std.is(v, String)), do: struct.quoteString(v)
+    if (Std.is(v, Array)), do: struct.writeArray(v)
+    struct.writeObject(v)
   end
   defp write_array(struct, arr) do
     items = []
@@ -87,37 +70,7 @@ end)
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.charCodeAt(i)
-    if (c == nil) do
-      if (c < 32) do
-        hex = StringTools.hex(c, 4)
-      else
-        acc_result = acc_result <> s.charAt(i)
-      end
-    else
-      case (c) do
-        8 ->
-          acc_result = acc_result <> "\\b"
-        9 ->
-          acc_result = acc_result <> "\\t"
-        10 ->
-          acc_result = acc_result <> "\\n"
-        12 ->
-          acc_result = acc_result <> "\\f"
-        13 ->
-          acc_result = acc_result <> "\\r"
-        34 ->
-          acc_result = acc_result <> "\\\""
-        92 ->
-          acc_result = acc_result <> "\\\\"
-        _ ->
-          if (c < 32) do
-            hex = StringTools.hex(c, 4)
-            acc_result = acc_result <> "\\u" <> hex
-          else
-            acc_result = acc_result <> s.charAt(i)
-          end
-      end
-    end
+    if (c == nil), do: nil, else: nil
     {:cont, {acc_result, acc_g1, acc_g, acc_state}}
   else
     {:halt, {acc_result, acc_g1, acc_g, acc_state}}

@@ -33,20 +33,7 @@ end)
     buf = Bytes.alloc(bufsize)
     total = Bytes.alloc(0)
     len = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {len, total, :ok}, fn _, {acc_len, acc_total, acc_state} ->
-  if true do
-    n = struct.readBytes(buf, 0, bufsize)
-    if (n == 0) do
-      throw(:break)
-    end
-    new_total = Bytes.alloc(acc_len + n)
-    new_total.blit(0, acc_total, 0, acc_len)
-    new_total.blit(acc_len, buf, 0, n)
-    {:cont, {acc_len, acc_total, acc_state}}
-  else
-    {:halt, {acc_len, acc_total, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len, :ok}, fn _, {acc_total, acc_len, acc_state} -> nil end)
     total
   end
   def read_string(struct, len) do

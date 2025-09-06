@@ -38,44 +38,40 @@ class JsonPrinter {
             v = replacer(key, v);
         }
         
-        // Handle null
+        // Use simple type checking instead of Type.typeof for now
+        // since pattern matching on ValueType enum is not working correctly
+        
         if (v == null) {
             return "null";
         }
         
-        // Handle different types
-        switch (Type.typeof(v)) {
-            case TNull:
-                return "null";
-            case TBool:
-                return v ? "true" : "false";
-            case TInt:
-                return Std.string(v);
-            case TFloat:
-                var s = Std.string(v);
-                // Check for NaN/Infinity
-                if (s == "NaN" || s == "Infinity" || s == "-Infinity") {
-                    return "null";
-                }
-                return s;
-            case TClass(c):
-                var className = Type.getClassName(c);
-                if (className == "String") {
-                    return quoteString(v);
-                } else if (className == "Array") {
-                    return writeArray(v);
-                } else {
-                    return writeObject(v);
-                }
-            case TObject:
-                return writeObject(v);
-            case TFunction:
-                return "null";
-            case TEnum(_):
-                return "null";
-            case TUnknown:
-                return "null";
+        if (Std.isOfType(v, Bool)) {
+            return v ? "true" : "false";
         }
+        
+        if (Std.isOfType(v, Int)) {
+            return Std.string(v);
+        }
+        
+        if (Std.isOfType(v, Float)) {
+            var s = Std.string(v);
+            // Check for NaN/Infinity
+            if (s == "NaN" || s == "Infinity" || s == "-Infinity") {
+                return "null";
+            }
+            return s;
+        }
+        
+        if (Std.isOfType(v, String)) {
+            return quoteString(v);
+        }
+        
+        if (Std.isOfType(v, Array)) {
+            return writeArray(v);
+        }
+        
+        // Default to object serialization
+        return writeObject(v);
     }
     
     /**

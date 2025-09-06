@@ -3,7 +3,7 @@ defmodule BalancedTree do
     %{}
   end
   def set(struct, key, value) do
-    root = struct.setLoop(key, value, struct.root)
+    %{struct | root: struct.setLoop(key, value, struct.root)}
   end
   def get(struct, key) do
     node = struct.root
@@ -11,11 +11,7 @@ defmodule BalancedTree do
   if (acc_node != nil) do
     c = struct.compare(key, acc_node.key)
     if (c == 0), do: acc_node.value
-    if (c < 0) do
-      acc_node = acc_node.left
-    else
-      acc_node = acc_node.right
-    end
+    nil
     {:cont, {acc_node, acc_state}}
   else
     {:halt, {acc_node, acc_state}}
@@ -25,10 +21,7 @@ end)
   end
   def remove(struct, key) do
     result = struct.removeLoop(key, struct.root)
-    if (result != nil) do
-      root = result.node
-      result.found
-    end
+    if (result != nil), do: result.found
     false
   end
   def exists(struct, key) do
@@ -36,15 +29,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
   if (acc_node != nil) do
     c = struct.compare(key, acc_node.key)
-    if (c == 0) do
-      true
-    else
-      if (c < 0) do
-        acc_node = acc_node.left
-      else
-        acc_node = acc_node.right
-      end
-    end
+    if (c == 0), do: true, else: nil
     {:cont, {acc_node, acc_state}}
   else
     {:halt, {acc_node, acc_state}}
@@ -167,6 +152,6 @@ end)
     if (struct.root == nil), do: "[]", else: "[" <> struct.root.toString() <> "]"
   end
   def clear(struct) do
-    root = nil
+    nil
   end
 end
