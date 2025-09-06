@@ -1,7 +1,7 @@
 defmodule TodoAppWeb.TodoLive do
   use TodoAppWeb, :live_view
   def mount(_params, session, socket) do
-    g = TodoPubSub.subscribe(:todo_updates)
+    g = TodoPubSub.subscribe({0})
     case (elem(g, 0)) do
       0 ->
         _g = elem(g, 1)
@@ -11,10 +11,10 @@ defmodule TodoAppWeb.TodoLive do
         reason = g
         {:Error, "Failed to subscribe to updates: " <> reason}
     end
-    current_user = get_user_from_session(session)
-    todos = load_todos(current_user.id)
-    presence_socket = Presence.track_user(socket, current_user)
-    assigns = %{:todos => todos, :filter => "all", :sortBy => "created", :currentUser => current_user, :editingTodo => nil, :showForm => false, :searchQuery => "", :selectedTags => [], :totalTodos => todos.length, :completedTodos => count_completed(todos), :pendingTodos => count_pending(todos), :onlineUsers => %{}}
+    current_user = TodoAppWeb.TodoLive.get_user_from_session(session)
+    todos = TodoAppWeb.TodoLive.load_todos(current_user.id)
+    presence_socket = TodoAppWeb.Presence.track_user(socket, current_user)
+    assigns = %{:todos => todos, :filter => "all", :sortBy => "created", :currentUser => current_user, :editingTodo => nil, :showForm => false, :searchQuery => "", :selectedTags => [], :totalTodos => todos.length, :completedTodos => TodoAppWeb.TodoLive.count_completed(todos), :pendingTodos => TodoAppWeb.TodoLive.count_pending(todos), :onlineUsers => %{}}
     updated_socket = Phoenix.LiveView.assign(presence_socket, assigns)
     {:Ok, updated_socket}
   end
@@ -23,25 +23,25 @@ defmodule TodoAppWeb.TodoLive do
   0 ->
     g = elem(event, 1)
     params = g
-    create_todo_typed(params, socket)
+    TodoAppWeb.TodoLive.create_todo_typed(params, socket)
   1 ->
     g = elem(event, 1)
     id = g
-    toggle_todo_status(id, socket)
+    TodoAppWeb.TodoLive.toggle_todo_status(id, socket)
   2 ->
     g = elem(event, 1)
     id = g
-    delete_todo(id, socket)
+    TodoAppWeb.TodoLive.delete_todo(id, socket)
   3 ->
     g = elem(event, 1)
     id = g
-    start_editing(id, socket)
+    TodoAppWeb.TodoLive.start_editing(id, socket)
   4 ->
     g = elem(event, 1)
     params = g
-    save_edited_todo_typed(params, socket)
+    TodoAppWeb.TodoLive.save_edited_todo_typed(params, socket)
   5 ->
-    presence_socket = Presence.update_user_editing(socket, socket.assigns.currentUser, nil)
+    presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.currentUser, nil)
     SafeAssigns.set_editing_todo(presence_socket, nil)
   6 ->
     g = elem(event, 1)
@@ -58,19 +58,19 @@ defmodule TodoAppWeb.TodoLive do
   9 ->
     g = elem(event, 1)
     tag = g
-    toggle_tag_filter(tag, socket)
+    TodoAppWeb.TodoLive.toggle_tag_filter(tag, socket)
   10 ->
     g = elem(event, 1)
     g1 = elem(event, 2)
     id = g
     priority = g1
-    update_todo_priority(id, priority, socket)
+    TodoAppWeb.TodoLive.update_todo_priority(id, priority, socket)
   11 ->
     SafeAssigns.set_show_form(socket, not socket.assigns.showForm)
   12 ->
-    complete_all_todos(socket)
+    TodoAppWeb.TodoLive.complete_all_todos(socket)
   13 ->
-    delete_completed_todos(socket)
+    TodoAppWeb.TodoLive.delete_completed_todos(socket)
 end
     {:NoReply, result_socket}
   end
@@ -84,19 +84,19 @@ end
       0 ->
         g = elem(parsed_msg, 1)
         todo = g
-        add_todo_to_list(todo, socket)
+        TodoAppWeb.TodoLive.add_todo_to_list(todo, socket)
       1 ->
         g = elem(parsed_msg, 1)
         todo = g
-        update_todo_in_list(todo, socket)
+        TodoAppWeb.TodoLive.update_todo_in_list(todo, socket)
       2 ->
         g = elem(parsed_msg, 1)
         id = g
-        remove_todo_from_list(id, socket)
+        TodoAppWeb.TodoLive.remove_todo_from_list(id, socket)
       3 ->
         g = elem(parsed_msg, 1)
         action = g
-        handle_bulk_update(action, socket)
+        TodoAppWeb.TodoLive.handle_bulk_update(action, socket)
       4 ->
         g = elem(parsed_msg, 1)
         _user_id = g
@@ -112,13 +112,13 @@ end
         level = g1
         flash_type = case (elem(level, 0)) do
   0 ->
-    :info
+    {0}
   1 ->
-    :warning
+    {2}
   2 ->
-    :error
+    {3}
   3 ->
-    :error
+    {3}
 end
         Phoenix.LiveView.put_flash(socket, flash_type, message)
     end
@@ -136,7 +136,7 @@ end
       0 ->
         g = elem(g, 1)
         todo = g
-        g = TodoPubSub.broadcast(:todo_updates, {:TodoCreated, todo})
+        g = TodoPubSub.broadcast({0}, {:TodoCreated, todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -146,12 +146,12 @@ end
             reason = g
             Log.trace("Failed to broadcast todo creation: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 276, :className => "server.live.TodoLive", :methodName => "createTodoTyped"})
         end
-        updated_socket = load_and_assign_todos(socket)
+        updated_socket = TodoAppWeb.TodoLive.load_and_assign_todos(socket)
         SafeAssigns.set_show_form(updated_socket, false)
       1 ->
         g = elem(g, 1)
         _changeset = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to create todo")
+        Phoenix.LiveView.put_flash(socket, {3}, "Failed to create todo")
     end
   end
   defp create_new_todo(params, socket) do
@@ -159,14 +159,18 @@ end
   Date.from_string(params.dueDate)
 else
   nil
-end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), :userId => socket.assigns.currentUser.id}
+end, :tags => if (params.tags != nil) do
+  TodoAppWeb.TodoLive.parse_tags(params.tags)
+else
+  []
+end, :userId => socket.assigns.currentUser.id}
     changeset = Todo.changeset(Todo.new(), todo_params)
     g = TodoApp.Repo.insert(changeset)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         todo = g
-        g = TodoPubSub.broadcast(:todo_updates, {:TodoCreated, todo})
+        g = TodoPubSub.broadcast({0}, {:TodoCreated, todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -179,15 +183,15 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
         todos = [todo] ++ socket.assigns.todos
         live_socket = socket
         updated_socket = Phoenix.LiveView.assign([live_socket, todos, false], %{:todos => {1}, :show_form => {2}})
-        Phoenix.LiveView.put_flash(updated_socket, :success, "Todo created successfully!")
+        Phoenix.LiveView.put_flash(updated_socket, {1}, "Todo created successfully!")
       1 ->
         g = elem(g, 1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to create todo: " <> Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, {3}, "Failed to create todo: " <> Std.string(reason))
     end
   end
   defp toggle_todo_status(id, socket) do
-    todo = find_todo(id, socket.assigns.todos)
+    todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
     updated_changeset = Todo.toggle_completed(todo)
     g = TodoApp.Repo.update(updated_changeset)
@@ -195,7 +199,7 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
       0 ->
         g = elem(g, 1)
         updated_todo = g
-        g = TodoPubSub.broadcast(:todo_updates, {:TodoUpdated, updated_todo})
+        g = TodoPubSub.broadcast({0}, {:TodoUpdated, updated_todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -205,22 +209,22 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
             reason = g
             Log.trace("Failed to broadcast todo update: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 344, :className => "server.live.TodoLive", :methodName => "toggleTodoStatus"})
         end
-        update_todo_in_list(updated_todo, socket)
+        TodoAppWeb.TodoLive.update_todo_in_list(updated_todo, socket)
       1 ->
         g = elem(g, 1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to update todo: " <> Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, {3}, "Failed to update todo: " <> Std.string(reason))
     end
   end
   defp delete_todo(id, socket) do
-    todo = find_todo(id, socket.assigns.todos)
+    todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
     g = TodoApp.Repo.delete(todo)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         _deleted_todo = g
-        g = TodoPubSub.broadcast(:todo_updates, {:TodoDeleted, id})
+        g = TodoPubSub.broadcast({0}, {:TodoDeleted, id})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -230,15 +234,15 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
             reason = g
             Log.trace("Failed to broadcast todo deletion: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 366, :className => "server.live.TodoLive", :methodName => "deleteTodo"})
         end
-        remove_todo_from_list(id, socket)
+        TodoAppWeb.TodoLive.remove_todo_from_list(id, socket)
       1 ->
         g = elem(g, 1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to delete todo: " <> Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, {3}, "Failed to delete todo: " <> Std.string(reason))
     end
   end
   defp update_todo_priority(id, priority, socket) do
-    todo = find_todo(id, socket.assigns.todos)
+    todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
     updated_changeset = Todo.update_priority(todo, priority)
     g = TodoApp.Repo.update(updated_changeset)
@@ -246,7 +250,7 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
       0 ->
         g = elem(g, 1)
         updated_todo = g
-        g = TodoPubSub.broadcast(:todo_updates, {:TodoUpdated, updated_todo})
+        g = TodoPubSub.broadcast({0}, {:TodoUpdated, updated_todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -256,11 +260,11 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
             reason = g
             Log.trace("Failed to broadcast todo priority update: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 390, :className => "server.live.TodoLive", :methodName => "updateTodoPriority"})
         end
-        update_todo_in_list(updated_todo, socket)
+        TodoAppWeb.TodoLive.update_todo_in_list(updated_todo, socket)
       1 ->
         g = elem(g, 1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to update priority: " <> Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, {3}, "Failed to update priority: " <> Std.string(reason))
     end
   end
   defp add_todo_to_list(todo, socket) do
@@ -270,19 +274,19 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: []), 
     Phoenix.LiveView.assign([live_socket, todos], %{:todos => {1}})
   end
   defp load_todos(user_id) do
-    query = Ecto.EctoQuery_Impl_.order_by(Ecto.EctoQuery_Impl_.where(Ecto.Query.from(Todo), "userId", user_id), "inserted_at", "asc")
+    query = EctoQuery_Impl_.order_by(EctoQuery_Impl_.where(Ecto.Query.from(Todo), "userId", user_id), "inserted_at", "asc")
     TodoApp.Repo.all(query)
   end
   defp find_todo(id, todos) do
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, :ok}, fn _, {acc_g, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, :ok}, fn _, {acc_todos, acc_g, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.id == id), do: todo
-    {:cont, {acc_g, acc_todos, acc_state}}
+    {:cont, {acc_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_state}}
   end
 end)
     nil
@@ -290,16 +294,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, todos, :ok}, fn _, {acc_count, acc_g, acc_todos, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_count, acc_todos, acc_g, acc_state}}
+    {:cont, {acc_count, acc_g, acc_todos, acc_state}}
   else
-    {:halt, {acc_count, acc_todos, acc_g, acc_state}}
+    {:halt, {acc_count, acc_g, acc_todos, acc_state}}
   end
 end)
     count
@@ -307,16 +311,16 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_count, acc_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
   else
-    {:halt, {acc_count, acc_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
   end
 end)
     count
@@ -329,23 +333,23 @@ end)
     %{:id => (if (session.userId != nil), do: session.userId, else: 1), :name => "Demo User", :email => "demo@example.com", :passwordHash => "hashed_password", :confirmedAt => nil, :lastLoginAt => nil, :active => true}
   end
   defp load_and_assign_todos(socket) do
-    todos = load_todos(socket.assigns.currentUser.id)
+    todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.currentUser.id)
     live_socket = socket
-    Phoenix.LiveView.assign([live_socket, todos, todos.length, count_completed(todos), count_pending(todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+    Phoenix.LiveView.assign([live_socket, todos, todos.length, TodoAppWeb.TodoLive.count_completed(todos), TodoAppWeb.TodoLive.count_pending(todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
   defp update_todo_in_list(todo, socket) do
     todos = socket.assigns.todos
     updated_todos = Enum.map(todos, fn t -> if (t.id == todo.id), do: todo, else: t end)
-    Phoenix.LiveView.assign([socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+    Phoenix.LiveView.assign([socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
   defp remove_todo_from_list(id, socket) do
     todos = socket.assigns.todos
     updated_todos = Enum.filter(todos, fn t -> t.id != id end)
-    Phoenix.LiveView.assign([socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+    Phoenix.LiveView.assign([socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
   defp start_editing(id, socket) do
-    todo = find_todo(id, socket.assigns.todos)
-    presence_socket = Presence.update_user_editing(socket, socket.assigns.currentUser, id)
+    todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
+    presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.currentUser, id)
     SafeAssigns.set_editing_todo(presence_socket, todo)
   end
   defp complete_all_todos(socket) do
@@ -356,7 +360,6 @@ end)
     todo = pending[g]
     acc_g = acc_g + 1
     updated_changeset = Todo.toggle_completed(todo)
-    acc_g = TodoApp.Repo.update(updated_changeset)
     case (elem(acc_g, 0)) do
       0 ->
         acc_g = elem(acc_g, 1)
@@ -365,14 +368,14 @@ end)
       1 ->
         acc_g = elem(acc_g, 1)
         reason = acc_g
-        Log.trace("Failed to complete todo " <> todo.id <> ": " <> Std.string(reason), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 523, :className => "server.live.TodoLive", :methodName => "completeAllTodos"})
+        Log.trace("Failed to complete todo " <> Kernel.to_string(todo.id) <> ": " <> Std.string(reason), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 523, :className => "server.live.TodoLive", :methodName => "completeAllTodos"})
     end
     {:cont, {acc_pending, acc_g, acc_state}}
   else
     {:halt, {acc_pending, acc_g, acc_state}}
   end
 end)
-    g = TodoPubSub.broadcast(:todo_updates, {:BulkUpdate, :complete_all})
+    g = TodoPubSub.broadcast({0}, {:BulkUpdate, {0}})
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
@@ -382,34 +385,34 @@ end)
         reason = g
         Log.trace("Failed to broadcast bulk complete: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 532, :className => "server.live.TodoLive", :methodName => "completeAllTodos"})
     end
-    updated_todos = load_todos(socket.assigns.currentUser.id)
+    updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.currentUser.id)
     current_assigns = socket.assigns
     complete_assigns = %{:todos => updated_todos, :filter => current_assigns.filter, :sortBy => current_assigns.sortBy, :currentUser => current_assigns.currentUser, :editingTodo => current_assigns.editingTodo, :showForm => current_assigns.showForm, :searchQuery => current_assigns.searchQuery, :selectedTags => current_assigns.selectedTags, :totalTodos => updated_todos.length, :completedTodos => updated_todos.length, :pendingTodos => 0, :onlineUsers => current_assigns.onlineUsers}
     updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
-    Phoenix.LiveView.put_flash(updated_socket, :info, "All todos marked as completed!")
+    Phoenix.LiveView.put_flash(updated_socket, {0}, "All todos marked as completed!")
   end
   defp delete_completed_todos(socket) do
     completed = Enum.filter(socket.assigns.todos, fn t -> t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {completed, g, :ok}, fn _, {acc_completed, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, completed, :ok}, fn _, {acc_g, acc_completed, acc_state} ->
   if (acc_g < acc_completed.length) do
     todo = completed[g]
     acc_g = acc_g + 1
     TodoApp.Repo.delete(todo)
-    {:cont, {acc_completed, acc_g, acc_state}}
+    {:cont, {acc_g, acc_completed, acc_state}}
   else
-    {:halt, {acc_completed, acc_g, acc_state}}
+    {:halt, {acc_g, acc_completed, acc_state}}
   end
 end)
-    TodoPubSub.broadcast(:todo_updates, {:BulkUpdate, :delete_completed})
+    TodoPubSub.broadcast({0}, {:BulkUpdate, {1}})
     remaining = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     current_assigns = socket.assigns
     complete_assigns = %{:todos => remaining, :filter => current_assigns.filter, :sortBy => current_assigns.sortBy, :currentUser => current_assigns.currentUser, :editingTodo => current_assigns.editingTodo, :showForm => current_assigns.showForm, :searchQuery => current_assigns.searchQuery, :selectedTags => current_assigns.selectedTags, :totalTodos => remaining.length, :completedTodos => 0, :pendingTodos => remaining.length, :onlineUsers => current_assigns.onlineUsers}
     updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
-    Phoenix.LiveView.put_flash(updated_socket, :info, "Completed todos deleted!")
+    Phoenix.LiveView.put_flash(updated_socket, {0}, "Completed todos deleted!")
   end
   defp start_editing_old(id, socket) do
-    todo = find_todo(id, socket.assigns.todos)
+    todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
     SafeAssigns.set_editing_todo(socket, todo)
   end
   defp save_edited_todo_typed(params, socket) do
@@ -421,7 +424,7 @@ end)
       0 ->
         g = elem(g, 1)
         updated_todo = g
-        g = TodoPubSub.broadcast(:todo_updates, {:TodoUpdated, updated_todo})
+        g = TodoPubSub.broadcast({0}, {:TodoUpdated, updated_todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -431,13 +434,13 @@ end)
             reason = g
             Log.trace("Failed to broadcast todo update: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 613, :className => "server.live.TodoLive", :methodName => "saveEditedTodoTyped"})
         end
-        presence_socket = Presence.update_user_editing(socket, socket.assigns.currentUser, nil)
+        presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.currentUser, nil)
         updated_socket = SafeAssigns.set_editing_todo(presence_socket, nil)
-        load_and_assign_todos(updated_socket)
+        TodoAppWeb.TodoLive.load_and_assign_todos(updated_socket)
       1 ->
         g = elem(g, 1)
         _changeset = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to update todo")
+        Phoenix.LiveView.put_flash(socket, {3}, "Failed to update todo")
     end
   end
   defp save_edited_todo(params, socket) do
@@ -447,14 +450,18 @@ end)
   Date.from_string(params.dueDate)
 else
   nil
-end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: nil), :completed => params.completed}
+end, :tags => if (params.tags != nil) do
+  TodoAppWeb.TodoLive.parse_tags(params.tags)
+else
+  nil
+end, :completed => params.completed}
     changeset = Todo.changeset(todo, todo_params)
     g = TodoApp.Repo.update(changeset)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
         updated_todo = g
-        g = TodoPubSub.broadcast(:todo_updates, {:TodoUpdated, updated_todo})
+        g = TodoPubSub.broadcast({0}, {:TodoUpdated, updated_todo})
         case (elem(g, 0)) do
           0 ->
             _g = elem(g, 1)
@@ -464,25 +471,25 @@ end, :tags => (if (params.tags != nil), do: parse_tags(params.tags), else: nil),
             reason = g
             Log.trace("Failed to broadcast todo save: " <> reason, %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 650, :className => "server.live.TodoLive", :methodName => "saveEditedTodo"})
         end
-        updated_socket = update_todo_in_list(updated_todo, socket)
+        updated_socket = TodoAppWeb.TodoLive.update_todo_in_list(updated_todo, socket)
         live_socket = updated_socket
         Phoenix.LiveView.assign(live_socket, :editing_todo, nil)
       1 ->
         g = elem(g, 1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, :error, "Failed to save todo: " <> Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, {3}, "Failed to save todo: " <> Std.string(reason))
     end
   end
   defp handle_bulk_update(action, socket) do
     case (elem(action, 0)) do
       0 ->
-        updated_todos = load_todos(socket.assigns.currentUser.id)
+        updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.currentUser.id)
         live_socket = socket
-        Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+        Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
       1 ->
-        updated_todos = load_todos(socket.assigns.currentUser.id)
+        updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.currentUser.id)
         live_socket = socket
-        Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+        Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
       2 ->
         g = elem(action, 1)
         _priority = g
@@ -516,7 +523,8 @@ end
     "edit"
   end
   def render(assigns) do
-    HXX.hxx("\n\t\t\t<div class=\"min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900\">\n\t\t\t\t<div class=\"container mx-auto px-4 py-8 max-w-6xl\">\n\t\t\t\t\t\n\t\t\t\t\t<!-- Header -->\n\t\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8\">\n\t\t\t\t\t\t<div class=\"flex justify-between items-center mb-6\">\n\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t<h1 class=\"text-4xl font-bold text-gray-800 dark:text-white mb-2\">\n\t\t\t\t\t\t\t\t\t📝 Todo Manager\n\t\t\t\t\t\t\t\t</h1>\n\t\t\t\t\t\t\t\t<p class=\"text-gray-600 dark:text-gray-400\">\n\t\t\t\t\t\t\t\t\tWelcome, <%= @currentUser.name %>!\n\t\t\t\t\t\t\t\t</p>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Statistics -->\n\t\t\t\t\t\t\t<div class=\"flex space-x-6\">\n\t\t\t\t\t\t\t\t<div class=\"text-center\">\n\t\t\t\t\t\t\t\t\t<div class=\"text-3xl font-bold text-blue-600 dark:text-blue-400\">\n\t\t\t\t\t\t\t\t\t\t<%= @totalTodos %>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">Total</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div class=\"text-center\">\n\t\t\t\t\t\t\t\t\t<div class=\"text-3xl font-bold text-green-600 dark:text-green-400\">\n\t\t\t\t\t\t\t\t\t\t<%= @completedTodos %>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">Completed</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div class=\"text-center\">\n\t\t\t\t\t\t\t\t\t<div class=\"text-3xl font-bold text-amber-600 dark:text-amber-400\">\n\t\t\t\t\t\t\t\t\t\t<%= @pendingTodos %>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">Pending</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<!-- Add Todo Button -->\n\t\t\t\t\t\t<button phx-click=\"toggle_form\" class=\"w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md\">\n\t\t\t\t\t\t\t<%= if @showForm, do: \"✖ Cancel\", else: \"➕ Add New Todo\" %>\n\t\t\t\t\t\t</button>\n\t\t\t\t\t</div>\n\t\t\t\t\t\n\t\t\t\t\t<!-- New Todo Form -->\n\t\t\t\t\t<%= if @showForm do %>\n\t\t\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500\">\n\t\t\t\t\t\t\t<form phx-submit=\"create_todo\" class=\"space-y-4\">\n\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\tTitle *\n\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t<input type=\"text\" name=\"title\" required\n\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\"\n\t\t\t\t\t\t\t\t\t\tplaceholder=\"What needs to be done?\" />\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\tDescription\n\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t<textarea name=\"description\" rows=\"3\"\n\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\"\n\t\t\t\t\t\t\t\t\t\tplaceholder=\"Add more details...\"></textarea>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<div class=\"grid grid-cols-2 gap-4\">\n\t\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\t\tPriority\n\t\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t\t<select name=\"priority\"\n\t\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\">\n\t\t\t\t\t\t\t\t\t\t\t<option value=\"low\">Low</option>\n\t\t\t\t\t\t\t\t\t\t\t<option value=\"medium\" selected>Medium</option>\n\t\t\t\t\t\t\t\t\t\t\t<option value=\"high\">High</option>\n\t\t\t\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\t\tDue Date\n\t\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t\t<input type=\"date\" name=\"dueDate\"\n\t\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\" />\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\tTags (comma-separated)\n\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t<input type=\"text\" name=\"tags\"\n\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\"\n\t\t\t\t\t\t\t\t\t\tplaceholder=\"work, personal, urgent\" />\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<button type=\"submit\"\n\t\t\t\t\t\t\t\t\tclass=\"w-full py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors shadow-md\">\n\t\t\t\t\t\t\t\t\t✅ Create Todo\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t</form>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t<% end %>\n\t\t\t\t\t\n\t\t\t\t\t<!-- Filters and Search -->\n\t\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8\">\n\t\t\t\t\t\t<div class=\"flex flex-wrap gap-4\">\n\t\t\t\t\t\t\t<!-- Search -->\n\t\t\t\t\t\t\t<div class=\"flex-1 min-w-[300px]\">\n\t\t\t\t\t\t\t\t<form phx-change=\"SearchTodos\" class=\"relative\">\n\t\t\t\t\t\t\t\t\t<input type=\"search\" name=\"query\" value={@searchQuery}\n\t\t\t\t\t\t\t\t\t\tclass=\"w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\"\n\t\t\t\t\t\t\t\t\t\tplaceholder=\"Search todos...\" />\n\t\t\t\t\t\t\t\t\t<span class=\"absolute left-3 top-2.5 text-gray-400\">🔍</span>\n\t\t\t\t\t\t\t\t</form>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Filter Buttons -->\n\t\t\t\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t\t\t\t<button phx-click=\"FilterTodos\" phx-value-filter=\"all\"\n\t\t\t\t\t\t\t\t\tclass={\"px-4 py-2 rounded-lg font-medium transition-colors \" <> if @filter == \"all\", do: \"bg-blue-500 text-white\", else: \"bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300\"}>\n\t\t\t\t\t\t\t\t\tAll\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t\t<button phx-click=\"FilterTodos\" phx-value-filter=\"active\"\n\t\t\t\t\t\t\t\t\tclass={\"px-4 py-2 rounded-lg font-medium transition-colors \" <> if @filter == \"active\", do: \"bg-blue-500 text-white\", else: \"bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300\"}>\n\t\t\t\t\t\t\t\t\tActive\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t\t<button phx-click=\"FilterTodos\" phx-value-filter=\"completed\"\n\t\t\t\t\t\t\t\t\tclass={\"px-4 py-2 rounded-lg font-medium transition-colors \" <> if @filter == \"completed\", do: \"bg-blue-500 text-white\", else: \"bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300\"}>\n\t\t\t\t\t\t\t\t\tCompleted\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Sort Dropdown -->\n\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t<select phx-change=\"sort_todos\" name=\"sortBy\"\n\t\t\t\t\t\t\t\t\tclass=\"px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\">\n\t\t\t\t\t\t\t\t\t<option value=\"created\" selected={@sortBy == \"created\"}>Sort by Date</option>\n\t\t\t\t\t\t\t\t\t<option value=\"priority\" selected={@sortBy == \"priority\"}>Sort by Priority</option>\n\t\t\t\t\t\t\t\t\t<option value=\"dueDate\" selected={@sortBy == \"dueDate\"}>Sort by Due Date</option>\n\t\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t\n\t\t\t\t\t<!-- Online Users Panel -->\n\t\t\t\t\t" <> render_presence_panel(assigns) <> "\n\t\t\t\t\t\n\t\t\t\t\t<!-- Bulk Actions -->\n\t\t\t\t\t" <> render_bulk_actions(assigns) <> "\n\t\t\t\t\t\n\t\t\t\t\t<!-- Todo List -->\n\t\t\t\t\t<div class=\"space-y-4\">\n\t\t\t\t\t\t" <> render_todo_list(assigns) <> "\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t")
+    template_str = "\n\t\t\t<div class=\"min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900\">\n\t\t\t\t<div class=\"container mx-auto px-4 py-8 max-w-6xl\">\n\t\t\t\t\t\n\t\t\t\t\t<!-- Header -->\n\t\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8\">\n\t\t\t\t\t\t<div class=\"flex justify-between items-center mb-6\">\n\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t<h1 class=\"text-4xl font-bold text-gray-800 dark:text-white mb-2\">\n\t\t\t\t\t\t\t\t\t📝 Todo Manager\n\t\t\t\t\t\t\t\t</h1>\n\t\t\t\t\t\t\t\t<p class=\"text-gray-600 dark:text-gray-400\">\n\t\t\t\t\t\t\t\t\tWelcome, <%= @currentUser.name %>!\n\t\t\t\t\t\t\t\t</p>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Statistics -->\n\t\t\t\t\t\t\t<div class=\"flex space-x-6\">\n\t\t\t\t\t\t\t\t<div class=\"text-center\">\n\t\t\t\t\t\t\t\t\t<div class=\"text-3xl font-bold text-blue-600 dark:text-blue-400\">\n\t\t\t\t\t\t\t\t\t\t<%= @totalTodos %>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">Total</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div class=\"text-center\">\n\t\t\t\t\t\t\t\t\t<div class=\"text-3xl font-bold text-green-600 dark:text-green-400\">\n\t\t\t\t\t\t\t\t\t\t<%= @completedTodos %>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">Completed</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t<div class=\"text-center\">\n\t\t\t\t\t\t\t\t\t<div class=\"text-3xl font-bold text-amber-600 dark:text-amber-400\">\n\t\t\t\t\t\t\t\t\t\t<%= @pendingTodos %>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">Pending</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<!-- Add Todo Button -->\n\t\t\t\t\t\t<button phx-click=\"toggle_form\" class=\"w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md\">\n\t\t\t\t\t\t\t<%= if @showForm, do: \"✖ Cancel\", else: \"➕ Add New Todo\" %>\n\t\t\t\t\t\t</button>\n\t\t\t\t\t</div>\n\t\t\t\t\t\n\t\t\t\t\t<!-- New Todo Form -->\n\t\t\t\t\t<%= if @showForm do %>\n\t\t\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500\">\n\t\t\t\t\t\t\t<form phx-submit=\"create_todo\" class=\"space-y-4\">\n\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\tTitle *\n\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t<input type=\"text\" name=\"title\" required\n\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\"\n\t\t\t\t\t\t\t\t\t\tplaceholder=\"What needs to be done?\" />\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\tDescription\n\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t<textarea name=\"description\" rows=\"3\"\n\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\"\n\t\t\t\t\t\t\t\t\t\tplaceholder=\"Add more details...\"></textarea>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<div class=\"grid grid-cols-2 gap-4\">\n\t\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\t\tPriority\n\t\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t\t<select name=\"priority\"\n\t\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\">\n\t\t\t\t\t\t\t\t\t\t\t<option value=\"low\">Low</option>\n\t\t\t\t\t\t\t\t\t\t\t<option value=\"medium\" selected>Medium</option>\n\t\t\t\t\t\t\t\t\t\t\t<option value=\"high\">High</option>\n\t\t\t\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\t\tDue Date\n\t\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t\t<input type=\"date\" name=\"dueDate\"\n\t\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\" />\n\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t\t<label class=\"block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2\">\n\t\t\t\t\t\t\t\t\t\tTags (comma-separated)\n\t\t\t\t\t\t\t\t\t</label>\n\t\t\t\t\t\t\t\t\t<input type=\"text\" name=\"tags\"\n\t\t\t\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\"\n\t\t\t\t\t\t\t\t\t\tplaceholder=\"work, personal, urgent\" />\n\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<button type=\"submit\"\n\t\t\t\t\t\t\t\t\tclass=\"w-full py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors shadow-md\">\n\t\t\t\t\t\t\t\t\t✅ Create Todo\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t</form>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t<% end %>\n\t\t\t\t\t\n\t\t\t\t\t<!-- Filters and Search -->\n\t\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8\">\n\t\t\t\t\t\t<div class=\"flex flex-wrap gap-4\">\n\t\t\t\t\t\t\t<!-- Search -->\n\t\t\t\t\t\t\t<div class=\"flex-1 min-w-[300px]\">\n\t\t\t\t\t\t\t\t<form phx-change=\"SearchTodos\" class=\"relative\">\n\t\t\t\t\t\t\t\t\t<input type=\"search\" name=\"query\" value={@searchQuery}\n\t\t\t\t\t\t\t\t\t\tclass=\"w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\"\n\t\t\t\t\t\t\t\t\t\tplaceholder=\"Search todos...\" />\n\t\t\t\t\t\t\t\t\t<span class=\"absolute left-3 top-2.5 text-gray-400\">🔍</span>\n\t\t\t\t\t\t\t\t</form>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Filter Buttons -->\n\t\t\t\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t\t\t\t<button phx-click=\"FilterTodos\" phx-value-filter=\"all\"\n\t\t\t\t\t\t\t\t\tclass={\"px-4 py-2 rounded-lg font-medium transition-colors \" <> if @filter == \"all\", do: \"bg-blue-500 text-white\", else: \"bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300\"}>\n\t\t\t\t\t\t\t\t\tAll\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t\t<button phx-click=\"FilterTodos\" phx-value-filter=\"active\"\n\t\t\t\t\t\t\t\t\tclass={\"px-4 py-2 rounded-lg font-medium transition-colors \" <> if @filter == \"active\", do: \"bg-blue-500 text-white\", else: \"bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300\"}>\n\t\t\t\t\t\t\t\t\tActive\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t\t<button phx-click=\"FilterTodos\" phx-value-filter=\"completed\"\n\t\t\t\t\t\t\t\t\tclass={\"px-4 py-2 rounded-lg font-medium transition-colors \" <> if @filter == \"completed\", do: \"bg-blue-500 text-white\", else: \"bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300\"}>\n\t\t\t\t\t\t\t\t\tCompleted\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Sort Dropdown -->\n\t\t\t\t\t\t\t<div>\n\t\t\t\t\t\t\t\t<select phx-change=\"sort_todos\" name=\"sortBy\"\n\t\t\t\t\t\t\t\t\tclass=\"px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\">\n\t\t\t\t\t\t\t\t\t<option value=\"created\" selected={@sortBy == \"created\"}>Sort by Date</option>\n\t\t\t\t\t\t\t\t\t<option value=\"priority\" selected={@sortBy == \"priority\"}>Sort by Priority</option>\n\t\t\t\t\t\t\t\t\t<option value=\"dueDate\" selected={@sortBy == \"dueDate\"}>Sort by Due Date</option>\n\t\t\t\t\t\t\t\t</select>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t\t\n\t\t\t\t\t<!-- Online Users Panel -->\n\t\t\t\t\t" <> TodoAppWeb.TodoLive.render_presence_panel(assigns) <> "\n\t\t\t\t\t\n\t\t\t\t\t<!-- Bulk Actions -->\n\t\t\t\t\t" <> TodoAppWeb.TodoLive.render_bulk_actions(assigns) <> "\n\t\t\t\t\t\n\t\t\t\t\t<!-- Todo List -->\n\t\t\t\t\t<div class=\"space-y-4\">\n\t\t\t\t\t\t" <> TodoAppWeb.TodoLive.render_todo_list(assigns) <> "\n\t\t\t\t\t</div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t"
+    template_str
   end
   defp render_presence_panel(assigns) do
     online_count = 0
@@ -526,7 +534,6 @@ end
     g = this1.keyValueIterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, online_count, :ok}, fn _, {acc_g, acc_online_count, acc_state} ->
   if (acc_g.hasNext()) do
-    acc_g = acc_g.next()
     _user_id = acc_g.key
     entry = acc_g.value
     acc_online_count = acc_online_count + 1
@@ -534,7 +541,7 @@ end
       meta = entry.metas[0]
       editing_badge = if (meta.editingTodoId != nil), do: " <span class=\"text-xs text-blue-500\">✏️</span>", else: ""
       online_users_list ++ ["<div class=\"flex items-center space-x-2\">\n\t\t\t\t\t<div class=\"w-2 h-2 bg-green-500 rounded-full animate-pulse\"></div>\n\t\t\t\t\t<span class=\"text-sm text-gray-700 dark:text-gray-300\">" <> meta.userName <> editing_badge <> "</span>\n\t\t\t\t</div>"]
-      if (meta.editingTodoId != nil), do: editing_indicators ++ ["<div class=\"text-xs text-gray-500 dark:text-gray-400 italic\">\n\t\t\t\t\t\t🖊️ " <> meta.userName <> " is editing todo #" <> meta.editingTodoId <> "\n\t\t\t\t\t</div>"]
+      if (meta.editingTodoId != nil), do: editing_indicators ++ ["<div class=\"text-xs text-gray-500 dark:text-gray-400 italic\">\n\t\t\t\t\t\t🖊️ " <> meta.userName <> " is editing todo #" <> Kernel.to_string(meta.editingTodoId) <> "\n\t\t\t\t\t</div>"]
     end
     {:cont, {acc_g, acc_online_count, acc_state}}
   else
@@ -542,7 +549,7 @@ end
   end
 end)
     if (online_count == 0), do: ""
-    "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6\">\n\t\t\t<div class=\"flex items-center justify-between mb-2\">\n\t\t\t\t<h3 class=\"text-sm font-semibold text-gray-700 dark:text-gray-300\">\n\t\t\t\t\t👥 Online Users (" <> online_count <> ")\n\t\t\t\t</h3>\n\t\t\t</div>\n\t\t\t<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">\n\t\t\t\t" <> Enum.join(online_users_list, "") <> "\n\t\t\t</div>\n\t\t\t" <> (if (editing_indicators.length > 0) do
+    "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6\">\n\t\t\t<div class=\"flex items-center justify-between mb-2\">\n\t\t\t\t<h3 class=\"text-sm font-semibold text-gray-700 dark:text-gray-300\">\n\t\t\t\t\t👥 Online Users (" <> Kernel.to_string(online_count) <> ")\n\t\t\t\t</h3>\n\t\t\t</div>\n\t\t\t<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">\n\t\t\t\t" <> Enum.join(online_users_list, "") <> "\n\t\t\t</div>\n\t\t\t" <> (if (editing_indicators.length > 0) do
   "<div class=\"mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1\">" <> Enum.join(editing_indicators, "") <> "</div>"
 else
   ""
@@ -550,36 +557,22 @@ end) <> "\n\t\t</div>"
   end
   defp render_bulk_actions(assigns) do
     if (assigns.todos.length == 0), do: ""
-    filtered_count = filter_todos(assigns.todos, assigns.filter, assigns.searchQuery).length
-    "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center\">\n\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">\n\t\t\t\t\tShowing " <> filtered_count <> " of " <> assigns.totalTodos <> " todos\n\t\t\t\t</div>\n\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t<button phx-click=\"bulk_complete\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm\">\n\t\t\t\t\t\t✅ Complete All\n\t\t\t\t\t</button>\n\t\t\t\t\t<button phx-click=\"bulk_delete_completed\" \n\t\t\t\t\t\tdata-confirm=\"Are you sure you want to delete all completed todos?\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm\">\n\t\t\t\t\t\t🗑️ Delete Completed\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>"
+    filtered_count = TodoAppWeb.TodoLive.filter_todos(assigns.todos, assigns.filter, assigns.searchQuery).length
+    "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center\">\n\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">\n\t\t\t\t\tShowing " <> Kernel.to_string(filtered_count) <> " of " <> Kernel.to_string(assigns.totalTodos) <> " todos\n\t\t\t\t</div>\n\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t<button phx-click=\"bulk_complete\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm\">\n\t\t\t\t\t\t✅ Complete All\n\t\t\t\t\t</button>\n\t\t\t\t\t<button phx-click=\"bulk_delete_completed\" \n\t\t\t\t\t\tdata-confirm=\"Are you sure you want to delete all completed todos?\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm\">\n\t\t\t\t\t\t🗑️ Delete Completed\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>"
   end
   defp render_todo_list(assigns) do
-    if (assigns.todos.length == 0) do
-      ~H"""
-
-				<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center">
-					<div class="text-6xl mb-4">📋</div>
-					<h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-						No todos yet!
-					</h3>
-					<p class="text-gray-600 dark:text-gray-400">
-						Click "Add New Todo" to get started.
-					</p>
-				</div>
-			
-"""
-    end
-    filtered_todos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
+    if (assigns.todos.length == 0), do: "\n\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center\">\n\t\t\t\t\t<div class=\"text-6xl mb-4\">📋</div>\n\t\t\t\t\t<h3 class=\"text-xl font-semibold text-gray-800 dark:text-white mb-2\">\n\t\t\t\t\t\tNo todos yet!\n\t\t\t\t\t</h3>\n\t\t\t\t\t<p class=\"text-gray-600 dark:text-gray-400\">\n\t\t\t\t\t\tClick \"Add New Todo\" to get started.\n\t\t\t\t\t</p>\n\t\t\t\t</div>\n\t\t\t"
+    filtered_todos = TodoAppWeb.TodoLive.filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
     todo_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, filtered_todos, :ok}, fn _, {acc_g, acc_filtered_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
   if (acc_g < acc_filtered_todos.length) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
-    todo_items ++ [render_todo_item(todo, assigns.editingTodo)]
-    {:cont, {acc_g, acc_filtered_todos, acc_state}}
+    todo_items ++ [TodoAppWeb.TodoLive.render_todo_item(todo, assigns.editingTodo)]
+    {:cont, {acc_filtered_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_filtered_todos, acc_state}}
+    {:halt, {acc_filtered_todos, acc_g, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")
@@ -598,16 +591,16 @@ end)
     "border-gray-300"
 end
     if is_editing do
-      "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 " <> priority_color <> "\">\n\t\t\t\t\t<form phx-submit=\"save_todo\" class=\"space-y-4\">\n\t\t\t\t\t\t<input type=\"hidden\" name=\"id\" value=\"" <> todo.id <> "\" />\n\t\t\t\t\t\t<input type=\"text\" name=\"title\" value=\"" <> todo.title <> "\" required\n\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\" />\n\t\t\t\t\t\t<textarea name=\"description\" rows=\"2\"\n\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\">" <> todo.description <> "</textarea>\n\t\t\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t\t\t<button type=\"submit\" class=\"px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600\">\n\t\t\t\t\t\t\t\tSave\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t<button type=\"button\" phx-click=\"cancel_edit\" class=\"px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400\">\n\t\t\t\t\t\t\t\tCancel\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</form>\n\t\t\t\t</div>"
+      "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 " <> priority_color <> "\">\n\t\t\t\t\t<form phx-submit=\"save_todo\" class=\"space-y-4\">\n\t\t\t\t\t\t<input type=\"hidden\" name=\"id\" value=\"" <> Kernel.to_string(todo.id) <> "\" />\n\t\t\t\t\t\t<input type=\"text\" name=\"title\" value=\"" <> todo.title <> "\" required\n\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\" />\n\t\t\t\t\t\t<textarea name=\"description\" rows=\"2\"\n\t\t\t\t\t\t\tclass=\"w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white\">" <> todo.description <> "</textarea>\n\t\t\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t\t\t<button type=\"submit\" class=\"px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600\">\n\t\t\t\t\t\t\t\tSave\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t<button type=\"button\" phx-click=\"cancel_edit\" class=\"px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400\">\n\t\t\t\t\t\t\t\tCancel\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</form>\n\t\t\t\t</div>"
     else
       completed_class = if (todo.completed), do: "opacity-60", else: ""
       text_decoration = if (todo.completed), do: "line-through", else: ""
       checkmark = if (todo.completed), do: "<span class=\"text-green-500\">✓</span>", else: ""
-      "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 " <> priority_color <> " " <> completed_class <> " transition-all hover:shadow-xl\">\n\t\t\t\t\t<div class=\"flex items-start space-x-4\">\n\t\t\t\t\t\t<!-- Checkbox -->\n\t\t\t\t\t\t<button phx-click=\"toggle_todo\" phx-value-id=\"" <> todo.id <> "\"\n\t\t\t\t\t\t\tclass=\"mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors\">\n\t\t\t\t\t\t\t" <> checkmark <> "\n\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<!-- Content -->\n\t\t\t\t\t\t<div class=\"flex-1\">\n\t\t\t\t\t\t\t<h3 class=\"text-lg font-semibold text-gray-800 dark:text-white " <> text_decoration <> "\">\n\t\t\t\t\t\t\t\t" <> todo.title <> "\n\t\t\t\t\t\t\t</h3>\n\t\t\t\t\t\t\t" <> (if (todo.description != nil && todo.description != ""), do: "<p class=\"text-gray-600 dark:text-gray-400 mt-1 " <> text_decoration <> "\">" <> todo.description <> "</p>", else: "") <> "\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Meta info -->\n\t\t\t\t\t\t\t<div class=\"flex flex-wrap gap-2 mt-3\">\n\t\t\t\t\t\t\t\t<span class=\"px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs\">\n\t\t\t\t\t\t\t\t\tPriority: " <> todo.priority <> "\n\t\t\t\t\t\t\t\t</span>\n\t\t\t\t\t\t\t\t" <> (if (todo.dueDate != nil) do
+      "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 " <> priority_color <> " " <> completed_class <> " transition-all hover:shadow-xl\">\n\t\t\t\t\t<div class=\"flex items-start space-x-4\">\n\t\t\t\t\t\t<!-- Checkbox -->\n\t\t\t\t\t\t<button phx-click=\"toggle_todo\" phx-value-id=\"" <> Kernel.to_string(todo.id) <> "\"\n\t\t\t\t\t\t\tclass=\"mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors\">\n\t\t\t\t\t\t\t" <> checkmark <> "\n\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<!-- Content -->\n\t\t\t\t\t\t<div class=\"flex-1\">\n\t\t\t\t\t\t\t<h3 class=\"text-lg font-semibold text-gray-800 dark:text-white " <> text_decoration <> "\">\n\t\t\t\t\t\t\t\t" <> todo.title <> "\n\t\t\t\t\t\t\t</h3>\n\t\t\t\t\t\t\t" <> (if (todo.description != nil && todo.description != ""), do: "<p class=\"text-gray-600 dark:text-gray-400 mt-1 " <> text_decoration <> "\">" <> todo.description <> "</p>", else: "") <> "\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t<!-- Meta info -->\n\t\t\t\t\t\t\t<div class=\"flex flex-wrap gap-2 mt-3\">\n\t\t\t\t\t\t\t\t<span class=\"px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs\">\n\t\t\t\t\t\t\t\t\tPriority: " <> todo.priority <> "\n\t\t\t\t\t\t\t\t</span>\n\t\t\t\t\t\t\t\t" <> (if (todo.dueDate != nil) do
   "<span class=\"px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs\">Due: " <> Std.string(todo.dueDate) <> "</span>"
 else
   ""
-end) <> "\n\t\t\t\t\t\t\t\t" <> render_tags(todo.tags) <> "\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<!-- Actions -->\n\t\t\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t\t\t<button phx-click=\"edit_todo\" phx-value-id=\"" <> todo.id <> "\"\n\t\t\t\t\t\t\t\tclass=\"p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors\">\n\t\t\t\t\t\t\t\t✏️\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t<button phx-click=\"delete_todo\" phx-value-id=\"" <> todo.id <> "\"\n\t\t\t\t\t\t\t\tdata-confirm=\"Are you sure?\"\n\t\t\t\t\t\t\t\tclass=\"p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors\">\n\t\t\t\t\t\t\t\t🗑️\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>"
+end) <> "\n\t\t\t\t\t\t\t\t" <> TodoAppWeb.TodoLive.render_tags(todo.tags) <> "\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\n\t\t\t\t\t\t<!-- Actions -->\n\t\t\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t\t\t<button phx-click=\"edit_todo\" phx-value-id=\"" <> Kernel.to_string(todo.id) <> "\"\n\t\t\t\t\t\t\t\tclass=\"p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors\">\n\t\t\t\t\t\t\t\t✏️\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t<button phx-click=\"delete_todo\" phx-value-id=\"" <> Kernel.to_string(todo.id) <> "\"\n\t\t\t\t\t\t\t\tdata-confirm=\"Are you sure?\"\n\t\t\t\t\t\t\t\tclass=\"p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors\">\n\t\t\t\t\t\t\t\t🗑️\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</div>"
     end
   end
   defp render_tags(tags) do
@@ -643,7 +636,7 @@ end
     filtered
   end
   defp filter_and_sort_todos(todos, filter, sort_by, search_query) do
-    filtered = filter_todos(todos, filter, search_query)
+    filtered = TodoAppWeb.TodoLive.filter_todos(todos, filter, search_query)
     filtered
   end
 end

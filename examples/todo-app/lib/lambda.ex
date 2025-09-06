@@ -4,7 +4,6 @@ defmodule Lambda do
     v = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
@@ -18,7 +17,6 @@ end)
     v = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
@@ -32,7 +30,6 @@ end)
     v = a.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
@@ -42,7 +39,6 @@ end)
     v = b.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
@@ -56,7 +52,6 @@ end)
     v = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     arr ++ [f.(acc_v)]
     {:cont, {acc_v, acc_state}}
   else
@@ -70,7 +65,6 @@ end)
     v = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     if (f.(acc_v)), do: arr ++ [acc_v]
     {:cont, {acc_v, acc_state}}
   else
@@ -84,8 +78,7 @@ end)
     v = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc, v, :ok}, fn _, {acc_acc, acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
-    acc_acc = f.(acc_v, acc_acc)
+    nil
     {:cont, {acc_acc, acc_v, acc_state}}
   else
     {:halt, {acc_acc, acc_v, acc_state}}
@@ -110,7 +103,6 @@ end)
       v = it.iterator()
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, n, :ok}, fn _, {acc_v, acc_n, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     if (pred.(acc_v)) do
       acc_n = acc_n + 1
     end
@@ -126,7 +118,6 @@ end)
     v = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     if (f.(acc_v)), do: true
     {:cont, {acc_v, acc_state}}
   else
@@ -139,7 +130,6 @@ end)
     v = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     if (not f.(acc_v)), do: false
     {:cont, {acc_v, acc_state}}
   else
@@ -152,7 +142,6 @@ end)
     v = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
   if (acc_v.hasNext()) do
-    acc_v = acc_v.next()
     if (f.(acc_v)), do: acc_v
     {:cont, {acc_v, acc_state}}
   else
@@ -179,7 +168,6 @@ end)
     x = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x, i, :ok}, fn _, {acc_x, acc_i, acc_state} ->
   if (acc_x.hasNext()) do
-    acc_x = acc_x.next()
     if (acc_x == v), do: acc_i
     acc_i = acc_i + 1
     {:cont, {acc_x, acc_i, acc_state}}
@@ -193,7 +181,6 @@ end)
     x = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x, :ok}, fn _, {acc_x, acc_state} ->
   if (acc_x.hasNext()) do
-    acc_x = acc_x.next()
     if (acc_x == v), do: true
     {:cont, {acc_x, acc_state}}
   else
@@ -206,7 +193,6 @@ end)
     x = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x, :ok}, fn _, {acc_x, acc_state} ->
   if (acc_x.hasNext()) do
-    acc_x = acc_x.next()
     f.(acc_x)
     {:cont, {acc_x, acc_state}}
   else

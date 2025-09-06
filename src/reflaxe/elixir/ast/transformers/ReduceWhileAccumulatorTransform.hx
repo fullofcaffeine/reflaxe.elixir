@@ -154,12 +154,24 @@ class ReduceWhileAccumulatorTransform {
      * Transform the clause body to properly handle accumulator updates
      */
     static function transformClauseBody(body: ElixirAST, accVarNames: Array<String>): ElixirAST {
-        // Look for patterns where accumulator variables are reassigned
+        // Deep transform to handle nested structures
+        return transformBodyRecursive(body, accVarNames, new Map<String, ElixirAST>());
+    }
+    
+    static function transformBodyRecursive(body: ElixirAST, accVarNames: Array<String>, accUpdates: Map<String, ElixirAST>): ElixirAST {
+        if (body == null) return null;
+        
         switch(body.def) {
+            case EIf(condition, thenBranch, elseBranch):
+                // Transform both branches of the if statement
+                var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy());
+                var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy()) : null;
+                return makeAST(EIf(condition, transformedThen, transformedElse));
+                
             case EBlock(exprs):
-                // Check if any expressions are assignments to accumulator variables
+                // Process block expressions
                 var transformedExprs = [];
-                var accumulatorUpdates = new Map<String, ElixirAST>();
+                var localUpdates = accUpdates.copy();
                 
                 for (i in 0...exprs.length) {
                     var expr = exprs[i];
@@ -167,21 +179,20 @@ class ReduceWhileAccumulatorTransform {
                     // Check if this is an assignment to an accumulator variable
                     switch(expr.def) {
                         case EMatch(PVar(varName), value) if (accVarNames.indexOf(varName) >= 0):
-                            // This is an accumulator variable update
-                            // Store the update instead of doing direct assignment
-                            accumulatorUpdates.set(varName, value);
+                            // Store the update - we'll use it when we see the return tuple
+                            localUpdates.set(varName, value);
                             
                             #if debug_reduce_while_transform
                             trace('[XRay ReduceWhile] Found accumulator update: $varName');
                             #end
+                            // Don't add the assignment to the output
                             
-                        case ETuple([atom, _]):
-                            // This might be a return statement {:cont, acc} or {:halt, acc}
-                            // Replace the accumulator with updated values
+                        case ETuple([atom, accTuple]):
+                            // This is a return statement {:cont, acc} or {:halt, acc}
                             switch(atom.def) {
                                 case EAtom("cont" | "halt"):
-                                    // Build new accumulator tuple with updates
-                                    var newAcc = buildUpdatedAccumulator(accVarNames, accumulatorUpdates);
+                                    // Build new accumulator with updates
+                                    var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, localUpdates);
                                     transformedExprs.push(makeAST(ETuple([atom, newAcc])));
                                     
                                 default:
@@ -189,20 +200,64 @@ class ReduceWhileAccumulatorTransform {
                             }
                             
                         default:
-                            transformedExprs.push(expr);
+                            // Recursively transform other expressions
+                            transformedExprs.push(transformBodyRecursive(expr, accVarNames, localUpdates));
                     }
                 }
                 
                 return makeAST(EBlock(transformedExprs));
                 
-            case ETuple([atom, acc]):
+            case ETuple([atom, accTuple]):
                 // Direct return of {:cont/:halt, accumulator}
-                // This is already correct
-                return body;
+                switch(atom.def) {
+                    case EAtom("cont" | "halt"):
+                        // Apply any accumulated updates
+                        var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, accUpdates);
+                        return makeAST(ETuple([atom, newAcc]));
+                    default:
+                        return body;
+                }
                 
             default:
                 // For other patterns, return as-is
                 return body;
+        }
+    }
+    
+    /**
+     * Apply accumulator updates to the return tuple
+     */
+    static function applyAccumulatorUpdates(accTuple: ElixirAST, varNames: Array<String>, updates: Map<String, ElixirAST>): ElixirAST {
+        // Check if updates map has any entries
+        var hasUpdates = false;
+        for (key in updates.keys()) {
+            hasUpdates = true;
+            break;
+        }
+        
+        if (!hasUpdates) {
+            return accTuple;
+        }
+        
+        switch(accTuple.def) {
+            case ETuple(elements):
+                // Update tuple elements
+                var newElements = [];
+                for (i in 0...elements.length) {
+                    if (i < varNames.length && updates.exists(varNames[i])) {
+                        newElements.push(updates.get(varNames[i]));
+                    } else {
+                        newElements.push(elements[i]);
+                    }
+                }
+                return makeAST(ETuple(newElements));
+                
+            case EVar(name) if (updates.exists(name)):
+                // Single variable accumulator
+                return updates.get(name);
+                
+            default:
+                return accTuple;
         }
     }
     
