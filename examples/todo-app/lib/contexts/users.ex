@@ -12,8 +12,8 @@ end
 else
   query
 end
-      query = if (filter.isActive != nil) do
-  EctoQuery_Impl_.where(query, "active", filter.isActive)
+      query = if (filter.is_active != nil) do
+  EctoQuery_Impl_.where(query, "active", filter.is_active)
 else
   query
 end

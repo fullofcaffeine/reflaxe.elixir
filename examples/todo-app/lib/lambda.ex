@@ -42,7 +42,7 @@ defmodule Lambda do
     if (pred == nil) do
       item = it.iterator()
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, item, :ok}, fn _, {acc_n, acc_item, acc_state} ->
-  if (acc_item.hasNext()) do
+  if (acc_item.has_next()) do
     _item = acc_item.next()
     acc_n = acc_n + 1
     {:cont, {acc_n, acc_item, acc_state}}
@@ -74,7 +74,7 @@ end)
   def empty(it) do
     item = it.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {item, :ok}, fn _, {acc_item, acc_state} ->
-  if (acc_item.hasNext()) do
+  if (acc_item.has_next()) do
     _item = acc_item.next()
     false
     {:cont, {acc_item, acc_state}}
@@ -87,7 +87,7 @@ end)
   def index_of(it, v) do
     i = 0
     x = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x, i, :ok}, fn _, {acc_x, acc_i, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, x, :ok}, fn _, {acc_i, acc_x, acc_state} -> nil end)
     -1
   end
   def has(it, v) do
