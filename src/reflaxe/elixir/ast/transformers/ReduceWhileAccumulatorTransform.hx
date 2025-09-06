@@ -163,10 +163,95 @@ class ReduceWhileAccumulatorTransform {
         
         switch(body.def) {
             case EIf(condition, thenBranch, elseBranch):
-                // Transform both branches of the if statement
+                // Check if this if statement contains accumulator assignments
+                var hasAccAssignments = checkForAccumulatorAssignments(thenBranch, accVarNames) || 
+                                        (elseBranch != null && checkForAccumulatorAssignments(elseBranch, accVarNames));
+                
+                if (hasAccAssignments) {
+                    // This if contains accumulator assignments, we need to capture the result
+                    // Generate a new variable name for the result
+                    var resultVarName = findAccumulatorVarInIf(thenBranch, elseBranch, accVarNames);
+                    
+                    if (resultVarName != null) {
+                        // Transform to capture the assignment result
+                        var transformedIf = makeAST(EIf(
+                            condition,
+                            extractValueFromAssignment(thenBranch, resultVarName),
+                            elseBranch != null ? extractValueFromAssignment(elseBranch, resultVarName) : null
+                        ));
+                        
+                        // Store the update for later use
+                        accUpdates.set(resultVarName, transformedIf);
+                        
+                        #if debug_reduce_while_transform
+                        trace('[XRay ReduceWhile] Found accumulator update in if: $resultVarName');
+                        #end
+                        
+                        // Return empty block (the assignment is captured in accUpdates)
+                        // We can't return null as it breaks subsequent transformations
+                        return makeAST(EBlock([]));
+                    }
+                }
+                
+                // Regular if without accumulator assignments
                 var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy());
                 var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy()) : null;
                 return makeAST(EIf(condition, transformedThen, transformedElse));
+                
+            case ECase(expr, branches):
+                // Handle case statements with accumulator updates
+                var hasAccAssignments = false;
+                var accVarName: String = null;
+                
+                // Check if any branch contains accumulator assignments
+                for (branch in branches) {
+                    if (checkForAccumulatorAssignments(branch.body, accVarNames)) {
+                        hasAccAssignments = true;
+                        // Find which accumulator variable is being assigned
+                        accVarName = findAssignedAccumulator(branch.body, accVarNames);
+                        if (accVarName != null) break;
+                    }
+                }
+                
+                if (hasAccAssignments && accVarName != null) {
+                    // Transform case branches to return values instead of assigning
+                    var transformedBranches = [];
+                    for (branch in branches) {
+                        var transformedBody = extractValueFromAssignment(branch.body, accVarName);
+                        // If no assignment found in this branch, keep original body
+                        if (transformedBody == branch.body) {
+                            // Still need to recursively transform
+                            transformedBody = transformBodyRecursive(branch.body, accVarNames, accUpdates.copy());
+                        }
+                        transformedBranches.push({
+                            pattern: branch.pattern,
+                            guard: branch.guard,
+                            body: transformedBody
+                        });
+                    }
+                    
+                    // Store the case expression as an update
+                    var transformedCase = makeAST(ECase(expr, transformedBranches));
+                    accUpdates.set(accVarName, transformedCase);
+                    
+                    #if debug_reduce_while_transform
+                    trace('[XRay ReduceWhile] Found accumulator update in case: $accVarName');
+                    #end
+                    
+                    // Return empty block
+                    return makeAST(EBlock([]));
+                } else {
+                    // Regular case without accumulator assignments
+                    var transformedBranches = [];
+                    for (branch in branches) {
+                        transformedBranches.push({
+                            pattern: branch.pattern,
+                            guard: branch.guard,
+                            body: transformBodyRecursive(branch.body, accVarNames, accUpdates.copy())
+                        });
+                    }
+                    return makeAST(ECase(expr, transformedBranches));
+                }
                 
             case EBlock(exprs):
                 // Process block expressions
@@ -201,7 +286,11 @@ class ReduceWhileAccumulatorTransform {
                             
                         default:
                             // Recursively transform other expressions
-                            transformedExprs.push(transformBodyRecursive(expr, accVarNames, localUpdates));
+                            var transformed = transformBodyRecursive(expr, accVarNames, localUpdates);
+                            // Only add non-null results
+                            if (transformed != null) {
+                                transformedExprs.push(transformed);
+                            }
                     }
                 }
                 
@@ -295,5 +384,85 @@ class ReduceWhileAccumulatorTransform {
             case EAtom("Elixir.Enum"): true;
             default: false;
         };
+    }
+    
+    /**
+     * Check if an AST node contains assignments to accumulator variables
+     */
+    static function checkForAccumulatorAssignments(node: ElixirAST, accVarNames: Array<String>): Bool {
+        if (node == null) return false;
+        
+        switch(node.def) {
+            case EMatch(PVar(varName), _) if (accVarNames.indexOf(varName) >= 0):
+                return true;
+            case EBlock(exprs):
+                for (expr in exprs) {
+                    if (checkForAccumulatorAssignments(expr, accVarNames)) {
+                        return true;
+                    }
+                }
+                return false;
+            case EIf(_, thenBranch, elseBranch):
+                return checkForAccumulatorAssignments(thenBranch, accVarNames) ||
+                       (elseBranch != null && checkForAccumulatorAssignments(elseBranch, accVarNames));
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Find which accumulator variable is being assigned in an if statement
+     */
+    static function findAccumulatorVarInIf(thenBranch: ElixirAST, elseBranch: ElixirAST, accVarNames: Array<String>): Null<String> {
+        // Check then branch for assignments
+        var varName = findAssignedAccumulator(thenBranch, accVarNames);
+        if (varName != null) return varName;
+        
+        // Check else branch if it exists
+        if (elseBranch != null) {
+            return findAssignedAccumulator(elseBranch, accVarNames);
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Find an accumulator variable being assigned in an AST node
+     */
+    static function findAssignedAccumulator(node: ElixirAST, accVarNames: Array<String>): Null<String> {
+        if (node == null) return null;
+        
+        switch(node.def) {
+            case EMatch(PVar(varName), _) if (accVarNames.indexOf(varName) >= 0):
+                return varName;
+            case EBlock(exprs):
+                for (expr in exprs) {
+                    var result = findAssignedAccumulator(expr, accVarNames);
+                    if (result != null) return result;
+                }
+                return null;
+            default:
+                return null;
+        }
+    }
+    
+    /**
+     * Extract the value being assigned from an assignment statement
+     */
+    static function extractValueFromAssignment(node: ElixirAST, varName: String): ElixirAST {
+        if (node == null) return null;
+        
+        switch(node.def) {
+            case EMatch(PVar(name), value) if (name == varName):
+                return value;
+            case EBlock(exprs):
+                for (expr in exprs) {
+                    var result = extractValueFromAssignment(expr, varName);
+                    if (result != null) return result;
+                }
+                return node; // Return the whole block if no assignment found
+            default:
+                return node;
+        }
     }
 }

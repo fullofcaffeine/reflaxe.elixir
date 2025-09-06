@@ -353,6 +353,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.reduceWhileAccumulatorPass
         });
         
+        // Struct field update transformation (removes problematic field assignments)
+        passes.push({
+            name: "StructUpdateTransform",
+            description: "Transform instance field assignments to avoid unused variable warnings",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StructUpdateTransform.structUpdateTransformPass
+        });
+        
         // Tuple element field to function transformation (must run before enum pattern matching)
         passes.push({
             name: "TupleElemFieldToFunction",

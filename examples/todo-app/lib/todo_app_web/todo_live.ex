@@ -311,16 +311,16 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
   if (acc_g < acc_todos.length) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
+    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
   end
 end)
     count
@@ -355,26 +355,7 @@ end)
   defp complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} ->
-  if (acc_g < acc_pending.length) do
-    todo = pending[g]
-    acc_g = acc_g + 1
-    updated_changeset = Todo.toggle_completed(todo)
-    case (elem(acc_g, 0)) do
-      0 ->
-        acc_g = elem(acc_g, 1)
-        updated_todo = acc_g
-        nil
-      1 ->
-        acc_g = elem(acc_g, 1)
-        reason = acc_g
-        Log.trace("Failed to complete todo " <> Kernel.to_string(todo.id) <> ": " <> Std.string(reason), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 523, :className => "server.live.TodoLive", :methodName => "completeAllTodos"})
-    end
-    {:cont, {acc_pending, acc_g, acc_state}}
-  else
-    {:halt, {acc_pending, acc_g, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, pending, :ok}, fn _, {acc_g, acc_pending, acc_state} -> nil end)
     g = TodoPubSub.broadcast({0}, {:BulkUpdate, {0}})
     case (elem(g, 0)) do
       0 ->
@@ -394,14 +375,14 @@ end)
   defp delete_completed_todos(socket) do
     completed = Enum.filter(socket.assigns.todos, fn t -> t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, completed, :ok}, fn _, {acc_g, acc_completed, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {completed, g, :ok}, fn _, {acc_completed, acc_g, acc_state} ->
   if (acc_g < acc_completed.length) do
     todo = completed[g]
     acc_g = acc_g + 1
     TodoApp.Repo.delete(todo)
-    {:cont, {acc_g, acc_completed, acc_state}}
+    {:cont, {acc_completed, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_completed, acc_state}}
+    {:halt, {acc_completed, acc_g, acc_state}}
   end
 end)
     TodoPubSub.broadcast({0}, {:BulkUpdate, {1}})
@@ -532,22 +513,7 @@ end
     editing_indicators = []
     this1 = assigns.onlineUsers
     g = this1.keyValueIterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, online_count, :ok}, fn _, {acc_g, acc_online_count, acc_state} ->
-  if (acc_g.hasNext()) do
-    _user_id = acc_g.key
-    entry = acc_g.value
-    acc_online_count = acc_online_count + 1
-    if (entry.metas.length > 0) do
-      meta = entry.metas[0]
-      editing_badge = if (meta.editingTodoId != nil), do: " <span class=\"text-xs text-blue-500\">✏️</span>", else: ""
-      online_users_list ++ ["<div class=\"flex items-center space-x-2\">\n\t\t\t\t\t<div class=\"w-2 h-2 bg-green-500 rounded-full animate-pulse\"></div>\n\t\t\t\t\t<span class=\"text-sm text-gray-700 dark:text-gray-300\">" <> meta.userName <> editing_badge <> "</span>\n\t\t\t\t</div>"]
-      if (meta.editingTodoId != nil), do: editing_indicators ++ ["<div class=\"text-xs text-gray-500 dark:text-gray-400 italic\">\n\t\t\t\t\t\t🖊️ " <> meta.userName <> " is editing todo #" <> Kernel.to_string(meta.editingTodoId) <> "\n\t\t\t\t\t</div>"]
-    end
-    {:cont, {acc_g, acc_online_count, acc_state}}
-  else
-    {:halt, {acc_g, acc_online_count, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, g, :ok}, fn _, {acc_online_count, acc_g, acc_state} -> nil end)
     if (online_count == 0), do: ""
     "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6\">\n\t\t\t<div class=\"flex items-center justify-between mb-2\">\n\t\t\t\t<h3 class=\"text-sm font-semibold text-gray-700 dark:text-gray-300\">\n\t\t\t\t\t👥 Online Users (" <> Kernel.to_string(online_count) <> ")\n\t\t\t\t</h3>\n\t\t\t</div>\n\t\t\t<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">\n\t\t\t\t" <> Enum.join(online_users_list, "") <> "\n\t\t\t</div>\n\t\t\t" <> (if (editing_indicators.length > 0) do
   "<div class=\"mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1\">" <> Enum.join(editing_indicators, "") <> "</div>"
@@ -565,14 +531,14 @@ end) <> "\n\t\t</div>"
     filtered_todos = TodoAppWeb.TodoLive.filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sortBy, assigns.searchQuery)
     todo_items = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, filtered_todos, :ok}, fn _, {acc_g, acc_filtered_todos, acc_state} ->
   if (acc_g < acc_filtered_todos.length) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
     todo_items ++ [TodoAppWeb.TodoLive.render_todo_item(todo, assigns.editingTodo)]
-    {:cont, {acc_filtered_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_filtered_todos, acc_state}}
   else
-    {:halt, {acc_filtered_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_filtered_todos, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")
