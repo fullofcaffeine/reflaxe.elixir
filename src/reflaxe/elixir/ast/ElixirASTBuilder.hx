@@ -521,7 +521,15 @@ class ElixirASTBuilder {
                         
                         // Generate appropriate binary operation
                         if (isStringConcat) {
-                            EBinary(StringConcat, left, right);  // String concatenation: <>
+                            // For string concatenation, ensure right operand is a string
+                            var rightStr = switch(e2.t) {
+                                case TInst(_.get() => {name: "String"}, _): right;
+                                case TAbstract(_.get() => {name: "String"}, _): right;
+                                default: 
+                                    // Non-string needs conversion
+                                    makeAST(ERemoteCall(makeAST(EVar("Kernel")), "to_string", [right]));
+                            };
+                            EBinary(StringConcat, left, rightStr);  // String concatenation: <>
                         } else {
                             EBinary(Add, left, right);           // Numeric addition: +
                         }
@@ -719,6 +727,17 @@ class ElixirASTBuilder {
             // Function Calls
             // ================================================================
             case TCall(e, el):
+                #if debug_function_reference
+                trace('[FunctionRef] Processing TCall with ${el.length} args');
+                for (i in 0...el.length) {
+                    switch(el[i].expr) {
+                        case TField(_, FStatic(classRef, cf)):
+                            trace('[FunctionRef] Arg $i is static field: ${classRef.get().name}.${cf.get().name}');
+                        default:
+                    }
+                }
+                #end
+                
                 // Check if this is an enum constructor call first
                 if (e != null && isEnumConstructor(e)) {
                     // ONLY BUILD - NO TRANSFORMATION!
@@ -756,8 +775,38 @@ class ElixirASTBuilder {
                     // The metadata will be set by the outer buildFromTypedExpr function
                     tupleDef;
                 } else {
-                    // Regular function call
-                    var args = [for (arg in el) buildFromTypedExpr(arg, variableUsageMap)];
+                    // Regular function call - check for function reference arguments
+                    var args = [];
+                    for (arg in el) {
+                        // Check if this argument is a function reference
+                        var isFunctionRef = false;
+                        switch(arg.expr) {
+                            case TField(_, FStatic(classRef, cf)):
+                                // This is a static field being passed as an argument
+                                switch(cf.get().type) {
+                                    case TFun(funcArgs, _):
+                                        // It's a function being passed as a reference
+                                        isFunctionRef = true;
+                                        var target = buildFromTypedExpr(arg, variableUsageMap);
+                                        
+                                        // Extract module and function name from the built AST
+                                        switch(target.def) {
+                                            case EField(module, funcName):
+                                                // Add capture operator with correct arity
+                                                var arity = funcArgs.length;
+                                                args.push(makeAST(ECapture(target, arity)));
+                                            default:
+                                                args.push(target);
+                                        }
+                                    default:
+                                        // Not a function, compile normally
+                                        args.push(buildFromTypedExpr(arg, variableUsageMap));
+                                }
+                            default:
+                                // Not a static field, compile normally
+                                args.push(buildFromTypedExpr(arg, variableUsageMap));
+                        }
+                    }
                     
                     /**
                      * CRITICAL FIX PART 2: Handle Static Extern Method Calls (2025-09-05)
@@ -778,12 +827,84 @@ class ElixirASTBuilder {
                      * This ensures all static methods on extern classes with @:native annotations
                      * are properly qualified with their module names in the generated Elixir code.
                      */
-                    // Check if this is a static method call on an extern class
+                    // Check if this is a static method call on an extern class or standard library class
                     if (e != null) {
                         switch(e.expr) {
                             case TField(_, FStatic(classRef, cf)):
                                 var classType = classRef.get();
-                                if (classType.isExtern && classType.meta.has(":native")) {
+                                var methodName = cf.get().name;
+                                
+                                // Special handling for Reflect static methods
+                                if (classType.name == "Reflect") {
+                                    switch(methodName) {
+                                        case "hasField":
+                                            // Reflect.hasField(obj, field) -> Map.has_key?(obj, field)
+                                            if (args.length == 2) {
+                                                return ERemoteCall(makeAST(EVar("Map")), "has_key?", args);
+                                            }
+                                        case "field":
+                                            // Reflect.field(obj, field) -> Map.get(obj, field)
+                                            if (args.length == 2) {
+                                                return ERemoteCall(makeAST(EVar("Map")), "get", args);
+                                            }
+                                        case "setField":
+                                            // Reflect.setField(obj, field, value) -> Map.put(obj, field, value)
+                                            if (args.length == 3) {
+                                                return ERemoteCall(makeAST(EVar("Map")), "put", args);
+                                            }
+                                        case "fields":
+                                            // Reflect.fields(obj) -> Map.keys(obj)
+                                            if (args.length == 1) {
+                                                return ERemoteCall(makeAST(EVar("Map")), "keys", args);
+                                            }
+                                        case "isObject":
+                                            // Reflect.isObject(v) -> is_map(v)
+                                            if (args.length == 1) {
+                                                return ECall(null, "is_map", args);
+                                            }
+                                        case "deleteField":
+                                            // Reflect.deleteField(obj, field) -> Map.delete(obj, field)
+                                            if (args.length == 2) {
+                                                return ERemoteCall(makeAST(EVar("Map")), "delete", args);
+                                            }
+                                        case "copy":
+                                            // Reflect.copy(obj) -> obj (immutable in Elixir)
+                                            if (args.length == 1) {
+                                                return args[0].def;
+                                            }
+                                        case "compare":
+                                            // Reflect.compare(a, b) -> compare function
+                                            if (args.length == 2) {
+                                                // Generate: cond do a < b -> -1; a > b -> 1; true -> 0 end
+                                                var lt = EBinary(EBinaryOp.Less, args[0], args[1]);
+                                                var gt = EBinary(EBinaryOp.Greater, args[0], args[1]);
+                                                var ltClause: ECondClause = {condition: makeAST(lt), body: makeAST(EInteger(-1))};
+                                                var gtClause: ECondClause = {condition: makeAST(gt), body: makeAST(EInteger(1))};
+                                                var trueClause: ECondClause = {condition: makeAST(EBoolean(true)), body: makeAST(EInteger(0))};
+                                                return ECond([ltClause, gtClause, trueClause]);
+                                            }
+                                        case "isEnumValue":
+                                            // Reflect.isEnumValue(v) -> is_tuple(v) and elem(v, 0) is atom
+                                            if (args.length == 1) {
+                                                var isTuple = ECall(null, "is_tuple", args);
+                                                var elem0 = ECall(null, "elem", [args[0], makeAST(EInteger(0))]);
+                                                var isAtom = ECall(null, "is_atom", [makeAST(elem0)]);
+                                                return EBinary(EBinaryOp.And, makeAST(isTuple), makeAST(isAtom));
+                                            }
+                                        case "callMethod":
+                                            // Reflect.callMethod(obj, func, args) -> apply(func, args)
+                                            if (args.length == 3) {
+                                                // In Elixir, we use apply/2 for function application
+                                                return ECall(null, "apply", [args[1], args[2]]);
+                                            }
+                                        default:
+                                            // Other Reflect methods not yet implemented
+                                    }
+                                }
+                                
+                                // Check for classes with @:native annotation (both extern and regular classes)
+                                // This handles framework classes like SafePubSub that should be called as remote modules
+                                if (classType.meta.has(":native")) {
                                     // Extract the native module name
                                     var nativeModuleName = "";
                                     var nativeMeta = classType.meta.extract(":native");
@@ -796,9 +917,10 @@ class ElixirASTBuilder {
                                     }
                                     
                                     if (nativeModuleName != "") {
+                                        // Convert method name to snake_case for Elixir
+                                        var elixirMethodName = toSnakeCase(methodName);
                                         // Generate remote call with full module qualification
-                                        var methodName = cf.get().name;
-                                        return ERemoteCall(makeAST(EVar(nativeModuleName)), methodName, args);
+                                        return ERemoteCall(makeAST(EVar(nativeModuleName)), elixirMethodName, args);
                                     }
                                 }
                             default:
@@ -839,6 +961,32 @@ class ElixirASTBuilder {
                             }
                         case TField(obj, fa):
                             var fieldName = extractFieldName(fa);
+                            
+                            // Special handling for getTime() called on Date.now()
+                            // Date.now().getTime() should generate DateTime.utc_now() |> DateTime.to_unix(:millisecond)
+                            if (fieldName == "getTime") {
+                                #if debug_date_compilation
+                                trace('[Date] Checking getTime() call on: ${obj.expr}');
+                                #end
+                                switch(obj.expr) {
+                                    case TCall({expr: TField(_, FStatic(classRef, cf))}, _):
+                                        var classType = classRef.get();
+                                        var methodName = cf.get().name;
+                                        #if debug_date_compilation
+                                        trace('[Date] Found static call: ${classType.name}.${methodName}()');
+                                        #end
+                                        if (classType.name == "Date" && methodName == "now") {
+                                            // Generate DateTime.utc_now() |> DateTime.to_unix(:millisecond)
+                                            var dateTimeCall = ERemoteCall(makeAST(EVar("DateTime")), "utc_now", []);
+                                            return EPipe(makeAST(dateTimeCall), makeAST(ERemoteCall(makeAST(EVar("DateTime")), "to_unix", [makeAST(EAtom("millisecond"))])));
+                                        }
+                                    default:
+                                        #if debug_date_compilation
+                                        trace('[Date] Not a static call pattern, got: ${obj.expr}');
+                                        #end
+                                }
+                            }
+                            
                             var objAst = buildFromTypedExpr(obj, variableUsageMap);
                             
                             // Special handling for tuple.elem(N) -> elem(tuple, N)
@@ -855,19 +1003,27 @@ class ElixirASTBuilder {
                             }
                             // Check for HXX.hxx() template calls
                             else if (fieldName == "hxx" && isHXXModule(obj)) {
-                                // HXX.hxx() returns a processed template string that needs ~H sigil
-                                // The macro already processed the template, we just need to wrap it
+                                #if debug_hxx_transformation
+                                trace('[HXX] Detected HXX.hxx() call - transforming to ~H sigil');
+                                if (args.length > 0) {
+                                    trace('[HXX] First argument AST: ${args[0].def}');
+                                }
+                                #end
+                                
+                                // HXX.hxx() template calls should be transformed to Phoenix ~H sigils
+                                // The templates can be either simple strings or string concatenations
+                                // (when Haxe interpolation like ${expr} is used)
                                 if (args.length == 1) {
-                                    // Extract the processed template string and wrap in ~H sigil
-                                    switch(args[0].def) {
-                                        case EString(content):
-                                            // Wrap the processed template in HEEx sigil
-                                            ESigil("H", content, "");
-                                        default:
-                                            // Non-string argument, compile as regular call
-                                            ECall(objAst, fieldName, args);
-                                    }
+                                    var templateContent = collectTemplateContent(args[0]);
+                                    #if debug_hxx_transformation
+                                    trace('[HXX] Collected template content for ~H sigil transformation');
+                                    #end
+                                    // Return the template wrapped in a ~H sigil
+                                    ESigil("H", templateContent, "");
                                 } else {
+                                    #if debug_hxx_transformation
+                                    trace('[HXX] Wrong number of arguments (${args.length}), falling back to regular call');
+                                    #end
                                     // Wrong number of arguments, compile as regular call
                                     ECall(objAst, fieldName, args);
                                 }
@@ -911,37 +1067,10 @@ class ElixirASTBuilder {
                                     // Regular module call - convert method name to snake_case for Elixir
                                     var elixirFuncName = toSnakeCase(fieldName);
                                     
-                                    // Check if this is a same-module call
-                                    if (currentModule != null) {
-                                        switch(obj.expr) {
-                                            case TTypeExpr(m):
-                                                var moduleName = moduleTypeToString(m);
-                                                #if debug_same_module_calls
-                                                trace('[Same Module Check] Current: $currentModule, Called: $moduleName, Method: $elixirFuncName');
-                                                #end
-                                                if (moduleName == currentModule) {
-                                                    // Same module call - just use the function name without module prefix
-                                                    ECall(null, elixirFuncName, args);
-                                                } else {
-                                                    // Different module - use remote call
-                                                    ERemoteCall(objAst, elixirFuncName, args);
-                                                }
-                                            default:
-                                                // Not a module type expression, use remote call
-                                                ERemoteCall(objAst, elixirFuncName, args);
-                                        }
-                                    } else {
-                                        // No current module context, use remote call
-                                        #if debug_same_module_calls
-                                        switch(obj.expr) {
-                                            case TTypeExpr(m):
-                                                var moduleName = moduleTypeToString(m);
-                                                trace('[Same Module Check] No context set! Module: $moduleName, Method: $elixirFuncName');
-                                            default:
-                                        }
-                                        #end
-                                        ERemoteCall(objAst, elixirFuncName, args);
-                                    }
+                                    // objAst already contains the full module name (including @:native if present)
+                                    // because it was built from TTypeExpr which handles @:native correctly.
+                                    // We can use it directly for the remote call.
+                                    ERemoteCall(objAst, elixirFuncName, args);
                                 }
                             } else {
                                 // Check if this is a method call that contains __elixir__() injection
@@ -1079,14 +1208,34 @@ class ElixirASTBuilder {
                 switch(fa) {
                     case FEnum(enumType, ef):
                         // Enum constructor reference (no arguments)
-                        // Convert CamelCase to snake_case for Elixir atoms
-                        var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
-                        EAtom(atomName);
+                        // Check if this enum is marked as @:elixirIdiomatic
+                        var enumT = enumType.get();
+                        if (enumT.meta.has(":elixirIdiomatic")) {
+                            // For idiomatic enums, generate atoms instead of tuples
+                            // OneForOne → :one_for_one
+                            var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+                            EAtom(atomName);
+                        } else {
+                            // Regular enums: generate tuples with their index for pattern matching
+                            // Even enum constructors without parameters need to be {index}
+                            ETuple([makeAST(EInteger(ef.index))]);
+                        }
                     case FStatic(classRef, cf):
-                        // Regular static field access
-                        // The TCall handler will detect if this needs special handling for extern classes
+                        // Static field access
                         var target = buildFromTypedExpr(e, variableUsageMap);
                         var fieldName = extractFieldName(fa);
+                        // Convert to snake_case for Elixir function names
+                        fieldName = toSnakeCase(fieldName);
+                        
+                        // For static fields on extern classes with @:native, we already have the full module name
+                        // in the target. Just return EField which will be handled properly by TCall
+                        // when this is used in a function call context.
+                        //
+                        // The TCall handler will detect that this is a static method call on an extern class
+                        // and will generate the proper ERemoteCall.
+                        //
+                        // Note: Function references are now handled at the TCall level
+                        // when a function is passed as an argument to another function
                         EField(target, fieldName);
                     case FAnon(cf):
                         // Anonymous field access - check for tuple pattern
@@ -3495,6 +3644,89 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Collect template content from HXX.hxx() argument
+     * 
+     * WHY: HXX.hxx() calls with string interpolation (${expr}) get compiled to
+     *      string concatenation operations by Haxe. We need to collect all the
+     *      pieces to build the complete template for the ~H sigil.
+     * 
+     * WHAT: Recursively collects and concatenates all string pieces from both
+     *       simple strings and binary concatenation operations.
+     * 
+     * HOW: Handles EString directly and recursively processes EBinary(StringConcat)
+     *      to collect all concatenated parts into a single template string.
+     * 
+     * Example: HXX.hxx('Hello ${name}') becomes concatenation that we collect into one template
+     */
+    static function collectTemplateContent(ast: ElixirAST): String {
+        return switch(ast.def) {
+            case EString(s): 
+                // Simple string - return as-is
+                s;
+                
+            case EBinary(StringConcat, left, right):
+                // String concatenation - collect both sides
+                collectTemplateContent(left) + collectTemplateContent(right);
+                
+            case EVar(name):
+                // Variable reference - convert to EEx interpolation
+                '<%= ' + name + ' %>';
+                
+            case ECall(module, func, args):
+                // Function call - convert to EEx interpolation
+                var callStr = if (module != null) {
+                    switch(module.def) {
+                        case EVar(m): m + "." + func;
+                        default: func;
+                    }
+                } else {
+                    func;
+                }
+                
+                // Build the function call with arguments
+                if (args.length > 0) {
+                    var argStrs = [];
+                    for (arg in args) {
+                        argStrs.push(collectTemplateArgument(arg));
+                    }
+                    callStr += "(" + argStrs.join(", ") + ")";
+                } else {
+                    callStr += "()";
+                }
+                '<%= ' + callStr + ' %>';
+                
+            default:
+                // For other expressions, try to convert to a string representation
+                // This is a fallback - ideally all cases should be handled explicitly
+                #if debug_hxx_transformation
+                trace('[HXX] Unhandled AST type in template collection: ${ast.def}');
+                #end
+                '<%= [unhandled expression] %>';
+        }
+    }
+    
+    /**
+     * Collect template argument for function calls within templates
+     */
+    static function collectTemplateArgument(ast: ElixirAST): String {
+        return switch(ast.def) {
+            case EString(s): '"' + s + '"';
+            case EVar(name): name;
+            case EAtom(a): ":" + a;
+            case EInteger(i): Std.string(i);
+            case EFloat(f): Std.string(f);
+            case EBoolean(b): b ? "true" : "false";
+            case ENil: "nil";
+            case EField(obj, field):
+                switch(obj.def) {
+                    case EVar(v): v + "." + field;
+                    default: "[complex]." + field;
+                }
+            default: "[complex arg]";
+        }
+    }
+    
+    /**
      * Check if expression is the HXX module (for Phoenix HEEx template processing)
      * 
      * WHY: HXX.hxx() is a compile-time macro that processes JSX-like template strings
@@ -3512,8 +3744,16 @@ class ElixirASTBuilder {
         return switch(expr.expr) {
             case TTypeExpr(m):
                 // Check if this is the HXX module
-                moduleTypeToString(m) == "HXX";
-            default: false;
+                var moduleName = moduleTypeToString(m);
+                #if debug_hxx_transformation
+                trace('[HXX] Checking module: $moduleName against "HXX"');
+                #end
+                moduleName == "HXX";
+            default: 
+                #if debug_hxx_transformation
+                trace('[HXX] Not a TTypeExpr, expr type: ${expr.expr}');
+                #end
+                false;
         }
     }
     
@@ -3576,6 +3816,12 @@ class ElixirASTBuilder {
         
         // Special handling for framework packages that should use proper Elixir module names
         if (pack.length > 0) {
+            // Don't add package prefix for implementation classes (_Impl_)
+            // These are compiler-generated and should not have the package prefix
+            if (name.endsWith("_Impl_") || name.contains("_Impl_")) {
+                return name;  // Return just the name without package prefix
+            }
+            
             switch(pack[0]) {
                 case "ecto":
                     // ecto.Query should become Ecto.Query (capitalize package name)

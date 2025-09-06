@@ -1,14 +1,14 @@
 defmodule TodoPubSub do
   def subscribe(topic) do
-    Phoenix.SafePubSub.subscribe_with_converter(topic, TodoPubSub.topicToString)
+    Phoenix.SafePubSub.subscribe_with_converter(topic, &TodoPubSub.topic_to_string/1)
   end
   def broadcast(topic, message) do
-    Phoenix.SafePubSub.broadcast_with_converters(topic, message, TodoPubSub.topicToString, TodoPubSub.messageToElixir)
+    Phoenix.SafePubSub.broadcast_with_converters(topic, message, &TodoPubSub.topic_to_string/1, &TodoPubSub.message_to_elixir/1)
   end
   def parse_message(msg) do
-    Phoenix.SafePubSub.parse_with_converter(msg, TodoPubSub.parseMessageImpl)
+    Phoenix.SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
   end
-  defp topic_to_string(topic) do
+  def topic_to_string(topic) do
     case (elem(topic, 0)) do
       0 ->
         "todo:updates"
@@ -18,7 +18,7 @@ defmodule TodoPubSub do
         "system:notifications"
     end
   end
-  defp message_to_elixir(message) do
+  def message_to_elixir(message) do
     base_payload = case (elem(message, 0)) do
   0 ->
     g = elem(message, 1)
@@ -35,7 +35,7 @@ defmodule TodoPubSub do
   3 ->
     g = elem(message, 1)
     action = g
-    %{:type => "bulk_update", :action => bulk_action_to_string(action)}
+    %{:type => "bulk_update", :action => TodoPubSub.bulk_action_to_string(action)}
   4 ->
     g = elem(message, 1)
     user_id = g
@@ -49,20 +49,20 @@ defmodule TodoPubSub do
     g1 = elem(message, 2)
     message = g
     level = g1
-    %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
+    %{:type => "system_alert", :message => message, :level => TodoPubSub.alert_level_to_string(level)}
 end
     Phoenix.SafePubSub.add_timestamp(base_payload)
   end
-  defp parse_message_impl(msg) do
+  def parse_message_impl(msg) do
     if (not Phoenix.SafePubSub.is_valid_message(msg)) do
-      Log.trace(Phoenix.SafePubSub.create_malformed_message_error(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 188, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+      Log.trace(Phoenix.SafePubSub.create_malformed_message_error(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 191, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
       :none
     end
     g = msg.type
     case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
-          bulk_action = parse_bulk_action(msg.action)
+          bulk_action = TodoPubSub.parse_bulk_action(msg.action)
           case (elem(bulk_action, 0)) do
             0 ->
               g = elem(bulk_action, 1)
@@ -76,7 +76,7 @@ end
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
-          alert_level = parse_alert_level(msg.level)
+          alert_level = TodoPubSub.parse_alert_level(msg.level)
           case (elem(alert_level, 0)) do
             0 ->
               g = elem(alert_level, 1)
@@ -99,7 +99,7 @@ end
       "user_online" ->
         if (msg.user_id != nil), do: msg.user_id, else: :none
       _ ->
-        Log.trace(Phoenix.SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 220, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+        Log.trace(Phoenix.SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 223, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
         :none
     end
   end
@@ -128,13 +128,13 @@ end
       "add_tag" ->
         ""
       "complete_all" ->
-        :complete_all
+        {0}
       "delete_completed" ->
-        :delete_completed
+        {1}
       "remove_tag" ->
         ""
       "set_priority" ->
-        :medium
+        {1}
       _ ->
         :none
     end
@@ -154,13 +154,13 @@ end
   defp parse_alert_level(level) do
     case (level) do
       "critical" ->
-        :critical
+        {3}
       "error" ->
-        :error
+        {2}
       "info" ->
-        :info
+        {0}
       "warning" ->
-        :warning
+        {1}
       _ ->
         :none
     end

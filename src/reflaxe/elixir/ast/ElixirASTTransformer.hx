@@ -125,6 +125,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.InlineExpansionTransforms.inlineMethodCallCombinerPass
         });
         
+        // Function reference transformation (must run early to add capture operators)
+        passes.push({
+            name: "FunctionReferenceTransform",
+            description: "Transform function references to use capture operator (&Module.func/arity)",
+            enabled: true,
+            pass: functionReferenceTransformPass
+        });
+        
         // Bitwise import pass (should run early to add imports)
         passes.push({
             name: "BitwiseImport",
@@ -205,6 +213,13 @@ class ElixirASTTransformer {
             description: "Transform @:schema modules into Ecto.Schema structure",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.schemaTransformPass
+        });
+        
+        passes.push({
+            name: "RepoTransform", 
+            description: "Transform @:repo modules into Ecto.Repo structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.repoTransformPass
         });
         
         passes.push({
@@ -501,6 +516,47 @@ class ElixirASTTransformer {
      */
     static function identityPass(ast: ElixirAST): ElixirAST {
         return ast;
+    }
+    
+    /**
+     * Function Reference Transform Pass
+     * 
+     * WHY: When passing functions as references in Elixir, they need the capture operator
+     * WHAT: Transforms Module.function__FUNC_REF__N to &Module.function/N
+     * HOW: Looks for EField nodes with __FUNC_REF__ marker and converts to capture syntax
+     */
+    static function functionReferenceTransformPass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EField(target, field):
+                    // Check if this has the function reference marker
+                    if (field.indexOf("__FUNC_REF__") != -1) {
+                        #if debug_function_reference
+                        trace('[FunctionRef] Found marked field: $field');
+                        #end
+                        
+                        // Extract the actual field name and arity
+                        var parts = field.split("__FUNC_REF__");
+                        var actualField = parts[0];
+                        var arity = parts.length > 1 ? Std.parseInt(parts[1]) : 0;
+                        if (arity == null) arity = 0;
+                        
+                        #if debug_function_reference
+                        trace('[FunctionRef] Transforming to capture: &Module.$actualField/$arity');
+                        #end
+                        
+                        // Create the clean field access without the marker
+                        var cleanField = makeAST(EField(target, actualField));
+                        
+                        // Transform to capture syntax: &Module.function/arity
+                        return makeAST(ECapture(cleanField, arity));
+                    }
+                    return node;
+                    
+                default:
+                    return node;
+            }
+        });
     }
     
     /**
@@ -1842,8 +1898,42 @@ class ElixirASTTransformer {
     
     /**
      * Immutability transformation pass - convert mutable patterns to immutable
+     * 
+     * ENHANCED: Now handles struct field mutations in BalancedTree and similar patterns
      */
     static function immutabilityTransformPass(ast: ElixirAST): ElixirAST {
+        // First pass: Transform method bodies that mutate struct fields
+        ast = transformNode(ast, function(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                case EDef(name, args, guards, body) if ((name == "set" || name == "remove") && 
+                                                        args.length > 0 && 
+                                                        switch(args[0]) { case PVar("struct"): true; default: false; }):
+                    // This is a struct method that might mutate fields
+                    #if debug_ast_transformer
+                    trace('[XRay ImmutabilityTransform] Found method $name with struct parameter');
+                    #end
+                    var updatedBody = transformStructFieldAssignments(body, args);
+                    if (updatedBody != body) {
+                        #if debug_ast_transformer
+                        trace('[XRay ImmutabilityTransform] Transformed body for method $name');
+                        #end
+                        makeASTWithMeta(
+                            EDef(name, args, guards, updatedBody),
+                            node.metadata,
+                            node.pos
+                        );
+                    } else {
+                        #if debug_ast_transformer
+                        trace('[XRay ImmutabilityTransform] No transformation needed for method $name');
+                        #end
+                        node;
+                    }
+                default:
+                    node;
+            }
+        });
+        
+        // Second pass: Other immutability transformations
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch(node.def) {
                 // Transform increment/decrement to reassignment
@@ -1884,10 +1974,87 @@ class ElixirASTTransformer {
                         [target, makeAST(EInteger(-1))]
                     ));
                     
+                    
                 default:
                     node;
             }
         });
+    }
+    
+    /**
+     * Transform struct field assignments within a method body to return updated struct
+     * 
+     * WHY: Methods like BalancedTree.set() modify fields but need to return the updated struct
+     * WHAT: Detects field assignments on "struct" parameter and adds struct return
+     * HOW: Wraps body in block that returns updated struct
+     */
+    static function transformStructFieldAssignments(body: ElixirAST, args: Array<EPattern>): ElixirAST {
+        // Check if first argument is "struct" (instance method pattern)
+        var hasStructParam = args.length > 0 && switch(args[0]) {
+            case PVar("struct"): true;
+            default: false;
+        };
+        
+        if (!hasStructParam) return body;
+        
+        #if debug_ast_transformer
+        trace('[XRay transformStructFieldAssignments] Analyzing body for field assignments');
+        #end
+        
+        // Look for field assignments in the body
+        var hasFieldAssignment = false;
+        var fieldUpdates: Map<String, ElixirAST> = new Map();
+        
+        // Analyze the body for field assignments
+        function analyzeNode(node: ElixirAST): Void {
+            switch(node.def) {
+                case EMatch(PVar("root"), value):
+                    // Found field assignment: root = ...
+                    #if debug_ast_transformer
+                    trace('[XRay transformStructFieldAssignments] Found root assignment');
+                    #end
+                    hasFieldAssignment = true;
+                    fieldUpdates.set("root", value);
+                case EBlock(statements):
+                    for (stmt in statements) {
+                        analyzeNode(stmt);
+                    }
+                default:
+                    // Continue analyzing
+            }
+        }
+        
+        analyzeNode(body);
+        
+        #if debug_ast_transformer
+        trace('[XRay transformStructFieldAssignments] hasFieldAssignment: $hasFieldAssignment, has root: ${fieldUpdates.exists("root")}');
+        #end
+        
+        if (hasFieldAssignment && fieldUpdates.exists("root")) {
+            // Transform the body to return updated struct
+            var statements = [];
+            
+            // Add the original body logic
+            switch(body.def) {
+                case EBlock(stmts):
+                    statements = stmts.copy();
+                default:
+                    statements = [body];
+            }
+            
+            // Add struct update at the end
+            // %{struct | root: root}
+            var structUpdate = makeAST(EStructUpdate(
+                makeAST(EVar("struct")),
+                [{ key: "root", value: makeAST(EVar("root")) }]
+            ));
+            
+            statements.push(structUpdate);
+            
+            return makeAST(EBlock(statements));
+        }
+        
+        return body;
     }
     
     // ========================================================================

@@ -11,16 +11,16 @@ defmodule Todo do
     timestamps()
   end
   def changeset(todo, params) do
-    cs = Ecto.Changeset_Impl_._new(todo, params)
-    Ecto.Changeset_Impl_.validate_length(Ecto.Changeset_Impl_.validate_length(Ecto.Changeset_Impl_.validate_required(cs, ["title", "userId"]), "title", %{:min => 3, :max => 200}), "description", %{:max => 1000})
+    cs = Changeset_Impl_._new(todo, params)
+    Changeset_Impl_.validate_length(Changeset_Impl_.validate_length(Changeset_Impl_.validate_required(cs, ["title", "userId"]), "title", %{:min => 3, :max => 200}), "description", %{:max => 1000})
   end
   def toggle_completed(todo) do
     params = %{:completed => not todo.completed}
-    changeset(todo, params)
+    Todo.changeset(todo, params)
   end
   def update_priority(todo, priority) do
     params = %{:priority => priority}
-    changeset(todo, params)
+    Todo.changeset(todo, params)
   end
   def add_tag(todo, tag) do
     tags = if (todo.tags != nil) do
@@ -30,6 +30,6 @@ else
 end
     tags = tags ++ [tag]
     params = %{:tags => tags}
-    changeset(todo, params)
+    Todo.changeset(todo, params)
   end
 end

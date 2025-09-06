@@ -3,17 +3,17 @@ defmodule Users do
     if (filter != nil) do
       query = Ecto.Query.from(User)
       query = if (filter.name != nil) do
-  Ecto.EctoQuery_Impl_.where(query, "name", "%" <> filter.name <> "%")
+  EctoQuery_Impl_.where(query, "name", "%" <> Kernel.to_string(filter.name) <> "%")
 else
   query
 end
       query = if (filter.email != nil) do
-  Ecto.EctoQuery_Impl_.where(query, "email", "%" <> filter.email <> "%")
+  EctoQuery_Impl_.where(query, "email", "%" <> Kernel.to_string(filter.email) <> "%")
 else
   query
 end
       query = if (filter.isActive != nil) do
-  Ecto.EctoQuery_Impl_.where(query, "active", filter.isActive)
+  EctoQuery_Impl_.where(query, "active", filter.isActive)
 else
   query
 end
@@ -23,7 +23,7 @@ end
   end
   def change_user(user) do
     empty_params = %{}
-    Ecto.Changeset_Impl_._new(user, empty_params)
+    Changeset_Impl_._new(user, empty_params)
   end
   def main() do
     Log.trace("Users context with User schema compiled successfully!", %{:fileName => "src_haxe/server/contexts/Users.hx", :lineNumber => 107, :className => "contexts.Users", :methodName => "main"})
@@ -31,7 +31,7 @@ end
   def get_user(id) do
     user = TodoApp.Repo.get(User, id)
     if (user == nil) do
-      throw("User not found with id: " <> id)
+      throw("User not found with id: " <> Kernel.to_string(id))
     end
     user
   end

@@ -1,4 +1,4 @@
-defmodule SafePubSub do
+defmodule Phoenix.SafePubSub do
   def subscribe_with_converter(topic, topic_converter) do
     pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
     topic_string = topic_converter.(topic)
@@ -17,11 +17,11 @@ defmodule SafePubSub do
     if (payload == nil) do
       payload = %{}
     end
-    Reflect.set_field(payload, "timestamp", Date.now().getTime())
+    payload = Map.put(payload, "timestamp", DateTime.utc_now() |> DateTime.to_unix(:millisecond))
     payload
   end
   def is_valid_message(msg) do
-    msg != nil && Reflect.has_field(msg, "type") && Reflect.field(msg, "type") != nil
+    msg != nil && Map.has_key?(msg, "type") && Map.get(msg, "type") != nil
   end
   def create_unknown_message_error(message_type) do
     "Unknown PubSub message type: \"" <> message_type <> "\". Check your message enum definitions."

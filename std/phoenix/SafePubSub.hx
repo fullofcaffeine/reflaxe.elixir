@@ -89,6 +89,7 @@ interface PubSubMessageProvider<M> {
  * operations. Applications extend this by providing their own
  * topic and message type definitions.
  */
+@:native("Phoenix.SafePubSub")
 class SafePubSub {
     
     /**
