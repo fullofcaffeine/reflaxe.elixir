@@ -17,7 +17,7 @@ defmodule Phoenix.SafePubSub do
     if (payload == nil) do
       payload = %{}
     end
-    payload = Map.put(payload, "timestamp", DateTime.utc_now() |> DateTime.to_unix(:millisecond))
+    payload = Map.put(payload, "timestamp", Date.now().get_time())
     payload
   end
   def is_valid_message(msg) do

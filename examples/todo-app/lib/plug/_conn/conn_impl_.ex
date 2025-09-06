@@ -52,7 +52,7 @@ end)
   end
   def get_header(this1, name) do
     headers = Conn_Impl_.get_headers(this1)
-    key = name.toLowerCase()
+    key = name.to_lower_case()
     Map.get(headers, key)
   end
   def get_body_params(this1) do
@@ -85,15 +85,15 @@ end)
     result = %{}
     g = 0
     g1 = Map.keys(headers)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1.length) do
     field = g1[g]
     acc_g = acc_g + 1
     value = Map.get(headers, field)
     Map.put(result, field, value)
-    {:cont, {acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     result

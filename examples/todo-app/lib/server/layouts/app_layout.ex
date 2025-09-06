@@ -18,10 +18,8 @@ defmodule AppLayout do
   defp get_initials(name) do
     if (name == nil || name == ""), do: "U"
     parts = name.split(" ")
-    if (parts.length >= 2) do
-      String.upcase(String.at(parts[0], 0)) <> String.upcase(String.at(parts[1], 0))
-    end
-    String.upcase(String.at(name, 0))
+    if (parts.length >= 2), do: parts[0].char_at(0).to_upper_case() <> parts[1].char_at(0).to_upper_case()
+    name.char_at(0).to_upper_case()
   end
   defp format_timestamp(timestamp) do
     timestamp

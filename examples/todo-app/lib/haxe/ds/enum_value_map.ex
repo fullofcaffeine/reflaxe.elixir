@@ -10,7 +10,7 @@ defmodule EnumValueMap do
     ld = (p1.length - p2.length)
     if (ld != 0), do: ld
     if (p1.length == 0 && p2.length == 0), do: 0
-    struct.compareArgs(p1, p2)
+    struct.compare_args(p1, p2)
   end
   defp compare_args(struct, a1, _a2) do
     g = 0
@@ -18,7 +18,7 @@ defmodule EnumValueMap do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
-    d = struct.compareArg(a1[i], a2[i])
+    d = struct.compare_arg(a1[i], a2[i])
     if (d != 0), do: d
     {:cont, {acc_g, acc_g1, acc_state}}
   else
