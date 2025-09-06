@@ -2305,6 +2305,63 @@ class ElixirASTBuilder {
                     // Check if the body contains early returns that need special handling
                     var bodyHasReturn = checkForEarlyReturns(transformedBody);
                     
+                    // Build the complete body first to check variable usage
+                    // Build updated accumulator for continuation
+                    var updatedContAccValues: Array<ElixirAST> = [];
+                    for (varName in accVarNames) {
+                        updatedContAccValues.push(makeAST(EVar("acc_" + varName)));
+                    }
+                    updatedContAccValues.push(makeAST(EVar("acc_state")));
+                    var updatedContAccumulator = makeAST(ETuple(updatedContAccValues));
+                    
+                    // Build the body using the pre-transformed condition and body
+                    var wrappedBody = if (bodyHasReturn) {
+                        // Transform returns in the body to halt tuples
+                        transformReturnsToHalts(transformedBody, updatedContAccumulator);
+                    } else {
+                        // Normal body without early returns
+                        makeAST(EBlock([
+                            transformedBody,
+                            makeAST(ETuple([makeAST(EAtom("cont")), updatedContAccumulator]))
+                        ]));
+                    };
+                    
+                    // Build the complete if statement
+                    var completeBody = makeAST(EIf(
+                        transformedCondition,
+                        wrappedBody,
+                        makeAST(ETuple([makeAST(EAtom("halt")), updatedContAccumulator]))
+                    ));
+                    
+                    // NOW check which acc_ variables are actually used in the complete body
+                    // This includes condition, body, and continuations
+                    var usedAccVars = new Map<String, Bool>();
+                    for (varName in accVarNames) {
+                        var accVarName = "acc_" + varName;
+                        usedAccVars.set(varName, isVariableUsedInAST(accVarName, completeBody));
+                    }
+                    var isAccStateUsed = isVariableUsedInAST("acc_state", completeBody);
+                    
+                    // Update the pattern to use underscore prefix for unused variables
+                    var finalAccPattern: Array<EPattern> = [];
+                    for (i in 0...accVarNames.length) {
+                        var varName = accVarNames[i];
+                        var accVarName = "acc_" + varName;
+                        if (usedAccVars.get(varName)) {
+                            finalAccPattern.push(PVar(accVarName));
+                        } else {
+                            // Prefix with underscore to indicate unused
+                            finalAccPattern.push(PVar("_" + accVarName));
+                        }
+                    }
+                    // Handle acc_state
+                    if (isAccStateUsed) {
+                        finalAccPattern.push(PVar("acc_state"));
+                    } else {
+                        finalAccPattern.push(PVar("_acc_state"));
+                    }
+                    var finalAccPatternTuple = PTuple(finalAccPattern);
+                    
                     #if debug_state_threading
                     if (transformedCondition != null) {
                         trace('[State Threading] Condition BEFORE transformation: ${ElixirASTPrinter.printAST(condition)}');
@@ -2313,6 +2370,7 @@ class ElixirASTBuilder {
                         trace('[State Threading] ERROR: transformedCondition is null!');
                     }
                     trace('[State Threading] Body has early return: $bodyHasReturn');
+                    trace('[State Threading] Used acc vars: $usedAccVars');
                     #end
                     
                     // Generate the reduce_while with state threading
@@ -2336,7 +2394,7 @@ class ElixirASTBuilder {
                             initialAccumulator,
                             makeAST(EFn([
                                 {
-                                    args: [PWildcard, accPatternTuple],
+                                    args: [PWildcard, finalAccPatternTuple],
                                     guard: null,
                                     body: {
                                         // Build updated accumulator for continuation
@@ -3891,6 +3949,74 @@ class ElixirASTBuilder {
             case TThrow(_): true;
             default: false;
         }
+    }
+    
+    /**
+     * Check if a variable name is used within an ElixirAST
+     * 
+     * WHY: Need to detect unused variables in reduce_while patterns to prefix with underscore
+     * WHAT: Recursively searches ElixirAST for EVar references to the given variable name
+     * HOW: Pattern matches on all ElixirAST node types that can contain variables
+     * 
+     * @param varName The variable name to search for
+     * @param ast The AST to search within
+     * @return true if the variable is referenced, false otherwise
+     */
+    static function isVariableUsedInAST(varName: String, ast: ElixirAST): Bool {
+        if (ast == null) return false;
+        
+        return switch(ast.def) {
+            case EVar(name): name == varName;
+            case EBlock(exprs): 
+                for (e in exprs) {
+                    if (isVariableUsedInAST(varName, e)) return true;
+                }
+                false;
+            case EIf(cond, thenBranch, elseBranch):
+                isVariableUsedInAST(varName, cond) || 
+                isVariableUsedInAST(varName, thenBranch) || 
+                (elseBranch != null && isVariableUsedInAST(varName, elseBranch));
+            case ETuple(values):
+                for (v in values) {
+                    if (isVariableUsedInAST(varName, v)) return true;
+                }
+                false;
+            case EList(values):
+                for (v in values) {
+                    if (isVariableUsedInAST(varName, v)) return true;
+                }
+                false;
+            case EBinary(_, left, right):
+                isVariableUsedInAST(varName, left) || isVariableUsedInAST(varName, right);
+            case ECall(target, funcName, args):
+                if (target != null && isVariableUsedInAST(varName, target)) return true;
+                for (a in args) {
+                    if (isVariableUsedInAST(varName, a)) return true;
+                }
+                false;
+            case ERemoteCall(module, func, args):
+                if (isVariableUsedInAST(varName, module)) return true;
+                for (a in args) {
+                    if (isVariableUsedInAST(varName, a)) return true;
+                }
+                false;
+            case EFn(clauses):
+                for (c in clauses) {
+                    if (isVariableUsedInAST(varName, c.body)) return true;
+                    if (c.guard != null && isVariableUsedInAST(varName, c.guard)) return true;
+                }
+                false;
+            case ECase(expr, clauses):
+                if (isVariableUsedInAST(varName, expr)) return true;
+                for (c in clauses) {
+                    if (isVariableUsedInAST(varName, c.body)) return true;
+                    if (c.guard != null && isVariableUsedInAST(varName, c.guard)) return true;
+                }
+                false;
+            case EAssign(name):
+                name == varName;
+            case _: false; // Other node types don't contain variable references
+        };
     }
     
     /**

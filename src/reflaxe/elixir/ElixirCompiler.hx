@@ -1247,9 +1247,19 @@ class ElixirCompiler extends GenericCompiler<
     private static function isParameterUsedInExpr(paramId: Int, expr: TypedExpr): Bool {
         if (expr == null) return false;
         
+        #if debug_param_usage_detail
+        var exprType = Type.enumConstructor(expr.expr);
+        if (exprType == "TLocal" || exprType == "TVar") {
+            trace('[isParameterUsedInExpr] Checking ${exprType} for paramId=$paramId');
+        }
+        #end
+        
         switch(expr.expr) {
             case TLocal(v):
                 // Check if this is a reference to our parameter
+                #if debug_param_usage_detail
+                trace('[isParameterUsedInExpr] TLocal: v.id=${v.id}, v.name=${v.name}, paramId=$paramId, match=${v.id == paramId}');
+                #end
                 if (v.id == paramId) return true;
             case TBlock(exprs):
                 for (e in exprs) {
@@ -1328,6 +1338,11 @@ class ElixirCompiler extends GenericCompiler<
                 for (arg in el) {
                     if (isParameterUsedInExpr(paramId, arg)) return true;
                 }
+            case TArray(arr, index):
+                // Check both the array expression and the index expression
+                // This is CRITICAL for detecting usage like a2[i]
+                if (isParameterUsedInExpr(paramId, arr)) return true;
+                if (isParameterUsedInExpr(paramId, index)) return true;
             default:
                 // For other cases, assume not used
         }
