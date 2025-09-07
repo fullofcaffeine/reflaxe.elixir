@@ -1,7 +1,7 @@
 defmodule TodoAppWeb.UserController do
   use TodoAppWeb, :controller
   defp generate_unique_id() do
-    timestamp = Date.now().get_time()
+    timestamp = DateTime.to_unix(Date.now(), :millisecond)
     v = Math.random() * 10000
     i = Std.int(v)
     random = if v < 0 && v != i, do: (i - 1), else: i

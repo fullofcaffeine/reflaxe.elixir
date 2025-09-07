@@ -2751,6 +2751,33 @@ class ElixirASTTransformer {
                         trace('[XRay PrefixUnusedParams] Found usage of param: $name');
                         #end
                     }
+                case EField(target, _):
+                    // Check if the target is a parameter being accessed
+                    switch(target.def) {
+                        case EVar(name):
+                            if (paramNames.exists(name)) {
+                                paramNames.set(name, true); // Mark as used
+                                #if debug_ast_transformer
+                                trace('[XRay PrefixUnusedParams] Found field access on param: $name');
+                                #end
+                            }
+                        default:
+                            markUsedVars(target); // Continue checking nested expressions
+                    }
+                case EAccess(target, key):
+                    // Check if the target is a parameter being accessed
+                    switch(target.def) {
+                        case EVar(name):
+                            if (paramNames.exists(name)) {
+                                paramNames.set(name, true); // Mark as used
+                                #if debug_ast_transformer
+                                trace('[XRay PrefixUnusedParams] Found bracket access on param: $name');
+                                #end
+                            }
+                        default:
+                            markUsedVars(target); // Continue checking nested expressions
+                    }
+                    markUsedVars(key); // Also check the key expression
                 default:
                     iterateAST(ast, markUsedVars);
             }
@@ -2807,10 +2834,23 @@ class ElixirASTTransformer {
         
         var newArgs = args.map(renameInPattern);
         
-        // Note: We don't need to rename in the body since unused parameters
-        // by definition aren't referenced there
+        // Apply renames to the body as well to handle cases where usage detection
+        // might be incomplete (e.g., field access patterns that weren't detected)
+        function renameInAST(ast: ElixirAST): ElixirAST {
+            switch(ast.def) {
+                case EVar(name):
+                    if (paramRenames.exists(name)) {
+                        return {def: EVar(paramRenames.get(name)), metadata: ast.metadata};
+                    }
+                    return ast;
+                default:
+                    return transformAST(ast, renameInAST);
+            }
+        }
         
-        return {args: newArgs, body: body, hasChanges: true};
+        var newBody = renameInAST(body);
+        
+        return {args: newArgs, body: newBody, hasChanges: true};
     }
     
     /**

@@ -224,7 +224,7 @@ class SafePubSub {
      * 
      * @return The PubSub module atom for the current application
      */
-    private static function getPubSubModule(): Dynamic {
+    public static function getPubSubModule(): Dynamic {
         // Get the PubSub module dynamically from endpoint configuration
         // This is a proper Phoenix way to retrieve the PubSub server
         return untyped __elixir__('
