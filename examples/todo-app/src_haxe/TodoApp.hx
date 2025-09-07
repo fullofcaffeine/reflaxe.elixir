@@ -25,14 +25,7 @@ class TodoApp {
         
         // Define children for the supervision tree using type-safe child specs
         var children: Array<ChildSpecFormat> = [
-            // Registry for Postgrex type manager - required for Ecto to work
-            // Using tuple format {Registry, [name: Postgrex.TypeManager, keys: :duplicate]}
-            ModuleWithConfig("Registry", [
-                {key: "name", value: "Postgrex.TypeManager"},
-                {key: "keys", value: "duplicate"}
-            ]),
-            
-            // Database repository - using ModuleRef directly to avoid inline conditional issue
+            // Database repository - Ecto.Repo handles Postgrex.TypeManager internally
             ModuleRef("TodoApp.Repo"),
             
             // PubSub system with proper child spec

@@ -558,7 +558,9 @@ class ElixirASTPrinter {
             // Literals
             // ================================================================
             case EAtom(value):
-                // Atoms with dots need to be quoted in Elixir
+                // Atoms with dots MUST be quoted in Elixir - this is a syntax requirement
+                // Examples: :"TodoApp.PubSub", :"Postgrex.TypeManager"
+                // Without dots, atoms don't need quoting: :duplicate, :ok
                 if (value.indexOf('.') != -1) {
                     ':"' + value + '"';
                 } else {
@@ -1190,6 +1192,53 @@ class ElixirASTPrinter {
         } else {
             return print(arg, 0);
         }
+    }
+    
+    /**
+     * Check if a string represents a module name
+     * Module names start with uppercase and can contain dots
+     * Examples: "Phoenix.PubSub", "TodoApp.Repo", "Task.Supervisor"
+     */
+    static function isModuleName(s: String): Bool {
+        if (s.length == 0) return false;
+        
+        var firstChar = s.charAt(0);
+        if (firstChar != firstChar.toUpperCase()) return false;
+        
+        // Check if all parts start with uppercase
+        var parts = s.split('.');
+        for (part in parts) {
+            if (part.length == 0) return false;
+            var first = part.charAt(0);
+            if (first != first.toUpperCase() || !~/^[A-Z]/.match(first)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Check if an atom value is likely an application-specific module name
+     * that should not be quoted even with dots.
+     * 
+     * This is a heuristic for Phoenix apps where module names like
+     * TodoApp.PubSub or MyApp.Repo should not be quoted.
+     */
+    static function isAppModuleName(s: String): Bool {
+        // First check if it's a valid module name format
+        if (!isModuleName(s)) return false;
+        
+        // Check for common Phoenix/Elixir app patterns
+        // App modules typically contain "App" or end with common suffixes
+        return s.indexOf("App") != -1 || 
+               s.endsWith(".PubSub") || 
+               s.endsWith(".Repo") || 
+               s.endsWith(".Endpoint") ||
+               s.endsWith(".Telemetry") ||
+               s.endsWith(".Supervisor") ||
+               s.endsWith(".Application") ||
+               s.endsWith("Web");
     }
 }
 

@@ -2392,41 +2392,65 @@ class ElixirASTBuilder {
                                 ]
                             )),
                             initialAccumulator,
-                            makeAST(EFn([
-                                {
-                                    args: [PWildcard, finalAccPatternTuple],
-                                    guard: null,
-                                    body: {
-                                        // Build updated accumulator for continuation
-                                        // Use the acc_ prefixed variables which may have been updated in the body
-                                        var updatedContAccValues: Array<ElixirAST> = [];
-                                        for (varName in accVarNames) {
-                                            updatedContAccValues.push(makeAST(EVar("acc_" + varName)));
+                            {
+                                // Check if the body is actually empty (just nil)
+                                var isEmptyBody = switch(transformedBody.def) {
+                                    case ENil: true;
+                                    case _: false;
+                                };
+                                
+                                // If body is empty and we have accumulator variables, 
+                                // we need to use wildcard pattern to avoid unused variable warnings
+                                var accPatternToUse = if (isEmptyBody && Lambda.count(mutatedVars) > 0) {
+                                    // Use wildcard for unused accumulator
+                                    PWildcard;
+                                } else {
+                                    // Use the actual pattern tuple
+                                    finalAccPatternTuple;
+                                };
+                                
+                                makeAST(EFn([
+                                    {
+                                        args: [PWildcard, accPatternToUse],
+                                        guard: null,
+                                        body: {
+                                            // Build updated accumulator for continuation
+                                            // Use the acc_ prefixed variables which may have been updated in the body
+                                            var updatedContAccValues: Array<ElixirAST> = [];
+                                            for (varName in accVarNames) {
+                                                updatedContAccValues.push(makeAST(EVar("acc_" + varName)));
+                                            }
+                                            updatedContAccValues.push(makeAST(EVar("acc_state")));
+                                            var updatedContAccumulator = makeAST(ETuple(updatedContAccValues));
+                                            
+                                            // Build the body using the pre-transformed condition and body
+                                            // If the body contains early returns, they need to be transformed to {:halt, value}
+                                            var wrappedBody = if (bodyHasReturn) {
+                                                // Transform returns in the body to halt tuples
+                                                transformReturnsToHalts(transformedBody, updatedContAccumulator);
+                                            } else if (isEmptyBody) {
+                                                // Empty body - just return nil
+                                                makeAST(ENil);
+                                            } else {
+                                                // Normal body without early returns
+                                                makeAST(EBlock([
+                                                    transformedBody,
+                                                    makeAST(ETuple([makeAST(EAtom("cont")), updatedContAccumulator]))
+                                                ]));
+                                            };
+                                            
+                                            makeAST(EIf(
+                                                transformedCondition,
+                                                wrappedBody,
+                                                makeAST(ETuple([makeAST(EAtom("halt")), 
+                                                    // For halt, also check if we need wildcard
+                                                    if (isEmptyBody) makeAST(EAtom("ok")) else updatedContAccumulator
+                                                ]))
+                                            ));
                                         }
-                                        updatedContAccValues.push(makeAST(EVar("acc_state")));
-                                        var updatedContAccumulator = makeAST(ETuple(updatedContAccValues));
-                                        
-                                        // Build the body using the pre-transformed condition and body
-                                        // If the body contains early returns, they need to be transformed to {:halt, value}
-                                        var wrappedBody = if (bodyHasReturn) {
-                                            // Transform returns in the body to halt tuples
-                                            transformReturnsToHalts(transformedBody, updatedContAccumulator);
-                                        } else {
-                                            // Normal body without early returns
-                                            makeAST(EBlock([
-                                                transformedBody,
-                                                makeAST(ETuple([makeAST(EAtom("cont")), updatedContAccumulator]))
-                                            ]));
-                                        };
-                                        
-                                        makeAST(EIf(
-                                            transformedCondition,
-                                            wrappedBody,
-                                            makeAST(ETuple([makeAST(EAtom("halt")), updatedContAccumulator]))
-                                        ));
                                     }
-                                }
-                            ]))
+                                ]));
+                            }
                         ]
                     );
                     
