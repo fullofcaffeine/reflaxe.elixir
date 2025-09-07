@@ -1,6 +1,6 @@
 defmodule Phoenix.SafePubSub do
   def subscribe_with_converter(topic, topic_converter) do
-    pubsub_module = :"TodoApp.PubSub"
+    pubsub_module = Phoenix.SafePubSub.get_pub_sub_module()
     topic_string = topic_converter.(topic)
     subscribe_result = Phoenix.PubSub.subscribe(pubsub_module, topic_string)
     is_ok = subscribe_result == :ok
@@ -16,7 +16,7 @@ defmodule Phoenix.SafePubSub do
     end
   end
   def broadcast_with_converters(topic, message, topic_converter, message_converter) do
-    pubsub_module = :"TodoApp.PubSub"
+    pubsub_module = Phoenix.SafePubSub.get_pub_sub_module()
     topic_string = topic_converter.(topic)
     message_payload = message_converter.(message)
     Phoenix.PubSub.broadcast(pubsub_module, topic_string, message_payload)
@@ -47,5 +47,57 @@ rescue
     "unparseable message"
 end
     "Malformed PubSub message: " <> msg_str <> ". Expected message with \"type\" field."
+  end
+  defp get_pub_sub_module() do
+    (
+
+            # Get all loaded applications
+            apps = Application.loaded_applications()
+            
+            # Find the first application that has an endpoint module
+            # (This assumes the Phoenix app has at least one endpoint)
+            {app_name, endpoint_module} = Enum.find_value(apps, fn {app, _desc, _vsn} ->
+                # Get all modules for this application
+                case :application.get_key(app, :modules) do
+                    {:ok, modules} ->
+                        # Find a module that ends with ".Endpoint"
+                        endpoint = Enum.find(modules, fn mod ->
+                            mod_str = to_string(mod)
+                            String.ends_with?(mod_str, ".Endpoint")
+                        end)
+                        
+                        if endpoint, do: {app, endpoint}, else: nil
+                    _ ->
+                        nil
+                end
+            end) || {:todo_app, TodoAppWeb.Endpoint}  # Fallback for safety
+            
+            # Get the pubsub_server from the endpoint configuration
+            case Application.get_env(app_name, endpoint_module) do
+                nil -> 
+                    # Fallback: construct module name from app name
+                    # Convert :todo_app to TodoApp.PubSub
+                    app_str = app_name
+                    |> to_string()
+                    |> String.split("_")
+                    |> Enum.map(&String.capitalize/1)
+                    |> Enum.join("")
+                    
+                    String.to_atom(app_str <> ".PubSub")
+                    
+                config when is_list(config) ->
+                    # Get pubsub_server from config
+                    Keyword.get(config, :pubsub_server) || 
+                        # Fallback construction if not configured
+                        (app_name
+                        |> to_string()
+                        |> String.split("_")
+                        |> Enum.map(&String.capitalize/1)
+                        |> Enum.join("")
+                        |> (&(String.to_atom(&1 <> ".PubSub")))
+                        .())
+            end
+        
+)
   end
 end
