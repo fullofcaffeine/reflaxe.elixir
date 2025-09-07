@@ -38,7 +38,7 @@ class AssignMacro {
 	 * Process a single assign operation.
 	 * 
 	 * Transforms: socket.assign(_.editingTodo, todo)
-	 * Into: Phoenix.LiveView.assign(socket, :editing_todo, todo)
+	 * Into: Phoenix.Component.assign(socket, :editing_todo, todo)
 	 * 
 	 * @param socketExpr The LiveSocket expression
 	 * @param fieldExpr Field access expression (_.fieldName)
@@ -58,9 +58,9 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 		
-		// Generate Phoenix.LiveView.assign call with atom key
+		// Generate Phoenix.Component.assign call with atom key
 		// Build the complete code string as a constant
-		var codeStr = 'Phoenix.LiveView.assign({0}, :$snakeCaseName, {1})';
+		var codeStr = 'Phoenix.Component.assign({0}, :$snakeCaseName, {1})';
 		return macro untyped __elixir__($v{codeStr}, $socketExpr, $value);
 	}
 	
@@ -68,7 +68,7 @@ class AssignMacro {
 	 * Process a batch merge operation.
 	 * 
 	 * Transforms: socket.merge({editingTodo: null, showForm: false})
-	 * Into: Phoenix.LiveView.assign(socket, %{editing_todo: nil, show_form: false})
+	 * Into: Phoenix.Component.assign(socket, %{editing_todo: nil, show_form: false})
 	 * 
 	 * @param socketExpr The LiveSocket expression
 	 * @param updates Object with fields to update
@@ -105,7 +105,7 @@ class AssignMacro {
 				var mapString = '%{' + mapPairs.join(', ') + '}';
 				
 				// Build complete code string as a constant
-				var codeStr = 'Phoenix.LiveView.assign({0}, $mapString)';
+				var codeStr = 'Phoenix.Component.assign({0}, $mapString)';
 				// Generate the call with all arguments
 				var args = [socketExpr].concat(values);
 				return macro untyped __elixir__($v{codeStr}, $a{args});
@@ -120,7 +120,7 @@ class AssignMacro {
 	 * Process an assign_new operation.
 	 * 
 	 * Transforms: socket.assignNew(_.theme, () -> getUserTheme())
-	 * Into: Phoenix.LiveView.assign_new(socket, :theme, fn -> get_user_theme() end)
+	 * Into: Phoenix.Component.assign_new(socket, :theme, fn -> get_user_theme() end)
 	 * 
 	 * @param socketExpr The LiveSocket expression
 	 * @param fieldExpr Field access expression (_.fieldName)
@@ -140,9 +140,9 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 		
-		// Generate Phoenix.LiveView.assign_new call with atom key
+		// Generate Phoenix.Component.assign_new call with atom key
 		// Build complete code string as a constant
-		var codeStr = 'Phoenix.LiveView.assign_new({0}, :$snakeCaseName, {1})';
+		var codeStr = 'Phoenix.Component.assign_new({0}, :$snakeCaseName, {1})';
 		return macro untyped __elixir__($v{codeStr}, $socketExpr, $defaultFn);
 	}
 	
@@ -150,7 +150,7 @@ class AssignMacro {
 	 * Process an update operation.
 	 * 
 	 * Transforms: socket.update(_.counter, x -> x + 1)
-	 * Into: Phoenix.LiveView.update(socket, :counter, &(&1 + 1))
+	 * Into: Phoenix.Component.update(socket, :counter, &(&1 + 1))
 	 * 
 	 * @param socketExpr The LiveSocket expression
 	 * @param fieldExpr Field access expression (_.fieldName)
@@ -170,9 +170,9 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 		
-		// Generate Phoenix.LiveView.update call with atom key
+		// Generate Phoenix.Component.update call with atom key
 		// Build complete code string as a constant
-		var codeStr = 'Phoenix.LiveView.update({0}, :$snakeCaseName, {1})';
+		var codeStr = 'Phoenix.Component.update({0}, :$snakeCaseName, {1})';
 		return macro untyped __elixir__($v{codeStr}, $socketExpr, $updater);
 	}
 	

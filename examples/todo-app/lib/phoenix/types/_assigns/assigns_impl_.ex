@@ -19,7 +19,7 @@ defmodule Assigns_Impl_ do
     g = 0
     g1 = Map.keys(this1)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
-  if (acc_g < acc_g1.length) do
+  if (acc_g < length(acc_g1)) do
     field = g1[g]
     acc_g = acc_g + 1
     Map.put(result, field, Map.get(this1, field))
@@ -31,7 +31,7 @@ end)
     g = 0
     g1 = Map.keys(Assigns_Impl_.to_dynamic(other))
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
-  if (acc_g < acc_g1.length) do
+  if (acc_g < length(acc_g1)) do
     field = g1[g]
     acc_g = acc_g + 1
     Map.put(result, field, Map.get(Assigns_Impl_.to_dynamic(other), field))
@@ -46,14 +46,14 @@ end)
     result = %{}
     g = 0
     g1 = Map.keys(this1)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
-  if (acc_g < acc_g1.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+  if (acc_g < length(acc_g1)) do
     existing_field = g1[g]
     acc_g = acc_g + 1
     Map.put(result, existing_field, Map.get(this1, existing_field))
-    {:cont, {acc_g, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
     result = Map.put(result, field, value)

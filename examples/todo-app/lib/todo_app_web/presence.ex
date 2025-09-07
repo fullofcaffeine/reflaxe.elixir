@@ -17,7 +17,7 @@ defmodule TodoAppWeb.Presence do
     user_key = Std.string(user_id)
     if (Map.has_key?(presences, user_key)) do
       entry = Map.get(presences, user_key)
-      if (entry.metas.length > 0) do
+      if (length(entry.metas) > 0) do
         entry.metas[0]
       else
         nil

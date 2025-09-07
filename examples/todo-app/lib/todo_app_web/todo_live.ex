@@ -14,7 +14,7 @@ defmodule TodoAppWeb.TodoLive do
     current_user = TodoAppWeb.TodoLive.get_user_from_session(session)
     todos = TodoAppWeb.TodoLive.load_todos(current_user.id)
     presence_socket = TodoAppWeb.Presence.track_user(socket, current_user)
-    assigns = %{:todos => todos, :filter => "all", :sortBy => "created", :currentUser => current_user, :editingTodo => nil, :showForm => false, :searchQuery => "", :selectedTags => [], :totalTodos => todos.length, :completedTodos => TodoAppWeb.TodoLive.count_completed(todos), :pendingTodos => TodoAppWeb.TodoLive.count_pending(todos), :onlineUsers => %{}}
+    assigns = %{:todos => todos, :filter => "all", :sortBy => "created", :currentUser => current_user, :editingTodo => nil, :showForm => false, :searchQuery => "", :selectedTags => [], :totalTodos => length(todos), :completedTodos => TodoAppWeb.TodoLive.count_completed(todos), :pendingTodos => TodoAppWeb.TodoLive.count_pending(todos), :onlineUsers => %{}}
     updated_socket = Phoenix.LiveView.assign(presence_socket, assigns)
     {:Ok, updated_socket}
   end
@@ -182,7 +182,7 @@ end, :userId => socket.assigns.current_user.id}
         end
         todos = [todo] ++ socket.assigns.todos
         live_socket = socket
-        updated_socket = Phoenix.LiveView.assign([live_socket, todos, false], %{:todos => {1}, :show_form => {2}})
+        updated_socket = Phoenix.Component.assign([live_socket, todos, false], %{:todos => {1}, :show_form => {2}})
         Phoenix.LiveView.put_flash(updated_socket, {1}, "Todo created successfully!")
       1 ->
         g = elem(g, 1)
@@ -271,7 +271,7 @@ end, :userId => socket.assigns.current_user.id}
     if (todo.user_id == socket.assigns.current_user.id), do: socket
     todos = [todo] ++ socket.assigns.todos
     live_socket = socket
-    Phoenix.LiveView.assign([live_socket, todos], %{:todos => {1}})
+    Phoenix.Component.assign([live_socket, todos], %{:todos => {1}})
   end
   defp load_todos(user_id) do
     query = EctoQuery_Impl_.order_by(EctoQuery_Impl_.where(Ecto.Query.from(Todo), "userId", user_id), "inserted_at", "asc")
@@ -279,14 +279,14 @@ end, :userId => socket.assigns.current_user.id}
   end
   defp find_todo(id, todos) do
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, :ok}, fn _, {acc_g, acc_todos, acc_state} ->
-  if (acc_g < acc_todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, :ok}, fn _, {acc_todos, acc_g, acc_state} ->
+  if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.id == id), do: todo
-    {:cont, {acc_g, acc_todos, acc_state}}
+    {:cont, {acc_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_state}}
   end
 end)
     nil
@@ -294,16 +294,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
-  if (acc_g < acc_todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
+  if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
+    {:cont, {acc_todos, acc_count, acc_g, acc_state}}
   else
-    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
+    {:halt, {acc_todos, acc_count, acc_g, acc_state}}
   end
 end)
     count
@@ -311,16 +311,16 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
-  if (acc_g < acc_todos.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
+  if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
   else
-    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
   end
 end)
     count
@@ -335,17 +335,17 @@ end)
   defp load_and_assign_todos(socket) do
     todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
     live_socket = socket
-    Phoenix.LiveView.assign([live_socket, todos, todos.length, TodoAppWeb.TodoLive.count_completed(todos), TodoAppWeb.TodoLive.count_pending(todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+    Phoenix.Component.assign([live_socket, todos, todos.length, TodoAppWeb.TodoLive.count_completed(todos), TodoAppWeb.TodoLive.count_pending(todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
   defp update_todo_in_list(todo, socket) do
     todos = socket.assigns.todos
     updated_todos = Enum.map(todos, fn t -> if (t.id == todo.id), do: todo, else: t end)
-    Phoenix.LiveView.assign([socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+    Phoenix.Component.assign([socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
   defp remove_todo_from_list(id, socket) do
     todos = socket.assigns.todos
     updated_todos = Enum.filter(todos, fn t -> t.id != id end)
-    Phoenix.LiveView.assign([socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+    Phoenix.Component.assign([socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
   defp start_editing(id, socket) do
     todo = TodoAppWeb.TodoLive.find_todo(id, socket.assigns.todos)
@@ -355,7 +355,7 @@ end)
   defp complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, pending, :ok}, fn _, {acc_g, acc_pending, acc_state} -> nil end)
     g = TodoPubSub.broadcast({0}, {:BulkUpdate, {0}})
     case (elem(g, 0)) do
       0 ->
@@ -368,27 +368,27 @@ end)
     end
     updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
     current_assigns = socket.assigns
-    complete_assigns = %{:todos => updated_todos, :filter => current_assigns.filter, :sortBy => current_assigns.sort_by, :currentUser => current_assigns.current_user, :editingTodo => current_assigns.editing_todo, :showForm => current_assigns.show_form, :searchQuery => current_assigns.search_query, :selectedTags => current_assigns.selected_tags, :totalTodos => updated_todos.length, :completedTodos => updated_todos.length, :pendingTodos => 0, :onlineUsers => current_assigns.online_users}
+    complete_assigns = %{:todos => updated_todos, :filter => current_assigns.filter, :sortBy => current_assigns.sort_by, :currentUser => current_assigns.current_user, :editingTodo => current_assigns.editing_todo, :showForm => current_assigns.show_form, :searchQuery => current_assigns.search_query, :selectedTags => current_assigns.selected_tags, :totalTodos => length(updated_todos), :completedTodos => length(updated_todos), :pendingTodos => 0, :onlineUsers => current_assigns.online_users}
     updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, {0}, "All todos marked as completed!")
   end
   defp delete_completed_todos(socket) do
     completed = Enum.filter(socket.assigns.todos, fn t -> t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, completed, :ok}, fn _, {acc_g, acc_completed, acc_state} ->
-  if (acc_g < acc_completed.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {completed, g, :ok}, fn _, {acc_completed, acc_g, acc_state} ->
+  if (acc_g < length(acc_completed)) do
     todo = completed[g]
     acc_g = acc_g + 1
     TodoApp.Repo.delete(todo)
-    {:cont, {acc_g, acc_completed, acc_state}}
+    {:cont, {acc_completed, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_completed, acc_state}}
+    {:halt, {acc_completed, acc_g, acc_state}}
   end
 end)
     TodoPubSub.broadcast({0}, {:BulkUpdate, {1}})
     remaining = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     current_assigns = socket.assigns
-    complete_assigns = %{:todos => remaining, :filter => current_assigns.filter, :sortBy => current_assigns.sort_by, :currentUser => current_assigns.current_user, :editingTodo => current_assigns.editing_todo, :showForm => current_assigns.show_form, :searchQuery => current_assigns.search_query, :selectedTags => current_assigns.selected_tags, :totalTodos => remaining.length, :completedTodos => 0, :pendingTodos => remaining.length, :onlineUsers => current_assigns.online_users}
+    complete_assigns = %{:todos => remaining, :filter => current_assigns.filter, :sortBy => current_assigns.sort_by, :currentUser => current_assigns.current_user, :editingTodo => current_assigns.editing_todo, :showForm => current_assigns.show_form, :searchQuery => current_assigns.search_query, :selectedTags => current_assigns.selected_tags, :totalTodos => length(remaining), :completedTodos => 0, :pendingTodos => length(remaining), :onlineUsers => current_assigns.online_users}
     updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, {0}, "Completed todos deleted!")
   end
@@ -454,7 +454,7 @@ end, :completed => params.completed}
         end
         updated_socket = TodoAppWeb.TodoLive.update_todo_in_list(updated_todo, socket)
         live_socket = updated_socket
-        Phoenix.LiveView.assign(live_socket, :editing_todo, nil)
+        Phoenix.Component.assign(live_socket, :editing_todo, nil)
       1 ->
         g = elem(g, 1)
         reason = g
@@ -466,11 +466,11 @@ end, :completed => params.completed}
       0 ->
         updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
         live_socket = socket
-        Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+        Phoenix.Component.assign([live_socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
       1 ->
         updated_todos = TodoAppWeb.TodoLive.load_todos(socket.assigns.current_user.id)
         live_socket = socket
-        Phoenix.LiveView.assign([live_socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
+        Phoenix.Component.assign([live_socket, updated_todos, updated_todos.length, TodoAppWeb.TodoLive.count_completed(updated_todos), TodoAppWeb.TodoLive.count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
       2 ->
         g = elem(action, 1)
         _priority = g
@@ -513,26 +513,26 @@ end
     editing_indicators = []
     this1 = assigns.online_users
     g = this1.key_value_iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, g, :ok}, fn _, {acc_online_count, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, online_count, :ok}, fn _, {acc_g, acc_online_count, acc_state} -> nil end)
     if (online_count == 0), do: ""
-    "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6\">\n\t\t\t<div class=\"flex items-center justify-between mb-2\">\n\t\t\t\t<h3 class=\"text-sm font-semibold text-gray-700 dark:text-gray-300\">\n\t\t\t\t\t👥 Online Users (" <> Kernel.to_string(online_count) <> ")\n\t\t\t\t</h3>\n\t\t\t</div>\n\t\t\t<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">\n\t\t\t\t" <> Enum.join(online_users_list, "") <> "\n\t\t\t</div>\n\t\t\t" <> (if (editing_indicators.length > 0) do
+    "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6\">\n\t\t\t<div class=\"flex items-center justify-between mb-2\">\n\t\t\t\t<h3 class=\"text-sm font-semibold text-gray-700 dark:text-gray-300\">\n\t\t\t\t\t👥 Online Users (" <> Kernel.to_string(online_count) <> ")\n\t\t\t\t</h3>\n\t\t\t</div>\n\t\t\t<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">\n\t\t\t\t" <> Enum.join(online_users_list, "") <> "\n\t\t\t</div>\n\t\t\t" <> (if (length(editing_indicators) > 0) do
   "<div class=\"mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1\">" <> Enum.join(editing_indicators, "") <> "</div>"
 else
   ""
 end) <> "\n\t\t</div>"
   end
   defp render_bulk_actions(assigns) do
-    if (assigns.todos.length == 0), do: ""
-    filtered_count = TodoAppWeb.TodoLive.filter_todos(assigns.todos, assigns.filter, assigns.search_query).length
+    if (length(assigns.todos) == 0), do: ""
+    filtered_count = length(TodoAppWeb.TodoLive.filter_todos(assigns.todos, assigns.filter, assigns.search_query))
     "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center\">\n\t\t\t\t<div class=\"text-sm text-gray-600 dark:text-gray-400\">\n\t\t\t\t\tShowing " <> Kernel.to_string(filtered_count) <> " of " <> Kernel.to_string(assigns.total_todos) <> " todos\n\t\t\t\t</div>\n\t\t\t\t<div class=\"flex space-x-2\">\n\t\t\t\t\t<button phx-click=\"bulk_complete\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm\">\n\t\t\t\t\t\t✅ Complete All\n\t\t\t\t\t</button>\n\t\t\t\t\t<button phx-click=\"bulk_delete_completed\" \n\t\t\t\t\t\tdata-confirm=\"Are you sure you want to delete all completed todos?\"\n\t\t\t\t\t\tclass=\"px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm\">\n\t\t\t\t\t\t🗑️ Delete Completed\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>"
   end
   defp render_todo_list(assigns) do
-    if (assigns.todos.length == 0), do: "\n\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center\">\n\t\t\t\t\t<div class=\"text-6xl mb-4\">📋</div>\n\t\t\t\t\t<h3 class=\"text-xl font-semibold text-gray-800 dark:text-white mb-2\">\n\t\t\t\t\t\tNo todos yet!\n\t\t\t\t\t</h3>\n\t\t\t\t\t<p class=\"text-gray-600 dark:text-gray-400\">\n\t\t\t\t\t\tClick \"Add New Todo\" to get started.\n\t\t\t\t\t</p>\n\t\t\t\t</div>\n\t\t\t"
+    if (length(assigns.todos) == 0), do: "\n\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center\">\n\t\t\t\t\t<div class=\"text-6xl mb-4\">📋</div>\n\t\t\t\t\t<h3 class=\"text-xl font-semibold text-gray-800 dark:text-white mb-2\">\n\t\t\t\t\t\tNo todos yet!\n\t\t\t\t\t</h3>\n\t\t\t\t\t<p class=\"text-gray-600 dark:text-gray-400\">\n\t\t\t\t\t\tClick \"Add New Todo\" to get started.\n\t\t\t\t\t</p>\n\t\t\t\t</div>\n\t\t\t"
     filtered_todos = TodoAppWeb.TodoLive.filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query)
     todo_items = []
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
-  if (acc_g < acc_filtered_todos.length) do
+  if (acc_g < length(acc_filtered_todos)) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
     todo_items ++ [TodoAppWeb.TodoLive.render_todo_item(todo, assigns.editing_todo)]
@@ -570,17 +570,17 @@ end) <> "\n\t\t\t\t\t\t\t\t" <> TodoAppWeb.TodoLive.render_tags(todo.tags) <> "\
     end
   end
   defp render_tags(tags) do
-    if (tags == nil || tags.length == 0), do: ""
+    if (tags == nil || length(tags) == 0), do: ""
     tag_elements = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, tags, :ok}, fn _, {acc_g, acc_tags, acc_state} ->
-  if (acc_g < acc_tags.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tags, g, :ok}, fn _, {acc_tags, acc_g, acc_state} ->
+  if (acc_g < length(acc_tags)) do
     tag = tags[g]
     acc_g = acc_g + 1
     tag_elements ++ ["<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>"]
-    {:cont, {acc_g, acc_tags, acc_state}}
+    {:cont, {acc_tags, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_tags, acc_state}}
+    {:halt, {acc_tags, acc_g, acc_state}}
   end
 end)
     Enum.join(tag_elements, "")

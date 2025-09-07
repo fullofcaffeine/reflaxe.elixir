@@ -361,6 +361,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.StructUpdateTransform.structUpdateTransformPass
         });
         
+        // Array length field to function transformation (must run early to fix field access)
+        passes.push({
+            name: "ArrayLengthFieldToFunction",
+            description: "Transform array.length field access to length(array) function calls",
+            enabled: true,
+            pass: arrayLengthFieldToFunctionPass
+        });
+        
         // Tuple element field to function transformation (must run before enum pattern matching)
         passes.push({
             name: "TupleElemFieldToFunction",
@@ -2083,6 +2091,60 @@ class ElixirASTTransformer {
             // For now, return null and use the fallback mechanism
         }
         return null;
+    }
+    
+    /**
+     * Array length field to function transformation pass
+     * 
+     * WHY: Elixir doesn't support .length property access on arrays/lists
+     * WHAT: Transforms array.length field access to length(array) function calls
+     * HOW: Detects EField(target, "length") and converts to ECall(null, "length", [target])
+     * 
+     * Example transformation:
+     *   array.length -> length(array)
+     *   list.length -> length(list) 
+     */
+    static function arrayLengthFieldToFunctionPass(ast: ElixirAST): ElixirAST {
+        #if debug_ast_transformer
+        trace('[XRay ArrayLengthField] Starting array length field to function transformation');
+        #end
+        
+        // Handle null nodes
+        if (ast == null) {
+            return null;
+        }
+        
+        return switch(ast.def) {
+            case EField(target, "length"):
+                // This is an array.length field access that needs to become length(array)
+                #if debug_ast_transformer
+                var targetStr = ElixirASTPrinter.printAST(target);
+                trace('[XRay ArrayLengthField] Transforming ${targetStr}.length to length($targetStr)');
+                #end
+                {
+                    def: ECall(null, "length", [
+                        transformAST(target, arrayLengthFieldToFunctionPass)
+                    ]),
+                    metadata: ast.metadata,
+                    pos: ast.pos
+                };
+                
+            case ECall(expr, funcName, args):
+                // Regular call, transform recursively
+                {
+                    def: ECall(
+                        expr != null ? transformAST(expr, arrayLengthFieldToFunctionPass) : null,
+                        funcName,
+                        [for (arg in args) transformAST(arg, arrayLengthFieldToFunctionPass)]
+                    ),
+                    metadata: ast.metadata,
+                    pos: ast.pos
+                };
+                
+            default:
+                // Recursively transform children
+                transformAST(ast, arrayLengthFieldToFunctionPass);
+        };
     }
     
     /**
