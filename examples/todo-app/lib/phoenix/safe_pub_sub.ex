@@ -1,11 +1,22 @@
 defmodule Phoenix.SafePubSub do
   def subscribe_with_converter(topic, topic_converter) do
-    pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
+    pubsub_module = :"TodoApp.PubSub"
     topic_string = topic_converter.(topic)
-    Phoenix.PubSub.subscribe(pubsub_module, topic_string)
+    subscribe_result = Phoenix.PubSub.subscribe(pubsub_module, topic_string)
+    is_ok = subscribe_result == :ok
+    if is_ok do
+      {:ok, nil}
+    else
+      error_reason = 
+                case subscribe_result do
+                    {:error, reason} -> to_string(reason)
+                    _ -> "Unknown subscription error"
+                end
+      {:error, error_reason}
+    end
   end
   def broadcast_with_converters(topic, message, topic_converter, message_converter) do
-    pubsub_module = Module.concat([Application.get_application(__MODULE__), "PubSub"])
+    pubsub_module = :"TodoApp.PubSub"
     topic_string = topic_converter.(topic)
     message_payload = message_converter.(message)
     Phoenix.PubSub.broadcast(pubsub_module, topic_string, message_payload)

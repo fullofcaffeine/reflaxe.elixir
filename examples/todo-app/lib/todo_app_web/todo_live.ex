@@ -294,16 +294,16 @@ end)
   defp count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_todos, acc_count, acc_g, acc_state}}
+    {:cont, {acc_count, acc_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_todos, acc_count, acc_g, acc_state}}
+    {:halt, {acc_count, acc_todos, acc_g, acc_state}}
   end
 end)
     count
@@ -311,16 +311,16 @@ end)
   defp count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
+    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
   end
 end)
     count
@@ -355,7 +355,7 @@ end)
   defp complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, pending, :ok}, fn _, {acc_g, acc_pending, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} -> nil end)
     g = TodoPubSub.broadcast({0}, {:BulkUpdate, {0}})
     case (elem(g, 0)) do
       0 ->
@@ -375,14 +375,14 @@ end)
   defp delete_completed_todos(socket) do
     completed = Enum.filter(socket.assigns.todos, fn t -> t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {completed, g, :ok}, fn _, {acc_completed, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, completed, :ok}, fn _, {acc_g, acc_completed, acc_state} ->
   if (acc_g < length(acc_completed)) do
     todo = completed[g]
     acc_g = acc_g + 1
     TodoApp.Repo.delete(todo)
-    {:cont, {acc_completed, acc_g, acc_state}}
+    {:cont, {acc_g, acc_completed, acc_state}}
   else
-    {:halt, {acc_completed, acc_g, acc_state}}
+    {:halt, {acc_g, acc_completed, acc_state}}
   end
 end)
     TodoPubSub.broadcast({0}, {:BulkUpdate, {1}})
@@ -573,14 +573,14 @@ end) <> "\n\t\t\t\t\t\t\t\t" <> TodoAppWeb.TodoLive.render_tags(todo.tags) <> "\
     if (tags == nil || length(tags) == 0), do: ""
     tag_elements = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tags, g, :ok}, fn _, {acc_tags, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, tags, :ok}, fn _, {acc_g, acc_tags, acc_state} ->
   if (acc_g < length(acc_tags)) do
     tag = tags[g]
     acc_g = acc_g + 1
     tag_elements ++ ["<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>"]
-    {:cont, {acc_tags, acc_g, acc_state}}
+    {:cont, {acc_g, acc_tags, acc_state}}
   else
-    {:halt, {acc_tags, acc_g, acc_state}}
+    {:halt, {acc_g, acc_tags, acc_state}}
   end
 end)
     Enum.join(tag_elements, "")
