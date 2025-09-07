@@ -28,7 +28,7 @@ defmodule Phoenix.SafePubSub do
     if (payload == nil) do
       payload = %{}
     end
-    payload = Map.put(payload, "timestamp", Date.now().get_time())
+    payload = Map.put(payload, "timestamp", DateTime.to_unix(Date.now(), :millisecond))
     payload
   end
   def is_valid_message(msg) do
@@ -48,7 +48,7 @@ rescue
 end
     "Malformed PubSub message: " <> msg_str <> ". Expected message with \"type\" field."
   end
-  defp get_pub_sub_module() do
+  def get_pub_sub_module() do
     (
 
             # Get all loaded applications
