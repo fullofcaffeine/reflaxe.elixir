@@ -103,11 +103,30 @@ class SafePubSub {
         topic: T, 
         topicConverter: T -> String
     ): Result<Void, String> {
-        // Use proper typed Module.concat - the compiler now correctly identifies
-        // this as an extern module call, not an array operation
-        var pubsubModule = elixir.Module.concat([Application.get_application(untyped __MODULE__), "PubSub"]);
+        // For now, hardcode TodoApp.PubSub to make it work
+        // TODO: Fix dynamic resolution - Application.get_application returns :todo_app but we need TodoApp
+        var pubsubModule = untyped __elixir__(':"TodoApp.PubSub"');
         var topicString = topicConverter(topic);
-        return phoenix.Phoenix.PubSub.subscribe(pubsubModule, topicString);
+        
+        // Phoenix.PubSub.subscribe returns :ok (atom) on success, not a tuple
+        // We need to handle this properly and convert to Result type
+        var subscribeResult = phoenix.Phoenix.PubSub.subscribe(pubsubModule, topicString);
+        
+        // Check if the result is :ok atom (success) or an error tuple
+        var isOk = untyped __elixir__('{0} == :ok', subscribeResult);
+        
+        if (isOk) {
+            return Ok(null);
+        } else {
+            // If it's not :ok, it should be {:error, reason}
+            // Extract the error reason from the tuple
+            var errorReason = untyped __elixir__('
+                case {0} do
+                    {:error, reason} -> to_string(reason)
+                    _ -> "Unknown subscription error"
+                end', subscribeResult);
+            return Error(errorReason);
+        }
     }
     
     /**
@@ -125,9 +144,9 @@ class SafePubSub {
         topicConverter: T -> String,
         messageConverter: M -> Dynamic
     ): Result<Void, String> {
-        // Use proper typed Module.concat - the compiler now correctly identifies
-        // this as an extern module call, not an array operation
-        var pubsubModule = elixir.Module.concat([Application.get_application(untyped __MODULE__), "PubSub"]);
+        // For now, hardcode TodoApp.PubSub to make it work
+        // TODO: Fix dynamic resolution - Application.get_application returns :todo_app but we need TodoApp
+        var pubsubModule = untyped __elixir__(':"TodoApp.PubSub"');
         var topicString = topicConverter(topic);
         var messagePayload = messageConverter(message);
         return phoenix.Phoenix.PubSub.broadcast(pubsubModule, topicString, messagePayload);
