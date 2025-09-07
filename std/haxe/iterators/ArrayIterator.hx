@@ -41,22 +41,36 @@ package haxe.iterators;
  * iter = ArrayIterator.new(arr)  # Returns arr itself via runtime module
  * ```
  */
+/**
+ * ArrayIterator with runtime module override pattern.
+ * 
+ * This class generates a basic implementation that will be overridden
+ * by the runtime module (runtime/array_iterator.ex) during compilation.
+ * 
+ * The runtime module provides the actual implementation that properly
+ * handles Elixir's immutability requirements and avoids AST transformer issues.
+ * 
+ * The @:runtimeModule metadata indicates this will be replaced by a runtime version.
+ */
 @:coreApi
 @:native("ArrayIterator")
+@:runtimeModule
 class ArrayIterator<T> {
-    final array: Array<T>;
-    var current: Int = 0;
+    var array: Array<T>;
+    var current: Int;
     
     /**
      * Create a new ArrayIterator.
-     * The Elixir runtime module handles this by returning the array itself.
+     * This implementation will be replaced by runtime/array_iterator.ex
      */
-    public function new(array: Array<T>) {
+    public function new(array: Array<T>): Void {
         this.array = array;
+        this.current = 0;
     }
     
     /**
      * Check if there are more elements.
+     * This implementation will be replaced by runtime/array_iterator.ex
      */
     public function hasNext(): Bool {
         return current < array.length;
@@ -64,6 +78,7 @@ class ArrayIterator<T> {
     
     /**
      * Get the next element.
+     * This implementation will be replaced by runtime/array_iterator.ex
      */
     public function next(): T {
         return array[current++];

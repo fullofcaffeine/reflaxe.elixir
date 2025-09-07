@@ -1,0 +1,10 @@
+# HXX to ~H sigil transformation test
+-cp .
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=lib
+-D debug_hxx_transformation
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

@@ -834,6 +834,31 @@ class ElixirASTBuilder {
                                 var classType = classRef.get();
                                 var methodName = cf.get().name;
                                 
+                                // Special handling for HXX.hxx() static method
+                                if (classType.name == "HXX" && methodName == "hxx") {
+                                    #if debug_hxx_transformation
+                                    trace('[HXX] Detected HXX.hxx() static call - transforming to ~H sigil');
+                                    if (args.length > 0) {
+                                        trace('[HXX] First argument AST: ${args[0].def}');
+                                    }
+                                    #end
+                                    
+                                    // HXX.hxx() template calls should be transformed to Phoenix ~H sigils
+                                    if (args.length == 1) {
+                                        var templateContent = collectTemplateContent(args[0]);
+                                        #if debug_hxx_transformation
+                                        trace('[HXX] Collected template content for ~H sigil transformation');
+                                        #end
+                                        // Return the template wrapped in a ~H sigil
+                                        return ESigil("H", templateContent, "");
+                                    } else {
+                                        #if debug_hxx_transformation
+                                        trace('[HXX] Wrong number of arguments (${args.length}), falling back to regular call');
+                                        #end
+                                        // Wrong number of arguments, compile as regular call
+                                    }
+                                }
+                                
                                 // Special handling for Reflect static methods
                                 if (classType.name == "Reflect") {
                                     switch(methodName) {
@@ -4076,7 +4101,9 @@ class ElixirASTBuilder {
                 #if debug_hxx_transformation
                 trace('[HXX] Checking module: $moduleName against "HXX"');
                 #end
-                moduleName == "HXX";
+                // Check both simple name and potentially qualified name
+                // The HXX module might be imported as reflaxe.elixir.macro.HXX
+                moduleName == "HXX" || moduleName.endsWith(".HXX");
             default: 
                 #if debug_hxx_transformation
                 trace('[HXX] Not a TTypeExpr, expr type: ${expr.expr}');

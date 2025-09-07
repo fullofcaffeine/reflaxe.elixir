@@ -262,6 +262,14 @@ class ElixirASTTransformer {
             pass: removeRedundantNilInitPass
         });
         
+        // Prefix unused parameters with underscore (Elixir convention)
+        passes.push({
+            name: "PrefixUnusedParameters",
+            description: "Prefix unused function parameters with underscore to follow Elixir conventions",
+            enabled: true,
+            pass: prefixUnusedParametersPass
+        });
+        
         // String method transformation pass (before pipeline optimization)
         passes.push({
             name: "StringMethodTransform",
@@ -2752,32 +2760,12 @@ class ElixirASTTransformer {
                         #end
                     }
                 case EField(target, _):
-                    // Check if the target is a parameter being accessed
-                    switch(target.def) {
-                        case EVar(name):
-                            if (paramNames.exists(name)) {
-                                paramNames.set(name, true); // Mark as used
-                                #if debug_ast_transformer
-                                trace('[XRay PrefixUnusedParams] Found field access on param: $name');
-                                #end
-                            }
-                        default:
-                            markUsedVars(target); // Continue checking nested expressions
-                    }
+                    // Mark the parameter as used and continue traversing
+                    markUsedVars(target);
                 case EAccess(target, key):
-                    // Check if the target is a parameter being accessed
-                    switch(target.def) {
-                        case EVar(name):
-                            if (paramNames.exists(name)) {
-                                paramNames.set(name, true); // Mark as used
-                                #if debug_ast_transformer
-                                trace('[XRay PrefixUnusedParams] Found bracket access on param: $name');
-                                #end
-                            }
-                        default:
-                            markUsedVars(target); // Continue checking nested expressions
-                    }
-                    markUsedVars(key); // Also check the key expression
+                    // Mark both target and key as used and continue traversing
+                    markUsedVars(target);
+                    markUsedVars(key);
                 default:
                     iterateAST(ast, markUsedVars);
             }
@@ -2840,15 +2828,27 @@ class ElixirASTTransformer {
             switch(ast.def) {
                 case EVar(name):
                     if (paramRenames.exists(name)) {
-                        return {def: EVar(paramRenames.get(name)), metadata: ast.metadata};
+                        #if debug_ast_transformer
+                        trace('[XRay PrefixUnusedParams] Renaming variable in body: $name -> ${paramRenames.get(name)}');
+                        #end
+                        return {def: EVar(paramRenames.get(name)), metadata: ast.metadata, pos: ast.pos};
                     }
                     return ast;
+                case EField(target, field):
+                    // Also handle field access with renamed target
+                    var newTarget = renameInAST(target);
+                    return {def: EField(newTarget, field), metadata: ast.metadata, pos: ast.pos};
+                case EAccess(target, key):
+                    // Also handle array/map access with renamed target
+                    var newTarget = renameInAST(target);
+                    var newKey = renameInAST(key);
+                    return {def: EAccess(newTarget, newKey), metadata: ast.metadata, pos: ast.pos};
                 default:
                     return transformAST(ast, renameInAST);
             }
         }
         
-        var newBody = renameInAST(body);
+        var newBody = hasChanges ? renameInAST(body) : body;
         
         return {args: newArgs, body: newBody, hasChanges: true};
     }

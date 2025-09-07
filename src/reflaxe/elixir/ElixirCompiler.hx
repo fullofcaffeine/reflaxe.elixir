@@ -12,6 +12,9 @@ import haxe.macro.Expr.Binop;
 import haxe.macro.Expr.Unop;
 import haxe.macro.Expr;
 import haxe.macro.Expr.Constant;
+import sys.FileSystem;
+import sys.io.File;
+import haxe.io.Path;
 
 import reflaxe.GenericCompiler;
 import reflaxe.compiler.TargetCodeInjection;
@@ -2155,6 +2158,73 @@ class ElixirCompiler extends GenericCompiler<
                 }
             }
             pendingSourceMapWriters = [];
+        }
+        
+        // Copy runtime modules to output directory
+        copyRuntimeModules();
+    }
+    
+    /**
+     * Copy runtime modules from runtime/ directory to output directory
+     * 
+     * WHY: Some standard library modules require hand-written Elixir implementations
+     *      to bypass AST transformation issues (e.g., ArrayIterator underscore prefixing bug).
+     *      The extern class pattern with runtime modules provides clean idiomatic Elixir
+     *      while maintaining type safety through Haxe interfaces.
+     * 
+     * WHAT: Copies all .ex files from runtime/ directory to the output lib/ directory,
+     *       overriding any generated files with the same name.
+     * 
+     * HOW: 1. Check if runtime/ directory exists
+     *      2. Iterate through all .ex files in runtime/
+     *      3. Copy each file to the appropriate output location
+     *      4. Runtime modules take precedence over generated code
+     * 
+     * EDGE CASES:
+     * - If runtime/ doesn't exist, silently skip (not all projects need runtime modules)
+     * - If output directory doesn't exist, create it
+     * - Runtime modules override generated files (by design)
+     */
+    function copyRuntimeModules(): Void {
+        // Try multiple locations for runtime directory
+        // First try absolute path to the haxe.elixir project root
+        var runtimeDir: String = "/Users/fullofcaffeine/workspace/code/haxe.elixir/runtime";
+        
+        // Check if runtime directory exists
+        if (!FileSystem.exists(runtimeDir)) {
+            // Try relative to current working directory  
+            runtimeDir = "runtime";
+            if (!FileSystem.exists(runtimeDir)) {
+                // Try two levels up (when running from examples/todo-app)
+                runtimeDir = "../../runtime";
+                if (!FileSystem.exists(runtimeDir)) {
+                    return; // No runtime modules to copy
+                }
+            }
+        }
+        
+        // Get the output directory from compiler settings
+        var outputDir: String = outputDirectory;
+        var libDir: String = outputDir; // outputDirectory already includes "lib/"
+        
+        // Ensure output lib directory exists
+        if (!FileSystem.exists(libDir)) {
+            FileSystem.createDirectory(libDir);
+        }
+        
+        // Copy all .ex files from runtime to output
+        for (file in FileSystem.readDirectory(runtimeDir)) {
+            if (file.endsWith(".ex")) {
+                var sourcePath: String = Path.join([runtimeDir, file]);
+                var destPath: String = Path.join([libDir, file]);
+                
+                // Copy the runtime module, overwriting any existing file
+                File.copy(sourcePath, destPath);
+                
+                #if debug_runtime_modules
+                trace('[Runtime Module] Copied: ${file} -> ${destPath}');
+                #end
+            }
         }
     }
     
