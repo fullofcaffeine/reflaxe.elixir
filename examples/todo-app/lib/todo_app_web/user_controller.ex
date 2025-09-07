@@ -23,13 +23,13 @@ defmodule TodoAppWeb.UserController do
   end
   def create(conn, params) do
     result = Users.create_user(params)
-    case (elem(result, 0)) do
-      0 ->
+    case (result) do
+      {:ok, _} ->
         g = elem(result, 1)
         user = g
         this1 = Plug.Conn.put_status(conn, 201)
         Phoenix.Controller.json(this1, %{:user => user, :created => true, :message => "User created successfully"})
-      1 ->
+      {:error, _} ->
         g = elem(result, 1)
         changeset = g
         this1 = Plug.Conn.put_status(conn, 422)
@@ -45,13 +45,13 @@ defmodule TodoAppWeb.UserController do
     end
     update_attrs = %{:name => params.name, :email => params.email, :age => params.age, :active => params.active}
     result = Users.update_user(user, update_attrs)
-    case (elem(result, 0)) do
-      0 ->
+    case (result) do
+      {:ok, _} ->
         g = elem(result, 1)
         updated_user = g
         data = %{:user => updated_user, :updated => true, :message => "User " <> params.id <> " updated successfully"}
         Phoenix.Controller.json(conn, data)
-      1 ->
+      {:error, _} ->
         g = elem(result, 1)
         changeset = g
         this1 = Plug.Conn.put_status(conn, 422)
@@ -66,13 +66,13 @@ defmodule TodoAppWeb.UserController do
       Phoenix.Controller.json(this1, %{:error => "User not found"})
     end
     result = Users.delete_user(user)
-    case (elem(result, 0)) do
-      0 ->
+    case (result) do
+      {:ok, _} ->
         g = elem(result, 1)
         _deleted_user = g
         data = %{:deleted => params.id, :success => true, :message => "User " <> params.id <> " deleted successfully"}
         Phoenix.Controller.json(conn, data)
-      1 ->
+      {:error, _} ->
         g = elem(result, 1)
         _changeset = g
         this1 = Plug.Conn.put_status(conn, 500)

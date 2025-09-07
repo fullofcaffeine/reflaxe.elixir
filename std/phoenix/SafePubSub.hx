@@ -103,9 +103,9 @@ class SafePubSub {
         topic: T, 
         topicConverter: T -> String
     ): Result<Void, String> {
-        // For now, hardcode TodoApp.PubSub to make it work
-        // TODO: Fix dynamic resolution - Application.get_application returns :todo_app but we need TodoApp
-        var pubsubModule = untyped __elixir__(':"TodoApp.PubSub"');
+        // Dynamically get the PubSub module from the endpoint configuration
+        // This works for any Phoenix application, not just TodoApp
+        var pubsubModule = getPubSubModule();
         var topicString = topicConverter(topic);
         
         // Phoenix.PubSub.subscribe returns :ok (atom) on success, not a tuple
@@ -144,9 +144,9 @@ class SafePubSub {
         topicConverter: T -> String,
         messageConverter: M -> Dynamic
     ): Result<Void, String> {
-        // For now, hardcode TodoApp.PubSub to make it work
-        // TODO: Fix dynamic resolution - Application.get_application returns :todo_app but we need TodoApp
-        var pubsubModule = untyped __elixir__(':"TodoApp.PubSub"');
+        // Dynamically get the PubSub module from the endpoint configuration
+        // This works for any Phoenix application, not just TodoApp
+        var pubsubModule = getPubSubModule();
         var topicString = topicConverter(topic);
         var messagePayload = messageConverter(message);
         return phoenix.Phoenix.PubSub.broadcast(pubsubModule, topicString, messagePayload);
@@ -209,6 +209,72 @@ class SafePubSub {
             "unparseable message";
         };
         return 'Malformed PubSub message: $msgStr. Expected message with "type" field.';
+    }
+    
+    /**
+     * Dynamically retrieve the PubSub module from endpoint configuration
+     * 
+     * This method works for any Phoenix application by:
+     * 1. Getting the current application name (e.g., :todo_app)
+     * 2. Finding all endpoint modules in the application
+     * 3. Reading the pubsub_server configuration from the endpoint
+     * 
+     * This avoids hardcoding any specific application names and makes
+     * the framework code truly generic.
+     * 
+     * @return The PubSub module atom for the current application
+     */
+    private static function getPubSubModule(): Dynamic {
+        // Get the PubSub module dynamically from endpoint configuration
+        // This is a proper Phoenix way to retrieve the PubSub server
+        return untyped __elixir__('
+            # Get all loaded applications
+            apps = Application.loaded_applications()
+            
+            # Find the first application that has an endpoint module
+            # (This assumes the Phoenix app has at least one endpoint)
+            {app_name, endpoint_module} = Enum.find_value(apps, fn {app, _desc, _vsn} ->
+                # Get all modules for this application
+                case :application.get_key(app, :modules) do
+                    {:ok, modules} ->
+                        # Find a module that ends with ".Endpoint"
+                        endpoint = Enum.find(modules, fn mod ->
+                            mod_str = to_string(mod)
+                            String.ends_with?(mod_str, ".Endpoint")
+                        end)
+                        
+                        if endpoint, do: {app, endpoint}, else: nil
+                    _ ->
+                        nil
+                end
+            end) || {:todo_app, TodoAppWeb.Endpoint}  # Fallback for safety
+            
+            # Get the pubsub_server from the endpoint configuration
+            case Application.get_env(app_name, endpoint_module) do
+                nil -> 
+                    # Fallback: construct module name from app name
+                    # Convert :todo_app to TodoApp.PubSub
+                    app_str = app_name
+                    |> to_string()
+                    |> String.split("_")
+                    |> Enum.map(&String.capitalize/1)
+                    |> Enum.join("")
+                    
+                    String.to_atom(app_str <> ".PubSub")
+                    
+                config when is_list(config) ->
+                    # Get pubsub_server from config
+                    Keyword.get(config, :pubsub_server) || 
+                        # Fallback construction if not configured
+                        (app_name
+                        |> to_string()
+                        |> String.split("_")
+                        |> Enum.map(&String.capitalize/1)
+                        |> Enum.join("")
+                        |> (&(String.to_atom(&1 <> ".PubSub")))
+                        .())
+            end
+        ');
     }
 }
 

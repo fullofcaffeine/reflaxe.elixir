@@ -34,7 +34,7 @@ defmodule Lambda do
   def fold(it, f, first) do
     acc = first
     v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc, v, :ok}, fn _, {acc_acc, acc_v, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, acc, :ok}, fn _, {acc_v, acc_acc, acc_state} -> nil end)
     acc
   end
   def count(it, pred) do
@@ -87,7 +87,7 @@ end)
   def index_of(it, v) do
     i = 0
     x = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, x, :ok}, fn _, {acc_i, acc_x, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {x, i, :ok}, fn _, {acc_x, acc_i, acc_state} -> nil end)
     -1
   end
   def has(it, v) do

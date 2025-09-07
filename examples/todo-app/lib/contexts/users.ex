@@ -1,7 +1,7 @@
 defmodule Users do
   def list_users(filter) do
     if (filter != nil) do
-      query = Ecto.Query.from(User)
+      query = Query.from(User)
       query = if (filter.name != nil) do
   EctoQuery_Impl_.where(query, "name", "%" <> Kernel.to_string(filter.name) <> "%")
 else

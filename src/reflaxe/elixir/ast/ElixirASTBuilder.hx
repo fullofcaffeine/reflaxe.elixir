@@ -1516,6 +1516,43 @@ class ElixirASTBuilder {
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
+                // Check if this is a switch on an idiomatic enum
+                // Haxe optimizes enum switches to TEnumIndex, so we need to look deeper
+                
+                // Helper function to extract the enum type from an expression
+                function extractEnumTypeFromSwitch(expr: TypedExpr): Null<EnumType> {
+                    return switch(expr.expr) {
+                        case TParenthesis(innerExpr):
+                            // Skip parenthesis wrapper
+                            extractEnumTypeFromSwitch(innerExpr);
+                        case TMeta(_, innerExpr):
+                            // Skip metadata wrapper
+                            extractEnumTypeFromSwitch(innerExpr);
+                        case TEnumIndex(enumExpr):
+                            // Found TEnumIndex, get the enum type from the inner expression
+                            switch(enumExpr.t) {
+                                case TEnum(enumRef, _): enumRef.get();
+                                default: null;
+                            }
+                        default:
+                            // Direct enum type
+                            switch(expr.t) {
+                                case TEnum(enumRef, _): enumRef.get();
+                                default: null;
+                            }
+                    }
+                }
+                
+                var enumType = extractEnumTypeFromSwitch(e);
+                var isIdiomaticEnum = if (enumType != null) {
+                    var hasMetadata = enumType.meta.has(":elixirIdiomatic");
+                    trace('[DEBUG ENUM] Found enum ${enumType.name}, has @:elixirIdiomatic: $hasMetadata');
+                    hasMetadata;
+                } else {
+                    trace('[DEBUG ENUM] No enum type found in switch target');
+                    false;
+                };
+                
                 var expr = buildFromTypedExpr(e, variableUsageMap).def;
                 var clauses = [];
                 
@@ -1528,7 +1565,13 @@ class ElixirASTBuilder {
                 var isReturnContext = false; // TODO: Will be set via metadata
                 
                 for (c in cases) {
-                    var patterns = [for (v in c.values) convertPattern(v)];
+                    var patterns = if (isIdiomaticEnum && enumType != null) {
+                        // For idiomatic enums, convert integer patterns to proper tuple patterns
+                        // Pass the actual enum expression for type extraction
+                        [for (v in c.values) convertIdiomaticEnumPatternWithType(v, enumType)];
+                    } else {
+                        [for (v in c.values) convertPattern(v)];
+                    }
                     
                     // Analyze the case body for enum parameter usage
                     var body = buildFromTypedExpr(c.expr, variableUsageMap);
@@ -2429,8 +2472,8 @@ class ElixirASTBuilder {
                                                 // Transform returns in the body to halt tuples
                                                 transformReturnsToHalts(transformedBody, updatedContAccumulator);
                                             } else if (isEmptyBody) {
-                                                // Empty body - just return nil
-                                                makeAST(ENil);
+                                                // Empty body - return cont with accumulator unchanged
+                                                makeAST(ETuple([makeAST(EAtom("cont")), updatedContAccumulator]));
                                             } else {
                                                 // Normal body without early returns
                                                 makeAST(EBlock([
@@ -2510,8 +2553,24 @@ class ElixirASTBuilder {
                 
             case TEnumIndex(e):
                 // Get enum tag index
-                var exprAST = buildFromTypedExpr(e);
-                ECall(exprAST, "elem", [makeAST(EInteger(0))]);
+                // For idiomatic enums, we match directly on the tuple without elem()
+                // Check if this is an idiomatic enum
+                var isIdiomatic = switch(e.t) {
+                    case TEnum(enumRef, _):
+                        enumRef.get().meta.has(":elixirIdiomatic");
+                    default:
+                        false;
+                };
+                
+                if (isIdiomatic) {
+                    // For idiomatic enums, match directly on the tuple
+                    // The patterns will handle the atom matching
+                    buildFromTypedExpr(e, variableUsageMap).def;
+                } else {
+                    // For regular enums, use elem to get the integer index
+                    var exprAST = buildFromTypedExpr(e, variableUsageMap);
+                    ECall(exprAST, "elem", [makeAST(EInteger(0))]);
+                }
                 
             case TIdent(s):
                 // Identifier reference
@@ -3096,19 +3155,213 @@ class ElixirASTBuilder {
                     atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
                 }
                 
-                if (ef.params.length == 0) {
+                // Extract parameter count from the enum field's type
+                var paramCount = 0;
+                switch(ef.type) {
+                    case TFun(args, _):
+                        paramCount = args.length;
+                    default:
+                        // No parameters
+                }
+                
+                if (paramCount == 0) {
                     // No-argument constructor
                     PLiteral(makeAST(EAtom(atomName)));
                 } else {
                     // Constructor with arguments - needs to be a tuple pattern
                     // This will be {:Constructor, _, _, ...} with wildcards for args
-                    var wildcards = [for (i in 0...ef.params.length) PWildcard];
+                    var wildcards = [for (i in 0...paramCount) PWildcard];
                     PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
                 }
                 
             // Default/wildcard
             default: 
                 PWildcard;
+        }
+    }
+    
+    /**
+     * Convert patterns for idiomatic enum switch statements with explicit EnumType
+     * 
+     * WHY: When we've already extracted the enum type, we can use it directly
+     * WHAT: Maps integer patterns to proper atom-based tuple patterns for idiomatic enums
+     * HOW: Uses the provided enum type to map indices to constructor names
+     */
+    static function convertIdiomaticEnumPatternWithType(value: TypedExpr, enumType: EnumType): EPattern {
+        return switch(value.expr) {
+            // Haxe internally converts enum constructors to integers for switch
+            case TConst(TInt(index)):
+                // Get the constructor at this index
+                // IMPORTANT: Haxe preserves definition order for enum constructor indices
+                // The first defined constructor is index 0, second is 1, etc.
+                // We need to get constructors in their definition order, NOT alphabetical
+                var constructors = enumType.constructs;
+                
+                // Build array of constructors in definition order (by index)
+                var constructorArray = [];
+                for (name in constructors.keys()) {
+                    var constructor = constructors.get(name);
+                    constructorArray[constructor.index] = constructor;
+                }
+                
+                if (index >= 0 && index < constructorArray.length && constructorArray[index] != null) {
+                    var constructor = constructorArray[index];
+                    
+                    // Convert to snake_case for idiomatic Elixir
+                    var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(constructor.name);
+                    
+                    #if debug_idiomatic_enum
+                    trace('[DEBUG IDIOMATIC] Constructor ${constructor.name}: type=${constructor.type}, params=${constructor.params}');
+                    #end
+                    
+                    // Create proper tuple pattern based on constructor parameters
+                    // For idiomatic enums, check if the constructor actually has parameters
+                    // constructor.type represents the function type of the constructor
+                    
+                    // Extract parameter count from the constructor's type field
+                    var paramCount = 0;
+                    switch(constructor.type) {
+                        case TFun(args, _):
+                            paramCount = args.length;
+                            #if debug_idiomatic_enum
+                            trace('[DEBUG IDIOMATIC] Found ${paramCount} parameters in TFun for ${constructor.name}');
+                            #end
+                        default:
+                            // No parameters
+                            #if debug_idiomatic_enum
+                            trace('[DEBUG IDIOMATIC] No TFun type, assuming no parameters for ${constructor.name}');
+                            #end
+                    }
+                    
+                    #if debug_idiomatic_enum
+                    trace('[DEBUG IDIOMATIC] Generating pattern for ${constructor.name} with ${paramCount} parameters');
+                    #end
+                    
+                    if (paramCount > 0) {
+                        // Constructor with arguments - create tuple pattern with wildcards
+                        // We use wildcards because the actual values are extracted in the body
+                        var wildcards = [for (i in 0...paramCount) PWildcard];
+                        PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
+                    } else {
+                        // No-argument constructor - just the atom
+                        PLiteral(makeAST(EAtom(atomName)));
+                    }
+                } else {
+                    // Invalid index, use wildcard
+                    PWildcard;
+                }
+                
+            // For actual enum constructor patterns (shouldn't happen in idiomatic switch)
+            case TField(_, FEnum(_, ef)):
+                var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+                
+                // Extract parameter count from the enum field's type
+                var paramCount = 0;
+                switch(ef.type) {
+                    case TFun(args, _):
+                        paramCount = args.length;
+                    default:
+                        // No parameters
+                }
+                
+                if (paramCount == 0) {
+                    PLiteral(makeAST(EAtom(atomName)));
+                } else {
+                    var wildcards = [for (i in 0...paramCount) PWildcard];
+                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
+                }
+                
+            default:
+                // Fallback to regular pattern conversion
+                convertPattern(value);
+        }
+    }
+    
+    /**
+     * Convert patterns for idiomatic enum switch statements
+     * 
+     * WHY: Idiomatic enums like Result<T,E> should generate {:ok, value} and {:error, reason}
+     *      patterns, not integer-based matching
+     * WHAT: Maps Haxe's internal integer indices to proper atom-based tuple patterns
+     * HOW: Analyzes the enum type to get constructor names and converts them to snake_case atoms
+     */
+    static function convertIdiomaticEnumPattern(value: TypedExpr, switchTarget: TypedExpr): EPattern {
+        #if debug_idiomatic_enum
+        trace('[XRay IdiomaticEnum] Converting pattern for value: ${value.expr}');
+        trace('[XRay IdiomaticEnum] Switch target type: ${switchTarget.t}');
+        #end
+        
+        // Always trace for debugging
+        trace('[DEBUG ENUM] convertIdiomaticEnumPattern called with value: ${value.expr}');
+        
+        // Get the enum type from the switch target
+        var enumType = switch(switchTarget.t) {
+            case TEnum(enumRef, _): enumRef.get();
+            default: return convertPattern(value); // Fallback to regular pattern
+        };
+        
+        return switch(value.expr) {
+            // Haxe internally converts enum constructors to integers for switch
+            case TConst(TInt(index)):
+                // Get the constructor at this index
+                var constructors = enumType.constructs;
+                var constructorNames = [for (name in constructors.keys()) name];
+                constructorNames.sort((a, b) -> a < b ? -1 : 1); // Ensure consistent ordering
+                
+                if (index >= 0 && index < constructorNames.length) {
+                    var constructorName = constructorNames[index];
+                    var constructor = constructors.get(constructorName);
+                    
+                    // Convert to snake_case for idiomatic Elixir
+                    var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(constructor.name);
+                    
+                    // Create proper tuple pattern based on constructor parameters
+                    // Extract parameter count from constructor's type field
+                    var paramCount = 0;
+                    switch(constructor.type) {
+                        case TFun(args, _):
+                            paramCount = args.length;
+                        default:
+                            // No parameters
+                    }
+                    
+                    if (paramCount > 0) {
+                        // Constructor with arguments - create tuple pattern with wildcards
+                        // We use wildcards because the actual values are extracted in the body
+                        var wildcards = [for (i in 0...paramCount) PWildcard];
+                        PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
+                    } else {
+                        // No-argument constructor - just the atom
+                        PLiteral(makeAST(EAtom(atomName)));
+                    }
+                } else {
+                    // Invalid index, use wildcard
+                    PWildcard;
+                }
+                
+            // For actual enum constructor patterns (shouldn't happen in idiomatic switch)
+            case TField(_, FEnum(_, ef)):
+                var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+                
+                // Extract parameter count from the enum field's type
+                var paramCount = 0;
+                switch(ef.type) {
+                    case TFun(args, _):
+                        paramCount = args.length;
+                    default:
+                        // No parameters
+                }
+                
+                if (paramCount == 0) {
+                    PLiteral(makeAST(EAtom(atomName)));
+                } else {
+                    var wildcards = [for (i in 0...paramCount) PWildcard];
+                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
+                }
+                
+            default:
+                // Fallback to regular pattern conversion
+                convertPattern(value);
         }
     }
     
@@ -3866,7 +4119,7 @@ class ElixirASTBuilder {
     
     /**
      * Convert module type to string
-     * Handles package-based module naming (e.g., ecto.Query → Ecto.Query)
+     * Handles package-based module naming (e.g., ecto.Query → Query for non-externs, Ecto.Query for externs)
      */
     static function moduleTypeToString(m: ModuleType): String {
         // Get the basic name first
@@ -3876,6 +4129,12 @@ class ElixirASTBuilder {
             case TTypeDecl(t): t.get().name;
             case TAbstract(a): a.get().name;
         }
+        
+        // Check if this is an extern class - only externs should get package prefixes
+        var isExtern = switch(m) {
+            case TClassDecl(c): c.get().isExtern;
+            default: false;
+        };
         
         // Get the package information
         var pack = switch(m) {
@@ -3893,15 +4152,22 @@ class ElixirASTBuilder {
                 return name;  // Return just the name without package prefix
             }
             
+            // For non-extern classes (like ecto.Query wrapper), just return the name
+            // This allows our Query wrapper to be called as Query.from() not Ecto.Query.from()
+            if (!isExtern) {
+                return name;
+            }
+            
+            // For extern classes, add the package prefix for proper Elixir module references
             switch(pack[0]) {
                 case "ecto":
-                    // ecto.Query should become Ecto.Query (capitalize package name)
+                    // Extern ecto modules should become Ecto.Module
                     return "Ecto." + name;
                 case "phoenix":
-                    // phoenix.LiveView should become Phoenix.LiveView
+                    // Extern phoenix modules should become Phoenix.Module
                     return "Phoenix." + name;
                 case "plug":
-                    // plug.Conn should become Plug.Conn
+                    // Extern plug modules should become Plug.Module
                     return "Plug." + name;
                 default:
                     // Other packages keep their structure

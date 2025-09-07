@@ -447,11 +447,15 @@ class TodoLive {
 		return tagsString.split(",").map(function(t) return t.trim());
 	}
 	
-	static function getUserFromSession(session: Session): User {
+	static function getUserFromSession(session: Dynamic): User {
 		// In real app, would fetch from session/token and validate properly
 		// For demo purposes, return a properly typed User object
+		// Handle empty session case (when Phoenix passes %{})
+		// Use Reflect.field for safe map access since session is Dynamic
+		var userId: Null<Int> = Reflect.field(session, "user_id");  // Note: Phoenix uses snake_case keys
+		
 		return {
-			id: session.userId != null ? session.userId : 1,  // camelCase!
+			id: userId != null ? userId : 1,  // Default to user 1 for demo
 			name: "Demo User",
 			email: "demo@example.com", 
 			passwordHash: "hashed_password",  // camelCase!

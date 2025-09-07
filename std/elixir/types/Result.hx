@@ -42,6 +42,7 @@ package elixir.types;
  * @see Agent for usage with Agent operations
  * @see GenServer for usage with GenServer operations
  */
+@:elixirIdiomatic
 enum Result<T, E = String> {
     /**
      * Represents a successful operation with a value of type T.
