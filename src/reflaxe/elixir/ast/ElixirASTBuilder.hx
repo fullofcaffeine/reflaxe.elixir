@@ -2445,8 +2445,12 @@ class ElixirASTBuilder {
                                 // If body is empty and we have accumulator variables, 
                                 // we need to use wildcard pattern to avoid unused variable warnings
                                 var accPatternToUse = if (isEmptyBody && Lambda.count(mutatedVars) > 0) {
-                                    // Use wildcard for unused accumulator
-                                    PWildcard;
+                                    // Build a tuple with all wildcards for unused accumulator
+                                    var wildcardPatterns: Array<EPattern> = [];
+                                    for (i in 0...(accVarNames.length + 1)) { // +1 for acc_state
+                                        wildcardPatterns.push(PWildcard);
+                                    }
+                                    PTuple(wildcardPatterns);
                                 } else {
                                     // Use the actual pattern tuple
                                     finalAccPatternTuple;
