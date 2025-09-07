@@ -23,51 +23,49 @@
 package haxe.iterators;
 
 /**
- * ArrayIterator for Reflaxe.Elixir - Type Compatibility Layer
+ * ArrayIterator for Reflaxe.Elixir
  * 
- * WHY THIS EXISTS:
- * When using @:coreApi on Array, Haxe's type system expects iterator()
- * to return specifically haxe.iterators.ArrayIterator<T>, not just Iterator<T>.
- * This is a requirement of the @:coreApi metadata for maintaining type compatibility.
+ * This class provides type compatibility with Haxe's Array.iterator() API.
+ * The Elixir runtime implementation (lib/array_iterator.ex) simply returns
+ * the array itself since Elixir lists are already iterable.
  * 
- * HOW IT WORKS:
- * 1. This class exists purely for type compatibility with Haxe's core Array API
- * 2. The Reflaxe.Elixir compiler recognizes and optimizes away ArrayIterator
- * 3. For-in loops using arrays are transformed directly to Elixir's Enum operations
- * 4. This class is NEVER actually used at runtime in generated Elixir code
+ * ## Usage Example (Haxe)
+ * ```haxe
+ * var arr = [1, 2, 3];
+ * var iter = arr.iterator();  // Returns ArrayIterator
+ * ```
  * 
- * ELIXIR TRANSFORMATION:
- * Haxe:   for (item in array) { trace(item); }
- * Elixir: Enum.each(array, fn item -> IO.inspect(item) end)
- * 
- * The ArrayIterator is completely eliminated during compilation.
+ * ## Generated Idiomatic Elixir
+ * ```elixir
+ * arr = [1, 2, 3]
+ * iter = ArrayIterator.new(arr)  # Returns arr itself via runtime module
+ * ```
  */
+@:coreApi
+@:native("ArrayIterator")
 class ArrayIterator<T> {
     final array: Array<T>;
     var current: Int = 0;
     
     /**
      * Create a new ArrayIterator.
-     * NOTE: This constructor is only called at compile-time for type checking.
-     * The actual iterator is never instantiated in generated Elixir code.
+     * The Elixir runtime module handles this by returning the array itself.
      */
-    public inline function new(array: Array<T>) {
+    public function new(array: Array<T>) {
         this.array = array;
     }
     
     /**
      * Check if there are more elements.
-     * NOTE: Transformed to Enum operations in Elixir.
      */
-    public inline function hasNext(): Bool {
+    public function hasNext(): Bool {
         return current < array.length;
     }
     
     /**
      * Get the next element.
-     * NOTE: Transformed to Enum operations in Elixir.
      */
-    public inline function next(): T {
+    public function next(): T {
         return array[current++];
     }
 }
