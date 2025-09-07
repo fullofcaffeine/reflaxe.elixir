@@ -446,11 +446,9 @@ class ModuleBuilder {
                         #end
                         
                         // Create function definition with metadata
-                        var funcAst = if (func.isPublic) {
-                            makeAST(EDef(funcName, args, null, body));
-                        } else {
-                            makeAST(EDefp(funcName, args, null, body));
-                        }
+                        // In LiveView modules, ALL functions must be public (def) because
+                        // Phoenix framework needs to access them via callbacks
+                        var funcAst = makeAST(EDef(funcName, args, null, body));
                         
                         // Add test metadata if this is a test function
                         if (isTestFunction) {

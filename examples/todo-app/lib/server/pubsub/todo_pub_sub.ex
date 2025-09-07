@@ -63,12 +63,12 @@ end
       "bulk_update" ->
         if (msg.action != nil) do
           bulk_action = TodoPubSub.parse_bulk_action(msg.action)
-          case (elem(bulk_action, 0)) do
-            0 ->
+          case (bulk_action) do
+            {:some, _} ->
               g = elem(bulk_action, 1)
               action = g
               action
-            1 ->
+            :none ->
               :none
           end
         else
@@ -77,12 +77,12 @@ end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
           alert_level = TodoPubSub.parse_alert_level(msg.level)
-          case (elem(alert_level, 0)) do
-            0 ->
+          case (alert_level) do
+            {:some, _} ->
               g = elem(alert_level, 1)
               level = g
               {msg.message, level}
-            1 ->
+            :none ->
               :none
           end
         else

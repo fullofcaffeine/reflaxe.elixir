@@ -5,16 +5,16 @@ defmodule FlashMapTools do
   def get_all(flash_map) do
     messages = []
     if (flash_map.info != nil) do
-      messages = messages ++ [Phoenix.Flash.info(flash_map.info)]
+      messages = messages ++ [Flash.info(flash_map.info)]
     end
     if (flash_map.success != nil) do
-      messages = messages ++ [Phoenix.Flash.success(flash_map.success)]
+      messages = messages ++ [Flash.success(flash_map.success)]
     end
     if (flash_map.warning != nil) do
-      messages = messages ++ [Phoenix.Flash.warning(flash_map.warning)]
+      messages = messages ++ [Flash.warning(flash_map.warning)]
     end
     if (flash_map.error != nil) do
-      messages = messages ++ [Phoenix.Flash.error(flash_map.error)]
+      messages = messages ++ [Flash.error(flash_map.error)]
     end
     messages
   end

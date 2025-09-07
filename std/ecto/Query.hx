@@ -105,7 +105,8 @@ class Query {
      */
     public static function from<T>(schema: Class<T>): EctoQuery<T> {
         // Using require to make the macro available
-        var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from({0}))', schema);
+        // Ecto.Query.from requires a binding variable like "from(t in Schema)"
+        var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}))', schema);
         return new EctoQuery<T>(query);
     }
     
