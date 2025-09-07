@@ -6,7 +6,7 @@ defmodule Output do
     nil
   end
   def write_bytes(struct, b, pos, len) do
-    if (pos < 0 || len < 0 || pos + len > b.length) do
+    if (pos < 0 || len < 0 || pos + len > length(b)) do
       throw("Invalid parameters")
     end
     k = len

@@ -7,14 +7,14 @@ defmodule EnumValueMap do
     if (d != 0), do: d
     p1 = Type.enum_parameters(k1)
     p2 = Type.enum_parameters(k2)
-    ld = (p1.length - p2.length)
+    ld = (length(p1) - length(p2))
     if (ld != 0), do: ld
-    if (p1.length == 0 && p2.length == 0), do: 0
+    if (length(p1) == 0 && length(p2) == 0), do: 0
     struct.compare_args(p1, p2)
   end
-  defp compare_args(struct, a1, _a2) do
+  defp compare_args(struct, a1, a2) do
     g = 0
-    g1 = a1.length
+    g1 = length(a1)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
