@@ -1,4 +1,4 @@
-defmodule Server.Live.UserLiveEvent do
+defmodule server.live.UserLiveEvent do
   def new_user() do
     {:NewUser}
   end

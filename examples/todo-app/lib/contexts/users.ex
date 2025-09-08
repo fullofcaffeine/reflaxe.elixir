@@ -2,21 +2,15 @@ defmodule Users do
   def list_users(filter) do
     if (filter != nil) do
       query = Query.from(User)
-      query = if (filter.name != nil) do
-  EctoQuery_Impl_.where(query, "name", "%" <> Kernel.to_string(filter.name) <> "%")
-else
-  query
-end
-      query = if (filter.email != nil) do
-  EctoQuery_Impl_.where(query, "email", "%" <> Kernel.to_string(filter.email) <> "%")
-else
-  query
-end
-      query = if (filter.is_active != nil) do
-  EctoQuery_Impl_.where(query, "active", filter.is_active)
-else
-  query
-end
+      if (filter.name != nil) do
+        query = EctoQuery_Impl_.where(query, "name", "%" <> Kernel.to_string(filter.name) <> "%")
+      end
+      if (filter.email != nil) do
+        query = EctoQuery_Impl_.where(query, "email", "%" <> Kernel.to_string(filter.email) <> "%")
+      end
+      if (filter.is_active != nil) do
+        query = EctoQuery_Impl_.where(query, "active", filter.is_active)
+      end
       TodoApp.Repo.all(query)
     end
     TodoApp.Repo.all(User)
@@ -56,3 +50,4 @@ end
     %{:total => 0, :active => 0, :inactive => 0}
   end
 end
+Users.main()

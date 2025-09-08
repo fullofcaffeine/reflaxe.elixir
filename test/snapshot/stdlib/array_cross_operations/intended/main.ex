@@ -22,20 +22,28 @@ defmodule Main do
   end
   defp test_list_operations() do
     items = ["apple", "banana", "cherry", "date"]
-    cherry_index = case Enum.find_index(items, fn item -> item == "cherry" end) do
+    cherry_index = (
+
+                case Enum.find_index(items, fn item -> item == "cherry" end) do
                     nil -> -1
                     idx -> idx
                 end
+            
+)
     Log.trace("Index of cherry: " <> Kernel.to_string(cherry_index), %{:fileName => "Main.hx", :lineNumber => 51, :className => "Main", :methodName => "testListOperations"})
     list = [1, 2, 3]
     list = list ++ [4]
     Log.trace("After push: " <> Std.string(list), %{:fileName => "Main.hx", :lineNumber => 58, :className => "Main", :methodName => "testListOperations"})
     combined = list ++ [5, 6, 7]
     Log.trace("Combined: " <> Std.string(combined), %{:fileName => "Main.hx", :lineNumber => 62, :className => "Main", :methodName => "testListOperations"})
-    has_two = (case Enum.find_index(list, fn item -> item == 2 end) do
+    has_two = (
+
+                case Enum.find_index(list, fn item -> item == 2 end) do
                     nil -> -1
                     idx -> idx
-                end) != -1
+                end
+            
+) != -1
     Log.trace("Has 2: " <> Std.string(has_two), %{:fileName => "Main.hx", :lineNumber => 66, :className => "Main", :methodName => "testListOperations"})
   end
   defp is_even(n) do

@@ -175,6 +175,39 @@ class ElixirCompiler extends GenericCompiler<
     public var consumedTempVariables: Null<Map<String, String>> = null;
     
     /**
+     * Module dependency tracking
+     * 
+     * WHY: When generating scripts with bootstrap code (static main()), we need to
+     *      ensure dependent modules are loaded in the correct order. Elixir doesn't
+     *      automatically handle module dependencies like some languages.
+     * 
+     * WHAT: Tracks which modules each module depends on (via remote calls).
+     *       Key = module name being compiled, Value = set of modules it depends on
+     * 
+     * HOW: Populated during AST building when we generate ERemoteCall nodes.
+     *      Used by output iterator to generate a bootstrap script or combine modules.
+     */
+    public var moduleDependencies: Map<String, Map<String, Bool>> = new Map();
+    
+    /**
+     * Current module being compiled
+     * Used to track dependencies for the current compilation unit
+     */
+    public var currentCompiledModule: String = null;
+    
+    /**
+     * Track modules that have bootstrap code (static main())
+     * These modules need special handling for script execution
+     */
+    public var modulesWithBootstrap: Array<String> = [];
+    
+    /**
+     * Track module output file paths for require generation
+     * Maps module name -> relative file path from output directory
+     */
+    public var moduleOutputPaths: Map<String, String> = new Map();
+    
+    /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
      */
     public function new() {
@@ -334,6 +367,22 @@ class ElixirCompiler extends GenericCompiler<
     }
     
     /**
+     * Get the output path for a module (for tracking)
+     */
+    private function getModuleOutputPath(moduleName: String, pack: Array<String> = null): String {
+        var fileName = reflaxe.elixir.ast.NameUtils.toSnakeCase(moduleName) + ".ex";
+        
+        if (pack != null && pack.length > 0) {
+            var dirPath = pack.map(function(segment) {
+                return reflaxe.elixir.ast.NameUtils.toSnakeCase(segment);
+            }).join("/");
+            return dirPath + "/" + fileName;
+        }
+        
+        return fileName;
+    }
+    
+    /**
      * Set output path for ANY module type using the universal naming system.
      * This ensures consistent snake_case naming for all generated files.
      */
@@ -386,6 +435,13 @@ class ElixirCompiler extends GenericCompiler<
         var moduleName = classType.name;
         var modulePack = classType.pack;
         
+        // Set current module for dependency tracking
+        currentCompiledModule = moduleName;
+        // Initialize dependency map for this module if not exists
+        if (!moduleDependencies.exists(moduleName)) {
+            moduleDependencies.set(moduleName, new Map<String, Bool>());
+        }
+        
         if (classType.meta.has(":native")) {
             var nativeMeta = classType.meta.extract(":native");
             if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
@@ -408,6 +464,10 @@ class ElixirCompiler extends GenericCompiler<
         
         // Set output file path with snake_case naming
         setUniversalOutputPath(moduleName, modulePack);
+        
+        // Track the output path for this module
+        var outputPath = getModuleOutputPath(moduleName, modulePack);
+        moduleOutputPaths.set(moduleName, outputPath);
         
         // Store current class context for use in expression compilation
         this.currentClassType = classType;
@@ -508,6 +568,8 @@ class ElixirCompiler extends GenericCompiler<
         var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
         
         // Build AST for the expression with usage information
+        // Set compiler reference for dependency tracking
+        reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
         var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, usageMap);
         
         // Apply transformations to all expressions, not just function bodies
@@ -527,6 +589,66 @@ class ElixirCompiler extends GenericCompiler<
      */
     public function generateOutputIterator(): Iterator<DataAndFileInfo<StringOrBytes>> {
         return new ElixirOutputIterator(this);
+    }
+    
+    /**
+     * Get modules sorted by dependency order (topological sort)
+     * 
+     * WHY: When generating scripts with bootstrap code, modules must be loaded
+     *      in dependency order to avoid "module not found" errors.
+     * 
+     * WHAT: Returns a list of module names sorted so that dependencies come before
+     *       modules that depend on them.
+     * 
+     * HOW: Simple topological sort - modules with no dependencies first,
+     *      then modules that only depend on already-sorted modules.
+     * 
+     * @return Array of module names in dependency order
+     */
+    public function getSortedModules(): Array<String> {
+        var sorted: Array<String> = [];
+        var remaining = new Map<String, Bool>();
+        
+        // Collect all modules
+        for (moduleName in moduleDependencies.keys()) {
+            remaining.set(moduleName, true);
+        }
+        
+        // Keep adding modules that have all dependencies satisfied
+        while (remaining.keys().hasNext()) {
+            var added = false;
+            for (moduleName in remaining.keys()) {
+                var deps = moduleDependencies.get(moduleName);
+                var canAdd = true;
+                
+                // Check if all dependencies are already in sorted list
+                if (deps != null) {
+                    for (dep in deps.keys()) {
+                        if (remaining.exists(dep)) {
+                            canAdd = false;
+                            break;
+                        }
+                    }
+                }
+                
+                if (canAdd) {
+                    sorted.push(moduleName);
+                    remaining.remove(moduleName);
+                    added = true;
+                }
+            }
+            
+            // Break if we can't add any more (circular dependencies)
+            if (!added) {
+                // Add remaining modules anyway to avoid infinite loop
+                for (moduleName in remaining.keys()) {
+                    sorted.push(moduleName);
+                }
+                break;
+            }
+        }
+        
+        return sorted;
     }
     
     /**
@@ -558,406 +680,45 @@ class ElixirCompiler extends GenericCompiler<
             return null;
         }
         
-        // Check if this class has special annotations that need ModuleBuilder
-        if (hasSpecialAnnotations(classType)) {
-            // Use ModuleBuilder for annotation-based modules
-            var instanceFields = classType.fields.get();
-            var staticFields = classType.statics.get();
-            
-            #if debug_module_builder
-            trace('[ElixirCompiler] Class ${classType.name} has ${instanceFields.length} instance fields and ${staticFields.length} static fields');
-            for (f in staticFields) {
-                trace('[ElixirCompiler] - Static field: ${f.name}, kind: ${f.kind}');
-            }
-            #end
-            
-            // Combine instance and static fields
-            var allFields = instanceFields.concat(staticFields);
-            
-            var varFields = allFields.filter(f -> f.kind.match(FVar(_, _)));
-            var funcFields = allFields.filter(f -> f.kind.match(FMethod(_)));
-            
-            #if debug_module_builder
-            trace('[ElixirCompiler] Filtered: ${varFields.length} var fields, ${funcFields.length} func fields');
-            #end
-            
-            var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, 
-                varFields, funcFields);
-            
-            #if debug_module_builder
-            if (classType.name == "Main") {
-                trace('[ElixirCompiler] Received module AST for Main from ModuleBuilder');
-                trace('[ElixirCompiler] Main module metadata: ${moduleAST.metadata}');
-                if (moduleAST.metadata != null) {
-                    trace('[ElixirCompiler] Main module metadata.isExunit: ${moduleAST.metadata.isExunit}');
-                }
-            }
-            #end
-            
-            return moduleAST;
+        // ALWAYS use ModuleBuilder for ALL classes to eliminate duplication
+        // All classes go through ModuleBuilder now for consistency
+        
+        // Use ModuleBuilder for ALL modules (not just annotated ones)
+        var instanceFields = classType.fields.get();
+        var staticFields = classType.statics.get();
+        
+        #if debug_module_builder
+        trace('[ElixirCompiler] Class ${classType.name} has ${instanceFields.length} instance fields and ${staticFields.length} static fields');
+        for (f in staticFields) {
+            trace('[ElixirCompiler] - Static field: ${f.name}, kind: ${f.kind}');
         }
+        #end
         
-        // Get module name - check for @:native annotation first
-        var moduleName = classType.name;
+        // Combine instance and static fields
+        var allFields = instanceFields.concat(staticFields);
         
-        // Check if there's a @:native annotation that overrides the module name
-        if (classType.meta.has(":native")) {
-            var nativeMeta = classType.meta.extract(":native");
-            if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-                switch(nativeMeta[0].params[0].expr) {
-                    case EConst(CString(s, _)):
-                        moduleName = s;
-                    default:
-                        // Keep original name if annotation is malformed
-                }
+        var varFields = allFields.filter(f -> f.kind.match(FVar(_, _)));
+        var funcFields = allFields.filter(f -> f.kind.match(FMethod(_)));
+        
+        #if debug_module_builder
+        trace('[ElixirCompiler] Filtered: ${varFields.length} var fields, ${funcFields.length} func fields');
+        #end
+        
+        // Set compiler reference for dependency tracking and bootstrap generation
+        reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
+        
+        var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, 
+            varFields, funcFields);
+        
+        #if debug_module_builder
+        if (classType.name == "Main") {
+            trace('[ElixirCompiler] Received module AST for Main from ModuleBuilder');
+            trace('[ElixirCompiler] Main module metadata: ${moduleAST.metadata}');
+            if (moduleAST.metadata != null) {
+                trace('[ElixirCompiler] Main module metadata.isExunit: ${moduleAST.metadata.isExunit}');
             }
         }
-        
-        // Skip module generation for invalid Elixir module names (e.g., starting with underscores)
-        // Module names in Elixir cannot start with underscores
-        if (moduleName.startsWith("_")) {
-            return null;
-        }
-        
-        // Set current module context for ElixirASTBuilder
-        var previousModule = reflaxe.elixir.ast.ElixirASTBuilder.currentModule;
-        reflaxe.elixir.ast.ElixirASTBuilder.currentModule = classType.name;
-        
-        // Build function definitions
-        var functions = [];
-        for (func in funcFields) {
-            if (func.field.expr() == null) continue;
-            
-            // Handle inline functions with special @:runtime metadata support
-            // @:runtime allows inline methods to use __elixir__() by deferring expansion
-            switch(func.field.kind) {
-                case FMethod(MethInline):
-                    // Check for @:runtime metadata - treat like regular functions
-                    if (!func.field.meta.has(":runtime")) {
-                        continue; // Skip regular inline functions
-                    }
-                    // @:runtime inline functions are generated normally
-                    // They will be inlined at call sites with __elixir__() support
-                case _:
-                    // Continue with normal function generation
-            }
-            
-            // Build function AST
-            // Convert function name to snake_case for idiomatic Elixir
-            var funcName = reflaxe.elixir.ast.NameUtils.toSnakeCase(func.field.name);
-            
-            // Extract the actual function expression to get parameters
-            var funcExpr = func.field.expr();
-            var args = [];
-            var body = null;
-            
-            // Check if this is a constructor
-            var isConstructor = funcName == "new";
-            
-            // Check if this is an instance method (non-static)
-            // Instance methods in Elixir need the instance as the first parameter
-            // Constructors don't need this since they create the instance
-            if (!func.isStatic && !isConstructor) {
-                // Add instance parameter as first argument
-                // Check if "this" is actually used in the function body
-                var thisIsUsed = false;
-                switch(funcExpr.expr) {
-                    case TFunction(tfunc):
-                        // Analyze if "this" is referenced in the function body
-                        thisIsUsed = reflaxe.elixir.helpers.VariableUsageAnalyzer.containsThisReference(tfunc.expr);
-                    default:
-                        // Assume it's used if we can't analyze
-                        thisIsUsed = true;
-                }
-                
-                // Use underscore prefix if "this" is not used
-                var structParamName = thisIsUsed ? "struct" : "_struct";
-                args.push(EPattern.PVar(structParamName));
-            }
-            
-            // Extract additional parameters from the function expression
-            switch(funcExpr.expr) {
-                case TFunction(tfunc):
-                    // Set context flag for ALL class methods to preserve camelCase
-                    var previousContext = reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext;
-                    reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = true;
-                    
-                    // Check if this function uses Phoenix component features
-                    // by looking for @:component metadata or ~H sigil in the body
-                    var isPhoenixComponent = func.field.meta.has(":component") || 
-                                           containsHSigil(tfunc.expr);
-                    
-                    // Add the function's actual parameters
-                    // AND register them to prevent snake_case conversion in the body
-                    for (arg in tfunc.args) {
-                        // Convert parameter names to snake_case for Elixir, handling reserved keywords
-                        var snakeName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
-                        // Check if it's a reserved keyword and add suffix if needed
-                        var baseName = if (reflaxe.elixir.ast.NameUtils.isElixirReserved(snakeName)) {
-                            snakeName + "_param";  // Add suffix for reserved keywords
-                        } else {
-                            snakeName;
-                        };
-                        
-                        // Special case: Phoenix components require 'assigns' parameter without underscore
-                        // even if it appears unused, because the ~H sigil macro uses it
-                        var isPhoenixAssigns = isPhoenixComponent && baseName == "assigns";
-                        
-                        // Check if the parameter is used in the function body
-                        // If not, prefix with underscore to follow Elixir conventions
-                        var isUsed = isParameterUsedInExpr(arg.v.id, tfunc.expr);
-                        var elixirParamName = if (!isPhoenixAssigns && (!isUsed || (arg.v.meta != null && arg.v.meta.has("-reflaxe.unused")))) {
-                            "_" + baseName;
-                        } else {
-                            baseName;
-                        };
-                        
-                        args.push(EPattern.PVar(elixirParamName));
-                        
-                        // Register the mapping from original name to snake_case name
-                        // This registration will be used during buildFromTypedExpr
-                        var idKey = Std.string(arg.v.id);
-                        // Map the parameter ID to its snake_case name
-                        reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, elixirParamName);
-                    }
-                    
-                    // Special handling for constructor body
-                    if (isConstructor) {
-                        // Constructors need to return a map with instance fields
-                        // Extract field assignments from the constructor body
-                        var fieldAssignments = [];
-                        
-                        // Analyze variable usage for the entire constructor body
-                        var constructorUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
-                        
-                        // Analyze the constructor body to find field assignments
-                        switch(tfunc.expr.expr) {
-                            case TBlock(exprs):
-                                for (expr in exprs) {
-                                    switch(expr.expr) {
-                                        case TBinop(OpAssign, e1, e2):
-                                            // Check if it's a this.field assignment
-                                            switch(e1.expr) {
-                                                case TField(ethis, fa):
-                                                    switch(ethis.expr) {
-                                                        case TConst(TThis):
-                                                            // This is a this.field assignment
-                                                            var fieldName = reflaxe.elixir.ast.ElixirASTBuilder.extractFieldName(fa);
-                                                            var value = buildFromTypedExpr(e2, constructorUsageMap);
-                                                            fieldAssignments.push({
-                                                                key: reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(fieldName)),
-                                                                value: value
-                                                            });
-                                                        default:
-                                                    }
-                                                default:
-                                            }
-                                        default:
-                                    }
-                                }
-                            default:
-                                // Single expression constructor body
-                                switch(tfunc.expr.expr) {
-                                    case TBinop(OpAssign, e1, e2):
-                                        // Check if it's a this.field assignment
-                                        switch(e1.expr) {
-                                            case TField(ethis, fa):
-                                                switch(ethis.expr) {
-                                                    case TConst(TThis):
-                                                        var fieldName = reflaxe.elixir.ast.ElixirASTBuilder.extractFieldName(fa);
-                                                        var value = buildFromTypedExpr(e2, constructorUsageMap);
-                                                        fieldAssignments.push({
-                                                            key: reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(fieldName)),
-                                                            value: value
-                                                        });
-                                                    default:
-                                                }
-                                            default:
-                                        }
-                                    default:
-                                }
-                        }
-                        
-                        // Create a map with the field assignments
-                        body = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EMap(fieldAssignments));
-                    } else {
-                        // For regular functions, extract the body directly
-                        // For regular functions, we need to handle parameter name mapping
-                        // This is especially important for abstract types where parameter names
-                        // may have collision-avoidance suffixes
-                        
-                        // Build a parameter mapping for the function body
-                        var paramMapping = new Map<String, String>();
-                        for (arg in tfunc.args) {
-                            // Map from the original name to the actual parameter name
-                            // This handles cases where Haxe adds suffixes like "1" to avoid collisions
-                            paramMapping.set(arg.v.name, arg.v.name);
-                        }
-                        
-                        // Special handling for abstract type methods
-                        // These often have simple bodies that just return the parameter
-                        var needsSpecialHandling = false;
-                        
-                        // Check if this is likely an abstract type method
-                        var className = classType.name;
-                        if (className.endsWith("_Impl_") || className.contains("_Impl_")) {
-                            // This is an abstract type implementation
-                            #if debug_abstract_compilation
-                            trace('Abstract method ${funcName} in ${className}, expr: ${tfunc.expr.expr}');
-                            #end
-                            // Check for simple return patterns
-                            switch(tfunc.expr.expr) {
-                                case TConst(TThis):
-                                    // Returns 'this' - use the first parameter name
-                                    if (tfunc.args.length > 0) {
-                                        body = reflaxe.elixir.ast.ElixirAST.makeAST(
-                                            ElixirASTDef.EVar(tfunc.args[0].v.name)
-                                        );
-                                        needsSpecialHandling = true;
-                                    }
-                                case TLocal(v):
-                                    // Returns a local variable - check if it's a parameter
-                                    for (arg in tfunc.args) {
-                                        if (v.name == arg.v.name || v.name == "this") {
-                                            body = reflaxe.elixir.ast.ElixirAST.makeAST(
-                                                ElixirASTDef.EVar(arg.v.name)
-                                            );
-                                            needsSpecialHandling = true;
-                                            break;
-                                        }
-                                    }
-                                case TBlock(exprs):
-                                    // Check if it's a single return statement
-                                    if (exprs.length == 1) {
-                                        switch(exprs[0].expr) {
-                                            case TReturn(retExpr):
-                                                // Check what's being returned (if not null)
-                                                if (retExpr != null) switch(retExpr.expr) {
-                                                    case TLocal(v):
-                                                        // Returning a local var - likely the parameter
-                                                        // For abstracts, "this" becomes the first parameter
-                                                        if (tfunc.args.length > 0 && (v.name == "this" || v.name.startsWith("this"))) {
-                                                            body = reflaxe.elixir.ast.ElixirAST.makeAST(
-                                                                ElixirASTDef.EVar(tfunc.args[0].v.name)
-                                                            );
-                                                            needsSpecialHandling = true;
-                                                        }
-                                                    case TConst(TThis):
-                                                        // Direct return of this
-                                                        if (tfunc.args.length > 0) {
-                                                            body = reflaxe.elixir.ast.ElixirAST.makeAST(
-                                                                ElixirASTDef.EVar(tfunc.args[0].v.name)
-                                                            );
-                                                            needsSpecialHandling = true;
-                                                        }
-                                                    default:
-                                                }
-                                            default:
-                                        }
-                                    }
-                                default:
-                            }
-                        }
-                        
-                        if (!needsSpecialHandling) {
-                            // Re-register parameters RIGHT before building body
-                            // Map them to their snake_case names, handling reserved keywords
-                            for (arg in tfunc.args) {
-                                var idKey = Std.string(arg.v.id);
-                                var snakeName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
-                                // Check if it's a reserved keyword and add suffix if needed
-                                var elixirParamName = if (reflaxe.elixir.ast.NameUtils.isElixirReserved(snakeName)) {
-                                    snakeName + "_param";  // Add suffix for reserved keywords
-                                } else {
-                                    snakeName;
-                                };
-                                reflaxe.elixir.ast.ElixirASTBuilder.tempVarRenameMap.set(idKey, elixirParamName);
-                            }
-                            
-                            // Set flag to indicate we're in a class method context
-                            // This prevents camelCase parameters from being converted to snake_case
-                            // This applies to ALL class methods (static and non-static)
-                            var previousContext = reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext;
-                            reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = true;
-                            
-                            // Analyze variable usage in the function body BEFORE building AST
-                            // Pass the whole TFunction expression so it knows about parameters
-                            var tempExpr: TypedExpr = {
-                                expr: TFunction(tfunc),
-                                pos: tfunc.expr.pos,
-                                t: tfunc.t
-                            };
-                            var functionUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tempExpr);
-                            
-                            body = buildFromTypedExpr(tfunc.expr, functionUsageMap);
-                            
-                            // Restore previous context
-                            reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = previousContext;
-                        }
-                    }
-                    // Restore context before handling default case
-                    reflaxe.elixir.ast.ElixirASTBuilder.isInClassMethodContext = previousContext;
-                default:
-                    // Not a function expression, use as-is
-                    // Still need to analyze usage even for non-function expressions
-                    var exprUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(funcExpr);
-                    body = buildFromTypedExpr(funcExpr, exprUsageMap);
-            }
-            
-            // Use the body we built above
-            if (body == null) {
-                // Analyze usage if we haven't already
-                var fallbackUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(funcExpr);
-                body = buildFromTypedExpr(funcExpr, fallbackUsageMap);
-            }
-            
-            // Apply transformations to the function body before using it
-            // This ensures assignment extraction and other transforms run on expressions
-            var originalBody = body;
-            body = reflaxe.elixir.ast.ElixirASTTransformer.transform(body);
-            
-            #if debug_ast_transformation
-            if (funcName == "get_errors_map") {
-                trace('[XRay Transformation] Transforming get_errors_map function');
-                trace('[XRay Transformation] Original body type: ${Type.enumConstructor(originalBody.def)}');
-                trace('[XRay Transformation] Transformed body type: ${Type.enumConstructor(body.def)}');
-            }
-            #end
-            
-            // Check for test-related metadata
-            var metadata: Dynamic = {};
-            if (func.field.meta != null) {
-                if (func.field.meta.has(":test")) {
-                    metadata.isTest = true;
-                }
-                if (func.field.meta.has(":setup")) {
-                    metadata.isSetup = true;
-                }
-                if (func.field.meta.has(":setupAll")) {
-                    metadata.isSetupAll = true;
-                }
-                if (func.field.meta.has(":teardown")) {
-                    metadata.isTeardown = true;
-                }
-            }
-            
-            var funcDef = func.field.isPublic 
-                ? ElixirASTDef.EDef(funcName, args, null, body)
-                : ElixirASTDef.EDefp(funcName, args, null, body);
-            
-            var funcAST = reflaxe.elixir.ast.ElixirAST.makeAST(funcDef);
-            if (Reflect.fields(metadata).length > 0) {
-                funcAST.metadata = metadata;
-            }
-            functions.push(funcAST);
-        }
-        
-        // Create module AST
-        var moduleBody = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EBlock(functions));
-        var moduleAST = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EDefmodule(moduleName, moduleBody));
-        
-        // Restore previous module context
-        reflaxe.elixir.ast.ElixirASTBuilder.currentModule = previousModule;
+        #end
         
         return moduleAST;
     }
@@ -966,30 +727,37 @@ class ElixirCompiler extends GenericCompiler<
      * Helper to build AST from TypedExpr (delegates to builder)
      */
     function buildFromTypedExpr(expr: TypedExpr, ?usageMap: Map<Int, Bool>): reflaxe.elixir.ast.ElixirAST {
+        // Set compiler reference for dependency tracking
+        reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
         return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, usageMap);
     }
     
     /**
-     * Build the full module name for an enum including package
-     * Examples:
-     * - plug.HttpMethod → Plug.HttpMethod
-     * - phoenix.HttpMethod → Phoenix.HttpMethod
-     * - HttpMethod → HttpMethod (no package)
+     * Check if this is a built-in abstract type that should NOT generate an Elixir module
      */
-    function buildEnumModuleName(enumType: EnumType): String {
-        if (enumType.pack.length > 0) {
-            // Convert package to module path with proper capitalization
-            var packageParts = enumType.pack.map(function(p) {
-                return p.charAt(0).toUpperCase() + p.substr(1);
-            });
-            return packageParts.join(".") + "." + enumType.name;
-        } else {
-            return enumType.name;
+    private function isBuiltinAbstractType(name: String): Bool {
+        // Built-in abstracts that shouldn't generate modules
+        return switch(name) {
+            case "Int" | "Float" | "Bool" | "String" | "Void" | "Dynamic": true;
+            case "__Int64" | "Int64": true; // Haxe Int64 types
+            case _: false;
         }
     }
     
     /**
-     * Build AST for an enum (generates tagged tuples in Elixir)
+     * Check if this is a standard library class type that should NOT generate an Elixir module
+     */
+    private function isStandardLibraryClass(name: String): Bool {
+        // Standard library classes handled elsewhere
+        return switch(name) {
+            case "String" | "Array" | "Map" | "Date" | "Math" | "List": true;
+            case "__Int64" | "Int64" | "Int64_Impl_": true; // Haxe Int64 internal types
+            case _: false;
+        }
+    }
+    
+    /**
+     * Build enum AST - creates module with constructor functions
      */
     function buildEnumAST(enumType: EnumType, options: Array<EnumOptionData>): Null<reflaxe.elixir.ast.ElixirAST> {
         var NameUtils = reflaxe.elixir.ast.NameUtils;
@@ -1064,537 +832,14 @@ class ElixirCompiler extends GenericCompiler<
     }
     
     /**
-     * Compile abstract types - generates proper Elixir type aliases and implementation modules
-     * Abstract types in Haxe become type aliases in Elixir with implementation modules for operators
+     * Build the full module name for an enum including package
      */
-    public override function compileAbstractImpl(abstractType: AbstractType): Null<reflaxe.elixir.ast.ElixirAST> {
-        // Skip core Haxe types that are handled elsewhere
-        // Return null (not empty string) to prevent file generation
-        if (isBuiltinAbstractType(abstractType.name)) {
-            return null;
-        }
-        
-        // Set universal output path for consistent snake_case naming
-        setUniversalOutputPath(abstractType.name, abstractType.pack);
-        
-        // Skip Haxe constraint abstracts that don't need generation
-        // These are internal Haxe types used for type constraints
-        if (abstractType.name == "FlatEnum" || abstractType.name == "NotVoid" || 
-            abstractType.name == "Constructible" || abstractType.pack.join(".") == "haxe.Constraints") {
-            return null; // Return null to prevent file generation
-        }
-        
-        // Generate Elixir type alias for the abstract
-        final typeName = abstractType.name;
-        final underlyingType = getElixirTypeFromHaxeType(abstractType.type);
-        
-        // For now, don't generate standalone type alias files - they cause compilation errors
-        // Type aliases should be defined within modules that use them
-        // Skipping standalone type alias generation for abstract
-        
-        // Return null to prevent generating a standalone file for type-only abstracts
-        return null;
+    function buildEnumModuleName(enumType: EnumType): String {
+        var parts = enumType.pack.copy();
+        parts.push(enumType.name);
+        return parts.join(".");
     }
     
-    /**
-     * Check if this is a built-in Haxe type that should NOT generate an Elixir module
-     */
-    private function isBuiltinAbstractType(name: String): Bool {
-        // Built-in abstracts that shouldn't generate modules
-        return switch(name) {
-            case "Int" | "Float" | "Bool" | "String" | "Void" | "Dynamic": true;
-            case "__Int64" | "Int64": true; // Haxe Int64 types
-            case _: false;
-        }
-    }
-    
-    /**
-     * Check if this is a standard library class type that should NOT generate an Elixir module
-     */
-    private function isStandardLibraryClass(name: String): Bool {
-        // Standard library classes handled elsewhere
-        return switch(name) {
-            case "String" | "Array" | "Map" | "Date" | "Math" | "List": true;
-            case "__Int64" | "Int64" | "Int64_Impl_": true; // Haxe Int64 internal types
-            case _: false;
-        }
-    }
-
-    /**
-     * Get Elixir type representation from Haxe type
-     */
-    private function getElixirTypeFromHaxeType(type: Type): String {
-        // Basic type mapping - will be handled by AST pipeline
-        return "term()";
-    }
-    
-    
-    /**
-     * Position tracking helper methods for source map generation
-     * 
-     * WHY: Source maps need systematic position tracking throughout compilation
-     * WHAT: Helper methods that abstract source map tracking complexity
-     * HOW: Non-invasive tracking that only activates when source mapping is enabled
-     */
-    
-    /**
-     * Track the current position in the source Haxe file
-     * 
-     * This method should be called before generating output for any AST node
-     * that has position information. It records the mapping between the current
-     * output position and the source position.
-     * 
-     * Note: This is a no-op when source mapping is disabled, ensuring zero
-     * overhead in production builds without source maps.
-     * 
-     * @param pos The position in the original Haxe source file
-     */
-    public function trackPosition(pos: Position): Void {
-        // Early return for zero overhead when source maps are disabled
-        if (!sourceMapOutputEnabled) return;
-        
-        #if debug_source_mapping_verbose
-//         trace('[SourceMapping] trackPosition called with pos: ${pos}');
-        #end
-        
-        if (currentSourceMapWriter != null && pos != null) {
-            currentSourceMapWriter.mapPosition(pos);
-            #if debug_source_mapping_verbose
-//             trace('[SourceMapping] Position tracked successfully');
-            #end
-        }
-    }
-    
-    /**
-     * Track output that has been written to the generated Elixir file
-     * 
-     * This method should be called after generating any output string to
-     * update the current position in the output file. The SourceMapWriter
-     * uses this to maintain accurate line and column tracking.
-     * 
-     * Note: This is a no-op when source mapping is disabled, ensuring zero
-     * overhead in production builds without source maps.
-     * 
-     * @param output The string that was written to the output
-     */
-    public function trackOutput(output: String): Void {
-        // Early return for zero overhead when source maps are disabled
-        if (!sourceMapOutputEnabled) return;
-        
-        if (currentSourceMapWriter != null && output != null) {
-            currentSourceMapWriter.stringWritten(output);
-        }
-    }
-    
-    /**
-     * Combined tracking helper for common pattern: track position then output
-     * 
-     * Many compilation methods follow the pattern of tracking source position
-     * before generating output. This helper combines both operations for
-     * convenience and consistency.
-     * 
-     * Note: Tracking is a no-op when source mapping is disabled, ensuring zero
-     * overhead in production builds without source maps.
-     * 
-     * @param pos The position in the original Haxe source file
-     * @param output The string to write to the output
-     * @return The output string (for chaining)
-     */
-    private function trackAndOutput(pos: Position, output: String): String {
-        // Only perform tracking when source maps are enabled
-        if (sourceMapOutputEnabled) {
-            trackPosition(pos);
-            trackOutput(output);
-        }
-        return output;
-    }
-    
-    /**
-     * Compile typedef - Returns null to ignore typedefs as BaseCompiler recommends.
-     * This prevents generating invalid StdTypes.ex files with @typedoc/@type outside modules.
-     * 
-     * IMPORTANT: Typedefs are compile-time only type aliases in Haxe and don't generate
-     * any runtime code in the target language. They exist purely for type checking
-     * during Haxe compilation. This is why this method returns null and doesn't use
-     * the AST pipeline - there's nothing to generate.
-     * 
-     * The AST pipeline (Builder → Transformer → Printer) only processes classes and enums
-     * which generate actual runtime code. Typedefs are resolved during compilation and
-     * their underlying types are used directly in the generated code.
-     * 
-     * Example: 
-     * typedef StringMap = Map<String, String>; // No .ex file generated
-     * The typedef just creates an alias - any usage of StringMap in code will be
-     * compiled as if Map<String, String> was used directly.
-     */
-    public override function compileTypedefImpl(defType: DefType): Null<reflaxe.elixir.ast.ElixirAST> {
-        // Typedefs don't generate runtime code in Elixir
-        return null;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    /**
-     * Check if an enum type is the Result<T,E> type
-     */
-    public function isResultType(enumType: EnumType): Bool {
-        return false && // ADT detection now handled by AST pipeline 
-               enumType.name == "Result";
-    }
-    
-    /**
-     * Check if an enum type is the Option<T> type  
-     */
-    public function isOptionType(enumType: EnumType): Bool {
-        return false && // ADT detection now handled by AST pipeline 
-               enumType.name == "Option";
-    }
-    
-    
-    /**
-     * Check if a parameter is used anywhere in an expression
-     * Recursively traverses the AST to find references to the parameter
-     */
-    private static function isParameterUsedInExpr(paramId: Int, expr: TypedExpr): Bool {
-        if (expr == null) return false;
-        
-        #if debug_param_usage_detail
-        var exprType = Type.enumConstructor(expr.expr);
-        if (exprType == "TLocal" || exprType == "TVar") {
-            trace('[isParameterUsedInExpr] Checking ${exprType} for paramId=$paramId');
-        }
-        #end
-        
-        switch(expr.expr) {
-            case TLocal(v):
-                // Check if this is a reference to our parameter
-                #if debug_param_usage_detail
-                trace('[isParameterUsedInExpr] TLocal: v.id=${v.id}, v.name=${v.name}, paramId=$paramId, match=${v.id == paramId}');
-                #end
-                if (v.id == paramId) return true;
-            case TBlock(exprs):
-                for (e in exprs) {
-                    if (isParameterUsedInExpr(paramId, e)) return true;
-                }
-            case TBinop(_, e1, e2):
-                return isParameterUsedInExpr(paramId, e1) || isParameterUsedInExpr(paramId, e2);
-            case TField(e, _):
-                return isParameterUsedInExpr(paramId, e);
-            case TCall(e, el):
-                if (isParameterUsedInExpr(paramId, e)) return true;
-                for (arg in el) {
-                    if (isParameterUsedInExpr(paramId, arg)) return true;
-                }
-            case TIf(econd, ethen, eelse):
-                if (isParameterUsedInExpr(paramId, econd)) return true;
-                if (isParameterUsedInExpr(paramId, ethen)) return true;
-                if (eelse != null && isParameterUsedInExpr(paramId, eelse)) return true;
-            case TSwitch(e, cases, edef):
-                // Check if the switch expression uses the parameter
-                if (isParameterUsedInExpr(paramId, e)) return true;
-                
-                // Also check inside case expressions - but NOT in the pattern extraction
-                // The pattern extraction (TEnumParameter) creates new variables that shadow parameters
-                for (c in cases) {
-                    // Check the case body
-                    if (isParameterUsedInExpr(paramId, c.expr)) return true;
-                    
-                    // Check if any of the case patterns reference the parameter
-                    // This handles switches on the parameter itself
-                    for (v in c.values) {
-                        if (isParameterUsedInExpr(paramId, v)) return true;
-                    }
-                }
-                if (edef != null && isParameterUsedInExpr(paramId, edef)) return true;
-            case TReturn(e):
-                if (e != null) return isParameterUsedInExpr(paramId, e);
-            case TUnop(_, _, e):
-                return isParameterUsedInExpr(paramId, e);
-            case TFunction(tfunc):
-                return isParameterUsedInExpr(paramId, tfunc.expr);
-            case TVar(_, e):
-                if (e != null) return isParameterUsedInExpr(paramId, e);
-            case TFor(v, e1, e2):
-                // Don't check the loop variable itself, but check the iterator and body
-                return isParameterUsedInExpr(paramId, e1) || isParameterUsedInExpr(paramId, e2);
-            case TWhile(econd, e, _):
-                return isParameterUsedInExpr(paramId, econd) || isParameterUsedInExpr(paramId, e);
-            case TTry(e, catches):
-                if (isParameterUsedInExpr(paramId, e)) return true;
-                for (c in catches) {
-                    if (isParameterUsedInExpr(paramId, c.expr)) return true;
-                }
-            case TArrayDecl(el):
-                for (e in el) {
-                    if (isParameterUsedInExpr(paramId, e)) return true;
-                }
-            case TObjectDecl(fields):
-                for (f in fields) {
-                    if (isParameterUsedInExpr(paramId, f.expr)) return true;
-                }
-            case TParenthesis(e):
-                return isParameterUsedInExpr(paramId, e);
-            case TCast(e, _):
-                return isParameterUsedInExpr(paramId, e);
-            case TMeta(_, e):
-                return isParameterUsedInExpr(paramId, e);
-            case TEnumParameter(e, _, _):
-                // Check if the enum being deconstructed is our parameter
-                return isParameterUsedInExpr(paramId, e);
-            case TEnumIndex(e):
-                // Check if we're getting the index of our parameter (for switch)
-                return isParameterUsedInExpr(paramId, e);
-            case TNew(_, _, el):
-                // Check constructor arguments - CRITICAL for detecting usage in new expressions
-                for (arg in el) {
-                    if (isParameterUsedInExpr(paramId, arg)) return true;
-                }
-            case TArray(arr, index):
-                // Check both the array expression and the index expression
-                // This is CRITICAL for detecting usage like a2[i]
-                if (isParameterUsedInExpr(paramId, arr)) return true;
-                if (isParameterUsedInExpr(paramId, index)) return true;
-            default:
-                // For other cases, assume not used
-        }
-        return false;
-    }
-    
-    /**
-     * Helper: Check if class has instance variables (non-static)
-     */
-    private function hasInstanceVars(varFields: Array<ClassVarData>): Bool {
-        for (field in varFields) {
-            if (!field.isStatic) return true;
-        }
-        return false;
-    }
-    
-    /**
-     * Helper: Check if expression is enum field access
-     */
-    private function isEnumFieldAccess(expr: TypedExpr): Bool {
-        return switch (expr.expr) {
-            case TField(_, FEnum(_, _)): true;
-            case _: false;
-        }
-    }
-    
-    /**
-     * Helper: Extract enum field name from TField expression
-     */
-    private function extractEnumFieldName(expr: TypedExpr): String {
-        return switch (expr.expr) {
-            case TField(_, FEnum(_, enumField)): reflaxe.elixir.ast.NameUtils.toSnakeCase(enumField.name);
-            case _: "unknown";
-        }
-    }
-    
-    /**
-     * Helper: Compile constants to Elixir literals
-     */
-    public function compileConstant(constant: Constant): String {
-        return switch (constant) {
-            case CInt(i, _): i;
-            case CFloat(s, _): s;
-            case CString(s, _): '"${s}"';
-            case CIdent(s): s;
-            case CRegexp(r, opt): '~r/${r}/${opt}';
-            case _: "nil";
-        }
-    }
-    
-    /**
-     * Helper: Compile TConstant (typed constants) to Elixir literals
-     */
-    // compileTConstant function extracted to LiteralCompiler
-    
-    /**
-     * Compile expression with proper type awareness for operators.
-     * This ensures string concatenation uses <> and not +.
-     */
-    
-    /**
-     * Check if a Type is a string type
-     */
-    public function isStringType(type: Type): Bool {
-        if (type == null) return false;
-        
-        return switch (type) {
-            case TInst(t, _):
-                t.get().name == "String";
-            case TAbstract(t, _):
-                t.get().name == "String";
-            case _:
-                false;
-        };
-    }
-    
-    /**
-     * Convert a non-string expression to a string in Elixir
-     */
-    public function convertToString(expr: TypedExpr, compiledExpr: String): String {
-        // Check the type and use the appropriate conversion function
-        return switch (expr.t) {
-            case TAbstract(t, _):
-                var typeName = t.get().name;
-                switch (typeName) {
-                    case "Int":
-                        'Integer.to_string(${compiledExpr})';
-                    case "Float":
-                        'Float.to_string(${compiledExpr})';
-                    case "Bool":
-                        'Atom.to_string(${compiledExpr})';
-                    case _:
-                        // For other types, use Kernel.inspect for a safe conversion
-                        'Kernel.inspect(${compiledExpr})';
-                }
-            case TInst(t, _):
-                // For class instances, use inspect
-                'Kernel.inspect(${compiledExpr})';
-            case _:
-                // Default: use inspect for safety
-                'Kernel.inspect(${compiledExpr})';
-        };
-    }
-    
-    /**
-     * Helper: Compile binary operators to Elixir
-     */
-    public function compileBinop(op: Binop): String {
-        return switch (op) {
-            case OpAdd: "+";
-            case OpMult: "*";
-            case OpDiv: "/";
-            case OpSub: "-";
-            case OpAssign: "=";
-            case OpEq: "==";
-            case OpNotEq: "!=";
-            case OpGt: ">";
-            case OpGte: ">=";
-            case OpLt: "<";
-            case OpLte: "<=";
-            case OpAnd: "&&&"; // Bitwise AND in Elixir uses &&&
-            case OpOr: "|||"; // Bitwise OR in Elixir uses |||
-            case OpXor: "^^^"; // Bitwise XOR in Elixir uses ^^^
-            case OpBoolAnd: "&&"; // Boolean AND
-            case OpBoolOr: "||"; // Boolean OR
-            case OpShl: "<<<"; // Bitwise shift left - needs special handling
-            case OpShr: ">>>"; // Bitwise shift right - needs special handling
-            case OpUShr: ">>>"; // Unsigned right shift - needs special handling
-            case OpMod: "rem"; // Remainder in Elixir
-            case OpAssignOp(op): compileBinop(op) + "=";
-            case OpInterval: ".."; // Range operator in Elixir
-            case OpArrow: "->"; // Function arrow
-            case OpIn: "in"; // Membership test
-            case OpNullCoal: "||"; // Null coalescing -> or
-        }
-    }
-    
-    
-    /**
-     * Set up parameter mapping for function compilation
-     */
-    public function setFunctionParameterMapping(args: Array<reflaxe.data.ClassFuncArg>): Void {
-        /**
-         * PRESERVE CRITICAL MAPPINGS
-         * 
-         * WHY: We need to preserve _this -> struct mappings for state threading
-         * WHAT: Save all this-related mappings before clearing
-         * HOW: Save this, _this, and struct mappings, then restore after clear
-         */
-        // Preserve any existing 'this' mappings for struct instance methods
-        var savedThisMapping = currentFunctionParameterMap.get("this");
-        var savedUnderscoreThisMapping = currentFunctionParameterMap.get("_this");
-        var savedStructMapping = currentFunctionParameterMap.get("struct");
-        
-        currentFunctionParameterMap.clear();
-        inlineContextMap.clear(); // Reset inline context for new function
-        // Reset array desugaring tracking for new function
-        isCompilingAbstractMethod = true;
-        
-        // Restore ALL 'this' related mappings if they existed
-        if (savedThisMapping != null) {
-            currentFunctionParameterMap.set("this", savedThisMapping);
-        }
-        if (savedUnderscoreThisMapping != null) {
-            currentFunctionParameterMap.set("_this", savedUnderscoreThisMapping);
-        }
-        if (savedStructMapping != null) {
-            currentFunctionParameterMap.set("struct", savedStructMapping);
-        }
-        
-        if (args != null) {
-            for (i in 0...args.length) {
-                var arg = args[i];
-                // Get the original parameter name from multiple sources
-                var originalName = if (arg.tvar != null) {
-                    arg.tvar.name;
-                } else {
-                    // Fallback to a generated name
-                    'param${i}';
-                }
-                
-                // Map the original name to the snake_case version (no more arg0/arg1!)
-                var snakeCaseName = reflaxe.elixir.ast.NameUtils.toSnakeCase(originalName);
-                currentFunctionParameterMap.set(originalName, snakeCaseName);
-                
-                // Also handle common abstract type parameter patterns
-                if (originalName == "this") {
-                    currentFunctionParameterMap.set("this1", snakeCaseName);
-                }
-            }
-        }
-    }
-    
-    
-    /**
-     * Check if a TLocal variable represents a function being passed as a reference
-     * 
-     * WHY: We need to distinguish between local variables and function references
-     *      to generate proper Elixir syntax (&Module.function/arity vs variable_name)
-     * 
-     * WHAT: Determines if a TVar is actually a function reference that needs & syntax
-     * 
-     * HOW: Check if the variable's TYPE is TFun, NOT just if it shares a name with
-     *      a static method. Local variables can have the same names as methods!
-     * 
-     * CRITICAL FIX: A local variable named "changeset" is NOT a reference to
-     *               Todo.changeset just because they share a name. Only generate
-     *               function reference syntax when the variable TYPE is TFun.
-     * 
-     * @param v The TVar representing the local variable
-     * @param originalName The original name of the variable
-     * @return true if this is a function reference, false otherwise
-     */
-    public function isFunctionReference(v: TVar, originalName: String): Bool {
-        // ONLY check the variable's type - don't look for static methods with same name!
-        // A local variable "changeset" is NOT a reference to a static method "changeset"
-        switch (v.t) {
-            case TFun(_, _):
-                // This variable's TYPE is a function - it's a function reference
-                // trace('[XRay ElixirCompiler] Variable ${originalName} has TFun type - IS a function reference');
-                return true;
-            case _:
-                // NOT a function type - it's just a regular variable
-                // Even if there's a static method with the same name, this is still just a variable!
-                // trace('[XRay ElixirCompiler] Variable ${originalName} does NOT have TFun type - NOT a function reference');
-                return false;
-        }
-    }
-    
-    /**
-     * Generate Elixir function reference syntax for a function name
-     * 
-     * @param functionName The function name to create a reference for
-     * @return Elixir function reference syntax like &Module.function/arity
-     */
     public function generateFunctionReference(functionName: String): String {
         // Convert function name to snake_case for Elixir
         var elixirFunctionName = reflaxe.elixir.ast.NameUtils.toSnakeCase(functionName);

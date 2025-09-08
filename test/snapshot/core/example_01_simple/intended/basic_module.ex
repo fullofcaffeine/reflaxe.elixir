@@ -27,9 +27,10 @@ defmodule BasicModule do
     "2024-01-01T00:00:00Z"
   end
   defp is_valid(_struct, input) do
-    input != nil && input.length > 0
+    input != nil && length(input) > 0
   end
   def main() do
     Log.trace("BasicModule example compiled successfully!", %{:fileName => "BasicModule.hx", :lineNumber => 62, :className => "BasicModule", :methodName => "main"})
   end
 end
+BasicModule.main()

@@ -1,4 +1,5 @@
 defmodule Input do
+  @big_endian nil
   defp set_big_endian(_struct, b) do
     b
   end

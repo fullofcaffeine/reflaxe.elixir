@@ -1,4 +1,4 @@
-defmodule Server.Types.PubSubMessageType do
+defmodule server.types.PubSubMessageType do
   def todo_created(arg0) do
     {:TodoCreated, arg0}
   end

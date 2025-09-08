@@ -1,4 +1,4 @@
-defmodule Elixir.Otp.ApplicationResult do
+defmodule elixir.otp.ApplicationResult do
   def ok(arg0) do
     {:Ok, arg0}
   end

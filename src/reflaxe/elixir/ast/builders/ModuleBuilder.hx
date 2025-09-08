@@ -45,6 +45,35 @@ import reflaxe.elixir.ast.NameUtils;
  * - @:controller - Phoenix.Controller module with action functions
  * - @:presence - Phoenix.Presence module with tracking and listing functions
  * 
+ * BOOTSTRAP CODE GENERATION:
+ * The ModuleBuilder automatically adds bootstrap code for classes with static main() functions,
+ * allowing standalone scripts to auto-execute when run with the Elixir command:
+ * 
+ * ```haxe
+ * class Main {
+ *     static function main() {
+ *         trace("Hello World");
+ *     }
+ * }
+ * ```
+ * 
+ * Generates:
+ * ```elixir
+ * defmodule Main do
+ *   def main() do
+ *     IO.puts("Hello World")
+ *   end
+ * end
+ * Main.main()  # Bootstrap code - auto-executes when script is run
+ * ```
+ * 
+ * This allows running scripts directly: `elixir main.ex`
+ * 
+ * Bootstrap code is NOT added for:
+ * - Classes with @:application annotation (OTP apps have their own startup)
+ * - Classes without static main() function
+ * - Instance methods named main() (must be static)
+ * 
  * METADATA FIELDS SET:
  * - isEndpoint: Boolean flag for @:endpoint annotation
  * - isLiveView: Boolean flag for @:liveview annotation  
@@ -135,6 +164,95 @@ class ModuleBuilder {
             null
         );
         
+        /**
+         * BOOTSTRAP CODE GENERATION
+         * 
+         * WHY: Elixir doesn't automatically execute main() functions like Java or C. 
+         *      Users expect to run scripts with `elixir script.ex` and have them execute.
+         * 
+         * WHAT: Adds a module-level call to ModuleName.main() after the module definition.
+         *       This makes the script auto-execute when loaded by the Elixir runtime.
+         * 
+         * HOW: 
+         * 1. Detect if class has static main() function
+         * 2. Exclude @:application classes (they have OTP startup)  
+         * 3. Generate ECall AST node for ModuleName.main()
+         * 4. Wrap module and bootstrap in EBlock
+         * 
+         * EXAMPLE OUTPUT:
+         * ```elixir
+         * defmodule MyScript do
+         *   def main() do
+         *     IO.puts("Hello")
+         *   end
+         * end
+         * MyScript.main()  # <-- Bootstrap code
+         * ```
+         * 
+         * EDGE CASES:
+         * - @:application classes are excluded (OTP apps manage their own startup)
+         * - Only static main() triggers bootstrap (instance methods don't count)
+         * - main() is forced to be public (def) even if marked private in Haxe
+         * 
+         * DEBUG: Use -D debug_bootstrap to trace bootstrap code generation
+         */
+        
+        // Check for static main() function
+        var hasStaticMain = false;
+        for (staticField in classType.statics.get()) {
+            if (staticField.name == "main") {
+                hasStaticMain = true;
+                break;
+            }
+        }
+        
+        // Add bootstrap code only if:
+        // 1. Class has static main() function
+        // 2. Class is NOT an OTP application (no @:application annotation)
+        if (hasStaticMain && !classType.meta.has(":application")) {
+            #if debug_bootstrap
+            trace('[ModuleBuilder] Adding bootstrap code for static main() in ${moduleName}');
+            #end
+            
+            var blockElements: Array<ElixirAST> = [];
+            
+            // Add Code.require_file statements for dependencies if in standalone mode
+            if (haxe.macro.Context.defined("standalone_script") || hasStaticMain) {
+                blockElements = blockElements.concat(generateRequireStatements(classType, moduleName));
+            }
+            
+            // Add the module definition
+            blockElements.push(moduleAST);
+            
+            // Create the bootstrap code that calls main() after the module loads
+            // Generate: ModuleName.main() after the module definition
+            var bootstrapCode = makeAST(
+                ECall(
+                    null,  // No receiver (module-level call)
+                    moduleName + ".main",  // Full module path (e.g., "Main.main")
+                    []  // No arguments to main()
+                )
+            );
+            blockElements.push(bootstrapCode);
+            
+            // Wrap everything in a block
+            // This creates the structure: 
+            // Code.require_file("std.ex", __DIR__)  # if needed
+            // Code.require_file("haxe/log.ex", __DIR__)  # if needed
+            // defmodule Main do ... end
+            // Main.main()
+            moduleAST = makeAST(EBlock(blockElements));
+            
+            // Track that this module has bootstrap code
+            if (ElixirASTBuilder.compiler != null) {
+                ElixirASTBuilder.compiler.modulesWithBootstrap.push(moduleName);
+            }
+            
+            #if debug_bootstrap  
+            trace('[ModuleBuilder] Bootstrap code added after module for ${moduleName}');
+            #end
+        }
+        
         // Restore previous module context
         reflaxe.elixir.ast.ElixirASTBuilder.currentModule = previousModule;
         
@@ -144,6 +262,47 @@ class ModuleBuilder {
         #end
         
         return moduleAST;
+    }
+    
+    /**
+     * Generate Code.require_file statements for module dependencies
+     * 
+     * WHY: Standalone scripts need to explicitly load their dependencies
+     * WHAT: Creates Code.require_file calls for common Haxe stdlib modules
+     * HOW: For scripts with main(), we know they likely use trace() which needs Log and Std
+     * 
+     * NOTE: This is a pragmatic approach since dependency tracking happens after module building.
+     * For standalone scripts with main(), we preload common stdlib modules that trace() uses.
+     */
+    static function generateRequireStatements(classType: ClassType, moduleName: String): Array<ElixirAST> {
+        var requires: Array<ElixirAST> = [];
+        
+        // For standalone scripts with main(), preload common dependencies
+        // trace() uses Log.trace() which depends on Std.string()
+        var commonDependencies = [
+            "std.ex",           // Std module (used by Log and often by user code)
+            "haxe/log.ex"       // Log module (used by trace())
+        ];
+        
+        for (filePath in commonDependencies) {
+            // Generate: Code.require_file("path/to/file.ex", __DIR__)
+            requires.push(makeAST(
+                ECall(
+                    null,
+                    "Code.require_file",
+                    [
+                        makeAST(EString(filePath)),
+                        makeAST(EVar("__DIR__"))
+                    ]
+                )
+            ));
+            
+            #if debug_bootstrap
+            trace('[ModuleBuilder] Added require for ${filePath}');
+            #end
+        }
+        
+        return requires;
     }
     
     /**
@@ -582,9 +741,52 @@ class ModuleBuilder {
     
     /**
      * Build body for regular modules (no special annotations)
+     * 
+     * WHY: Regular modules may have static main() functions that need bootstrap code
+     * WHAT: Builds module body and detects if main() exists for bootstrap generation
+     * HOW: Checks static fields for main() and stores flag in metadata for later use
+     * 
+     * BOOTSTRAP DETECTION:
+     * This function identifies if a class has a static main() function that should
+     * be auto-executed when the script is run with `elixir module.ex`. The detection
+     * happens here but the actual bootstrap code is added in buildClassModule().
      */
     static function buildRegularModuleBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
         var statements = [];
+        
+        // Check if this module has a static main() function for bootstrap generation
+        // Note: We check for main() regardless of visibility since it's a special function
+        // that should be callable as the entry point (we force it to be public later)
+        var hasStaticMain = false;
+        
+        // Check in the actual static fields from the class type
+        #if debug_bootstrap
+        trace('[ModuleBuilder] Checking statics for class ${classType.name}');
+        #end
+        
+        for (staticField in classType.statics.get()) {
+            #if debug_bootstrap
+            trace('[ModuleBuilder] Found static field: ${staticField.name}');
+            #end
+            if (staticField.name == "main") {
+                hasStaticMain = true;
+                #if debug_bootstrap
+                trace('[ModuleBuilder] Found static main() function - will add bootstrap code');
+                #end
+                break;
+            }
+        }
+        
+        #if debug_bootstrap
+        trace('[ModuleBuilder] Finished checking statics, hasStaticMain: ${hasStaticMain}');
+        #end
+        
+        // Store hasStaticMain in the module's metadata for bootstrap generation
+        // This is accessed later in buildClassModule to add bootstrap code after the module
+        if (hasStaticMain) {
+            // We need to pass this information up to buildClassModule
+            // Since we can't modify metadata here, we'll handle it differently
+        }
         
         // Add module attributes for fields
         for (field in varFields) {
@@ -615,11 +817,43 @@ class ModuleBuilder {
                     case EFn(clauses) if (clauses.length > 0):
                         // Extract the first clause (functions typically have one clause)
                         var clause = clauses[0];
+                        
+                        // Check if this is an instance method (non-static) that needs struct parameter
+                        var args = clause.args;
+                        // Check if this function is in the static fields list
+                        // Instance fields are not in classType.statics
+                        var isStatic = false;
+                        for (staticField in classType.statics.get()) {
+                            if (staticField.name == func.name) {
+                                isStatic = true;
+                                break;
+                            }
+                        }
+                        if (!isStatic && func.name != "new") {
+                            // Instance methods need the struct as first parameter
+                            // Check if "this" is used in the function body
+                            var thisIsUsed = switch(funcExpr.expr) {
+                                case TFunction(tfunc):
+                                    reflaxe.elixir.helpers.VariableUsageAnalyzer.containsThisReference(tfunc.expr);
+                                default:
+                                    true; // Assume it's used if we can't analyze
+                            };
+                            
+                            // Use underscore prefix if "this" is not used
+                            var structParamName = thisIsUsed ? "struct" : "_struct";
+                            
+                            // Add struct parameter as first argument
+                            args = [EPattern.PVar(structParamName)].concat(args);
+                        }
+                        
                         // Create the function definition (use defp for private functions)
-                        if (func.isPublic) {
-                            statements.push(makeAST(EDef(funcName, clause.args, null, clause.body)));
+                        // Special case: static main() must always be public for bootstrap code to work
+                        var forcePublic = (funcName == "main" && isStatic);
+                        
+                        if (func.isPublic || forcePublic) {
+                            statements.push(makeAST(EDef(funcName, args, null, clause.body)));
                         } else {
-                            statements.push(makeAST(EDefp(funcName, clause.args, null, clause.body)));
+                            statements.push(makeAST(EDefp(funcName, args, null, clause.body)));
                         }
                     case _:
                         // If it's not a function AST, something went wrong, skip it

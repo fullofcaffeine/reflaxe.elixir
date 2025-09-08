@@ -1,5 +1,4 @@
 defmodule TodoAppWeb.UserLive do
-  use TodoAppWeb, :live_view
   def mount(_params, _session, socket) do
     users = Users.list_users(nil)
     live_socket = socket
@@ -126,3 +125,4 @@ end
     Log.trace("UserLive with @:liveview annotation compiled successfully!", %{:fileName => "src_haxe/server/live/UserLive.hx", :lineNumber => 505, :className => "server.live.UserLive", :methodName => "main"})
   end
 end
+TodoAppWeb.UserLive.main()

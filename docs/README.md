@@ -22,6 +22,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Haxe for Phoenix](02-user-guide/haxe-for-phoenix.md) - Why Haxe makes Phoenix better
 - [Todo App Specifics](02-user-guide/todo-app-specifics.md) - LiveView implementation patterns and project-specific guidance
 - [Ecto Integration Patterns](02-user-guide/ECTO_INTEGRATION_PATTERNS.md) - Database integration
+- [Bootstrap Code Generation](02-user-guide/bootstrap-code-generation.md) - Auto-execution for scripts
 - [User Guide](02-user-guide/USER_GUIDE.md) - Comprehensive development guide
 
 ### ⚙️ Compiler Development

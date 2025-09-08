@@ -1,4 +1,4 @@
-defmodule Ecto.ChangesetAction do
+defmodule ecto.ChangesetAction do
   def insert() do
     {:Insert}
   end

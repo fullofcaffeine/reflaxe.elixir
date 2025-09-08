@@ -1,4 +1,4 @@
-defmodule Phoenix.OnUpdateAction do
+defmodule phoenix.OnUpdateAction do
   def nothing() do
     {:Nothing}
   end

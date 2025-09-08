@@ -8,8 +8,8 @@ defmodule TodoPubSub do
   def parse_message(msg) do
     Phoenix.SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
   end
-  def topic_to_string(topic) do
-    case (elem(topic, 0)) do
+  def topic_to_string(_topic) do
+    case (elem(_topic, 0)) do
       0 ->
         "todo:updates"
       1 ->
@@ -18,35 +18,35 @@ defmodule TodoPubSub do
         "system:notifications"
     end
   end
-  def message_to_elixir(message) do
-    base_payload = case (elem(message, 0)) do
+  def message_to_elixir(_message) do
+    base_payload = case (elem(_message, 0)) do
   0 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     todo = g
     %{:type => "todo_created", :todo => todo}
   1 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     todo = g
     %{:type => "todo_updated", :todo => todo}
   2 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     id = g
     %{:type => "todo_deleted", :todo_id => id}
   3 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     action = g
     %{:type => "bulk_update", :action => TodoPubSub.bulk_action_to_string(action)}
   4 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     user_id = g
     %{:type => "user_online", :user_id => user_id}
   5 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     user_id = g
     %{:type => "user_offline", :user_id => user_id}
   6 ->
-    g = elem(message, 1)
-    g1 = elem(message, 2)
+    g = elem(_message, 1)
+    g1 = elem(_message, 2)
     message = g
     level = g1
     %{:type => "system_alert", :message => message, :level => TodoPubSub.alert_level_to_string(level)}
@@ -67,7 +67,7 @@ end
             {:some, _} ->
               g = elem(bulk_action, 1)
               action = g
-              action
+              {:BulkUpdate, action}
             :none ->
               :none
           end
@@ -81,7 +81,7 @@ end
             {:some, _} ->
               g = elem(alert_level, 1)
               level = g
-              {msg.message, level}
+              {:SystemAlert, msg.message, level}
             :none ->
               :none
           end
@@ -89,36 +89,36 @@ end
           :none
         end
       "todo_created" ->
-        if (msg.todo != nil), do: msg.todo, else: :none
+        if (msg.todo != nil), do: {:TodoCreated, msg.todo}, else: :none
       "todo_deleted" ->
-        if (msg.todo_id != nil), do: msg.todo_id, else: :none
+        if (msg.todo_id != nil), do: {:TodoDeleted, msg.todo_id}, else: :none
       "todo_updated" ->
-        if (msg.todo != nil), do: msg.todo, else: :none
+        if (msg.todo != nil), do: {:TodoUpdated, msg.todo}, else: :none
       "user_offline" ->
-        if (msg.user_id != nil), do: msg.user_id, else: :none
+        if (msg.user_id != nil), do: {:UserOffline, msg.user_id}, else: :none
       "user_online" ->
-        if (msg.user_id != nil), do: msg.user_id, else: :none
+        if (msg.user_id != nil), do: {:UserOnline, msg.user_id}, else: :none
       _ ->
         Log.trace(Phoenix.SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 223, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
         :none
     end
   end
-  defp bulk_action_to_string(action) do
-    case (elem(action, 0)) do
+  defp bulk_action_to_string(_action) do
+    case (elem(_action, 0)) do
       0 ->
         "complete_all"
       1 ->
         "delete_completed"
       2 ->
-        g = elem(action, 1)
+        g = elem(_action, 1)
         _priority = g
         "set_priority"
       3 ->
-        g = elem(action, 1)
+        g = elem(_action, 1)
         _tag = g
         "add_tag"
       4 ->
-        g = elem(action, 1)
+        g = elem(_action, 1)
         _tag = g
         "remove_tag"
     end
@@ -126,21 +126,21 @@ end
   defp parse_bulk_action(action) do
     case (action) do
       "add_tag" ->
-        ""
+        {:AddTag, ""}
       "complete_all" ->
         {0}
       "delete_completed" ->
         {1}
       "remove_tag" ->
-        ""
+        {:RemoveTag, ""}
       "set_priority" ->
-        {1}
+        {:SetPriority, {1}}
       _ ->
         :none
     end
   end
-  defp alert_level_to_string(level) do
-    case (elem(level, 0)) do
+  defp alert_level_to_string(_level) do
+    case (elem(_level, 0)) do
       0 ->
         "info"
       1 ->

@@ -512,28 +512,36 @@ class ElixirASTPrinter {
              * - `(if cond, do: val1, else: val2) + 5`
              */
             case EBinary(op, left, right):
-                var needsParens = needsParentheses(node);
-                var opStr = binaryOpToString(op);
-                
-                // Check if operands need parentheses (e.g., if expressions in comparisons)
-                var leftStr = switch(left.def) {
-                    case EIf(_, _, _):
-                        // If expressions in binary operations need parentheses
-                        '(' + print(left, 0) + ')';
-                    default:
-                        print(left, 0);
-                };
-                
-                var rightStr = switch(right.def) {
-                    case EIf(_, _, _):
-                        // If expressions in binary operations need parentheses
-                        '(' + print(right, 0) + ')';
-                    default:
-                        print(right, 0);
-                };
-                
-                var result = leftStr + ' ' + opStr + ' ' + rightStr;
-                needsParens ? '(' + result + ')' : result;
+                // Special handling for remainder operator - it's a function in Elixir, not infix
+                if (op == Remainder) {
+                    // Generate rem(n, 2) instead of n rem 2
+                    var leftStr = print(left, 0);
+                    var rightStr = print(right, 0);
+                    'rem(' + leftStr + ', ' + rightStr + ')';
+                } else {
+                    var needsParens = needsParentheses(node);
+                    var opStr = binaryOpToString(op);
+                    
+                    // Check if operands need parentheses (e.g., if expressions in comparisons)
+                    var leftStr = switch(left.def) {
+                        case EIf(_, _, _):
+                            // If expressions in binary operations need parentheses
+                            '(' + print(left, 0) + ')';
+                        default:
+                            print(left, 0);
+                    };
+                    
+                    var rightStr = switch(right.def) {
+                        case EIf(_, _, _):
+                            // If expressions in binary operations need parentheses
+                            '(' + print(right, 0) + ')';
+                        default:
+                            print(right, 0);
+                    };
+                    
+                    var result = leftStr + ' ' + opStr + ' ' + rightStr;
+                    needsParens ? '(' + result + ')' : result;
+                }
                 
             case EUnary(op, expr):
                 #if debug_ast_printer

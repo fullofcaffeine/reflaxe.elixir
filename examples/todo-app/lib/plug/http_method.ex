@@ -1,4 +1,4 @@
-defmodule Plug.HttpMethod do
+defmodule plug.HttpMethod do
   def get() do
     {:GET}
   end

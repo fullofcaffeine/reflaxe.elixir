@@ -7,7 +7,7 @@ defmodule ChildSpecBuilder do
   end
   def temp_worker(module, args, id) do
     spec = ChildSpecBuilder.worker(module, args, id)
-    spec = Map.put(spec, :restart, {1})
+    restart = {1}
     spec
   end
 end

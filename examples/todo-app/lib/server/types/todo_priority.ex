@@ -1,4 +1,4 @@
-defmodule Server.Types.TodoPriority do
+defmodule server.types.TodoPriority do
   def low() do
     {:Low}
   end
