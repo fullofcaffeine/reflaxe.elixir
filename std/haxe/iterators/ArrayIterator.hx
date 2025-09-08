@@ -26,46 +26,57 @@ package haxe.iterators;
  * ArrayIterator for Reflaxe.Elixir
  * 
  * This class provides type compatibility with Haxe's Array.iterator() API.
- * The Elixir runtime implementation (lib/array_iterator.ex) simply returns
- * the array itself since Elixir lists are already iterable.
+ * In Elixir, iterator patterns are transformed directly to Enum operations
+ * at compile time, so this class exists only for type checking.
  * 
  * ## Usage Example (Haxe)
  * ```haxe
  * var arr = [1, 2, 3];
- * var iter = arr.iterator();  // Returns ArrayIterator
+ * for (item in arr) {  // Uses iterator internally
+ *     trace(item);
+ * }
  * ```
  * 
  * ## Generated Idiomatic Elixir
  * ```elixir
  * arr = [1, 2, 3]
- * iter = ArrayIterator.new(arr)  # Returns arr itself via runtime module
+ * Enum.each(arr, fn item -> IO.inspect(item) end)
  * ```
+ * 
+ * The compiler transforms iterator-based patterns to idiomatic Enum operations,
+ * so the ArrayIterator methods are never actually called in generated code.
+ * 
+ * Note: This class uses inline methods to provide compile-time compatibility
+ * while the AST transformer handles the actual iteration pattern conversion.
  */
 @:coreApi
-@:native("ArrayIterator")
 class ArrayIterator<T> {
     final array: Array<T>;
     var current: Int = 0;
     
     /**
      * Create a new ArrayIterator.
-     * The Elixir runtime module handles this by returning the array itself.
+     * This constructor exists for type compatibility with code that
+     * manually creates iterators (like BalancedTree), but the actual
+     * iteration is transformed to Enum operations by the compiler.
      */
-    public function new(array: Array<T>) {
+    public inline function new(array: Array<T>) {
         this.array = array;
     }
     
     /**
      * Check if there are more elements.
+     * At runtime, this is transformed to Enum pattern matching.
      */
-    public function hasNext(): Bool {
+    public inline function hasNext(): Bool {
         return current < array.length;
     }
     
     /**
      * Get the next element.
+     * At runtime, this is transformed to Enum iteration.
      */
-    public function next(): T {
+    public inline function next(): T {
         return array[current++];
     }
 }

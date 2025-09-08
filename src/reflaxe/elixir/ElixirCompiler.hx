@@ -628,12 +628,16 @@ class ElixirCompiler extends GenericCompiler<
         for (func in funcFields) {
             if (func.field.expr() == null) continue;
             
-            // Skip inline functions - they should be inlined at call sites, not generated as functions
-            // This is particularly important for abstract type getters marked as 'inline'
-            // Check if the function kind is MethInline
+            // Handle inline functions with special @:runtime metadata support
+            // @:runtime allows inline methods to use __elixir__() by deferring expansion
             switch(func.field.kind) {
                 case FMethod(MethInline):
-                    continue; // Skip inline functions
+                    // Check for @:runtime metadata - treat like regular functions
+                    if (!func.field.meta.has(":runtime")) {
+                        continue; // Skip regular inline functions
+                    }
+                    // @:runtime inline functions are generated normally
+                    // They will be inlined at call sites with __elixir__() support
                 case _:
                     // Continue with normal function generation
             }
