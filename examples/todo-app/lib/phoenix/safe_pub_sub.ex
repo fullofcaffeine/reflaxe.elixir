@@ -28,7 +28,7 @@ defmodule Phoenix.SafePubSub do
     if (payload == nil) do
       payload = %{}
     end
-    _this = DateTime.utc_now()
+    _this = Date.now()
     payload = Map.put(payload, String.to_atom("timestamp"), DateTime.to_unix(this.datetime, :millisecond))
     payload
   end

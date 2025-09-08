@@ -167,10 +167,22 @@ single:
 	fi
 	@$(MAKE) -f $(MAKEFILE_LIST) test-$(TEST)
 
+# Validate Elixir syntax of generated code
+.PHONY: validate-elixir
+validate-elixir:
+	@echo "Running Elixir syntax validation..."
+	@./validate_elixir.sh $(TEST_DIR)
+
+# Run tests and then validate Elixir syntax
+.PHONY: test-with-validation
+test-with-validation: all validate-elixir
+	@echo "Tests and Elixir validation complete!"
+
 # Clean target
 .PHONY: clean
 clean:
 	@rm -f test-results.tmp
+	@rm -f elixir_validation.log
 	@find $(TEST_DIR) -name $(OUTPUT_DIR) -type d -exec rm -rf {} + 2>/dev/null || true
 
 # List all tests

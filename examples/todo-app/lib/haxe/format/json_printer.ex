@@ -67,14 +67,14 @@ end)
     result = "\""
     g = 0
     g1 = length(s)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, result, g, :ok}, fn _, {acc_g1, acc_result, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, result, :ok}, fn _, {acc_g1, acc_g, acc_result, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.char_code_at(i)
     if (c == nil), do: nil, else: nil
-    {:cont, {acc_g1, acc_result, acc_g, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_result, acc_state}}
   else
-    {:halt, {acc_g1, acc_result, acc_g, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_result, acc_state}}
   end
 end)
     result = result <> "\""
