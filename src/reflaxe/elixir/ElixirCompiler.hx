@@ -369,7 +369,7 @@ class ElixirCompiler extends GenericCompiler<
     /**
      * Get the output path for a module (for tracking)
      */
-    private function getModuleOutputPath(moduleName: String, pack: Array<String> = null): String {
+    public function getModuleOutputPath(moduleName: String, pack: Array<String> = null): String {
         var fileName = reflaxe.elixir.ast.NameUtils.toSnakeCase(moduleName) + ".ex";
         
         if (pack != null && pack.length > 0) {
