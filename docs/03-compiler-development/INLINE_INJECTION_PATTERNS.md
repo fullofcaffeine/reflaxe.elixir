@@ -1,6 +1,87 @@
-# Method Body Inspection and `__elixir__()` Expansion in Reflaxe.Elixir
+# Inline and Target Code Injection Patterns in Reflaxe Compilers
 
-## ✅ SOLVED: `__elixir__()` Injection Now Works with Standard Library Methods
+> **See Also**: [`RUNTIME_INLINE_PATTERN.md`](RUNTIME_INLINE_PATTERN.md) - Comprehensive guide to @:runtime inline implementation for zero-overhead abstractions
+
+## Part 1: Inline Patterns Across Reflaxe Targets
+
+### ✅ CONFIRMED: All Reflaxe Compilers Avoid Inline with Target Injection
+
+**Universal Pattern**: No Reflaxe compiler uses `inline` on methods containing target-specific code injection in `@:coreApi` classes. This is a consistent architectural requirement across all targets.
+
+### Verified Patterns by Target
+
+#### C++ Target (Reflaxe.CPP)
+- **Solution**: `@:runtime inline` metadata on ALL methods with `__cpp__()`
+- **Implementation**: Compiler checks `isExtern || hasMeta(":runtime")`
+- **Example**:
+```haxe
+@:runtime public inline function push(x: T): Int {
+    untyped this.push_back(x);
+    return length;
+}
+```
+
+#### JavaScript Target (Haxe stdlib)
+- **Solution**: Mixed approach - plain `inline` for casts, `@:runtime inline` for `js.Syntax`
+- **Example**:
+```haxe
+// Simple cast - plain inline OK
+inline function copy():Array<T> {
+    return (cast this).slice();
+}
+
+// JS injection - needs @:runtime
+@:runtime inline function map<S>(f:T->S):Array<S> {
+    var result:Array<S> = js.Syntax.construct(Array, length);
+}
+```
+
+#### Lua Target (Reflaxe.lua)
+- **Solution**: Architectural separation - native code NOT inline, delegation methods OK
+- **Example**:
+```haxe
+// Native code - NOT inline
+@:nativeFunctionCode("table.insert({this}, {arg0})")
+function push(x:T):Void;
+
+// Delegation - inline OK
+inline function concat(a:Array<T>):Array<T>
+    return ArrayTools.concat(this, a);
+```
+
+#### Elixir Target (Our Implementation)
+- **Solution**: No inline on methods with `__elixir__()`
+- **Rationale**: `__elixir__()` doesn't exist in macro expansion context
+- **Example**:
+```haxe
+// Has __elixir__() - NO inline
+public function map<S>(f: T -> S): Array<S> {
+    return untyped __elixir__('Enum.map({0}, {1})', this, f);
+}
+
+// No __elixir__() - inline OK
+public inline function iterator(): haxe.iterators.ArrayIterator<T> {
+    return new haxe.iterators.ArrayIterator(this);
+}
+```
+
+### Why This Pattern Exists
+
+1. **@:coreApi classes are global** - Used even during macro expansion
+2. **Target injection is runtime-only** - `__cpp__()`, `__elixir__()`, etc. don't exist at macro time
+3. **Inline expands early** - Before target identifiers are available
+
+### Conclusion
+
+Our approach of avoiding inline with `__elixir__()` is:
+- **Correct** - Follows universal Reflaxe pattern
+- **Simple** - No additional compiler features needed
+- **Documented** - Clear rationale provided
+- **Acceptable** - Minimal performance impact
+
+---
+
+## Part 2: Method Body Inspection for `__elixir__()` Expansion
 
 ### Executive Summary
 

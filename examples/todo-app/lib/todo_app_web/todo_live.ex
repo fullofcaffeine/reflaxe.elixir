@@ -1,7 +1,7 @@
 defmodule TodoAppWeb.TodoLive do
   use TodoAppWeb, :live_view
   def mount(_params, session, socket) do
-    now = DateTime.utc_now()
+    now = Date.now()
     Log.trace("Current time: " <> DateTime.to_iso8601(now.datetime), %{:fileName => "src_haxe/server/live/TodoLive.hx", :lineNumber => 108, :className => "server.live.TodoLive", :methodName => "mount"})
     g = TodoPubSub.subscribe({0})
     case (g) do
@@ -158,13 +158,7 @@ end
   end
   def create_new_todo(params, socket) do
     todo_params = %{:title => params.title, :description => params.description, :completed => false, :priority => (if (params.priority != nil), do: params.priority, else: "medium"), :dueDate => if (params.due_date != nil) do
-  s = params.due_date
-  d = Date.new(0, 0, 0, 0, 0, 0)
-  datetime = case DateTime.from_iso8601(s) do
-            {:ok, dt, _} -> dt
-            _ -> nil
-        end
-  d
+  Date.from_string(params.due_date)
 else
   nil
 end, :tags => if (params.tags != nil) do
@@ -302,16 +296,16 @@ end)
   def count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, todos, :ok}, fn _, {acc_g, acc_count, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_g, acc_count, acc_todos, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
   else
-    {:halt, {acc_g, acc_count, acc_todos, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
   end
 end)
     count
@@ -319,16 +313,16 @@ end)
   def count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, todos, :ok}, fn _, {acc_count, acc_g, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_count, acc_g, acc_todos, acc_state}}
+    {:cont, {acc_todos, acc_count, acc_g, acc_state}}
   else
-    {:halt, {acc_count, acc_g, acc_todos, acc_state}}
+    {:halt, {acc_todos, acc_count, acc_g, acc_state}}
   end
 end)
     count
@@ -437,13 +431,7 @@ end)
     todo = socket.assigns.editing_todo
     if (todo == nil), do: socket
     todo_params = %{:title => params.title, :description => params.description, :priority => params.priority, :dueDate => if (params.due_date != nil) do
-  s = params.due_date
-  d = Date.new(0, 0, 0, 0, 0, 0)
-  datetime = case DateTime.from_iso8601(s) do
-            {:ok, dt, _} -> dt
-            _ -> nil
-        end
-  d
+  Date.from_string(params.due_date)
 else
   nil
 end, :tags => if (params.tags != nil) do
@@ -528,7 +516,7 @@ end
     editing_indicators = []
     this1 = assigns.online_users
     g = this1.key_value_iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, g, :ok}, fn _, {acc_online_count, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, online_count, :ok}, fn _, {acc_g, acc_online_count, acc_state} -> nil end)
     if (online_count == 0), do: ""
     "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6\">\n\t\t\t<div class=\"flex items-center justify-between mb-2\">\n\t\t\t\t<h3 class=\"text-sm font-semibold text-gray-700 dark:text-gray-300\">\n\t\t\t\t\t👥 Online Users (" <> Kernel.to_string(online_count) <> ")\n\t\t\t\t</h3>\n\t\t\t</div>\n\t\t\t<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">\n\t\t\t\t" <> Enum.join(online_users_list, "") <> "\n\t\t\t</div>\n\t\t\t" <> (if (length(editing_indicators) > 0) do
   "<div class=\"mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1\">" <> Enum.join(editing_indicators, "") <> "</div>"
@@ -588,14 +576,14 @@ end) <> "\n\t\t\t\t\t\t\t\t" <> TodoAppWeb.TodoLive.render_tags(todo.tags) <> "\
     if (tags == nil || length(tags) == 0), do: ""
     tag_elements = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, tags, :ok}, fn _, {acc_g, acc_tags, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tags, g, :ok}, fn _, {acc_tags, acc_g, acc_state} ->
   if (acc_g < length(acc_tags)) do
     tag = tags[g]
     acc_g = acc_g + 1
     tag_elements ++ ["<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>"]
-    {:cont, {acc_g, acc_tags, acc_state}}
+    {:cont, {acc_tags, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_tags, acc_state}}
+    {:halt, {acc_tags, acc_g, acc_state}}
   end
 end)
     Enum.join(tag_elements, "")

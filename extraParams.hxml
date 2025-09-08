@@ -39,3 +39,6 @@
 
 # Macro context
 -D macro-times
+
+# Import global functions for Elixir target
+--macro include('ElixirGlobal')
