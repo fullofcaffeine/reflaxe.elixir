@@ -1,4 +1,4 @@
-defmodule Phoenix.JoinType do
+defmodule phoenix.JoinType do
   def inner() do
     {:Inner}
   end

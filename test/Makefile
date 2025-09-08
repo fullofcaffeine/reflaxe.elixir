@@ -87,8 +87,16 @@ test-%:
 		end=$$(date +%s); \
 		duration=$$((end - start)); \
 		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
-			if diff -r --exclude="_GeneratedFiles.json" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
-				echo "✅ $$testname ($${duration}s)" | tee -a test-results.tmp; \
+			if diff -r --exclude="_GeneratedFiles.json" --exclude="erl_crash.dump" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
+				if [ -n "$(RUN_TESTS)" ] && [ -f $$testdir/$(OUTPUT_DIR)/main.ex ]; then \
+					if cd $$testdir/$(OUTPUT_DIR) && timeout 5s elixir -pa . -e "Code.compile_file(\"main.ex\")" > /dev/null 2>&1; then \
+						echo "✅ $$testname - compiled and executed ($${duration}s)" | tee -a test-results.tmp; \
+					else \
+						echo "❌ $$testname - Runtime error ($${duration}s)" | tee -a test-results.tmp; \
+					fi; \
+				else \
+					echo "✅ $$testname ($${duration}s)" | tee -a test-results.tmp; \
+				fi; \
 			else \
 				echo "❌ $$testname - Output mismatch ($${duration}s)" | tee -a test-results.tmp; \
 			fi; \
@@ -159,13 +167,53 @@ $(UPDATE_TARGETS): update-%:
 	fi
 
 # Run a single test by name (convenience target)
+# Accepts both formats: stdlib/array_cross_operations or stdlib__array_cross_operations
 .PHONY: single
 single:
 	@if [ -z "$(TEST)" ]; then \
 		echo "Usage: make single TEST=test_name"; \
+		echo "Example: make single TEST=stdlib/array_cross_operations"; \
 		exit 1; \
-	fi
-	@$(MAKE) -f $(MAKEFILE_LIST) test-$(TEST)
+	fi; \
+	test_name=$$(echo "$(TEST)" | sed 's|/|__|g'); \
+	$(MAKE) -f $(MAKEFILE_LIST) test-$$test_name
+
+# Run a single test with execution validation
+.PHONY: test-exec
+test-exec:
+	@if [ -z "$(TEST)" ]; then \
+		echo "Usage: make test-exec TEST=test_name"; \
+		echo "Example: make test-exec TEST=stdlib/array_cross_operations"; \
+		echo "This will compile, compare, AND execute the generated Elixir code"; \
+		exit 1; \
+	fi; \
+	test_name=$$(echo "$(TEST)" | sed 's|/|__|g'); \
+	RUN_TESTS=1 $(MAKE) -f $(MAKEFILE_LIST) test-$$test_name
+
+# Run the output of a specific test with Elixir
+# Accepts both formats: stdlib/array_cross_operations or stdlib__array_cross_operations
+.PHONY: run
+run:
+	@if [ -z "$(TEST)" ]; then \
+		echo "Usage: make run TEST=test_name [FILE=main.ex]"; \
+		echo "Example: make run TEST=stdlib/array_cross_operations"; \
+		exit 1; \
+	fi; \
+	test_path=$$(echo "$(TEST)" | sed 's|__|/|g'); \
+	testdir=$(TEST_DIR)/$$test_path; \
+	if [ ! -d "$$testdir/out" ]; then \
+		echo "❌ No output directory found. Run the test first: make single TEST=$(TEST)"; \
+		exit 1; \
+	fi; \
+	file=$${FILE:-main.ex}; \
+	if [ ! -f "$$testdir/out/$$file" ]; then \
+		echo "❌ File not found: $$testdir/out/$$file"; \
+		exit 1; \
+	fi; \
+	echo "Running $$testdir/out/$$file..."; \
+	cd $$testdir/out && \
+	if [ -f "std.ex" ]; then elixir -r std.ex -r $$file -e "if function_exported?(Main, :main, 0), do: Main.main()"; \
+	else elixir -r $$file -e "if function_exported?(Main, :main, 0), do: Main.main()"; fi
 
 # Validate Elixir syntax of generated code
 .PHONY: validate-elixir

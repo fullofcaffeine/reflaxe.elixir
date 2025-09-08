@@ -68,6 +68,45 @@ class ElixirASTBuilder {
     public static var variableUsageMap: Null<Map<Int, Bool>> = null;
     
     /**
+     * Reference to the compiler for dependency tracking
+     * Set by ElixirCompiler when calling buildFromTypedExpr
+     */
+    @:allow(reflaxe.elixir.ElixirCompiler)
+    @:allow(reflaxe.elixir.ast.builders.ModuleBuilder)
+    public static var compiler: reflaxe.elixir.ElixirCompiler = null;
+    
+    /**
+     * Track module dependency when generating remote calls
+     * 
+     * WHY: Need to ensure modules are loaded in correct order for scripts
+     * WHAT: Records that the current module depends on the specified module
+     * HOW: Updates the compiler's moduleDependencies map
+     */
+    static function trackDependency(moduleName: String): Void {
+        // Skip built-in Elixir modules that don't need loading
+        var builtins = ["Map", "Enum", "String", "Kernel", "List", "IO", 
+                        "Process", "GenServer", "Supervisor", "Agent", 
+                        "File", "Path", "System", "Code", "Module", "Application",
+                        "Integer", "Float", "Regex", "Date", "DateTime", "NaiveDateTime"];
+        
+        if (builtins.indexOf(moduleName) >= 0) {
+            return; // Don't track built-in modules
+        }
+        
+        if (compiler != null && compiler.currentCompiledModule != null) {
+            var deps = compiler.moduleDependencies.get(compiler.currentCompiledModule);
+            if (deps != null && moduleName != compiler.currentCompiledModule) {
+                // Don't track self-dependencies
+                deps.set(moduleName, true);
+                
+                #if debug_dependencies
+                trace('[ElixirASTBuilder] Module ${compiler.currentCompiledModule} depends on ${moduleName}');
+                #end
+            }
+        }
+    }
+    
+    /**
      * Main entry point: Convert TypedExpr to ElixirAST
      * 
      * WHY: Single entry point for all AST conversion
@@ -472,10 +511,30 @@ class ElixirASTBuilder {
             // Binary Operations
             // ================================================================
             case TBinop(op, e1, e2):
+                // Special handling for field != nil or field == nil comparisons
+                // These are checking for optional fields and need safe access
+                var isNilComparison = switch(op) {
+                    case OpEq | OpNotEq: 
+                        switch(e2.expr) {
+                            case TConst(TNull): true;
+                            default: false;
+                        }
+                    default: false;
+                };
+                
                 // Check if either operand is an inline expansion block
                 var left = switch(e1.expr) {
                     case TBlock(el) if (ElixirASTPatterns.isInlineExpansionBlock(el)):
                         makeAST(ElixirASTPatterns.transformInlineExpansion(el, function(e) return buildFromTypedExpr(e, variableUsageMap), function(name) return toElixirVarName(name)));
+                    case TField(target, FAnon(cf)) if (isNilComparison):
+                        // For optional field checks, use Map.get for safe access
+                        var targetAst = buildFromTypedExpr(target, variableUsageMap);
+                        var fieldName = toSnakeCase(cf.get().name);
+                        makeAST(ERemoteCall(
+                            makeAST(EVar("Map")),
+                            "get",
+                            [targetAst, makeAST(EAtom(fieldName))]
+                        ));
                     case _:
                         buildFromTypedExpr(e1, variableUsageMap);
                 };
@@ -834,6 +893,14 @@ class ElixirASTBuilder {
                                 var classType = classRef.get();
                                 var methodName = cf.get().name;
                                 
+                                // Check if we're calling a static method within the same module
+                                // Private functions in Elixir cannot be called with module prefix
+                                if (currentModule != null && classType.name == currentModule) {
+                                    // Same module - call without module prefix
+                                    var elixirMethodName = toSnakeCase(methodName);
+                                    return ECall(null, elixirMethodName, args);
+                                }
+                                
                                 // Special handling for Reflect static methods
                                 if (classType.name == "Reflect") {
                                     switch(methodName) {
@@ -851,6 +918,7 @@ class ElixirASTBuilder {
                                                     [fieldNameExpr]
                                                 ));
                                                 
+                                                trackDependency("Map");
                                                 return ERemoteCall(makeAST(EVar("Map")), "has_key?", [obj, atomField]);
                                             }
                                         case "field":
@@ -867,6 +935,7 @@ class ElixirASTBuilder {
                                                     [fieldNameExpr]
                                                 ));
                                                 
+                                                trackDependency("Map");
                                                 return ERemoteCall(makeAST(EVar("Map")), "get", [obj, atomField]);
                                             }
                                         case "setField":
@@ -964,6 +1033,8 @@ class ElixirASTBuilder {
                                     if (nativeModuleName != "") {
                                         // Convert method name to snake_case for Elixir
                                         var elixirMethodName = toSnakeCase(methodName);
+                                        // Track dependency on this module
+                                        trackDependency(nativeModuleName);
                                         // Generate remote call with full module qualification
                                         return ERemoteCall(makeAST(EVar(nativeModuleName)), elixirMethodName, args);
                                     }
@@ -1080,6 +1151,7 @@ class ElixirASTBuilder {
                                     if (parts.length > 1) {
                                         var module = parts.slice(0, parts.length - 1).join(".");
                                         var funcName = parts[parts.length - 1];
+                                        trackDependency(module);
                                         ERemoteCall(makeAST(EVar(module)), funcName, args);
                                     } else {
                                         // Just a function name, use with the module
@@ -1244,21 +1316,32 @@ class ElixirASTBuilder {
                         }
                     case FStatic(classRef, cf):
                         // Static field access
-                        var target = buildFromTypedExpr(e, variableUsageMap);
+                        var className = classRef.get().name;
                         var fieldName = extractFieldName(fa);
                         // Convert to snake_case for Elixir function names
                         fieldName = toSnakeCase(fieldName);
                         
-                        // For static fields on extern classes with @:native, we already have the full module name
-                        // in the target. Just return EField which will be handled properly by TCall
-                        // when this is used in a function call context.
-                        //
-                        // The TCall handler will detect that this is a static method call on an extern class
-                        // and will generate the proper ERemoteCall.
-                        //
-                        // Note: Function references are now handled at the TCall level
-                        // when a function is passed as an argument to another function
-                        EField(target, fieldName);
+                        // Check if we're accessing a static field from within the same module
+                        // In this case, we don't need the module prefix
+                        if (currentModule != null && className == currentModule) {
+                            // Same module - just use the function name without module prefix
+                            // This allows private functions to be called without qualification
+                            EVar(fieldName);
+                        } else {
+                            // Different module or no current module context - use full qualification
+                            var target = buildFromTypedExpr(e, variableUsageMap);
+                            
+                            // For static fields on extern classes with @:native, we already have the full module name
+                            // in the target. Just return EField which will be handled properly by TCall
+                            // when this is used in a function call context.
+                            //
+                            // The TCall handler will detect that this is a static method call on an extern class
+                            // and will generate the proper ERemoteCall.
+                            //
+                            // Note: Function references are now handled at the TCall level
+                            // when a function is passed as an argument to another function
+                            EField(target, fieldName);
+                        }
                     case FAnon(cf):
                         // Anonymous field access - check for tuple pattern
                         var fieldName = cf.get().name;
@@ -1902,7 +1985,9 @@ class ElixirASTBuilder {
                     // Child spec pattern - needs special handling for the start field
                     var pairs = [];
                     for (field in fields) {
-                        var key = makeAST(EAtom(field.name));
+                        // Convert camelCase field names to snake_case for Elixir atoms
+                        var atomName = toSnakeCase(field.name);
+                        var key = makeAST(EAtom(atomName));
                         
                         // Special handling for the start field in child specs
                         var fieldValue = if (field.name == "start") {
@@ -1973,7 +2058,9 @@ class ElixirASTBuilder {
                     // Regular object - generate as map
                     var pairs = [];
                     for (field in fields) {
-                        var key = makeAST(EAtom(field.name));
+                        // Convert camelCase field names to snake_case for Elixir atoms
+                        var atomName = toSnakeCase(field.name);
+                        var key = makeAST(EAtom(atomName));
                         
                         /**
                          * Detect and transform null coalescing pattern in object field values.

@@ -1,4 +1,4 @@
-defmodule Phoenix.HttpStatus do
+defmodule phoenix.HttpStatus do
   def ok() do
     {:Ok}
   end

@@ -1,4 +1,4 @@
-defmodule Server.Pubsub.TodoPubSubMessage do
+defmodule server.pubsub.TodoPubSubMessage do
   def todo_created(arg0) do
     {:TodoCreated, arg0}
   end

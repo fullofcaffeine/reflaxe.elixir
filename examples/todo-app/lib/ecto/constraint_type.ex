@@ -1,4 +1,4 @@
-defmodule Ecto.ConstraintType do
+defmodule ecto.ConstraintType do
   def unique() do
     {:Unique}
   end

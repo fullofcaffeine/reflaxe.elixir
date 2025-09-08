@@ -1,4 +1,4 @@
-defmodule Server.Types.PubSubTopic do
+defmodule server.types.PubSubTopic do
   def todo_updates() do
     {:TodoUpdates}
   end

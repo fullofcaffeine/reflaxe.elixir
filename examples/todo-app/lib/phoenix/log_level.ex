@@ -1,4 +1,4 @@
-defmodule Phoenix.LogLevel do
+defmodule phoenix.LogLevel do
   def debug() do
     {:Debug}
   end
