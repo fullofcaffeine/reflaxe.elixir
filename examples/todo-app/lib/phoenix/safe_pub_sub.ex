@@ -28,11 +28,11 @@ defmodule Phoenix.SafePubSub do
     if (payload == nil) do
       payload = %{}
     end
-    payload = Map.put(payload, "timestamp", DateTime.to_unix(Date.now(), :millisecond))
+    payload = Map.put(payload, String.to_atom("timestamp"), DateTime.to_unix(Date.now(), :millisecond))
     payload
   end
   def is_valid_message(msg) do
-    msg != nil && Map.has_key?(msg, "type") && Map.get(msg, "type") != nil
+    msg != nil && Map.has_key?(msg, String.to_atom("type")) && Map.get(msg, String.to_atom("type")) != nil
   end
   def create_unknown_message_error(message_type) do
     "Unknown PubSub message type: \"" <> message_type <> "\". Check your message enum definitions."
