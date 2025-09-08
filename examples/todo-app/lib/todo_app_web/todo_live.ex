@@ -294,16 +294,16 @@ end)
   def count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, todos, :ok}, fn _, {acc_count, acc_g, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, todos, :ok}, fn _, {acc_g, acc_count, acc_todos, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_count, acc_g, acc_todos, acc_state}}
+    {:cont, {acc_g, acc_count, acc_todos, acc_state}}
   else
-    {:halt, {acc_count, acc_g, acc_todos, acc_state}}
+    {:halt, {acc_g, acc_count, acc_todos, acc_state}}
   end
 end)
     count
@@ -311,16 +311,16 @@ end)
   def count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, count, :ok}, fn _, {acc_todos, acc_g, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_todos, acc_g, acc_count, acc_state}}
+    {:cont, {acc_count, acc_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_todos, acc_g, acc_count, acc_state}}
+    {:halt, {acc_count, acc_todos, acc_g, acc_state}}
   end
 end)
     count
@@ -330,7 +330,7 @@ end)
     Enum.map(tags_string.split(","), fn t -> StringTools.ltrim(StringTools.rtrim(t)) end)
   end
   def get_user_from_session(session) do
-    user_id = Map.get(session, "user_id")
+    user_id = Map.get(session, String.to_atom("user_id"))
     %{:id => (if (user_id != nil), do: user_id, else: 1), :name => "Demo User", :email => "demo@example.com", :passwordHash => "hashed_password", :confirmedAt => nil, :lastLoginAt => nil, :active => true}
   end
   def load_and_assign_todos(socket) do
@@ -356,7 +356,7 @@ end)
   def complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, pending, :ok}, fn _, {acc_g, acc_pending, acc_state} -> nil end)
     g = TodoPubSub.broadcast({0}, {:BulkUpdate, {0}})
     case (g) do
       {:ok, _} ->
@@ -376,14 +376,14 @@ end)
   def delete_completed_todos(socket) do
     completed = Enum.filter(socket.assigns.todos, fn t -> t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, completed, :ok}, fn _, {acc_g, acc_completed, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {completed, g, :ok}, fn _, {acc_completed, acc_g, acc_state} ->
   if (acc_g < length(acc_completed)) do
     todo = completed[g]
     acc_g = acc_g + 1
     TodoApp.Repo.delete(todo)
-    {:cont, {acc_g, acc_completed, acc_state}}
+    {:cont, {acc_completed, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_completed, acc_state}}
+    {:halt, {acc_completed, acc_g, acc_state}}
   end
 end)
     TodoPubSub.broadcast({0}, {:BulkUpdate, {1}})

@@ -3,14 +3,14 @@ defmodule StringTools do
     result = ""
     g = 0
     g1 = length(s)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g1, g, :ok}, fn _, {acc_result, acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.char_code_at(i)
     nil
-    {:cont, {acc_result, acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_result, acc_state}}
   else
-    {:halt, {acc_result, acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_result, acc_state}}
   end
 end)
     result
@@ -18,7 +18,7 @@ end)
   def url_decode(s) do
     result = ""
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i, s, :ok}, fn _, {acc_result, acc_i, acc_s, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, s, result, :ok}, fn _, {acc_i, acc_s, acc_result, acc_state} -> nil end)
     result
   end
   def html_escape(s, quotes) do
@@ -42,12 +42,12 @@ end)
   def ltrim(s) do
     l = length(s)
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, s, r, :ok}, fn _, {acc_l, acc_s, acc_r, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {r, l, s, :ok}, fn _, {acc_r, acc_l, acc_s, acc_state} ->
   if (acc_r < acc_l && StringTools.is_space(acc_s, acc_r)) do
     acc_r = acc_r + 1
-    {:cont, {acc_l, acc_s, acc_r, acc_state}}
+    {:cont, {acc_r, acc_l, acc_s, acc_state}}
   else
-    {:halt, {acc_l, acc_s, acc_r, acc_state}}
+    {:halt, {acc_r, acc_l, acc_s, acc_state}}
   end
 end)
     if (r > 0) do
@@ -76,7 +76,7 @@ end)
   def lpad(s, c, l) do
     if (length(c) <= 0), do: s
     buf = ""
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, s, buf, :ok}, fn _, {acc_l, acc_s, acc_buf, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, buf, l, :ok}, fn _, {acc_s, acc_buf, acc_l, acc_state} -> nil end)
     buf <> s
   end
   def rpad(s, c, l) do
@@ -91,7 +91,7 @@ end)
   def hex(n, digits) do
     s = ""
     hex_chars = "0123456789ABCDEF"
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, n, :ok}, fn _, {acc_s, acc_n, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s, :ok}, fn _, {acc_n, acc_s, acc_state} -> nil end)
     if (digits != nil) do
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digits, s, :ok}, fn _, {acc_digits, acc_s, acc_state} -> nil end)
     end
@@ -115,7 +115,7 @@ end)
       result = 0
       g = 0
       g1 = length(hex)
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, result, :ok}, fn _, {acc_g1, acc_g, acc_result, acc_state} -> nil end)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, result, g, :ok}, fn _, {acc_g1, acc_result, acc_g, acc_state} -> nil end)
       result
     end
     result = 0
