@@ -208,6 +208,12 @@ class ElixirCompiler extends GenericCompiler<
     public var moduleOutputPaths: Map<String, String> = new Map();
     
     /**
+     * Track module packages for proper path resolution
+     * Maps module name -> package array (e.g., "Log" -> ["haxe"])
+     */
+    public var modulePackages: Map<String, Array<String>> = new Map();
+    
+    /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
      */
     public function new() {
@@ -671,6 +677,49 @@ class ElixirCompiler extends GenericCompiler<
     }
     
     /**
+     * Discover dependencies by pre-compiling function bodies
+     * 
+     * WHY: Dependencies are tracked when ERemoteCall nodes are generated during function compilation.
+     *      We need to discover these before building the module structure.
+     * 
+     * WHAT: Compiles all function bodies to trigger dependency tracking without generating output
+     * 
+     * HOW: Iterates through all functions and compiles their expressions, which populates
+     *      the moduleDependencies map as a side effect of trackDependency() calls
+     */
+    function discoverDependencies(classType: ClassType, funcFields: Array<ClassField>): Void {
+        // Set compiler reference for dependency tracking
+        reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
+        
+        // Compile each function body to discover dependencies
+        for (func in funcFields) {
+            var funcExpr = func.expr();
+            if (funcExpr != null) {
+                // Compile the function body - this triggers dependency tracking
+                // We don't need the result, just the side effect of tracking
+                switch(funcExpr.expr) {
+                    case TFunction(tfunc):
+                        if (tfunc.expr != null) {
+                            // Analyze variable usage for the function
+                            var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                            // Build AST which triggers dependency tracking
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, usageMap);
+                        }
+                    default:
+                        // Not a function, skip
+                }
+            }
+        }
+        
+        #if debug_dependencies
+        var deps = moduleDependencies.get(currentCompiledModule);
+        if (deps != null) {
+            trace('[ElixirCompiler] After dependency discovery for ${currentCompiledModule}: ${[for (k in deps.keys()) k].join(", ")}');
+        }
+        #end
+    }
+    
+    /**
      * Build AST for a class (generates Elixir module)
      */
     function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
@@ -704,6 +753,11 @@ class ElixirCompiler extends GenericCompiler<
         trace('[ElixirCompiler] Filtered: ${varFields.length} var fields, ${funcFields.length} func fields');
         #end
         
+        // PASS 1: Discover dependencies by pre-compiling function bodies
+        // This populates the moduleDependencies map before we build the module
+        discoverDependencies(classType, funcFields);
+        
+        // PASS 2: Build the module with discovered dependencies
         // Set compiler reference for dependency tracking and bootstrap generation
         reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
         

@@ -1034,10 +1034,33 @@ class ElixirASTBuilder {
                                         // Convert method name to snake_case for Elixir
                                         var elixirMethodName = toSnakeCase(methodName);
                                         // Track dependency on this module
+                                        #if debug_dependencies
+                                        trace('[ElixirASTBuilder] Static method ${classType.name}.${methodName} with @:native(${nativeModuleName})');
+                                        trace('[ElixirASTBuilder] About to track dependency on ${nativeModuleName}');
+                                        #end
                                         trackDependency(nativeModuleName);
                                         // Generate remote call with full module qualification
                                         return ERemoteCall(makeAST(EVar(nativeModuleName)), elixirMethodName, args);
                                     }
+                                } else {
+                                    // No @:native annotation, but still a static method call on another class
+                                    // Track dependency on the class name (e.g., Std, Log, etc.)
+                                    var moduleName = classType.name;
+                                    #if debug_dependencies
+                                    trace('[ElixirASTBuilder] Static method ${classType.name}.${methodName} without @:native');
+                                    trace('[ElixirASTBuilder] Class package: ${classType.pack.join(".")}');
+                                    trace('[ElixirASTBuilder] Tracking dependency on ${moduleName}');
+                                    #end
+                                    trackDependency(moduleName);
+                                    
+                                    // Store package information for this module
+                                    if (compiler != null && classType.pack.length > 0) {
+                                        compiler.modulePackages.set(moduleName, classType.pack);
+                                        #if debug_dependencies
+                                        trace('[ElixirASTBuilder] Stored package info for ${moduleName}: ${classType.pack.join("/")}');
+                                        #end
+                                    }
+                                    // Note: The actual call generation happens later via normal target building
                                 }
                             default:
                         }
