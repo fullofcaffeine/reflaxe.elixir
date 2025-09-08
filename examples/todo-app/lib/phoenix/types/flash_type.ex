@@ -1,4 +1,4 @@
-defmodule Phoenix.Types.FlashType do
+defmodule phoenix.types.FlashType do
   def info() do
     {:Info}
   end

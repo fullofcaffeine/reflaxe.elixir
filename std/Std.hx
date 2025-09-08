@@ -25,8 +25,9 @@ class Std {
      * @return String representation of the value
      */
     public static function string<T>(value: T): String {
-        // Use native Elixir string conversion
-        return untyped __elixir__('to_string({0})', value);
+        // Use inspect for proper string representation of all data types
+        // inspect() handles lists, maps, tuples correctly unlike to_string()
+        return untyped __elixir__('inspect({0})', value);
     }
     
     /**

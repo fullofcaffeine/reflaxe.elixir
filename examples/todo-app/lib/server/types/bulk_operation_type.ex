@@ -1,4 +1,4 @@
-defmodule Server.Types.BulkOperationType do
+defmodule server.types.BulkOperationType do
   def complete_all() do
     {:CompleteAll}
   end

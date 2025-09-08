@@ -37,22 +37,22 @@ defmodule Lambda do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc, v, :ok}, fn _, {acc_acc, acc_v, acc_state} -> nil end)
     acc
   end
-  def count(it, pred) do
+  def count(_it, pred) do
     n = 0
     if (pred == nil) do
-      item = it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, item, :ok}, fn _, {acc_n, acc_item, acc_state} ->
+      item = _it.iterator()
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {item, n, :ok}, fn _, {acc_item, acc_n, acc_state} ->
   if (acc_item.has_next()) do
     _item = acc_item.next()
     acc_n = acc_n + 1
-    {:cont, {acc_n, acc_item, acc_state}}
+    {:cont, {acc_item, acc_n, acc_state}}
   else
-    {:halt, {acc_n, acc_item, acc_state}}
+    {:halt, {acc_item, acc_n, acc_state}}
   end
 end)
     else
-      v = it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, v, :ok}, fn _, {acc_n, acc_v, acc_state} -> nil end)
+      v = _it.iterator()
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, n, :ok}, fn _, {acc_v, acc_n, acc_state} -> nil end)
     end
     n
   end

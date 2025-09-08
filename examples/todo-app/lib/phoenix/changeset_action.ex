@@ -1,4 +1,4 @@
-defmodule Phoenix.ChangesetAction do
+defmodule phoenix.ChangesetAction do
   def insert() do
     {:Insert}
   end

@@ -1,6 +1,6 @@
 defmodule HttpStatusTools do
-  def to_int(status) do
-    case (elem(status, 0)) do
+  def to_int(_status) do
+    case (elem(_status, 0)) do
       0 ->
         200
       1 ->
@@ -20,7 +20,7 @@ defmodule HttpStatusTools do
       8 ->
         500
       9 ->
-        g = elem(status, 1)
+        g = elem(_status, 1)
         code = g
         code
     end

@@ -1,4 +1,4 @@
-defmodule Server.Types.SortDirection do
+defmodule server.types.SortDirection do
   def asc() do
     {:Asc}
   end

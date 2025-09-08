@@ -141,6 +141,10 @@ class ElixirASTTransformer {
             pass: bitwiseImportPass
         });
         
+        // Module dependency requires pass (for standalone scripts)
+        // NOTE: This is now handled directly in ModuleBuilder.generateRequireStatements
+        // when building modules with static main() functions
+        
         // Annotation-based transformation passes (MUST run first to set up module structure)
         passes.push({
             name: "PhoenixWebTransform",
@@ -1976,6 +1980,15 @@ class ElixirASTTransformer {
                         default:
                             node;
                     }
+                    
+                // Transform modulo operator to rem function call
+                case EBinary(Remainder, left, right):
+                    // x % 2 becomes rem(x, 2) - rem is a function in Elixir, not an operator
+                    makeAST(ECall(
+                        null,
+                        "rem",
+                        [left, right]
+                    ));
                     
                 // Transform array mutation patterns
                 case ECall(target, "push", [item]):
