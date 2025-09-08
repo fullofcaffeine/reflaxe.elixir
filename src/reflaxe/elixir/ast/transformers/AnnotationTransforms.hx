@@ -116,7 +116,7 @@ class AnnotationTransforms {
         var sessionOptions = makeAST(EKeywordList([
             {key: "store", value: makeAST(EAtom("cookie"))},
             {key: "key", value: makeAST(EString('_${appName}_key'))},
-            {key: "signing_salt", value: makeAST(EString('generated_salt_' + Date.now().getTime()))},
+            {key: "signing_salt", value: makeAST(EString('generated_salt_${Std.int(Math.random() * 1000000)}'))},
             {key: "same_site", value: makeAST(EString("Lax"))}
         ]));
         // Module attribute for session options

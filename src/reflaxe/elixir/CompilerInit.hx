@@ -19,13 +19,6 @@ class CompilerInit {
      * Use --macro reflaxe.elixir.CompilerInit.Start() in your hxml
      */
     public static function Start() {
-        haxe.macro.Context.onAfterInitMacros(Begin);
-    }
-    
-    /**
-     * Begin compiler registration
-     */
-    public static function Begin() {
         // Platform check for Haxe 5.0+ only: ensures compiler only runs when
         // --custom-target elixir=output_dir is specified in compilation command.
         // This prevents Reflaxe targets from activating on every compilation.

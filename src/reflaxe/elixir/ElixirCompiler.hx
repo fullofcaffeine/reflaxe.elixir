@@ -205,6 +205,18 @@ class ElixirCompiler extends GenericCompiler<
             return true;
         }
         
+        // Check if this is a @:coreApi class (like Date, Sys, etc.)
+        // These need to be generated as Elixir modules
+        if (classType.meta.has(":coreApi")) {
+            return true;
+        }
+        
+        // Force compilation of Date class when used
+        // This ensures Date module with __elixir__() implementations is available
+        if (classType.name == "Date" && classType.pack.length == 0) {
+            return true;
+        }
+        
         // Otherwise use default behavior
         return super.shouldGenerateClass(classType);
     }
@@ -532,7 +544,8 @@ class ElixirCompiler extends GenericCompiler<
                classType.meta.has(":presence") ||
                classType.meta.has(":phoenixWeb") ||
                classType.meta.has(":phoenixWebModule") ||
-               classType.meta.has(":exunit");
+               classType.meta.has(":exunit") ||
+               classType.meta.has(":coreApi");  // Include @:coreApi classes like Date
     }
     
     /**

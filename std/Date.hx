@@ -54,9 +54,15 @@ class Date {
      * @return A new Date instance representing the current time
      */
     public static function now(): Date {
-        var d = new Date(0, 0, 0, 0, 0, 0);
-        d.datetime = untyped __elixir__('DateTime.utc_now()');
+        #if macro
+        // At macro/compile time, create a Date with current system time
+        // This works because the constructor is available at macro time
+        var d = Date.fromTime(Sys.time() * 1000);
         return d;
+        #else
+        // At runtime, use Elixir's DateTime
+        return untyped __elixir__('DateTime.utc_now()');
+        #end
     }
     
     /**
@@ -65,11 +71,19 @@ class Date {
      * @return A new Date instance
      */
     public static function fromTime(t: Float): Date {
+        #if macro
+        // At macro time, create a Date with timestamp
+        var d = new Date(1970, 0, 1, 0, 0, 0);
+        // Store timestamp as a simple way to track it at macro time
+        @:privateAccess d.datetime = t;
+        return d;
+        #else
         var d = new Date(0, 0, 0, 0, 0, 0);
         var seconds = Std.int(t / 1000);
         var microseconds = Std.int((t % 1000) * 1000);
         d.datetime = untyped __elixir__('DateTime.from_unix!({0}, :second) |> DateTime.add({1}, :microsecond)', seconds, microseconds);
         return d;
+        #end
     }
     
     /**
@@ -111,7 +125,7 @@ class Date {
      * Returns the timestamp of this Date.
      * @return The number of milliseconds since Unix epoch
      */
-    public function getTime(): Float {
+    extern inline public function getTime(): Float {
         return untyped __elixir__('DateTime.to_unix({0}, :millisecond)', datetime);
     }
     
@@ -119,7 +133,7 @@ class Date {
      * Returns the year of this Date.
      * @return The year (4 digits)
      */
-    public function getFullYear(): Int {
+    extern inline public function getFullYear(): Int {
         return untyped __elixir__('{0}.year', datetime);
     }
     
@@ -127,7 +141,7 @@ class Date {
      * Returns the month of this Date.
      * @return The month (0-11, where 0 = January)
      */
-    public function getMonth(): Int {
+    extern inline public function getMonth(): Int {
         // Convert from Elixir's 1-based to Haxe's 0-based months
         return untyped __elixir__('{0}.month - 1', datetime);
     }
@@ -136,7 +150,7 @@ class Date {
      * Returns the day of the month of this Date.
      * @return The day (1-31)
      */
-    public function getDate(): Int {
+    extern inline public function getDate(): Int {
         return untyped __elixir__('{0}.day', datetime);
     }
     
@@ -144,7 +158,7 @@ class Date {
      * Returns the day of the week of this Date.
      * @return The day of the week (0-6, where 0 = Sunday)
      */
-    public function getDay(): Int {
+    extern inline public function getDay(): Int {
         // Elixir's Date.day_of_week returns 1-7 (Monday-Sunday)
         // Haxe expects 0-6 (Sunday-Saturday)
         var elixirDay: Int = untyped __elixir__('Date.day_of_week({0})', datetime);
@@ -155,7 +169,7 @@ class Date {
      * Returns the hour of this Date.
      * @return The hour (0-23)
      */
-    public function getHours(): Int {
+    extern inline public function getHours(): Int {
         return untyped __elixir__('{0}.hour', datetime);
     }
     
@@ -163,7 +177,7 @@ class Date {
      * Returns the minutes of this Date.
      * @return The minutes (0-59)
      */
-    public function getMinutes(): Int {
+    extern inline public function getMinutes(): Int {
         return untyped __elixir__('{0}.minute', datetime);
     }
     
@@ -171,7 +185,7 @@ class Date {
      * Returns the seconds of this Date.
      * @return The seconds (0-59)
      */
-    public function getSeconds(): Int {
+    extern inline public function getSeconds(): Int {
         return untyped __elixir__('{0}.second', datetime);
     }
     
@@ -179,7 +193,7 @@ class Date {
      * Returns a string representation of this Date.
      * @return An ISO 8601 formatted date string
      */
-    public function toString(): String {
+    extern inline public function toString(): String {
         return untyped __elixir__('DateTime.to_iso8601({0})', datetime);
     }
     
@@ -187,7 +201,7 @@ class Date {
      * Returns the UTC offset of this Date in minutes.
      * @return The UTC offset in minutes (always 0 for UTC dates)
      */
-    public function getTimezoneOffset(): Int {
+    extern inline public function getTimezoneOffset(): Int {
         // For now, we always use UTC, so offset is 0
         return 0;
     }
@@ -196,7 +210,7 @@ class Date {
      * Returns the UTC year of this Date.
      * @return The UTC year (4 digits)
      */
-    public function getUTCFullYear(): Int {
+    extern inline public function getUTCFullYear(): Int {
         return getFullYear();
     }
     
@@ -204,7 +218,7 @@ class Date {
      * Returns the UTC month of this Date.
      * @return The UTC month (0-11)
      */
-    public function getUTCMonth(): Int {
+    extern inline public function getUTCMonth(): Int {
         return getMonth();
     }
     
@@ -212,7 +226,7 @@ class Date {
      * Returns the UTC day of the month of this Date.
      * @return The UTC day (1-31)
      */
-    public function getUTCDate(): Int {
+    extern inline public function getUTCDate(): Int {
         return getDate();
     }
     
@@ -220,7 +234,7 @@ class Date {
      * Returns the UTC hour of this Date.
      * @return The UTC hour (0-23)
      */
-    public function getUTCHours(): Int {
+    extern inline public function getUTCHours(): Int {
         return getHours();
     }
     
@@ -228,7 +242,7 @@ class Date {
      * Returns the UTC minutes of this Date.
      * @return The UTC minutes (0-59)
      */
-    public function getUTCMinutes(): Int {
+    extern inline public function getUTCMinutes(): Int {
         return getMinutes();
     }
     
@@ -236,7 +250,7 @@ class Date {
      * Returns the UTC seconds of this Date.
      * @return The UTC seconds (0-59)
      */
-    public function getUTCSeconds(): Int {
+    extern inline public function getUTCSeconds(): Int {
         return getSeconds();
     }
     
@@ -244,7 +258,7 @@ class Date {
      * Returns the UTC day of the week of this Date.
      * @return The UTC day of the week (0-6, where 0 = Sunday)
      */
-    public function getUTCDay(): Int {
+    extern inline public function getUTCDay(): Int {
         return getDay();
     }
 }
