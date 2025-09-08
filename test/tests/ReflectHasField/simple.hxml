@@ -1,0 +1,9 @@
+# Simple Reflect.hasField Test
+-cp .
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=simple_out
+--macro reflaxe.elixir.CompilerInit.Start()
+SimpleMain

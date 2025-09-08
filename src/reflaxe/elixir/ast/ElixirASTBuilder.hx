@@ -838,19 +838,53 @@ class ElixirASTBuilder {
                                 if (classType.name == "Reflect") {
                                     switch(methodName) {
                                         case "hasField":
-                                            // Reflect.hasField(obj, field) -> Map.has_key?(obj, field)
+                                            // Reflect.hasField(obj, field) -> Map.has_key?(obj, String.to_atom(field))
+                                            // Convert field name to atom since Elixir maps typically use atom keys
                                             if (args.length == 2) {
-                                                return ERemoteCall(makeAST(EVar("Map")), "has_key?", args);
+                                                var obj = args[0];
+                                                var fieldNameExpr = args[1];
+                                                
+                                                // Wrap the field name with String.to_atom() conversion
+                                                var atomField = makeAST(ERemoteCall(
+                                                    makeAST(EVar("String")),
+                                                    "to_atom",
+                                                    [fieldNameExpr]
+                                                ));
+                                                
+                                                return ERemoteCall(makeAST(EVar("Map")), "has_key?", [obj, atomField]);
                                             }
                                         case "field":
-                                            // Reflect.field(obj, field) -> Map.get(obj, field)
+                                            // Reflect.field(obj, field) -> Map.get(obj, String.to_atom(field))
+                                            // Convert field name to atom since Elixir maps typically use atom keys
                                             if (args.length == 2) {
-                                                return ERemoteCall(makeAST(EVar("Map")), "get", args);
+                                                var obj = args[0];
+                                                var fieldNameExpr = args[1];
+                                                
+                                                // Wrap the field name with String.to_atom() conversion
+                                                var atomField = makeAST(ERemoteCall(
+                                                    makeAST(EVar("String")),
+                                                    "to_atom",
+                                                    [fieldNameExpr]
+                                                ));
+                                                
+                                                return ERemoteCall(makeAST(EVar("Map")), "get", [obj, atomField]);
                                             }
                                         case "setField":
-                                            // Reflect.setField(obj, field, value) -> Map.put(obj, field, value)
+                                            // Reflect.setField(obj, field, value) -> Map.put(obj, String.to_atom(field), value)
+                                            // Convert field name to atom since Elixir maps typically use atom keys
                                             if (args.length == 3) {
-                                                return ERemoteCall(makeAST(EVar("Map")), "put", args);
+                                                var obj = args[0];
+                                                var fieldNameExpr = args[1];
+                                                var value = args[2];
+                                                
+                                                // Wrap the field name with String.to_atom() conversion
+                                                var atomField = makeAST(ERemoteCall(
+                                                    makeAST(EVar("String")),
+                                                    "to_atom",
+                                                    [fieldNameExpr]
+                                                ));
+                                                
+                                                return ERemoteCall(makeAST(EVar("Map")), "put", [obj, atomField, value]);
                                             }
                                         case "fields":
                                             // Reflect.fields(obj) -> Map.keys(obj)
@@ -863,9 +897,20 @@ class ElixirASTBuilder {
                                                 return ECall(null, "is_map", args);
                                             }
                                         case "deleteField":
-                                            // Reflect.deleteField(obj, field) -> Map.delete(obj, field)
+                                            // Reflect.deleteField(obj, field) -> Map.delete(obj, String.to_atom(field))
+                                            // Convert field name to atom since Elixir maps typically use atom keys
                                             if (args.length == 2) {
-                                                return ERemoteCall(makeAST(EVar("Map")), "delete", args);
+                                                var obj = args[0];
+                                                var fieldNameExpr = args[1];
+                                                
+                                                // Wrap the field name with String.to_atom() conversion
+                                                var atomField = makeAST(ERemoteCall(
+                                                    makeAST(EVar("String")),
+                                                    "to_atom",
+                                                    [fieldNameExpr]
+                                                ));
+                                                
+                                                return ERemoteCall(makeAST(EVar("Map")), "delete", [obj, atomField]);
                                             }
                                         case "copy":
                                             // Reflect.copy(obj) -> obj (immutable in Elixir)
