@@ -3,14 +3,14 @@ defmodule StringTools do
     result = ""
     g = 0
     g1 = length(s)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, g1, :ok}, fn _, {acc_g, acc_result, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g1, g, :ok}, fn _, {acc_result, acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.char_code_at(i)
     nil
-    {:cont, {acc_g, acc_result, acc_g1, acc_state}}
+    {:cont, {acc_result, acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_result, acc_g1, acc_state}}
+    {:halt, {acc_result, acc_g1, acc_g, acc_state}}
   end
 end)
     result
@@ -42,12 +42,12 @@ end)
   def ltrim(s) do
     l = length(s)
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r, :ok}, fn _, {acc_s, acc_l, acc_r, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, s, r, :ok}, fn _, {acc_l, acc_s, acc_r, acc_state} ->
   if (acc_r < acc_l && StringTools.is_space(acc_s, acc_r)) do
     acc_r = acc_r + 1
-    {:cont, {acc_s, acc_l, acc_r, acc_state}}
+    {:cont, {acc_l, acc_s, acc_r, acc_state}}
   else
-    {:halt, {acc_s, acc_l, acc_r, acc_state}}
+    {:halt, {acc_l, acc_s, acc_r, acc_state}}
   end
 end)
     if (r > 0) do
@@ -59,12 +59,12 @@ end)
   def rtrim(s) do
     l = length(s)
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, s, r, :ok}, fn _, {acc_l, acc_s, acc_r, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {r, l, s, :ok}, fn _, {acc_r, acc_l, acc_s, acc_state} ->
   if (acc_r < acc_l && StringTools.is_space(acc_s, ((acc_l - acc_r) - 1))) do
     acc_r = acc_r + 1
-    {:cont, {acc_l, acc_s, acc_r, acc_state}}
+    {:cont, {acc_r, acc_l, acc_s, acc_state}}
   else
-    {:halt, {acc_l, acc_s, acc_r, acc_state}}
+    {:halt, {acc_r, acc_l, acc_s, acc_state}}
   end
 end)
     if (r > 0) do
@@ -76,7 +76,7 @@ end)
   def lpad(s, c, l) do
     if (length(c) <= 0), do: s
     buf = ""
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, buf, :ok}, fn _, {acc_s, acc_l, acc_buf, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, s, buf, :ok}, fn _, {acc_l, acc_s, acc_buf, acc_state} -> nil end)
     buf <> s
   end
   def rpad(s, c, l) do
@@ -93,7 +93,7 @@ end)
     hex_chars = "0123456789ABCDEF"
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, n, :ok}, fn _, {acc_s, acc_n, acc_state} -> nil end)
     if (digits != nil) do
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, digits, :ok}, fn _, {acc_s, acc_digits, acc_state} -> nil end)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digits, s, :ok}, fn _, {acc_digits, acc_s, acc_state} -> nil end)
     end
     s
   end
@@ -115,7 +115,7 @@ end)
       result = 0
       g = 0
       g1 = length(hex)
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} -> nil end)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, result, :ok}, fn _, {acc_g1, acc_g, acc_result, acc_state} -> nil end)
       result
     end
     result = 0
@@ -131,14 +131,14 @@ end)
     end
     g = start
     g1 = length(str)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, g1, :ok}, fn _, {acc_g, acc_result, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = str.char_code_at(i)
     nil
-    {:cont, {acc_g, acc_g1, acc_result, acc_state}}
+    {:cont, {acc_g, acc_result, acc_g1, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_result, acc_state}}
+    {:halt, {acc_g, acc_result, acc_g1, acc_state}}
   end
 end)
     if negative do
