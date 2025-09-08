@@ -1,0 +1,8 @@
+-cp .
+-cp ../src
+-cp ../std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=.
+--macro reflaxe.elixir.CompilerInit.Start()
+SimpleBootstrapTest
