@@ -1,0 +1,9 @@
+-cp test/tests/DateCompilation
+-cp std
+-lib reflaxe
+-cp src
+--macro reflaxe.elixir.CompilerInit.Start()
+-D reflaxe-elixir
+-D analyzer-optimize
+--dce full
+--main Main

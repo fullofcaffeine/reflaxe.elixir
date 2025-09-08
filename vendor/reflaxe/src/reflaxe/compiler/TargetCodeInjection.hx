@@ -24,6 +24,11 @@ class TargetCodeInjection {
 						arguments = el;
 						id;
 					}
+					// Also check for TLocal with the injection name (for when it's a local variable)
+					case TLocal(v) if (v.name == injectFunctionName): {
+						arguments = el;
+						v.name;
+					}
 					case _: null;
 				}
 			}
@@ -93,6 +98,11 @@ class TargetCodeInjection {
 					case TIdent(id): {
 						arguments = el;
 						id;
+					}
+					// Also check for TLocal with the injection name (for when it's a local variable)
+					case TLocal(v) if (v.name == injectFunctionName): {
+						arguments = el;
+						v.name;
 					}
 					case _: null;
 				}
