@@ -299,7 +299,9 @@ class ModuleBuilder {
                     if (filePath == null) {
                         // Convert module name to file path
                         // e.g., "Std" -> "std.ex", "Log" -> "haxe/log.ex"
-                        filePath = ElixirASTBuilder.compiler.getModuleOutputPath(depModule);
+                        // Check if we have package information for this module
+                        var modulePack = ElixirASTBuilder.compiler.modulePackages.get(depModule);
+                        filePath = ElixirASTBuilder.compiler.getModuleOutputPath(depModule, modulePack);
                     }
                     
                     if (filePath != null) {
