@@ -52,7 +52,7 @@ defmodule Lambda do
 end)
     else
       v = it.iterator()
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, n, :ok}, fn _, {acc_v, acc_n, acc_state} -> nil end)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, v, :ok}, fn _, {acc_n, acc_v, acc_state} -> nil end)
     end
     n
   end
