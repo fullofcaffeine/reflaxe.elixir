@@ -268,38 +268,59 @@ class ModuleBuilder {
      * Generate Code.require_file statements for module dependencies
      * 
      * WHY: Standalone scripts need to explicitly load their dependencies
-     * WHAT: Creates Code.require_file calls for common Haxe stdlib modules
-     * HOW: For scripts with main(), we know they likely use trace() which needs Log and Std
+     * WHAT: Creates Code.require_file calls for modules that are actually used
+     * HOW: Uses the compiler's dependency tracking to only load needed modules
      * 
-     * NOTE: This is a pragmatic approach since dependency tracking happens after module building.
-     * For standalone scripts with main(), we preload common stdlib modules that trace() uses.
+     * NOTE: Dependencies are tracked during AST building when ERemoteCall nodes are generated.
+     * Only modules that are actually referenced in the code will be required.
      */
     static function generateRequireStatements(classType: ClassType, moduleName: String): Array<ElixirAST> {
         var requires: Array<ElixirAST> = [];
         
-        // For standalone scripts with main(), preload common dependencies
-        // trace() uses Log.trace() which depends on Std.string()
-        var commonDependencies = [
-            "std.ex",           // Std module (used by Log and often by user code)
-            "haxe/log.ex"       // Log module (used by trace())
-        ];
-        
-        for (filePath in commonDependencies) {
-            // Generate: Code.require_file("path/to/file.ex", __DIR__)
-            requires.push(makeAST(
-                ECall(
-                    null,
-                    "Code.require_file",
-                    [
-                        makeAST(EString(filePath)),
-                        makeAST(EVar("__DIR__"))
-                    ]
-                )
-            ));
+        // Get the actual dependencies from the compiler's tracking
+        if (ElixirASTBuilder.compiler != null) {
+            var deps = ElixirASTBuilder.compiler.moduleDependencies.get(moduleName);
             
             #if debug_bootstrap
-            trace('[ModuleBuilder] Added require for ${filePath}');
+            trace('[ModuleBuilder] generateRequireStatements for ${moduleName}');
+            trace('[ModuleBuilder] compiler.moduleDependencies has ${[for (k in ElixirASTBuilder.compiler.moduleDependencies.keys()) k].length} modules');
+            trace('[ModuleBuilder] Dependencies for ${moduleName}: ${deps != null ? [for (k in deps.keys()) k].join(", ") : "none"}');
             #end
+            
+            if (deps != null) {
+                // Get module output paths from the compiler
+                var outputPaths = ElixirASTBuilder.compiler.moduleOutputPaths;
+                
+                for (depModule in deps.keys()) {
+                    // Get the file path for this dependency
+                    var filePath = outputPaths.get(depModule);
+                    
+                    // If we don't have a path, try to construct one based on module name
+                    if (filePath == null) {
+                        // Convert module name to file path
+                        // e.g., "Std" -> "std.ex", "Log" -> "haxe/log.ex"
+                        filePath = ElixirASTBuilder.compiler.getModuleOutputPath(depModule);
+                    }
+                    
+                    if (filePath != null) {
+                        // Generate: Code.require_file("path/to/file.ex", __DIR__)
+                        requires.push(makeAST(
+                            ECall(
+                                null,
+                                "Code.require_file",
+                                [
+                                    makeAST(EString(filePath)),
+                                    makeAST(EVar("__DIR__"))
+                                ]
+                            )
+                        ));
+                        
+                        #if debug_bootstrap
+                        trace('[ModuleBuilder] Added require for ${depModule} at ${filePath}');
+                        #end
+                    }
+                }
+            }
         }
         
         return requires;
