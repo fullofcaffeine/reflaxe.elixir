@@ -2156,6 +2156,7 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 
 ## Known Issues  
 - **Array Mutability**: Methods like `reverse()` and `sort()` don't mutate in place (Elixir lists are immutable)
+- **Postgrex.TypeManager Race Condition**: When using `mix phx.server`, may encounter "unknown registry: Postgrex.TypeManager" errors due to a race condition in Phoenix server startup. Workaround: Use `iex -S mix` to start in interactive mode, or ensure database is configured correctly. The application works correctly in interactive mode and with `mix run`.
 
 ## Recently Resolved Issues ✅
 - **Major Loop Compilation Refactoring (August 2025)**: Reduced loop compilation from 10,668 lines across 10+ files to a single 334-line UnifiedLoopCompiler using TDD approach. Eliminated complex Y-combinator patterns in favor of simple recursive functions. Fixed g_array variable mismatch bugs. (see commit c85745e)
