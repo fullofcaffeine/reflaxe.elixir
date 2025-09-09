@@ -821,12 +821,13 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
                                 }
                                 
                                 if (keyName != null && keyValue != null) {
-                                    // For certain keys, convert strings to atoms
+                                    // For certain keys, convert strings to appropriate references
                                     var finalValue = if (keyName == "name") {
                                         switch(keyValue.def) {
                                             case EString(s) if (isModuleName(s)):
-                                                // Convert module name string to atom
-                                                makeAST(EAtom(s), keyValue.pos);
+                                                // Convert module name string to module reference (unquoted)
+                                                // Use EVar for module references like TodoApp.PubSub
+                                                makeAST(EVar(s), keyValue.pos);
                                             default:
                                                 keyValue;
                                         }

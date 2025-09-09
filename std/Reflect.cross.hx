@@ -258,9 +258,9 @@ class Reflect {
      * @param field The name of the field to retrieve
      * @return The value of the field, or null if it doesn't exist
      */
-    public static function field<T, R>(obj: T, field: String): Null<R> {
+    public static function field(o: Dynamic, field: String): Dynamic {
         // Use native Elixir Map.get with atom conversion
-        return untyped __elixir__('Map.get({0}, String.to_existing_atom({1}))', obj, field);
+        return untyped __elixir__('Map.get({0}, String.to_existing_atom({1}))', o, field);
     }
     
     /**
@@ -278,10 +278,10 @@ class Reflect {
      * @param value The value to set
      * @return The updated object (new map with the field set)
      */
-    public static function setField<T, V>(obj: T, field: String, value: V): T {
+    public static function setField(o: Dynamic, field: String, value: Dynamic): Void {
         // Use native Elixir Map.put with atom conversion
-        // Note: This returns a new map (immutability)
-        return untyped __elixir__('Map.put({0}, String.to_atom({1}), {2})', obj, field, value);
+        // Note: In Elixir this returns a new map, but Haxe API expects Void
+        untyped __elixir__('Map.put({0}, String.to_atom({1}), {2})', o, field, value);
     }
     
     /**
@@ -294,9 +294,9 @@ class Reflect {
      * @param obj The object (map) to get fields from
      * @return Array of field names as strings
      */
-    public static function fields<T>(obj: T): Array<String> {
+    public static function fields(o: Dynamic): Array<String> {
         // Use native Elixir to get map keys and convert atoms to strings
-        return untyped __elixir__('Map.keys({0}) |> Enum.map(&Atom.to_string/1)', obj);
+        return untyped __elixir__('Map.keys({0}) |> Enum.map(&Atom.to_string/1)', o);
     }
     
     /**
@@ -310,8 +310,9 @@ class Reflect {
      * @param field The name of the field to check for
      * @return True if the field exists, false otherwise
      */
-    extern
-    public static function hasField<T>(obj: T, field: String): Bool;
+    public static function hasField(o: Dynamic, field: String): Bool {
+        return untyped __elixir__('Map.has_key?({0}, String.to_existing_atom({1}))', o, field);
+    }
     
     /**
      * Delete a field from an object.
@@ -326,8 +327,11 @@ class Reflect {
      * @param field The name of the field to delete
      * @return The updated object (new map without the field)
      */
-    extern
-    public static function deleteField<T>(obj: T, field: String): T;
+    public static function deleteField(o: Dynamic, field: String): Bool {
+        // In Elixir, we can't truly delete from immutable maps
+        // We return true if the field exists, false otherwise (matches Haxe behavior)
+        return hasField(o, field);
+    }
     
     /**
      * Check if a value is an object (map in Elixir).
@@ -339,8 +343,10 @@ class Reflect {
      * @param value The value to check
      * @return True if the value is an object/map
      */
-    extern
-    public static function isObject<T>(value: T): Bool;
+    public static function isObject(v: Dynamic): Bool {
+        // In Elixir, objects are maps
+        return untyped __elixir__('is_map({0})', v);
+    }
     
     /**
      * Make a shallow copy of an object with all its fields.
@@ -352,10 +358,10 @@ class Reflect {
      * @param obj The object to copy
      * @return A shallow copy of the object
      */
-    public static inline function copy<T>(obj: T): T {
+    public static inline function copy<T>(o: T): T {
         // In Elixir, maps are immutable, so we just return the same map
         // This maintains API compatibility while being efficient
-        return obj;
+        return o;
     }
     
     /**
@@ -374,8 +380,9 @@ class Reflect {
      * @param args Array of arguments to pass to the function
      * @return The return value of the function call
      */
-    extern
-    public static function callMethod<T, R>(obj: T, func: haxe.Constraints.Function, args: Array<{}>): R;
+    public static function callMethod(o: Dynamic, func: haxe.Constraints.Function, args: Array<Dynamic>): Dynamic {
+        return untyped __elixir__('apply({0}, {1})', func, args);
+    }
     
     /**
      * Compare two values for ordering.
@@ -412,8 +419,10 @@ class Reflect {
      * @param value The value to check
      * @return True if the value is an enum value
      */
-    extern
-    public static function isEnumValue<T>(value: T): Bool;
+    public static function isEnumValue(v: Dynamic): Bool {
+        // In Elixir, enums are represented as tagged tuples
+        return untyped __elixir__('is_tuple({0}) and tuple_size({0}) >= 1 and is_atom(elem({0}, 0))', v);
+    }
     
     /**
      * Check if a value is a function.
@@ -427,7 +436,8 @@ class Reflect {
      */
     public static function isFunction(f: Dynamic): Bool {
         // In Elixir, check if it's a function
-        return untyped __elixir__('is_function({0})', f);
+        // Use Kernel.is_function to avoid conflict with our own function name
+        return untyped __elixir__('Kernel.is_function({0})', f);
     }
     
     /**
@@ -459,7 +469,8 @@ class Reflect {
      */
     public static function getProperty(o: Dynamic, field: String): Dynamic {
         // In Elixir, properties are the same as fields
-        return field(o, field);
+        // Note: We're calling Reflect.field function, not using the parameter directly
+        return Reflect.field(o, field);
     }
     
     /**
