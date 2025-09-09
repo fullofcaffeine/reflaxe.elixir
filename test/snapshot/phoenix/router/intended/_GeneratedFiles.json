@@ -3,6 +3,7 @@
   "value_type.ex",
   "user_live.ex",
   "user_controller.ex",
+  "type.ex",
   "string_buf.ex",
   "std.ex",
   "status_controller.ex",

@@ -1,7 +1,5 @@
 defmodule FileStorage do
-  def new() do
-    %{:basePath => "/tmp/storage"}
-  end
+  @base_path nil
   def init(struct, config) do
     if (config.path != nil) do
       basePath = config.path

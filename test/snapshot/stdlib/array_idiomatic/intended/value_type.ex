@@ -14,9 +14,6 @@ defmodule ValueType do
   def t_object() do
     {:TObject}
   end
-  def t_function() do
-    {:TFunction}
-  end
   def t_class(arg0) do
     {:TClass, arg0}
   end

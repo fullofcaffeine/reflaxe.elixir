@@ -1,4 +1,4 @@
-defmodule Phoenix.RepoOption do
+defmodule phoenix.RepoOption do
   def timeout(arg0) do
     {:Timeout, arg0}
   end

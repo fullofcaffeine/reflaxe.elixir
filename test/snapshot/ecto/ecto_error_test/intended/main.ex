@@ -1,5 +1,5 @@
 defmodule Main do
-  defp main() do
-    Log.trace("Ecto error validation test", %{:fileName => "Main.hx", :lineNumber => 27, :className => "Main", :methodName => "main"})
+  def main() do
+    Log.trace("Ecto error validation test", %{:file_name => "Main.hx", :line_number => 27, :class_name => "Main", :method_name => "main"})
   end
 end

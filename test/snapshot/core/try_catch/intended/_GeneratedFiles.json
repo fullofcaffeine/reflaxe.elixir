@@ -1,6 +1,8 @@
 {
   "filesGenerated": [
   "value_type.ex",
+  "type.ex",
+  "sys.ex",
   "string_tools.ex",
   "string_buf.ex",
   "std.ex",
@@ -22,6 +24,7 @@
   "haxe/ds/enum_value_map.ex",
   "haxe/ds/balanced_tree.ex",
   "haxe/ds/_map/map_impl_.ex",
+  "haxe/_int64/___int64.ex",
   "haxe/_int32/int32_impl_.ex",
   "haxe/_constraints/not_void_impl_.ex",
   "haxe/_constraints/function_impl_.ex",
@@ -29,6 +32,7 @@
   "haxe/_constraints/constructible_impl_.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
   "custom_exception.ex",
+  "bootstrap_main.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],

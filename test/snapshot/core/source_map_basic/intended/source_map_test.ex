@@ -1,7 +1,4 @@
 defmodule SourceMapTest do
-  def new() do
-    %{}
-  end
   def simple_method(_struct) do
     "test"
   end
@@ -10,8 +7,8 @@ defmodule SourceMapTest do
   end
   def main() do
     test = SourceMapTest.new()
-    result = test.simpleMethod()
-    condition = test.conditionalMethod(42)
-    Log.trace("Source mapping test: " <> result <> " " <> Std.string(condition), %{:fileName => "SourceMapTest.hx", :lineNumber => 23, :className => "SourceMapTest", :methodName => "main"})
+    result = test.simple_method()
+    condition = test.conditional_method(42)
+    Log.trace("Source mapping test: " <> result <> " " <> Std.string(condition), %{:file_name => "SourceMapTest.hx", :line_number => 23, :class_name => "SourceMapTest", :method_name => "main"})
   end
 end

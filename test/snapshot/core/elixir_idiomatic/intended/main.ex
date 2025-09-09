@@ -2,49 +2,49 @@ defmodule Main do
   defp test_idiomatic_option() do
     some = "test"
     none = :none
-    Log.trace("Idiomatic option some: " <> Std.string(some), %{:fileName => "Main.hx", :lineNumber => 40, :className => "Main", :methodName => "testIdiomaticOption"})
-    Log.trace("Idiomatic option none: " <> Std.string(none), %{:fileName => "Main.hx", :lineNumber => 41, :className => "Main", :methodName => "testIdiomaticOption"})
+    Log.trace("Idiomatic option some: " <> Std.string(some), %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "testIdiomaticOption"})
+    Log.trace("Idiomatic option none: " <> Std.string(none), %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testIdiomaticOption"})
   end
   defp test_literal_option() do
     some = {:Some, "test"}
-    none = :none
-    Log.trace("Literal option some: " <> Std.string(some), %{:fileName => "Main.hx", :lineNumber => 53, :className => "Main", :methodName => "testLiteralOption"})
-    Log.trace("Literal option none: " <> Std.string(none), %{:fileName => "Main.hx", :lineNumber => 54, :className => "Main", :methodName => "testLiteralOption"})
+    none = {1}
+    Log.trace("Literal option some: " <> Std.string(some), %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "testLiteralOption"})
+    Log.trace("Literal option none: " <> Std.string(none), %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "testLiteralOption"})
   end
   defp test_idiomatic_result() do
     ok = "success"
     error = "failed"
-    Log.trace("Idiomatic result ok: " <> Std.string(ok), %{:fileName => "Main.hx", :lineNumber => 66, :className => "Main", :methodName => "testIdiomaticResult"})
-    Log.trace("Idiomatic result error: " <> Std.string(error), %{:fileName => "Main.hx", :lineNumber => 67, :className => "Main", :methodName => "testIdiomaticResult"})
+    Log.trace("Idiomatic result ok: " <> Std.string(ok), %{:file_name => "Main.hx", :line_number => 66, :class_name => "Main", :method_name => "testIdiomaticResult"})
+    Log.trace("Idiomatic result error: " <> Std.string(error), %{:file_name => "Main.hx", :line_number => 67, :class_name => "Main", :method_name => "testIdiomaticResult"})
   end
   defp test_pattern_matching() do
     user_opt = 42
-    case (elem(user_opt, 0)) do
-      0 ->
+    case (user_opt) do
+      {:some, _} ->
         g = elem(user_opt, 1)
         value = g
-        Log.trace("Got value: " <> value, %{:fileName => "Main.hx", :lineNumber => 79, :className => "Main", :methodName => "testPatternMatching"})
-      1 ->
-        Log.trace("Got none", %{:fileName => "Main.hx", :lineNumber => 81, :className => "Main", :methodName => "testPatternMatching"})
+        Log.trace("Got value: " <> Kernel.to_string(value), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "testPatternMatching"})
+      :none ->
+        Log.trace("Got none", %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "testPatternMatching"})
     end
     result = "data"
-    case (elem(result, 0)) do
-      0 ->
+    case (result) do
+      {:ok, _} ->
         g = elem(result, 1)
         data = g
-        Log.trace("Success: " <> data, %{:fileName => "Main.hx", :lineNumber => 88, :className => "Main", :methodName => "testPatternMatching"})
-      1 ->
+        Log.trace("Success: " <> data, %{:file_name => "Main.hx", :line_number => 88, :class_name => "Main", :method_name => "testPatternMatching"})
+      {:error, _} ->
         g = elem(result, 1)
         reason = g
-        Log.trace("Error: " <> reason, %{:fileName => "Main.hx", :lineNumber => 90, :className => "Main", :methodName => "testPatternMatching"})
+        Log.trace("Error: " <> reason, %{:file_name => "Main.hx", :line_number => 90, :class_name => "Main", :method_name => "testPatternMatching"})
     end
   end
-  defp main() do
-    Log.trace("=== Testing @:elixirIdiomatic Annotation ===", %{:fileName => "Main.hx", :lineNumber => 95, :className => "Main", :methodName => "main"})
+  def main() do
+    Log.trace("=== Testing @:elixirIdiomatic Annotation ===", %{:file_name => "Main.hx", :line_number => 95, :class_name => "Main", :method_name => "main"})
     test_idiomatic_option()
     test_literal_option()
     test_idiomatic_result()
     test_pattern_matching()
-    Log.trace("=== Test Complete ===", %{:fileName => "Main.hx", :lineNumber => 102, :className => "Main", :methodName => "main"})
+    Log.trace("=== Test Complete ===", %{:file_name => "Main.hx", :line_number => 102, :class_name => "Main", :method_name => "main"})
   end
 end

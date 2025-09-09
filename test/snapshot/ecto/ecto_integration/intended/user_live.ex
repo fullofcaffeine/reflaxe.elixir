@@ -1,10 +1,10 @@
 defmodule UserLive do
   use UserLiveWeb, :live_view
-  defp mount(params, session, socket) do
+  def mount(params, session, socket) do
     users = Accounts.list_users()
     %{:ok => true, :socket => socket}
   end
-  defp handle_event(event, params, socket) do
+  def handle_event(event, params, socket) do
     case (event) do
       "delete_user" ->
         user = Accounts.get_user(params.id)

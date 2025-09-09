@@ -1,4 +1,4 @@
-defmodule Elixir.Types.MonitorInfo do
+defmodule elixir.types.MonitorInfo do
   def process_monitor(arg0) do
     {:ProcessMonitor, arg0}
   end

@@ -1,12 +1,6 @@
 defmodule TestString do
-  def new(s) do
-    %{:str => s}
-  end
+  @str nil
   def cca(struct, index) do
-    if (index < struct.str.length) do
-      :binary.at(struct.str, index)
-    else
-      0
-    end
+    if (index < length(struct.str)), do: struct.str.char_code_at(index), else: 0
   end
 end

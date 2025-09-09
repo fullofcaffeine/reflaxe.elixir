@@ -1,5 +1,5 @@
 defmodule Main do
-  defp main() do
+  def main() do
     test = {:Option1, "test"}
     case (elem(test, 0)) do
       0 ->
@@ -9,24 +9,24 @@ defmodule Main do
       1 ->
         g = elem(test, 1)
         _data = g
-        Log.trace("Option2", %{:fileName => "Main.hx", :lineNumber => 23, :className => "Main", :methodName => "main"})
+        Log.trace("Option2", %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "main"})
       2 ->
-        Log.trace("Option3", %{:fileName => "Main.hx", :lineNumber => 25, :className => "Main", :methodName => "main"})
+        Log.trace("Option3", %{:file_name => "Main.hx", :line_number => 25, :class_name => "Main", :method_name => "main"})
     end
-    Log.trace("This should remain", %{:fileName => "Main.hx", :lineNumber => 30, :className => "Main", :methodName => "main"})
+    Log.trace("This should remain", %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "main"})
     _unused = "This variable is never used"
     used = "This is used"
-    Log.trace(used, %{:fileName => "Main.hx", :lineNumber => 38, :className => "Main", :methodName => "main"})
+    Log.trace(used, %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "main"})
     temp1 = 42
     temp2 = temp1
     result = temp2 + 1
-    Log.trace(result, %{:fileName => "Main.hx", :lineNumber => 44, :className => "Main", :methodName => "main"})
+    Log.trace(result, %{:file_name => "Main.hx", :line_number => 44, :class_name => "Main", :method_name => "main"})
     dead_code_example()
   end
   defp dead_code_example() do
     42
     dead_var = "never executed"
-    Log.trace(dead_var, %{:fileName => "Main.hx", :lineNumber => 54, :className => "Main", :methodName => "deadCodeExample"})
+    Log.trace(dead_var, %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "deadCodeExample"})
     0
   end
 end

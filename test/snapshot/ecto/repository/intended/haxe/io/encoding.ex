@@ -1,4 +1,4 @@
-defmodule Haxe.Io.Encoding do
+defmodule haxe.io.Encoding do
   def utf8() do
     {:UTF8}
   end

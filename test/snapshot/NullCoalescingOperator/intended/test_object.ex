@@ -1,7 +1,4 @@
 defmodule TestObject do
-  def new() do
-    %{}
-  end
   def get_name(_struct) do
     "TestName"
   end

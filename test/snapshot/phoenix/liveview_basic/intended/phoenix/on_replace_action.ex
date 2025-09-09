@@ -1,4 +1,4 @@
-defmodule Phoenix.OnReplaceAction do
+defmodule phoenix.OnReplaceAction do
   def raise() do
     {:Raise}
   end

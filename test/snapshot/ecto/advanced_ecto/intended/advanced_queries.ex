@@ -48,16 +48,16 @@ defmodule AdvancedQueries do
     compiled_query
   end
   def main() do
-    Log.trace("=== Advanced Ecto Features Demonstration ===", %{:fileName => "AdvancedQueries.hx", :lineNumber => 138, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("1. " <> demonstrate_subquery(), %{:fileName => "AdvancedQueries.hx", :lineNumber => 140, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("2. " <> demonstrate_c_t_e(), %{:fileName => "AdvancedQueries.hx", :lineNumber => 141, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("3. " <> demonstrate_window_functions(), %{:fileName => "AdvancedQueries.hx", :lineNumber => 142, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("4. " <> demonstrate_complex_joins(), %{:fileName => "AdvancedQueries.hx", :lineNumber => 143, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("5. " <> demonstrate_multi_transactions(), %{:fileName => "AdvancedQueries.hx", :lineNumber => 144, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("6. " <> demonstrate_advanced_aggregations(), %{:fileName => "AdvancedQueries.hx", :lineNumber => 145, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("7. " <> demonstrate_fragments(), %{:fileName => "AdvancedQueries.hx", :lineNumber => 146, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("8. " <> demonstrate_preloading(), %{:fileName => "AdvancedQueries.hx", :lineNumber => 147, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("9. " <> demonstrate_complex_query(), %{:fileName => "AdvancedQueries.hx", :lineNumber => 148, :className => "AdvancedQueries", :methodName => "main"})
-    Log.trace("=== Advanced Ecto Features Completed ===", %{:fileName => "AdvancedQueries.hx", :lineNumber => 150, :className => "AdvancedQueries", :methodName => "main"})
+    Log.trace("=== Advanced Ecto Features Demonstration ===", %{:file_name => "AdvancedQueries.hx", :line_number => 138, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("1. " <> demonstrate_subquery(), %{:file_name => "AdvancedQueries.hx", :line_number => 140, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("2. " <> demonstrate_c_t_e(), %{:file_name => "AdvancedQueries.hx", :line_number => 141, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("3. " <> demonstrate_window_functions(), %{:file_name => "AdvancedQueries.hx", :line_number => 142, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("4. " <> demonstrate_complex_joins(), %{:file_name => "AdvancedQueries.hx", :line_number => 143, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("5. " <> demonstrate_multi_transactions(), %{:file_name => "AdvancedQueries.hx", :line_number => 144, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("6. " <> demonstrate_advanced_aggregations(), %{:file_name => "AdvancedQueries.hx", :line_number => 145, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("7. " <> demonstrate_fragments(), %{:file_name => "AdvancedQueries.hx", :line_number => 146, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("8. " <> demonstrate_preloading(), %{:file_name => "AdvancedQueries.hx", :line_number => 147, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("9. " <> demonstrate_complex_query(), %{:file_name => "AdvancedQueries.hx", :line_number => 148, :class_name => "AdvancedQueries", :method_name => "main"})
+    Log.trace("=== Advanced Ecto Features Completed ===", %{:file_name => "AdvancedQueries.hx", :line_number => 150, :class_name => "AdvancedQueries", :method_name => "main"})
   end
 end

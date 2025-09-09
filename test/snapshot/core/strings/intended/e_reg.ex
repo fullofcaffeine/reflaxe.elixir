@@ -1,7 +1,4 @@
 defmodule EReg do
-  def new(_r, _opt) do
-    %{}
-  end
   def match(_struct, _s) do
     false
   end

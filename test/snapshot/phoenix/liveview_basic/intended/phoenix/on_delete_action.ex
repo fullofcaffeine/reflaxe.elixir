@@ -1,4 +1,4 @@
-defmodule Phoenix.OnDeleteAction do
+defmodule phoenix.OnDeleteAction do
   def nothing() do
     {:Nothing}
   end

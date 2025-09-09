@@ -2,14 +2,14 @@ defmodule Main do
   defp compare_params(p1, p2) do
     _p = p1
     _p = p2
-    if (p1.length == 0 && p2.length == 0), do: 0
+    if (length(p1) == 0 && length(p2) == 0), do: 0
     compare_arrays(p1, p2)
   end
   defp compare_arrays(a1, a2) do
-    (a1.length - a2.length)
+    (length(a1) - length(a2))
   end
-  defp main() do
+  def main() do
     result = compare_params([1, 2], [3, 4, 5])
-    Log.trace("Result: " <> result, %{:fileName => "Main.hx", :lineNumber => 18, :className => "Main", :methodName => "main"})
+    Log.trace("Result: " <> Kernel.to_string(result), %{:file_name => "Main.hx", :line_number => 18, :class_name => "Main", :method_name => "main"})
   end
 end

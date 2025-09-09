@@ -10,12 +10,12 @@ defmodule Main do
       "update" ->
         {:Some, {:TodoUpdated, %{:id => 1, :title => "Updated"}}}
       _ ->
-        :none
+        {1}
     end
   end
   def main() do
     msg = "create"
-    g = {:ParseMessage, msg}
+    g = parse_message(msg)
     case (elem(g, 0)) do
       0 ->
         g = elem(g, 1)
@@ -24,22 +24,22 @@ defmodule Main do
           0 ->
             g = elem(parsed_msg, 1)
             todo = g
-            Log.trace("Todo created: " <> Std.string(todo.title), %{:fileName => "Main.hx", :lineNumber => 51, :className => "Main", :methodName => "main"})
+            Log.trace("Todo created: " <> Std.string(todo.title), %{:file_name => "Main.hx", :line_number => 51, :class_name => "Main", :method_name => "main"})
           1 ->
             g = elem(parsed_msg, 1)
             todo = g
-            Log.trace("Todo updated: " <> Std.string(todo.title), %{:fileName => "Main.hx", :lineNumber => 53, :className => "Main", :methodName => "main"})
+            Log.trace("Todo updated: " <> Std.string(todo.title), %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "main"})
           2 ->
             g = elem(parsed_msg, 1)
             id = g
-            Log.trace("Todo deleted: " <> id, %{:fileName => "Main.hx", :lineNumber => 55, :className => "Main", :methodName => "main"})
+            Log.trace("Todo deleted: " <> Kernel.to_string(id), %{:file_name => "Main.hx", :line_number => 55, :class_name => "Main", :method_name => "main"})
           3 ->
             g = elem(parsed_msg, 1)
             message = g
-            Log.trace("Alert: " <> message, %{:fileName => "Main.hx", :lineNumber => 57, :className => "Main", :methodName => "main"})
+            Log.trace("Alert: " <> message, %{:file_name => "Main.hx", :line_number => 57, :class_name => "Main", :method_name => "main"})
         end
       1 ->
-        Log.trace("No message parsed", %{:fileName => "Main.hx", :lineNumber => 60, :className => "Main", :methodName => "main"})
+        Log.trace("No message parsed", %{:file_name => "Main.hx", :line_number => 60, :class_name => "Main", :method_name => "main"})
     end
   end
 end

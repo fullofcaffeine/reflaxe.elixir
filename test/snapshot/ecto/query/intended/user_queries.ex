@@ -21,7 +21,7 @@ defmodule UserQueries do
     from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :select => %{:user => "u", :post_count => "count(p.id)"}})
   end
   def get_active_posters(min_posts) do
-    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> min_posts, :select => %{:user => "u", :post_count => "count(p.id)"}})
+    from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> Kernel.to_string(min_posts), :select => %{:user => "u", :post_count => "count(p.id)"}})
   end
   def get_top_users() do
     subquery = from("posts", "p", %{:group_by => "p.user_id", :select => %{:user_id => "p.user_id", :count => "count(p.id)"}})
@@ -31,34 +31,28 @@ defmodule UserQueries do
     from("users", "u", %{:preload => ["posts", "profile", "comments"], :select => "u"})
   end
   def deactivate_old_users(days) do
-    from("users", "u", %{:where => %{:last_login_lt => "ago(" <> days <> ", \"day\")"}, :update => %{:active => false}})
+    from("users", "u", %{:where => %{:last_login_lt => "ago(" <> Kernel.to_string(days) <> ", \"day\")"}, :update => %{:active => false}})
   end
   def delete_inactive_users() do
     from("users", "u", %{:where => %{:active => false}, :delete_all => true})
   end
   def search_users(filters) do
     query = from("users", "u", %{:select => "u"})
-    query = if (filters.name != nil) do
-  where(query, "u", %{:name_ilike => filters.name})
-else
-  query
-end
-    query = if (filters.email != nil) do
-  where(query, "u", %{:email => filters.email})
-else
-  query
-end
-    query = if (filters.min_age != nil) do
-  where(query, "u", %{:age_gte => filters.min_age})
-else
-  query
-end
+    if (filters.name != nil) do
+      query = where(query, "u", %{:name_ilike => filters.name})
+    end
+    if (filters.email != nil) do
+      query = where(query, "u", %{:email => filters.email})
+    end
+    if (filters.min_age != nil) do
+      query = where(query, "u", %{:age_gte => filters.min_age})
+    end
     query
   end
-  defp from(_table, _alias_param, _opts) do
+  defp from(_table, _alias, _opts) do
     nil
   end
-  defp where(_query, _alias_param, _condition) do
+  defp where(_query, _alias, _condition) do
     nil
   end
 end

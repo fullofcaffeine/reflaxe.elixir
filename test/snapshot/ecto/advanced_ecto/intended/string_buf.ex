@@ -1,10 +1,9 @@
 defmodule StringBuf do
-  def new() do
-    %{:parts => []}
-  end
+  @parts nil
+  @length nil
   defp get_length(struct) do
     joined = Enum.join(struct.parts, "")
-    joined.length
+    length(joined)
   end
   def add(struct, x) do
     str = if (x == nil) do

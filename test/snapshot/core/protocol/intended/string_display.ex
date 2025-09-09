@@ -3,9 +3,7 @@ defmodule StringDisplay do
     value
   end
   def format(value, options) do
-    if (options.uppercase) do
-      value = String.upcase(value)
-    end
+    if (options.uppercase), do: value.to_upper_case()
     value
   end
 end

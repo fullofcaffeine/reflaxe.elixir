@@ -119,7 +119,7 @@ class ElixirOutputIterator {
             // Get from abstracts
             compiler.abstracts[index - compiler.classes.length - compiler.enums.length - compiler.typedefs.length];
         }
-        
+
         index++;
         
         #if debug_output_iterator
@@ -148,12 +148,56 @@ class ElixirOutputIterator {
         #end
         
         // Convert AST to string
-        final output = ElixirASTPrinter.print(transformedAST, 0);
+        var output = ElixirASTPrinter.print(transformedAST, 0);
         
         #if debug_output_iterator
         trace('[ElixirOutputIterator] Generated ${output.length} characters of output');
         #end
         
+        // Inline-deterministic strategy: inject requires + Module.main() into the
+        // module file AFTER compilation using the full dependency graph.
+        //
+        // WHY: Guarantees deterministic ordering (topological) and complete transitive
+        // closure while keeping a single-file entrypoint (no .exs runner).
+        if (ModuleBuilder.getBootstrapStrategy() == BootstrapStrategy.InlineDeterministic) {
+            // Attempt to map the current BaseType back to the module name used in maps
+            var moduleName: Null<String> = null;
+            for (name in compiler.moduleBaseTypes.keys()) {
+                if (compiler.moduleBaseTypes.get(name) == astData.baseType) {
+                    moduleName = name;
+                    break;
+                }
+            }
+            if (moduleName != null && compiler.modulesWithBootstrap.indexOf(moduleName) >= 0) {
+                // Compute deterministic require list using transitive closure and topo order
+                var closure = computeTransitiveDependencies(moduleName);
+                var topo = compiler.getSortedModules();
+                var ordered: Array<String> = [];
+                for (m in topo) if (closure.exists(m)) ordered.push(m);
+                if (ordered.length < Lambda.count(closure)) {
+                    var allKeys: Array<String> = [for (k in closure.keys()) k];
+                    allKeys.sort((a, b) -> Reflect.compare(a, b));
+                    ordered = allKeys;
+                }
+                var lines: Array<String> = [];
+                for (dep in ordered) {
+                    // Skip self when injecting inline
+                    if (dep == moduleName) continue;
+                    var p = compiler.moduleOutputPaths.get(dep);
+                    if (p == null) {
+                        var pack = compiler.modulePackages.get(dep);
+                        p = compiler.getModuleOutputPath(dep, pack);
+                    }
+                    if (p != null) lines.push('Code.require_file("' + p + '", __DIR__)');
+                }
+                // Build final inline output: requires + module + main call
+                var injected = (lines.length > 0 ? lines.join("\n") + "\n" : "")
+                    + output + "\n" + moduleName + ".main()";
+                // Ensure trailing newline for consistent diffs
+                output = injected + "\n";
+            }
+        }
+
         // Return the same DataAndFileInfo but with string output instead of AST
         return astData.withOutput(output);
     }
@@ -163,13 +207,14 @@ class ElixirOutputIterator {
      * Aggregates dependency graph AFTER compilation for deterministic and complete requires.
      */
     function prepareExternalBootstraps(): Void {
-        // Respect bootstrap strategy: only generate externals if not inline
-        if (ModuleBuilder.getBootstrapStrategy() == BootstrapStrategy.Inline) return;
+        // Respect bootstrap strategy: only generate externals for External strategy
+        if (ModuleBuilder.getBootstrapStrategy() != BootstrapStrategy.External) return;
         if (compiler.modulesWithBootstrap.length == 0) return;
 
         // Build global topological order once
         var topo = compiler.getSortedModules();
 
+        var generatedFor: Array<String> = [];
         for (moduleName in compiler.modulesWithBootstrap) {
             // Compute transitive closure for this module
             var closure = computeTransitiveDependencies(moduleName);
@@ -208,11 +253,47 @@ class ElixirOutputIterator {
             lines.push(moduleName + '.main()');
 
             var content = lines.join("\n");
-            var fileBase = 'bootstrap_' + NameUtils.toSnakeCase(moduleName);
+            // Emit <module>.exs script; the overrideFileName must not include extension.
+            var fileBase = NameUtils.toSnakeCase(moduleName);
 
             // Construct output info with override name/dir
             var baseType = compiler.moduleBaseTypes.exists(moduleName) ? compiler.moduleBaseTypes.get(moduleName) : null;
             var data = new DataAndFileInfo<StringOrBytes>(StringOrBytes.fromString(content), baseType, fileBase, null);
+            extraOutputs.push(data);
+            generatedFor.push(moduleName);
+        }
+
+        // Convenience: if exactly one entrypoint, emit a generic main.exs as well
+        if (generatedFor.length == 1) {
+            var moduleName = generatedFor[0];
+            var topo = compiler.getSortedModules();
+            var closure = computeTransitiveDependencies(moduleName);
+            var ordered: Array<String> = [];
+            for (m in topo) if (closure.exists(m)) ordered.push(m);
+            if (ordered.length < Lambda.count(closure)) {
+                var allKeys: Array<String> = [for (k in closure.keys()) k];
+                allKeys.sort((a, b) -> Reflect.compare(a, b));
+                ordered = allKeys;
+            }
+            var lines: Array<String> = [];
+            for (dep in ordered) {
+                var p = compiler.moduleOutputPaths.get(dep);
+                if (p == null) {
+                    var pack = compiler.modulePackages.get(dep);
+                    p = compiler.getModuleOutputPath(dep, pack);
+                }
+                if (p != null) lines.push('Code.require_file("' + p + '", __DIR__)');
+            }
+            var mainPath = compiler.moduleOutputPaths.get(moduleName);
+            if (mainPath == null) {
+                var pack = compiler.modulePackages.get(moduleName);
+                mainPath = compiler.getModuleOutputPath(moduleName, pack);
+            }
+            if (mainPath != null) lines.push('Code.require_file("' + mainPath + '", __DIR__)');
+            lines.push(moduleName + '.main()');
+            var content = lines.join("\n");
+            var baseType = compiler.moduleBaseTypes.exists(moduleName) ? compiler.moduleBaseTypes.get(moduleName) : null;
+            var data = new DataAndFileInfo<StringOrBytes>(StringOrBytes.fromString(content), baseType, 'main.exs', null);
             extraOutputs.push(data);
         }
     }

@@ -16,19 +16,19 @@ defmodule Main do
     doubled = Enum.map(numbers, fn x -> x * 2 end)
     plus_ten = Enum.map(numbers, fn x -> x + 10 end)
     strings = ["hello", "world"]
-    uppercased = Enum.map(strings, fn s -> s.toUpperCase() end)
-    Log.trace("Doubled: " <> Std.string(doubled), %{:fileName => "Main.hx", :lineNumber => 32, :className => "Main", :methodName => "testMapFunction"})
-    Log.trace("Plus ten: " <> Std.string(plus_ten), %{:fileName => "Main.hx", :lineNumber => 33, :className => "Main", :methodName => "testMapFunction"})
-    Log.trace("Uppercased: " <> Std.string(uppercased), %{:fileName => "Main.hx", :lineNumber => 34, :className => "Main", :methodName => "testMapFunction"})
+    uppercased = Enum.map(strings, fn s -> s.to_upper_case() end)
+    Log.trace("Doubled: " <> Std.string(doubled), %{:file_name => "Main.hx", :line_number => 32, :class_name => "Main", :method_name => "testMapFunction"})
+    Log.trace("Plus ten: " <> Std.string(plus_ten), %{:file_name => "Main.hx", :line_number => 33, :class_name => "Main", :method_name => "testMapFunction"})
+    Log.trace("Uppercased: " <> Std.string(uppercased), %{:file_name => "Main.hx", :line_number => 34, :class_name => "Main", :method_name => "testMapFunction"})
   end
   defp test_filter_function() do
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    evens = Enum.filter(numbers, fn x -> x rem 2 == 0 end)
+    evens = Enum.filter(numbers, fn x -> rem(x, 2) == 0 end)
     greater_than_five = Enum.filter(numbers, fn x -> x > 5 end)
-    even_and_greater_than_five = Enum.filter(Enum.filter(numbers, fn x -> x rem 2 == 0 end), fn x -> x > 5 end)
-    Log.trace("Evens: " <> Std.string(evens), %{:fileName => "Main.hx", :lineNumber => 51, :className => "Main", :methodName => "testFilterFunction"})
-    Log.trace("Greater than 5: " <> Std.string(greater_than_five), %{:fileName => "Main.hx", :lineNumber => 52, :className => "Main", :methodName => "testFilterFunction"})
-    Log.trace("Even and > 5: " <> Std.string(even_and_greater_than_five), %{:fileName => "Main.hx", :lineNumber => 53, :className => "Main", :methodName => "testFilterFunction"})
+    even_and_greater_than_five = Enum.filter(Enum.filter(numbers, fn x -> rem(x, 2) == 0 end), fn x -> x > 5 end)
+    Log.trace("Evens: " <> Std.string(evens), %{:file_name => "Main.hx", :line_number => 51, :class_name => "Main", :method_name => "testFilterFunction"})
+    Log.trace("Greater than 5: " <> Std.string(greater_than_five), %{:file_name => "Main.hx", :line_number => 52, :class_name => "Main", :method_name => "testFilterFunction"})
+    Log.trace("Even and > 5: " <> Std.string(even_and_greater_than_five), %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "testFilterFunction"})
   end
   defp test_concat_function() do
     first = [1, 2, 3]
@@ -36,84 +36,98 @@ defmodule Main do
     third = [7, 8, 9]
     combined = first ++ second
     all = first ++ second ++ third
-    Log.trace("Combined: " <> Std.string(combined), %{:fileName => "Main.hx", :lineNumber => 67, :className => "Main", :methodName => "testConcatFunction"})
-    Log.trace("All: " <> Std.string(all), %{:fileName => "Main.hx", :lineNumber => 68, :className => "Main", :methodName => "testConcatFunction"})
+    Log.trace("Combined: " <> Std.string(combined), %{:file_name => "Main.hx", :line_number => 67, :class_name => "Main", :method_name => "testConcatFunction"})
+    Log.trace("All: " <> Std.string(all), %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "testConcatFunction"})
   end
   defp test_reverse_function() do
     numbers = [1, 2, 3, 4, 5]
     copy = numbers
     Enum.reverse(copy)
-    Log.trace("Original: " <> Std.string(numbers), %{:fileName => "Main.hx", :lineNumber => 78, :className => "Main", :methodName => "testReverseFunction"})
-    Log.trace("Reversed: " <> Std.string(copy), %{:fileName => "Main.hx", :lineNumber => 79, :className => "Main", :methodName => "testReverseFunction"})
+    Log.trace("Original: " <> Std.string(numbers), %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "testReverseFunction"})
+    Log.trace("Reversed: " <> Std.string(copy), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "testReverseFunction"})
   end
   defp test_sort_function() do
     numbers = [5, 2, 8, 1, 9, 3]
     copy = numbers
-    Enum.sort(copy)
-    Log.trace("Original: " <> Std.string(numbers), %{:fileName => "Main.hx", :lineNumber => 89, :className => "Main", :methodName => "testSortFunction"})
-    Log.trace("Sorted: " <> Std.string(copy), %{:fileName => "Main.hx", :lineNumber => 90, :className => "Main", :methodName => "testSortFunction"})
+    Enum.sort(copy, fn a, b -> (a - b) end)
+    Log.trace("Original: " <> Std.string(numbers), %{:file_name => "Main.hx", :line_number => 89, :class_name => "Main", :method_name => "testSortFunction"})
+    Log.trace("Sorted: " <> Std.string(copy), %{:file_name => "Main.hx", :line_number => 90, :class_name => "Main", :method_name => "testSortFunction"})
   end
   defp test_contains_function() do
     numbers = [1, 2, 3, 4, 5]
     has_three = Enum.member?(numbers, 3)
     has_ten = Enum.member?(numbers, 10)
-    Log.trace("Contains 3: " <> Std.string(has_three), %{:fileName => "Main.hx", :lineNumber => 102, :className => "Main", :methodName => "testContainsFunction"})
-    Log.trace("Contains 10: " <> Std.string(has_ten), %{:fileName => "Main.hx", :lineNumber => 103, :className => "Main", :methodName => "testContainsFunction"})
+    Log.trace("Contains 3: " <> Std.string(has_three), %{:file_name => "Main.hx", :line_number => 102, :class_name => "Main", :method_name => "testContainsFunction"})
+    Log.trace("Contains 10: " <> Std.string(has_ten), %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "testContainsFunction"})
   end
   defp test_index_of_function() do
     numbers = [1, 2, 3, 4, 5, 3, 6]
-    first_three = Enum.find_index(numbers, fn item -> item == 3 end) || -1
-    not_found = Enum.find_index(numbers, fn item -> item == 10 end) || -1
-    Log.trace("Index of 3: " <> first_three, %{:fileName => "Main.hx", :lineNumber => 115, :className => "Main", :methodName => "testIndexOfFunction"})
-    Log.trace("Index of 10: " <> not_found, %{:fileName => "Main.hx", :lineNumber => 116, :className => "Main", :methodName => "testIndexOfFunction"})
+    first_three = (
+
+                case Enum.find_index(numbers, fn item -> item == 3 end) do
+                    nil -> -1
+                    idx -> idx
+                end
+            
+)
+    not_found = (
+
+                case Enum.find_index(numbers, fn item -> item == 10 end) do
+                    nil -> -1
+                    idx -> idx
+                end
+            
+)
+    Log.trace("Index of 3: " <> Kernel.to_string(first_three), %{:file_name => "Main.hx", :line_number => 115, :class_name => "Main", :method_name => "testIndexOfFunction"})
+    Log.trace("Index of 10: " <> Kernel.to_string(not_found), %{:file_name => "Main.hx", :line_number => 116, :class_name => "Main", :method_name => "testIndexOfFunction"})
   end
   defp test_join_function() do
     words = ["Hello", "Elixir", "World"]
     sentence = Enum.join(words, " ")
     csv = Enum.join(words, ", ")
-    Log.trace("Sentence: " <> sentence, %{:fileName => "Main.hx", :lineNumber => 128, :className => "Main", :methodName => "testJoinFunction"})
-    Log.trace("CSV: " <> csv, %{:fileName => "Main.hx", :lineNumber => 129, :className => "Main", :methodName => "testJoinFunction"})
+    Log.trace("Sentence: " <> sentence, %{:file_name => "Main.hx", :line_number => 128, :class_name => "Main", :method_name => "testJoinFunction"})
+    Log.trace("CSV: " <> csv, %{:file_name => "Main.hx", :line_number => 129, :class_name => "Main", :method_name => "testJoinFunction"})
   end
   defp test_slice_function() do
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     from_third = if (end_param == nil) do
-  Enum.slice(numbers, 2..-1)
+  Enum.slice(numbers, 2..-1//1)
 else
-  Enum.slice(numbers, 2..{2})
+  Enum.slice(numbers, 2..{2}//1)
 end
     middle = if (end_param == nil) do
-  Enum.slice(numbers, 2..-1)
+  Enum.slice(numbers, 2..-1//1)
 else
-  Enum.slice(numbers, 2..5)
+  Enum.slice(numbers, 2..5//1)
 end
-    Log.trace("From third: " <> Std.string(from_third), %{:fileName => "Main.hx", :lineNumber => 141, :className => "Main", :methodName => "testSliceFunction"})
-    Log.trace("Middle: " <> Std.string(middle), %{:fileName => "Main.hx", :lineNumber => 142, :className => "Main", :methodName => "testSliceFunction"})
+    Log.trace("From third: " <> Std.string(from_third), %{:file_name => "Main.hx", :line_number => 141, :class_name => "Main", :method_name => "testSliceFunction"})
+    Log.trace("Middle: " <> Std.string(middle), %{:file_name => "Main.hx", :line_number => 142, :class_name => "Main", :method_name => "testSliceFunction"})
   end
   defp test_iterator_function() do
     numbers = [1, 2, 3]
-    Log.trace("Iterating with for loop:", %{:fileName => "Main.hx", :lineNumber => 149, :className => "Main", :methodName => "testIteratorFunction"})
+    Log.trace("Iterating with for loop:", %{:file_name => "Main.hx", :line_number => 149, :class_name => "Main", :method_name => "testIteratorFunction"})
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, numbers, :ok}, fn _, {acc_g, acc_numbers, acc_state} ->
-  if (acc_g < acc_numbers.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
+  if (acc_g < length(acc_numbers)) do
     n = numbers[g]
     acc_g = acc_g + 1
-    Log.trace("  Number: " <> n, %{:fileName => "Main.hx", :lineNumber => 151, :className => "Main", :methodName => "testIteratorFunction"})
-    {:cont, {acc_g, acc_numbers, acc_state}}
+    Log.trace("  Number: " <> Kernel.to_string(n), %{:file_name => "Main.hx", :line_number => 151, :class_name => "Main", :method_name => "testIteratorFunction"})
+    {:cont, {acc_numbers, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_numbers, acc_state}}
+    {:halt, {acc_numbers, acc_g, acc_state}}
   end
 end)
     iter_current = nil
     iter_array = nil
     iter_current = 0
     iter_array = numbers
-    Log.trace("Iterating with iterator:", %{:fileName => "Main.hx", :lineNumber => 156, :className => "Main", :methodName => "testIteratorFunction"})
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {iter_current, iter_array, :ok}, fn _, {acc_iter_current, acc_iter_array, acc_state} ->
-  if (acc_iter_current < acc_iter_array.length) do
-    Log.trace("  Next: " <> iter_array[iter_current = iter_current + 1], %{:fileName => "Main.hx", :lineNumber => 158, :className => "Main", :methodName => "testIteratorFunction"})
-    {:cont, {acc_iter_current, acc_iter_array, acc_state}}
+    Log.trace("Iterating with iterator:", %{:file_name => "Main.hx", :line_number => 156, :class_name => "Main", :method_name => "testIteratorFunction"})
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {iter_array, iter_current, :ok}, fn _, {acc_iter_array, acc_iter_current, acc_state} ->
+  if (acc_iter_current < length(acc_iter_array)) do
+    Log.trace("  Next: " <> Kernel.to_string(iter_array[iter_current = iter_current + 1]), %{:file_name => "Main.hx", :line_number => 158, :class_name => "Main", :method_name => "testIteratorFunction"})
+    {:cont, {acc_iter_array, acc_iter_current, acc_state}}
   else
-    {:halt, {acc_iter_current, acc_iter_array, acc_state}}
+    {:halt, {acc_iter_array, acc_iter_current, acc_state}}
   end
 end)
   end

@@ -1,3 +1,4 @@
 defmodule UserLive do
-  nil
+  @show nil
+  @edit nil
 end
