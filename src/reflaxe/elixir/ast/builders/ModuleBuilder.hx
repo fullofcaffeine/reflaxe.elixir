@@ -486,6 +486,67 @@ class ModuleBuilder {
             trace('[ModuleBuilder] ✓ Found @:repo annotation on class: ${classType.name}');
             #end
         }
+
+        // Check for Postgrex Types module (@:postgrexTypes) - sugar for @:dbTypes("postgrex", json)
+        if (classType.meta.has(":postgrexTypes")) {
+            metadata.isPostgrexTypes = true;
+            // Optional parameter for JSON module (defaults to "Jason")
+            var meta = classType.meta.extract(":postgrexTypes");
+            if (meta.length > 0 && meta[0].params != null && meta[0].params.length > 0) {
+                switch(meta[0].params[0].expr) {
+                    case EConst(CString(s, _)):
+                        metadata.jsonModule = s;
+                    default:
+                }
+            }
+            if (metadata.jsonModule == null) metadata.jsonModule = "Jason";
+            // Normalize to generic db types
+            metadata.isDbTypes = true;
+            metadata.dbAdapter = "postgrex";
+            if (metadata.extensions == null) metadata.extensions = [];
+            #if debug_module_builder
+            trace('[ModuleBuilder] ✓ Found @:postgrexTypes (json=' + metadata.jsonModule + ') on class: ${classType.name}');
+            #end
+        }
+
+        // Check for generic DB Types module (@:dbTypes(adapter, ?json, ?extensions))
+        if (classType.meta.has(":dbTypes")) {
+            metadata.isDbTypes = true;
+            var meta = classType.meta.extract(":dbTypes");
+            if (meta.length > 0 && meta[0].params != null && meta[0].params.length > 0) {
+                var params = meta[0].params;
+                // adapter (required)
+                switch(params[0].expr) {
+                    case EConst(CString(s, _)):
+                        metadata.dbAdapter = s;
+                    default:
+                        metadata.dbAdapter = "postgrex"; // fallback
+                }
+                // json module (optional)
+                if (params.length > 1) switch(params[1].expr) {
+                    case EConst(CString(s, _)):
+                        metadata.jsonModule = s;
+                    default:
+                }
+                // extensions (optional array of strings)
+                if (params.length > 2) switch(params[2].expr) {
+                    case EArrayDecl(values):
+                        var exts: Array<String> = [];
+                        for (v in values) switch(v.expr) {
+                            case EConst(CString(s, _)):
+                                exts.push(s);
+                            default:
+                        }
+                        metadata.extensions = exts;
+                    default:
+                }
+            }
+            if (metadata.jsonModule == null) metadata.jsonModule = "Jason";
+            if (metadata.extensions == null) metadata.extensions = [];
+            #if debug_module_builder
+            trace('[ModuleBuilder] ✓ Found @:dbTypes adapter=' + metadata.dbAdapter + ', json=' + metadata.jsonModule + ' on class: ${classType.name}');
+            #end
+        }
         
         // Check for OTP Application
         if (classType.meta.has(":application")) {
