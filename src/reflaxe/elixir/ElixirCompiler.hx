@@ -25,6 +25,7 @@ import reflaxe.elixir.PhoenixMapper;
 import reflaxe.elixir.SourceMapWriter;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -791,7 +792,146 @@ class ElixirCompiler extends GenericCompiler<
         }
         #end
         
+        // PASS 3: Generate companion modules if needed (e.g., PostgrexTypes for Repo)
+        if (moduleAST != null && moduleAST.metadata != null) {
+            generateCompanionModules(classType, moduleAST.metadata);
+        }
+        
         return moduleAST;
+    }
+    
+    /**
+     * Generate companion modules based on metadata (e.g., PostgrexTypes for Repo)
+     * 
+     * WHY: Some Elixir modules require companion modules for configuration.
+     *      For example, Ecto.Repo with PostgreSQL needs a PostgrexTypes module
+     *      that defines type encoding/decoding using Postgrex.Types.define.
+     * 
+     * WHAT: Generates additional modules as separate files when needed
+     * 
+     * HOW: Checks metadata flags and generates appropriate companion modules
+     *      using setExtraFile to create additional output files
+     */
+    function generateCompanionModules(classType: ClassType, metadata: ElixirMetadata): Void {
+        // Check if this Repo needs a PostgrexTypes companion module
+        if (metadata.isRepo && metadata.needsPostgrexTypes) {
+            generatePostgrexTypesModule(classType, metadata);
+        }
+    }
+    
+    /**
+     * Generate PostgrexTypes companion module for Ecto.Repo with PostgreSQL
+     * 
+     * WHY: PostgreSQL adapter requires a types module for JSON encoding/decoding
+     * 
+     * WHAT: Creates a separate module that calls Postgrex.Types.define
+     * 
+     * HOW: Builds the module AST and writes it as a separate file
+     * 
+     * Example output:
+     * ```elixir
+     * defmodule TodoApp.PostgrexTypes do
+     *   Postgrex.Types.define(TodoApp.PostgrexTypes, [], json: Jason)
+     * end
+     * ```
+     */
+    function generatePostgrexTypesModule(classType: ClassType, metadata: ElixirMetadata): Void {
+        // Get the base module name (e.g., "TodoApp.Repo" -> "TodoApp")
+        var moduleName = reflaxe.elixir.ast.builders.ModuleBuilder.extractModuleName(classType);
+        
+        // Extract the base app name (before .Repo)
+        var appName = moduleName.split(".")[0];
+        
+        // Create the PostgrexTypes module name
+        var typesModuleName = appName + ".PostgrexTypes";
+        
+        #if debug_repo
+        trace('[ElixirCompiler] Generating PostgrexTypes companion module: ${typesModuleName}');
+        trace('[ElixirCompiler] JSON module: ${metadata.jsonModule}, Extensions: ${metadata.extensions}');
+        #end
+        
+        // Build the module body
+        var statements = [];
+        
+        // Build extensions array - empty by default
+        var extensionsAST = reflaxe.elixir.ast.ElixirAST.makeAST(
+            reflaxe.elixir.ast.ElixirASTDef.EList([])
+        );
+        if (metadata.extensions != null && metadata.extensions.length > 0) {
+            var extElements = metadata.extensions.map(ext -> 
+                reflaxe.elixir.ast.ElixirAST.makeAST(
+                    reflaxe.elixir.ast.ElixirASTDef.EAtom(ext)
+                )
+            );
+            extensionsAST = reflaxe.elixir.ast.ElixirAST.makeAST(
+                reflaxe.elixir.ast.ElixirASTDef.EList(extElements)
+            );
+        }
+        
+        // Build keyword list for options (json: Jason)
+        var options = [];
+        if (metadata.jsonModule != null) {
+            // Create a keyword list element for json: Jason
+            var jsonAtom = reflaxe.elixir.ast.ElixirAST.makeAST(
+                reflaxe.elixir.ast.ElixirASTDef.EAtom("json")
+            );
+            var jsonModule = reflaxe.elixir.ast.ElixirAST.makeAST(
+                reflaxe.elixir.ast.ElixirASTDef.EVar(metadata.jsonModule)
+            );
+            var keywordElement = reflaxe.elixir.ast.ElixirAST.makeAST(
+                reflaxe.elixir.ast.ElixirASTDef.ETuple([jsonAtom, jsonModule])
+            );
+            options.push(keywordElement);
+        }
+        
+        // Build the Postgrex.Types.define call
+        var moduleRef = reflaxe.elixir.ast.ElixirAST.makeAST(
+            reflaxe.elixir.ast.ElixirASTDef.EVar(typesModuleName)
+        );
+        var args = [
+            moduleRef,          // Module reference
+            extensionsAST,      // Extensions array
+            reflaxe.elixir.ast.ElixirAST.makeAST(
+                reflaxe.elixir.ast.ElixirASTDef.EList(options)
+            )  // Options keyword list
+        ];
+        
+        var defineCall = reflaxe.elixir.ast.ElixirAST.makeAST(
+            reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(
+                reflaxe.elixir.ast.ElixirAST.makeAST(
+                    reflaxe.elixir.ast.ElixirASTDef.EVar("Postgrex.Types")
+                ),
+                "define",
+                args
+            )
+        );
+        
+        statements.push(defineCall);
+        
+        // For PostgrexTypes, we don't need a module wrapper - Postgrex.Types.define creates it
+        // Just generate the top-level macro call
+        var moduleAST = defineCall;
+        
+        // Apply transformations
+        moduleAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(moduleAST);
+        
+        // Convert to string
+        var moduleString = reflaxe.elixir.ast.ElixirASTPrinter.printAST(moduleAST);
+        
+        // Set the output path for this companion module
+        // Use snake_case for the file name
+        var fileName = reflaxe.elixir.ast.NameUtils.toSnakeCase("PostgrexTypes");
+        var filePackage = [reflaxe.elixir.ast.NameUtils.toSnakeCase(appName)];
+        
+        // Create the output path
+        var outputPath = filePackage.join("/") + "/" + fileName + ".ex";
+        
+        #if debug_repo
+        trace('[ElixirCompiler] Writing PostgrexTypes module to: ${outputPath}');
+        #end
+        
+        // Use setExtraFile to generate the companion module
+        setExtraFile(outputPath, moduleString);
     }
     
     /**

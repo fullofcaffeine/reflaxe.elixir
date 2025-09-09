@@ -3,25 +3,36 @@ package server.infrastructure;
 import elixir.types.Result;
 import ecto.Changeset;
 import ecto.Query.EctoQuery;
+import ecto.DatabaseAdapter.*;
 
 /**
  * Database repository for TodoApp
  * 
- * This class uses @:repo annotation to generate the Ecto.Repo module,
- * then acts as an extern to reference the injected functions.
+ * This class uses @:repo annotation with typed configuration to generate:
+ * 1. The Ecto.Repo module with proper adapter settings
+ * 2. A companion PostgrexTypes module for JSON encoding/decoding
  * 
- * The @:repo annotation generates:
+ * The typed configuration ensures compile-time validation and
+ * automatic generation of all required database modules.
+ * 
+ * Generated Elixir:
  * ```elixir
  * defmodule TodoApp.Repo do
  *   use Ecto.Repo, otp_app: :todo_app, adapter: Ecto.Adapters.Postgres
  * end
- * ```
  * 
- * The methods below are extern declarations that reference the functions
- * injected by the Ecto.Repo macro.
+ * defmodule TodoApp.PostgrexTypes do
+ *   Postgrex.Types.define(TodoApp.PostgrexTypes, [], json: Jason)
+ * end
+ * ```
  */
 @:native("TodoApp.Repo")
-@:repo
+@:repo({
+    adapter: Postgres,
+    json: Jason,
+    extensions: [],
+    poolSize: 10
+})
 extern class Repo {
     // These are extern declarations for the functions injected by Ecto.Repo
     

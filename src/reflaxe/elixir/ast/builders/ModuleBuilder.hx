@@ -135,6 +135,19 @@ class ModuleBuilder {
         
         // Create metadata for the module
         var metadata = createModuleMetadata(classType);
+        // Link back to the original Haxe fully-qualified class name for downstream transformers
+        var fqcn = (classType.pack != null && classType.pack.length > 0) ? (classType.pack.join(".") + "." + classType.name) : classType.name;
+        metadata.haxeFqcn = fqcn;
+        // Capture schema fields and timestamps if this is an @:schema module
+        if (metadata.isSchema) {
+            metadata.schemaFields = [];
+            metadata.hasTimestamps = classType.meta.has(":timestamps");
+            // Infer and record field types with simple normalization
+            for (vf in varFields) {
+                var t = inferFieldType(vf.type);
+                metadata.schemaFields.push({ name: vf.name, type: t });
+            }
+        }
         
         // Build module body based on annotations
         var moduleBody = if (metadata.isPhoenixWeb) {
@@ -164,6 +177,9 @@ class ModuleBuilder {
         } else if (metadata.isExunit) {
             // For @:exunit, build test module body - transformer will add ExUnit.Case
             buildExUnitBody(classType, varFields, funcFields);
+        } else if (metadata.isDbTypes) {
+            // For @:dbTypes, build Postgrex.Types.define call
+            buildDbTypesBody(classType, metadata);
         } else {
             // Regular module
             buildRegularModuleBody(classType, varFields, funcFields);
@@ -278,6 +294,49 @@ class ModuleBuilder {
         #end
         
         return moduleAST;
+    }
+
+    // Infer basic field type from Haxe macro Type, unwrapping Null<T> and aliases where possible
+    static function inferFieldType(t: Type): String {
+        return switch (t) {
+            case TType(tt, params):
+                var n = tt.get().name;
+                // Handle Null<T> wrapper and other typedefs by recursing
+                if (n == "Null" && params != null && params.length == 1) {
+                    inferFieldType(params[0]);
+                } else {
+                    // Fallback to underlying type if available
+                    var underlying = tt.get().type;
+                    if (underlying != null) inferFieldType(underlying) else "Dynamic";
+                }
+            case TInst(ti, params):
+                var n = ti.get().name;
+                if (n == "Array" && params != null && params.length == 1) {
+                    return switch (params[0]) {
+                        case TInst(ti2, _): (ti2.get().name == "String") ? "Array<String>" : "Array<Dynamic>";
+                        case TType(_, _):
+                            var inner = inferFieldType(params[0]);
+                            (inner == "String") ? "Array<String>" : "Array<Dynamic>";
+                        case _: "Array<Dynamic>";
+                    }
+                }
+                return switch (n) {
+                    case "String": "String";
+                    case "Int": "Int";
+                    case "Bool": "Bool";
+                    case "Date": "NaiveDateTime";
+                    default: "Dynamic";
+                };
+            case TAbstract(ta, _):
+                var n = ta.get().name;
+                return switch (n) {
+                    case "Int": "Int";
+                    case "Bool": "Bool";
+                    case "Single", "Float": "Float";
+                    default: "Dynamic";
+                };
+            case _: "Dynamic";
+        }
     }
 
     /**
@@ -431,7 +490,7 @@ class ModuleBuilder {
     /**
      * Extract the module name from a class, checking for @:native annotation
      */
-    static function extractModuleName(classType: ClassType): String {
+    public static function extractModuleName(classType: ClassType): String {
         if (classType.meta.has(":native")) {
             var nativeMeta = classType.meta.extract(":native");
             if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
@@ -478,12 +537,93 @@ class ModuleBuilder {
             #end
         }
         
-        // Check for Ecto Repo
+        // Check for Ecto Repo with optional typed configuration
         if (classType.meta.has(":repo")) {
             metadata.isRepo = true;
             metadata.appName = extractAppName(classType);
+            
+            // Extract repo configuration if provided
+            var meta = classType.meta.extract(":repo");
+            if (meta.length > 0 && meta[0].params != null && meta[0].params.length > 0) {
+                // Parse the configuration object
+                switch(meta[0].params[0].expr) {
+                    case EObjectDecl(fields):
+                        for (field in fields) {
+                            switch(field.field) {
+                                case "adapter":
+                                    // Extract adapter enum value
+                                    switch(field.expr.expr) {
+                                        case EConst(CIdent(s)) | EField(_, s):
+                                            metadata.dbAdapter = switch(s) {
+                                                case "Postgres": "postgrex";
+                                                case "MySQL": "mysql";
+                                                case "SQLite3": "sqlite3";
+                                                case "SQLServer": "mssql";
+                                                case _: "postgrex"; // default
+                                            };
+                                        default:
+                                    }
+                                case "json":
+                                    // Extract JSON library enum value
+                                    switch(field.expr.expr) {
+                                        case EConst(CIdent(s)) | EField(_, s):
+                                            metadata.jsonModule = switch(s) {
+                                                case "Jason": "Jason";
+                                                case "Poison": "Poison";
+                                                case "None": null;
+                                                case _: "Jason"; // default
+                                            };
+                                        default:
+                                    }
+                                case "extensions":
+                                    // Extract extensions array
+                                    switch(field.expr.expr) {
+                                        case EArrayDecl(values):
+                                            metadata.extensions = [];
+                                            for (v in values) {
+                                                switch(v.expr) {
+                                                    case EConst(CIdent(s)) | EField(_, s):
+                                                        // Convert enum values to extension strings
+                                                        var ext = switch(s) {
+                                                            case "UuidOssp": "uuid-ossp";
+                                                            case "PostGIS": "postgis";
+                                                            case "HStore": "hstore";
+                                                            case "PgTrgm": "pg_trgm";
+                                                            case "PgCrypto": "pgcrypto";
+                                                            case "JsonbPlv8": "jsonb_plv8";
+                                                            case _: s;
+                                                        };
+                                                        metadata.extensions.push(ext);
+                                                    default:
+                                                }
+                                            }
+                                        default:
+                                    }
+                                case "poolSize":
+                                    switch(field.expr.expr) {
+                                        case EConst(CInt(i)):
+                                            metadata.poolSize = Std.parseInt(i);
+                                        default:
+                                    }
+                            }
+                        }
+                        
+                        // If PostgreSQL adapter, mark that we need to generate types module
+                        if (metadata.dbAdapter == "postgrex") {
+                            metadata.needsPostgrexTypes = true;
+                            if (metadata.jsonModule == null) metadata.jsonModule = "Jason";
+                            if (metadata.extensions == null) metadata.extensions = [];
+                        }
+                    default:
+                        // Legacy string-based configuration or no config
+                }
+            }
+            
             #if debug_module_builder
             trace('[ModuleBuilder] ✓ Found @:repo annotation on class: ${classType.name}');
+            if (metadata.needsPostgrexTypes) {
+                trace('[ModuleBuilder]   - Will generate PostgrexTypes module with json=${metadata.jsonModule}');
+            }
             #end
         }
 
@@ -655,6 +795,73 @@ class ModuleBuilder {
         // For endpoint and similar, just create an empty block
         // The transformer will add all the necessary structure
         return makeAST(EBlock([]));
+    }
+    
+    /**
+     * Build body for Database Types modules (@:dbTypes)
+     * 
+     * WHY: Postgrex and other database adapters need type definitions for custom encoding/decoding
+     * WHAT: Generates Postgrex.Types.define or similar calls based on the adapter
+     * HOW: Uses metadata to determine adapter, JSON module, and extensions
+     * 
+     * Example output for @:dbTypes("postgrex", "Jason"):
+     * ```elixir
+     * Postgrex.Types.define(TodoApp.PostgrexTypes, [], json: Jason)
+     * ```
+     * 
+     * @param classType The class with @:dbTypes annotation
+     * @param metadata Module metadata containing dbAdapter, jsonModule, extensions
+     * @return AST for the module body containing the type definition
+     */
+    static function buildDbTypesBody(classType: ClassType, metadata: ElixirMetadata): ElixirAST {
+        var statements = [];
+        
+        // Get the module name from classType
+        var moduleName = extractModuleName(classType);
+        
+        // Build the define call based on adapter
+        if (metadata.dbAdapter == "postgrex") {
+            // Build extensions array - empty by default
+            var extensionsAST = makeAST(EList([]));
+            if (metadata.extensions != null && metadata.extensions.length > 0) {
+                var extElements = metadata.extensions.map(ext -> makeAST(EAtom(ext)));
+                extensionsAST = makeAST(EList(extElements));
+            }
+            
+            // Build keyword list for options (json: Jason)
+            var options = [];
+            if (metadata.jsonModule != null) {
+                // Create a keyword list element for json: Jason
+                var jsonAtom = makeAST(EAtom("json"));
+                var jsonModule = makeAST(EVar(metadata.jsonModule));
+                var keywordElement = makeAST(ETuple([jsonAtom, jsonModule]));
+                options.push(keywordElement);
+            }
+            
+            // Build the Postgrex.Types.define call
+            // Postgrex.Types.define(ModuleName, extensions, options)
+            var moduleRef = makeAST(EVar(moduleName));
+            var args = [
+                moduleRef,          // Module reference
+                extensionsAST,      // Extensions array
+                makeAST(EList(options))  // Options keyword list
+            ];
+            
+            var defineCall = makeAST(ERemoteCall(
+                makeAST(EVar("Postgrex.Types")),  // Module reference using EVar
+                "define",
+                args
+            ));
+            
+            statements.push(defineCall);
+        } else {
+            // For other adapters, could add support here
+            // For now, just generate a raw expression
+            var rawExpr = makeAST(ERaw("# Database types for adapter: " + metadata.dbAdapter));
+            statements.push(rawExpr);
+        }
+        
+        return makeAST(EBlock(statements));
     }
     
     /**

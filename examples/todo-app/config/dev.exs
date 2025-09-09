@@ -6,7 +6,7 @@ config :todo_app, TodoApp.Repo,
   password: "postgres",
   hostname: "localhost",
   database: "todo_app_dev",
-  # Use precompiled Postgrex types module (extern-backed) to avoid runtime TypeManager races
+  # Use Postgrex types to ensure TypeManager registry is properly initialized
   types: TodoApp.PostgrexTypes,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
