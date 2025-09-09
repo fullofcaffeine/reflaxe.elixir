@@ -73,7 +73,8 @@ extern class DateTime {
     /**
      * Returns the current datetime in UTC
      */
-    static function utc_now(): DateTime;
+    @:native("utc_now")
+    static function utcNow(): DateTime;
     
     /**
      * Creates a new datetime from Unix timestamp
