@@ -31,7 +31,7 @@ defmodule Main do
     end
     invalid_emails = ["invalid-email", "@example.com", "user@", "user@@example.com", "", "user space@example.com"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_emails, :ok}, fn _, {acc_g, acc_invalid_emails, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_emails, g, :ok}, fn _, {acc_invalid_emails, acc_g, acc_state} -> nil end)
     email1_result = Email_Impl_.parse("Test@Example.Com")
     email2_result = Email_Impl_.parse("test@example.com")
     if (ResultTools.is_ok(email1_result) && ResultTools.is_ok(email2_result)) do
@@ -61,7 +61,7 @@ end)
 g), "")
 )]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_ids, g, :ok}, fn _, {acc_invalid_ids, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_ids, :ok}, fn _, {acc_g, acc_invalid_ids, acc_state} -> nil end)
     id1_result = UserId_Impl_.parse("User123")
     id2_result = UserId_Impl_.parse("user123")
     if (ResultTools.is_ok(id1_result) && ResultTools.is_ok(id2_result)) do
@@ -76,7 +76,7 @@ g), "")
     Log.trace("=== PositiveInt Arithmetic Tests ===", %{:file_name => "Main.hx", :line_number => 158, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
     valid_numbers = [1, 5, 42, 100, 999]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {valid_numbers, g, :ok}, fn _, {acc_valid_numbers, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, valid_numbers, :ok}, fn _, {acc_g, acc_valid_numbers, acc_state} -> nil end)
     invalid_numbers = [0, -1, -42, -100]
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_numbers, :ok}, fn _, {acc_g, acc_invalid_numbers, acc_state} -> nil end)
@@ -122,13 +122,13 @@ g), "")
     Log.trace("=== NonEmptyString Operations Tests ===", %{:file_name => "Main.hx", :line_number => 242, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
     valid_strings = ["hello", "world", "test", "NonEmptyString"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, valid_strings, :ok}, fn _, {acc_g, acc_valid_strings, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {valid_strings, g, :ok}, fn _, {acc_valid_strings, acc_g, acc_state} -> nil end)
     invalid_strings = ["", "   ", "\t\n"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_strings, g, :ok}, fn _, {acc_invalid_strings, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_strings, :ok}, fn _, {acc_g, acc_invalid_strings, acc_state} -> nil end)
     whitespace_strings = ["  hello  ", "\tworld\n", "  test  "]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {whitespace_strings, g, :ok}, fn _, {acc_whitespace_strings, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, whitespace_strings, :ok}, fn _, {acc_g, acc_whitespace_strings, acc_state} -> nil end)
     test_str = ResultTools.unwrap(NonEmptyString_Impl_.parse("Hello World"))
     starts_with_hello = NonEmptyString_Impl_.starts_with(test_str, "Hello")
     ends_with_world = NonEmptyString_Impl_.ends_with(test_str, "World")
@@ -199,15 +199,15 @@ end)
     registration_data = [%{:user_id => "alice123", :email => "alice@example.com", :preferred_name => "Alice Smith"}, %{:user_id => "bob456", :email => "bob.jones@company.org", :preferred_name => "Bob"}, %{:user_id => "charlie", :email => "charlie@test.dev", :preferred_name => "Charlie Brown"}]
     valid_users = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {registration_data, g, :ok}, fn _, {acc_registration_data, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, registration_data, :ok}, fn _, {acc_g, acc_registration_data, acc_state} ->
   if (acc_g < length(acc_registration_data)) do
     user_data = registration_data[g]
     acc_g = acc_g + 1
     user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
     nil
-    {:cont, {acc_registration_data, acc_g, acc_state}}
+    {:cont, {acc_g, acc_registration_data, acc_state}}
   else
-    {:halt, {acc_registration_data, acc_g, acc_state}}
+    {:halt, {acc_g, acc_registration_data, acc_state}}
   end
 end)
     Log.trace("Successfully created " <> Kernel.to_string(length(valid_users)) <> " users", %{:file_name => "Main.hx", :line_number => 439, :class_name => "Main", :method_name => "testRealWorldScenarios"})
@@ -245,14 +245,3 @@ end)
     ResultTools.flat_map(ResultTools.map_error(PositiveInt_Impl_.parse(timeout_int), fn e -> "Invalid timeout: " <> e end), fn _timeout -> ResultTools.flat_map(ResultTools.map_error(PositiveInt_Impl_.parse(retries_int), fn e -> "Invalid retries: " <> e end), fn _retries -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(_name_str), fn e -> "Invalid name: " <> e end), fn name -> %{:timeout => _timeout, :retries => _retries, :name => name} end) end) end)
   end
 end
-
-Code.require_file("haxe/validation/_user_id/user_id_impl_.ex", __DIR__)
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/functional/result_tools.ex", __DIR__)
-Code.require_file("haxe/validation/_positive_int/positive_int_impl_.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("haxe/validation/_email/email_impl_.ex", __DIR__)
-Code.require_file("string_tools.ex", __DIR__)
-Code.require_file("haxe/validation/_non_empty_string/non_empty_string_impl_.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

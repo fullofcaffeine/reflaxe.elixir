@@ -12,8 +12,7 @@ defmodule Flash do
     %{:type => {3}, :message => message, :details => details, :title => title, :dismissible => true}
   end
   def validation_error(message, changeset) do
-    errors = extract_changeset_errors(changeset)
-    %{:type => {3}, :message => message, :details => errors, :title => "Validation Failed", :dismissible => true}
+    %{:type => {3}, :message => message, :details => (extract_changeset_errors(changeset)), :title => "Validation Failed", :dismissible => true}
   end
   def to_phoenix_flash(flash) do
     %{:type => FlashTypeTools.to_string(flash.type), :message => flash.message, :title => flash.title, :details => flash.details, :dismissible => flash.dismissible, :timeout => flash.timeout, :action => flash.action}

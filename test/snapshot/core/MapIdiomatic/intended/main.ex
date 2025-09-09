@@ -52,7 +52,7 @@ defmodule Main do
     Log.trace("Values iterator: " <> Std.string(values), %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "testMapQueries"})
     has_keys = false
     key = Map.keys(map)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {key, has_keys, :ok}, fn _, {acc_key, acc_has_keys, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {has_keys, key, :ok}, fn _, {acc_has_keys, acc_key, acc_state} -> nil end)
     Log.trace("Map has keys: " <> Std.string(has_keys), %{:file_name => "Main.hx", :line_number => 112, :class_name => "Main", :method_name => "testMapQueries"})
     empty_map = %{}
     empty_has_keys = false
@@ -112,8 +112,3 @@ defmodule Main do
     Log.trace("Final values after chaining: a=" <> Kernel.to_string(final_a) <> ", b=" <> Kernel.to_string(final_b), %{:file_name => "Main.hx", :line_number => 212, :class_name => "Main", :method_name => "testEdgeCases"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

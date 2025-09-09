@@ -1,8 +1,8 @@
 defmodule SourceMapTest do
-  def simple_method(_struct) do
+  def simple_method(struct) do
     "test"
   end
-  def conditional_method(_struct, value) do
+  def conditional_method(struct, value) do
     if (value > 0), do: true, else: false
   end
   def main() do
@@ -12,8 +12,3 @@ defmodule SourceMapTest do
     Log.trace("Source mapping test: " <> result <> " " <> Std.string(condition), %{:file_name => "SourceMapTest.hx", :line_number => 23, :class_name => "SourceMapTest", :method_name => "main"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("source_map_test.ex", __DIR__)
-SourceMapTest.main()

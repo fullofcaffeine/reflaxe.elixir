@@ -10,19 +10,19 @@ defmodule CreateUsersTable do
   def down(struct) do
     struct.drop_table("users")
   end
-  defp create_table(_struct, _table_name) do
+  defp create_table(struct, _table_name) do
     nil
   end
-  defp drop_table(_struct, _table_name) do
+  defp drop_table(struct, _table_name) do
     nil
   end
-  defp add_column(_struct, _table, _column, _type) do
+  defp add_column(struct, _table, _column, _type) do
     nil
   end
-  defp add_index(_struct, _table, _columns) do
+  defp add_index(struct, _table, _columns) do
     nil
   end
-  defp timestamps(_struct) do
+  defp timestamps(struct) do
     nil
   end
 end

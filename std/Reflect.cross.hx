@@ -240,6 +240,7 @@
  * @see https://api.haxe.org/Reflect.html - Official Haxe Reflect documentation
  * @see https://hexdocs.pm/elixir/Map.html - Elixir Map module documentation
  */
+@:coreApi
 class Reflect {
     /**
      * Get a field value from an object.
@@ -413,4 +414,83 @@ class Reflect {
      */
     extern
     public static function isEnumValue<T>(value: T): Bool;
+    
+    /**
+     * Check if a value is a function.
+     * 
+     * WHY: Type checking for dynamic function invocation and validation.
+     * WHAT: Determines if a value can be called as a function.
+     * HOW: In Elixir, checks if value is a function reference.
+     * 
+     * @param f The value to check
+     * @return True if the value is a function
+     */
+    public static function isFunction(f: Dynamic): Bool {
+        // In Elixir, check if it's a function
+        return untyped __elixir__('is_function({0})', f);
+    }
+    
+    /**
+     * Compare two function references for equality.
+     * 
+     * WHY: Needed for checking if two function references point to the same function.
+     * WHAT: Compares two function values for reference equality.
+     * HOW: In Elixir, function references can be compared directly.
+     * 
+     * @param f1 First function to compare
+     * @param f2 Second function to compare
+     * @return True if both refer to the same function
+     */
+    public static function compareMethods(f1: Dynamic, f2: Dynamic): Bool {
+        // In Elixir, function references can be compared directly
+        return untyped __elixir__('{0} == {1}', f1, f2);
+    }
+    
+    /**
+     * Get a property value from an object.
+     * 
+     * WHY: Some platforms distinguish between fields and properties.
+     * WHAT: Gets a property value (in Elixir, same as field).
+     * HOW: In Elixir, properties and fields are the same (map keys).
+     * 
+     * @param o The object to get property from
+     * @param field The property name
+     * @return The property value
+     */
+    public static function getProperty(o: Dynamic, field: String): Dynamic {
+        // In Elixir, properties are the same as fields
+        return field(o, field);
+    }
+    
+    /**
+     * Set a property value on an object.
+     * 
+     * WHY: Some platforms distinguish between fields and properties.
+     * WHAT: Sets a property value (in Elixir, same as field).
+     * HOW: In Elixir, properties and fields are the same (map keys).
+     * 
+     * @param o The object to set property on
+     * @param field The property name
+     * @param value The value to set
+     */
+    public static function setProperty(o: Dynamic, field: String, value: Dynamic): Void {
+        // In Elixir, properties are the same as fields
+        // Note: setField returns the new object, but setProperty returns Void
+        setField(o, field, value);
+    }
+    
+    /**
+     * Create a variable argument function wrapper.
+     * 
+     * WHY: Needed for functions that accept variable number of arguments.
+     * WHAT: Wraps a function to accept variable arguments.
+     * HOW: Creates a wrapper that collects arguments into an array.
+     * 
+     * @param f Function that takes an array of arguments
+     * @return Function that accepts variable arguments
+     */
+    public static function makeVarArgs(f: Array<Dynamic> -> Dynamic): Dynamic {
+        // Create a function that collects arguments into an array
+        return untyped __elixir__('fn args -> {0}.(args) end', f);
+    }
 }

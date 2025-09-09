@@ -16,14 +16,14 @@ defmodule SourceMapValidationTest do
     Log.trace("Loop iteration: " <> Kernel.to_string(4), %{:file_name => "SourceMapValidationTest.hx", :line_number => 31, :class_name => "SourceMapValidationTest", :method_name => "main"})
     array = [1, 2, 3, 4, 5]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array, g, :ok}, fn _, {acc_array, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, array, :ok}, fn _, {acc_g, acc_array, acc_state} ->
   if (acc_g < length(acc_array)) do
     item = array[g]
     acc_g = acc_g + 1
     process_item(item)
-    {:cont, {acc_array, acc_g, acc_state}}
+    {:cont, {acc_g, acc_array, acc_state}}
   else
-    {:halt, {acc_array, acc_g, acc_state}}
+    {:halt, {acc_g, acc_array, acc_state}}
   end
 end)
     obj_value = nil
@@ -43,8 +43,3 @@ end)
     Log.trace("Processing item: " <> Kernel.to_string(item), %{:file_name => "SourceMapValidationTest.hx", :line_number => 61, :class_name => "SourceMapValidationTest", :method_name => "processItem"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("source_map_validation_test.ex", __DIR__)
-SourceMapValidationTest.main()

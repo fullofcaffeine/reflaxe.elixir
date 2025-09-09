@@ -1,4 +1,4 @@
-defmodule server.live.TodoLiveEvent do
+defmodule Server.Live.TodoLiveEvent do
   def create_todo(arg0) do
     {:CreateTodo, arg0}
   end

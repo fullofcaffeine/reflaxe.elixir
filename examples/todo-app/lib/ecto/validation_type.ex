@@ -1,4 +1,4 @@
-defmodule ecto.ValidationType do
+defmodule Ecto.ValidationType do
   def required() do
     {:Required}
   end

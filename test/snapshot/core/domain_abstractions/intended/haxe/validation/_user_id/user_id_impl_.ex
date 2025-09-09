@@ -58,14 +58,14 @@ defmodule UserId_Impl_ do
     if (length(user_id) > 50), do: {:error, "User ID too long: maximum " <> Kernel.to_string(50) <> " characters, got " <> Kernel.to_string(length(user_id))}
     g = 0
     g1 = length(user_id)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     char = user_id.char_at(i)
     if (not is_alpha_numeric(char)), do: {:error, "User ID contains invalid character: \"" <> char <> "\" at position " <> Kernel.to_string(i) <> ". Only alphanumeric characters allowed."}
-    {:cont, {acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     {:ok, nil}

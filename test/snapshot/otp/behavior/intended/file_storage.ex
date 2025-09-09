@@ -6,16 +6,16 @@ defmodule FileStorage do
     end
     %{:ok => struct}
   end
-  def get(_struct, _key) do
+  def get(struct, _key) do
     nil
   end
-  def put(_struct, _key, _value) do
+  def put(struct, _key, _value) do
     true
   end
-  def delete(_struct, _key) do
+  def delete(struct, _key) do
     true
   end
-  def list(_struct) do
+  def list(struct) do
     []
   end
 end

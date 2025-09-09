@@ -87,7 +87,7 @@ defmodule Main do
     all_numbers = EReg.new("\\d+", "g")
     numbers = []
     temp = text
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {temp, all_numbers, :ok}, fn _, {acc_temp, acc_all_numbers, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {all_numbers, temp, :ok}, fn _, {acc_all_numbers, acc_temp, acc_state} -> nil end)
     Log.trace("All numbers: " <> Std.string(numbers), %{:file_name => "Main.hx", :line_number => 151, :class_name => "Main", :method_name => "regexOperations"})
     replaced = EReg.new("\\d+", "").replace(text, "XXX")
     Log.trace("Numbers replaced: " <> replaced, %{:file_name => "Main.hx", :line_number => 155, :class_name => "Main", :method_name => "regexOperations"})
@@ -140,9 +140,3 @@ defmodule Main do
     unicode_strings()
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("string_tools.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

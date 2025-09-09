@@ -1,4 +1,4 @@
-defmodule elixir.ComparisonResult do
+defmodule Elixir.ComparisonResult do
   def less_than() do
     {:LessThan}
   end

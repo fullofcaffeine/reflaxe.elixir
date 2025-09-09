@@ -1,4 +1,4 @@
-defmodule elixir.otp.RestartType do
+defmodule Elixir.Otp.RestartType do
   def permanent() do
     {:Permanent}
   end

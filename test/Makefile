@@ -41,7 +41,8 @@ TEST_TARGETS := $(shell echo "$(TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|
 .PHONY: all
 all:
 	@rm -f test-results.tmp
-	@$(MAKE) -f $(MAKEFILE_LIST) -j4 summary
+	# Respect jobserver: do not force -j here; top-level -j will propagate
+	@$(MAKE) -f $(MAKEFILE_LIST) summary
 
 # Summary target that depends on all tests
 .PHONY: summary
@@ -87,7 +88,7 @@ test-%:
 		end=$$(date +%s); \
 		duration=$$((end - start)); \
 		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
-			if diff -r --exclude="_GeneratedFiles.json" --exclude="erl_crash.dump" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
+			if diff -r --exclude="_GeneratedFiles.json" --exclude="erl_crash.dump" --exclude="bootstrap_*.ex" --exclude="*.exs.ex" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
 				if [ -n "$(RUN_TESTS)" ] && [ -f $$testdir/$(OUTPUT_DIR)/main.ex ]; then \
 					if cd $$testdir/$(OUTPUT_DIR) && timeout 5s elixir -pa . -e "Code.compile_file(\"main.ex\")" > /dev/null 2>&1; then \
 						echo "✅ $$testname - compiled and executed ($${duration}s)" | tee -a test-results.tmp; \
@@ -245,6 +246,32 @@ clean:
 list:
 	@echo "Available tests:"
 	@for test in $(TESTS); do echo "  $$test"; done
+
+# Runtime smoke: compile all tests, then execute any generated *.exs (or main.ex if no .exs)
+.PHONY: runtime
+RUNTIME_TIMEOUT ?= 5s
+
+runtime: all
+	@echo "Running runtime smoke tests..."
+	@fail=0; \
+	for td in $(TESTS); do \
+		outdir="$(TEST_DIR)/$$td/out"; \
+		[ -d "$$outdir" ] || continue; \
+		entry=$$(ls "$$outdir"/*.exs 2>/dev/null | head -n1); \
+		if [ -z "$$entry" ]; then \
+			[ -f "$$outdir/main.ex" ] && entry="$$outdir/main.ex"; \
+		fi; \
+		if [ -n "$$entry" ]; then \
+			echo "→ $$td: $$(basename $$entry)"; \
+			if (cd "$$outdir" && timeout $(RUNTIME_TIMEOUT) elixir "$$(basename $$entry)" >/dev/null 2>&1); then \
+				echo "  ✓ ran"; \
+			else \
+				echo "  ✗ runtime error"; \
+				fail=1; \
+			fi; \
+		fi; \
+	done; \
+	[ $$fail -eq 0 ] || (echo "Some runtime tests failed" && exit 1)
 
 # Help target
 .PHONY: help

@@ -140,6 +140,39 @@ class ElixirASTTransformer {
             enabled: true,
             pass: bitwiseImportPass
         });
+
+        // Collapse simple temp-binding blocks in expression contexts
+        passes.push({
+            name: "InlineTempBindingInExpr",
+            description: "Collapse EBlock([tmp = exprA, exprB(tmp)]) to exprB(exprA) in expression positions",
+            enabled: true,
+            pass: inlineTempBindingInExprPass
+        });
+
+        // Debug: XRay map field values that contain EBlock
+        passes.push({
+            name: "XRayMapBlocks",
+            description: "Debug pass to log map fields containing EBlock values",
+            enabled: #if debug_temp_binding true #else false #end,
+            pass: function(ast) {
+                return transformNode(ast, function(node) {
+                    switch(node.def) {
+                        case EMap(pairs):
+                            for (p in pairs) {
+                                switch(p.value.def) {
+                                    case EBlock(exprs):
+                                        trace('[XRayMapBlocks] Found EBlock in map value with ' + exprs.length + ' exprs');
+                                        for (i in 0...exprs.length) trace('  expr[' + i + ']: ' + ElixirASTPrinter.print(exprs[i], 0));
+                                    default:
+                                }
+                            }
+                            return node;
+                        default:
+                            return node;
+                    }
+                });
+            }
+        });
         
         // Module dependency requires pass (for standalone scripts)
         // NOTE: This is now handled directly in ModuleBuilder.generateRequireStatements
@@ -438,7 +471,132 @@ class ElixirASTTransformer {
         // Return only enabled passes
         return passes.filter(p -> p.enabled);
     }
-    
+
+    /**
+     * InlineTempBindingInExpr: Collapse simple temp-binding EBlock into a single expression
+     * 
+     * WHY: Abstract method inlining sometimes produces blocks like:
+     *   %{:online_at => (tmp = Date.now(); DateTime.to_unix(tmp, :millisecond))}
+     * which is invalid in map field position. We collapse to a single expression:
+     *   %{:online_at => DateTime.to_unix(Date.now(), :millisecond)}
+     * 
+     * WHAT: Detect EBlock([EMatch(PVar(tmp), exprA), exprB]) where exprB contains EVar(tmp)
+     * and replace all occurrences of tmp in exprB with exprA.
+     */
+    static function inlineTempBindingInExprPass(ast: ElixirAST): ElixirAST {
+        function replaceVar(node: ElixirAST, name: String, replacement: ElixirAST): ElixirAST {
+            return transformNode(node, function(n) {
+                return switch(n.def) {
+                    case EVar(v) if (v == name):
+                        // Replace with a parenthesized expression to preserve precedence
+                        makeAST(EParen(replacement));
+                    case _:
+                        n;
+                };
+            });
+        }
+        return transformNode(ast, function(node) {
+            return switch(node.def) {
+                case EBlock(exprs) if (exprs.length == 2):
+                    switch(exprs[0].def) {
+                        case EMatch(PVar(tmp), bindExpr):
+                            // Replace tmp in second expression
+                            var second = exprs[1];
+                            // Only collapse if tmp appears at least once; otherwise just return second
+                            var collapsed = replaceVar(second, tmp, bindExpr);
+                            #if debug_temp_binding
+                            trace('[InlineTempBindingInExpr] Collapsing temp binding in block');
+                            trace('[InlineTempBindingInExpr]   tmp      = ' + tmp);
+                            trace('[InlineTempBindingInExpr]   bindExpr = ' + ElixirASTPrinter.print(bindExpr, 0));
+                            trace('[InlineTempBindingInExpr]   second   = ' + ElixirASTPrinter.print(second, 0));
+                            trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
+                            #end
+                            collapsed;
+                        case EBinary(Match, left, bindExpr2):
+                            // Also handle plain binary match: tmp = expr
+                            switch(left.def) {
+                                case EVar(tmp2):
+                                    var second = exprs[1];
+                                    var collapsed = replaceVar(second, tmp2, bindExpr2);
+                                    #if debug_temp_binding
+                                    trace('[InlineTempBindingInExpr] Collapsing (binary) temp binding in block');
+                                    trace('[InlineTempBindingInExpr]   tmp      = ' + tmp2);
+                                    trace('[InlineTempBindingInExpr]   bindExpr = ' + ElixirASTPrinter.print(bindExpr2, 0));
+                                    trace('[InlineTempBindingInExpr]   second   = ' + ElixirASTPrinter.print(second, 0));
+                                    trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
+                                    #end
+                                    collapsed;
+                                default:
+                                    node;
+                            }
+                        default:
+                            node;
+                    }
+                // Also handle parenthesized blocks like: (tmp = expr; use(tmp))
+                case EParen(inner):
+                    switch(inner.def) {
+                        case EBlock(exprs) if (exprs.length == 2):
+                            switch(exprs[0].def) {
+                                case EMatch(PVar(tmp), bindExpr):
+                                    var second = exprs[1];
+                                    var collapsed = replaceVar(second, tmp, bindExpr);
+                                    #if debug_temp_binding
+                                    trace('[InlineTempBindingInExpr] Collapsing temp binding inside paren');
+                                    trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
+                                    #end
+                                    collapsed;
+                                case EBinary(Match, left, bindExpr2):
+                                    switch(left.def) {
+                                        case EVar(tmp2):
+                                            var second = exprs[1];
+                                            var collapsed = replaceVar(second, tmp2, bindExpr2);
+                                            #if debug_temp_binding
+                                            trace('[InlineTempBindingInExpr] Collapsing (binary) temp binding inside paren');
+                                            trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
+                                            #end
+                                            collapsed;
+                                        default:
+                                            node;
+                                    }
+                                default:
+                                    node;
+                            }
+                        default:
+                            node;
+                    }
+                case EMap(pairs):
+                    // Transform map field values that contain blocks
+                    var transformedPairs = [for (p in pairs) {
+                        var transformedValue = inlineTempBindingInExprPass(p.value);
+                        {key: p.key, value: transformedValue};
+                    }];
+                    makeAST(EMap(transformedPairs));
+                // Also transform keyword list values
+                case EKeywordList(pairs):
+                    var transformedKw = [for (p in pairs) {
+                        var transformedValue = inlineTempBindingInExprPass(p.value);
+                        {key: p.key, value: transformedValue};
+                    }];
+                    makeAST(EKeywordList(transformedKw));
+                // And struct fields
+                case EStruct(module, fields):
+                    var transformedFields = [for (f in fields) {
+                        var transformedValue = inlineTempBindingInExprPass(f.value);
+                        {key: f.key, value: transformedValue};
+                    }];
+                    makeAST(EStruct(module, transformedFields));
+                case EStructUpdate(struct, fields):
+                    var transformedSUFields = [for (f in fields) {
+                        var transformedValue = inlineTempBindingInExprPass(f.value);
+                        {key: f.key, value: transformedValue};
+                    }];
+                    makeAST(EStructUpdate(struct, transformedSUFields));
+                default:
+                    node;
+            };
+        });
+    }
+
     // ========================================================================
     // Transformation Passes
     // ========================================================================
@@ -1308,13 +1466,13 @@ class ElixirASTTransformer {
                     for (clause in clauses) {
                         if (clause.args.length > 0) {
                             switch(clause.args[0]) {
-                                case PVar(paramName) if (paramName.indexOf("this") == 0):
+                                case PVar(paramName) if (paramName.indexOf("this") == 0 || paramName == "_struct" || paramName == "struct"):
                                     #if debug_abstract_this
-                                    trace('[XRay AbstractThis] Found function with this parameter: $paramName');
+                                    trace('[XRay AbstractThis] Found function with this/struct parameter: $paramName');
                                     trace('[XRay AbstractThis] Body before fix: ${ElixirASTPrinter.print(clause.body, 0)}');
                                     #end
                                     
-                                    // Found a "this" or "this_1" parameter
+                                    // Found a "this", "this_1", "struct", or "_struct" parameter
                                     // Replace "struct" or "this" with the actual parameter name in body
                                     var fixedBody = replaceStructWithParam(clause.body, paramName);
                                     

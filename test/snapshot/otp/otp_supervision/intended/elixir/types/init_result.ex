@@ -1,4 +1,4 @@
-defmodule elixir.types.InitResult do
+defmodule Elixir.Types.InitResult do
   def ok(arg0) do
     {:Ok, arg0}
   end

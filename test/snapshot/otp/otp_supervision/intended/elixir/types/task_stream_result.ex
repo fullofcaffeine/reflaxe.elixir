@@ -1,4 +1,4 @@
-defmodule elixir.types.TaskStreamResult do
+defmodule Elixir.Types.TaskStreamResult do
   def ok(arg0) do
     {:Ok, arg0}
   end

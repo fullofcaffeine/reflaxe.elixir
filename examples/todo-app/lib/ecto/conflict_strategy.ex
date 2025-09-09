@@ -1,4 +1,4 @@
-defmodule ecto.ConflictStrategy do
+defmodule Ecto.ConflictStrategy do
   def error() do
     {:Error}
   end

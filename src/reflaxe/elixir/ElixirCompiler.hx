@@ -245,6 +245,12 @@ class ElixirCompiler extends GenericCompiler<
      * @return True if the class should be compiled
      */
     public override function shouldGenerateClass(classType: ClassType): Bool {
+        // Skip internal Haxe types that shouldn't generate modules
+        // Module names in Elixir must start with uppercase letters
+        if (classType.name.startsWith("__") || classType.name == "___Int64") {
+            return false;
+        }
+        
         // Check if this is an extern class with special annotations
         if (classType.isExtern && hasSpecialAnnotations(classType)) {
             // Force generation for extern classes with framework annotations
@@ -896,10 +902,20 @@ class ElixirCompiler extends GenericCompiler<
     
     /**
      * Build the full module name for an enum including package
+     * Ensures proper capitalization for Elixir module names
      */
     function buildEnumModuleName(enumType: EnumType): String {
         var parts = enumType.pack.copy();
         parts.push(enumType.name);
+        
+        // Capitalize each part for valid Elixir module names
+        // ecto.ConstraintType -> Ecto.ConstraintType
+        for (i in 0...parts.length) {
+            if (parts[i].length > 0) {
+                parts[i] = parts[i].charAt(0).toUpperCase() + parts[i].substr(1);
+            }
+        }
+        
         return parts.join(".");
     }
     

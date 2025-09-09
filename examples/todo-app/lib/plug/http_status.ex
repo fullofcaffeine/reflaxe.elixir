@@ -1,4 +1,4 @@
-defmodule plug.HttpStatus do
+defmodule Plug.HttpStatus do
   def ok() do
     {:Ok}
   end

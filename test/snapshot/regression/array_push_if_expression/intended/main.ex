@@ -42,8 +42,3 @@ defmodule Main do
     Log.trace("Nested if push: " <> Std.string(results), %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testNestedIfPush"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

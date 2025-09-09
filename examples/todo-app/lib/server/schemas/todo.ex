@@ -15,12 +15,10 @@ defmodule Todo do
     Changeset_Impl_.validate_length(Changeset_Impl_.validate_length(Changeset_Impl_.validate_required(cs, ["title", "userId"]), "title", %{:min => 3, :max => 200}), "description", %{:max => 1000})
   end
   def toggle_completed(todo) do
-    params = %{:completed => not todo.completed}
-    changeset(todo, params)
+    changeset(todo, (%{:completed => not todo.completed}))
   end
   def update_priority(todo, priority) do
-    params = %{:priority => priority}
-    changeset(todo, params)
+    changeset(todo, (%{:priority => priority}))
   end
   def add_tag(todo, tag) do
     tags = if (todo.tags != nil) do

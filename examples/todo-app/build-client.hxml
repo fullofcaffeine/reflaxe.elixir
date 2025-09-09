@@ -7,8 +7,10 @@
 -cp ../../std
 
 # Include libraries for modern JavaScript
--lib reflaxe
--lib genes
+# Note: genes is currently incompatible with Haxe 4.3.7
+# Using built-in Haxe JS generation instead
+# -lib reflaxe
+# -lib genes
 
 # JavaScript target with modern ES6 modules via genes
 -js assets/js/app.js

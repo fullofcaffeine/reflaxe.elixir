@@ -1,12 +1,12 @@
 defmodule TodoPubSub do
   def subscribe(topic) do
-    Phoenix.SafePubSub.subscribe_with_converter(topic, topic_to_string)
+    Phoenix.SafePubSub.subscribe_with_converter(topic, &TodoPubSub.topic_to_string/1)
   end
   def broadcast(topic, message) do
-    Phoenix.SafePubSub.broadcast_with_converters(topic, message, topic_to_string, message_to_elixir)
+    Phoenix.SafePubSub.broadcast_with_converters(topic, message, &TodoPubSub.topic_to_string/1, &TodoPubSub.message_to_elixir/1)
   end
   def parse_message(msg) do
-    Phoenix.SafePubSub.parse_with_converter(msg, parse_message_impl)
+    Phoenix.SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
   end
   def topic_to_string(_topic) do
     case (elem(_topic, 0)) do
@@ -22,28 +22,22 @@ defmodule TodoPubSub do
     base_payload = case (elem(_message, 0)) do
   0 ->
     g = elem(_message, 1)
-    todo = g
-    %{:type => "todo_created", :todo => todo}
+    %{:type => "todo_created", :todo => (g)}
   1 ->
     g = elem(_message, 1)
-    todo = g
-    %{:type => "todo_updated", :todo => todo}
+    %{:type => "todo_updated", :todo => (g)}
   2 ->
     g = elem(_message, 1)
-    id = g
-    %{:type => "todo_deleted", :todo_id => id}
+    %{:type => "todo_deleted", :todo_id => (g)}
   3 ->
     g = elem(_message, 1)
-    action = g
-    %{:type => "bulk_update", :action => bulk_action_to_string(action)}
+    %{:type => "bulk_update", :action => bulk_action_to_string((g))}
   4 ->
     g = elem(_message, 1)
-    user_id = g
-    %{:type => "user_online", :user_id => user_id}
+    %{:type => "user_online", :user_id => (g)}
   5 ->
     g = elem(_message, 1)
-    user_id = g
-    %{:type => "user_offline", :user_id => user_id}
+    %{:type => "user_offline", :user_id => (g)}
   6 ->
     g = elem(_message, 1)
     g1 = elem(_message, 2)
@@ -66,8 +60,7 @@ end
           case (bulk_action) do
             {:some, _} ->
               g = elem(bulk_action, 1)
-              action = g
-              {:BulkUpdate, action}
+              {:some, {:BulkUpdate, (g)}}
             :none ->
               :none
           end
@@ -80,8 +73,7 @@ end
           case (alert_level) do
             {:some, _} ->
               g = elem(alert_level, 1)
-              level = g
-              {:SystemAlert, msg.message, level}
+              {:some, {:SystemAlert, msg.message, (g)}}
             :none ->
               :none
           end

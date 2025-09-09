@@ -1,4 +1,4 @@
-defmodule server.types.TodoFilter do
+defmodule Server.Types.TodoFilter do
   def all() do
     {:All}
   end

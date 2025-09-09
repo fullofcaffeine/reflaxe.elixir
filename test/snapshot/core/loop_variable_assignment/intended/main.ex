@@ -17,14 +17,14 @@ g
     Log.trace("Doubled: " <> Std.string(doubled), %{:file_name => "Main.hx", :line_number => 9, :class_name => "Main", :method_name => "main"})
     g = []
     g1 = 0
-    evens = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g1, :ok}, fn _, {acc_numbers, acc_g1, acc_state} ->
+    evens = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, numbers, :ok}, fn _, {acc_g1, acc_numbers, acc_state} ->
   n = numbers[g1]
   if (acc_g1 < length(acc_numbers)) do
     acc_g1 = acc_g1 + 1
     if rem(n, 2) == 0, do: g ++ [n]
-    {:cont, {acc_numbers, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_numbers, acc_state}}
   else
-    {:halt, {acc_numbers, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_numbers, acc_state}}
   end
 end)
 g
@@ -72,7 +72,7 @@ end)
     Log.trace("Do-while results: " <> Std.string(results), %{:file_name => "Main.hx", :line_number => 37, :class_name => "Main", :method_name => "main"})
     sum = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, g, numbers, :ok}, fn _, {acc_sum, acc_g, acc_numbers, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, numbers, g, :ok}, fn _, {acc_sum, acc_numbers, acc_g, acc_state} -> nil end)
     Log.trace("Sum: " <> Kernel.to_string(sum), %{:file_name => "Main.hx", :line_number => 44, :class_name => "Main", :method_name => "main"})
     output = []
     g = 0
@@ -89,8 +89,3 @@ end)
     Log.trace("Filtered output: " <> Std.string(output), %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "main"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

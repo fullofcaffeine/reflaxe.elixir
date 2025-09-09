@@ -1,4 +1,4 @@
-defmodule elixir.RegistryError do
+defmodule Elixir.RegistryError do
   def already_registered(arg0) do
     {:AlreadyRegistered, arg0}
   end

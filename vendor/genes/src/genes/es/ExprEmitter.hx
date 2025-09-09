@@ -800,7 +800,8 @@ class ExprEmitter extends Emitter {
 
   function emitString(input: String) {
     writeQuotes();
-    for (char in input)
+    for (i in 0...input.length) {
+      var char = input.charCodeAt(i);
       write(switch char {
         case '\n'.code: "\\n";
         case '\t'.code: "\\t";
@@ -811,6 +812,7 @@ class ExprEmitter extends Emitter {
           if (code < 32) "\\x"
             + StringTools.hex(code, 2) else String.fromCharCode(code);
       });
+    }
     writeQuotes();
   }
 

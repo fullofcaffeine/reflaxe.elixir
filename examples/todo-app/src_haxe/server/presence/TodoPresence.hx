@@ -94,7 +94,7 @@ class TodoPresence {
      * Helper to get current user presence metadata
      */
     static function getUserPresence<T>(socket: Socket<T>, userId: Int): Null<PresenceMeta> {
-        var presences = Presence.list(socket, "users");
+        var presences = Presence.listTopic("users");
         var userKey = Std.string(userId);
         if (presences.exists(userKey)) {
             var entry = presences.get(userKey);
@@ -108,7 +108,7 @@ class TodoPresence {
      */
     public static function listOnlineUsers<T>(socket: Socket<T>): Map<String, PresenceEntry<PresenceMeta>> {
         // Use framework-level Presence abstraction instead of __elixir__()
-        return Presence.list(socket, "users");
+        return Presence.listTopic("users");
     }
     
     /**
@@ -118,7 +118,7 @@ class TodoPresence {
      * querying separate topics - more maintainable and Phoenix-like.
      */
     public static function getUsersEditingTodo<T>(socket: Socket<T>, todoId: Int): Array<PresenceMeta> {
-        var allUsers = Presence.list(socket, "users");
+        var allUsers = Presence.listTopic("users");
         var editingUsers = [];
         
         for (userId => entry in allUsers) {

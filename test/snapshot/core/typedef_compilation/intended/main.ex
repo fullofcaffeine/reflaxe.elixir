@@ -48,8 +48,8 @@ defmodule Main do
     api_response_data_ok = nil
     api_response_status = 200
     api_response_data_ok = true
-    _this = Date.now()
-    api_response_metadata_timestamp = DateTime.to_unix(this.datetime, :millisecond)
+    this1 = DateTime.utc_now()
+    api_response_metadata_timestamp = this1.to_unix("millisecond")
     api_response_metadata_version = "1.0.0"
     success_status_success = nil
     success_status_success = true
@@ -68,8 +68,3 @@ defmodule Main do
     Log.trace("Typedef compilation test complete", %{:file_name => "Main.hx", :line_number => 183, :class_name => "Main", :method_name => "main"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

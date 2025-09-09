@@ -1,4 +1,4 @@
-defmodule haxe.ds.Option do
+defmodule Haxe.Ds.Option do
   def some(arg0) do
     arg0
   end

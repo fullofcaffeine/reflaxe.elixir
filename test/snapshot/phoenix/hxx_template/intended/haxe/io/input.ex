@@ -1,9 +1,9 @@
 defmodule Input do
   @big_endian nil
-  defp set_big_endian(_struct, b) do
+  defp set_big_endian(struct, b) do
     b
   end
-  def read_byte(_struct) do
+  def read_byte(struct) do
     -1
   end
   def read_bytes(struct, b, pos, len) do
@@ -63,7 +63,7 @@ end)
 end)
     IO.iodata_to_binary(buf)
   end
-  def close(_struct) do
+  def close(struct) do
     nil
   end
 end

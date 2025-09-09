@@ -14,14 +14,14 @@ defmodule Main do
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, fruits, :ok}, fn _, {acc_g, acc_fruits, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, g, :ok}, fn _, {acc_fruits, acc_g, acc_state} ->
   if (acc_g < length(acc_fruits)) do
     fruit = fruits[g]
     acc_g = acc_g + 1
     Log.trace("Fruit: " <> fruit, %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "arrayIteration"})
-    {:cont, {acc_g, acc_fruits, acc_state}}
+    {:cont, {acc_fruits, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_fruits, acc_state}}
+    {:halt, {acc_fruits, acc_g, acc_state}}
   end
 end)
     g = 0
@@ -36,13 +36,13 @@ end)
   end
 end)
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, fruits, :ok}, fn _, {acc_i, acc_fruits, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, i, :ok}, fn _, {acc_fruits, acc_i, acc_state} ->
   if (acc_i < length(acc_fruits)) do
     Log.trace("While: " <> fruits[i], %{:file_name => "Main.hx", :line_number => 46, :class_name => "Main", :method_name => "arrayIteration"})
     acc_i = acc_i + 1
-    {:cont, {acc_i, acc_fruits, acc_state}}
+    {:cont, {acc_fruits, acc_i, acc_state}}
   else
-    {:halt, {acc_i, acc_fruits, acc_state}}
+    {:halt, {acc_fruits, acc_i, acc_state}}
   end
 end)
   end
@@ -142,13 +142,13 @@ g
     g1 = 0
     b = length(arr)
     g2 = Std.int((if n < b, do: n, else: b))
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g2, :ok}, fn _, {acc_g1, acc_g2, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g2, g1, :ok}, fn _, {acc_g2, acc_g1, acc_state} ->
   if (acc_g1 < acc_g2) do
     i = acc_g1 = acc_g1 + 1
     g ++ [arr[i]]
-    {:cont, {acc_g1, acc_g2, acc_state}}
+    {:cont, {acc_g2, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g2, acc_state}}
+    {:halt, {acc_g2, acc_g1, acc_state}}
   end
 end)
     g
@@ -208,9 +208,3 @@ end)
     functional_methods()
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("array_tools.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

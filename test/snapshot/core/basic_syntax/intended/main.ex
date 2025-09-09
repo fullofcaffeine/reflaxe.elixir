@@ -5,27 +5,27 @@ defmodule Main do
   def calculate(struct, x, y) do
     x + y * struct.instance_var
   end
-  def check_value(_struct, n) do
+  def check_value(struct, n) do
     if (n < 0) do
       "negative"
     else
       if (n == 0), do: "zero", else: "positive"
     end
   end
-  def sum_range(_struct, start, end_param) do
+  def sum_range(struct, start, end_param) do
     sum = 0
     g = start
     g1 = end_param
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, sum, g, :ok}, fn _, {acc_g1, acc_sum, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, g, g1, :ok}, fn _, {acc_sum, acc_g, acc_g1, acc_state} -> nil end)
     sum
   end
-  def factorial(_struct, n) do
+  def factorial(struct, n) do
     result = 1
     i = n
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i, :ok}, fn _, {acc_result, acc_i, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, result, :ok}, fn _, {acc_i, acc_result, acc_state} -> nil end)
     result
   end
-  def day_name(_struct, day) do
+  def day_name(struct, day) do
     case (day) do
       1 ->
         "Monday"
@@ -58,8 +58,3 @@ defmodule Main do
     Log.trace(instance.day_name(3), %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "main"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

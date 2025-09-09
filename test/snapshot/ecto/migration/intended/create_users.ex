@@ -15,22 +15,22 @@ defmodule CreateUsers do
   def down(struct) do
     struct.drop_table("users")
   end
-  defp create_table(_struct, _name) do
+  defp create_table(struct, _name) do
     nil
   end
-  defp add_column(_struct, _table, _name, _type, _primary_key, _default_value) do
+  defp add_column(struct, _table, _name, _type, _primary_key, _default_value) do
     nil
   end
-  defp add_timestamps(_struct, _table) do
+  defp add_timestamps(struct, _table) do
     nil
   end
-  defp drop_table(_struct, _name) do
+  defp drop_table(struct, _name) do
     nil
   end
-  defp add_index(_struct, _table, _columns, _options) do
+  defp add_index(struct, _table, _columns, _options) do
     nil
   end
-  defp add_check_constraint(_struct, _table, _name, _condition) do
+  defp add_check_constraint(struct, _table, _name, _condition) do
     nil
   end
 end

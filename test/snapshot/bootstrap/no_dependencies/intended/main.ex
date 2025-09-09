@@ -6,6 +6,3 @@ defmodule Main do
     IO.puts("Result: #result")
   end
 end
-
-Code.require_file("main.ex", __DIR__)
-Main.main()

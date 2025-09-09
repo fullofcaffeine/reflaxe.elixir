@@ -1,11 +1,11 @@
 defmodule BasicModule do
-  defp hello(_struct) do
+  defp hello(struct) do
     "world"
   end
-  defp greet(_struct, name) do
+  defp greet(struct, name) do
     "Hello, " <> name <> "!"
   end
-  defp calculate(_struct, x, y, operation) do
+  defp calculate(struct, x, y, operation) do
     case (operation) do
       "add" ->
         x + y
@@ -23,18 +23,13 @@ defmodule BasicModule do
         0
     end
   end
-  defp get_timestamp(_struct) do
+  defp get_timestamp(struct) do
     "2024-01-01T00:00:00Z"
   end
-  defp is_valid(_struct, input) do
+  defp is_valid(struct, input) do
     input != nil && length(input) > 0
   end
   def main() do
     Log.trace("BasicModule example compiled successfully!", %{:file_name => "BasicModule.hx", :line_number => 62, :class_name => "BasicModule", :method_name => "main"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("basic_module.ex", __DIR__)
-BasicModule.main()

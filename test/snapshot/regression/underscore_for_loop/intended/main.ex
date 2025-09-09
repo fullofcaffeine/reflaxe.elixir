@@ -18,13 +18,7 @@ defmodule Main do
     matrix = [[1, 2], [3, 4], [5, 6]]
     rows = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {cols, rows, matrix, g, :ok}, fn _, {acc_cols, acc_rows, acc_matrix, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {rows, matrix, g, cols, :ok}, fn _, {acc_rows, acc_matrix, acc_g, acc_cols, acc_state} -> nil end)
     Log.trace("Rows: " <> Kernel.to_string(rows), %{:file_name => "Main.hx", :line_number => 45, :class_name => "Main", :method_name => "main"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("lambda.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

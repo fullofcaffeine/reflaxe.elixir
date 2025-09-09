@@ -1,4 +1,4 @@
-defmodule phoenix.HandleEventResult do
+defmodule Phoenix.HandleEventResult do
   def no_reply(arg0) do
     {:NoReply, arg0}
   end

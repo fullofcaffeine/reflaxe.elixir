@@ -1,5 +1,5 @@
 defmodule Main do
-  def instance_method(_struct, used, _unused1, _unused2) do
+  def instance_method(struct, used, _unused1, _unused2) do
     used + 10
   end
   def main() do
@@ -17,6 +17,3 @@ defmodule Main do
     "constant"
   end
 end
-
-Code.require_file("main.ex", __DIR__)
-Main.main()

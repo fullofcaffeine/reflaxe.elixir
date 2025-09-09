@@ -6,10 +6,10 @@ defmodule CreateTodos do
   @due_date nil
   @tags nil
   @user_id nil
-  def migrate_add_indexes(_struct) do
+  def migrate_add_indexes(struct) do
     nil
   end
-  def rollback_custom_operation(_struct) do
+  def rollback_custom_operation(struct) do
     nil
   end
 end

@@ -5,7 +5,7 @@ defmodule ArrayKeyValueIterator do
     struct.current < length(struct.array)
   end
   def next(struct) do
-    index = struct.current + 1
-    %{:key => index, :value => struct.array[index]}
+    index = struct.current
+    %{:key => index, :value => Enum.at(struct.array, index)}
   end
 end

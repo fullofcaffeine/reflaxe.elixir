@@ -148,7 +148,9 @@ abstract Date(DateTime) from DateTime to DateTime {
     /**
      * Milliseconds since Unix epoch (Haxe standard API)
      */
-    public inline function getTime(): Float {
+    public function getTime(): Float {
+        // Non-inline to avoid Haxe introducing temp bindings when chained in expressions
+        // Generates: DateTime.to_unix(DateTime.utc_now(), :millisecond)
         return this.to_unix(TimeUnit.Millisecond);
     }
 

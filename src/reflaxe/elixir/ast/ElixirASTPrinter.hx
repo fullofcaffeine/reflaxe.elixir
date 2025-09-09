@@ -314,6 +314,10 @@ class ElixirASTPrinter {
                     
                     // Check if value is an inline if-else that needs parentheses
                     var valueStr = switch(value.def) {
+                        case EBlock(exprs) if (exprs.length > 1):
+                            // Fallback: ensure single expression in map field
+                            // Wrap multi-statement block in zero-arity anonymous function call
+                            '(fn -> ' + print(value, 0) + ' end).()';
                         case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
                             isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
                             // Wrap inline if-else in parentheses for map context
@@ -332,6 +336,9 @@ class ElixirASTPrinter {
                     
                     // Check if value is an inline if-else that needs parentheses
                     var valueStr = switch(value.def) {
+                        case EBlock(exprs) if (exprs.length > 1):
+                            // Fallback for multi-statement in struct field
+                            '(fn -> ' + print(value, 0) + ' end).()';
                         case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
                             isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
                             // Wrap inline if-else in parentheses for struct context
@@ -351,6 +358,8 @@ class ElixirASTPrinter {
                     
                     // Check if value is an inline if-else that needs parentheses
                     var valueStr = switch(value.def) {
+                        case EBlock(exprs) if (exprs.length > 1):
+                            '(fn -> ' + print(value, 0) + ' end).()';
                         case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
                             isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
                             // Wrap inline if-else in parentheses for struct update context
@@ -368,6 +377,8 @@ class ElixirASTPrinter {
                     
                     // Check if value is an inline if-else that needs parentheses
                     var valueStr = switch(value.def) {
+                        case EBlock(exprs) if (exprs.length > 1):
+                            '(fn -> ' + print(value, 0) + ' end).()';
                         case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && 
                             isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
                             // Wrap inline if-else in parentheses for keyword list context

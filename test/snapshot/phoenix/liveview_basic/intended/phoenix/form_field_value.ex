@@ -1,4 +1,4 @@
-defmodule phoenix.FormFieldValue do
+defmodule Phoenix.FormFieldValue do
   def string_value(arg0) do
     {:StringValue, arg0}
   end

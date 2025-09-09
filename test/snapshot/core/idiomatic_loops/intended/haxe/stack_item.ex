@@ -1,4 +1,4 @@
-defmodule haxe.StackItem do
+defmodule Haxe.StackItem do
   def c_function() do
     {:CFunction}
   end

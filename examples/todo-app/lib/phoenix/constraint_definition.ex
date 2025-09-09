@@ -1,4 +1,4 @@
-defmodule phoenix.ConstraintDefinition do
+defmodule Phoenix.ConstraintDefinition do
   def check(arg0) do
     {:Check, arg0}
   end
