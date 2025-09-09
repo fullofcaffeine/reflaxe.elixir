@@ -3,6 +3,7 @@ package ecto;
 #if (elixir || reflaxe_runtime)
 
 import haxe.functional.Result;
+// Note: Avoid depending on compiler-time NameUtils at runtime; use Elixir's Macro.underscore
 
 /**
  * Type-safe Ecto Query API for Haxe→Elixir
@@ -28,13 +29,13 @@ abstract EctoQuery<T>(Dynamic) {
      * @return The query with the where clause added
      * @deprecated This API needs redesign to properly handle dynamic field queries
      */
-    public function where<V>(_field: String, value: V): EctoQuery<T> {
-        // TODO: This implementation is incorrect - it uses literal :field atom instead of dynamic field
-        // Marking parameter as unused with underscore prefix to avoid compilation warning
-        // Proper implementation would require Ecto.Query.dynamic or a different approach
-        // Using import inside the function to access the macro
-        // Using require to make the macro available without importing all functions
-        var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.where({0}, [field: ^{1}]))', this, value);
+    public function where<V>(fieldName: String, value: V): EctoQuery<T> {
+        // Use field/2 with a binding and convert string to existing atom
+        // Avoids atom leaks and matches Ecto expectations
+        var newQuery = untyped __elixir__(
+            '(require Ecto.Query; Ecto.Query.where({0}, [q], field(q, ^String.to_existing_atom(Macro.underscore({1}))) == ^{2}))',
+            this, fieldName, value
+        );
         return new EctoQuery<T>(newQuery);
     }
     
@@ -45,15 +46,16 @@ abstract EctoQuery<T>(Dynamic) {
      * @return The query with the order_by clause added
      */
     public function orderBy(field: String, direction: String = "asc"): EctoQuery<T> {
-        // Build the order_by clause with proper direction atom
-        // Using import inside the expression to access the macro
+        // Use field/2 with a binding and convert string to existing atom
         var newQuery = if (direction == "desc") {
-            untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [desc: ^{1}]))', this, field);
+            untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [q], [desc: field(q, ^String.to_existing_atom(Macro.underscore({1})))]))', this, field);
         } else {
-            untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [asc: ^{1}]))', this, field);
+            untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [q], [asc: field(q, ^String.to_existing_atom(Macro.underscore({1})))]))', this, field);
         }
         return new EctoQuery<T>(newQuery);
     }
+
+    // Note: Use NameUtils.toSnakeCase instead of duplicating logic
     
     /**
      * Add a limit to the query
@@ -104,10 +106,10 @@ class Query {
      * @return A new EctoQuery instance
      */
     public static function from<T>(schema: Class<T>): EctoQuery<T> {
-        // Using require to make the macro available
-        // Ecto.Query.from requires a binding variable like "from(t in Schema)"
-        var query = untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}))', schema);
-        return new EctoQuery<T>(query);
+        // CRITICAL: Ecto.Query.from is a macro that needs the module at compile time
+        // We use Ecto.Queryable.to_query/1 which can accept runtime module values
+        // This is the recommended way to create queries dynamically
+        return new EctoQuery<T>(untyped __elixir__('Ecto.Queryable.to_query({0})', schema));
     }
     
     /**
