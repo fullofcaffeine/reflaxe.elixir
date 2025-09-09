@@ -17,6 +17,9 @@ defmodule Main do
     now = DateTime.utc_now()
     IO.inspect(now)
   end
+  defp inject_code(msg) do
+    IO.puts(msg)
+  end
   defp test_inline_injection() do
     IO.puts("Inline injection test")
   end

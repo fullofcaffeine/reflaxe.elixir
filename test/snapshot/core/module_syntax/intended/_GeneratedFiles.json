@@ -3,6 +3,7 @@
   "value_type.ex",
   "user_service.ex",
   "user_helper.ex",
+  "type.ex",
   "string_utils.ex",
   "string_buf.ex",
   "std.ex",

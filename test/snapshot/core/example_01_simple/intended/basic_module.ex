@@ -30,7 +30,6 @@ defmodule BasicModule do
     input != nil && length(input) > 0
   end
   def main() do
-    Log.trace("BasicModule example compiled successfully!", %{:fileName => "BasicModule.hx", :lineNumber => 62, :className => "BasicModule", :methodName => "main"})
+    Log.trace("BasicModule example compiled successfully!", %{:file_name => "BasicModule.hx", :line_number => 62, :class_name => "BasicModule", :method_name => "main"})
   end
 end
-BasicModule.main()

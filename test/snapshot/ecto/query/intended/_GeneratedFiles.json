@@ -2,6 +2,7 @@
   "filesGenerated": [
   "value_type.ex",
   "user_queries.ex",
+  "type.ex",
   "string_buf.ex",
   "std.ex",
   "int_iterator.ex",

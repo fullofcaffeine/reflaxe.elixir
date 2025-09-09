@@ -1,4 +1,4 @@
-defmodule Phoenix.MountResult do
+defmodule phoenix.MountResult do
   def ok(arg0) do
     {:Ok, arg0}
   end

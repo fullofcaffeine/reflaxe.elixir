@@ -1,4 +1,8 @@
 defmodule User do
+  @name nil
+  @email nil
+  @age nil
+  @bio nil
   def changeset(_struct, _user, _params) do
     nil
   end

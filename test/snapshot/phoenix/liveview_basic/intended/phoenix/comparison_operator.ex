@@ -1,4 +1,4 @@
-defmodule Phoenix.ComparisonOperator do
+defmodule phoenix.ComparisonOperator do
   def equal() do
     {:Equal}
   end

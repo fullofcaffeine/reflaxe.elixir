@@ -7,7 +7,7 @@ defmodule Main do
   defp test_basic_ternary() do
     config = %{:name => "test"}
     id = if (config != nil), do: config.id, else: "default"
-    Log.trace("ID: " <> id, %{:fileName => "Main.hx", :lineNumber => 14, :className => "Main", :methodName => "testBasicTernary"})
+    Log.trace("ID: " <> id, %{:file_name => "Main.hx", :line_number => 14, :class_name => "Main", :method_name => "testBasicTernary"})
   end
   defp test_nested_ternary() do
     a = 5
@@ -17,14 +17,14 @@ defmodule Main do
 else
   "a not positive"
 end
-    Log.trace("Result: " <> result, %{:fileName => "Main.hx", :lineNumber => 22, :className => "Main", :methodName => "testNestedTernary"})
+    Log.trace("Result: " <> result, %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "testNestedTernary"})
   end
   defp test_ternary_in_function() do
     module = "MyModule"
     args = [1, 2, 3]
     id = nil
     spec = create_spec(module, args, id)
-    Log.trace("Spec: " <> Std.string(spec), %{:fileName => "Main.hx", :lineNumber => 32, :className => "Main", :methodName => "testTernaryInFunction"})
+    Log.trace("Spec: " <> Std.string(spec), %{:file_name => "Main.hx", :line_number => 32, :class_name => "Main", :method_name => "testTernaryInFunction"})
   end
   defp create_spec(module, args, id) do
     actual_id = if (id != nil), do: id, else: module

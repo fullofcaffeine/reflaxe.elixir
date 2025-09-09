@@ -1,30 +1,30 @@
 defmodule Main do
   def main() do
     test_result = {:Ok, "success"}
-    opt = {:ToOption, test_result}
+    opt = to_option(test_result)
     unwrapped = unwrap_or(test_result, "default")
-    Log.trace(opt, %{:fileName => "Main.hx", :lineNumber => 26, :className => "Main", :methodName => "main"})
-    Log.trace(unwrapped, %{:fileName => "Main.hx", :lineNumber => 27, :className => "Main", :methodName => "main"})
+    Log.trace(opt, %{:file_name => "Main.hx", :line_number => 26, :class_name => "Main", :method_name => "main"})
+    Log.trace(unwrapped, %{:file_name => "Main.hx", :line_number => 27, :class_name => "Main", :method_name => "main"})
   end
-  def to_option(result) do
-    case (elem(result, 0)) do
+  def to_option(_result) do
+    case (elem(_result, 0)) do
       0 ->
-        g = elem(result, 1)
+        g = elem(_result, 1)
         value = g
         {:Some, value}
       1 ->
-        _g = elem(result, 1)
-        :none
+        _g = elem(_result, 1)
+        {1}
     end
   end
-  def unwrap_or(result, default_value) do
-    case (elem(result, 0)) do
+  def unwrap_or(_result, default_value) do
+    case (elem(_result, 0)) do
       0 ->
-        g = elem(result, 1)
+        g = elem(_result, 1)
         value = g
         value
       1 ->
-        _g = elem(result, 1)
+        _g = elem(_result, 1)
         default_value
     end
   end

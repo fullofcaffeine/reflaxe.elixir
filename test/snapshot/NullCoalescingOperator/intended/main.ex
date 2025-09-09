@@ -1,5 +1,5 @@
 defmodule Main do
-  defp main() do
+  def main() do
     test_simple_assignment()
     test_function_arguments()
     test_object_literals()
@@ -61,6 +61,7 @@ defmodule Main do
     maybe2 = nil
     arr_2 = nil
     arr_1 = nil
+    arr_0 = nil
     tmp = maybe1
     arr_0 = if tmp != nil, do: tmp, else: "item1"
     tmp = get_value()
@@ -81,9 +82,9 @@ defmodule Main do
   end
   defp test_method_calls() do
     obj = nil
-    tmp = if (obj != nil), do: obj.getName(), else: nil
+    tmp = if (obj != nil), do: obj.get_name(), else: nil
     _name = if tmp != nil, do: tmp, else: "Anonymous"
-    tmp = if (obj != nil), do: obj.getValue(), else: nil
+    tmp = if (obj != nil), do: obj.get_value(), else: nil
     _value = if tmp != nil, do: tmp, else: 100
     opt = get_optional()
     tmp = if (opt != nil), do: opt.process(), else: nil

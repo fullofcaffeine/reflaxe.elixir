@@ -1,3 +1,3 @@
 defmodule ArrayKeyValueIterator do
-  nil
+  @array nil
 end
