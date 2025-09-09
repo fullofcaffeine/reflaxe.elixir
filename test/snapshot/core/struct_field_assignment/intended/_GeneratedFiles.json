@@ -5,7 +5,6 @@
   "test_struct.ex",
   "string_buf.ex",
   "std.ex",
-  "main.exs.ex",
   "main.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",

@@ -36,12 +36,7 @@ end)
     data = [1, 2, 3, 4, 5]
     sum = 0
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {data, i, sum, :ok}, fn _, {acc_data, acc_i, acc_sum, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, i, data, :ok}, fn _, {acc_sum, acc_i, acc_data, acc_state} -> nil end)
     Log.trace("Sum: " <> Kernel.to_string(sum), %{:file_name => "Main.hx", :line_number => 47, :class_name => "Main", :method_name => "testComplexLoop"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

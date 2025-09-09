@@ -1104,6 +1104,53 @@ class ElixirASTBuilder {
                             fieldName = toSnakeCase(fieldName);
                             
                             var objAst = buildFromTypedExpr(obj, variableUsageMap);
+
+                            // Fallback based on the object's type: if it's an extern Elixir class
+                            // with @:native("Module"), rewrite instance call to Module.function(obj, ...)
+                            var typeModule = getExternNativeModuleNameFromType(obj.t);
+                            if (typeModule != null) {
+                                trackDependency(typeModule);
+                                return ERemoteCall(makeAST(EVar(typeModule)), fieldName, [objAst].concat(args));
+                            }
+                            
+                            // If calling an instance method on an extern Elixir type (@:native module),
+                            // transform `value.method(args)` into `Module.method(value, args)`.
+                            // This avoids invalid instance-style syntax in Elixir.
+                            switch (fa) {
+                                case FInstance(cRef, _, cfRef):
+                                    var cls = cRef.get();
+                                    // Detect extern Elixir class with @:native("Module") metadata
+                                    if (cls.isExtern && cls.meta.has(":native")) {
+                                        var nativeMeta = cls.meta.extract(":native");
+                                        var moduleName: Null<String> = null;
+                                        if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                                            switch(nativeMeta[0].params[0].expr) {
+                                                case EConst(CString(s, _)):
+                                                    moduleName = s;
+                                                default:
+                                            }
+                                        }
+                                        if (moduleName != null) {
+                                            // Determine function name: prefer method-level @:native if present
+                                            var methodName = fieldName;
+                                            var cf = cfRef.get();
+                                            if (cf.meta.has(":native")) {
+                                                var mMeta = cf.meta.extract(":native");
+                                                if (mMeta.length > 0 && mMeta[0].params != null && mMeta[0].params.length > 0) {
+                                                    switch(mMeta[0].params[0].expr) {
+                                                        case EConst(CString(ns, _)):
+                                                            methodName = toSnakeCase(ns);
+                                                        default:
+                                                    }
+                                                }
+                                            }
+                                            // Track dependency and emit remote call with object as first argument
+                                            trackDependency(moduleName);
+                                            return ERemoteCall(makeAST(EVar(moduleName)), methodName, [objAst].concat(args));
+                                        }
+                                    }
+                                default:
+                            }
                             
                             // Special handling for tuple.elem(N) -> elem(tuple, N)
                             if (fieldName == "elem" && args.length == 1) {
@@ -1344,9 +1391,10 @@ class ElixirASTBuilder {
                         // Convert to snake_case for Elixir function names
                         fieldName = toSnakeCase(fieldName);
                         
-                        // Check if we're accessing a static field from within the same module
-                        // In this case, we don't need the module prefix
-                        if (currentModule != null && className == currentModule) {
+                        // Always use full qualification for function references
+                        // When a static method is passed as a function reference (not called directly),
+                        // it needs to be fully qualified even within the same module
+                        if (false) { // Disabled for now - always qualify
                             // Same module - just use the function name without module prefix
                             // This allows private functions to be called without qualification
                             EVar(fieldName);
@@ -1606,9 +1654,15 @@ class ElixirASTBuilder {
                             
                             var initExpr = buildFromTypedExpr(init, variableUsageMap);
                             var bodyExpr = buildFromTypedExpr(el[1], variableUsageMap);
-                            
-                            // Generate a block with the assignment extracted
-                            // This will be handled by the assignment extraction pass
+
+                            // Try to inline immediately when the temp var is used exactly once
+                            var usageCount = countVarOccurrencesInAST(bodyExpr, varName);
+                            if (usageCount == 1) {
+                                var inlined = replaceVarInAST(bodyExpr, varName, initExpr);
+                                return inlined.def;
+                            }
+
+                            // Fallback: keep block, will be handled by transformer/printer later
                             return EBlock([
                                 makeAST(EMatch(PVar(varName), initExpr)),
                                 bodyExpr
@@ -4275,6 +4329,29 @@ class ElixirASTBuilder {
             default: false;
         }
     }
+
+    /**
+     * If a type is an extern Elixir class with @:native, return its module name.
+     */
+    static function getExternNativeModuleNameFromType(t: Type): Null<String> {
+        return switch(t) {
+            case TInst(cRef, _):
+                var c = cRef.get();
+                if (c.isExtern && c.meta.has(":native")) {
+                    var meta = c.meta.extract(":native");
+                    if (meta.length > 0 && meta[0].params != null && meta[0].params.length > 0) {
+                        switch(meta[0].params[0].expr) {
+                            case EConst(CString(s, _)):
+                                s;
+                            default:
+                                null;
+                        }
+                    } else null;
+                } else null;
+            case _:
+                null;
+        }
+    }
     
     /**
      * Convert module type to string
@@ -4334,6 +4411,37 @@ class ElixirASTBuilder {
         }
         
         return name;
+    }
+
+    /**
+     * Count occurrences of a variable name in an ElixirAST tree.
+     */
+    static function countVarOccurrencesInAST(ast: ElixirAST, name: String): Int {
+        var count = 0;
+        var _ = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node) {
+            switch(node.def) {
+                case EVar(v) if (v == name):
+                    count++;
+                    return node;
+                default:
+                    return node;
+            }
+        });
+        return count;
+    }
+
+    /**
+     * Replace all occurrences of a variable name with a replacement AST (wrapped in parentheses).
+     */
+    static function replaceVarInAST(ast: ElixirAST, name: String, replacement: ElixirAST): ElixirAST {
+        return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node) {
+            switch(node.def) {
+                case EVar(v) if (v == name):
+                    return makeAST(EParen(replacement));
+                default:
+                    return node;
+            }
+        });
     }
     
     /**

@@ -1,4 +1,4 @@
-defmodule phoenix.HttpMethod do
+defmodule Phoenix.HttpMethod do
   def get() do
     {:GET}
   end

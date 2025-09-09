@@ -4,6 +4,3 @@ defmodule Main do
     IO.puts("Void context broken")
   end
 end
-
-Code.require_file("main.ex", __DIR__)
-Main.main()

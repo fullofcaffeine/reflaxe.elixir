@@ -48,7 +48,7 @@ defmodule Main do
     %{:is_success_ok => is_success_ok, :is_failure_ok => is_failure_ok, :is_success_error => is_success_error, :is_failure_error => is_failure_error, :success_value => success_value, :failure_value => failure_value, :mapped_error => mapped_error}
   end
   def process_multiple_numbers(inputs) do
-    results = Enum.map(inputs, parse_number)
+    results = Enum.map(inputs, Main.parse_number)
     ResultTools.sequence(results)
   end
   def validate_and_double(inputs) do
@@ -77,9 +77,3 @@ defmodule Main do
     Log.trace("Utilities test completed", %{:file_name => "Main.hx", :line_number => 195, :class_name => "Main", :method_name => "main"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/functional/result_tools.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

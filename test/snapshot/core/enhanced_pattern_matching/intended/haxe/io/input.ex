@@ -1,9 +1,9 @@
 defmodule Input do
   @big_endian nil
-  defp set_big_endian(_struct, b) do
+  defp set_big_endian(struct, b) do
     b
   end
-  def read_byte(_struct) do
+  def read_byte(struct) do
     -1
   end
   def read_bytes(struct, b, pos, len) do
@@ -11,7 +11,7 @@ defmodule Input do
       throw("Invalid parameters")
     end
     k = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, k, :ok}, fn _, {acc_pos, acc_k, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, pos, :ok}, fn _, {acc_k, acc_pos, acc_state} ->
   if (acc_k > 0) do
     byte = struct.read_byte()
     if (byte < 0) do
@@ -20,9 +20,9 @@ defmodule Input do
     b.set(acc_pos, byte)
     acc_pos = acc_pos + 1
     acc_k = (acc_k - 1)
-    {:cont, {acc_pos, acc_k, acc_state}}
+    {:cont, {acc_k, acc_pos, acc_state}}
   else
-    {:halt, {acc_pos, acc_k, acc_state}}
+    {:halt, {acc_k, acc_pos, acc_state}}
   end
 end)
     (len - k)
@@ -34,7 +34,7 @@ end)
     buf = Bytes.alloc(bufsize)
     total = Bytes.alloc(0)
     len = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len, :ok}, fn _, {acc_total, acc_len, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {len, total, :ok}, fn _, {acc_len, acc_total, acc_state} -> nil end)
     total
   end
   def read_string(struct, len) do
@@ -63,7 +63,7 @@ end)
 end)
     IO.iodata_to_binary(buf)
   end
-  def close(_struct) do
+  def close(struct) do
     nil
   end
 end

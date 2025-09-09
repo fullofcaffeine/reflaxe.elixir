@@ -1,4 +1,4 @@
-defmodule phoenix.QueryValue do
+defmodule Phoenix.QueryValue do
   def string(arg0) do
     {:String, arg0}
   end

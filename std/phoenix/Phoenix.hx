@@ -1042,11 +1042,14 @@ extern class Presence {
     /**
      * List all presences for a topic
      * 
-     * @param socket The LiveView socket
-     * @param topic The topic to list presences for
-     * @return Map of presence entries by key
+     * Overloads:
+     * - list(socket, topic): Use a socket/process reference
+     * - list(topic): Use presence module default
      */
     static function list<TSocket, TMeta>(socket: TSocket, topic: String): Map<String, PresenceEntry<TMeta>>;
+
+    @:native("list")
+    static function listTopic<TMeta>(topic: String): Map<String, PresenceEntry<TMeta>>;
     
     /**
      * Update presence metadata

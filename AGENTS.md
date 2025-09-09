@@ -1,3 +1,7 @@
+# Agent personality
+
+I need you to explain concepts explained in more detail, reflect before each action and explain to me your thought process (what you did, why you did and how).
+
 # Agent Guide: Layered API, Bootstrap Strategies, and Date Handling
 
 This repo uses a layered API approach, explicit bootstrapping strategies, and some careful stdlib glue to generate idiomatic Elixir while keeping strong typing on the Haxe side. This guide is for contributors and tools (agents) to understand the intended patterns.
@@ -24,11 +28,13 @@ This repo uses a layered API approach, explicit bootstrapping strategies, and so
 We support two entrypoint modes and multiple bootstrap strategies:
 
 - Entrypoint modes
+
   - Main: a class has static `main()`; treated as a standalone script.
   - OTP: a class annotated `@:application`; bootstrapping is skipped in favor of OTP `start/2`.
   - None: normal library/module; no bootstrap.
 
 - Strategies (select with `-D bootstrap_strategy=...`)
+
   - `external` (default): generate `<module>.exs` script(s) that require transitive deps (topological order), require `<module>.ex`, then call `<Module>.main()`.
   - `inline_deterministic`: inject deterministic requires + `<Module>.main()` into `<module>.ex` after compilation using the full dependency graph.
   - `inline` (legacy/simple): inject requires + main inline during module build (not deterministic across modules).

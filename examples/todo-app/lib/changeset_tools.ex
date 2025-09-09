@@ -45,8 +45,7 @@ end)
     case (elem(_result, 0)) do
       0 ->
         g = elem(_result, 1)
-        value = g
-        value
+        {:some, (g)}
       1 ->
         _g = elem(_result, 1)
         :none
@@ -56,8 +55,7 @@ end)
     case (elem(_result, 0)) do
       0 ->
         g = elem(_result, 1)
-        value = g
-        value
+        (g)
       1 ->
         g = elem(_result, 1)
         changeset = g
@@ -69,8 +67,7 @@ end)
     case (elem(_result, 0)) do
       0 ->
         g = elem(_result, 1)
-        value = g
-        value
+        (g)
       1 ->
         _g = elem(_result, 1)
         default_value

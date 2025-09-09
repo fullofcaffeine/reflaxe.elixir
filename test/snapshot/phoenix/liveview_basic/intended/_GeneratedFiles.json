@@ -53,6 +53,7 @@
   "e_reg.ex",
   "counter_live.ex",
   "_enum_value/enum_value_impl_.ex",
+  "_date/date_impl_.ex",
   "_any/any_impl_.ex"
 ],
   "id": 0,

@@ -331,29 +331,21 @@ class TodoLive {
 		}
 	}
 	
-	static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo = findTodo(id, socket.assigns.todos);
-		if (todo == null) return socket;
-		
-		var updatedChangeset = server.schemas.Todo.toggleCompleted(todo);
-		
-		// Use type-safe Repo operations
-		switch (Repo.update(updatedChangeset)) {
-			case Ok(updatedTodo):
-				// Broadcast to other users using type-safe PubSub with compile-time validation
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
-					case Ok(_):
-						// Broadcast successful
-					case Error(reason):
-						trace("Failed to broadcast todo update: " + reason);
-				}
-				
-				return updateTodoInList(updatedTodo, socket);
-				
-			case Error(reason):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
-		}
-	}
+static function toggleTodoStatus(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	var todo = findTodo(id, socket.assigns.todos);
+	if (todo == null) return socket;
+
+	var updatedChangeset = server.schemas.Todo.toggleCompleted(todo);
+
+	// Use type-safe Repo operations with explicit binding to avoid temp var issues
+	var updatedTodo: server.schemas.Todo = switch (Repo.update(updatedChangeset)) {
+		case Ok(u): u;
+		case Error(reason): return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update todo: " + reason);
+	};
+	// Broadcast (best-effort); ignore result
+	TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo));
+	return updateTodoInList(updatedTodo, socket);
+}
 	
 	static function deleteTodo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 		var todo = findTodo(id, socket.assigns.todos);
@@ -377,29 +369,21 @@ class TodoLive {
 		}
 	}
 	
-	static function updateTodoPriority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todo = findTodo(id, socket.assigns.todos);
-		if (todo == null) return socket;
-		
-		var updatedChangeset = server.schemas.Todo.updatePriority(todo, priority);
-		
-		// Use type-safe Repo operations
-		switch (Repo.update(updatedChangeset)) {
-			case Ok(updatedTodo):
-				// Broadcast to other users using type-safe PubSub
-				switch (TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo))) {
-					case Ok(_):
-						// Broadcast successful
-					case Error(reason):
-						trace("Failed to broadcast todo priority update: " + reason);
-				}
-				
-				return updateTodoInList(updatedTodo, socket);
-				
-			case Error(reason):
-				return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
-		}
-	}
+static function updateTodoPriority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	var todo = findTodo(id, socket.assigns.todos);
+	if (todo == null) return socket;
+
+	var updatedChangeset = server.schemas.Todo.updatePriority(todo, priority);
+
+	// Use type-safe Repo operations with explicit binding to avoid temp var issues
+	var updatedTodo: server.schemas.Todo = switch (Repo.update(updatedChangeset)) {
+		case Ok(u): u;
+		case Error(reason): return LiveView.putFlash(socket, phoenix.Phoenix.FlashType.Error, "Failed to update priority: " + reason);
+	};
+	// Broadcast (best-effort); ignore result
+	TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo));
+	return updateTodoInList(updatedTodo, socket);
+}
 	
 	// List management helpers with type-safe socket handling
 	static function addTodoToList(todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
@@ -451,23 +435,23 @@ class TodoLive {
 		return tagsString.split(",").map(function(t) return t.trim());
 	}
 	
-	static function getUserFromSession(session: Dynamic): User {
-		// In real app, would fetch from session/token and validate properly
-		// For demo purposes, return a properly typed User object
-		// Handle empty session case (when Phoenix passes %{})
-		// Use Reflect.field for safe map access since session is Dynamic
-		var userId: Null<Int> = Reflect.field(session, "user_id");  // Note: Phoenix uses snake_case keys
-		
-		return {
-			id: userId != null ? userId : 1,  // Default to user 1 for demo
-			name: "Demo User",
-			email: "demo@example.com", 
-			passwordHash: "hashed_password",  // camelCase!
-			confirmedAt: null,  // camelCase!
-			lastLoginAt: null,  // camelCase!
-			active: true
-		};
-	}
+static function getUserFromSession(session: Dynamic): User {
+	// In real app, would fetch from session/token and validate properly
+	// For demo purposes, return a properly typed User object
+	// Handle empty session case (when Phoenix passes %{})
+	// Use Reflect.field for safe map access since session is Dynamic
+	var idVal: Null<Int> = Reflect.field(session, "user_id");
+	var uid = idVal != null ? idVal : 1;
+	return {
+		id: uid,
+		name: "Demo User",
+		email: "demo@example.com", 
+		passwordHash: "hashed_password",  // camelCase!
+		confirmedAt: null,  // camelCase!
+		lastLoginAt: null,  // camelCase!
+		active: true
+	};
+}
 	
 	// Missing helper functions
 	static function loadAndAssignTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {

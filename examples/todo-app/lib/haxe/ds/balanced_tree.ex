@@ -62,11 +62,9 @@ end)
       TreeNode.new(node.left, k, v, node.right, node.get_height())
     else
       if (c < 0) do
-        nl = struct.set_loop(k, v, node.left)
-        struct.balance(nl, node.key, node.value, node.right)
+        struct.balance((struct.set_loop(k, v, node.left)), node.key, node.value, node.right)
       else
-        nr = struct.set_loop(k, v, node.right)
-        struct.balance(node.left, node.key, node.value, nr)
+        struct.balance(node.left, node.key, node.value, (struct.set_loop(k, v, node.right)))
       end
     end
   end
@@ -118,7 +116,7 @@ end)
     if (t.left == nil), do: t.right
     struct.balance(struct.remove_min_binding(t.left), t.key, t.value, t.right)
   end
-  defp balance(_struct, l, k, v, r) do
+  defp balance(struct, l, k, v, r) do
     hl = l.get_height()
     hr = r.get_height()
     if (hl > hr + 2) do
@@ -139,7 +137,7 @@ end)
       end
     end
   end
-  defp compare(_struct, k1, k2) do
+  defp compare(struct, k1, k2) do
     cond do
       k1 < k2 ->
         -1

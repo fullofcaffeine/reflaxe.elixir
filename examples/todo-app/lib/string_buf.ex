@@ -6,12 +6,11 @@ defmodule StringBuf do
     length(joined)
   end
   def add(struct, x) do
-    str = if (x == nil) do
+    struct.parts ++ [(if (x == nil) do
   "null"
 else
   Std.string(x)
-end
-    struct.parts ++ [str]
+end)]
   end
   def add_char(struct, c) do
     struct.parts ++ [String.from_char_code(c)]

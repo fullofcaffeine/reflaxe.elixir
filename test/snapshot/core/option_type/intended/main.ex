@@ -91,9 +91,3 @@ end
     _processed_values = Enum.filter(Enum.map(options, fn opt -> OptionTools.map(opt, fn x -> x * 2 end) end), fn opt -> OptionTools.is_some(opt) end)
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/ds/option_tools.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

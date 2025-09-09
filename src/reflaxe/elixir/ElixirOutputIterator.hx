@@ -209,6 +209,10 @@ class ElixirOutputIterator {
     function prepareExternalBootstraps(): Void {
         // Respect bootstrap strategy: only generate externals for External strategy
         if (ModuleBuilder.getBootstrapStrategy() != BootstrapStrategy.External) return;
+        // Only emit scripts when explicitly requested to avoid cluttering snapshots
+        #if macro
+        if (!haxe.macro.Context.defined("emit_bootstrap_scripts")) return;
+        #end
         if (compiler.modulesWithBootstrap.length == 0) return;
 
         // Build global topological order once
@@ -253,8 +257,9 @@ class ElixirOutputIterator {
             lines.push(moduleName + '.main()');
 
             var content = lines.join("\n");
-            // Emit <module>.exs script; the overrideFileName must not include extension.
-            var fileBase = NameUtils.toSnakeCase(moduleName);
+            // Emit a separate bootstrap script to avoid colliding with module files.
+            // Use a distinct name (bootstrap_<module>). Output manager will add .ex.
+            var fileBase = 'bootstrap_' + NameUtils.toSnakeCase(moduleName);
 
             // Construct output info with override name/dir
             var baseType = compiler.moduleBaseTypes.exists(moduleName) ? compiler.moduleBaseTypes.get(moduleName) : null;
@@ -267,41 +272,7 @@ class ElixirOutputIterator {
             generatedFor.push(moduleName);
         }
 
-        // Convenience: if exactly one entrypoint, emit a generic main.exs as well
-        if (generatedFor.length == 1) {
-            var moduleName = generatedFor[0];
-            var topo = compiler.getSortedModules();
-            var closure = computeTransitiveDependencies(moduleName);
-            var ordered: Array<String> = [];
-            for (m in topo) if (closure.exists(m)) ordered.push(m);
-            if (ordered.length < Lambda.count(closure)) {
-                var allKeys: Array<String> = [for (k in closure.keys()) k];
-                allKeys.sort((a, b) -> Reflect.compare(a, b));
-                ordered = allKeys;
-            }
-            var lines: Array<String> = [];
-            for (dep in ordered) {
-                var p = compiler.moduleOutputPaths.get(dep);
-                if (p == null) {
-                    var pack = compiler.modulePackages.get(dep);
-                    p = compiler.getModuleOutputPath(dep, pack);
-                }
-                if (p != null) lines.push('Code.require_file("' + p + '", __DIR__)');
-            }
-            var mainPath = compiler.moduleOutputPaths.get(moduleName);
-            if (mainPath == null) {
-                var pack = compiler.modulePackages.get(moduleName);
-                mainPath = compiler.getModuleOutputPath(moduleName, pack);
-            }
-            if (mainPath != null) lines.push('Code.require_file("' + mainPath + '", __DIR__)');
-            lines.push(moduleName + '.main()');
-            var content = lines.join("\n");
-            var baseType = compiler.moduleBaseTypes.exists(moduleName) ? compiler.moduleBaseTypes.get(moduleName) : null;
-            if (baseType != null) {
-                var data = new DataAndFileInfo<StringOrBytes>(StringOrBytes.fromString(content), baseType, 'main', null);
-                extraOutputs.push(data);
-            }
-        }
+        // No generic main file to avoid name collision with module file.
     }
 
     /**

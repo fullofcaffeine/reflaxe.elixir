@@ -1,4 +1,4 @@
-defmodule elixir.types.HandleCallResult do
+defmodule Elixir.Types.HandleCallResult do
   def reply(arg0, arg1) do
     {:Reply, arg0, arg1}
   end
