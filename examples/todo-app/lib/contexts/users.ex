@@ -2,13 +2,13 @@ defmodule Users do
   def list_users(filter) do
     if (filter != nil) do
       query = Query.from(User)
-      if (filter.name != nil) do
+      if (Map.get(filter, :name) != nil) do
         query = EctoQuery_Impl_.where(query, "name", "%" <> Kernel.to_string(filter.name) <> "%")
       end
-      if (filter.email != nil) do
+      if (Map.get(filter, :email) != nil) do
         query = EctoQuery_Impl_.where(query, "email", "%" <> Kernel.to_string(filter.email) <> "%")
       end
-      if (filter.is_active != nil) do
+      if (Map.get(filter, :is_active) != nil) do
         query = EctoQuery_Impl_.where(query, "active", filter.is_active)
       end
       TodoApp.Repo.all(query)
@@ -20,7 +20,7 @@ defmodule Users do
     Changeset_Impl_._new(user, empty_params)
   end
   def main() do
-    Log.trace("Users context with User schema compiled successfully!", %{:fileName => "src_haxe/server/contexts/Users.hx", :lineNumber => 107, :className => "contexts.Users", :methodName => "main"})
+    Log.trace("Users context with User schema compiled successfully!", %{:file_name => "src_haxe/server/contexts/Users.hx", :line_number => 107, :class_name => "contexts.Users", :method_name => "main"})
   end
   def get_user(id) do
     user = TodoApp.Repo.get(User, id)
@@ -50,4 +50,3 @@ defmodule Users do
     %{:total => 0, :active => 0, :inactive => 0}
   end
 end
-Users.main()

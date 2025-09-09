@@ -20,3 +20,10 @@ end
     test_ternary_with_temp_vars()
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("string_tools.ex", __DIR__)
+Code.require_file("haxe/format/json_printer.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

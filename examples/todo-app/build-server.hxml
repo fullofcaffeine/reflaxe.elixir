@@ -23,8 +23,9 @@
 # Application-specific configuration
 -D app_name=TodoApp
 
-# Enable debug traces for dynamic assignment fix
--D debug_dynamic_assignment
+# (Optional) Debug traces for dynamic assignment fix
+# Disabled by default to avoid noisy generation in some modules
+# -D debug_dynamic_assignment
 
 # Exclude client code from server compilation
 --macro exclude('client')

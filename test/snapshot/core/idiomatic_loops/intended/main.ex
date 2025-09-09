@@ -122,7 +122,7 @@ end)
     Log.trace("Nested for: " <> Kernel.to_string(2) <> ", " <> Kernel.to_string(0), %{:file_name => "Main.hx", :line_number => 153, :class_name => "Main", :method_name => "testNestedLoops"})
     Log.trace("Nested for: " <> Kernel.to_string(2) <> ", " <> Kernel.to_string(1), %{:file_name => "Main.hx", :line_number => 153, :class_name => "Main", :method_name => "testNestedLoops"})
     outer = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner, outer, :ok}, fn _, {acc_inner, acc_outer, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {outer, inner, :ok}, fn _, {acc_outer, acc_inner, acc_state} -> nil end)
     j = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j, :ok}, fn _, {acc_j, acc_state} ->
   if (acc_j < 2) do
@@ -209,16 +209,16 @@ end
     data = [1, 2, 3, 4, 5]
     acc = %{:sum => 0, :count => 0, :product => 1}
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, data, :ok}, fn _, {acc_g, acc_data, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {data, g, :ok}, fn _, {acc_data, acc_g, acc_state} ->
   if (acc_g < length(acc_data)) do
     n = data[g]
     acc_g = acc_g + 1
     sum = acc.sum + n
     acc.count + 1
     product = acc.product * n
-    {:cont, {acc_g, acc_data, acc_state}}
+    {:cont, {acc_data, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_data, acc_state}}
+    {:halt, {acc_data, acc_g, acc_state}}
   end
 end)
     Log.trace("Accumulator: " <> Std.string(acc), %{:file_name => "Main.hx", :line_number => 243, :class_name => "Main", :method_name => "testComplexPatterns"})
@@ -226,7 +226,7 @@ end)
     current_state = 0
     events = ["begin", "work", "work", "finish"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {events, g, current_state, :ok}, fn _, {acc_events, acc_g, acc_current_state, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, current_state, events, :ok}, fn _, {acc_g, acc_current_state, acc_events, acc_state} ->
   if (acc_g < length(acc_events)) do
     event = events[g]
     acc_g = acc_g + 1
@@ -239,9 +239,9 @@ end)
         nil
     end
     Log.trace("State after " <> event <> ": " <> states[current_state], %{:file_name => "Main.hx", :line_number => 259, :class_name => "Main", :method_name => "testComplexPatterns"})
-    {:cont, {acc_events, acc_g, acc_current_state, acc_state}}
+    {:cont, {acc_g, acc_current_state, acc_events, acc_state}}
   else
-    {:halt, {acc_events, acc_g, acc_current_state, acc_state}}
+    {:halt, {acc_g, acc_current_state, acc_events, acc_state}}
   end
 end)
     items = ["valid1", "error", "valid2", "valid3"]
@@ -266,3 +266,9 @@ end)
     Log.trace("Errors: " <> Std.string(errors), %{:file_name => "Main.hx", :line_number => 276, :class_name => "Main", :method_name => "testComplexPatterns"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("lambda.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

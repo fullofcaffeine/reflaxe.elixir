@@ -19,7 +19,7 @@ defmodule TypeSafeChildSpec do
       spec = opts
       id = module
       start = %{:module => module, :func => "start_link", :args => (if (args != nil), do: args, else: [])}
-      if (spec.type == nil) do
+      if (Map.get(spec, :type) == nil) do
         type = {1}
       end
       {:full_spec, spec}

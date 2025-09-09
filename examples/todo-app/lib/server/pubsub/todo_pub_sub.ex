@@ -1,12 +1,12 @@
 defmodule TodoPubSub do
   def subscribe(topic) do
-    Phoenix.SafePubSub.subscribe_with_converter(topic, &TodoPubSub.topic_to_string/1)
+    Phoenix.SafePubSub.subscribe_with_converter(topic, topic_to_string)
   end
   def broadcast(topic, message) do
-    Phoenix.SafePubSub.broadcast_with_converters(topic, message, &TodoPubSub.topic_to_string/1, &TodoPubSub.message_to_elixir/1)
+    Phoenix.SafePubSub.broadcast_with_converters(topic, message, topic_to_string, message_to_elixir)
   end
   def parse_message(msg) do
-    Phoenix.SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
+    Phoenix.SafePubSub.parse_with_converter(msg, parse_message_impl)
   end
   def topic_to_string(_topic) do
     case (elem(_topic, 0)) do
@@ -35,7 +35,7 @@ defmodule TodoPubSub do
   3 ->
     g = elem(_message, 1)
     action = g
-    %{:type => "bulk_update", :action => TodoPubSub.bulk_action_to_string(action)}
+    %{:type => "bulk_update", :action => bulk_action_to_string(action)}
   4 ->
     g = elem(_message, 1)
     user_id = g
@@ -49,20 +49,20 @@ defmodule TodoPubSub do
     g1 = elem(_message, 2)
     message = g
     level = g1
-    %{:type => "system_alert", :message => message, :level => TodoPubSub.alert_level_to_string(level)}
+    %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
 end
     Phoenix.SafePubSub.add_timestamp(base_payload)
   end
   def parse_message_impl(msg) do
     if (not Phoenix.SafePubSub.is_valid_message(msg)) do
-      Log.trace(Phoenix.SafePubSub.create_malformed_message_error(msg), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 191, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+      Log.trace(Phoenix.SafePubSub.create_malformed_message_error(msg), %{:file_name => "src_haxe/server/pubsub/TodoPubSub.hx", :line_number => 191, :class_name => "server.pubsub.TodoPubSub", :method_name => "parseMessageImpl"})
       :none
     end
     g = msg.type
     case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
-          bulk_action = TodoPubSub.parse_bulk_action(msg.action)
+          bulk_action = parse_bulk_action(msg.action)
           case (bulk_action) do
             {:some, _} ->
               g = elem(bulk_action, 1)
@@ -76,7 +76,7 @@ end
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
-          alert_level = TodoPubSub.parse_alert_level(msg.level)
+          alert_level = parse_alert_level(msg.level)
           case (alert_level) do
             {:some, _} ->
               g = elem(alert_level, 1)
@@ -99,7 +99,7 @@ end
       "user_online" ->
         if (msg.user_id != nil), do: {:UserOnline, msg.user_id}, else: :none
       _ ->
-        Log.trace(Phoenix.SafePubSub.create_unknown_message_error(msg.type), %{:fileName => "src_haxe/server/pubsub/TodoPubSub.hx", :lineNumber => 223, :className => "server.pubsub.TodoPubSub", :methodName => "parseMessageImpl"})
+        Log.trace(Phoenix.SafePubSub.create_unknown_message_error(msg.type), %{:file_name => "src_haxe/server/pubsub/TodoPubSub.hx", :line_number => 223, :class_name => "server.pubsub.TodoPubSub", :method_name => "parseMessageImpl"})
         :none
     end
   end

@@ -7,6 +7,7 @@
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
+  "main.exs.ex",
   "main.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
@@ -34,7 +35,6 @@
   "create_users_table.ex",
   "create_products_table.ex",
   "create_posts_table.ex",
-  "bootstrap_main.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],

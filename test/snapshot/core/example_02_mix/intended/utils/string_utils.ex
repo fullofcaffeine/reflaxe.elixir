@@ -61,7 +61,7 @@ end)
       result = ""
       g = 0
       g1 = repeat_count
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, g1, :ok}, fn _, {acc_g, acc_result, acc_g1, acc_state} -> nil end)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} -> nil end)
       result
     end
     visible = text.substr(0, visible_chars)
@@ -69,7 +69,7 @@ end)
     masked = ""
     g = 0
     g1 = masked_count
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {masked, g1, g, :ok}, fn _, {acc_masked, acc_g1, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, masked, g1, :ok}, fn _, {acc_g, acc_masked, acc_g1, acc_state} -> nil end)
     visible <> masked
   end
   defp remove_excess_whitespace(text) do

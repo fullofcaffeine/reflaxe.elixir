@@ -45,6 +45,12 @@ extern class Date {
      * Calculate difference between two dates in days
      */
     static function diff(date1: Date, date2: Date): Int;
+
+    /**
+     * Day of week for a date (1..7 Monday..Sunday)
+     */
+    @:native("day_of_week")
+    static function day_of_week(date: Date): Int;
 }
 
 /**
@@ -88,11 +94,23 @@ extern class DateTime {
      * Converts to ISO8601 string format
      */
     function to_iso8601(): String;
+
+    @:native("to_naive")
+    function to_naive(): NaiveDateTime;
+
+    @:native("to_date")
+    function to_date(): Date;
     
     /**
      * Parses an ISO8601 string to DateTime
      */
     static function from_iso8601(string: String): haxe.functional.Result<DateTime, String>;
+
+    @:native("from_unix!")
+    static function fromUnixBang(timestamp: Int, ?unit: TimeUnit): DateTime;
+
+    @:native("from_naive!")
+    static function fromNaiveBang(naive: NaiveDateTime, timezone: String): DateTime;
     
     /**
      * Compares two datetimes

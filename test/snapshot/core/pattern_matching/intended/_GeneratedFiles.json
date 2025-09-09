@@ -9,6 +9,7 @@
   "reflect.ex",
   "pattern_matching_test.ex",
   "option.ex",
+  "main.exs.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
   "haxe/log.ex",
@@ -33,7 +34,6 @@
   "haxe/_constraints/constructible_impl_.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
   "color.ex",
-  "bootstrap_pattern_matching_test.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],

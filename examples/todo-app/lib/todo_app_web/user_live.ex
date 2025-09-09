@@ -1,4 +1,5 @@
 defmodule TodoAppWeb.UserLive do
+  use TodoAppWeb, :live_view
   def mount(_params, _session, socket) do
     users = Users.list_users(nil)
     live_socket = socket
@@ -8,31 +9,31 @@ defmodule TodoAppWeb.UserLive do
     live_socket = socket
     case (elem(event, 0)) do
       0 ->
-        TodoAppWeb.UserLive.handle_new_user(live_socket)
+        handle_new_user(live_socket)
       1 ->
         g = elem(event, 1)
         id = g
-        TodoAppWeb.UserLive.handle_edit_user(id, live_socket)
+        handle_edit_user(id, live_socket)
       2 ->
         g = elem(event, 1)
         params = g
-        TodoAppWeb.UserLive.handle_save_user(params, live_socket)
+        handle_save_user(params, live_socket)
       3 ->
         g = elem(event, 1)
         id = g
-        TodoAppWeb.UserLive.handle_delete_user(id, live_socket)
+        handle_delete_user(id, live_socket)
       4 ->
         g = elem(event, 1)
         params = g
-        TodoAppWeb.UserLive.handle_search(params.search_term, live_socket)
+        handle_search(params.search_term, live_socket)
       5 ->
         g = elem(event, 1)
         params = g
-        TodoAppWeb.UserLive.handle_filter_status(params.status, live_socket)
+        handle_filter_status(params.status, live_socket)
       6 ->
-        TodoAppWeb.UserLive.handle_clear_search(live_socket)
+        handle_clear_search(live_socket)
       7 ->
-        TodoAppWeb.UserLive.handle_cancel(live_socket)
+        handle_cancel(live_socket)
     end
   end
   def handle_new_user(socket) do
@@ -83,12 +84,12 @@ end
     end
   end
   def handle_search(search_term, socket) do
-    filter = if (length(search_term) > 0), do: %{:name => search_term, :email => search_term, :isActive => nil}, else: nil
+    filter = if (length(search_term) > 0), do: %{:name => search_term, :email => search_term, :is_active => nil}, else: nil
     users = Users.list_users(filter)
     %{:status => "noreply", :socket => Phoenix.Component.assign([socket, users, search_term], %{:users => {1}, :search_term => {2}})}
   end
   def handle_filter_status(status, socket) do
-    filter = if (length(status) > 0), do: %{:name => nil, :email => nil, :isActive => status == "active"}, else: nil
+    filter = if (length(status) > 0), do: %{:name => nil, :email => nil, :is_active => status == "active"}, else: nil
     users = Users.list_users(filter)
     %{:status => "noreply", :socket => Phoenix.Component.assign(socket, :users, users)}
   end
@@ -100,7 +101,7 @@ end
     %{:status => "noreply", :socket => Phoenix.Component.assign([socket, false, nil, Users.change_user(nil)], %{:show_form => {1}, :selected_user => {2}, :changeset => {3}})}
   end
   def render(assigns) do
-    template_str = "\n        <div class=\"min-h-screen bg-gray-50 py-8\">\n            <div class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8\">\n                <!-- Header with gradient background -->\n                <div class=\"bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 mb-8\">\n                    <div class=\"flex justify-between items-center\">\n                        <div>\n                            <h1 class=\"text-3xl font-bold text-white\">User Management</h1>\n                            <p class=\"text-blue-100 mt-1\">Manage your application users</p>\n                        </div>\n                        <button \n                            phx-click=\"new_user\" \n                            class=\"bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors shadow-md\"\n                        >\n                            <svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                                <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 6v6m0 0v6m0-6h6m-6 0H6\"></path>\n                            </svg>\n                            New User\n                        </button>\n                    </div>\n                </div>\n                \n                <!-- Search and Filter Section -->\n                <div class=\"bg-white rounded-lg shadow-md p-6 mb-6\">\n                    <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\">\n                        <div class=\"md:col-span-2\">\n                            <label class=\"block text-sm font-medium text-gray-700 mb-2\">Search Users</label>\n                            <form phx-change=\"search\" phx-submit=\"search\">\n                                <div class=\"relative\">\n                                    <input \n                                        name=\"search_term\"\n                                        value={@searchTerm}\n                                        placeholder=\"Search by name or email...\"\n                                        type=\"text\"\n                                        class=\"w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500\"\n                                    />\n                                    <svg class=\"absolute left-3 top-2.5 w-5 h-5 text-gray-400\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                                        <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z\"></path>\n                                    </svg>\n                                </div>\n                            </form>\n                        </div>\n                        <div>\n                            <label class=\"block text-sm font-medium text-gray-700 mb-2\">Filter by Status</label>\n                            <select phx-change=\"filter_status\" class=\"w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500\">\n                                <option value=\"\">All Users</option>\n                                <option value=\"active\">Active</option>\n                                <option value=\"inactive\">Inactive</option>\n                            </select>\n                        </div>\n                    </div>\n                    \n                    <%= if @searchTerm != \"\" do %>\n                        <div class=\"mt-4 flex items-center text-sm text-gray-600\">\n                            <span>Showing results for: <span class=\"font-semibold\">{@searchTerm}</span></span>\n                            <button phx-click=\"clear_search\" class=\"ml-2 text-blue-600 hover:text-blue-800\">Clear</button>\n                        </div>\n                    <% end %>\n                </div>\n                \n                " <> TodoAppWeb.UserLive.render_user_list(assigns) <> "\n                " <> TodoAppWeb.UserLive.render_user_form(assigns) <> "\n            </div>\n        </div>\n        "
+    template_str = "\n        <div class=\"min-h-screen bg-gray-50 py-8\">\n            <div class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8\">\n                <!-- Header with gradient background -->\n                <div class=\"bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 mb-8\">\n                    <div class=\"flex justify-between items-center\">\n                        <div>\n                            <h1 class=\"text-3xl font-bold text-white\">User Management</h1>\n                            <p class=\"text-blue-100 mt-1\">Manage your application users</p>\n                        </div>\n                        <button \n                            phx-click=\"new_user\" \n                            class=\"bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors shadow-md\"\n                        >\n                            <svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                                <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 6v6m0 0v6m0-6h6m-6 0H6\"></path>\n                            </svg>\n                            New User\n                        </button>\n                    </div>\n                </div>\n                \n                <!-- Search and Filter Section -->\n                <div class=\"bg-white rounded-lg shadow-md p-6 mb-6\">\n                    <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\">\n                        <div class=\"md:col-span-2\">\n                            <label class=\"block text-sm font-medium text-gray-700 mb-2\">Search Users</label>\n                            <form phx-change=\"search\" phx-submit=\"search\">\n                                <div class=\"relative\">\n                                    <input \n                                        name=\"search_term\"\n                                        value={@searchTerm}\n                                        placeholder=\"Search by name or email...\"\n                                        type=\"text\"\n                                        class=\"w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500\"\n                                    />\n                                    <svg class=\"absolute left-3 top-2.5 w-5 h-5 text-gray-400\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                                        <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z\"></path>\n                                    </svg>\n                                </div>\n                            </form>\n                        </div>\n                        <div>\n                            <label class=\"block text-sm font-medium text-gray-700 mb-2\">Filter by Status</label>\n                            <select phx-change=\"filter_status\" class=\"w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500\">\n                                <option value=\"\">All Users</option>\n                                <option value=\"active\">Active</option>\n                                <option value=\"inactive\">Inactive</option>\n                            </select>\n                        </div>\n                    </div>\n                    \n                    <%= if @searchTerm != \"\" do %>\n                        <div class=\"mt-4 flex items-center text-sm text-gray-600\">\n                            <span>Showing results for: <span class=\"font-semibold\">{@searchTerm}</span></span>\n                            <button phx-click=\"clear_search\" class=\"ml-2 text-blue-600 hover:text-blue-800\">Clear</button>\n                        </div>\n                    <% end %>\n                </div>\n                \n                " <> render_user_list(assigns) <> "\n                " <> render_user_form(assigns) <> "\n            </div>\n        </div>\n        "
     template_str
   end
   def render_user_list(assigns) do
@@ -108,7 +109,7 @@ end
   end
   def render_user_row(assigns) do
     user = assigns.user
-    template_str = "\n        <tr>\n            <td>" <> user.name <> "</td>\n            <td>" <> user.email <> "</td>\n            <td>" <> user.age <> "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " <> TodoAppWeb.UserLive.get_status_text(user.active) <> "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        "
+    template_str = "\n        <tr>\n            <td>" <> user.name <> "</td>\n            <td>" <> user.email <> "</td>\n            <td>" <> user.age <> "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " <> get_status_text(user.active) <> "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        "
     template_str
   end
   def get_status_class(active) do
@@ -122,7 +123,6 @@ end
     "\n        <div class=\"modal\">\n            <div class=\"modal-content\">\n                <div class=\"modal-header\">\n                    <h2><%= if @selectedUser, do: \"Edit User\", else: \"New User\" %></h2>\n                    <button phx-click=\"cancel\" class=\"close\">&times;</button>\n                </div>\n                \n                <.form for={@changeset} phx-submit=\"save_user\">\n                    <div class=\"form-group\">\n                        <.label for=\"name\">Name</.label>\n                        <.input field={@changeset[:name]} type=\"text\" required />\n                        <.error field={@changeset[:name]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label for=\"email\">Email</.label>\n                        <.input field={@changeset[:email]} type=\"email\" required />\n                        <.error field={@changeset[:email]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label for=\"age\">Age</.label>\n                        <.input field={@changeset[:age]} type=\"number\" />\n                        <.error field={@changeset[:age]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.input \n                            field={@changeset[:active]} \n                            type=\"checkbox\" \n                            label=\"Active\"\n                        />\n                    </div>\n                    \n                    <div class=\"form-actions\">\n                        <.button type=\"submit\">\n                            <%= if @selectedUser, do: \"Update\", else: \"Create\" %> User\n                        </.button>\n                        <.button type=\"button\" phx-click=\"cancel\" variant=\"secondary\">\n                            Cancel\n                        </.button>\n                    </div>\n                </.form>\n            </div>\n        </div>\n        "
   end
   def main() do
-    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{:fileName => "src_haxe/server/live/UserLive.hx", :lineNumber => 505, :className => "server.live.UserLive", :methodName => "main"})
+    Log.trace("UserLive with @:liveview annotation compiled successfully!", %{:file_name => "src_haxe/server/live/UserLive.hx", :line_number => 505, :class_name => "server.live.UserLive", :method_name => "main"})
   end
 end
-TodoAppWeb.UserLive.main()

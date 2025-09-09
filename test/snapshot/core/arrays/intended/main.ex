@@ -14,14 +14,14 @@ defmodule Main do
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, g, :ok}, fn _, {acc_fruits, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, fruits, :ok}, fn _, {acc_g, acc_fruits, acc_state} ->
   if (acc_g < length(acc_fruits)) do
     fruit = fruits[g]
     acc_g = acc_g + 1
     Log.trace("Fruit: " <> fruit, %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "arrayIteration"})
-    {:cont, {acc_fruits, acc_g, acc_state}}
+    {:cont, {acc_g, acc_fruits, acc_state}}
   else
-    {:halt, {acc_fruits, acc_g, acc_state}}
+    {:halt, {acc_g, acc_fruits, acc_state}}
   end
 end)
     g = 0
@@ -113,7 +113,7 @@ g
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     Log.trace("Matrix element [1][2]: " <> Kernel.to_string(matrix[1][2]), %{:file_name => "Main.hx", :line_number => 108, :class_name => "Main", :method_name => "multiDimensional"})
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, matrix, g, :ok}, fn _, {acc_g, acc_matrix, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {matrix, g, g, :ok}, fn _, {acc_matrix, acc_g, acc_g, acc_state} -> nil end)
     g = []
     g = g ++ [g = []
 g ++ [0]
@@ -208,3 +208,9 @@ end)
     functional_methods()
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("array_tools.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()
