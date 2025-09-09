@@ -1,0 +1,9 @@
+# Snapshot: DB types with extensions generation
+-cp ../../../../std
+-cp ../../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+PostgrexTypes
+

@@ -632,6 +632,10 @@ typedef ElixirMetadata = {
     ?isLiveView: Bool,            // @:liveview Phoenix.LiveView
     ?isSchema: Bool,              // @:schema Ecto.Schema
     ?isRepo: Bool,                // @:repo Ecto.Repo
+    ?isPostgrexTypes: Bool,       // @:postgrexTypes Postgrex precompiled types module (sugar)
+    ?isDbTypes: Bool,             // @:dbTypes generic DB types module
+    ?dbAdapter: String,           // Adapter name (e.g., "postgrex")
+    ?extensions: Array<String>,   // Optional extensions for types define
     ?isApplication: Bool,         // @:application OTP Application
     ?isGenServer: Bool,           // @:genserver GenServer behavior
     ?isRouter: Bool,              // @:router Phoenix.Router
@@ -649,6 +653,7 @@ typedef ElixirMetadata = {
     ?testTags: Array<String>,     // @:tag values for test tagging
     ?appName: String,             // Application name for OTP/Phoenix
     ?tableName: String,           // Table name for Ecto schemas
+    ?jsonModule: String,          // JSON library module name for Postgrex.Types.define
     
     // Optimization Hints
     ?canInline: Bool,             // Can be inlined

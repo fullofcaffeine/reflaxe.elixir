@@ -35,6 +35,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - @:liveview - Phoenix.LiveView with mount/handle_event/render callbacks
  * - @:schema - Ecto.Schema with field definitions and changeset functions
  * - @:repo - Ecto.Repo with database access functions
+ * - @:postgrexTypes - Postgrex precompiled types module (Types.define)
  * - @:application - OTP Application with supervision tree configuration
  * - @:phoenixWeb - Phoenix Web module with router/controller/live_view macros
  * - @:controller - Phoenix.Controller with action functions
@@ -662,6 +663,82 @@ class AnnotationTransforms {
                 // Not a Repo module, just pass through
                 return ast;
         }
+    }
+
+    /**
+     * Transform @:postgrexTypes modules into a precompiled Postgrex types module
+     *
+     * WHY: Avoid runtime TypeManager races and allow custom JSON codecs
+     * WHAT: Adds a module-level call to Postgrex.Types.define(__MODULE__, [], json: <jsonModule>)
+     * HOW: Detects isPostgrexTypes metadata and builds a minimal module body
+     */
+    public static function postgrexTypesTransformPass(ast: ElixirAST): ElixirAST {
+        switch (ast.def) {
+            case EDefmodule(name, body) if (ast.metadata?.isPostgrexTypes == true):
+                var jsonLib = ast.metadata.jsonModule != null ? ast.metadata.jsonModule : "Jason";
+                var typesBody = buildDbTypesBody(name, "postgrex", jsonLib, []);
+                return makeASTWithMeta(
+                    EDefmodule(name, typesBody),
+                    ast.metadata,
+                    ast.pos
+                );
+            default:
+                return ast;
+        }
+    }
+
+    /** Generic DB types transformer */
+    public static function dbTypesTransformPass(ast: ElixirAST): ElixirAST {
+        switch (ast.def) {
+            case EDefmodule(name, body) if (ast.metadata?.isDbTypes == true):
+                var adapter = ast.metadata.dbAdapter != null ? ast.metadata.dbAdapter : "postgrex";
+                var jsonLib = ast.metadata.jsonModule != null ? ast.metadata.jsonModule : "Jason";
+                var exts = ast.metadata.extensions != null ? ast.metadata.extensions : [];
+                
+                // For Postgrex, the Types.define macro creates the module itself
+                // So we return just the macro call without the defmodule wrapper
+                switch(adapter.toLowerCase()) {
+                    case "postgrex":
+                        var opts = 'json: ' + jsonLib;
+                        if (exts != null && exts.length > 0) {
+                            var extList = '[' + exts.join(", ") + ']';
+                            opts = opts + ', extensions: ' + extList;
+                        }
+                        // Generate the macro call with the module name directly
+                        var line = 'Postgrex.Types.define(' + name + ', [], ' + opts + ')';
+                        return makeAST(ERaw(line));
+                    default:
+                        // For other adapters, keep the module wrapper (they might need it)
+                        var typesBody = buildDbTypesBody(name, adapter, jsonLib, exts);
+                        return makeASTWithMeta(
+                            EDefmodule(name, typesBody),
+                            ast.metadata,
+                            ast.pos
+                        );
+                }
+            default:
+                return ast;
+        }
+    }
+
+    static function buildDbTypesBody(moduleName: String, adapter: String, jsonLib: String, extensions: Array<String>): ElixirAST {
+        var statements = [];
+        switch(adapter.toLowerCase()) {
+            case "postgrex":
+                // This case is now handled above, but keep for completeness
+                var opts = 'json: ' + jsonLib;
+                if (extensions != null && extensions.length > 0) {
+                    var extList = '[' + extensions.join(", ") + ']';
+                    opts = opts + ', extensions: ' + extList;
+                }
+                var line = 'Postgrex.Types.define(__MODULE__, [], ' + opts + ')';
+                statements.push(makeAST(ERaw(line)));
+            default:
+                // Unknown adapter → emit a compile error as a clear message
+                var err = 'raise("Unsupported DB adapter for @:dbTypes: ' + adapter + '")';
+                statements.push(makeAST(ERaw(err)));
+        }
+        return makeAST(EBlock(statements));
     }
     
     /**
