@@ -1,9 +1,9 @@
 defmodule Main do
-  defp main() do
+  def main() do
     test_elixir_injection()
   end
   defp test_elixir_injection() do
     result = 42
-    Log.trace("Result: " <> result, %{:fileName => "Main.hx", :lineNumber => 10, :className => "Main", :methodName => "testElixirInjection"})
+    Log.trace("Result: " <> result, %{:file_name => "Main.hx", :line_number => 10, :class_name => "Main", :method_name => "testElixirInjection"})
   end
 end

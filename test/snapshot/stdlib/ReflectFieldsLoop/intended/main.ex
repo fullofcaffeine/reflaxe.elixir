@@ -2,44 +2,31 @@ defmodule Main do
   def main() do
     obj = %{:a => 1, :b => 2, :c => 3}
     g = 0
-    g1 = Reflect.fields(obj)
+    g1 = Map.keys(obj)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
-  if (acc_g < acc_g1.length) do
+  if (acc_g < length(acc_g1)) do
     field = g1[g]
     acc_g = acc_g + 1
-    Log.trace("Field: " <> field, %{:fileName => "Main.hx", :lineNumber => 7, :className => "Main", :methodName => "main"})
+    Log.trace("Field: " <> field, %{:file_name => "Main.hx", :line_number => 7, :class_name => "Main", :method_name => "main"})
     {:cont, {acc_g, acc_g1, acc_state}}
   else
     {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     data = %{:errors => %{:name => ["Required"], :age => ["Invalid"]}}
-    changeset_errors = Reflect.field(data, "errors")
+    changeset_errors = Map.get(data, String.to_atom("errors"))
     if (changeset_errors != nil) do
       g = 0
-      g1 = Reflect.fields(changeset_errors)
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, g, :ok}, fn _, {acc_g, acc_g1, acc_g, acc_state} ->
-  if (acc_g < acc_g1.length) do
+      g1 = Map.keys(changeset_errors)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, g, :ok}, fn _, {acc_g1, acc_g, acc_g, acc_state} ->
+  if (acc_g < length(acc_g1)) do
     field = g1[g]
     acc_g = acc_g + 1
-    field_errors = Reflect.field(changeset_errors, field)
-    if (Std.is(field_errors, Array)) do
-      acc_g = 0
-      acc_g1 = field_errors
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_g, acc_g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
-  if (acc_g < acc_g1.length) do
-    error = g1[g]
-    acc_g = acc_g + 1
-    Log.trace("" <> field <> ": " <> Std.string(error), %{:fileName => "Main.hx", :lineNumber => 18, :className => "Main", :methodName => "main"})
-    {:cont, {acc_g, acc_g1, acc_state}}
+    field_errors = Map.get(changeset_errors, String.to_atom(field))
+    nil
+    {:cont, {acc_g1, acc_g, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_state}}
-  end
-end)
-    end
-    {:cont, {acc_g, acc_g1, acc_g, acc_state}}
-  else
-    {:halt, {acc_g, acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_g, acc_state}}
   end
 end)
     end

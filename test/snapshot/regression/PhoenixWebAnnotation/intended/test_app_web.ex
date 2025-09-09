@@ -12,14 +12,14 @@ defmodule TestAppWeb do
   end
   def controller() do
     quote do
-      use Phoenix.Controller, [formats: [:html, :json], layouts: [html: {TestAppWeb.Layouts, :app}]]
+      use Phoenix.Controller, formats: [:html, :json], layouts: [html: {TestAppWeb.Layouts, :app}]
       import Plug.Conn
       unquote(verified_routes())
     end
   end
   def live_view() do
     quote do
-      use Phoenix.LiveView, [layout: {TestAppWeb.Layouts, :app}]
+      use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
       unquote(html_helpers())
       _ = nil
     end
@@ -48,7 +48,7 @@ defmodule TestAppWeb do
   end
   def verified_routes() do
     quote do
-      use Phoenix.VerifiedRoutes, [endpoint: :"TestAppWeb.Endpoint", router: :"TestAppWeb.Router", statics: TestAppWeb.static_paths()]
+      use Phoenix.VerifiedRoutes, endpoint: :"TestAppWeb.Endpoint", router: :"TestAppWeb.Router", statics: TestAppWeb.static_paths()
     end
   end
   def channel() do

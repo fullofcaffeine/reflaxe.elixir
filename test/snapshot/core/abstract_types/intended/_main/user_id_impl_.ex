@@ -1,5 +1,6 @@
 defmodule UserId_Impl_ do
   def _new(id) do
+    this1 = nil
     this1 = id
     this1
   end
@@ -13,6 +14,6 @@ defmodule UserId_Impl_ do
     this1
   end
   def to_string(this1) do
-    "UserId(" <> this1 <> ")"
+    "UserId(" <> Kernel.to_string(this1) <> ")"
   end
 end

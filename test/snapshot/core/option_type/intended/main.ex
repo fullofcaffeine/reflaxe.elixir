@@ -19,42 +19,42 @@ defmodule Main do
   end
   defp test_pattern_matching() do
     user = Bob
-    _result = case (elem(user, 0)) do
-  0 ->
+    _result = case (user) do
+  {:some, _} ->
     g = elem(user, 1)
     name = g
     "Hello, " <> name
-  1 ->
+  :none ->
     "Hello, anonymous"
 end
     scores = [1, 2, 3]
-    _total = case (elem(scores, 0)) do
-  0 ->
+    _total = case (scores) do
+  {:some, _} ->
     g = elem(scores, 1)
     score_list = g
-    score_list.length
-  1 ->
+    length(score_list)
+  :none ->
     0
 end
     process_user(Charlie)
     process_user(:none)
   end
-  defp process_user(user) do
-    case (elem(user, 0)) do
-      0 ->
-        g = elem(user, 1)
+  defp process_user(_user) do
+    case (_user) do
+      {:some, _} ->
+        g = elem(_user, 1)
         name = g
-        Log.trace("Processing user: " <> name, %{:fileName => "Main.hx", :lineNumber => 68, :className => "Main", :methodName => "processUser"})
-      1 ->
-        Log.trace("No user to process", %{:fileName => "Main.hx", :lineNumber => 69, :className => "Main", :methodName => "processUser"})
+        Log.trace("Processing user: " <> name, %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "processUser"})
+      :none ->
+        Log.trace("No user to process", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "processUser"})
     end
   end
   defp test_functional_operations() do
     user = David
-    _upper_name = OptionTools.map(user, fn name -> name.toUpperCase() end)
-    long_name = OptionTools.filter(user, fn name -> name.length > 3 end)
-    processed_user = OptionTools.then(user, fn name -> if (name.length > 0), do: name <> "!", else: :none end)
-    final_result = OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> name.toUpperCase() end), fn name -> name.length > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
+    _upper_name = OptionTools.map(user, fn name -> name.to_upper_case() end)
+    long_name = OptionTools.filter(user, fn name -> length(name) > 3 end)
+    processed_user = OptionTools.then(user, fn name -> if (length(name) > 0), do: name <> "!", else: :none end)
+    final_result = OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> name.to_upper_case() end), fn name -> length(name) > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
     greeting = OptionTools.unwrap(user, "Anonymous")
     expensive_default = OptionTools.lazy_unwrap(user, fn -> "Computed default" end)
     first = First
@@ -76,7 +76,7 @@ end
   defp test_null_safety() do
     maybe_null = nil
     safe_option = OptionTools.from_nullable(maybe_null)
-    _result = OptionTools.unwrap(OptionTools.map(safe_option, fn s -> s.length end), 0)
+    _result = OptionTools.unwrap(OptionTools.map(safe_option, fn s -> length(s) end), 0)
     has_value = OptionTools.is_some(safe_option)
     is_empty = OptionTools.is_none(safe_option)
     back_to_nullable = OptionTools.to_nullable(safe_option)

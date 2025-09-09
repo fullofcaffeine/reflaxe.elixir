@@ -1,3 +1,6 @@
 defmodule CreatePostsTable do
-  nil
+  @title nil
+  @content nil
+  @view_count nil
+  @user_id nil
 end

@@ -1,3 +1,10 @@
 defmodule LiveSocket_Impl_ do
-  nil
+  def _new(socket) do
+    this1 = nil
+    this1 = socket
+    this1
+  end
+  def pipe(socket, func) do
+    func.(socket)
+  end
 end

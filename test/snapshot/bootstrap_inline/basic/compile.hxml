@@ -1,0 +1,10 @@
+# Inline deterministic bootstrap generation test
+-cp .
+-cp ../../../../src
+-cp ../../../../std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out
+--macro reflaxe.elixir.CompilerInit.Start()
+-D bootstrap_strategy=inline_deterministic
+Main

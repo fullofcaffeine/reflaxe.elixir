@@ -1,5 +1,5 @@
 defmodule Main do
-  defp main() do
+  def main() do
     x = 42
     _y = 3.14
     _s = "Hello, AST!"
@@ -8,10 +8,10 @@ defmodule Main do
     _product = x * 2
     _comparison = x > 20
     if b do
-      Log.trace("Boolean is true", %{:fileName => "Main.hx", :lineNumber => 16, :className => "Main", :methodName => "main"})
+      Log.trace("Boolean is true", %{:file_name => "Main.hx", :line_number => 16, :class_name => "Main", :method_name => "main"})
     else
-      Log.trace("Boolean is false", %{:fileName => "Main.hx", :lineNumber => 18, :className => "Main", :methodName => "main"})
+      Log.trace("Boolean is false", %{:file_name => "Main.hx", :line_number => 18, :class_name => "Main", :method_name => "main"})
     end
-    Log.trace("Sum: " <> sum, %{:fileName => "Main.hx", :lineNumber => 22, :className => "Main", :methodName => "main"})
+    Log.trace("Sum: " <> Kernel.to_string(sum), %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "main"})
   end
 end

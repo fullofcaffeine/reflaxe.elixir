@@ -1,9 +1,8 @@
 defmodule Shape do
-  def new(x, y, name) do
-    %{:position => Point.new(x, y), :name => name}
-  end
+  @position nil
+  @name nil
   def draw(struct) do
-    "" <> struct.name <> " at " <> struct.position.toString()
+    "" <> struct.name <> " at " <> struct.position.to_string()
   end
   def get_position(struct) do
     struct.position

@@ -1,118 +1,114 @@
 defmodule OptionTools do
-  def map(option, transform) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def map(_option, transform) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         value = g
         transform.(value)
-      1 ->
+      :none ->
         :none
     end
   end
-  def then(option, transform) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def then(_option, transform) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         value = g
         transform.(value)
-      1 ->
+      :none ->
         :none
     end
   end
-  def flatten(option) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def flat_map(option, transform) do
+    then(option, transform)
+  end
+  def flatten(_option) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         inner = g
         inner
-      1 ->
+      :none ->
         :none
     end
   end
-  def filter(option, predicate) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def filter(_option, predicate) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         value = g
         if (predicate.(value)), do: value, else: :none
-      1 ->
+      :none ->
         :none
     end
   end
-  def unwrap(option, default_value) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def unwrap(_option, default_value) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         value = g
         value
-      1 ->
+      :none ->
         default_value
     end
   end
-  def lazy_unwrap(option, fn_param) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def lazy_unwrap(_option, fn_param) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         value = g
         value
-      1 ->
+      :none ->
         fn_param.()
     end
   end
   def or(first, second) do
-    case (elem(first, 0)) do
-      0 ->
+    case (first) do
+      {:some, _} ->
         _g = elem(first, 1)
         first
-      1 ->
+      :none ->
         second
     end
   end
   def lazy_or(first, fn_param) do
-    case (elem(first, 0)) do
-      0 ->
+    case (first) do
+      {:some, _} ->
         _g = elem(first, 1)
         first
-      1 ->
+      :none ->
         fn_param.()
     end
   end
-  def is_some(option) do
-    case (elem(option, 0)) do
-      0 ->
-        _g = elem(option, 1)
+  def is_some(_option) do
+    case (_option) do
+      {:some, _} ->
+        _g = elem(_option, 1)
         true
-      1 ->
+      :none ->
         false
     end
   end
-  def is_none(option) do
-    case (elem(option, 0)) do
-      0 ->
-        _g = elem(option, 1)
+  def is_none(_option) do
+    case (_option) do
+      {:some, _} ->
+        _g = elem(_option, 1)
         false
-      1 ->
+      :none ->
         true
     end
   end
   def all(options) do
     values = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {options, g, :ok}, fn _, {acc_options, acc_g, acc_state} ->
-  if (acc_g < acc_options.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, options, :ok}, fn _, {acc_g, acc_options, acc_state} ->
+  if (acc_g < length(acc_options)) do
     option = options[g]
     acc_g = acc_g + 1
-    case (elem(option, 0)) do
-      0 ->
-        acc_g = elem(option, 1)
-        value = acc_g
-        values ++ [value]
-      1 ->
-        :none
-    end
-    {:cont, {acc_options, acc_g, acc_state}}
+    nil
+    {:cont, {acc_g, acc_options, acc_state}}
   else
-    {:halt, {acc_options, acc_g, acc_state}}
+    {:halt, {acc_g, acc_options, acc_state}}
   end
 end)
     {:some, values}
@@ -120,86 +116,85 @@ end)
   def values(options) do
     result = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, options, :ok}, fn _, {acc_g, acc_options, acc_state} ->
-  if (acc_g < acc_options.length) do
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {options, g, :ok}, fn _, {acc_options, acc_g, acc_state} ->
+  if (acc_g < length(acc_options)) do
     option = options[g]
     acc_g = acc_g + 1
-    case (elem(option, 0)) do
-      0 ->
-        acc_g = elem(option, 1)
-        value = acc_g
-        result ++ [value]
-      1 ->
-        nil
-    end
-    {:cont, {acc_g, acc_options, acc_state}}
+    nil
+    {:cont, {acc_options, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_options, acc_state}}
+    {:halt, {acc_options, acc_g, acc_state}}
   end
 end)
     result
   end
-  def to_result(option, error) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def to_result(_option, error) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         value = g
         value
-      1 ->
+      :none ->
         error
     end
   end
-  def from_result(result) do
-    case (elem(result, 0)) do
-      0 ->
-        g = elem(result, 1)
+  def from_result(_result) do
+    case (_result) do
+      {:ok, _} ->
+        g = elem(_result, 1)
         value = g
         value
-      1 ->
-        _g = elem(result, 1)
+      {:error, _} ->
+        _g = elem(_result, 1)
         :none
     end
   end
   def from_nullable(value) do
     if (value != nil), do: value, else: :none
   end
-  def to_nullable(option) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def to_nullable(_option) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         value = g
         value
-      1 ->
+      :none ->
         nil
     end
   end
-  def to_reply(option) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def to_reply(_option) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         value = g
         %{:reply => value, :status => "ok"}
-      1 ->
+      :none ->
         %{:reply => nil, :status => "none"}
     end
   end
-  def expect(option, _message) do
-    case (elem(option, 0)) do
-      0 ->
-        g = elem(option, 1)
+  def expect(_option, _message) do
+    case (_option) do
+      {:some, _} ->
+        g = elem(_option, 1)
         value = g
         value
-      1 ->
-        throw("Expected Some value but got None: " <> message)
+      :none ->
+        throw("Expected Some value but got None: " <> _message)
     end
   end
+  def some(value) do
+    {:some, value}
+  end
+  def none() do
+    :none
+  end
   def apply(option, fn_param) do
-    case (elem(option, 0)) do
-      0 ->
+    case (option) do
+      {:some, _} ->
         g = elem(option, 1)
         value = g
         fn_param.(value)
-      1 ->
+      :none ->
         nil
     end
     option

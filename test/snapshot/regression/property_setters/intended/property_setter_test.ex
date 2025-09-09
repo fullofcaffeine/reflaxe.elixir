@@ -1,7 +1,6 @@
 defmodule PropertySetterTest do
-  def new() do
-    %{}
-  end
+  @value nil
+  @name nil
   defp set_value(_struct, v) do
     v
   end

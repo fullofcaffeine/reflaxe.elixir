@@ -1,5 +1,5 @@
 defmodule TreeNode do
-  def new() do
-    %{:_height => 0}
-  end
+  @_height nil
+  @left nil
+  @right nil
 end

@@ -1,5 +1,5 @@
 defmodule Std do
   def string(value) do
-    to_string(value)
+    inspect(value)
   end
 end

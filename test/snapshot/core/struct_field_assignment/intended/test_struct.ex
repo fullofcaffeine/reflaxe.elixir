@@ -1,9 +1,7 @@
 defmodule TestStruct do
-  def new() do
-    %{:field => ""}
-  end
+  @field nil
   def write(struct, value) do
-    g = {:Typeof, value}
+    g = Type.typeof(value)
     case (elem(g, 0)) do
       0 ->
         field = struct.field <> "null"

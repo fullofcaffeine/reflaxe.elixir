@@ -108,8 +108,9 @@ enum EntrypointMode {
 
 // Bootstrap emission strategy
 enum BootstrapStrategy {
-    Inline;   // Emit requires + Main.main() inline in module file
-    External; // Defer to final output phase (bootstrap file per module)
+    Inline;              // Emit requires + Main.main() inline in module file (legacy/simple)
+    InlineDeterministic; // Inject inline at final output phase using full graph (deterministic)
+    External;            // Defer to final output phase (emit <module>.exs script per entrypoint)
 }
 
 class ModuleBuilder {
@@ -311,11 +312,21 @@ class ModuleBuilder {
      * 2) inline_bootstrap (boolean define) → Inline
      * 3) Default → External for stricter, deterministic dependency loading
      */
+    /**
+     * Select the bootstrap strategy from defines.
+     *
+     * Supported values:
+     * - bootstrap_strategy=inline              → BootstrapStrategy.Inline
+     * - bootstrap_strategy=inline_deterministic→ BootstrapStrategy.InlineDeterministic
+     * - bootstrap_strategy=external (default)  → BootstrapStrategy.External
+     * - inline_bootstrap (boolean define)      → BootstrapStrategy.Inline (compat alias)
+     */
     public static function getBootstrapStrategy(): BootstrapStrategy {
         var val = haxe.macro.Context.definedValue("bootstrap_strategy");
         if (val != null) {
             var v = val.toLowerCase();
             if (v == "inline") return BootstrapStrategy.Inline;
+            if (v == "inline_deterministic") return BootstrapStrategy.InlineDeterministic;
             if (v == "external") return BootstrapStrategy.External;
         }
         if (haxe.macro.Context.defined("inline_bootstrap")) return BootstrapStrategy.Inline;

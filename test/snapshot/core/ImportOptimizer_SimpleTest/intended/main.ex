@@ -8,7 +8,7 @@ defmodule Main do
     text = "hello world"
     text = StringTools.ltrim(StringTools.rtrim(text))
     text = StringTools.replace(text, "world", "universe")
-    Log.trace("Result: " <> Std.string(result), %{:fileName => "Main.hx", :lineNumber => 25, :className => "Main", :methodName => "main"})
-    Log.trace("Text: " <> text, %{:fileName => "Main.hx", :lineNumber => 26, :className => "Main", :methodName => "main"})
+    Log.trace("Result: " <> Std.string(result), %{:file_name => "Main.hx", :line_number => 25, :class_name => "Main", :method_name => "main"})
+    Log.trace("Text: " <> text, %{:file_name => "Main.hx", :line_number => 26, :class_name => "Main", :method_name => "main"})
   end
 end

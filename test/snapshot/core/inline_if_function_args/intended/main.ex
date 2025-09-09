@@ -1,5 +1,5 @@
 defmodule Main do
-  defp main() do
+  def main() do
     test_map_put()
     test_function_calls()
     test_multiple_inline_ifs()
@@ -15,7 +15,7 @@ defmodule Main do
     is_active = false
     map = Map.put(map, "status", (if is_active, do: "active", else: "inactive"))
     maybe = nil
-    map = Map.put(map, "nullable", (if (maybe != nil), do: maybe, else: "default"))
+    Map.put(map, "nullable", (if (maybe != nil), do: maybe, else: "default"))
   end
   defp test_function_calls() do
     flag = true
@@ -49,7 +49,7 @@ else
   "disabled"
 end)
     str = "test"
-    process_string((if (str.length > 3), do: "long", else: "short"))
+    process_string((if (length(str) > 3), do: "long", else: "short"))
   end
   defp process_string(s) do
     "Processed: " <> s
@@ -61,7 +61,7 @@ end)
     "" <> a <> ", " <> b <> ", " <> c
   end
   defp process_mixed(a, b, c, d) do
-    "" <> a <> ", " <> b <> ", " <> c <> ", " <> d
+    "" <> a <> ", " <> b <> ", " <> Kernel.to_string(c) <> ", " <> Kernel.to_string(d)
   end
   defp get_value(key) do
     "value_" <> key
@@ -70,6 +70,6 @@ end)
     "[" <> s <> "]"
   end
   defp compute_value(n) do
-    "computed_" <> n
+    "computed_" <> Kernel.to_string(n)
   end
 end

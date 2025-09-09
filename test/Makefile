@@ -205,6 +205,13 @@ run:
 		echo "❌ No output directory found. Run the test first: make single TEST=$(TEST)"; \
 		exit 1; \
 	fi; \
+	# Prefer <module>.exs or main.exs when present
+	if ls "$$testdir/out"/*.exs >/dev/null 2>&1; then \
+		entry=$$(ls "$$testdir/out"/*.exs | head -n1); \
+		echo "Running $$entry..."; \
+		cd $$testdir/out && elixir "$$(basename $$entry)"; \
+		exit $$?; \
+	fi; \
 	file=$${FILE:-main.ex}; \
 	if [ ! -f "$$testdir/out/$$file" ]; then \
 		echo "❌ File not found: $$testdir/out/$$file"; \

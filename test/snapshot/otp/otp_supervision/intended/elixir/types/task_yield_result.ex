@@ -1,4 +1,4 @@
-defmodule Elixir.Types.TaskYieldResult do
+defmodule elixir.types.TaskYieldResult do
   def ok(arg0) do
     {:Ok, arg0}
   end

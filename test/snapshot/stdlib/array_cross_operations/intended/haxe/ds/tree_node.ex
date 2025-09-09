@@ -1,7 +1,9 @@
 defmodule TreeNode do
-  def new(l, k, v, r, h) do
-    %{:left => l, :key => k, :value => v, :right => r, :_height => (if (h == -1), do: 1, else: h)}
-  end
+  @left nil
+  @right nil
+  @key nil
+  @value nil
+  @_height nil
   def get_height(struct) do
     struct._height
   end

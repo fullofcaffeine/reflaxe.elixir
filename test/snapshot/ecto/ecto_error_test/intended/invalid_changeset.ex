@@ -1,5 +1,3 @@
 defmodule InvalidChangeset do
-  def new() do
-    %{}
-  end
+  nil
 end

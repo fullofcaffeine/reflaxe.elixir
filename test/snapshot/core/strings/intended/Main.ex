@@ -3,59 +3,59 @@ defmodule Main do
     str1 = "Hello"
     str2 = "World"
     str3 = str1 <> " " <> str2
-    Log.trace(str3, %{:fileName => "Main.hx", :lineNumber => 15, :className => "Main", :methodName => "stringBasics"})
+    Log.trace(str3, %{:file_name => "Main.hx", :line_number => 15, :class_name => "Main", :method_name => "stringBasics"})
     multiline = "This is\na multi-line\nstring"
-    Log.trace(multiline, %{:fileName => "Main.hx", :lineNumber => 21, :className => "Main", :methodName => "stringBasics"})
-    Log.trace("Length of \"" <> str3 <> "\": " <> str3.length, %{:fileName => "Main.hx", :lineNumber => 24, :className => "Main", :methodName => "stringBasics"})
+    Log.trace(multiline, %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "stringBasics"})
+    Log.trace("Length of \"" <> str3 <> "\": " <> Kernel.to_string(length(str3)), %{:file_name => "Main.hx", :line_number => 24, :class_name => "Main", :method_name => "stringBasics"})
   end
   def string_interpolation() do
     name = "Alice"
     age = 30
     pi = 3.14159
-    Log.trace("Hello, " <> name <> "!", %{:fileName => "Main.hx", :lineNumber => 34, :className => "Main", :methodName => "stringInterpolation"})
-    Log.trace("Age: " <> age, %{:fileName => "Main.hx", :lineNumber => 35, :className => "Main", :methodName => "stringInterpolation"})
-    Log.trace("Next year, " <> name <> " will be " <> (age + 1), %{:fileName => "Main.hx", :lineNumber => 38, :className => "Main", :methodName => "stringInterpolation"})
-    Log.trace("Pi rounded: " <> Std.int(pi * 100 + 0.5) / 100, %{:fileName => "Main.hx", :lineNumber => 39, :className => "Main", :methodName => "stringInterpolation"})
+    Log.trace("Hello, " <> name <> "!", %{:file_name => "Main.hx", :line_number => 34, :class_name => "Main", :method_name => "stringInterpolation"})
+    Log.trace("Age: " <> Kernel.to_string(age), %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "stringInterpolation"})
+    Log.trace("Next year, " <> name <> " will be " <> Kernel.to_string((age + 1)), %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "stringInterpolation"})
+    Log.trace("Pi rounded: " <> Kernel.to_string(Std.int(pi * 100 + 0.5) / 100), %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "stringInterpolation"})
     person_name = nil
     person_age = nil
     person_name = "Bob"
     person_age = 25
-    Log.trace("Person: " <> person_name <> " is " <> person_age <> " years old", %{:fileName => "Main.hx", :lineNumber => 43, :className => "Main", :methodName => "stringInterpolation"})
+    Log.trace("Person: " <> person_name <> " is " <> Kernel.to_string(person_age) <> " years old", %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "stringInterpolation"})
     items = ["apple", "banana", "orange"]
-    Log.trace("Items: " <> Enum.join(items, ", "), %{:fileName => "Main.hx", :lineNumber => 47, :className => "Main", :methodName => "stringInterpolation"})
-    Log.trace("First item: " <> items[0].toUpperCase(), %{:fileName => "Main.hx", :lineNumber => 48, :className => "Main", :methodName => "stringInterpolation"})
+    Log.trace("Items: " <> Enum.join(items, ", "), %{:file_name => "Main.hx", :line_number => 47, :class_name => "Main", :method_name => "stringInterpolation"})
+    Log.trace("First item: " <> items[0].to_upper_case(), %{:file_name => "Main.hx", :line_number => 48, :class_name => "Main", :method_name => "stringInterpolation"})
   end
   def string_methods() do
     str = "  Hello, World!  "
-    Log.trace("Trimmed: \"" <> StringTools.ltrim(StringTools.rtrim(str)) <> "\"", %{:fileName => "Main.hx", :lineNumber => 56, :className => "Main", :methodName => "stringMethods"})
-    Log.trace("Upper: " <> str.toUpperCase(), %{:fileName => "Main.hx", :lineNumber => 59, :className => "Main", :methodName => "stringMethods"})
-    Log.trace("Lower: " <> str.toLowerCase(), %{:fileName => "Main.hx", :lineNumber => 60, :className => "Main", :methodName => "stringMethods"})
+    Log.trace("Trimmed: \"" <> StringTools.ltrim(StringTools.rtrim(str)) <> "\"", %{:file_name => "Main.hx", :line_number => 56, :class_name => "Main", :method_name => "stringMethods"})
+    Log.trace("Upper: " <> str.to_upper_case(), %{:file_name => "Main.hx", :line_number => 59, :class_name => "Main", :method_name => "stringMethods"})
+    Log.trace("Lower: " <> str.to_lower_case(), %{:file_name => "Main.hx", :line_number => 60, :class_name => "Main", :method_name => "stringMethods"})
     text = "Hello, World!"
-    Log.trace("Substring(0, 5): " <> text.substring(0, 5), %{:fileName => "Main.hx", :lineNumber => 64, :className => "Main", :methodName => "stringMethods"})
-    Log.trace("Substr(7, 5): " <> text.substr(7, 5), %{:fileName => "Main.hx", :lineNumber => 65, :className => "Main", :methodName => "stringMethods"})
-    Log.trace("Char at 0: " <> text.charAt(0), %{:fileName => "Main.hx", :lineNumber => 68, :className => "Main", :methodName => "stringMethods"})
-    Log.trace("Char code at 0: " <> text.charCodeAt(0), %{:fileName => "Main.hx", :lineNumber => 69, :className => "Main", :methodName => "stringMethods"})
-    Log.trace("Index of \"World\": " <> text.indexOf("World"), %{:fileName => "Main.hx", :lineNumber => 72, :className => "Main", :methodName => "stringMethods"})
-    Log.trace("Last index of \"o\": " <> text.lastIndexOf("o"), %{:fileName => "Main.hx", :lineNumber => 73, :className => "Main", :methodName => "stringMethods"})
+    Log.trace("Substring(0, 5): " <> text.substring(0, 5), %{:file_name => "Main.hx", :line_number => 64, :class_name => "Main", :method_name => "stringMethods"})
+    Log.trace("Substr(7, 5): " <> text.substr(7, 5), %{:file_name => "Main.hx", :line_number => 65, :class_name => "Main", :method_name => "stringMethods"})
+    Log.trace("Char at 0: " <> text.char_at(0), %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "stringMethods"})
+    Log.trace("Char code at 0: " <> Kernel.to_string(text.char_code_at(0)), %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "stringMethods"})
+    Log.trace("Index of \"World\": " <> Kernel.to_string(text.index_of("World")), %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "stringMethods"})
+    Log.trace("Last index of \"o\": " <> Kernel.to_string(text.last_index_of("o")), %{:file_name => "Main.hx", :line_number => 73, :class_name => "Main", :method_name => "stringMethods"})
     parts = text.split(", ")
-    Log.trace("Split parts: " <> Std.string(parts), %{:fileName => "Main.hx", :lineNumber => 77, :className => "Main", :methodName => "stringMethods"})
+    Log.trace("Split parts: " <> Std.string(parts), %{:file_name => "Main.hx", :line_number => 77, :class_name => "Main", :method_name => "stringMethods"})
     joined = Enum.join(parts, " - ")
-    Log.trace("Joined: " <> joined, %{:fileName => "Main.hx", :lineNumber => 79, :className => "Main", :methodName => "stringMethods"})
+    Log.trace("Joined: " <> joined, %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "stringMethods"})
     replaced = StringTools.replace(text, "World", "Haxe")
-    Log.trace("Replaced: " <> replaced, %{:fileName => "Main.hx", :lineNumber => 83, :className => "Main", :methodName => "stringMethods"})
+    Log.trace("Replaced: " <> replaced, %{:file_name => "Main.hx", :line_number => 83, :class_name => "Main", :method_name => "stringMethods"})
   end
   def string_comparison() do
     str1 = "apple"
     str2 = "Apple"
     str3 = "apple"
     str4 = "banana"
-    Log.trace("str1 == str3: " <> Std.string(str1 == str3), %{:fileName => "Main.hx", :lineNumber => 94, :className => "Main", :methodName => "stringComparison"})
-    Log.trace("str1 == str2: " <> Std.string(str1 == str2), %{:fileName => "Main.hx", :lineNumber => 95, :className => "Main", :methodName => "stringComparison"})
+    Log.trace("str1 == str3: " <> Std.string(str1 == str3), %{:file_name => "Main.hx", :line_number => 94, :class_name => "Main", :method_name => "stringComparison"})
+    Log.trace("str1 == str2: " <> Std.string(str1 == str2), %{:file_name => "Main.hx", :line_number => 95, :class_name => "Main", :method_name => "stringComparison"})
     if (str1 < str4) do
-      Log.trace("" <> str1 <> " comes before " <> str4, %{:fileName => "Main.hx", :lineNumber => 99, :className => "Main", :methodName => "stringComparison"})
+      Log.trace("" <> str1 <> " comes before " <> str4, %{:file_name => "Main.hx", :line_number => 99, :class_name => "Main", :method_name => "stringComparison"})
     end
-    if (str1.toLowerCase() == str2.toLowerCase()) do
-      Log.trace("" <> str1 <> " and " <> str2 <> " are equal (case-insensitive)", %{:fileName => "Main.hx", :lineNumber => 104, :className => "Main", :methodName => "stringComparison"})
+    if (str1.to_lower_case() == str2.to_lower_case()) do
+      Log.trace("" <> str1 <> " and " <> str2 <> " are equal (case-insensitive)", %{:file_name => "Main.hx", :line_number => 104, :class_name => "Main", :method_name => "stringComparison"})
     end
   end
   def string_building() do
@@ -68,83 +68,75 @@ defmodule Main do
     buf.add("!")
     buf.add("!")
     result = IO.iodata_to_binary(buf)
-    Log.trace("Built string: " <> result, %{:fileName => "Main.hx", :lineNumber => 122, :className => "Main", :methodName => "stringBuilding"})
+    Log.trace("Built string: " <> result, %{:file_name => "Main.hx", :line_number => 122, :class_name => "Main", :method_name => "stringBuilding"})
     parts = []
-    parts = parts ++ ["Item " <> 1]
-    parts = parts ++ ["Item " <> 2]
-    parts = parts ++ ["Item " <> 3]
-    parts = parts ++ ["Item " <> 4]
-    parts = parts ++ ["Item " <> 5]
+    parts = parts ++ ["Item " <> Kernel.to_string(1)]
+    parts = parts ++ ["Item " <> Kernel.to_string(2)]
+    parts = parts ++ ["Item " <> Kernel.to_string(3)]
+    parts = parts ++ ["Item " <> Kernel.to_string(4)]
+    parts = parts ++ ["Item " <> Kernel.to_string(5)]
     list = Enum.join(parts, ", ")
-    Log.trace("List: " <> list, %{:fileName => "Main.hx", :lineNumber => 130, :className => "Main", :methodName => "stringBuilding"})
+    Log.trace("List: " <> list, %{:file_name => "Main.hx", :line_number => 130, :class_name => "Main", :method_name => "stringBuilding"})
   end
   def regex_operations() do
     text = "The year is 2024 and the time is 15:30"
     digit_regex = EReg.new("\\d+", "")
     if (digit_regex.match(text)) do
-      Log.trace("First number found: " <> digit_regex.matched(0), %{:fileName => "Main.hx", :lineNumber => 140, :className => "Main", :methodName => "regexOperations"})
+      Log.trace("First number found: " <> digit_regex.matched(0), %{:file_name => "Main.hx", :line_number => 140, :class_name => "Main", :method_name => "regexOperations"})
     end
     all_numbers = EReg.new("\\d+", "g")
     numbers = []
     temp = text
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {temp, all_numbers, :ok}, fn _, {acc_temp, acc_all_numbers, acc_state} ->
-  if (acc_all_numbers.match(acc_temp)) do
-    numbers ++ [acc_all_numbers.matched(0)]
-    acc_temp = acc_all_numbers.matchedRight()
-    {:cont, {acc_temp, acc_all_numbers, acc_state}}
-  else
-    {:halt, {acc_temp, acc_all_numbers, acc_state}}
-  end
-end)
-    Log.trace("All numbers: " <> Std.string(numbers), %{:fileName => "Main.hx", :lineNumber => 151, :className => "Main", :methodName => "regexOperations"})
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {temp, all_numbers, :ok}, fn _, {acc_temp, acc_all_numbers, acc_state} -> nil end)
+    Log.trace("All numbers: " <> Std.string(numbers), %{:file_name => "Main.hx", :line_number => 151, :class_name => "Main", :method_name => "regexOperations"})
     replaced = EReg.new("\\d+", "").replace(text, "XXX")
-    Log.trace("Numbers replaced: " <> replaced, %{:fileName => "Main.hx", :lineNumber => 155, :className => "Main", :methodName => "regexOperations"})
+    Log.trace("Numbers replaced: " <> replaced, %{:file_name => "Main.hx", :line_number => 155, :class_name => "Main", :method_name => "regexOperations"})
     email = "user@example.com"
     email_regex = EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")
-    Log.trace("Is valid email: " <> Std.string(email_regex.match(email)), %{:fileName => "Main.hx", :lineNumber => 160, :className => "Main", :methodName => "regexOperations"})
+    Log.trace("Is valid email: " <> Std.string(email_regex.match(email)), %{:file_name => "Main.hx", :line_number => 160, :class_name => "Main", :method_name => "regexOperations"})
   end
   def string_formatting() do
     num = 42
     padded = StringTools.lpad(Std.string(num), "0", 5)
-    Log.trace("Padded number: " <> padded, %{:fileName => "Main.hx", :lineNumber => 168, :className => "Main", :methodName => "stringFormatting"})
+    Log.trace("Padded number: " <> padded, %{:file_name => "Main.hx", :line_number => 168, :class_name => "Main", :method_name => "stringFormatting"})
     text = "Hi"
     rpadded = StringTools.rpad(text, " ", 10) <> "|"
-    Log.trace("Right padded: " <> rpadded, %{:fileName => "Main.hx", :lineNumber => 172, :className => "Main", :methodName => "stringFormatting"})
+    Log.trace("Right padded: " <> rpadded, %{:file_name => "Main.hx", :line_number => 172, :class_name => "Main", :method_name => "stringFormatting"})
     hex = StringTools.hex(255)
-    Log.trace("255 in hex: " <> hex, %{:fileName => "Main.hx", :lineNumber => 176, :className => "Main", :methodName => "stringFormatting"})
+    Log.trace("255 in hex: " <> hex, %{:file_name => "Main.hx", :line_number => 176, :class_name => "Main", :method_name => "stringFormatting"})
     url = "Hello World!"
     encoded = StringTools.url_encode(url)
-    Log.trace("URL encoded: " <> encoded, %{:fileName => "Main.hx", :lineNumber => 181, :className => "Main", :methodName => "stringFormatting"})
+    Log.trace("URL encoded: " <> encoded, %{:file_name => "Main.hx", :line_number => 181, :class_name => "Main", :method_name => "stringFormatting"})
     decoded = StringTools.url_decode(encoded)
-    Log.trace("URL decoded: " <> decoded, %{:fileName => "Main.hx", :lineNumber => 183, :className => "Main", :methodName => "stringFormatting"})
+    Log.trace("URL decoded: " <> decoded, %{:file_name => "Main.hx", :line_number => 183, :class_name => "Main", :method_name => "stringFormatting"})
   end
   def unicode_strings() do
     unicode = "Hello 世界 🌍"
-    Log.trace("Unicode string: " <> unicode, %{:fileName => "Main.hx", :lineNumber => 189, :className => "Main", :methodName => "unicodeStrings"})
-    Log.trace("Length: " <> unicode.length, %{:fileName => "Main.hx", :lineNumber => 190, :className => "Main", :methodName => "unicodeStrings"})
+    Log.trace("Unicode string: " <> unicode, %{:file_name => "Main.hx", :line_number => 189, :class_name => "Main", :method_name => "unicodeStrings"})
+    Log.trace("Length: " <> Kernel.to_string(length(unicode)), %{:file_name => "Main.hx", :line_number => 190, :class_name => "Main", :method_name => "unicodeStrings"})
     escaped = "Line 1\nLine 2\tTabbed\r\nLine 3"
-    Log.trace("Escaped: " <> escaped, %{:fileName => "Main.hx", :lineNumber => 194, :className => "Main", :methodName => "unicodeStrings"})
+    Log.trace("Escaped: " <> escaped, %{:file_name => "Main.hx", :line_number => 194, :class_name => "Main", :method_name => "unicodeStrings"})
     quote_param = "She said \"Hello\""
-    Log.trace("Quote: " <> quote_param, %{:fileName => "Main.hx", :lineNumber => 197, :className => "Main", :methodName => "unicodeStrings"})
+    Log.trace("Quote: " <> quote_param, %{:file_name => "Main.hx", :line_number => 197, :class_name => "Main", :method_name => "unicodeStrings"})
     backslash = "Path: C:\\Users\\Name"
-    Log.trace("Backslash: " <> backslash, %{:fileName => "Main.hx", :lineNumber => 200, :className => "Main", :methodName => "unicodeStrings"})
+    Log.trace("Backslash: " <> backslash, %{:file_name => "Main.hx", :line_number => 200, :class_name => "Main", :method_name => "unicodeStrings"})
   end
   def main() do
-    Log.trace("=== String Basics ===", %{:fileName => "Main.hx", :lineNumber => 204, :className => "Main", :methodName => "main"})
+    Log.trace("=== String Basics ===", %{:file_name => "Main.hx", :line_number => 204, :class_name => "Main", :method_name => "main"})
     string_basics()
-    Log.trace("\n=== String Interpolation ===", %{:fileName => "Main.hx", :lineNumber => 207, :className => "Main", :methodName => "main"})
+    Log.trace("\n=== String Interpolation ===", %{:file_name => "Main.hx", :line_number => 207, :class_name => "Main", :method_name => "main"})
     string_interpolation()
-    Log.trace("\n=== String Methods ===", %{:fileName => "Main.hx", :lineNumber => 210, :className => "Main", :methodName => "main"})
+    Log.trace("\n=== String Methods ===", %{:file_name => "Main.hx", :line_number => 210, :class_name => "Main", :method_name => "main"})
     string_methods()
-    Log.trace("\n=== String Comparison ===", %{:fileName => "Main.hx", :lineNumber => 213, :className => "Main", :methodName => "main"})
+    Log.trace("\n=== String Comparison ===", %{:file_name => "Main.hx", :line_number => 213, :class_name => "Main", :method_name => "main"})
     string_comparison()
-    Log.trace("\n=== String Building ===", %{:fileName => "Main.hx", :lineNumber => 216, :className => "Main", :methodName => "main"})
+    Log.trace("\n=== String Building ===", %{:file_name => "Main.hx", :line_number => 216, :class_name => "Main", :method_name => "main"})
     string_building()
-    Log.trace("\n=== Regex Operations ===", %{:fileName => "Main.hx", :lineNumber => 219, :className => "Main", :methodName => "main"})
+    Log.trace("\n=== Regex Operations ===", %{:file_name => "Main.hx", :line_number => 219, :class_name => "Main", :method_name => "main"})
     regex_operations()
-    Log.trace("\n=== String Formatting ===", %{:fileName => "Main.hx", :lineNumber => 222, :className => "Main", :methodName => "main"})
+    Log.trace("\n=== String Formatting ===", %{:file_name => "Main.hx", :line_number => 222, :class_name => "Main", :method_name => "main"})
     string_formatting()
-    Log.trace("\n=== Unicode Strings ===", %{:fileName => "Main.hx", :lineNumber => 225, :className => "Main", :methodName => "main"})
+    Log.trace("\n=== Unicode Strings ===", %{:file_name => "Main.hx", :line_number => 225, :class_name => "Main", :method_name => "main"})
     unicode_strings()
   end
 end

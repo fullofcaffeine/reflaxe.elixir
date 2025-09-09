@@ -1,4 +1,4 @@
-defmodule Phoenix.HandleInfoResult do
+defmodule phoenix.HandleInfoResult do
   def no_reply(arg0) do
     {:NoReply, arg0}
   end

@@ -12,14 +12,14 @@ defmodule AlternateAppWeb do
   end
   def controller() do
     quote do
-      use Phoenix.Controller, [formats: [:html, :json], layouts: [html: {AlternateAppWeb.Layouts, :app}]]
+      use Phoenix.Controller, formats: [:html, :json], layouts: [html: {AlternateAppWeb.Layouts, :app}]
       import Plug.Conn
       unquote(verified_routes())
     end
   end
   def live_view() do
     quote do
-      use Phoenix.LiveView, [layout: {AlternateAppWeb.Layouts, :app}]
+      use Phoenix.LiveView, layout: {AlternateAppWeb.Layouts, :app}
       unquote(html_helpers())
       _ = nil
     end
@@ -48,7 +48,7 @@ defmodule AlternateAppWeb do
   end
   def verified_routes() do
     quote do
-      use Phoenix.VerifiedRoutes, [endpoint: :"AlternateAppWeb.Endpoint", router: :"AlternateAppWeb.Router", statics: AlternateAppWeb.static_paths()]
+      use Phoenix.VerifiedRoutes, endpoint: :"AlternateAppWeb.Endpoint", router: :"AlternateAppWeb.Router", statics: AlternateAppWeb.static_paths()
     end
   end
   def channel() do

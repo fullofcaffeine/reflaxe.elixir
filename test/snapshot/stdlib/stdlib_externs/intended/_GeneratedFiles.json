@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "value_type.ex",
+  "type.ex",
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
@@ -41,6 +42,7 @@
   "elixir/types/_agent_ref/agent_ref_impl_.ex",
   "elixir/registry_error.ex",
   "elixir/comparison_result.ex",
+  "bootstrap_main.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],

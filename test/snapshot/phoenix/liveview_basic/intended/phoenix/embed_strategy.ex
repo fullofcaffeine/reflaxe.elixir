@@ -1,4 +1,4 @@
-defmodule Phoenix.EmbedStrategy do
+defmodule phoenix.EmbedStrategy do
   def replace() do
     {:Replace}
   end

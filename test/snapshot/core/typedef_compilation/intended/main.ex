@@ -1,5 +1,5 @@
 defmodule Main do
-  defp main() do
+  def main() do
     user_id = 123
     username = "john_doe"
     _score = 98.5
@@ -29,6 +29,7 @@ defmodule Main do
     company_address_zip_code = "94102"
     company_address_country = "USA"
     success_result_value = nil
+    success_result_ok = nil
     success_result_ok = true
     success_result_value = "Success!"
     error_result_ok = nil
@@ -36,19 +37,23 @@ defmodule Main do
     error_result_ok = false
     error_result_error = "Something went wrong"
     pair_second = nil
+    pair_first = nil
     pair_first = 42
     pair_second = "Answer"
     _callback = fn _msg, code -> code == 200 end
-    handler = fn -> Log.trace("Async operation complete", %{:fileName => "Main.hx", :lineNumber => 145, :className => "Main", :methodName => "main"}) end
+    handler = fn -> Log.trace("Async operation complete", %{:file_name => "Main.hx", :line_number => 145, :class_name => "Main", :method_name => "main"}) end
     api_response_status = nil
     api_response_metadata_version = nil
     api_response_metadata_timestamp = nil
     api_response_data_ok = nil
     api_response_status = 200
     api_response_data_ok = true
-    api_response_metadata_timestamp = Date.now().getTime()
+    _this = Date.now()
+    api_response_metadata_timestamp = DateTime.to_unix(this.datetime, :millisecond)
     api_response_metadata_version = "1.0.0"
+    success_status_success = nil
     success_status_success = true
+    error_status_error = nil
     error_status_error = "Failed to process"
     tree_value = nil
     tree_right_value = nil
@@ -60,6 +65,6 @@ defmodule Main do
     tree_left_left_value = 3
     tree_left_right_value = 7
     tree_right_value = 15
-    Log.trace("Typedef compilation test complete", %{:fileName => "Main.hx", :lineNumber => 183, :className => "Main", :methodName => "main"})
+    Log.trace("Typedef compilation test complete", %{:file_name => "Main.hx", :line_number => 183, :class_name => "Main", :method_name => "main"})
   end
 end

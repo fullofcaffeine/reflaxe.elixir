@@ -1,4 +1,4 @@
-defmodule Reflaxe.Elixir.Macros.HttpMethod do
+defmodule reflaxe.elixir.macros.HttpMethod do
   def get() do
     {:GET}
   end

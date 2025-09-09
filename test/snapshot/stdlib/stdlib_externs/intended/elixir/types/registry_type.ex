@@ -1,4 +1,4 @@
-defmodule Elixir.Types.RegistryType do
+defmodule elixir.types.RegistryType do
   def unique() do
     {:Unique}
   end

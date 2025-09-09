@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "value_type.ex",
+  "type.ex",
   "test_struct.ex",
   "string_buf.ex",
   "std.ex",
@@ -10,6 +11,7 @@
   "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
+  "bootstrap_main.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],

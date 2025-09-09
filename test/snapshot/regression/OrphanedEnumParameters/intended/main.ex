@@ -1,5 +1,5 @@
 defmodule Main do
-  defp main() do
+  def main() do
     test_basic_enum()
     test_multiple_parameters()
     test_empty_cases()
@@ -13,19 +13,19 @@ defmodule Main do
       0 ->
         g = elem(msg, 1)
         content = g
-        Log.trace("Created: " <> content, %{:fileName => "Main.hx", :lineNumber => 38, :className => "Main", :methodName => "testBasicEnum"})
+        Log.trace("Created: " <> content, %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "testBasicEnum"})
       1 ->
         g = elem(msg, 1)
         g1 = elem(msg, 2)
         id = g
         content = g1
-        Log.trace("Updated " <> id <> ": " <> content, %{:fileName => "Main.hx", :lineNumber => 40, :className => "Main", :methodName => "testBasicEnum"})
+        Log.trace("Updated " <> Kernel.to_string(id) <> ": " <> content, %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "testBasicEnum"})
       2 ->
         g = elem(msg, 1)
         id = g
-        Log.trace("Deleted: " <> id, %{:fileName => "Main.hx", :lineNumber => 42, :className => "Main", :methodName => "testBasicEnum"})
+        Log.trace("Deleted: " <> Kernel.to_string(id), %{:file_name => "Main.hx", :line_number => 42, :class_name => "Main", :method_name => "testBasicEnum"})
       3 ->
-        Log.trace("Empty message", %{:fileName => "Main.hx", :lineNumber => 44, :className => "Main", :methodName => "testBasicEnum"})
+        Log.trace("Empty message", %{:file_name => "Main.hx", :line_number => 44, :class_name => "Main", :method_name => "testBasicEnum"})
     end
   end
   defp test_multiple_parameters() do
@@ -38,17 +38,17 @@ defmodule Main do
         x = g
         y = g1
         z = g2
-        Log.trace("Moving to (" <> x <> ", " <> y <> ", " <> z <> ")", %{:fileName => "Main.hx", :lineNumber => 53, :className => "Main", :methodName => "testMultipleParameters"})
+        Log.trace("Moving to (" <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y) <> ", " <> Kernel.to_string(z) <> ")", %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "testMultipleParameters"})
       1 ->
         g = elem(action, 1)
         g1 = elem(action, 2)
         angle = g
         axis = g1
-        Log.trace("Rotating " <> angle <> " degrees on " <> axis, %{:fileName => "Main.hx", :lineNumber => 55, :className => "Main", :methodName => "testMultipleParameters"})
+        Log.trace("Rotating " <> Kernel.to_string(angle) <> " degrees on " <> axis, %{:file_name => "Main.hx", :line_number => 55, :class_name => "Main", :method_name => "testMultipleParameters"})
       2 ->
         g = elem(action, 1)
         factor = g
-        Log.trace("Scaling by " <> factor, %{:fileName => "Main.hx", :lineNumber => 57, :className => "Main", :methodName => "testMultipleParameters"})
+        Log.trace("Scaling by " <> Kernel.to_string(factor), %{:file_name => "Main.hx", :line_number => 57, :class_name => "Main", :method_name => "testMultipleParameters"})
     end
   end
   defp test_empty_cases() do
@@ -71,7 +71,7 @@ defmodule Main do
         _key = g
         nil
     end
-    Log.trace("Empty cases handled", %{:fileName => "Main.hx", :lineNumber => 75, :className => "Main", :methodName => "testEmptyCases"})
+    Log.trace("Empty cases handled", %{:file_name => "Main.hx", :line_number => 75, :class_name => "Main", :method_name => "testEmptyCases"})
   end
   defp test_fall_through() do
     state = {:Loading, 50}
@@ -84,7 +84,7 @@ defmodule Main do
       1 ->
         g = elem(state, 1)
         progress = g
-        description = "Progress: " <> progress <> "%"
+        description = "Progress: " <> Kernel.to_string(progress) <> "%"
       2 ->
         g = elem(state, 1)
         result = g
@@ -94,7 +94,7 @@ defmodule Main do
         msg = g
         description = "Error: " <> msg
     end
-    Log.trace(description, %{:fileName => "Main.hx", :lineNumber => 93, :className => "Main", :methodName => "testFallThrough"})
+    Log.trace(description, %{:file_name => "Main.hx", :line_number => 93, :class_name => "Main", :method_name => "testFallThrough"})
   end
   defp test_nested_enums() do
     container = {:Box, {:Text, "Hello"}}
@@ -106,20 +106,20 @@ defmodule Main do
           0 ->
             g = elem(content, 1)
             str = g
-            Log.trace("Box contains text: " <> str, %{:fileName => "Main.hx", :lineNumber => 103, :className => "Main", :methodName => "testNestedEnums"})
+            Log.trace("Box contains text: " <> str, %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "testNestedEnums"})
           1 ->
             g = elem(content, 1)
             n = g
-            Log.trace("Box contains number: " <> n, %{:fileName => "Main.hx", :lineNumber => 105, :className => "Main", :methodName => "testNestedEnums"})
+            Log.trace("Box contains number: " <> Kernel.to_string(n), %{:file_name => "Main.hx", :line_number => 105, :class_name => "Main", :method_name => "testNestedEnums"})
           2 ->
-            Log.trace("Box is empty", %{:fileName => "Main.hx", :lineNumber => 107, :className => "Main", :methodName => "testNestedEnums"})
+            Log.trace("Box is empty", %{:file_name => "Main.hx", :line_number => 107, :class_name => "Main", :method_name => "testNestedEnums"})
         end
       1 ->
         g = elem(container, 1)
         items = g
-        Log.trace("List with " <> items.length <> " items", %{:fileName => "Main.hx", :lineNumber => 110, :className => "Main", :methodName => "testNestedEnums"})
+        Log.trace("List with " <> Kernel.to_string(length(items)) <> " items", %{:file_name => "Main.hx", :line_number => 110, :class_name => "Main", :method_name => "testNestedEnums"})
       2 ->
-        Log.trace("Container is empty", %{:fileName => "Main.hx", :lineNumber => 112, :className => "Main", :methodName => "testNestedEnums"})
+        Log.trace("Container is empty", %{:file_name => "Main.hx", :line_number => 112, :class_name => "Main", :method_name => "testNestedEnums"})
     end
   end
   defp test_mixed_cases() do
@@ -130,7 +130,7 @@ defmodule Main do
         g1 = elem(result, 2)
         msg = g
         code = g1
-        Log.trace("Success: " <> msg <> " (code: " <> code <> ")", %{:fileName => "Main.hx", :lineNumber => 121, :className => "Main", :methodName => "testMixedCases"})
+        Log.trace("Success: " <> msg <> " (code: " <> Kernel.to_string(code) <> ")", %{:file_name => "Main.hx", :line_number => 121, :class_name => "Main", :method_name => "testMixedCases"})
       1 ->
         g = elem(result, 1)
         _msg = g
@@ -140,9 +140,9 @@ defmodule Main do
         g1 = elem(result, 2)
         msg = g
         code = g1
-        Log.trace("Error: " <> msg <> " (code: " <> code <> ")", %{:fileName => "Main.hx", :lineNumber => 125, :className => "Main", :methodName => "testMixedCases"})
+        Log.trace("Error: " <> msg <> " (code: " <> Kernel.to_string(code) <> ")", %{:file_name => "Main.hx", :line_number => 125, :class_name => "Main", :method_name => "testMixedCases"})
       3 ->
-        Log.trace("Still pending...", %{:fileName => "Main.hx", :lineNumber => 127, :className => "Main", :methodName => "testMixedCases"})
+        Log.trace("Still pending...", %{:file_name => "Main.hx", :line_number => 127, :class_name => "Main", :method_name => "testMixedCases"})
     end
   end
 end

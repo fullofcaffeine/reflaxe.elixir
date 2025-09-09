@@ -1,6 +1,6 @@
 defmodule PatternMatchingTest do
-  def match_color(color) do
-    case (elem(color, 0)) do
+  def match_color(_color) do
+    case (elem(_color, 0)) do
       0 ->
         "red"
       1 ->
@@ -8,21 +8,21 @@ defmodule PatternMatchingTest do
       2 ->
         "blue"
       3 ->
-        g = elem(color, 1)
-        g1 = elem(color, 2)
-        g2 = elem(color, 3)
+        g = elem(_color, 1)
+        g1 = elem(_color, 2)
+        g2 = elem(_color, 3)
         r = g
         g = g1
         b = g2
-        "rgb(" <> r <> "," <> g <> "," <> b <> ")"
+        "rgb(" <> Kernel.to_string(r) <> "," <> Kernel.to_string(g) <> "," <> Kernel.to_string(b) <> ")"
     end
   end
-  def match_option(option) do
-    case (elem(option, 0)) do
+  def match_option(_option) do
+    case (elem(_option, 0)) do
       0 ->
         "none"
       1 ->
-        g = elem(option, 1)
+        g = elem(_option, 1)
         value = g
         "some(" <> Std.string(value) <> ")"
     end
@@ -51,23 +51,23 @@ defmodule PatternMatchingTest do
         "greeting"
       _ ->
         s = str
-        if (s.length > 10), do: "long", else: "other"
+        if (length(s) > 10), do: "long", else: "other"
     end
   end
   def match_array(arr) do
-    case (arr.length) do
+    case (length(arr)) do
       0 ->
         "empty"
       1 ->
         g = arr[0]
         x = g
-        "single(" <> x <> ")"
+        "single(" <> Kernel.to_string(x) <> ")"
       2 ->
         g = arr[0]
         g1 = arr[1]
         x = g
         y = g1
-        "pair(" <> x <> "," <> y <> ")"
+        "pair(" <> Kernel.to_string(x) <> "," <> Kernel.to_string(y) <> ")"
       3 ->
         g = arr[0]
         g1 = arr[1]
@@ -75,17 +75,17 @@ defmodule PatternMatchingTest do
         x = g
         y = g1
         z = g2
-        "triple(" <> x <> "," <> y <> "," <> z <> ")"
+        "triple(" <> Kernel.to_string(x) <> "," <> Kernel.to_string(y) <> "," <> Kernel.to_string(z) <> ")"
       _ ->
         "many"
     end
   end
-  def match_nested(option) do
-    case (elem(option, 0)) do
+  def match_nested(_option) do
+    case (elem(_option, 0)) do
       0 ->
         "no color"
       1 ->
-        g = elem(option, 1)
+        g = elem(_option, 1)
         case (elem(g, 0)) do
           0 ->
             "red color"
@@ -129,6 +129,6 @@ defmodule PatternMatchingTest do
     end
   end
   def main() do
-    Log.trace("Pattern matching compilation test", %{:fileName => "Main.hx", :lineNumber => 110, :className => "PatternMatchingTest", :methodName => "main"})
+    Log.trace("Pattern matching compilation test", %{:file_name => "Main.hx", :line_number => 110, :class_name => "PatternMatchingTest", :method_name => "main"})
   end
 end

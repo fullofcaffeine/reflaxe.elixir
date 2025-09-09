@@ -1,3 +1,4 @@
 defmodule MyAppWeb do
-  nil
+  @layout_view nil
+  @api_auth_plug nil
 end

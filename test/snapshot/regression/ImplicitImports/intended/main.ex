@@ -1,10 +1,10 @@
 defmodule Main do
-  defp main() do
+  def main() do
     BitwiseOperations.test_bitwise()
     BitwiseOperations.complex_bitwise()
-    assigns = %{:className => "container", :title => "Test Title", :content => "Test content", :type => "button", :disabled => false, :label => "Click me"}
-    TestComponent.render(assigns)
-    TestComponent.button(assigns)
-    Log.trace("Implicit imports test compiled successfully", %{:fileName => "Main.hx", :lineNumber => 119, :className => "Main", :methodName => "main"})
+    assigns = %{:class_name => "container", :title => "Test Title", :content => "Test content", :type => "button", :disabled => false, :label => "Click me"}
+    TestAppWeb.TestComponent.render(assigns)
+    TestAppWeb.TestComponent.button(assigns)
+    Log.trace("Implicit imports test compiled successfully", %{:file_name => "Main.hx", :line_number => 119, :class_name => "Main", :method_name => "main"})
   end
 end

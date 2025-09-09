@@ -1,18 +1,20 @@
 defmodule StringTools do
   import Bitwise
+  @min_surrogate_code_point nil
+  @max_surrogate_code_point nil
+  @min_high_surrogate_code_point nil
+  @max_high_surrogate_code_point nil
+  @min_low_surrogate_code_point nil
+  @max_low_surrogate_code_point nil
   def url_encode(s) do
     result = ""
     g = 0
-    g1 = s.length
+    g1 = length(s)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, result, g1, :ok}, fn _, {acc_g, acc_result, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
-    c = s.charCodeAt(i)
-    if (c >= 65 && c <= 90 || c >= 97 && c <= 122 || c >= 48 && c <= 57 || c == 45 || c == 95 || c == 46 || c == 126) do
-      acc_result = acc_result <> String.from_char_code(c)
-    else
-      acc_result = acc_result <> "%" <> hex(c, 2).toUpperCase()
-    end
+    c = s.char_code_at(i)
+    nil
     {:cont, {acc_g, acc_result, acc_g1, acc_state}}
   else
     {:halt, {acc_g, acc_result, acc_g1, acc_state}}
@@ -23,66 +25,54 @@ end)
   def url_decode(s) do
     result = ""
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i, s, :ok}, fn _, {acc_result, acc_i, acc_s, acc_state} ->
-  if (acc_i < acc_s.length) do
-    c = acc_s.charAt(acc_i)
-    if (c == "%") do
-      if (acc_i + 2 < acc_s.length) do
-        hex = acc_s.substr(acc_i + 1, 2)
-        code = parse_int("0x" <> hex)
-        if (code != nil) do
-          acc_result = acc_result <> String.from_char_code(code)
-          acc_i = acc_i + 3
-          throw(:continue)
-        end
-      end
-    end
-    acc_result = acc_result <> c
-    acc_i = acc_i + 1
-    {:cont, {acc_result, acc_i, acc_s, acc_state}}
-  else
-    {:halt, {acc_result, acc_i, acc_s, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, result, s, :ok}, fn _, {acc_i, acc_result, acc_s, acc_state} -> nil end)
     result
   end
   def html_escape(s, quotes) do
-    s = s |> replace("&", "&amp;") |> replace("<", "&lt;") |> replace(">", "&gt;")
+    s = replace(s, "&", "&amp;")
+    s = replace(s, "<", "&lt;")
+    s = replace(s, ">", "&gt;")
+    if quotes do
+      s = replace(s, "\"", "&quot;")
+      s = replace(s, "'", "&#039;")
+    end
+    s
   end
   def html_unescape(s) do
-    s = s |> replace("&gt;", ">") |> replace("&lt;", "<") |> replace("&quot;", "\"") |> replace("&#039;", "'") |> replace("&amp;", "&")
+    s = replace(s, "&gt;", ">")
+    s = replace(s, "&lt;", "<")
+    s = replace(s, "&quot;", "\"")
+    s = replace(s, "&#039;", "'")
+    s = replace(s, "&amp;", "&")
+    s
   end
   def starts_with(s, start) do
-    s.length >= start.length && String.slice(s, 0, start.length) == start
+    length(s) >= length(start) && s.substr(0, start.length) == start
   end
   def ends_with(s, end_param) do
-    elen = end_param.length
-    slen = s.length
-    slen >= elen && String.slice(s, (slen - elen), elen) == end_param
+    elen = length(end_param)
+    slen = length(s)
+    slen >= elen && s.substr((slen - elen), elen) == end_param
   end
   def is_space(s, pos) do
-    c = s.charCodeAt(pos)
+    c = s.char_code_at(pos)
     c > 8 && c < 14 || c == 32
   end
   def ltrim(s) do
-    l = s.length
+    l = length(s)
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r, :ok}, fn _, {acc_s, acc_l, acc_r, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {r, s, l, :ok}, fn _, {acc_r, acc_s, acc_l, acc_state} ->
   if (acc_r < acc_l && is_space(acc_s, acc_r)) do
     acc_r = acc_r + 1
-    {:cont, {acc_s, acc_l, acc_r, acc_state}}
+    {:cont, {acc_r, acc_s, acc_l, acc_state}}
   else
-    {:halt, {acc_s, acc_l, acc_r, acc_state}}
+    {:halt, {acc_r, acc_s, acc_l, acc_state}}
   end
 end)
-    if (r > 0) do
-      s = String.slice(s, r, (l - r))
-    else
-      s
-    end
+    if (r > 0), do: s.substr(r, (l - r)), else: s
   end
   def rtrim(s) do
-    l = s.length
+    l = length(s)
     r = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, r, s, :ok}, fn _, {acc_l, acc_r, acc_s, acc_state} ->
   if (acc_r < acc_l && is_space(acc_s, ((acc_l - acc_r) - 1))) do
@@ -92,36 +82,21 @@ end)
     {:halt, {acc_l, acc_r, acc_s, acc_state}}
   end
 end)
-    if (r > 0) do
-      s = String.slice(s, 0, (l - r))
-    else
-      s
-    end
+    if (r > 0), do: s.substr(0, (l - r)), else: s
+  end
+  def trim(s) do
+    ltrim(rtrim(s))
   end
   def lpad(s, c, l) do
-    if (c.length <= 0), do: s
+    if (length(c) <= 0), do: s
     buf = ""
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, s, buf, :ok}, fn _, {acc_l, acc_s, acc_buf, acc_state} ->
-  if (acc_buf.length + acc_s.length < acc_l) do
-    acc_buf = acc_buf <> c
-    {:cont, {acc_l, acc_s, acc_buf, acc_state}}
-  else
-    {:halt, {acc_l, acc_s, acc_buf, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, buf, :ok}, fn _, {acc_s, acc_l, acc_buf, acc_state} -> nil end)
     buf <> s
   end
   def rpad(s, c, l) do
-    if (c.length <= 0), do: s
+    if (length(c) <= 0), do: s
     buf = s
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf, l, :ok}, fn _, {acc_buf, acc_l, acc_state} ->
-  if (acc_buf.length < acc_l) do
-    acc_buf = acc_buf <> c
-    {:cont, {acc_buf, acc_l, acc_state}}
-  else
-    {:halt, {acc_buf, acc_l, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, buf, :ok}, fn _, {acc_l, acc_buf, acc_state} -> nil end)
     buf
   end
   def replace(s, sub, by) do
@@ -130,46 +105,34 @@ end)
   def hex(n, digits) do
     s = ""
     hex_chars = "0123456789ABCDEF"
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, n, :ok}, fn _, {acc_s, acc_n, acc_state} ->
-  if (acc_n > 0) do
-    acc_s = hex_chars.charAt(acc_n &&& 15) <> acc_s
-    acc_n = acc_n + 4
-    {:cont, {acc_s, acc_n, acc_state}}
-  else
-    {:halt, {acc_s, acc_n, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, n, :ok}, fn _, {acc_s, acc_n, acc_state} -> nil end)
     if (digits != nil) do
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digits, s, :ok}, fn _, {acc_digits, acc_s, acc_state} ->
-  if (acc_s.length < acc_digits) do
-    acc_s = "0" <> acc_s
-    {:cont, {acc_digits, acc_s, acc_state}}
-  else
-    {:halt, {acc_digits, acc_s, acc_state}}
-  end
-end)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digits, s, :ok}, fn _, {acc_digits, acc_s, acc_state} -> nil end)
     end
     s
   end
+  def fast_code_at(s, index) do
+    s.char_code_at(index)
+  end
   def contains(s, value) do
-    String.index(s, value) != -1
+    s.index_of(value) != -1
+  end
+  def is_eof(c) do
+    c < 0
   end
   def utf16_code_point_at(s, index) do
-    :binary.at(s, index)
+    s.char_code_at(index)
+  end
+  def is_high_surrogate(code) do
+    code >= 55296 && code <= 56319
+  end
+  def is_low_surrogate(code) do
+    code >= 56320 && code <= 57343
   end
   def quote_regexp_meta(s) do
     special_chars = ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, special_chars, g, :ok}, fn _, {acc_s, acc_special_chars, acc_g, acc_state} ->
-  if (acc_g < acc_special_chars.length) do
-    char = special_chars[g]
-    acc_g = acc_g + 1
-    acc_s = replace(acc_s, char, "\\" <> char)
-    {:cont, {acc_s, acc_special_chars, acc_g, acc_state}}
-  else
-    {:halt, {acc_s, acc_special_chars, acc_g, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, g, special_chars, :ok}, fn _, {acc_s, acc_g, acc_special_chars, acc_state} -> nil end)
     s
   end
   def parse_int(str) do
@@ -177,57 +140,31 @@ end)
       hex = str.substr(2)
       result = 0
       g = 0
-      g1 = hex.length
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
-  if (acc_g < acc_g1) do
-    i = acc_g = acc_g + 1
-    c = hex.charCodeAt(i)
-    acc_result = acc_result * 16
-    if (c >= 48 && c <= 57) do
-      acc_result = acc_result + (c - 48)
-    else
-      if (c >= 65 && c <= 70) do
-        acc_result = acc_result + (c - 65) + 10
-      else
-        if (c >= 97 && c <= 102) do
-          acc_result = acc_result + (c - 97) + 10
-        else
-          nil
-        end
-      end
-    end
-    {:cont, {acc_result, acc_g, acc_g1, acc_state}}
-  else
-    {:halt, {acc_result, acc_g, acc_g1, acc_state}}
-  end
-end)
+      g1 = length(hex)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, result, g, :ok}, fn _, {acc_g1, acc_result, acc_g, acc_state} -> nil end)
       result
     end
     result = 0
     negative = false
     start = 0
-    if (str.charAt(0) == "-") do
+    if (str.char_at(0) == "-") do
       negative = true
       start = 1
     else
-      if (str.charAt(0) == "+") do
+      if (str.char_at(0) == "+") do
         start = 1
       end
     end
     g = start
-    g1 = str.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
+    g1 = length(str)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, result, :ok}, fn _, {acc_g1, acc_g, acc_result, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
-    c = str.charCodeAt(i)
-    if (c >= 48 && c <= 57) do
-      acc_result = acc_result * 10 + ((c - 48))
-    else
-      nil
-    end
-    {:cont, {acc_result, acc_g, acc_g1, acc_state}}
+    c = str.char_code_at(i)
+    nil
+    {:cont, {acc_g1, acc_g, acc_result, acc_state}}
   else
-    {:halt, {acc_result, acc_g, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_result, acc_state}}
   end
 end)
     if negative do

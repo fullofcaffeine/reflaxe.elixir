@@ -1,4 +1,8 @@
 defmodule CallStack_Impl_ do
+  @length nil
+  defp get_length(this1) do
+    length(this1)
+  end
   def call_stack() do
     NativeStackTrace.to_haxe(NativeStackTrace.call_stack())
   end
@@ -12,7 +16,7 @@ defmodule CallStack_Impl_ do
     g = 0
     g1 = stack
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
-  if (acc_g < acc_g1.length) do
+  if (acc_g < length(acc_g1)) do
     s = g1[g]
     acc_g = acc_g + 1
     b.add("\nCalled from ")
@@ -27,46 +31,25 @@ end)
   def subtract(this1, stack) do
     start_index = -1
     i = -1
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, this1, g, start_index, :ok}, fn _, {acc_i, acc_this1, acc_g, acc_start_index, acc_state} ->
-  if (acc_i = acc_i + 1 < acc_this1.length) do
-    acc_g = 0
-    g1 = stack.length
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_i, acc_g, g1, acc_start_index, :ok}, fn _, {acc_i, acc_g, acc_g1, acc_start_index, acc_state} ->
-  if (acc_g < acc_g1) do
-    j = acc_g = acc_g + 1
-    if (equal_items(this1[i], stack[j])) do
-      if (acc_start_index < 0) do
-        acc_start_index = acc_i
-      end
-      acc_i = acc_i + 1
-      if (acc_i >= this1.length) do
-        throw(:break)
-      end
-    else
-      acc_start_index = -1
-    end
-    {:cont, {acc_i, acc_g, acc_g1, acc_start_index, acc_state}}
-  else
-    {:halt, {acc_i, acc_g, acc_g1, acc_start_index, acc_state}}
-  end
-end)
-    if (acc_start_index >= 0) do
-      throw(:break)
-    end
-    {:cont, {acc_i, acc_this1, acc_g, acc_start_index, acc_state}}
-  else
-    {:halt, {acc_i, acc_this1, acc_g, acc_start_index, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {start_index, i, g, this1, :ok}, fn _, {acc_start_index, acc_i, acc_g, acc_this1, acc_state} -> nil end)
     if (start_index >= 0) do
       if (end_param == nil) do
-        Enum.slice(this1, 0..-1)
+        Enum.slice(this1, 0..-1//1)
       else
-        Enum.slice(this1, 0..start_index)
+        Enum.slice(this1, 0..start_index//1)
       end
     else
       this1
     end
+  end
+  def copy(this1) do
+    this1
+  end
+  def get(this1, index) do
+    this1[index]
+  end
+  defp as_array(this1) do
+    this1
   end
   defp equal_items(item1, item2) do
     if (item1 == nil) do
@@ -157,49 +140,34 @@ end)
   defp exception_to_string(e) do
     if (e.get_previous() == nil) do
       tmp = e.get_stack()
-      "Exception: " <> e.toString() <> (if tmp == nil, do: "null", else: to_string(tmp))
+      "Exception: " <> e.to_string() <> (if tmp == nil, do: "null", else: to_string(tmp))
     end
     result = ""
     e = e
     prev = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {prev, result, e, :ok}, fn _, {acc_prev, acc_result, acc_e, acc_state} ->
-  if (acc_e != nil) do
-    if (acc_prev == nil) do
-      tmp = acc_e.get_stack()
-      acc_result = "Exception: " <> acc_e.get_message() <> (if tmp == nil, do: "null", else: to_string(tmp)) <> acc_result
-    else
-      prev_stack = subtract(acc_e.get_stack(), acc_prev.get_stack())
-      acc_result = "Exception: " <> acc_e.get_message() <> (if (prev_stack == nil), do: "null", else: to_string(prev_stack)) <> "\n\nNext " <> acc_result
-    end
-    acc_prev = acc_e
-    acc_e = acc_e.get_previous()
-    {:cont, {acc_prev, acc_result, acc_e, acc_state}}
-  else
-    {:halt, {acc_prev, acc_result, acc_e, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, prev, e, :ok}, fn _, {acc_result, acc_prev, acc_e, acc_state} -> nil end)
     result
   end
-  defp item_to_string(b, s) do
-    case (elem(s, 0)) do
+  defp item_to_string(b, _s) do
+    case (elem(_s, 0)) do
       0 ->
         b.add("a C function")
       1 ->
-        g = elem(s, 1)
+        g = elem(_s, 1)
         m = g
         b.add("module ")
         b.add(m)
       2 ->
-        g = elem(s, 1)
-        g1 = elem(s, 2)
-        g2 = elem(s, 3)
-        g3 = elem(s, 4)
+        g = elem(_s, 1)
+        g1 = elem(_s, 2)
+        g2 = elem(_s, 3)
+        g3 = elem(_s, 4)
         s = g
         file = g1
         line = g2
         col = g3
         if (s != nil) do
-          item_to_string(b, s)
+          item_to_string(b, _s)
           b.add(" (")
         end
         b.add(file)
@@ -211,15 +179,15 @@ end)
         end
         if (s != nil), do: b.add(")")
       3 ->
-        g = elem(s, 1)
-        g1 = elem(s, 2)
+        g = elem(_s, 1)
+        g1 = elem(_s, 2)
         cname = g
         meth = g1
         b.add((if (cname == nil), do: "<unknown>", else: cname))
         b.add(".")
         b.add(meth)
       4 ->
-        g = elem(s, 1)
+        g = elem(_s, 1)
         n = g
         b.add("local function #")
         b.add(n)

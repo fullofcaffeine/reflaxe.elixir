@@ -57,10 +57,16 @@ Inline remains available for simple scripts or when you prefer a single file.
 
 ## Running
 
-External strategy emits `bootstrap_<module>.ex` files in the output directory. Run them with:
+External strategy emits `<module>.exs` script files in the output directory (and if there is only one entrypoint module, a `main.exs`). These scripts:
+- Require the full transitive dependency closure in topological order
+- Require the module file itself
+- Call `<Module>.main()`
+
+Run with:
 
 ```
-elixir bootstrap_main.ex
+elixir main.exs
+elixir AnotherModule.exs
 ```
 
 Inline strategy requires only the generated `main.ex`:
@@ -73,3 +79,15 @@ elixir main.ex
 
 - `@:application` modules never generate bootstrap code; OTP manages startup.
 - The compiler generates snake_case file names and directory paths based on package/module names.
+- `.exs` scripts are not compiled into releases; they are ideal for entrypoint runners without polluting library code.
+
+## Strategy matrix and recommendations
+
+- External (`-D bootstrap_strategy=external`): recommended. Produces `<module>.exs` runner with deterministic, complete requires. Great for examples, CLIs, and scripts. Keeps `<module>.ex` pure.
+- Inline (`-D bootstrap_strategy=inline`): quick single-file execution by injecting requires + `<Module>.main()` into `<module>.ex`. Simpler but intermixes execution with module definition.
+- Inline deterministic (`-D bootstrap_strategy=inline_deterministic`): same as inline but computes requires after compilation (full graph) for deterministic ordering. Useful when you want `<module>.ex` to be the entrypoint without `.exs` runners.
+
+### Example: todo-app
+
+- Server side entrypoint (Main.main/0) can be run via `main.exs` or inline strategies.
+- Phoenix apps (`@:application`) do not emit bootstrap; they start with `mix phx.server` or via `start/2` in releases.

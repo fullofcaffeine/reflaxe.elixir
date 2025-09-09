@@ -19,23 +19,13 @@ end)
   end
 end)
     counter = 10
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {counter, :ok}, fn _, {acc_counter, acc_state} ->
-  if (acc_counter > 0) do
-    acc_counter = (acc_counter - 2)
-    if (acc_counter == 4) do
-      throw(:break)
-    end
-    {:cont, {acc_counter, acc_state}}
-  else
-    {:halt, {acc_counter, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {counter, :ok}, fn _, {acc_counter, acc_state} -> nil end)
     k = 0
     evens = []
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
   if (acc_k < 10) do
     acc_k = acc_k + 1
-    if (acc_k rem 2 != 0) do
+    if (rem(acc_k, 2) != 0) do
       throw(:continue)
     end
     evens ++ [acc_k]
@@ -57,33 +47,16 @@ end)
   end
 end)
     outer = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner, outer, :ok}, fn _, {acc_inner, acc_outer, acc_state} ->
-  if (acc_outer < 3) do
-    acc_inner = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_inner, :ok}, fn _, {acc_inner, acc_state} ->
-  if (acc_inner < 2) do
-    Log.trace("Nested: " <> outer <> ", " <> acc_inner, %{:fileName => "Main.hx", :lineNumber => 47, :className => "Main", :methodName => "main"})
-    acc_inner = acc_inner + 1
-    {:cont, {acc_inner, acc_state}}
-  else
-    {:halt, {acc_inner, acc_state}}
-  end
-end)
-    acc_outer = acc_outer + 1
-    {:cont, {acc_inner, acc_outer, acc_state}}
-  else
-    {:halt, {acc_inner, acc_outer, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner, outer, :ok}, fn _, {acc_inner, acc_outer, acc_state} -> nil end)
     a = 0
     b = 10
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {a, b, :ok}, fn _, {acc_a, acc_b, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {b, a, :ok}, fn _, {acc_b, acc_a, acc_state} ->
   if (acc_a < 5 && acc_b > 5) do
     acc_a = acc_a + 1
     acc_b = (acc_b - 1)
-    {:cont, {acc_a, acc_b, acc_state}}
+    {:cont, {acc_b, acc_a, acc_state}}
   else
-    {:halt, {acc_a, acc_b, acc_state}}
+    {:halt, {acc_b, acc_a, acc_state}}
   end
 end)
     x = 0
@@ -98,12 +71,12 @@ end)
     {:halt, {acc_x, acc_state}}
   end
 end)
-    Log.trace("Final i: " <> i, %{:fileName => "Main.hx", :lineNumber => 68, :className => "Main", :methodName => "main"})
-    Log.trace("Final j: " <> j, %{:fileName => "Main.hx", :lineNumber => 69, :className => "Main", :methodName => "main"})
-    Log.trace("Final counter: " <> counter, %{:fileName => "Main.hx", :lineNumber => 70, :className => "Main", :methodName => "main"})
-    Log.trace("Evens: " <> Std.string(evens), %{:fileName => "Main.hx", :lineNumber => 71, :className => "Main", :methodName => "main"})
-    Log.trace("Count from infinite: " <> count, %{:fileName => "Main.hx", :lineNumber => 72, :className => "Main", :methodName => "main"})
-    Log.trace("Complex condition result: a=" <> a <> ", b=" <> b, %{:fileName => "Main.hx", :lineNumber => 73, :className => "Main", :methodName => "main"})
-    Log.trace("Do-while with break: x=" <> x, %{:fileName => "Main.hx", :lineNumber => 74, :className => "Main", :methodName => "main"})
+    Log.trace("Final i: " <> Kernel.to_string(i), %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "main"})
+    Log.trace("Final j: " <> Kernel.to_string(j), %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "main"})
+    Log.trace("Final counter: " <> Kernel.to_string(counter), %{:file_name => "Main.hx", :line_number => 70, :class_name => "Main", :method_name => "main"})
+    Log.trace("Evens: " <> Std.string(evens), %{:file_name => "Main.hx", :line_number => 71, :class_name => "Main", :method_name => "main"})
+    Log.trace("Count from infinite: " <> Kernel.to_string(count), %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "main"})
+    Log.trace("Complex condition result: a=" <> Kernel.to_string(a) <> ", b=" <> Kernel.to_string(b), %{:file_name => "Main.hx", :line_number => 73, :class_name => "Main", :method_name => "main"})
+    Log.trace("Do-while with break: x=" <> Kernel.to_string(x), %{:file_name => "Main.hx", :line_number => 74, :class_name => "Main", :method_name => "main"})
   end
 end

@@ -1,7 +1,5 @@
 defmodule TaskSupervisor do
-  def new(config) do
-    %{:config => config}
-  end
+  @config nil
   def start_link(_args) do
     {"ok", "task_supervisor_pid"}
   end

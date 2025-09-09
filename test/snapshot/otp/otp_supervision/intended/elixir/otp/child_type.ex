@@ -1,4 +1,4 @@
-defmodule Elixir.Otp.ChildType do
+defmodule elixir.otp.ChildType do
   def worker() do
     {:Worker}
   end

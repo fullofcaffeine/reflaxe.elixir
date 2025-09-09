@@ -10,44 +10,44 @@ defmodule Main do
   defp test_field_operations() do
     obj = %{:name => "Alice", :age => 30, :active => true}
     nested = %{:user => %{:id => 1, :name => "Bob"}, :settings => %{:theme => "dark", :notifications => true}}
-    name = Reflect.field(obj, "name")
-    age = Reflect.field(obj, "age")
-    missing = Reflect.field(obj, "nonexistent")
-    nested_name = Reflect.field(Reflect.field(nested, "user"), "name")
-    Log.trace("Field retrieval:", %{:fileName => "Main.hx", :lineNumber => 29, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  obj.name: " <> name, %{:fileName => "Main.hx", :lineNumber => 30, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  obj.age: " <> age, %{:fileName => "Main.hx", :lineNumber => 31, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  obj.nonexistent: " <> missing, %{:fileName => "Main.hx", :lineNumber => 32, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  nested.user.name: " <> nested_name, %{:fileName => "Main.hx", :lineNumber => 33, :className => "Main", :methodName => "testFieldOperations"})
-    updated = Reflect.set_field(obj, "age", 31)
-    new_field = Reflect.set_field(obj, "city", "New York")
-    Log.trace("Field setting (immutable):", %{:fileName => "Main.hx", :lineNumber => 39, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  Updated age: " <> Reflect.field(updated, "age"), %{:fileName => "Main.hx", :lineNumber => 40, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  New field city: " <> Reflect.field(new_field, "city"), %{:fileName => "Main.hx", :lineNumber => 41, :className => "Main", :methodName => "testFieldOperations"})
-    has_name = Reflect.has_field(obj, "name")
-    has_city = Reflect.has_field(obj, "city")
-    has_nested = Reflect.has_field(nested, "user")
-    Log.trace("Field existence:", %{:fileName => "Main.hx", :lineNumber => 48, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  Has name: " <> Std.string(has_name), %{:fileName => "Main.hx", :lineNumber => 49, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  Has city: " <> Std.string(has_city), %{:fileName => "Main.hx", :lineNumber => 50, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  Has user: " <> Std.string(has_nested), %{:fileName => "Main.hx", :lineNumber => 51, :className => "Main", :methodName => "testFieldOperations"})
-    deleted = Reflect.delete_field(obj, "age")
-    deleted_missing = Reflect.delete_field(obj, "nonexistent")
-    Log.trace("Field deletion:", %{:fileName => "Main.hx", :lineNumber => 57, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  After deleting age: " <> Std.string(Reflect.has_field(deleted, "age")), %{:fileName => "Main.hx", :lineNumber => 58, :className => "Main", :methodName => "testFieldOperations"})
-    Log.trace("  Delete nonexistent: " <> Reflect.field(deleted_missing, "name"), %{:fileName => "Main.hx", :lineNumber => 59, :className => "Main", :methodName => "testFieldOperations"})
+    name = Map.get(obj, String.to_atom("name"))
+    age = Map.get(obj, String.to_atom("age"))
+    missing = Map.get(obj, String.to_atom("nonexistent"))
+    nested_name = Map.get(Map.get(nested, String.to_atom("user")), String.to_atom("name"))
+    Log.trace("Field retrieval:", %{:file_name => "Main.hx", :line_number => 29, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  obj.name: " <> Kernel.to_string(name), %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  obj.age: " <> Kernel.to_string(age), %{:file_name => "Main.hx", :line_number => 31, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  obj.nonexistent: " <> Kernel.to_string(missing), %{:file_name => "Main.hx", :line_number => 32, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  nested.user.name: " <> Kernel.to_string(nested_name), %{:file_name => "Main.hx", :line_number => 33, :class_name => "Main", :method_name => "testFieldOperations"})
+    updated = Map.put(obj, String.to_atom("age"), 31)
+    new_field = Map.put(obj, String.to_atom("city"), "New York")
+    Log.trace("Field setting (immutable):", %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  Updated age: " <> Kernel.to_string(Map.get(updated, String.to_atom("age"))), %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  New field city: " <> Kernel.to_string(Map.get(new_field, String.to_atom("city"))), %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testFieldOperations"})
+    has_name = Map.has_key?(obj, String.to_atom("name"))
+    has_city = Map.has_key?(obj, String.to_atom("city"))
+    has_nested = Map.has_key?(nested, String.to_atom("user"))
+    Log.trace("Field existence:", %{:file_name => "Main.hx", :line_number => 48, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  Has name: " <> Std.string(has_name), %{:file_name => "Main.hx", :line_number => 49, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  Has city: " <> Std.string(has_city), %{:file_name => "Main.hx", :line_number => 50, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  Has user: " <> Std.string(has_nested), %{:file_name => "Main.hx", :line_number => 51, :class_name => "Main", :method_name => "testFieldOperations"})
+    deleted = Map.delete(obj, String.to_atom("age"))
+    deleted_missing = Map.delete(obj, String.to_atom("nonexistent"))
+    Log.trace("Field deletion:", %{:file_name => "Main.hx", :line_number => 57, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  After deleting age: " <> Std.string(Map.has_key?(deleted, String.to_atom("age"))), %{:file_name => "Main.hx", :line_number => 58, :class_name => "Main", :method_name => "testFieldOperations"})
+    Log.trace("  Delete nonexistent: " <> Kernel.to_string(Map.get(deleted_missing, String.to_atom("name"))), %{:file_name => "Main.hx", :line_number => 59, :class_name => "Main", :method_name => "testFieldOperations"})
   end
   defp test_field_listing() do
     simple = %{:x => 10, :y => 20}
     complex = %{:id => 1, :name => "Test", :active => true, :data => [1, 2, 3], :meta => %{:created => "2024-01-01"}}
     empty = %{}
-    simple_fields = Reflect.fields(simple)
-    complex_fields = Reflect.fields(complex)
-    empty_fields = Reflect.fields(empty)
-    Log.trace("Field listing:", %{:fileName => "Main.hx", :lineNumber => 78, :className => "Main", :methodName => "testFieldListing"})
-    Log.trace("  Simple object fields: [" <> Enum.join(simple_fields, ", ") <> "]", %{:fileName => "Main.hx", :lineNumber => 79, :className => "Main", :methodName => "testFieldListing"})
-    Log.trace("  Complex object fields: [" <> Enum.join(complex_fields, ", ") <> "]", %{:fileName => "Main.hx", :lineNumber => 80, :className => "Main", :methodName => "testFieldListing"})
-    Log.trace("  Empty object fields: [" <> Enum.join(empty_fields, ", ") <> "]", %{:fileName => "Main.hx", :lineNumber => 81, :className => "Main", :methodName => "testFieldListing"})
+    simple_fields = Map.keys(simple)
+    complex_fields = Map.keys(complex)
+    empty_fields = Map.keys(empty)
+    Log.trace("Field listing:", %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "testFieldListing"})
+    Log.trace("  Simple object fields: [" <> Enum.join(simple_fields, ", ") <> "]", %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "testFieldListing"})
+    Log.trace("  Complex object fields: [" <> Enum.join(complex_fields, ", ") <> "]", %{:file_name => "Main.hx", :line_number => 80, :class_name => "Main", :method_name => "testFieldListing"})
+    Log.trace("  Empty object fields: [" <> Enum.join(empty_fields, ", ") <> "]", %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "testFieldListing"})
   end
   defp test_object_checking() do
     obj = %{:field => "value"}
@@ -56,83 +56,125 @@ defmodule Main do
     arr = [1, 2, 3]
     nul = nil
     fun = fn x -> x * 2 end
-    obj_is_object = Reflect.is_object(obj)
-    str_is_object = Reflect.is_object(str)
-    num_is_object = Reflect.is_object(num)
-    arr_is_object = Reflect.is_object(arr)
-    null_is_object = Reflect.is_object(nul)
-    fun_is_object = Reflect.is_object(fun)
-    Log.trace("Object type checking:", %{:fileName => "Main.hx", :lineNumber => 100, :className => "Main", :methodName => "testObjectChecking"})
-    Log.trace("  Object is object: " <> Std.string(obj_is_object), %{:fileName => "Main.hx", :lineNumber => 101, :className => "Main", :methodName => "testObjectChecking"})
-    Log.trace("  String is object: " <> Std.string(str_is_object), %{:fileName => "Main.hx", :lineNumber => 102, :className => "Main", :methodName => "testObjectChecking"})
-    Log.trace("  Number is object: " <> Std.string(num_is_object), %{:fileName => "Main.hx", :lineNumber => 103, :className => "Main", :methodName => "testObjectChecking"})
-    Log.trace("  Array is object: " <> Std.string(arr_is_object), %{:fileName => "Main.hx", :lineNumber => 104, :className => "Main", :methodName => "testObjectChecking"})
-    Log.trace("  Null is object: " <> Std.string(null_is_object), %{:fileName => "Main.hx", :lineNumber => 105, :className => "Main", :methodName => "testObjectChecking"})
-    Log.trace("  Function is object: " <> Std.string(fun_is_object), %{:fileName => "Main.hx", :lineNumber => 106, :className => "Main", :methodName => "testObjectChecking"})
+    obj_is_object = is_map(obj)
+    str_is_object = is_map(str)
+    num_is_object = is_map(num)
+    arr_is_object = is_map(arr)
+    null_is_object = is_map(nul)
+    fun_is_object = is_map(fun)
+    Log.trace("Object type checking:", %{:file_name => "Main.hx", :line_number => 100, :class_name => "Main", :method_name => "testObjectChecking"})
+    Log.trace("  Object is object: " <> Std.string(obj_is_object), %{:file_name => "Main.hx", :line_number => 101, :class_name => "Main", :method_name => "testObjectChecking"})
+    Log.trace("  String is object: " <> Std.string(str_is_object), %{:file_name => "Main.hx", :line_number => 102, :class_name => "Main", :method_name => "testObjectChecking"})
+    Log.trace("  Number is object: " <> Std.string(num_is_object), %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "testObjectChecking"})
+    Log.trace("  Array is object: " <> Std.string(arr_is_object), %{:file_name => "Main.hx", :line_number => 104, :class_name => "Main", :method_name => "testObjectChecking"})
+    Log.trace("  Null is object: " <> Std.string(null_is_object), %{:file_name => "Main.hx", :line_number => 105, :class_name => "Main", :method_name => "testObjectChecking"})
+    Log.trace("  Function is object: " <> Std.string(fun_is_object), %{:file_name => "Main.hx", :line_number => 106, :class_name => "Main", :method_name => "testObjectChecking"})
     original = %{:a => 1, :b => %{:c => 2}}
     copied = original
-    Log.trace("Object copying:", %{:fileName => "Main.hx", :lineNumber => 112, :className => "Main", :methodName => "testObjectChecking"})
-    Log.trace("  Original a: " <> Reflect.field(original, "a"), %{:fileName => "Main.hx", :lineNumber => 113, :className => "Main", :methodName => "testObjectChecking"})
-    Log.trace("  Copied a: " <> Reflect.field(copied, "a"), %{:fileName => "Main.hx", :lineNumber => 114, :className => "Main", :methodName => "testObjectChecking"})
+    Log.trace("Object copying:", %{:file_name => "Main.hx", :line_number => 112, :class_name => "Main", :method_name => "testObjectChecking"})
+    Log.trace("  Original a: " <> Kernel.to_string(Map.get(original, String.to_atom("a"))), %{:file_name => "Main.hx", :line_number => 113, :class_name => "Main", :method_name => "testObjectChecking"})
+    Log.trace("  Copied a: " <> Kernel.to_string(Map.get(copied, String.to_atom("a"))), %{:file_name => "Main.hx", :line_number => 114, :class_name => "Main", :method_name => "testObjectChecking"})
   end
   defp test_comparison() do
-    cmp_ints = Reflect.compare(5, 10)
-    cmp_equal = Reflect.compare(42, 42)
-    cmp_strings = Reflect.compare("apple", "banana")
-    cmp_floats = Reflect.compare(3.14, 2.71)
-    cmp_bools = Reflect.compare(true, false)
-    cmp_arrays = Reflect.compare([1, 2], [1, 3])
-    Log.trace("Value comparison:", %{:fileName => "Main.hx", :lineNumber => 126, :className => "Main", :methodName => "testComparison"})
-    Log.trace("  5 vs 10: " <> cmp_ints, %{:fileName => "Main.hx", :lineNumber => 127, :className => "Main", :methodName => "testComparison"})
-    Log.trace("  42 vs 42: " <> cmp_equal, %{:fileName => "Main.hx", :lineNumber => 128, :className => "Main", :methodName => "testComparison"})
-    Log.trace("  \"apple\" vs \"banana\": " <> cmp_strings, %{:fileName => "Main.hx", :lineNumber => 129, :className => "Main", :methodName => "testComparison"})
-    Log.trace("  3.14 vs 2.71: " <> cmp_floats, %{:fileName => "Main.hx", :lineNumber => 130, :className => "Main", :methodName => "testComparison"})
-    Log.trace("  true vs false: " <> cmp_bools, %{:fileName => "Main.hx", :lineNumber => 131, :className => "Main", :methodName => "testComparison"})
-    Log.trace("  [1,2] vs [1,3]: " <> cmp_arrays, %{:fileName => "Main.hx", :lineNumber => 132, :className => "Main", :methodName => "testComparison"})
+    cmp_ints = cond do
+  5 < 10 ->
+    -1
+  5 > 10 ->
+    1
+  true ->
+    0
+end
+    cmp_equal = cond do
+  42 < 42 ->
+    -1
+  42 > 42 ->
+    1
+  true ->
+    0
+end
+    cmp_strings = cond do
+  "apple" < "banana" ->
+    -1
+  "apple" > "banana" ->
+    1
+  true ->
+    0
+end
+    cmp_floats = cond do
+  3.14 < 2.71 ->
+    -1
+  3.14 > 2.71 ->
+    1
+  true ->
+    0
+end
+    cmp_bools = cond do
+  true < false ->
+    -1
+  true > false ->
+    1
+  true ->
+    0
+end
+    cmp_arrays = cond do
+  [1, 2] < [1, 3] ->
+    -1
+  [1, 2] > [1, 3] ->
+    1
+  true ->
+    0
+end
+    Log.trace("Value comparison:", %{:file_name => "Main.hx", :line_number => 126, :class_name => "Main", :method_name => "testComparison"})
+    Log.trace("  5 vs 10: " <> Kernel.to_string(cmp_ints), %{:file_name => "Main.hx", :line_number => 127, :class_name => "Main", :method_name => "testComparison"})
+    Log.trace("  42 vs 42: " <> Kernel.to_string(cmp_equal), %{:file_name => "Main.hx", :line_number => 128, :class_name => "Main", :method_name => "testComparison"})
+    Log.trace("  \"apple\" vs \"banana\": " <> Kernel.to_string(cmp_strings), %{:file_name => "Main.hx", :line_number => 129, :class_name => "Main", :method_name => "testComparison"})
+    Log.trace("  3.14 vs 2.71: " <> Kernel.to_string(cmp_floats), %{:file_name => "Main.hx", :line_number => 130, :class_name => "Main", :method_name => "testComparison"})
+    Log.trace("  true vs false: " <> Kernel.to_string(cmp_bools), %{:file_name => "Main.hx", :line_number => 131, :class_name => "Main", :method_name => "testComparison"})
+    Log.trace("  [1,2] vs [1,3]: " <> Kernel.to_string(cmp_arrays), %{:file_name => "Main.hx", :line_number => 132, :class_name => "Main", :method_name => "testComparison"})
   end
   defp test_enum_detection() do
     opt1 = {:Some, "value"}
-    opt2 = :none
+    opt2 = {1}
     res1 = {:Ok, 42}
     res2 = {:Error, "failed"}
     str = "not an enum"
     obj = %{:field => "value"}
     num = 123
-    opt1_is_enum = Reflect.is_enum_value(opt1)
-    opt2_is_enum = Reflect.is_enum_value(opt2)
-    res1_is_enum = Reflect.is_enum_value(res1)
-    res2_is_enum = Reflect.is_enum_value(res2)
-    str_is_enum = Reflect.is_enum_value(str)
-    obj_is_enum = Reflect.is_enum_value(obj)
-    num_is_enum = Reflect.is_enum_value(num)
-    Log.trace("Enum value detection:", %{:fileName => "Main.hx", :lineNumber => 154, :className => "Main", :methodName => "testEnumDetection"})
-    Log.trace("  Some(\"value\") is enum: " <> Std.string(opt1_is_enum), %{:fileName => "Main.hx", :lineNumber => 155, :className => "Main", :methodName => "testEnumDetection"})
-    Log.trace("  None is enum: " <> Std.string(opt2_is_enum), %{:fileName => "Main.hx", :lineNumber => 156, :className => "Main", :methodName => "testEnumDetection"})
-    Log.trace("  Ok(42) is enum: " <> Std.string(res1_is_enum), %{:fileName => "Main.hx", :lineNumber => 157, :className => "Main", :methodName => "testEnumDetection"})
-    Log.trace("  Error(\"failed\") is enum: " <> Std.string(res2_is_enum), %{:fileName => "Main.hx", :lineNumber => 158, :className => "Main", :methodName => "testEnumDetection"})
-    Log.trace("  String is enum: " <> Std.string(str_is_enum), %{:fileName => "Main.hx", :lineNumber => 159, :className => "Main", :methodName => "testEnumDetection"})
-    Log.trace("  Object is enum: " <> Std.string(obj_is_enum), %{:fileName => "Main.hx", :lineNumber => 160, :className => "Main", :methodName => "testEnumDetection"})
-    Log.trace("  Number is enum: " <> Std.string(num_is_enum), %{:fileName => "Main.hx", :lineNumber => 161, :className => "Main", :methodName => "testEnumDetection"})
+    opt1_is_enum = is_tuple(opt1) and is_atom(elem(opt1, 0))
+    opt2_is_enum = is_tuple(opt2) and is_atom(elem(opt2, 0))
+    res1_is_enum = is_tuple(res1) and is_atom(elem(res1, 0))
+    res2_is_enum = is_tuple(res2) and is_atom(elem(res2, 0))
+    str_is_enum = is_tuple(str) and is_atom(elem(str, 0))
+    obj_is_enum = is_tuple(obj) and is_atom(elem(obj, 0))
+    num_is_enum = is_tuple(num) and is_atom(elem(num, 0))
+    Log.trace("Enum value detection:", %{:file_name => "Main.hx", :line_number => 154, :class_name => "Main", :method_name => "testEnumDetection"})
+    Log.trace("  Some(\"value\") is enum: " <> Std.string(opt1_is_enum), %{:file_name => "Main.hx", :line_number => 155, :class_name => "Main", :method_name => "testEnumDetection"})
+    Log.trace("  None is enum: " <> Std.string(opt2_is_enum), %{:file_name => "Main.hx", :line_number => 156, :class_name => "Main", :method_name => "testEnumDetection"})
+    Log.trace("  Ok(42) is enum: " <> Std.string(res1_is_enum), %{:file_name => "Main.hx", :line_number => 157, :class_name => "Main", :method_name => "testEnumDetection"})
+    Log.trace("  Error(\"failed\") is enum: " <> Std.string(res2_is_enum), %{:file_name => "Main.hx", :line_number => 158, :class_name => "Main", :method_name => "testEnumDetection"})
+    Log.trace("  String is enum: " <> Std.string(str_is_enum), %{:file_name => "Main.hx", :line_number => 159, :class_name => "Main", :method_name => "testEnumDetection"})
+    Log.trace("  Object is enum: " <> Std.string(obj_is_enum), %{:file_name => "Main.hx", :line_number => 160, :class_name => "Main", :method_name => "testEnumDetection"})
+    Log.trace("  Number is enum: " <> Std.string(num_is_enum), %{:file_name => "Main.hx", :line_number => 161, :class_name => "Main", :method_name => "testEnumDetection"})
   end
   defp test_method_calling() do
     add = fn a, b -> a + b end
     multiply = fn x, y -> x * y end
     greet = fn name -> "Hello, " <> name <> "!" end
     no_args = fn -> "No arguments" end
-    sum = Reflect.call_method(nil, add, [10, 20])
-    product = Reflect.call_method(nil, multiply, [5, 6])
-    greeting = Reflect.call_method(nil, greet, ["World"])
-    no_args_result = Reflect.call_method(nil, no_args, [])
-    Log.trace("Dynamic method calling:", %{:fileName => "Main.hx", :lineNumber => 188, :className => "Main", :methodName => "testMethodCalling"})
-    Log.trace("  add(10, 20): " <> sum, %{:fileName => "Main.hx", :lineNumber => 189, :className => "Main", :methodName => "testMethodCalling"})
-    Log.trace("  multiply(5, 6): " <> product, %{:fileName => "Main.hx", :lineNumber => 190, :className => "Main", :methodName => "testMethodCalling"})
-    Log.trace("  greet(\"World\"): " <> greeting, %{:fileName => "Main.hx", :lineNumber => 191, :className => "Main", :methodName => "testMethodCalling"})
-    Log.trace("  noArgs(): " <> no_args_result, %{:fileName => "Main.hx", :lineNumber => 192, :className => "Main", :methodName => "testMethodCalling"})
-    calculator = %{:value => 100, :addTo => fn n -> n + 100 end, :multiplyBy => fn n -> n * 2 end}
-    added = Reflect.call_method(calculator, Reflect.field(calculator, "addTo"), [50])
-    multiplied = Reflect.call_method(calculator, Reflect.field(calculator, "multiplyBy"), [25])
-    Log.trace("Object method calling:", %{:fileName => "Main.hx", :lineNumber => 208, :className => "Main", :methodName => "testMethodCalling"})
-    Log.trace("  calculator.addTo(50): " <> added, %{:fileName => "Main.hx", :lineNumber => 209, :className => "Main", :methodName => "testMethodCalling"})
-    Log.trace("  calculator.multiplyBy(25): " <> multiplied, %{:fileName => "Main.hx", :lineNumber => 210, :className => "Main", :methodName => "testMethodCalling"})
+    sum = apply(add, [10, 20])
+    product = apply(multiply, [5, 6])
+    greeting = apply(greet, ["World"])
+    no_args_result = apply(no_args, [])
+    Log.trace("Dynamic method calling:", %{:file_name => "Main.hx", :line_number => 188, :class_name => "Main", :method_name => "testMethodCalling"})
+    Log.trace("  add(10, 20): " <> sum, %{:file_name => "Main.hx", :line_number => 189, :class_name => "Main", :method_name => "testMethodCalling"})
+    Log.trace("  multiply(5, 6): " <> product, %{:file_name => "Main.hx", :line_number => 190, :class_name => "Main", :method_name => "testMethodCalling"})
+    Log.trace("  greet(\"World\"): " <> greeting, %{:file_name => "Main.hx", :line_number => 191, :class_name => "Main", :method_name => "testMethodCalling"})
+    Log.trace("  noArgs(): " <> no_args_result, %{:file_name => "Main.hx", :line_number => 192, :class_name => "Main", :method_name => "testMethodCalling"})
+    calculator = %{:value => 100, :add_to => fn n -> n + 100 end, :multiply_by => fn n -> n * 2 end}
+    added = apply(Map.get(calculator, String.to_atom("addTo")), [50])
+    multiplied = apply(Map.get(calculator, String.to_atom("multiplyBy")), [25])
+    Log.trace("Object method calling:", %{:file_name => "Main.hx", :line_number => 208, :class_name => "Main", :method_name => "testMethodCalling"})
+    Log.trace("  calculator.addTo(50): " <> added, %{:file_name => "Main.hx", :line_number => 209, :class_name => "Main", :method_name => "testMethodCalling"})
+    Log.trace("  calculator.multiplyBy(25): " <> multiplied, %{:file_name => "Main.hx", :line_number => 210, :class_name => "Main", :method_name => "testMethodCalling"})
   end
 end

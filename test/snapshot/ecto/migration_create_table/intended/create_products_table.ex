@@ -1,15 +1,15 @@
 defmodule CreateProductsTable do
   def up(struct) do
-    struct.createTable("products")
-    struct.addColumn("products", "name", "string")
-    struct.addColumn("products", "price", "decimal")
-    if (struct.shouldAddInventory()) do
-      struct.addColumn("products", "inventory_count", "integer")
+    struct.create_table("products")
+    struct.add_column("products", "name", "string")
+    struct.add_column("products", "price", "decimal")
+    if (struct.should_add_inventory()) do
+      struct.add_column("products", "inventory_count", "integer")
     end
     struct.timestamps()
   end
   def down(struct) do
-    struct.dropTable("products")
+    struct.drop_table("products")
   end
   defp should_add_inventory(_struct) do
     true

@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "value_type.ex",
+  "type.ex",
   "string_tools.ex",
   "string_buf.ex",
   "std.ex",
@@ -10,8 +11,6 @@
   "haxe/validation/_positive_int/positive_int_impl_.ex",
   "haxe/validation/_non_empty_string/non_empty_string_impl_.ex",
   "haxe/validation/_email/email_impl_.ex",
-  "haxe/test/test_case.ex",
-  "haxe/test/assert.ex",
   "haxe/stack_item.ex",
   "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
@@ -20,6 +19,8 @@
   "haxe/ds/option_tools.ex",
   "haxe/ds/option.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
+  "exunit/test_case.ex",
+  "exunit/assert.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],
