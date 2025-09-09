@@ -228,52 +228,46 @@ class SafePubSub {
         // Get the PubSub module dynamically from endpoint configuration
         // This is a proper Phoenix way to retrieve the PubSub server
         return untyped __elixir__('
+            debug? = System.get_env("SAFE_PUBSUB_DEBUG") in ["1", "true", "TRUE"]
+            
             # Get all loaded applications
             apps = Application.loaded_applications()
             
             # Find the first application that has an endpoint module
-            # (This assumes the Phoenix app has at least one endpoint)
             {app_name, endpoint_module} = Enum.find_value(apps, fn {app, _desc, _vsn} ->
-                # Get all modules for this application
                 case :application.get_key(app, :modules) do
                     {:ok, modules} ->
-                        # Find a module that ends with ".Endpoint"
                         endpoint = Enum.find(modules, fn mod ->
                             mod_str = to_string(mod)
                             String.ends_with?(mod_str, ".Endpoint")
                         end)
-                        
                         if endpoint, do: {app, endpoint}, else: nil
-                    _ ->
-                        nil
+                    _ -> nil
                 end
-            end) || {:todo_app, TodoAppWeb.Endpoint}  # Fallback for safety
+            end) || {:todo_app, TodoAppWeb.Endpoint}
             
-            # Get the pubsub_server from the endpoint configuration
-            case Application.get_env(app_name, endpoint_module) do
+            pubsub_mod = case Application.get_env(app_name, endpoint_module) do
                 nil -> 
-                    # Fallback: construct module name from app name
-                    # Convert :todo_app to TodoApp.PubSub
-                    app_str = app_name
+                    # Fallback: construct proper module alias from app name
+                    app_mod = app_name
                     |> to_string()
                     |> String.split("_")
                     |> Enum.map(&String.capitalize/1)
-                    |> Enum.join("")
-                    
-                    String.to_atom(app_str <> ".PubSub")
-                    
+                    |> Module.concat()
+                    Module.concat(app_mod, :PubSub)
                 config when is_list(config) ->
-                    # Get pubsub_server from config
                     Keyword.get(config, :pubsub_server) || 
-                        # Fallback construction if not configured
                         (app_name
                         |> to_string()
                         |> String.split("_")
                         |> Enum.map(&String.capitalize/1)
-                        |> Enum.join("")
-                        |> (&(String.to_atom(&1 <> ".PubSub")))
-                        .())
+                        |> Module.concat()
+                        |> (&Module.concat(&1, :PubSub)).())
             end
+            if debug? do
+                IO.puts("[SafePubSub] app=#{inspect(app_name)} endpoint=#{inspect(endpoint_module)} pubsub=#{inspect(pubsub_mod)}")
+            end
+            pubsub_mod
         ');
     }
 }

@@ -1,4 +1,4 @@
-defmodule server.types.AlertLevel do
+defmodule Server.Types.AlertLevel do
   def info() do
     {:Info}
   end

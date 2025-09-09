@@ -122,18 +122,13 @@ end)
     iter_current = 0
     iter_array = numbers
     Log.trace("Iterating with iterator:", %{:file_name => "Main.hx", :line_number => 156, :class_name => "Main", :method_name => "testIteratorFunction"})
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {iter_current, iter_array, :ok}, fn _, {acc_iter_current, acc_iter_array, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {iter_array, iter_current, :ok}, fn _, {acc_iter_array, acc_iter_current, acc_state} ->
   if (acc_iter_current < length(acc_iter_array)) do
     Log.trace("  Next: " <> Kernel.to_string(iter_array[iter_current = iter_current + 1]), %{:file_name => "Main.hx", :line_number => 158, :class_name => "Main", :method_name => "testIteratorFunction"})
-    {:cont, {acc_iter_current, acc_iter_array, acc_state}}
+    {:cont, {acc_iter_array, acc_iter_current, acc_state}}
   else
-    {:halt, {acc_iter_current, acc_iter_array, acc_state}}
+    {:halt, {acc_iter_array, acc_iter_current, acc_state}}
   end
 end)
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

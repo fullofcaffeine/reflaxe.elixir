@@ -106,6 +106,3 @@ defmodule Main do
     nil
   end
 end
-
-Code.require_file("main.ex", __DIR__)
-Main.main()

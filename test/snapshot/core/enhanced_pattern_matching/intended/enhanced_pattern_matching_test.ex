@@ -435,9 +435,3 @@ this1
     Log.trace(match_binary_pattern(""), %{:file_name => "Main.hx", :line_number => 273, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("haxe/io/bytes.ex", __DIR__)
-Code.require_file("enhanced_pattern_matching_test.ex", __DIR__)
-EnhancedPatternMatchingTest.main()

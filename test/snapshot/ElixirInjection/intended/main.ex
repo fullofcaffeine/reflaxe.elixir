@@ -24,6 +24,3 @@ defmodule Main do
     IO.puts("Inline injection test")
   end
 end
-
-Code.require_file("main.ex", __DIR__)
-Main.main()

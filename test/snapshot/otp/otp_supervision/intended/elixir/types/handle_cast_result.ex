@@ -1,4 +1,4 @@
-defmodule elixir.types.HandleCastResult do
+defmodule Elixir.Types.HandleCastResult do
   def no_reply(arg0) do
     {:NoReply, arg0}
   end

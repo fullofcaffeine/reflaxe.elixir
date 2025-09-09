@@ -132,8 +132,3 @@ defmodule PatternMatchingTest do
     Log.trace("Pattern matching compilation test", %{:file_name => "Main.hx", :line_number => 110, :class_name => "PatternMatchingTest", :method_name => "main"})
   end
 end
-
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("pattern_matching_test.ex", __DIR__)
-PatternMatchingTest.main()

@@ -31,7 +31,7 @@ end)
   def subtract(this1, stack) do
     start_index = -1
     i = -1
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {this1, i, start_index, g, :ok}, fn _, {acc_this1, acc_i, acc_start_index, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, i, this1, start_index, :ok}, fn _, {acc_g, acc_i, acc_this1, acc_start_index, acc_state} -> nil end)
     if (start_index >= 0) do
       if (end_param == nil) do
         Enum.slice(this1, 0..-1//1)
@@ -145,7 +145,7 @@ end)
     result = ""
     e = e
     prev = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, e, prev, :ok}, fn _, {acc_result, acc_e, acc_prev, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {prev, e, result, :ok}, fn _, {acc_prev, acc_e, acc_result, acc_state} -> nil end)
     result
   end
   defp item_to_string(b, _s) do

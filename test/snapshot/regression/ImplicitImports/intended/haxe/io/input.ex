@@ -1,9 +1,9 @@
 defmodule Input do
   @big_endian nil
-  defp set_big_endian(_struct, b) do
+  defp set_big_endian(struct, b) do
     b
   end
-  def read_byte(_struct) do
+  def read_byte(struct) do
     -1
   end
   def read_bytes(struct, b, pos, len) do
@@ -34,7 +34,7 @@ end)
     buf = Bytes.alloc(bufsize)
     total = Bytes.alloc(0)
     len = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, len, :ok}, fn _, {acc_total, acc_len, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {len, total, :ok}, fn _, {acc_len, acc_total, acc_state} -> nil end)
     total
   end
   def read_string(struct, len) do
@@ -63,7 +63,7 @@ end)
 end)
     IO.iodata_to_binary(buf)
   end
-  def close(_struct) do
+  def close(struct) do
     nil
   end
 end

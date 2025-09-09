@@ -22,7 +22,7 @@ defmodule Int64Helper do
     len = length(s)
     g = 0
     g1 = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {low, b_low, b_high, low, high, p01, low, b_high, p10, digit_low, p01, high, this1, g1, digit_high, current, b_low, high, high, this1, g, p01, p10, p10, high, this1, multiplier, :ok}, fn _, {acc_low, acc_b_low, acc_b_high, acc_low, acc_high, acc_p01, acc_low, acc_b_high, acc_p10, acc_digit_low, acc_p01, acc_high, acc_this1, acc_g1, acc_digit_high, acc_current, acc_b_low, acc_high, acc_high, acc_this1, acc_g, acc_p01, acc_p10, acc_p10, acc_high, acc_this1, acc_multiplier, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digit_high, low, high, p10, digit_low, high, p10, this1, b_high, b_high, p01, this1, multiplier, b_low, high, high, high, low, this1, g, b_low, current, p01, low, p01, p10, g1, :ok}, fn _, {acc_digit_high, acc_low, acc_high, acc_p10, acc_digit_low, acc_high, acc_p10, acc_this1, acc_b_high, acc_b_high, acc_p01, acc_this1, acc_multiplier, acc_b_low, acc_high, acc_high, acc_high, acc_low, acc_this1, acc_g, acc_b_low, acc_current, acc_p01, acc_low, acc_p01, acc_p10, acc_g1, acc_state} -> nil end)
     current
   end
   def from_float(f) do
@@ -47,7 +47,7 @@ else
   no_fractions
 end
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {rest, a_high, a_low, this1, this1, result, high, this1, i, b, this1, :ok}, fn _, {acc_rest, acc_a_high, acc_a_low, acc_this1, acc_this1, acc_result, acc_high, acc_this1, acc_i, acc_b, acc_this1, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {this1, a_high, b, this1, result, this1, this1, high, i, rest, a_low, :ok}, fn _, {acc_this1, acc_a_high, acc_b, acc_this1, acc_result, acc_this1, acc_this1, acc_high, acc_i, acc_rest, acc_a_low, acc_state} -> nil end)
     if neg do
       high = ~~~result.high
       low = ~~~result.low + 1

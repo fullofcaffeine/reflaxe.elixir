@@ -962,8 +962,9 @@ class ModuleBuilder {
                                     true; // Assume it's used if we can't analyze
                             };
                             
-                            // Use underscore prefix if "this" is not used
-                            var structParamName = thisIsUsed ? "struct" : "_struct";
+                            // Always use "struct" without underscore since the body will reference it
+                            // The abstractThisPass in ElixirASTTransformer will handle replacement
+                            var structParamName = "struct";
                             
                             // Add struct parameter as first argument
                             args = [EPattern.PVar(structParamName)].concat(args);

@@ -29,10 +29,3 @@ defmodule Main do
     Log.trace("Money from int: $" <> Kernel.to_string(Money_Impl_.to_dollars(money_from_int)), %{:file_name => "Main.hx", :line_number => 97, :class_name => "Main", :method_name => "main"})
   end
 end
-
-Code.require_file("_main/user_id_impl_.ex", __DIR__)
-Code.require_file("std.ex", __DIR__)
-Code.require_file("_main/money_impl_.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("main.ex", __DIR__)
-Main.main()

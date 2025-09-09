@@ -1,4 +1,4 @@
-defmodule elixir.otp.SupervisorStrategy do
+defmodule Elixir.Otp.SupervisorStrategy do
   def one_for_one() do
     :OneForOne
   end

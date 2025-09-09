@@ -21,8 +21,7 @@ defmodule HttpStatusTools do
         500
       9 ->
         g = elem(_status, 1)
-        code = g
-        code
+        (g)
     end
   end
   def from_int(code) do

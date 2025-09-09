@@ -4,6 +4,3 @@ defmodule Main do
     test.write(nil)
   end
 end
-
-Code.require_file("main.ex", __DIR__)
-Main.main()

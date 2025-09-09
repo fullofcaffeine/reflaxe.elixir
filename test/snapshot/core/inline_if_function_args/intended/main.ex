@@ -73,6 +73,3 @@ end)
     "computed_" <> Kernel.to_string(n)
   end
 end
-
-Code.require_file("main.ex", __DIR__)
-Main.main()

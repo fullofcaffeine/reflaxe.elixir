@@ -1,14 +1,14 @@
 defmodule TestCase do
-  def setup(_struct, context) do
+  def setup(struct, context) do
     context
   end
-  def setup_all(_struct, context) do
+  def setup_all(struct, context) do
     context
   end
-  def teardown(_struct, _context) do
+  def teardown(struct, _context) do
     nil
   end
-  def teardown_all(_struct, _context) do
+  def teardown_all(struct, _context) do
     nil
   end
 end
