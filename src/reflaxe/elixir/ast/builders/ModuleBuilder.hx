@@ -98,6 +98,20 @@ import reflaxe.elixir.ast.NameUtils;
  * - Invalid annotation parameters: Falls back to default values
  */
 @:nullSafety(Off)
+
+// Entry point mode for compiled modules
+enum EntrypointMode {
+    Main; // Standalone script: emit requires + call main()
+    Otp;  // OTP application: managed by Mix/OTP, no bootstrap
+    None; // Library/module: no bootstrap
+}
+
+// Bootstrap emission strategy
+enum BootstrapStrategy {
+    Inline;   // Emit requires + Main.main() inline in module file
+    External; // Defer to final output phase (bootstrap file per module)
+}
+
 class ModuleBuilder {
     
     /**
@@ -205,21 +219,27 @@ class ModuleBuilder {
                 break;
             }
         }
-        
-        // Add bootstrap code only if:
-        // 1. Class has static main() function
-        // 2. Class is NOT an OTP application (no @:application annotation)
-        if (hasStaticMain && !classType.meta.has(":application")) {
+
+        // Decide entrypoint mode in a single place
+        var entrypointMode = determineEntrypointMode(classType, hasStaticMain);
+
+        // Track bootstrap modules regardless of strategy; external writer needs this
+        if (entrypointMode == EntrypointMode.Main && ElixirASTBuilder.compiler != null) {
+            if (ElixirASTBuilder.compiler.modulesWithBootstrap.indexOf(moduleName) < 0) {
+                ElixirASTBuilder.compiler.modulesWithBootstrap.push(moduleName);
+            }
+        }
+
+        // Add bootstrap code for standalone scripts only, based on strategy
+        if (entrypointMode == EntrypointMode.Main && getBootstrapStrategy() == BootstrapStrategy.Inline) {
             #if debug_bootstrap
             trace('[ModuleBuilder] Adding bootstrap code for static main() in ${moduleName}');
             #end
             
             var blockElements: Array<ElixirAST> = [];
             
-            // Add Code.require_file statements for dependencies if in standalone mode
-            if (haxe.macro.Context.defined("standalone_script") || hasStaticMain) {
-                blockElements = blockElements.concat(generateRequireStatements(classType, moduleName));
-            }
+            // Add Code.require_file statements for dependencies (inline strategy only)
+            blockElements = blockElements.concat(generateRequireStatements(classType, moduleName));
             
             // Add the module definition
             blockElements.push(moduleAST);
@@ -243,11 +263,6 @@ class ModuleBuilder {
             // Main.main()
             moduleAST = makeAST(EBlock(blockElements));
             
-            // Track that this module has bootstrap code
-            if (ElixirASTBuilder.compiler != null) {
-                ElixirASTBuilder.compiler.modulesWithBootstrap.push(moduleName);
-            }
-            
             #if debug_bootstrap  
             trace('[ModuleBuilder] Bootstrap code added after module for ${moduleName}');
             #end
@@ -262,6 +277,49 @@ class ModuleBuilder {
         #end
         
         return moduleAST;
+    }
+
+    /**
+     * Determine the entrypoint mode for a compiled class.
+     * Returns one of: "main" (standalone script), "otp" (OTP application), "none" (library/module).
+     * Centralizing this decision keeps bootstrap/require logic in one place.
+     */
+    static function determineEntrypointMode(classType: ClassType, hasStaticMain: Bool): EntrypointMode {
+        // OTP applications manage startup themselves via start/2
+        if (classType.meta.has(":application")) return EntrypointMode.Otp;
+        // Standalone script mode when a static main() is present
+        if (hasStaticMain) {
+            // Allow override via -D entrypoint=main|none|otp
+            var ep = haxe.macro.Context.definedValue("entrypoint");
+            if (ep != null) {
+                switch(ep.toLowerCase()) {
+                    case "none": return EntrypointMode.None;
+                    case "otp": return EntrypointMode.Otp;
+                    case "main": return EntrypointMode.Main;
+                    default:
+                }
+            }
+            return EntrypointMode.Main;
+        }
+        return EntrypointMode.None;
+    }
+
+    /**
+     * Determine bootstrap emission strategy from defines.
+     * Priority:
+     * 1) bootstrap_strategy=inline|external (string define)
+     * 2) inline_bootstrap (boolean define) → Inline
+     * 3) Default → External for stricter, deterministic dependency loading
+     */
+    public static function getBootstrapStrategy(): BootstrapStrategy {
+        var val = haxe.macro.Context.definedValue("bootstrap_strategy");
+        if (val != null) {
+            var v = val.toLowerCase();
+            if (v == "inline") return BootstrapStrategy.Inline;
+            if (v == "external") return BootstrapStrategy.External;
+        }
+        if (haxe.macro.Context.defined("inline_bootstrap")) return BootstrapStrategy.Inline;
+        return BootstrapStrategy.External;
     }
     
     /**
@@ -288,24 +346,30 @@ class ModuleBuilder {
             #end
             
             if (deps != null) {
-                // Get module output paths from the compiler
+                // Compute transitive closure of dependencies for deterministic and robust loading
+                var closure = computeTransitiveDependencies(moduleName);
+                
+                // Determine output paths
                 var outputPaths = ElixirASTBuilder.compiler.moduleOutputPaths;
                 
-                for (depModule in deps.keys()) {
-                    // Get the file path for this dependency
+                // Use global topological order and filter to this module's closure for stable ordering
+                var topo = ElixirASTBuilder.compiler.getSortedModules();
+                
+                var ordered: Array<String> = [];
+                for (depModule in topo) if (closure.exists(depModule)) ordered.push(depModule);
+                // Fallback: if sorted list is incomplete (graph may be partial), use alpha order of closure keys
+                if (ordered.length < Lambda.count(closure)) {
+                    var allKeys: Array<String> = [for (k in closure.keys()) k];
+                    allKeys.sort(function(a, b) return Reflect.compare(a, b));
+                    ordered = allKeys;
+                }
+                for (depModule in ordered) {
                     var filePath = outputPaths.get(depModule);
-                    
-                    // If we don't have a path, try to construct one based on module name
                     if (filePath == null) {
-                        // Convert module name to file path
-                        // e.g., "Std" -> "std.ex", "Log" -> "haxe/log.ex"
-                        // Check if we have package information for this module
                         var modulePack = ElixirASTBuilder.compiler.modulePackages.get(depModule);
                         filePath = ElixirASTBuilder.compiler.getModuleOutputPath(depModule, modulePack);
                     }
-                    
                     if (filePath != null) {
-                        // Generate: Code.require_file("path/to/file.ex", __DIR__)
                         requires.push(makeAST(
                             ECall(
                                 null,
@@ -316,7 +380,6 @@ class ModuleBuilder {
                                 ]
                             )
                         ));
-                        
                         #if debug_bootstrap
                         trace('[ModuleBuilder] Added require for ${depModule} at ${filePath}');
                         #end
@@ -326,6 +389,32 @@ class ModuleBuilder {
         }
         
         return requires;
+    }
+
+    /**
+     * Compute transitive dependency closure for a module using compiler.moduleDependencies
+     */
+    static function computeTransitiveDependencies(root: String): Map<String, Bool> {
+        var result = new Map<String, Bool>();
+        if (ElixirASTBuilder.compiler == null) return result;
+        var graph = ElixirASTBuilder.compiler.moduleDependencies;
+        
+        // DFS stack
+        var stack: Array<String> = [];
+        // Seed with direct deps of root
+        var direct = graph.get(root);
+        if (direct != null) for (k in direct.keys()) stack.push(k);
+        
+        while (stack.length > 0) {
+            var m = stack.pop();
+            if (m == null) break;
+            if (m == root) continue; // avoid self
+            if (result.exists(m)) continue;
+            result.set(m, true);
+            var next = graph.get(m);
+            if (next != null) for (n in next.keys()) if (!result.exists(n)) stack.push(n);
+        }
+        return result;
     }
     
     /**

@@ -23,72 +23,7 @@ echo "=== Elixir Syntax Validation ===" | tee "$VALIDATION_LOG"
 echo "Validating generated Elixir code in $TEST_DIR" | tee -a "$VALIDATION_LOG"
 echo "" | tee -a "$VALIDATION_LOG"
 
-# Function to validate a single Elixir file
-validate_elixir_file() {
-    local file="$1"
-    local test_name="$2"
-    
-    # Skip files that are known to have dependencies
-    if [[ "$file" == *"_GeneratedFiles.json"* ]]; then
-        return 0
-    fi
-    
-    # Create a temporary test file that loads and validates the syntax
-    local temp_test="/tmp/elixir_test_$$.exs"
-    
-    cat > "$temp_test" << 'EOF'
-# Stub modules that generated code might depend on
-defmodule Std do
-  def string(v), do: inspect(v)
-end
-
-defmodule Log do
-  def trace(msg, _metadata), do: :ok
-end
-
-defmodule StringTools do
-  def ltrim(s), do: String.trim_leading(s)
-  def rtrim(s), do: String.trim_trailing(s)
-  def replace(s, from, to), do: String.replace(s, from, to)
-end
-
-defmodule StringBuf do
-  defstruct iolist: []
-end
-
-defmodule Type do
-  def get_class(_), do: nil
-  def get_enum(_), do: nil
-end
-
-defmodule Reflect do
-  def fields(_), do: []
-  def get_property(_, _), do: nil
-  def set_property(_, _, _), do: :ok
-  def has_field(_, _), do: false
-end
-
-# Now try to compile the generated file
-EOF
-    
-    echo "Code.compile_file(\"$file\")" >> "$temp_test"
-    
-    # Try to validate the Elixir syntax
-    if timeout 5s elixir "$temp_test" > /dev/null 2>&1; then
-        echo -e "${GREEN}✓${RESET} $test_name: $(basename "$file")"
-        rm -f "$temp_test"
-        return 0
-    else
-        # Capture the actual error for debugging
-        local error_output=$(timeout 5s elixir "$temp_test" 2>&1 || true)
-        echo -e "${RED}✗${RESET} $test_name: $(basename "$file")" | tee -a "$VALIDATION_LOG"
-        echo "  Error: $error_output" | head -5 | tee -a "$VALIDATION_LOG"
-        rm -f "$temp_test"
-        return 1
-    fi
-}
-
-# Function to validate all .ex files in a test directory
+# Validate all .ex files in a test directory by parsing (no execution)
 validate_test_directory() {
     local test_dir="$1"
     local test_name=$(basename "$test_dir")
@@ -104,7 +39,7 @@ validate_test_directory() {
     fi
     
     # Find all .ex files in the out directory
-    local ex_files=$(find "$test_dir/out" -name "*.ex" -type f 2>/dev/null)
+    local ex_files=$(find "$test_dir/out" -name "*.ex" -type f 2>/dev/null | sort)
     
     if [ -z "$ex_files" ]; then
         # No Elixir files, might be a JavaScript test
@@ -113,13 +48,15 @@ validate_test_directory() {
     
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     
+    # Build one Elixir command to parse all files without executing them
+    # Using Code.string_to_quoted/2 avoids running top-level code in files
+    local parse_cmd='files = System.argv(); ok = Enum.all?(files, fn f -> case File.read(f) do {:ok, s} -> case Code.string_to_quoted(s, file: f) do {:ok, _} -> true; {:error, reason} -> IO.puts("Syntax error in #{f}: #{inspect(reason)}"); false end; {:error, r} -> IO.puts("Read error in #{f}: #{inspect(r)}"); false end end); if ok, do: :ok, else: System.halt(1)'
     local test_passed=true
-    for file in $ex_files; do
-        if ! validate_elixir_file "$file" "$test_name"; then
+    if [ -n "$ex_files" ]; then
+        if ! timeout 20s elixir -e "$parse_cmd" $ex_files > /dev/null 2>>"$VALIDATION_LOG"; then
             test_passed=false
-            break
         fi
-    done
+    fi
     
     if $test_passed; then
         PASSED_TESTS=$((PASSED_TESTS + 1))

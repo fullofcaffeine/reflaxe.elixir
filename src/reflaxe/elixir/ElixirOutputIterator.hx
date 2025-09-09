@@ -4,6 +4,8 @@ package reflaxe.elixir;
 
 import reflaxe.output.DataAndFileInfo;
 import reflaxe.output.StringOrBytes;
+import reflaxe.elixir.ast.builders.ModuleBuilder; // For strategy
+import reflaxe.elixir.ast.NameUtils; // snake_case helpers
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirASTPrinter;
@@ -22,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  * - Applies transformation passes via ElixirASTTransformer
  * - Converts to strings via ElixirASTPrinter
  * - Returns DataAndFileInfo with string output for Reflaxe to write to files
+ * - If bootstrap strategy is External, also emits bootstrap_<module>.ex files after
+ *   module generation that load transitive dependencies in topological order and
+ *   call Module.main(). This defers require generation to the final output phase
+ *   for deterministic and complete loading semantics.
  * 
  * ARCHITECTURE BENEFITS:
  * - Clean separation between AST compilation and string generation
@@ -46,6 +52,10 @@ class ElixirOutputIterator {
      * Total number of items to iterate
      */
     var maxIndex: Int;
+
+    // Extra outputs generated after all normal modules (e.g., bootstrap files)
+    var extraOutputs: Array<DataAndFileInfo<StringOrBytes>> = [];
+    var extraIndex: Int = 0;
     
     /**
      * Constructor
@@ -68,6 +78,9 @@ class ElixirOutputIterator {
         trace('[ElixirOutputIterator] Typedefs: ${compiler.typedefs.length}');
         trace('[ElixirOutputIterator] Abstracts: ${compiler.abstracts.length}');
         #end
+
+        // Prepare external bootstrap files if strategy requires it
+        prepareExternalBootstraps();
     }
     
     /**
@@ -75,7 +88,7 @@ class ElixirOutputIterator {
      * @return True if there are more items
      */
     public function hasNext(): Bool {
-        return index < maxIndex;
+        return index < maxIndex || extraIndex < extraOutputs.length;
     }
     
     /**
@@ -83,6 +96,15 @@ class ElixirOutputIterator {
      * @return DataAndFileInfo with string output
      */
     public function next(): DataAndFileInfo<StringOrBytes> {
+        // If normal items are exhausted, serve extra outputs
+        if (index >= maxIndex) {
+            if (extraIndex < extraOutputs.length) {
+                return extraOutputs[extraIndex++];
+            }
+            // Should not happen if hasNext() is respected
+            return new DataAndFileInfo(StringOrBytes.fromString(""), null, "", null);
+        }
+
         // Determine which collection to pull from based on current index
         final astData: DataAndFileInfo<ElixirAST> = if (index < compiler.classes.length) {
             // Get from classes
@@ -134,6 +156,86 @@ class ElixirOutputIterator {
         
         // Return the same DataAndFileInfo but with string output instead of AST
         return astData.withOutput(output);
+    }
+
+    /**
+     * Prepare external bootstrap files when using the External strategy.
+     * Aggregates dependency graph AFTER compilation for deterministic and complete requires.
+     */
+    function prepareExternalBootstraps(): Void {
+        // Respect bootstrap strategy: only generate externals if not inline
+        if (ModuleBuilder.getBootstrapStrategy() == BootstrapStrategy.Inline) return;
+        if (compiler.modulesWithBootstrap.length == 0) return;
+
+        // Build global topological order once
+        var topo = compiler.getSortedModules();
+
+        for (moduleName in compiler.modulesWithBootstrap) {
+            // Compute transitive closure for this module
+            var closure = computeTransitiveDependencies(moduleName);
+            // Ordered list filtered by topo
+            var ordered: Array<String> = [];
+            for (m in topo) if (closure.exists(m)) ordered.push(m);
+            // Fallback: alpha order of closure keys if needed
+            if (ordered.length < Lambda.count(closure)) {
+                var allKeys: Array<String> = [for (k in closure.keys()) k];
+                allKeys.sort((a, b) -> Reflect.compare(a, b));
+                ordered = allKeys;
+            }
+
+            // Build bootstrap script content
+            var lines: Array<String> = [];
+            for (dep in ordered) {
+                var filePath = compiler.moduleOutputPaths.get(dep);
+                if (filePath == null) {
+                    var pack = compiler.modulePackages.get(dep);
+                    filePath = compiler.getModuleOutputPath(dep, pack);
+                }
+                if (filePath != null) {
+                    lines.push('Code.require_file("' + filePath + '", __DIR__)');
+                }
+            }
+            // Require the main module file itself
+            var mainPath = compiler.moduleOutputPaths.get(moduleName);
+            if (mainPath == null) {
+                var pack = compiler.modulePackages.get(moduleName);
+                mainPath = compiler.getModuleOutputPath(moduleName, pack);
+            }
+            if (mainPath != null) {
+                lines.push('Code.require_file("' + mainPath + '", __DIR__)');
+            }
+            // Call Main.main()
+            lines.push(moduleName + '.main()');
+
+            var content = lines.join("\n");
+            var fileBase = 'bootstrap_' + NameUtils.toSnakeCase(moduleName);
+
+            // Construct output info with override name/dir
+            var baseType = compiler.moduleBaseTypes.exists(moduleName) ? compiler.moduleBaseTypes.get(moduleName) : null;
+            var data = new DataAndFileInfo<StringOrBytes>(StringOrBytes.fromString(content), baseType, fileBase, null);
+            extraOutputs.push(data);
+        }
+    }
+
+    /**
+     * Compute transitive dependency closure for a module using compiler.moduleDependencies
+     */
+    inline function computeTransitiveDependencies(root: String): Map<String, Bool> {
+        var result = new Map<String, Bool>();
+        var graph = compiler.moduleDependencies;
+        var stack: Array<String> = [];
+        var direct = graph.get(root);
+        if (direct != null) for (k in direct.keys()) stack.push(k);
+        while (stack.length > 0) {
+            var m = stack.pop();
+            if (m == null) break;
+            if (m == root) continue;
+            if (result.exists(m)) continue;
+            result.set(m, true);
+            var next = graph.get(m);
+            if (next != null) for (n in next.keys()) if (!result.exists(n)) stack.push(n);
+        }
+        return result;
     }
 }
 

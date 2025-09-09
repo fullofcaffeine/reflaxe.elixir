@@ -212,6 +212,13 @@ class ElixirCompiler extends GenericCompiler<
      * Maps module name -> package array (e.g., "Log" -> ["haxe"])
      */
     public var modulePackages: Map<String, Array<String>> = new Map();
+
+    /**
+     * Map module name -> BaseType for synthetic outputs (e.g., bootstrap files)
+     * WHY: OutputManager requires a BaseType for each DataAndFileInfo; we use the module's
+     *      BaseType combined with overrideFileName to write custom files.
+     */
+    public var moduleBaseTypes: Map<String, BaseType> = new Map();
     
     /**
      * Constructor - Initialize the compiler with type mapping and pattern matching systems
@@ -441,13 +448,6 @@ class ElixirCompiler extends GenericCompiler<
         var moduleName = classType.name;
         var modulePack = classType.pack;
         
-        // Set current module for dependency tracking
-        currentCompiledModule = moduleName;
-        // Initialize dependency map for this module if not exists
-        if (!moduleDependencies.exists(moduleName)) {
-            moduleDependencies.set(moduleName, new Map<String, Bool>());
-        }
-        
         if (classType.meta.has(":native")) {
             var nativeMeta = classType.meta.extract(":native");
             if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
@@ -468,12 +468,21 @@ class ElixirCompiler extends GenericCompiler<
             }
         }
         
+        // Set current module for dependency tracking using the final module name
+        currentCompiledModule = moduleName;
+        // Initialize dependency map for this module if not exists
+        if (!moduleDependencies.exists(moduleName)) {
+            moduleDependencies.set(moduleName, new Map<String, Bool>());
+        }
+        
         // Set output file path with snake_case naming
         setUniversalOutputPath(moduleName, modulePack);
         
         // Track the output path for this module
         var outputPath = getModuleOutputPath(moduleName, modulePack);
         moduleOutputPaths.set(moduleName, outputPath);
+        // Track BaseType for synthetic outputs
+        moduleBaseTypes.set(moduleName, classType);
         
         // Store current class context for use in expression compilation
         this.currentClassType = classType;
