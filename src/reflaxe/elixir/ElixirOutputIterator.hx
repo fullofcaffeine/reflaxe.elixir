@@ -258,8 +258,12 @@ class ElixirOutputIterator {
 
             // Construct output info with override name/dir
             var baseType = compiler.moduleBaseTypes.exists(moduleName) ? compiler.moduleBaseTypes.get(moduleName) : null;
-            var data = new DataAndFileInfo<StringOrBytes>(StringOrBytes.fromString(content), baseType, fileBase, null);
-            extraOutputs.push(data);
+            // SAFETY: OutputManager requires a non-null BaseType for filename resolution.
+            // If we cannot map a BaseType (unexpected), skip emitting the script to avoid crashes.
+            if (baseType != null) {
+                var data = new DataAndFileInfo<StringOrBytes>(StringOrBytes.fromString(content), baseType, fileBase, null);
+                extraOutputs.push(data);
+            }
             generatedFor.push(moduleName);
         }
 
@@ -293,8 +297,10 @@ class ElixirOutputIterator {
             lines.push(moduleName + '.main()');
             var content = lines.join("\n");
             var baseType = compiler.moduleBaseTypes.exists(moduleName) ? compiler.moduleBaseTypes.get(moduleName) : null;
-            var data = new DataAndFileInfo<StringOrBytes>(StringOrBytes.fromString(content), baseType, 'main.exs', null);
-            extraOutputs.push(data);
+            if (baseType != null) {
+                var data = new DataAndFileInfo<StringOrBytes>(StringOrBytes.fromString(content), baseType, 'main', null);
+                extraOutputs.push(data);
+            }
         }
     }
 
