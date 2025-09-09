@@ -22,7 +22,7 @@ defmodule Main do
   def factorial(_struct, n) do
     result = 1
     i = n
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, result, :ok}, fn _, {acc_i, acc_result, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i, :ok}, fn _, {acc_result, acc_i, acc_state} -> nil end)
     result
   end
   def day_name(_struct, day) do
@@ -58,3 +58,8 @@ defmodule Main do
     Log.trace(instance.day_name(3), %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "main"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

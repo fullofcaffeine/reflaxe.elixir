@@ -23,3 +23,8 @@ defmodule Main do
     Log.trace("pos1: " <> Kernel.to_string(pos1) <> ", pos2: " <> Kernel.to_string(pos2) <> ", sum: " <> Kernel.to_string(sum), %{:file_name => "Main.hx", :line_number => 33, :class_name => "Main", :method_name => "testParams"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

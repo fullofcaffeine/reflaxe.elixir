@@ -32,46 +32,46 @@ defmodule Assigns_Impl_ do
     result = %{}
     g = 0
     g1 = Map.keys(this1)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
-  if (acc_g < length(acc_g1)) do
-    field = g1[g]
-    acc_g = acc_g + 1
-    Map.put(result, String.to_atom(field), Map.get(this1, String.to_atom(field)))
-    {:cont, {acc_g1, acc_g, acc_state}}
-  else
-    {:halt, {acc_g1, acc_g, acc_state}}
-  end
-end)
-    g = 0
-    g1 = Map.keys(Assigns_Impl_.to_dynamic(other))
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < length(acc_g1)) do
     field = g1[g]
     acc_g = acc_g + 1
-    Map.put(result, String.to_atom(field), Map.get(Assigns_Impl_.to_dynamic(other), String.to_atom(field)))
+    Map.put(result, String.to_atom(field), Map.get(this1, String.to_atom(field)))
     {:cont, {acc_g, acc_g1, acc_state}}
   else
     {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
-    Assigns_Impl_.from_dynamic(result)
-  end
-  def with_field(this1, field, value) do
-    result = %{}
     g = 0
-    g1 = Map.keys(this1)
+    g1 = Map.keys(to_dynamic(other))
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
   if (acc_g < length(acc_g1)) do
-    existing_field = g1[g]
+    field = g1[g]
     acc_g = acc_g + 1
-    Map.put(result, String.to_atom(existing_field), Map.get(this1, String.to_atom(existing_field)))
+    Map.put(result, String.to_atom(field), Map.get(to_dynamic(other), String.to_atom(field)))
     {:cont, {acc_g1, acc_g, acc_state}}
   else
     {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
+    from_dynamic(result)
+  end
+  def with_field(this1, field, value) do
+    result = %{}
+    g = 0
+    g1 = Map.keys(this1)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
+  if (acc_g < length(acc_g1)) do
+    existing_field = g1[g]
+    acc_g = acc_g + 1
+    Map.put(result, String.to_atom(existing_field), Map.get(this1, String.to_atom(existing_field)))
+    {:cont, {acc_g, acc_g1, acc_state}}
+  else
+    {:halt, {acc_g, acc_g1, acc_state}}
+  end
+end)
     result = Map.put(result, String.to_atom(field), value)
-    Assigns_Impl_.from_dynamic(result)
+    from_dynamic(result)
   end
   def get_inner_content(this1) do
     Map.get(this1, String.to_atom("inner_content"))

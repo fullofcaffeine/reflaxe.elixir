@@ -10,6 +10,7 @@
   "result.ex",
   "reflect.ex",
   "message.ex",
+  "main.exs.ex",
   "main.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
@@ -37,7 +38,6 @@
   "event.ex",
   "content.ex",
   "container.ex",
-  "bootstrap_main.ex",
   "action.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"

@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "value_type.ex",
+  "users.ex",
   "type.ex",
   "todo_app_web/user_live.ex",
   "todo_app_web/user_controller.ex",

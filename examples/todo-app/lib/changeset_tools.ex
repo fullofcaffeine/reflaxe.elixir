@@ -12,7 +12,7 @@ defmodule ChangesetTools do
     Lambda.exists(changeset.errors, fn error -> error.field == _field end)
   end
   def get_first_field_error(changeset, field) do
-    errors = ChangesetTools.get_field_errors(changeset, field)
+    errors = get_field_errors(changeset, field)
     if (length(errors) > 0) do
       errors[0]
     else
@@ -61,7 +61,7 @@ end)
       1 ->
         g = elem(_result, 1)
         changeset = g
-        errors = ChangesetTools.get_errors_map(changeset)
+        errors = get_errors_map(changeset)
         throw("Changeset has errors: " <> (if (errors == nil), do: "null", else: errors.to_string()))
     end
   end

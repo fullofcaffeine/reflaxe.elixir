@@ -77,3 +77,9 @@ defmodule Main do
     Log.trace("Utilities test completed", %{:file_name => "Main.hx", :line_number => 195, :class_name => "Main", :method_name => "main"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/functional/result_tools.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()
