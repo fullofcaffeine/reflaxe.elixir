@@ -60,8 +60,21 @@ class Date {
         var d = Date.fromTime(Sys.time() * 1000);
         return d;
         #else
-        // At runtime, use Elixir's DateTime
-        return untyped __elixir__('DateTime.utc_now()');
+        // At runtime, construct a Date wrapper holding Elixir's DateTime
+        // WHY: Returning the bare DateTime leads to broken inline expansions like
+        // "_this = Date.now(); DateTime.to_unix(this.datetime, :millisecond)".
+        // We must return a Haxe Date instance whose `datetime` field points to
+        // the Elixir DateTime so that instance methods (getTime, etc.) can
+        // reliably reference `this.datetime`.
+        var d = new Date(0, 0, 0, 0, 0, 0);
+        // We intentionally initialize the private backing field here.
+        // @:privateAccess allows accessing a type's private fields from outside
+        // their usual visibility. Even though we're inside Date, using it makes
+        // the intent explicit and avoids exposing a public setter just for this.
+        // This keeps `datetime` encapsulated while constructing a correct
+        // wrapper around the Elixir DateTime value.
+        @:privateAccess d.datetime = untyped __elixir__('DateTime.utc_now()');
+        return d;
         #end
     }
     
@@ -72,9 +85,11 @@ class Date {
      */
     public static function fromTime(t: Float): Date {
         #if macro
-        // At macro time, create a Date with timestamp
+        // At macro time, create a Date with timestamp. We cannot call
+        // runtime Elixir here, so we stash the value in the private field.
         var d = new Date(1970, 0, 1, 0, 0, 0);
-        // Store timestamp as a simple way to track it at macro time
+        // @:privateAccess: explicitly write to the private field without
+        // introducing public mutators, keeping the type encapsulated.
         @:privateAccess d.datetime = t;
         return d;
         #else
