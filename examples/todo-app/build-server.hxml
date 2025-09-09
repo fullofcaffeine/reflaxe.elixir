@@ -53,6 +53,7 @@ server.infrastructure.Gettext
 server.infrastructure.TranslationBindings
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
+server.infrastructure.PostgrexTypes
 # Temporarily exclude problematic stdlib modules
 # -D exclude-bytes  # Removed to test assignment extraction fix
 -D exclude-balanced-tree

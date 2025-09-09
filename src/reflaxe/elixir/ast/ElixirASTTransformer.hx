@@ -258,6 +258,20 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.repoTransformPass
         });
+
+        passes.push({
+            name: "PostgrexTypesTransform",
+            description: "Transform @:postgrexTypes modules into Postgrex types definition",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.postgrexTypesTransformPass
+        });
+
+        passes.push({
+            name: "DbTypesTransform",
+            description: "Transform @:dbTypes modules into DB adapter types definition",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.dbTypesTransformPass
+        });
         
         passes.push({
             name: "ApplicationTransform",

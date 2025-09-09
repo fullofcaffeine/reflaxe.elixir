@@ -71,6 +71,16 @@ See `docs/06-guides/BOOTSTRAP_AND_ENTRYPOINTS.md` for details and examples.
   - Phoenix OTP modules (`@:application`) do not emit bootstrap; start with `mix phx.server` or releases.
   - If you add a `Main.main/0`, external strategy will emit a `main.exs` runner.
 
+## Examples: Todo App Philosophy
+
+- Goal: Keep the todo app as a near 1:1 reproduction of a Phoenix application, but authored in Haxe. Treat it as “typed Elixir” (akin to Gleam ergonomics) rather than a new abstraction layer.
+- Approach: Prefer mirroring Phoenix/Ecto constructs and files through externs and annotations (`@:application`, `@:phoenixWebModule`, `@:repo`, etc.). Only introduce extra abstractions when they clearly improve safety or ergonomics without obscuring Elixir semantics.
+- Generated Code: Avoid hand-editing generated `.ex` files under `examples/todo-app/lib`. Any additional runtime modules should come from Haxe externs/stubs that inject Elixir code deterministically.
+- DB Types modules (generalized): Prefer generating DB adapter type modules via annotations rather than hand-written `.ex` files.
+  - Generic: `@:dbTypes("postgrex", "Jason")` on an extern with `@:native("MyApp.PostgrexTypes")` emits `Postgrex.Types.define(__MODULE__, [], json: Jason)`.
+  - Sugar: `@:postgrexTypes("Jason")` is equivalent to `@:dbTypes("postgrex", "Jason")`.
+  - Repo config: set `types: MyApp.PostgrexTypes` in each env.
+
 ## Contribution Notes
 
 - Keep Elixir externs minimal and typed; prefer exposing precise signatures and atoms.

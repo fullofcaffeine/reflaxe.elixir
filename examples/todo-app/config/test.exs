@@ -11,3 +11,7 @@ config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# Use precompiled Postgrex types in tests to avoid races in concurrent DB usage
+config :todo_app, TodoApp.Repo,
+  types: TodoApp.PostgrexTypes

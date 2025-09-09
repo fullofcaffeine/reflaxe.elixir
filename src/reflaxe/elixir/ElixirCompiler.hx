@@ -680,6 +680,8 @@ class ElixirCompiler extends GenericCompiler<
                classType.meta.has(":liveview") ||
                classType.meta.has(":schema") ||
                classType.meta.has(":repo") ||
+               classType.meta.has(":dbTypes") ||
+               classType.meta.has(":postgrexTypes") ||
                classType.meta.has(":application") ||
                classType.meta.has(":genserver") ||
                classType.meta.has(":router") ||
