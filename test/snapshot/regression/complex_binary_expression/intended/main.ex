@@ -26,3 +26,8 @@ defmodule Main do
     Log.trace("final c: " <> Kernel.to_string(c), %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testMethodCallInBinaryExpression"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

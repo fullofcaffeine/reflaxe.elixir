@@ -51,7 +51,7 @@ end)
     result
   end
   def get_header(this1, name) do
-    headers = Conn_Impl_.get_headers(this1)
+    headers = get_headers(this1)
     key = name.to_lower_case()
     Map.get(headers, key)
   end
@@ -71,7 +71,7 @@ end)
     Map.get(this1, String.to_atom("assigns"))
   end
   def get_assign(this1, key) do
-    assigns = Conn_Impl_.get_assigns(this1)
+    assigns = get_assigns(this1)
     Map.get(assigns, String.to_atom(key))
   end
   def is_halted(this1) do
@@ -85,15 +85,15 @@ end)
     result = %{}
     g = 0
     g1 = Map.keys(headers)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
   if (acc_g < length(acc_g1)) do
     field = g1[g]
     acc_g = acc_g + 1
     value = Map.get(headers, String.to_atom(field))
     Map.put(result, field, value)
-    {:cont, {acc_g, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
     result

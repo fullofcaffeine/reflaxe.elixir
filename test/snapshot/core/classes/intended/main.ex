@@ -23,3 +23,9 @@ defmodule Main do
     Log.trace(lengths.get(0), %{:file_name => "Main.hx", :line_number => 171, :class_name => "Main", :method_name => "main"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("circle.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

@@ -178,3 +178,8 @@ end
     Log.trace("  calculator.multiplyBy(25): " <> multiplied, %{:file_name => "Main.hx", :line_number => 210, :class_name => "Main", :method_name => "testMethodCalling"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

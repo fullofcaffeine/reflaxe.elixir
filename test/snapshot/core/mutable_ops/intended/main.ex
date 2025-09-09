@@ -63,11 +63,16 @@ end)
 end)
     sum = 0
     k = 1
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, sum, :ok}, fn _, {acc_k, acc_sum, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, k, :ok}, fn _, {acc_sum, acc_k, acc_state} -> nil end)
     Log.trace("Sum: " <> Kernel.to_string(sum), %{:file_name => "Main.hx", :line_number => 91, :class_name => "Main", :method_name => "testLoopCounters"})
     total = 0
     x = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total, y, x, :ok}, fn _, {acc_total, acc_y, acc_x, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {y, x, total, :ok}, fn _, {acc_y, acc_x, acc_total, acc_state} -> nil end)
     Log.trace("Total from nested loops: " <> Kernel.to_string(total), %{:file_name => "Main.hx", :line_number => 104, :class_name => "Main", :method_name => "testLoopCounters"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

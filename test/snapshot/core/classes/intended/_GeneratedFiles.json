@@ -11,6 +11,7 @@
   "shape.ex",
   "reflect.ex",
   "point.ex",
+  "main.exs.ex",
   "main.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
@@ -38,7 +39,6 @@
   "drawable.ex",
   "container.ex",
   "circle.ex",
-  "bootstrap_main.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],

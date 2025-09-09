@@ -14,6 +14,7 @@
   "reflect.ex",
   "post.ex",
   "organization.ex",
+  "main.exs.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
   "haxe/log.ex",
@@ -40,7 +41,6 @@
   "ecto_integration_simple.ex",
   "create_users_table.ex",
   "comment.ex",
-  "bootstrap_ecto_integration_simple.ex",
   "accounts.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"

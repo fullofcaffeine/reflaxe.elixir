@@ -86,3 +86,8 @@ defmodule Main do
     Log.trace("  0.0 -> " <> Kernel.to_string(truncated5), %{:file_name => "Main.hx", :line_number => 135, :class_name => "Main", :method_name => "testRandomAndInt"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

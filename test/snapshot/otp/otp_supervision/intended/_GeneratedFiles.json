@@ -7,6 +7,7 @@
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
+  "main.exs.ex",
   "main.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
@@ -62,7 +63,6 @@
   "elixir/otp/child_spec_format.ex",
   "elixir/otp/child_spec_builder.ex",
   "elixir/comparison_result.ex",
-  "bootstrap_main.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],

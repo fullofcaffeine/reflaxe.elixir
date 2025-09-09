@@ -6,7 +6,7 @@ defmodule Log do
     if (Map.get(infos, :custom_params) != nil) do
       g = 0
       g1 = infos.custom_params
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {str, g1, g, :ok}, fn _, {acc_str, acc_g1, acc_g, acc_state} -> nil end)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, str, g, :ok}, fn _, {acc_g1, acc_str, acc_g, acc_state} -> nil end)
     end
     pstr <> ": " <> str
   end

@@ -50,13 +50,13 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner, outer, :ok}, fn _, {acc_inner, acc_outer, acc_state} -> nil end)
     a = 0
     b = 10
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {b, a, :ok}, fn _, {acc_b, acc_a, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {a, b, :ok}, fn _, {acc_a, acc_b, acc_state} ->
   if (acc_a < 5 && acc_b > 5) do
     acc_a = acc_a + 1
     acc_b = (acc_b - 1)
-    {:cont, {acc_b, acc_a, acc_state}}
+    {:cont, {acc_a, acc_b, acc_state}}
   else
-    {:halt, {acc_b, acc_a, acc_state}}
+    {:halt, {acc_a, acc_b, acc_state}}
   end
 end)
     x = 0
@@ -80,3 +80,8 @@ end)
     Log.trace("Do-while with break: x=" <> Kernel.to_string(x), %{:file_name => "Main.hx", :line_number => 74, :class_name => "Main", :method_name => "main"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

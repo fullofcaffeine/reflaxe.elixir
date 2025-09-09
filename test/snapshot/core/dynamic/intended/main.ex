@@ -28,7 +28,7 @@ defmodule Main do
     var_args = fn args ->
   sum = 0
   g = 0
-  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {args, sum, g, :ok}, fn _, {acc_args, acc_sum, acc_g, acc_state} -> nil end)
+  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, args, sum, :ok}, fn _, {acc_g, acc_args, acc_sum, acc_state} -> nil end)
   sum
 end
     Log.trace(var_args([1, 2, 3, 4, 5]), %{:file_name => "Main.hx", :line_number => 62, :class_name => "Main", :method_name => "dynamicFunctions"})
@@ -58,14 +58,14 @@ end
   def dynamic_collections() do
     dyn_array = [1, "two", 3, true, %{:x => 10}]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {dyn_array, g, :ok}, fn _, {acc_dyn_array, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, dyn_array, :ok}, fn _, {acc_g, acc_dyn_array, acc_state} ->
   if (acc_g < length(acc_dyn_array)) do
     item = dyn_array[g]
     acc_g = acc_g + 1
     Log.trace("Item: " <> Std.string(item), %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "dynamicCollections"})
-    {:cont, {acc_dyn_array, acc_g, acc_state}}
+    {:cont, {acc_g, acc_dyn_array, acc_state}}
   else
-    {:halt, {acc_dyn_array, acc_g, acc_state}}
+    {:halt, {acc_g, acc_dyn_array, acc_state}}
   end
 end)
     dyn_obj = %{}
@@ -139,3 +139,8 @@ end)
     Log.trace(str, %{:file_name => "Main.hx", :line_number => 186, :class_name => "Main", :method_name => "main"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

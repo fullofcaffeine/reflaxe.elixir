@@ -17,3 +17,6 @@ defmodule Main do
     IO.puts("Hello from function!")
   end
 end
+
+Code.require_file("main.ex", __DIR__)
+Main.main()

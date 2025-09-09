@@ -37,3 +37,8 @@ end)
     Log.trace("Calculator result: " <> Kernel.to_string(calc.get_value()), %{:file_name => "Main.hx", :line_number => 58, :class_name => "Main", :method_name => "testClassTracking"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("main.ex", __DIR__)
+Main.main()

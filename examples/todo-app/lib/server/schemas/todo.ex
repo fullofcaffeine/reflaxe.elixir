@@ -16,11 +16,11 @@ defmodule Todo do
   end
   def toggle_completed(todo) do
     params = %{:completed => not todo.completed}
-    Todo.changeset(todo, params)
+    changeset(todo, params)
   end
   def update_priority(todo, priority) do
     params = %{:priority => priority}
-    Todo.changeset(todo, params)
+    changeset(todo, params)
   end
   def add_tag(todo, tag) do
     tags = if (todo.tags != nil) do
@@ -30,6 +30,6 @@ else
 end
     tags = tags ++ [tag]
     params = %{:tags => tags}
-    Todo.changeset(todo, params)
+    changeset(todo, params)
   end
 end

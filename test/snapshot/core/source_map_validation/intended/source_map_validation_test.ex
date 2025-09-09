@@ -43,3 +43,8 @@ end)
     Log.trace("Processing item: " <> Kernel.to_string(item), %{:file_name => "SourceMapValidationTest.hx", :line_number => 61, :class_name => "SourceMapValidationTest", :method_name => "processItem"})
   end
 end
+
+Code.require_file("std.ex", __DIR__)
+Code.require_file("haxe/log.ex", __DIR__)
+Code.require_file("source_map_validation_test.ex", __DIR__)
+SourceMapValidationTest.main()

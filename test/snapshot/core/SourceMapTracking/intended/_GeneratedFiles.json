@@ -7,6 +7,7 @@
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
+  "main.exs.ex",
   "main.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
@@ -32,7 +33,6 @@
   "haxe/_constraints/constructible_impl_.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
   "calculator.ex",
-  "bootstrap_main.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],

@@ -41,3 +41,6 @@ defmodule Main do
     %{:type => "ArrayValue", :items => arr}
   end
 end
+
+Code.require_file("main.ex", __DIR__)
+Main.main()

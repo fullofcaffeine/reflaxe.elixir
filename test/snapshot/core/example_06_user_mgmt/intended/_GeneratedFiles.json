@@ -1,12 +1,14 @@
 {
   "filesGenerated": [
   "value_type.ex",
+  "users.ex",
   "type.ex",
   "sys.ex",
   "string_tools.ex",
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
+  "main.exs.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
   "haxe/log.ex",
@@ -33,7 +35,6 @@
   "contexts/users.ex",
   "contexts/user_changeset.ex",
   "contexts/user.ex",
-  "bootstrap_users.ex",
   "_enum_value/enum_value_impl_.ex",
   "_any/any_impl_.ex"
 ],
