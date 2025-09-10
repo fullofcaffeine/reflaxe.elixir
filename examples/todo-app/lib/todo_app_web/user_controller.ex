@@ -21,9 +21,9 @@ defmodule TodoAppWeb.UserController do
   end
   def create(_conn, _params) do
     case (result) do
-      {:ok, _} ->
+      {:ok, g} ->
         Phoenix.Controller.json(this1, %{:user => user, :created => true, :message => "User created successfully"})
-      {:error, _} ->
+      {:error, g} ->
         Phoenix.Controller.json(this1, %{:error => "Failed to create user", :changeset => changeset})
     end
   end
@@ -36,9 +36,9 @@ defmodule TodoAppWeb.UserController do
     update_attrs = %{:name => params.name, :email => params.email, :age => params.age, :active => params.active}
     result = Users.update_user(user, update_attrs)
     case (result) do
-      {:ok, _} ->
+      {:ok, g} ->
         Phoenix.Controller.json(conn, data)
-      {:error, _} ->
+      {:error, g} ->
         Phoenix.Controller.json(this1, %{:error => "Failed to update user", :changeset => changeset})
     end
   end
@@ -50,9 +50,9 @@ defmodule TodoAppWeb.UserController do
     end
     result = Users.delete_user(user)
     case (result) do
-      {:ok, _} ->
+      {:ok, g} ->
         Phoenix.Controller.json(conn, data)
-      {:error, _} ->
+      {:error, g} ->
         Phoenix.Controller.json(this1, %{:error => "Failed to delete user", :success => false})
     end
   end
