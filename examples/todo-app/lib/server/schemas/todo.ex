@@ -11,44 +11,79 @@ defmodule Todo do
     field(:user_id, :integer)
     timestamps()
   end
-  def changeset(todo, params) do
+  def changeset(_todo, _params) do
     this1 = nil
     this1 = Ecto.Changeset.change(todo, params)
     cs = this1
-    atoms = Enum.join(Enum.map(["title", "userId"], fn f -> ":" <> f end), ", ")
-    this1 = Ecto.Changeset.validate_required(cs, [__elixir__.call(atoms)])
+    this1 = Ecto.Changeset.validate_required(cs, Enum.map(["title", "userId"], &String.to_atom/1))
     opts = %{:min => 3, :max => 200}
-    elixir_opts = []
-    elixir_opts = elixir_opts ++ ["min: " <> Kernel.to_string(opts.min)]
-    elixir_opts = elixir_opts ++ ["max: " <> Kernel.to_string(opts.max)]
-    elixir_opts = elixir_opts ++ ["is: " <> Kernel.to_string(opts.is)]
-    opts_str = Enum.join(elixir_opts, ", ")
-    this1 = this1
-if Map.get(opts, :min) != nil, do: elixir_opts
-if Map.get(opts, :max) != nil, do: elixir_opts
-if Map.get(opts, :is) != nil, do: elixir_opts
-Ecto.Changeset.validate_length(this1, :"title", [__elixir__.call(opts_str)])
+    this1 = if Map.get(opts, :min) != nil && Map.get(opts, :max) != nil && Map.get(opts, :is) != nil do
+  Ecto.Changeset.validate_length(this1, :"title", [min: opts.min, max: opts.max, is: opts.is])
+else
+  if Map.get(opts, :min) != nil && Map.get(opts, :max) != nil do
+    Ecto.Changeset.validate_length(this1, :"title", [min: opts.min, max: opts.max])
+  else
+    if Map.get(opts, :min) != nil && Map.get(opts, :is) != nil do
+      Ecto.Changeset.validate_length(this1, :"title", [min: opts.min, is: opts.is])
+    else
+      if Map.get(opts, :max) != nil && Map.get(opts, :is) != nil do
+        Ecto.Changeset.validate_length(this1, :"title", [max: opts.max, is: opts.is])
+      else
+        if Map.get(opts, :min) != nil do
+          Ecto.Changeset.validate_length(this1, :"title", [min: opts.min])
+        else
+          if Map.get(opts, :max) != nil do
+            Ecto.Changeset.validate_length(this1, :"title", [max: opts.max])
+          else
+            if Map.get(opts, :is) != nil do
+              Ecto.Changeset.validate_length(this1, :"title", [is: opts.is])
+            else
+              Ecto.Changeset.validate_length(this1, :"title", [])
+            end
+          end
+        end
+      end
+    end
+  end
+end
     opts = %{:max => 1000}
-    elixir_opts = []
-    if (Map.get(opts, :min) != nil) do
-      elixir_opts = elixir_opts ++ ["min: " <> Kernel.to_string(opts.min)]
+    if (Map.get(opts, :min) != nil && Map.get(opts, :max) != nil && Map.get(opts, :is) != nil) do
+      Ecto.Changeset.validate_length(this1, :"description", [min: opts.min, max: opts.max, is: opts.is])
+    else
+      if (Map.get(opts, :min) != nil && Map.get(opts, :max) != nil) do
+        Ecto.Changeset.validate_length(this1, :"description", [min: opts.min, max: opts.max])
+      else
+        if (Map.get(opts, :min) != nil && Map.get(opts, :is) != nil) do
+          Ecto.Changeset.validate_length(this1, :"description", [min: opts.min, is: opts.is])
+        else
+          if (Map.get(opts, :max) != nil && Map.get(opts, :is) != nil) do
+            Ecto.Changeset.validate_length(this1, :"description", [max: opts.max, is: opts.is])
+          else
+            if (Map.get(opts, :min) != nil) do
+              Ecto.Changeset.validate_length(this1, :"description", [min: opts.min])
+            else
+              if (Map.get(opts, :max) != nil) do
+                Ecto.Changeset.validate_length(this1, :"description", [max: opts.max])
+              else
+                if (Map.get(opts, :is) != nil) do
+                  Ecto.Changeset.validate_length(this1, :"description", [is: opts.is])
+                else
+                  Ecto.Changeset.validate_length(this1, :"description", [])
+                end
+              end
+            end
+          end
+        end
+      end
     end
-    if (Map.get(opts, :max) != nil) do
-      elixir_opts = elixir_opts ++ ["max: " <> Kernel.to_string(opts.max)]
-    end
-    if (Map.get(opts, :is) != nil) do
-      elixir_opts = elixir_opts ++ ["is: " <> Kernel.to_string(opts.is)]
-    end
-    opts_str = Enum.join(elixir_opts, ", ")
-    Ecto.Changeset.validate_length(this1, :"description", [__elixir__.call(opts_str)])
   end
   def toggle_completed(todo) do
     changeset(todo, (%{:completed => not todo.completed}))
   end
-  def update_priority(todo, priority) do
+  def update_priority(todo, _priority) do
     changeset(todo, (%{:priority => priority}))
   end
-  def add_tag(todo, tag) do
+  def add_tag(todo, _tag) do
     tags = if (todo.tags != nil) do
   todo.tags
 else

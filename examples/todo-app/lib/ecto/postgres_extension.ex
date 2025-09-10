@@ -1,20 +1,20 @@
 defmodule Ecto.PostgresExtension do
   def uuid_ossp() do
-    {:UuidOssp}
+    {0}
   end
   def post_gis() do
-    {:PostGIS}
+    {1}
   end
   def h_store() do
-    {:HStore}
+    {2}
   end
   def pg_trgm() do
-    {:PgTrgm}
+    {3}
   end
   def pg_crypto() do
-    {:PgCrypto}
+    {4}
   end
   def jsonb_plv8() do
-    {:JsonbPlv8}
+    {5}
   end
 end

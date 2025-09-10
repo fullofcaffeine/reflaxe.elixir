@@ -5,7 +5,7 @@ defmodule ChildSpecBuilder do
   def supervisor(module, args, id) do
     %{:id => (if (id != nil), do: id, else: module), :start => {module, :start_link, args}, :restart => {:Permanent}, :shutdown => {:Infinity}, :type => {:Supervisor}, :modules => [module]}
   end
-  def temp_worker(module, args, id) do
+  def temp_worker(_module, _args, _id) do
     spec = worker(module, args, id)
     spec = Map.put(spec, :restart, {:Temporary})
     spec

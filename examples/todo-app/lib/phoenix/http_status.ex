@@ -1,50 +1,50 @@
 defmodule Phoenix.HttpStatus do
   def ok() do
-    {:Ok}
+    {0}
   end
   def created() do
-    {:Created}
+    {1}
   end
   def no_content() do
-    {:NoContent}
+    {2}
   end
   def moved_permanently() do
-    {:MovedPermanently}
+    {3}
   end
   def found() do
-    {:Found}
+    {4}
   end
   def not_modified() do
-    {:NotModified}
+    {5}
   end
   def bad_request() do
-    {:BadRequest}
+    {6}
   end
   def unauthorized() do
-    {:Unauthorized}
+    {7}
   end
   def forbidden() do
-    {:Forbidden}
+    {8}
   end
   def not_found() do
-    {:NotFound}
+    {9}
   end
   def method_not_allowed() do
-    {:MethodNotAllowed}
+    {10}
   end
   def unprocessable_entity() do
-    {:UnprocessableEntity}
+    {11}
   end
   def internal_server_error() do
-    {:InternalServerError}
+    {12}
   end
   def bad_gateway() do
-    {:BadGateway}
+    {13}
   end
   def service_unavailable() do
-    {:ServiceUnavailable}
+    {14}
   end
   def custom(arg0) do
-    {:Custom, arg0}
+    {15, arg0}
   end
 end

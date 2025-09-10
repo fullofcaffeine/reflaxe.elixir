@@ -1,11 +1,11 @@
 defmodule Ecto.Migration.ConstraintType do
   def unique() do
-    {:Unique}
+    {0}
   end
   def check() do
-    {:Check}
+    {1}
   end
   def exclusion() do
-    {:Exclusion}
+    {2}
   end
 end

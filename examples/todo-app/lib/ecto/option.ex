@@ -1,8 +1,8 @@
 defmodule Ecto.Option do
   def some(arg0) do
-    {:Some, arg0}
+    {0, arg0}
   end
   def none() do
-    {:None}
+    {1}
   end
 end

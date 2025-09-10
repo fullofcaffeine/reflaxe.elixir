@@ -7,11 +7,11 @@ defmodule TodoAppWeb.UserController do
     random = if v < 0 && v != i, do: (i - 1), else: i
     "" <> Kernel.to_string(timestamp) <> "_" <> Kernel.to_string(random)
   end
-  def index(conn, _params) do
+  def index(_conn, _params) do
     users = Users.list_users(nil)
     Phoenix.Controller.json(conn, %{:users => users})
   end
-  def show(conn, params) do
+  def show(_conn, _params) do
     user_id = Std.parse_int(params.id)
     user = Users.get_user_safe(user_id)
     if (user != nil) do
@@ -21,7 +21,7 @@ defmodule TodoAppWeb.UserController do
       Phoenix.Controller.json(this1, %{:error => "User not found"})
     end
   end
-  def create(conn, params) do
+  def create(_conn, _params) do
     result = Users.create_user(params)
     case (result) do
       {:ok, value} ->
@@ -36,7 +36,7 @@ defmodule TodoAppWeb.UserController do
         Phoenix.Controller.json(this1, %{:error => "Failed to create user", :changeset => reason})
     end
   end
-  def update(conn, params) do
+  def update(_conn, _params) do
     user_id = Std.parse_int(params.id)
     user = Users.get_user_safe(user_id)
     if (user == nil) do
@@ -58,7 +58,7 @@ defmodule TodoAppWeb.UserController do
         Phoenix.Controller.json(this1, %{:error => "Failed to update user", :changeset => reason})
     end
   end
-  def delete(conn, params) do
+  def delete(_conn, _params) do
     user_id = Std.parse_int(params.id)
     user = Users.get_user_safe(user_id)
     if (user == nil) do

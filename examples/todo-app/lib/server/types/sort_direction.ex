@@ -1,8 +1,8 @@
 defmodule Server.Types.SortDirection do
   def asc() do
-    {:Asc}
+    {0}
   end
   def desc() do
-    {:Desc}
+    {1}
   end
 end

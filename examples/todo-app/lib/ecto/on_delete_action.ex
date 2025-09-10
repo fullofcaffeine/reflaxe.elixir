@@ -1,14 +1,14 @@
 defmodule Ecto.OnDeleteAction do
   def restrict() do
-    {:Restrict}
+    {0}
   end
   def cascade() do
-    {:Cascade}
+    {1}
   end
   def set_null() do
-    {:SetNull}
+    {2}
   end
   def no_action() do
-    {:NoAction}
+    {3}
   end
 end

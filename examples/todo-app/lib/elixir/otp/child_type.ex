@@ -1,8 +1,8 @@
 defmodule Elixir.Otp.ChildType do
   def worker() do
-    {:Worker}
+    {0}
   end
   def supervisor() do
-    {:Supervisor}
+    {1}
   end
 end

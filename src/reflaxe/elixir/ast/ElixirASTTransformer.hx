@@ -483,11 +483,53 @@ class ElixirASTTransformer {
         #end
         
         // Prefix unused function parameters with underscore
+        // DISABLED: Now handled during AST building with more accurate TypedExpr-based detection
+        // The transformer approach had issues with mismatched detection logic between TypedExpr and ElixirAST
+        // See ElixirASTBuilder line 2064-2070 for the proper implementation
+        /*
         passes.push({
             name: "PrefixUnusedParameters", 
             description: "Prefix unused function parameters with underscore to follow Elixir conventions",
             enabled: true,
             pass: prefixUnusedParametersPass
+        });
+        */
+        
+        // ===== HYGIENE TRANSFORMATION PASSES =====
+        // These passes eliminate compilation warnings and ensure idiomatic Elixir
+        // TEMPORARILY DISABLED: Stack overflow issues due to incomplete AST traversal
+        // TODO: Fix recursive traversal to handle all AST node types properly
+        
+        // Hygienic variable naming pass (eliminate shadowing)
+        passes.push({
+            name: "HygienicNaming",
+            description: "Eliminate variable shadowing with scope-aware renaming",
+            enabled: false, // TEMP: Disabled due to stack overflow
+            pass: reflaxe.elixir.ast.transformers.HygieneTransforms.hygienicNamingPass
+        });
+        
+        // Usage analysis pass (detect unused variables)
+        passes.push({
+            name: "UsageAnalysis",
+            description: "Detect and mark unused variables with underscore prefix",
+            enabled: true, // Enable to reduce unused variable warnings
+            pass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPass
+        });
+        
+        // Atom normalization pass (remove unnecessary quotes)
+        passes.push({
+            name: "AtomNormalization",
+            description: "Remove unnecessary quotes from atoms",
+            enabled: false, // TEMP: Disabled - needs more testing
+            pass: reflaxe.elixir.ast.transformers.HygieneTransforms.atomNormalizationPass
+        });
+        
+        // Equality to pattern matching pass (idiomatic comparisons)
+        passes.push({
+            name: "EqualityToPattern",
+            description: "Transform == comparisons to pattern matching",
+            enabled: false, // TEMP: Disabled - needs more testing
+            pass: reflaxe.elixir.ast.transformers.HygieneTransforms.equalityToPatternPass
         });
         
         // Return only enabled passes
@@ -3340,6 +3382,14 @@ class ElixirASTTransformer {
                             #end
                         }
                     }
+                case EKeywordList(pairs):
+                    // Check values in keyword list for parameter usage
+                    for (pair in pairs) {
+                        markUsedVars(pair.value);
+                        #if debug_ast_transformer
+                        trace('[XRay PrefixUnusedParams] Checking keyword list value for parameter usage');
+                        #end
+                    }
                 default:
                     iterateAST(ast, markUsedVars);
             }
@@ -3531,6 +3581,11 @@ class ElixirASTTransformer {
                 visitor(object);
             case EModuleAttribute(name, value):
                 visitor(value);
+            case EKeywordList(pairs):
+                // Visit values in keyword list
+                for (pair in pairs) {
+                    visitor(pair.value);
+                }
             case _:
                 // Leaf nodes - nothing to iterate
         }
@@ -3598,6 +3653,11 @@ class ElixirASTTransformer {
             case EMap(pairs):
                 makeASTWithMeta(
                     EMap(pairs.map(p -> {key: transformer(p.key), value: transformer(p.value)})),
+                    node.metadata, node.pos
+                );
+            case EKeywordList(pairs):
+                makeASTWithMeta(
+                    EKeywordList(pairs.map(p -> {key: p.key, value: transformer(p.value)})),
                     node.metadata, node.pos
                 );
             case EStruct(name, fields):

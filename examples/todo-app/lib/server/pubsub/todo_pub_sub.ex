@@ -1,15 +1,15 @@
 defmodule TodoPubSub do
-  def subscribe(topic) do
+  def subscribe(_topic) do
     Phoenix.SafePubSub.subscribe_with_converter(topic, &TodoPubSub.topic_to_string/1)
   end
-  def broadcast(topic, message) do
+  def broadcast(_topic, _message) do
     Phoenix.SafePubSub.broadcast_with_converters(topic, message, &TodoPubSub.topic_to_string/1, &TodoPubSub.message_to_elixir/1)
   end
-  def parse_message(msg) do
+  def parse_message(_msg) do
     Phoenix.SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
   end
-  def topic_to_string(topic) do
-    case (elem(topic, 0)) do
+  def topic_to_string(_topic) do
+    case (elem(_topic, 0)) do
       0 ->
         "todo:updates"
       1 ->
@@ -18,42 +18,42 @@ defmodule TodoPubSub do
         "system:notifications"
     end
   end
-  def message_to_elixir(message) do
-    base_payload = case (elem(message, 0)) do
+  def message_to_elixir(_message) do
+    base_payload = case (elem(_message, 0)) do
   0 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     todo = g
     %{:type => "todo_created", :todo => todo}
   1 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     todo = g
     %{:type => "todo_updated", :todo => todo}
   2 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     id = g
     %{:type => "todo_deleted", :todo_id => id}
   3 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     action = g
     %{:type => "bulk_update", :action => bulk_action_to_string(action)}
   4 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     user_id = g
     %{:type => "user_online", :user_id => user_id}
   5 ->
-    g = elem(message, 1)
+    g = elem(_message, 1)
     user_id = g
     %{:type => "user_offline", :user_id => user_id}
   6 ->
-    g = elem(message, 1)
-    g1 = elem(message, 2)
+    g = elem(_message, 1)
+    g1 = elem(_message, 2)
     message = g
     level = g1
     %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
 end
     Phoenix.SafePubSub.add_timestamp(base_payload)
   end
-  def parse_message_impl(msg) do
+  def parse_message_impl(_msg) do
     if (not Phoenix.SafePubSub.is_valid_message(msg)) do
       Log.trace(Phoenix.SafePubSub.create_malformed_message_error(msg), %{:file_name => "src_haxe/server/pubsub/TodoPubSub.hx", :line_number => 191, :class_name => "server.pubsub.TodoPubSub", :method_name => "parseMessageImpl"})
       :none
@@ -103,27 +103,27 @@ end
         :none
     end
   end
-  defp bulk_action_to_string(action) do
-    case (elem(action, 0)) do
+  defp bulk_action_to_string(_action) do
+    case (elem(_action, 0)) do
       0 ->
         "complete_all"
       1 ->
         "delete_completed"
       2 ->
-        g = elem(action, 1)
+        g = elem(_action, 1)
         _priority = g
         "set_priority"
       3 ->
-        g = elem(action, 1)
+        g = elem(_action, 1)
         _tag = g
         "add_tag"
       4 ->
-        g = elem(action, 1)
+        g = elem(_action, 1)
         _tag = g
         "remove_tag"
     end
   end
-  defp parse_bulk_action(action) do
+  defp parse_bulk_action(_action) do
     case (action) do
       "add_tag" ->
         {:AddTag, ""}
@@ -139,8 +139,8 @@ end
         :none
     end
   end
-  defp alert_level_to_string(level) do
-    case (elem(level, 0)) do
+  defp alert_level_to_string(_level) do
+    case (elem(_level, 0)) do
       0 ->
         "info"
       1 ->
@@ -151,7 +151,7 @@ end
         "critical"
     end
   end
-  defp parse_alert_level(level) do
+  defp parse_alert_level(_level) do
     case (level) do
       "critical" ->
         {:Critical}

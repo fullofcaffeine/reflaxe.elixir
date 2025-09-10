@@ -81,9 +81,9 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @return The updated changeset
      */
     extern inline public function castFields(fields: Array<String>): Changeset<T, P> {
-        var atoms = fields.map(f -> ':$f').join(", ");
-        return untyped __elixir__('Ecto.Changeset.cast({0}, {1}, [{2}])', 
-            this, untyped __elixir__('{1}', this), untyped __elixir__(atoms));
+        // Pass the fields array directly and convert to atoms in Elixir
+        return untyped __elixir__('Ecto.Changeset.cast({0}, {1}, Enum.map({2}, &String.to_atom/1))', 
+            this, untyped __elixir__('{1}', this), fields);
     }
     
     /**
@@ -93,8 +93,10 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @return The updated changeset
      */
     extern inline public function validateRequired(fields: Array<String>): Changeset<T, P> {
-        var atoms = fields.map(f -> ':$f').join(", ");
-        return untyped __elixir__('Ecto.Changeset.validate_required({0}, [{1}])', this, untyped __elixir__(atoms));
+        // Build the atoms list directly as part of the __elixir__ call
+        // We can't dynamically build strings for __elixir__, so we need to handle this differently
+        // The simplest approach is to pass the array directly and let Elixir handle it
+        return untyped __elixir__('Ecto.Changeset.validate_required({0}, Enum.map({1}, &String.to_atom/1))', this, fields);
     }
     
     /**
@@ -105,13 +107,34 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @return The updated changeset
      */
     extern inline public function validateLength(field: String, opts: {?min: Int, ?max: Int, ?is: Int}): Changeset<T, P> {
-        var elixirOpts = [];
-        if (opts.min != null) elixirOpts.push('min: ${opts.min}');
-        if (opts.max != null) elixirOpts.push('max: ${opts.max}');
-        if (opts.is != null) elixirOpts.push('is: ${opts.is}');
-        var optsStr = elixirOpts.join(", ");
-        return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [{2}])', 
-            this, field, untyped __elixir__(optsStr));
+        // Build the options list directly with __elixir__ based on what's provided
+        // We need to handle all combinations since __elixir__ requires compile-time constants
+        if (opts.min != null && opts.max != null && opts.is != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [min: {2}, max: {3}, is: {4}])', 
+                this, field, opts.min, opts.max, opts.is);
+        } else if (opts.min != null && opts.max != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [min: {2}, max: {3}])', 
+                this, field, opts.min, opts.max);
+        } else if (opts.min != null && opts.is != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [min: {2}, is: {3}])', 
+                this, field, opts.min, opts.is);
+        } else if (opts.max != null && opts.is != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [max: {2}, is: {3}])', 
+                this, field, opts.max, opts.is);
+        } else if (opts.min != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [min: {2}])', 
+                this, field, opts.min);
+        } else if (opts.max != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [max: {2}])', 
+                this, field, opts.max);
+        } else if (opts.is != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [is: {2}])', 
+                this, field, opts.is);
+        } else {
+            // No options provided, just call with empty options
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [])', 
+                this, field);
+        }
     }
     
     /**
@@ -164,14 +187,26 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @return The updated changeset
      */
     extern inline public function validateNumber(field: String, opts: {?min: Float, ?max: Float, ?equal_to: Float, ?not_equal_to: Float}): Changeset<T, P> {
-        var elixirOpts = [];
-        if (opts.min != null) elixirOpts.push('greater_than_or_equal_to: ${opts.min}');
-        if (opts.max != null) elixirOpts.push('less_than_or_equal_to: ${opts.max}');
-        if (opts.equal_to != null) elixirOpts.push('equal_to: ${opts.equal_to}');
-        if (opts.not_equal_to != null) elixirOpts.push('not_equal_to: ${opts.not_equal_to}');
-        var optsStr = elixirOpts.join(", ");
-        return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [{2}])', 
-            this, field, untyped __elixir__(optsStr));
+        // Build the options list directly - simplified version for common cases
+        if (opts.min != null && opts.max != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [greater_than_or_equal_to: {2}, less_than_or_equal_to: {3}])', 
+                this, field, opts.min, opts.max);
+        } else if (opts.min != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [greater_than_or_equal_to: {2}])', 
+                this, field, opts.min);
+        } else if (opts.max != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [less_than_or_equal_to: {2}])', 
+                this, field, opts.max);
+        } else if (opts.equal_to != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [equal_to: {2}])', 
+                this, field, opts.equal_to);
+        } else if (opts.not_equal_to != null) {
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [not_equal_to: {2}])', 
+                this, field, opts.not_equal_to);
+        } else {
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [])', 
+                this, field);
+        }
     }
     
     /**
@@ -215,12 +250,18 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      */
     extern inline public function uniqueConstraint(field: String, ?opts: {?name: String, ?message: String}): Changeset<T, P> {
         if (opts != null) {
-            var elixirOpts = [];
-            if (opts.name != null) elixirOpts.push('name: "${opts.name}"');
-            if (opts.message != null) elixirOpts.push('message: "${opts.message}"');
-            var optsStr = elixirOpts.join(", ");
-            return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1}, [{2}])', 
-                this, field, untyped __elixir__(optsStr));
+            if (opts.name != null && opts.message != null) {
+                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1}, [name: {2}, message: {3}])', 
+                    this, field, opts.name, opts.message);
+            } else if (opts.name != null) {
+                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1}, [name: {2}])', 
+                    this, field, opts.name);
+            } else if (opts.message != null) {
+                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1}, [message: {2}])', 
+                    this, field, opts.message);
+            } else {
+                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1})', this, field);
+            }
         } else {
             return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1})', this, field);
         }
@@ -235,12 +276,18 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      */
     extern inline public function foreignKeyConstraint(field: String, ?opts: {?name: String, ?message: String}): Changeset<T, P> {
         if (opts != null) {
-            var elixirOpts = [];
-            if (opts.name != null) elixirOpts.push('name: "${opts.name}"');
-            if (opts.message != null) elixirOpts.push('message: "${opts.message}"');
-            var optsStr = elixirOpts.join(", ");
-            return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1}, [{2}])', 
-                this, field, untyped __elixir__(optsStr));
+            if (opts.name != null && opts.message != null) {
+                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1}, [name: {2}, message: {3}])', 
+                    this, field, opts.name, opts.message);
+            } else if (opts.name != null) {
+                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1}, [name: {2}])', 
+                    this, field, opts.name);
+            } else if (opts.message != null) {
+                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1}, [message: {2}])', 
+                    this, field, opts.message);
+            } else {
+                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1})', this, field);
+            }
         } else {
             return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1})', this, field);
         }
@@ -254,11 +301,13 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @return The updated changeset
      */
     extern inline public function checkConstraint(field: String, opts: {name: String, ?message: String}): Changeset<T, P> {
-        var elixirOpts = ['name: "${opts.name}"'];
-        if (opts.message != null) elixirOpts.push('message: "${opts.message}"');
-        var optsStr = elixirOpts.join(", ");
-        return untyped __elixir__('Ecto.Changeset.check_constraint({0}, :{1}, [{2}])', 
-            this, field, untyped __elixir__(optsStr));
+        if (opts.message != null) {
+            return untyped __elixir__('Ecto.Changeset.check_constraint({0}, :{1}, [name: {2}, message: {3}])', 
+                this, field, opts.name, opts.message);
+        } else {
+            return untyped __elixir__('Ecto.Changeset.check_constraint({0}, :{1}, [name: {2}])', 
+                this, field, opts.name);
+        }
     }
     
     /**
@@ -308,13 +357,12 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @return The updated changeset
      */
     extern inline public function applyAction(action: ChangesetAction): Result<T, Changeset<T, P>> {
-        var actionAtom = switch(action) {
-            case Insert: ":insert";
-            case Update: ":update";
-            case Delete: ":delete";
-            case Replace: ":replace";
+        return switch(action) {
+            case Insert: untyped __elixir__('Ecto.Changeset.apply_action({0}, :insert)', this);
+            case Update: untyped __elixir__('Ecto.Changeset.apply_action({0}, :update)', this);
+            case Delete: untyped __elixir__('Ecto.Changeset.apply_action({0}, :delete)', this);
+            case Replace: untyped __elixir__('Ecto.Changeset.apply_action({0}, :replace)', this);
         };
-        return untyped __elixir__('Ecto.Changeset.apply_action({0}, {1})', this, untyped __elixir__(actionAtom));
     }
     
     /**

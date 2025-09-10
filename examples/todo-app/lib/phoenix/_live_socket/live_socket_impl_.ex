@@ -1,5 +1,5 @@
 defmodule LiveSocket_Impl_ do
-  def _new(socket) do
+  def _new(_socket) do
     this1 = socket
     this1
   end

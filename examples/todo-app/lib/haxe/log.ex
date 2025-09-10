@@ -1,5 +1,5 @@
 defmodule Log do
-  def format_output(v, infos) do
+  def format_output(_v, _infos) do
     str = Std.string(v)
     if (infos == nil), do: str
     pstr = infos.file_name <> ":" <> Kernel.to_string(infos.line_number)
@@ -10,7 +10,7 @@ defmodule Log do
     end
     pstr <> ": " <> str
   end
-  def trace(v, infos) do
+  def trace(_v, _infos) do
     str = format_output(v, infos)
     IO.puts(str)
   end

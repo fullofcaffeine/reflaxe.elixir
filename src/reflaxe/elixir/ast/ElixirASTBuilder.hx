@@ -2061,9 +2061,13 @@ class ElixirASTBuilder {
                     }
                     #end
                     
-                    // NO LONGER prefix with underscore here - let PrefixUnusedParameters transformer handle it
-                    // This ensures consistent handling between function parameters and their body references
-                    var finalName = baseName;
+                    // Prefix with underscore if unused (using TypedExpr-based detection which is more accurate)
+                    // This is done here rather than in a transformer because we have full semantic information
+                    var finalName = if (isActuallyUnused && !baseName.startsWith("_")) {
+                        "_" + baseName;
+                    } else {
+                        baseName;
+                    };
                     
                     // Register the mapping for TLocal references in the body
                     if (!tempVarRenameMap.exists(idKey)) {

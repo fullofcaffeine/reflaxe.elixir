@@ -1,32 +1,32 @@
 defmodule Plug.HttpStatus do
   def ok() do
-    {:Ok}
+    {0}
   end
   def created() do
-    {:Created}
+    {1}
   end
   def no_content() do
-    {:NoContent}
+    {2}
   end
   def bad_request() do
-    {:BadRequest}
+    {3}
   end
   def unauthorized() do
-    {:Unauthorized}
+    {4}
   end
   def forbidden() do
-    {:Forbidden}
+    {5}
   end
   def not_found() do
-    {:NotFound}
+    {6}
   end
   def method_not_allowed() do
-    {:MethodNotAllowed}
+    {7}
   end
   def internal_server_error() do
-    {:InternalServerError}
+    {8}
   end
   def custom(arg0) do
-    {:Custom, arg0}
+    {9, arg0}
   end
 end

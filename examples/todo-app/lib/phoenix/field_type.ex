@@ -1,59 +1,59 @@
 defmodule Phoenix.FieldType do
   def id() do
-    {:Id}
+    {0}
   end
   def binary_id() do
-    {:Binary_id}
+    {1}
   end
   def integer() do
-    {:Integer}
+    {2}
   end
   def float() do
-    {:Float}
+    {3}
   end
   def boolean() do
-    {:Boolean}
+    {4}
   end
   def string() do
-    {:String}
+    {5}
   end
   def binary() do
-    {:Binary}
+    {6}
   end
   def date() do
-    {:Date}
+    {7}
   end
   def time() do
-    {:Time}
+    {8}
   end
   def naive_datetime() do
-    {:Naive_datetime}
+    {9}
   end
   def utc_datetime() do
-    {:Utc_datetime}
+    {10}
   end
   def map() do
-    {:Map}
+    {11}
   end
   def array(arg0) do
-    {:Array, arg0}
+    {12, arg0}
   end
   def decimal() do
-    {:Decimal}
+    {13}
   end
   def custom(arg0) do
-    {:Custom, arg0}
+    {14, arg0}
   end
   def belongs_to() do
-    {:BelongsTo}
+    {15}
   end
   def has_one() do
-    {:HasOne}
+    {16}
   end
   def has_many() do
-    {:HasMany}
+    {17}
   end
   def many_to_many() do
-    {:ManyToMany}
+    {18}
   end
 end

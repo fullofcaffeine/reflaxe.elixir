@@ -1,7 +1,7 @@
 defmodule JsonPrinter do
   @replacer nil
   @space nil
-  defp write_value(struct, v, key) do
+  defp write_value(struct, v, _key) do
     v = if (struct.replacer != nil), do: struct.replacer(key, v), else: v
     if (v == nil), do: "null"
     if (Std.is(v, Bool)) do
@@ -19,7 +19,7 @@ defmodule JsonPrinter do
     if (Std.is(v, Array)), do: struct.write_array(v)
     struct.write_object(v)
   end
-  defp write_array(struct, arr) do
+  defp write_array(_struct, _arr) do
     items = []
     g = 0
     g1 = length(arr)
@@ -38,7 +38,7 @@ end)
       "[" <> Enum.join(items, ",") <> "]"
     end
   end
-  defp write_object(struct, obj) do
+  defp write_object(_struct, _obj) do
     fields = Map.keys(obj)
     pairs = []
     g = 0
@@ -61,18 +61,18 @@ end)
       "{" <> Enum.join(pairs, ",") <> "}"
     end
   end
-  defp quote_string(_struct, s) do
+  defp quote_string(_struct, _s) do
     result = "\""
     g = 0
     g1 = length(s)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, result, :ok}, fn _, {acc_g1, acc_g, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g1, g, :ok}, fn _, {acc_result, acc_g1, acc_g, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.char_code_at(i)
     if (c == nil), do: nil, else: nil
-    {:cont, {acc_g1, acc_g, acc_result, acc_state}}
+    {:cont, {acc_result, acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_result, acc_state}}
+    {:halt, {acc_result, acc_g1, acc_g, acc_state}}
   end
 end)
     result = result <> "\""
@@ -81,7 +81,7 @@ end)
   def write(struct, k, v) do
     struct.write_value(v, k)
   end
-  def print(o, replacer, space) do
+  def print(o, _replacer, _space) do
     (JsonPrinter.new(replacer, space)).write_value(o, "")
   end
 end

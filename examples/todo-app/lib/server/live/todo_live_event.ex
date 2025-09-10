@@ -1,44 +1,44 @@
 defmodule Server.Live.TodoLiveEvent do
   def create_todo(arg0) do
-    {:CreateTodo, arg0}
+    {0, arg0}
   end
   def toggle_todo(arg0) do
-    {:ToggleTodo, arg0}
+    {1, arg0}
   end
   def delete_todo(arg0) do
-    {:DeleteTodo, arg0}
+    {2, arg0}
   end
   def edit_todo(arg0) do
-    {:EditTodo, arg0}
+    {3, arg0}
   end
   def save_todo(arg0) do
-    {:SaveTodo, arg0}
+    {4, arg0}
   end
   def cancel_edit() do
-    {:CancelEdit}
+    {5}
   end
   def filter_todos(arg0) do
-    {:FilterTodos, arg0}
+    {6, arg0}
   end
   def sort_todos(arg0) do
-    {:SortTodos, arg0}
+    {7, arg0}
   end
   def search_todos(arg0) do
-    {:SearchTodos, arg0}
+    {8, arg0}
   end
   def toggle_tag(arg0) do
-    {:ToggleTag, arg0}
+    {9, arg0}
   end
   def set_priority(arg0, arg1) do
-    {:SetPriority, arg0, arg1}
+    {10, arg0, arg1}
   end
   def toggle_form() do
-    {:ToggleForm}
+    {11}
   end
   def bulk_complete() do
-    {:BulkComplete}
+    {12}
   end
   def bulk_delete_completed() do
-    {:BulkDeleteCompleted}
+    {13}
   end
 end

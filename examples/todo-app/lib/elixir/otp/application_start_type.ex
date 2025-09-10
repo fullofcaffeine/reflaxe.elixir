@@ -1,11 +1,11 @@
 defmodule Elixir.Otp.ApplicationStartType do
   def normal() do
-    {:Normal}
+    {0}
   end
   def temporary() do
-    {:Temporary}
+    {1}
   end
   def permanent() do
-    {:Permanent}
+    {2}
   end
 end

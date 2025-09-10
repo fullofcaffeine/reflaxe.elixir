@@ -1,39 +1,39 @@
 defmodule SafeAssigns do
-  def set_editing_todo(socket, todo) do
+  def set_editing_todo(_socket, _todo) do
     live_socket = socket
     Phoenix.Component.assign(live_socket, :editing_todo, todo)
   end
-  def set_selected_tags(socket, tags) do
+  def set_selected_tags(_socket, _tags) do
     live_socket = socket
     Phoenix.Component.assign(live_socket, :selected_tags, tags)
   end
-  def set_filter(socket, filter) do
+  def set_filter(_socket, _filter) do
     live_socket = socket
     Phoenix.Component.assign(live_socket, :filter, filter)
   end
-  def set_sort_by(socket, sort_by) do
+  def set_sort_by(_socket, _sort_by) do
     live_socket = socket
     Phoenix.Component.assign(live_socket, :sort_by, sort_by)
   end
-  def set_search_query(socket, query) do
+  def set_search_query(_socket, _query) do
     live_socket = socket
     Phoenix.Component.assign(live_socket, :search_query, query)
   end
-  def set_show_form(socket, show_form) do
+  def set_show_form(_socket, _show_form) do
     live_socket = socket
     Phoenix.Component.assign(live_socket, :show_form, show_form)
   end
-  def update_todos_and_stats(socket, todos) do
+  def update_todos_and_stats(_socket, _todos) do
     completed = count_completed(todos)
     pending = count_pending(todos)
     live_socket = socket
     Phoenix.Component.assign([live_socket, todos, todos.length, completed, pending], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end
-  def set_todos(socket, todos) do
+  def set_todos(_socket, _todos) do
     live_socket = socket
     Phoenix.Component.assign(live_socket, :todos, todos)
   end
-  defp count_completed(todos) do
+  defp count_completed(_todos) do
     count = 0
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
@@ -50,19 +50,19 @@ defmodule SafeAssigns do
 end)
     count
   end
-  defp count_pending(todos) do
+  defp count_pending(_todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_todos, acc_count, acc_g, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
   else
-    {:halt, {acc_todos, acc_count, acc_g, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
   end
 end)
     count
