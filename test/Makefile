@@ -41,6 +41,7 @@ TEST_TARGETS := $(shell echo "$(TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|
 .PHONY: all
 all:
 	@rm -f test-results.tmp
+	@echo "Running all tests (use -j N to control parallelism)..."
 	# Respect jobserver: do not force -j here; top-level -j will propagate
 	@$(MAKE) -f $(MAKEFILE_LIST) summary
 
@@ -273,17 +274,92 @@ runtime: all
 	done; \
 	[ $$fail -eq 0 ] || (echo "Some runtime tests failed" && exit 1)
 
+# Category test targets - run specific test categories
+.PHONY: test-core
+test-core:
+	@echo "Running core language tests..."
+	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/core -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+
+.PHONY: test-stdlib
+test-stdlib:
+	@echo "Running standard library tests..."
+	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/stdlib -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+
+.PHONY: test-regression
+test-regression:
+	@echo "Running regression tests..."
+	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/regression -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+
+.PHONY: test-phoenix
+test-phoenix:
+	@echo "Running Phoenix framework tests..."
+	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/phoenix -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+
+.PHONY: test-ecto
+test-ecto:
+	@echo "Running Ecto ORM tests..."
+	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/ecto -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+
+.PHONY: test-otp
+test-otp:
+	@echo "Running OTP pattern tests..."
+	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/otp -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+
+.PHONY: test-bootstrap
+test-bootstrap:
+	@echo "Running bootstrap tests..."
+	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/bootstrap* -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+
+# Pattern-based test selection
+.PHONY: test-pattern
+test-pattern:
+	@if [ -z "$(PATTERN)" ]; then \
+		echo "Usage: make test-pattern PATTERN=*array*"; \
+		echo "       make test-pattern PATTERN=*date*"; \
+		exit 1; \
+	fi; \
+	echo "Running tests matching pattern: $(PATTERN)"; \
+	$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR) -type d -name "$(PATTERN)" | xargs -I {} find {} -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+
+# Run only failed tests from last run
+.PHONY: test-failed
+test-failed:
+	@if [ -f test-results.tmp ]; then \
+		failed=$$(grep "❌" test-results.tmp | sed 's/❌ //' | sed 's/ -.*//' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' '); \
+		if [ -n "$$failed" ]; then \
+			echo "Re-running failed tests..."; \
+			$(MAKE) -f $(MAKEFILE_LIST) $$failed; \
+		else \
+			echo "No failed tests to re-run"; \
+		fi; \
+	else \
+		echo "No test results found. Run tests first."; \
+	fi
+
 # Help target
 .PHONY: help
 help:
 	@echo "Test Runner for Reflaxe.Elixir"
 	@echo ""
-	@echo "Usage:"
-	@echo "  make                          # Run all tests (parallel, 4 jobs)"
+	@echo "Basic Usage:"
+	@echo "  make                          # Run all tests (parallel)"
 	@echo "  make -j1                      # Run all tests sequentially"
 	@echo "  make -j8                      # Run with 8 parallel jobs"
 	@echo "  make test-NAME                # Run specific test"
 	@echo "  make single TEST=NAME         # Run specific test (alternative)"
+	@echo ""
+	@echo "Category Testing:"
+	@echo "  make test-core                # Run core language tests"
+	@echo "  make test-stdlib              # Run standard library tests"
+	@echo "  make test-regression          # Run regression tests"
+	@echo "  make test-phoenix             # Run Phoenix framework tests"
+	@echo "  make test-ecto                # Run Ecto ORM tests"
+	@echo "  make test-otp                 # Run OTP pattern tests"
+	@echo "  make test-bootstrap           # Run bootstrap tests"
+	@echo "  make test-pattern PATTERN=*array* # Run tests matching pattern"
+	@echo "  make test-failed              # Re-run failed tests from last run"
+	@echo ""
+	@echo "Maintenance:"
 	@echo "  make update-intended TEST=NAME # Update intended output for test"
 	@echo "  make update-intended          # Update all intended outputs"
 	@echo "  make clean                    # Clean output directories"
@@ -292,7 +368,7 @@ help:
 	@echo "Pipeline Testing:"
 	@echo "  make                          # Run tests with AST pipeline (default)"
 	@echo "  make USE_LEGACY=1             # Run tests with legacy string pipeline"
-	@echo "  make USE_LEGACY=1 test-NAME   # Run specific test with legacy pipeline"
+	@echo "  make USE_LEGACY=1 test-core   # Run category with legacy pipeline"
 	@echo ""
 	@echo "Options:"
 	@echo "  -j N    Run N tests in parallel (default: 4)"
@@ -300,6 +376,6 @@ help:
 	@echo "  -s      Silent mode (less output)"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make -j1                      # Sequential execution"
-	@echo "  make test-arrays              # Run arrays test"
-	@echo "  make update-intended TEST=arrays # Update arrays baseline"
+	@echo "  make test-core -j8            # Run core tests with 8 parallel jobs"
+	@echo "  make test-pattern PATTERN=*date* # Run all date-related tests"
+	@echo "  make test-failed              # Re-run only failed tests"

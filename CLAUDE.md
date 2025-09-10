@@ -486,9 +486,27 @@ curl http://localhost:4000        # Test application response
 
 ### Quick Testing
 ```bash
-make -C test test-name                     # Specific snapshot test
-make -C test update-intended TEST=name     # Accept new output
+# Category-based testing (NEW - much faster iteration!)
+npm run test:core                          # Run core language tests only
+npm run test:stdlib                        # Run standard library tests
+npm run test:regression                    # Run regression tests
+npm run test:phoenix                       # Run Phoenix framework tests
+npm run test:changed                       # Run only tests affected by git changes
+npm run test:failed                        # Re-run only failed tests from last run
+
+# Pattern-based testing
+scripts/test-runner.sh --pattern "*array*" # Run all array-related tests
+scripts/test-runner.sh --pattern "*date*"  # Run all date-related tests
+
+# Traditional commands (still work)
+make -C test test-core__arrays             # Specific test (use __ for path separator)
+make -C test update-intended TEST=arrays   # Accept new output
 MIX_ENV=test mix test                      # Runtime validation
+
+# Advanced test runner
+scripts/test-runner.sh --help              # Show all available options
+scripts/test-runner.sh --category core --parallel 8  # Run core tests with 8 jobs
+scripts/test-runner.sh --changed --update  # Update tests affected by changes
 ```
 
 ### Advanced Debugging
@@ -1662,13 +1680,24 @@ class StringBuf {
 **EVERY compiler change MUST be validated through the complete testing pipeline.**
 
 ### After ANY Compiler Change
+
+#### Quick Iteration Testing (NEW - Recommended)
+```bash
+# Test only affected areas during development
+npm run test:changed         # Run tests affected by git changes
+npm run test:failed          # Re-run only failed tests
+npm run test:core            # Test core features if working on basics
+npm run test:stdlib          # Test stdlib if working on standard library
+```
+
+#### Full Validation (Before Commit)
 1. **Run Full Test Suite**: `npm test` - ALL tests must pass
 2. **Test Todo-App Integration**:
    ```bash
    cd examples/todo-app
-   rm -rf lib/*.ex lib/**/*.ex
    npx haxe build-server.hxml
    mix compile --force
+   mix phx.server        # Ensure app starts
    ```
 
 **Rule**: If ANY step fails, the compiler change is incomplete. Fix the root cause.
