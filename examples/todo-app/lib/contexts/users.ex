@@ -17,7 +17,9 @@ defmodule Users do
   end
   def change_user(user) do
     empty_params = %{}
-    Changeset_Impl_._new(user, empty_params)
+    this1 = nil
+    this1 = Ecto.Changeset.change(user, empty_params)
+    this1
   end
   def main() do
     Log.trace("Users context with User schema compiled successfully!", %{:file_name => "src_haxe/server/contexts/Users.hx", :line_number => 107, :class_name => "contexts.Users", :method_name => "main"})

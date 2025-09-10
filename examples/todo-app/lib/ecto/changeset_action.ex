@@ -11,7 +11,4 @@ defmodule Ecto.ChangesetAction do
   def replace() do
     {:Replace}
   end
-  def ignore() do
-    {:Ignore}
-  end
 end
