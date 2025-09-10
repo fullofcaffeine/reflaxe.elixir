@@ -1,42 +1,29 @@
 defmodule Main do
   def main() do
-    test_basic_query()
-    test_where_clause()
-    test_order_by()
-    test_limit_offset()
-    test_chained_operations()
-    test_where_all()
+    test_basic_typed_query()
+    test_where_conditions()
+    test_escape_hatches()
+    test_query_execution()
+    test_migration_compilation()
   end
-  defp test_basic_query() do
-    _query = Query.from(User)
-    Log.trace("Basic query created from User schema", %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "testBasicQuery"})
+  defp test_basic_typed_query() do
+    _query = TypedQuery.from(User).limit(10).offset(20)
+    Log.trace("Basic TypedQuery created with limit and offset", %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "testBasicTypedQuery"})
   end
-  defp test_where_clause() do
-    query = Query.from(User)
-    query = EctoQuery_Impl_.where(query, "active", true)
-    Log.trace("Query with where clause for active users", %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testWhereClause"})
+  defp test_where_conditions() do
+    _active_adults = TypedQuery.from(User).where(fn u -> u.active == true end).where(fn u -> u.age >= 18 end).order_by(fn u -> u.created_at end, {1})
+    Log.trace("TypedQuery with type-safe where conditions", %{:file_name => "Main.hx", :line_number => 48, :class_name => "Main", :method_name => "testWhereConditions"})
   end
-  defp test_order_by() do
-    query = Query.from(Post)
-    query = EctoQuery_Impl_.order_by(query, "createdAt", "desc")
-    Log.trace("Query ordered by createdAt descending", %{:file_name => "Main.hx", :line_number => 47, :class_name => "Main", :method_name => "testOrderBy"})
+  defp test_escape_hatches() do
+    complex_query = TypedQuery.from(User).where_raw("active = ? AND role IN (?)", [true, ["admin", "moderator"]]).order_by_raw("CASE WHEN role = 'admin' THEN 0 ELSE 1 END, created_at DESC")
+    _ecto_query = complex_query.to_ecto_query()
+    Log.trace("TypedQuery with raw SQL escape hatches", %{:file_name => "Main.hx", :line_number => 59, :class_name => "Main", :method_name => "testEscapeHatches"})
   end
-  defp test_limit_offset() do
-    query = Query.from(Post)
-    query = EctoQuery_Impl_.offset(EctoQuery_Impl_.limit(query, 10), 20)
-    Log.trace("Query with limit 10 and offset 20", %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "testLimitOffset"})
+  defp test_query_execution() do
+    _query = TypedQuery.from(User)
+    Log.trace("Query execution methods validated", %{:file_name => "Main.hx", :line_number => 71, :class_name => "Main", :method_name => "testQueryExecution"})
   end
-  defp test_chained_operations() do
-    _query = EctoQuery_Impl_.limit(EctoQuery_Impl_.order_by(EctoQuery_Impl_.where(Query.from(User), "role", "admin"), "name", "asc"), 5)
-    Log.trace("Chained query operations", %{:file_name => "Main.hx", :line_number => 61, :class_name => "Main", :method_name => "testChainedOperations"})
-  end
-  defp test_where_all() do
-    conditions = %{}
-    conditions = Map.put(conditions, "active", true)
-    conditions = Map.put(conditions, "role", "moderator")
-    conditions = Map.put(conditions, "age", 25)
-    query = Query.from(User)
-    query = Query.where_all(query, conditions)
-    Log.trace("Query with multiple where conditions", %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "testWhereAll"})
+  defp test_migration_compilation() do
+    Log.trace("Migration DSL compiled successfully", %{:file_name => "Main.hx", :line_number => 77, :class_name => "Main", :method_name => "testMigrationCompilation"})
   end
 end

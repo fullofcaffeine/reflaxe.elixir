@@ -515,7 +515,8 @@ class AnnotationTransforms {
                 #end
                 
                 var tableName = ast.metadata.tableName ?? "items";
-                var schemaBody = buildSchemaBody(name, tableName, body);
+                var lookupName = ast.metadata?.haxeFqcn != null ? ast.metadata.haxeFqcn : name;
+                var schemaBody = buildSchemaBody(name, tableName, body, lookupName, ast.metadata);
                 
                 return makeASTWithMeta(
                     EDefmodule(name, schemaBody),
@@ -532,7 +533,7 @@ class AnnotationTransforms {
     /**
      * Build Ecto.Schema module body
      */
-    static function buildSchemaBody(moduleName: String, tableName: String, existingBody: ElixirAST): ElixirAST {
+    static function buildSchemaBody(moduleName: String, tableName: String, existingBody: ElixirAST, lookupName: String, meta: reflaxe.elixir.ast.ElixirMetadata): ElixirAST {
         var statements = [];
         
         // use Ecto.Schema
@@ -541,50 +542,41 @@ class AnnotationTransforms {
         // import Ecto.Changeset
         statements.push(makeAST(EImport("Ecto.Changeset", null, null)));
         
-        // Extract schema fields from existingBody metadata if available
+        // Extract schema fields from metadata (populated by ModuleBuilder)
         var schemaFieldStatements = [];
-        var hasTimestamps = false;
+        var hasTimestamps: Bool = meta != null && meta.hasTimestamps == true;
         
         // Look for field metadata that might have been passed along
         // For now, we'll generate basic fields and rely on the functions being added below
         // The actual field extraction would require accessing the ClassType data
         // which would need to be passed through metadata
         
-        // Build a basic schema block
-        // Note: A more complete implementation would extract fields from ClassType metadata
-        schemaFieldStatements.push(makeAST(ECall(null, "field", [
-            makeAST(EAtom("name")),
-            makeAST(EAtom("string"))
-        ])));
+        // Use schemaFields provided in metadata. General, app-agnostic.
+        if (meta != null && meta.schemaFields != null) {
+            for (f in meta.schemaFields) {
+                // Skip primary key id (Ecto adds by default)
+                if (f.name == "id") continue;
+                var snake = reflaxe.elixir.ast.NameUtils.toSnakeCase(f.name);
+                switch (f.type) {
+                    case "Int":
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("integer")) ])));
+                    case "Bool":
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("boolean")) ])));
+                    case "NaiveDateTime":
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("naive_datetime")) ])));
+                    case "Float":
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("float")) ])));
+                    case "Array<String>":
+                        // Use {:array, :string}
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(ETuple([makeAST(EAtom("array")), makeAST(EAtom("string"))])) ])));
+                    case _:
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("string")) ])));
+                }
+            }
+        }
         
-        schemaFieldStatements.push(makeAST(ECall(null, "field", [
-            makeAST(EAtom("email")),
-            makeAST(EAtom("string"))
-        ])));
-        
-        schemaFieldStatements.push(makeAST(ECall(null, "field", [
-            makeAST(EAtom("password_hash")),
-            makeAST(EAtom("string"))
-        ])));
-        
-        schemaFieldStatements.push(makeAST(ECall(null, "field", [
-            makeAST(EAtom("confirmed_at")),
-            makeAST(EAtom("naive_datetime"))
-        ])));
-        
-        schemaFieldStatements.push(makeAST(ECall(null, "field", [
-            makeAST(EAtom("last_login_at")),
-            makeAST(EAtom("naive_datetime"))
-        ])));
-        
-        schemaFieldStatements.push(makeAST(ECall(null, "field", [
-            makeAST(EAtom("active")),
-            makeAST(EAtom("boolean")),
-            makeAST(EKeywordList([{key: "default", value: makeAST(EBoolean(true))}]))
-        ])));
-        
-        // Add timestamps if the class has @:timestamps annotation
-        schemaFieldStatements.push(makeAST(ECall(null, "timestamps", [])));
+        // Add timestamps only if class had @:timestamps
+        if (hasTimestamps) schemaFieldStatements.push(makeAST(ECall(null, "timestamps", [])));
         
         var schemaFields = makeAST(EBlock(schemaFieldStatements));
         

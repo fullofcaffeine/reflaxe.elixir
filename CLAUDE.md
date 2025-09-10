@@ -100,11 +100,14 @@ npx haxe build.hxml -D debug_otp_child_spec -D debug_pattern_matching
 
 **FUNDAMENTAL PRINCIPLE: Generate idiomatic Phoenix/Elixir code, augmented with Haxe's type safety.**
 
-### Core Philosophy
+### Core Philosophy: "Idiomatic Haxe for Elixir"
 - **Phoenix patterns first**: Use standard Phoenix patterns and conventions as the foundation
 - **Type safety on top**: Add Haxe's compile-time guarantees without changing the runtime patterns
 - **Don't reinvent**: If Phoenix has an established pattern, use it - don't create a "Haxe way"
 - **Augment intelligently**: Only deviate from Phoenix patterns when type safety provides clear value
+- **Phoenix app in Haxe**: The todo-app should be a standard Phoenix app, just written in Haxe
+- **Minimal deviation**: Only differ from Phoenix patterns when it provides type safety or better ergonomics
+- **Recognize the patterns**: An Elixir developer should immediately recognize all Phoenix patterns
 
 ### Examples of Idiomatic Phoenix with Haxe Benefits
 

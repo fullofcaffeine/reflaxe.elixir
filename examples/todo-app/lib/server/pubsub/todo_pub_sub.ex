@@ -120,13 +120,13 @@ end
       "add_tag" ->
         {:AddTag, ""}
       "complete_all" ->
-        {0}
+        {:CompleteAll}
       "delete_completed" ->
-        {1}
+        {:DeleteCompleted}
       "remove_tag" ->
         {:RemoveTag, ""}
       "set_priority" ->
-        {:SetPriority, {1}}
+        {:SetPriority, {:Medium}}
       _ ->
         :none
     end
@@ -146,13 +146,13 @@ end
   defp parse_alert_level(level) do
     case (level) do
       "critical" ->
-        {3}
+        {:Critical}
       "error" ->
-        {2}
+        {:Error}
       "info" ->
-        {0}
+        {:Info}
       "warning" ->
-        {1}
+        {:Warning}
       _ ->
         :none
     end
