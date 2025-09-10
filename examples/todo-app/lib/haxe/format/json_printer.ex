@@ -41,7 +41,8 @@ end)
   defp write_object(struct, obj) do
     fields = Map.keys(obj)
     pairs = []
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, fields, :ok}, fn _, {acc_g, acc_fields, acc_state} ->
+    g = 0
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fields, g, :ok}, fn _, {acc_fields, acc_g, acc_state} ->
   if (acc_g < length(acc_fields)) do
     field = fields[g]
     acc_g = acc_g + 1
@@ -49,9 +50,9 @@ end)
     key = struct.quote_string(field)
     val = struct.write_value(value, field)
     if (struct.space != nil), do: pairs ++ [key <> ": " <> val], else: pairs ++ [key <> ":" <> val]
-    {:cont, {acc_g, acc_fields, acc_state}}
+    {:cont, {acc_fields, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_fields, acc_state}}
+    {:halt, {acc_fields, acc_g, acc_state}}
   end
 end)
     if (struct.space != nil && length(pairs) > 0) do

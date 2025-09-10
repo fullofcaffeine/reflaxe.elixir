@@ -1,7 +1,8 @@
 defmodule StringBuf do
   @parts nil
   @length nil
-  defp get_length(_struct) do
+  defp get_length(struct) do
+    joined = Enum.join(struct.parts, "")
     length(joined)
   end
   def add(struct, x) do

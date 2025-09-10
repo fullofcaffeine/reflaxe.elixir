@@ -13,10 +13,12 @@ defmodule TranslationBindings_Impl_ do
     this1
   end
   def set_int(this1, key, value) do
+    value = Std.string(value)
     this1 = Map.put(this1, key, value)
     this1
   end
   def set_float(this1, key, value) do
+    value = Std.string(value)
     this1 = Map.put(this1, key, value)
     this1
   end

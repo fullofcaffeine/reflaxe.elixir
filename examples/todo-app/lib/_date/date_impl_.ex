@@ -124,10 +124,12 @@ defmodule Date_Impl_ do
     DateTime.compare(a, b) == ":lt"
   end
   defp gte(a, b) do
-    (DateTime.compare(a, b)) == ":gt" || (DateTime.compare(a, b)) == ":eq"
+    result = DateTime.compare(a, b)
+    result == ":gt" || result == ":eq"
   end
   defp lte(a, b) do
-    (DateTime.compare(a, b)) == ":lt" || (DateTime.compare(a, b)) == ":eq"
+    result = DateTime.compare(a, b)
+    result == ":lt" || result == ":eq"
   end
   defp eq(a, b) do
     DateTime.compare(a, b) == ":eq"
