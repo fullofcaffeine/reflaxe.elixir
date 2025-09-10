@@ -6,12 +6,12 @@ defmodule Input do
   def read_byte(_struct) do
     -1
   end
-  def read_bytes(struct, b, pos, len) do
+  def read_bytes(_struct, _b, _pos, len) do
     if (pos < 0 || len < 0 || pos + len > length(b)) do
       throw("Invalid parameters")
     end
     k = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, pos, :ok}, fn _, {acc_k, acc_pos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, k, :ok}, fn _, {acc_pos, acc_k, acc_state} ->
   if (acc_k > 0) do
     byte = struct.read_byte()
     if (byte < 0) do
@@ -20,14 +20,14 @@ defmodule Input do
     b.set(acc_pos, byte)
     acc_pos = acc_pos + 1
     acc_k = (acc_k - 1)
-    {:cont, {acc_k, acc_pos, acc_state}}
+    {:cont, {acc_pos, acc_k, acc_state}}
   else
-    {:halt, {acc_k, acc_pos, acc_state}}
+    {:halt, {acc_pos, acc_k, acc_state}}
   end
 end)
     (len - k)
   end
-  def read_all(_struct, bufsize) do
+  def read_all(_struct, _bufsize) do
     if (bufsize == nil) do
       bufsize = 4096
     end
@@ -37,7 +37,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {len, total, :ok}, fn _, {acc_len, acc_total, acc_state} -> nil end)
     total
   end
-  def read_string(struct, len) do
+  def read_string(_struct, _len) do
     b = Bytes.alloc(len)
     actual = struct.read_bytes(b, 0, len)
     if (actual < len) do
@@ -47,7 +47,7 @@ end)
     end
     b.to_string()
   end
-  def read_line(struct) do
+  def read_line(_struct) do
     buf = StringBuf.new()
     last = nil
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {last, :ok}, fn _, {acc_last, acc_state} ->

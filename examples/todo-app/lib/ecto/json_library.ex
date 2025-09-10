@@ -1,11 +1,11 @@
 defmodule Ecto.JsonLibrary do
   def jason() do
-    {:Jason}
+    {0}
   end
   def poison() do
-    {:Poison}
+    {1}
   end
   def none() do
-    {:None}
+    {2}
   end
 end

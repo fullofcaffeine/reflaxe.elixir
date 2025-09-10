@@ -1,8 +1,8 @@
 defmodule TodoAppWeb.Layouts do
-  def root(assigns) do
+  def root(_assigns) do
     RootLayout.render(assigns)
   end
-  def app(assigns) do
+  def app(_assigns) do
     AppLayout.render(assigns)
   end
 end

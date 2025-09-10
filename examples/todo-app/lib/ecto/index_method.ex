@@ -1,17 +1,17 @@
 defmodule Ecto.IndexMethod do
   def b_tree() do
-    {:BTree}
+    {0}
   end
   def hash() do
-    {:Hash}
+    {1}
   end
   def gin() do
-    {:Gin}
+    {2}
   end
   def gist() do
-    {:Gist}
+    {3}
   end
   def brin() do
-    {:Brin}
+    {4}
   end
 end

@@ -1,8 +1,8 @@
 defmodule Ecto.IdType do
   def auto_increment() do
-    {:AutoIncrement}
+    {0}
   end
   def uuid() do
-    {:UUID}
+    {1}
   end
 end

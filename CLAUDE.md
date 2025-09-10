@@ -631,6 +631,48 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 - It **violates the entire purpose** of the transpiler
 - Fixing symptoms instead of causes **perpetuates bugs**
 
+## ⚠️ CRITICAL: NEVER DELETE FILES MANUALLY - USE NPM SCRIPTS ONLY
+
+**FUNDAMENTAL RULE: NEVER manually delete .ex files with rm, find, or any other command. ALWAYS use the designated npm script.**
+
+### The ONLY Way to Clean Generated Files:
+```bash
+npm run clean:generated  # ✅ CORRECT - Uses _GeneratedFiles.json manifest to precisely remove only compiler-generated files
+```
+
+### NEVER Do This:
+```bash
+rm -rf lib/*.ex                           # ❌ WRONG - Deletes critical runtime files
+find . -name "*.ex" -delete               # ❌ WRONG - Deletes everything
+cd examples/todo-app && rm lib/*.ex       # ❌ WRONG - No discrimination
+```
+
+### How It Works:
+The `clean:generated` script uses the `_GeneratedFiles.json` manifest created by the compiler:
+1. **Reads the manifest** - Each compilation creates `_GeneratedFiles.json` listing all generated files
+2. **Deletes only listed files** - Only removes files explicitly marked as compiler-generated
+3. **Preserves everything else** - All hand-written files are automatically safe
+
+### What Gets Preserved (Automatically):
+- `lib/haxe_compiler.ex` - Haxe compilation support (not generated)
+- `lib/haxe_server.ex` - Compilation server (not generated)
+- `lib/haxe_watcher.ex` - File watcher (not generated)
+- `lib/mix/tasks/*.ex` - Mix tasks (not generated)
+- `config/*.exs` - Configuration files (not generated)
+- `priv/**/*.exs` - Migrations and seeds (not generated)
+- Any file NOT in `_GeneratedFiles.json`
+
+### What Gets Deleted:
+- Only files listed in `_GeneratedFiles.json` manifests
+- Test output files in `test/snapshot/*/out/`
+- Nothing else - the script is surgically precise
+
+### Why This Critical Rule Exists:
+- **Accidental deletion of lib/*.ex breaks Mix integration** - The :haxe compiler disappears
+- **These files were deleted multiple times** - Git history shows repeated restoration
+- **Manual rm commands don't discriminate** - They delete hand-written runtime support
+- **The clean:generated script uses a whitelist** - It knows exactly what to preserve
+
 ## ⚠️ CRITICAL: NO BAND-AID FIXES EVER
 
 **FUNDAMENTAL RULE: NEVER USE POST-PROCESSING OR BAND-AID FIXES. ALWAYS FIX THE ROOT CAUSE.**

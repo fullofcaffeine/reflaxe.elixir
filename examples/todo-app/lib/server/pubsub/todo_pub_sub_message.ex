@@ -1,23 +1,23 @@
 defmodule Server.Pubsub.TodoPubSubMessage do
   def todo_created(arg0) do
-    {:TodoCreated, arg0}
+    {0, arg0}
   end
   def todo_updated(arg0) do
-    {:TodoUpdated, arg0}
+    {1, arg0}
   end
   def todo_deleted(arg0) do
-    {:TodoDeleted, arg0}
+    {2, arg0}
   end
   def bulk_update(arg0) do
-    {:BulkUpdate, arg0}
+    {3, arg0}
   end
   def user_online(arg0) do
-    {:UserOnline, arg0}
+    {4, arg0}
   end
   def user_offline(arg0) do
-    {:UserOffline, arg0}
+    {5, arg0}
   end
   def system_alert(arg0, arg1) do
-    {:SystemAlert, arg0, arg1}
+    {6, arg0, arg1}
   end
 end

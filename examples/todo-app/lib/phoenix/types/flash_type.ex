@@ -1,14 +1,14 @@
 defmodule Phoenix.Types.FlashType do
   def info() do
-    {:Info}
+    {0}
   end
   def success() do
-    {:Success}
+    {1}
   end
   def warning() do
-    {:Warning}
+    {2}
   end
   def error() do
-    {:Error}
+    {3}
   end
 end

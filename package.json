@@ -48,8 +48,7 @@
     "test:update": "make -C test update-intended",
     "test:verify": "npm run test:core && echo 'Core functionality verified ✅'",
     "clean": "npm run test:clean",
-    "clean:ex": "find . -name '*.ex' -not -path './vendor/*' -not -path './_build/*' -not -path './deps/*' -not -path './test/*.exs' -not -path './test/*/*.exs' -not -path './config/*' -not -path './priv/*' -delete",
-    "clean:todo": "cd examples/todo-app && find lib -name '*.ex' -delete 2>/dev/null || true",
+    "clean:generated": "bash -c 'echo \"Cleaning compiler-generated files...\"; for dir in examples/*/lib test/snapshot/*/out test/snapshot/*/intended; do if [ -f \"$dir/_GeneratedFiles.json\" ]; then echo \"Processing $dir\"; (cd \"$dir\" && jq -r \".filesGenerated[]\" _GeneratedFiles.json 2>/dev/null | while read -r file; do if [ -f \"$file\" ]; then echo \"  Removing: $file\"; rm \"$file\"; fi; done); elif [ -d \"$dir\" ]; then echo \"Cleaning $dir (no manifest)\"; find \"$dir\" -name \"*.ex\" -type f -delete 2>/dev/null; fi; done; echo \"✓ Cleaned all compiler-generated files\"'",
     "setup": "lix scope create && lix install haxelib:reflaxe"
   },
   "engines": {

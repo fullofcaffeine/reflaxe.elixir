@@ -1,23 +1,23 @@
 defmodule Plug.HttpMethod do
   def get() do
-    {:GET}
+    {0}
   end
   def post() do
-    {:POST}
+    {1}
   end
   def put() do
-    {:PUT}
+    {2}
   end
   def patch() do
-    {:PATCH}
+    {3}
   end
   def delete() do
-    {:DELETE}
+    {4}
   end
   def head() do
-    {:HEAD}
+    {5}
   end
   def options() do
-    {:OPTIONS}
+    {6}
   end
 end

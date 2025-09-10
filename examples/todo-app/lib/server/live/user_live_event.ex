@@ -1,26 +1,26 @@
 defmodule Server.Live.UserLiveEvent do
   def new_user() do
-    {:NewUser}
+    {0}
   end
   def edit_user(arg0) do
-    {:EditUser, arg0}
+    {1, arg0}
   end
   def save_user(arg0) do
-    {:SaveUser, arg0}
+    {2, arg0}
   end
   def delete_user(arg0) do
-    {:DeleteUser, arg0}
+    {3, arg0}
   end
   def search(arg0) do
-    {:Search, arg0}
+    {4, arg0}
   end
   def filter_status(arg0) do
-    {:FilterStatus, arg0}
+    {5, arg0}
   end
   def clear_search() do
-    {:ClearSearch}
+    {6}
   end
   def cancel() do
-    {:Cancel}
+    {7}
   end
 end

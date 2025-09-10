@@ -14,7 +14,7 @@ defmodule TypeSafeChildSpec do
   def worker(module, args) do
     if (args != nil && length(args) > 0), do: {:module_with_args, module, args}, else: {:module_ref, module}
   end
-  def supervisor(module, args, opts) do
+  def supervisor(module, args, _opts) do
     if (opts != nil) do
       spec = opts
       id = module
@@ -30,7 +30,7 @@ defmodule TypeSafeChildSpec do
   def task_supervisor(name) do
     {:module_with_config, "Task.Supervisor", [%{:key => "name", :value => name}]}
   end
-  def registry(name, opts) do
+  def registry(_name, _opts) do
     config = [%{:key => "name", :value => name}]
     if (opts != nil) do
       config = config ++ opts

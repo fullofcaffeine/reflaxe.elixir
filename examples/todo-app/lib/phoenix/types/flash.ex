@@ -11,13 +11,13 @@ defmodule Flash do
   def error(message, details, title) do
     %{:type => {:Error}, :message => message, :details => details, :title => title, :dismissible => true}
   end
-  def validation_error(message, changeset) do
+  def validation_error(message, _changeset) do
     %{:type => {:Error}, :message => message, :details => (extract_changeset_errors(changeset)), :title => "Validation Failed", :dismissible => true}
   end
-  def to_phoenix_flash(flash) do
+  def to_phoenix_flash(_flash) do
     %{:type => FlashTypeTools.to_string(flash.type), :message => flash.message, :title => flash.title, :details => flash.details, :dismissible => flash.dismissible, :timeout => flash.timeout, :action => flash.action}
   end
-  def from_phoenix_flash(phoenix_flash) do
+  def from_phoenix_flash(_phoenix_flash) do
     type_string = if (Map.get(phoenix_flash, :type) != nil), do: phoenix_flash.type, else: "info"
     flash_type = FlashTypeTools.from_string(type_string)
     message = if (Map.get(phoenix_flash, :message) != nil), do: phoenix_flash.message, else: ""
