@@ -25,13 +25,13 @@ defmodule JsonPrinter do
     items = []
     g = 0
     g1 = length(arr)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     items ++ [struct.write_value(arr[i], Std.string(i))]
-    {:cont, {acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     if (struct.space != nil && length(items) > 0) do

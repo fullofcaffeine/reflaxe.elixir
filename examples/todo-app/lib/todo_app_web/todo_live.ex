@@ -172,7 +172,7 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
       {:error, _} ->
         g = elem(g, 1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to create todo: " <> Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to create todo: " <> Kernel.to_string(reason))
     end
   end
   def toggle_todo_status(id, socket) do
@@ -187,7 +187,7 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
   {:error, _} ->
     g = elem(g, 1)
     reason = g
-    Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to update todo: " <> Std.string(reason))
+    Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to update todo: " <> Kernel.to_string(reason))
 end
     TodoPubSub.broadcast({:TodoUpdates}, {:TodoUpdated, updated_todo})
     update_todo_in_list(updated_todo, socket)
@@ -214,7 +214,7 @@ end
       {:error, _} ->
         g = elem(g, 1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to delete todo: " <> Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to delete todo: " <> Kernel.to_string(reason))
     end
   end
   def update_todo_priority(id, priority, socket) do
@@ -229,7 +229,7 @@ end
   {:error, _} ->
     g = elem(g, 1)
     reason = g
-    Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to update priority: " <> Std.string(reason))
+    Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to update priority: " <> Kernel.to_string(reason))
 end
     TodoPubSub.broadcast({:TodoUpdates}, {:TodoUpdated, updated_todo})
     update_todo_in_list(updated_todo, socket)
@@ -261,16 +261,16 @@ end)
   def count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, todos, :ok}, fn _, {acc_g, acc_count, acc_todos, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_count, acc_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_count, acc_todos, acc_state}}
   else
-    {:halt, {acc_count, acc_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_count, acc_todos, acc_state}}
   end
 end)
     count
@@ -278,16 +278,16 @@ end)
   def count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, g, todos, :ok}, fn _, {acc_count, acc_g, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_count, acc_g, acc_todos, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
   else
-    {:halt, {acc_count, acc_g, acc_todos, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
   end
 end)
     count
@@ -324,7 +324,7 @@ end)
   def complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, pending, :ok}, fn _, {acc_g, acc_pending, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} -> nil end)
     g = TodoPubSub.broadcast({:TodoUpdates}, {:BulkUpdate, {:CompleteAll}})
     case (g) do
       {:ok, _} ->
@@ -423,7 +423,7 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
       {:error, _} ->
         g = elem(g, 1)
         reason = g
-        Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to save todo: " <> Std.string(reason))
+        Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to save todo: " <> Kernel.to_string(reason))
     end
   end
   def handle_bulk_update(action, socket) do
