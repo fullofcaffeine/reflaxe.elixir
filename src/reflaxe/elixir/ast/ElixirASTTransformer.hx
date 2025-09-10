@@ -2710,29 +2710,55 @@ class ElixirASTTransformer {
             switch(node.def) {
                 case EBlock(expressions):
                     var filtered = [];
+                    var nilAssignments = new Map<String, Int>(); // Track nil assignments by variable name
                     var i = 0;
                     
+                    // First pass: identify all nil assignments
                     while (i < expressions.length) {
                         var expr = expressions[i];
-                        var shouldSkip = false;
-                        
-                        // Check if this is a nil assignment
                         switch(expr.def) {
                             case EMatch(PVar(varName), nilValue):
                                 switch(nilValue.def) {
                                     case ENil:
-                                        // This is `var = nil` - check if next expression reassigns same variable
-                                        if (i + 1 < expressions.length) {
-                                            switch(expressions[i + 1].def) {
-                                                case EMatch(PVar(nextVarName), _) if (nextVarName == varName):
-                                                    // Next expression reassigns same variable - skip the nil init
-                                                    #if debug_ast_transformer
-                                                    trace('[XRay RemoveRedundantNilInit] Removing redundant nil init for: $varName');
-                                                    #end
-                                                    shouldSkip = true;
+                                        nilAssignments.set(varName, i);
+                                    default:
+                                }
+                            default:
+                        }
+                        i++;
+                    }
+                    
+                    // Second pass: filter out redundant nil assignments
+                    i = 0;
+                    while (i < expressions.length) {
+                        var expr = expressions[i];
+                        var shouldSkip = false;
+                        
+                        // Check if this is a nil assignment that should be removed
+                        switch(expr.def) {
+                            case EMatch(PVar(varName), nilValue):
+                                switch(nilValue.def) {
+                                    case ENil:
+                                        // Check if this variable is assigned again later
+                                        var j = i + 1;
+                                        while (j < expressions.length) {
+                                            switch(expressions[j].def) {
+                                                case EMatch(PVar(nextVarName), value) if (nextVarName == varName):
+                                                    // Found reassignment - check if the value is not nil
+                                                    switch(value.def) {
+                                                        case ENil:
+                                                            // Another nil assignment, keep looking
+                                                        default:
+                                                            // Non-nil reassignment found - skip the initial nil
+                                                            #if debug_ast_transformer
+                                                            trace('[XRay RemoveRedundantNilInit] Removing redundant nil init for: $varName (reassigned at index $j)');
+                                                            #end
+                                                            shouldSkip = true;
+                                                            break;
+                                                    }
                                                 default:
-                                                    // Keep the nil assignment
                                             }
+                                            j++;
                                         }
                                     default:
                                         // Not a nil assignment

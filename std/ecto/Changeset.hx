@@ -80,7 +80,7 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @param fields List of field names to cast
      * @return The updated changeset
      */
-    extern inline public function cast(fields: Array<String>): Changeset<T, P> {
+    extern inline public function castFields(fields: Array<String>): Changeset<T, P> {
         var atoms = fields.map(f -> ':$f').join(", ");
         return untyped __elixir__('Ecto.Changeset.cast({0}, {1}, [{2}])', 
             this, untyped __elixir__('{1}', this), untyped __elixir__(atoms));

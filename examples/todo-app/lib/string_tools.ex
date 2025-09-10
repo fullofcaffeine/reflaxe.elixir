@@ -61,12 +61,12 @@ end)
   def ltrim(s) do
     l = length(s)
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, r, l, :ok}, fn _, {acc_s, acc_r, acc_l, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, s, r, :ok}, fn _, {acc_l, acc_s, acc_r, acc_state} ->
   if (acc_r < acc_l && is_space(acc_s, acc_r)) do
     acc_r = acc_r + 1
-    {:cont, {acc_s, acc_r, acc_l, acc_state}}
+    {:cont, {acc_l, acc_s, acc_r, acc_state}}
   else
-    {:halt, {acc_s, acc_r, acc_l, acc_state}}
+    {:halt, {acc_l, acc_s, acc_r, acc_state}}
   end
 end)
     if (r > 0), do: s.substr(r, (l - r)), else: s
@@ -74,12 +74,12 @@ end)
   def rtrim(s) do
     l = length(s)
     r = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, s, r, :ok}, fn _, {acc_l, acc_s, acc_r, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {r, l, s, :ok}, fn _, {acc_r, acc_l, acc_s, acc_state} ->
   if (acc_r < acc_l && is_space(acc_s, ((acc_l - acc_r) - 1))) do
     acc_r = acc_r + 1
-    {:cont, {acc_l, acc_s, acc_r, acc_state}}
+    {:cont, {acc_r, acc_l, acc_s, acc_state}}
   else
-    {:halt, {acc_l, acc_s, acc_r, acc_state}}
+    {:halt, {acc_r, acc_l, acc_s, acc_state}}
   end
 end)
     if (r > 0), do: s.substr(0, (l - r)), else: s
@@ -96,7 +96,7 @@ end)
   def rpad(s, c, l) do
     if (length(c) <= 0), do: s
     buf = s
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, buf, :ok}, fn _, {acc_l, acc_buf, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {buf, l, :ok}, fn _, {acc_buf, acc_l, acc_state} -> nil end)
     buf
   end
   def replace(s, sub, by) do
@@ -132,7 +132,7 @@ end)
   def quote_regexp_meta(s) do
     special_chars = ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, special_chars, g, :ok}, fn _, {acc_s, acc_special_chars, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {special_chars, s, g, :ok}, fn _, {acc_special_chars, acc_s, acc_g, acc_state} -> nil end)
     s
   end
   def parse_int(str) do
@@ -157,14 +157,14 @@ end)
     end
     g = start
     g1 = length(str)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, result, g, :ok}, fn _, {acc_g1, acc_result, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = str.char_code_at(i)
     nil
-    {:cont, {acc_g1, acc_result, acc_g, acc_state}}
+    {:cont, {acc_result, acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_result, acc_g, acc_state}}
+    {:halt, {acc_result, acc_g, acc_g1, acc_state}}
   end
 end)
     if negative do

@@ -51,7 +51,7 @@ import ecto.DatabaseAdapter;
  * mix ecto.reset         # Drop, create, and migrate
  * ```
  */
-@:autoBuild(reflaxe.elixir.macros.MigrationValidator.build())
+@:autoBuild(reflaxe.elixir.macros.MigrationBuilder.build())
 abstract class Migration {
     /**
      * Define forward migration operations
@@ -202,7 +202,16 @@ class TableBuilder {
      * Add a foreign key reference to another table
      */
     public function addReference(columnName: String, referencedTable: String, ?options: ReferenceOptions): TableBuilder {
-        addColumn(columnName, References(referencedTable), cast options);
+        // Cast the reference options to column options
+        var columnOptions: ColumnOptions<Int> = null;
+        if (options != null) {
+            columnOptions = {
+                nullable: false,
+                onDelete: options.onDelete,
+                onUpdate: options.onUpdate
+            };
+        }
+        addColumn(columnName, References(referencedTable), columnOptions);
         return this;
     }
     
@@ -501,11 +510,3 @@ private enum AlterOperation {
     RenameColumn(oldName: String, newName: String);
 }
 
-/**
- * Migration metadata for compiler
- */
-@:autoBuild(ecto.MigrationBuilder.build())
-interface IMigration {
-    function up(): Void;
-    function down(): Void;
-}

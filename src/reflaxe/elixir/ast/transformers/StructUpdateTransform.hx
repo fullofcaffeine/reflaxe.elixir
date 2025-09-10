@@ -3,6 +3,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
 
+using StringTools;
 using reflaxe.elixir.ast.ElixirASTTransformer;
 
 /**
@@ -92,6 +93,12 @@ class StructUpdateTransform {
             return transformSetMethod(body);
         }
         
+        // For fluent API methods (like add_column, add_index, etc.), 
+        // transform field mutations into struct updates
+        if (isFluentAPIMethod(functionName)) {
+            return transformFluentMethod(body);
+        }
+        
         // For other functions, we'll just detect and remove problematic assignments
         // to eliminate warnings. A proper implementation would transform
         // the entire function to thread struct updates properly.
@@ -115,6 +122,164 @@ class StructUpdateTransform {
             default:
                 // Recursively transform other expressions
                 return ElixirASTTransformer.transformAST(body, node -> transformFunctionBody(node, functionName));
+        }
+    }
+    
+    /**
+     * Check if a method is a fluent API method that mutates fields and returns this
+     */
+    static function isFluentAPIMethod(name: String): Bool {
+        // Common fluent API method patterns
+        return StringTools.startsWith(name, "add_") || 
+               StringTools.startsWith(name, "set_") || 
+               StringTools.startsWith(name, "with_") ||
+               name == "push" ||
+               name == "append";
+    }
+    
+    /**
+     * Transform fluent API methods that mutate fields and return struct
+     */
+    static function transformFluentMethod(body: ElixirAST): ElixirAST {
+        if (body == null) return null;
+        
+        switch(body.def) {
+            case EBlock(exprs):
+                var transformedExprs = [];
+                var hasTransformations = false;
+                
+                for (i in 0...exprs.length) {
+                    var expr = exprs[i];
+                    
+                    // Check if this is a method call on struct that returns a new struct
+                    var transformed = transformStructMethodCall(expr);
+                    if (transformed != null) {
+                        transformedExprs.push(transformed);
+                        hasTransformations = true;
+                        #if debug_struct_update_transform
+                        trace('[XRay StructUpdate] Transformed struct method call');
+                        #end
+                    }
+                    // Check if this is a field mutation that's being ignored  
+                    else if (isIgnoredFieldMutation(expr)) {
+                        // Transform to struct update
+                        var update = extractFieldUpdate(expr);
+                        if (update != null) {
+                            #if debug_struct_update_transform
+                            trace('[XRay StructUpdate] Transforming field mutation: ${update.key}');
+                            #end
+                            transformedExprs.push(makeAST(EStructUpdate(
+                                makeAST(EVar("struct")),
+                                [update]
+                            )));
+                            hasTransformations = true;
+                        }
+                    }
+                    else {
+                        transformedExprs.push(expr);
+                    }
+                }
+                
+                return hasTransformations ? makeAST(EBlock(transformedExprs)) : body;
+                
+            default:
+                return body;
+        }
+    }
+    
+    /**
+     * Transform method calls on struct to capture return value
+     */
+    static function transformStructMethodCall(expr: ElixirAST): Null<ElixirAST> {
+        if (expr == null) return null;
+        
+        switch(expr.def) {
+            case ECall(target, method, args):
+                // Check if target is not null and is a call on struct variable
+                if (target != null && target.def != null) {
+                    switch(target.def) {
+                        case EVar("struct"):
+                            // This is a method call on struct that should return a new struct
+                            // Transform: struct.method(...) -> struct = struct.method(...)
+                            #if debug_struct_update_transform
+                            trace('[XRay StructUpdate] Found struct method call: $method');
+                            #end
+                            return makeAST(EMatch(
+                                PVar("struct"),
+                                makeAST(ECall(target, method, args))
+                            ));
+                        default:
+                    }
+                }
+            default:
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Check if an expression is an ignored field mutation (like struct.columns ++ [...])
+     */
+    static function isIgnoredFieldMutation(expr: ElixirAST): Bool {
+        if (expr == null) return false;
+        
+        switch(expr.def) {
+            case EBinary(Concat, left, right):
+                // Check if left side is struct.field access
+                switch(left.def) {
+                    case EField(obj, field):
+                        switch(obj.def) {
+                            case EVar("struct"):
+                                return true;
+                            default:
+                        }
+                    default:
+                }
+            default:
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Extract field update information from a mutation expression
+     */
+    static function extractFieldUpdate(expr: ElixirAST): Null<{key: String, value: ElixirAST}> {
+        if (expr == null) return null;
+        
+        switch(expr.def) {
+            case EBinary(Concat, left, right):
+                // Extract field name and build update expression
+                switch(left.def) {
+                    case EField(obj, field):
+                        switch(obj.def) {
+                            case EVar("struct"):
+                                // Build the complete update expression: struct.field ++ right
+                                return {
+                                    key: field,
+                                    value: makeAST(EBinary(Concat, left, right))
+                                };
+                            default:
+                        }
+                    default:
+                }
+            default:
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Check if an expression is returning the struct
+     */
+    static function isReturnStruct(expr: ElixirAST): Bool {
+        if (expr == null) return false;
+        
+        switch(expr.def) {
+            case EVar("struct"):
+                return true;
+            default:
+                return false;
         }
     }
     

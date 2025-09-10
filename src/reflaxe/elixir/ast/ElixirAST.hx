@@ -695,7 +695,13 @@ typedef ElixirMetadata = {
     
     // Function Reference Handling (Added 2025-09-05)
     ?isFunctionReference: Bool,   // Marks a function being passed as a reference
-    ?arity: Int                   // Function arity for capture operator
+    ?arity: Int,                  // Function arity for capture operator
+    
+    // Fluent API Detection (Added 2025-09-10)
+    ?isFluentMethod: Bool,         // Method returns 'this' for chaining
+    ?mutatesFields: Array<String>, // Fields mutated in this method (e.g., ["columns", "indexes"])
+    ?fieldMutations: Array<{field: String, expr: ElixirAST}>, // Field mutation operations
+    ?returnsThis: Bool            // Method returns 'this' for fluent chaining
 }
 
 // ============================================================================

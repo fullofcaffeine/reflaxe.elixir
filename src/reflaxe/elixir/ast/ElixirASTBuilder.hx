@@ -1853,6 +1853,9 @@ class ElixirASTBuilder {
                 }
                 #end
                 
+                // Detect fluent API patterns
+                var fluentPattern = detectFluentAPIPattern(f);
+                
                 var args = [];
                 var paramRenaming = new Map<String, String>();
                 
@@ -1949,11 +1952,32 @@ class ElixirASTBuilder {
                     body = applyParameterRenaming(body, paramRenaming);
                 }
                 
-                EFn([{
+                // Create the function AST with fluent API metadata if detected
+                var fnAst = makeAST(EFn([{
                     args: args,
                     guard: null,
                     body: body
-                }]);
+                }]));
+                
+                // Add fluent API metadata if patterns were detected
+                if (fluentPattern.returnsThis || fluentPattern.fieldMutations.length > 0) {
+                    fnAst.metadata.isFluentMethod = true;
+                    fnAst.metadata.returnsThis = fluentPattern.returnsThis;
+                    
+                    if (fluentPattern.fieldMutations.length > 0) {
+                        fnAst.metadata.mutatesFields = [];
+                        fnAst.metadata.fieldMutations = [];
+                        for (mutation in fluentPattern.fieldMutations) {
+                            fnAst.metadata.mutatesFields.push(mutation.field);
+                            fnAst.metadata.fieldMutations.push({
+                                field: mutation.field,
+                                expr: buildFromTypedExpr(mutation.expr, functionUsageMap)
+                            });
+                        }
+                    }
+                }
+                
+                fnAst.def;
                 
             // ================================================================
             // Object/Anonymous Structure
@@ -3786,6 +3810,106 @@ class ElixirASTBuilder {
             default:
         }
         return null;
+    }
+    
+    /**
+     * Detect fluent API patterns in a function
+     * Returns metadata with fluent API information
+     */
+    static function detectFluentAPIPattern(func: TFunc): {returnsThis: Bool, fieldMutations: Array<{field: String, expr: TypedExpr}>} {
+        var result = {
+            returnsThis: false,
+            fieldMutations: []
+        };
+        
+        if (func.expr == null) return result;
+        
+        // Check if function returns 'this'
+        function checkReturnsThis(expr: TypedExpr): Bool {
+            switch(expr.expr) {
+                case TReturn(e) if (e != null):
+                    switch(e.expr) {
+                        case TConst(TThis):
+                            return true;
+                        case TLocal(v) if (v.name == "this"):
+                            return true;
+                        default:
+                    }
+                case TConst(TThis): // Implicit return
+                    return true;
+                case TLocal(v) if (v.name == "this"):
+                    return true;
+                case TBlock(exprs) if (exprs.length > 0):
+                    // Check last expression in block (implicit return)
+                    return checkReturnsThis(exprs[exprs.length - 1]);
+                default:
+            }
+            return false;
+        }
+        
+        // Detect field mutations (e.g., this.columns.push(...))
+        function detectMutations(expr: TypedExpr): Void {
+            switch(expr.expr) {
+                case TCall(e, args):
+                    // Look for method calls on 'this' fields
+                    switch(e.expr) {
+                        case TField(target, FInstance(_, _, cf)):
+                            var methodName = cf.get().name;
+                            // Check if it's a mutating method
+                            if (methodName == "push" || methodName == "pop" || 
+                                methodName == "shift" || methodName == "unshift" ||
+                                methodName == "splice" || methodName == "reverse" ||
+                                methodName == "sort") {
+                                // Check if target is a field of 'this'
+                                switch(target.expr) {
+                                    case TField(obj, FInstance(_, _, fieldRef)):
+                                        switch(obj.expr) {
+                                            case TConst(TThis):
+                                                // Found mutation of this.field
+                                                result.fieldMutations.push({
+                                                    field: fieldRef.get().name,
+                                                    expr: expr
+                                                });
+                                            default:
+                                        }
+                                    default:
+                                }
+                            }
+                        default:
+                    }
+                case TBlock(exprs):
+                    for (e in exprs) {
+                        detectMutations(e);
+                    }
+                case TIf(_, thenExpr, elseExpr):
+                    detectMutations(thenExpr);
+                    if (elseExpr != null) detectMutations(elseExpr);
+                case TWhile(_, body, _):
+                    detectMutations(body);
+                case TFor(_, _, body):
+                    detectMutations(body);
+                case TSwitch(_, cases, edef):
+                    for (c in cases) {
+                        detectMutations(c.expr);
+                    }
+                    if (edef != null) detectMutations(edef);
+                case TReturn(e) if (e != null):
+                    detectMutations(e);
+                case TTry(e, catches):
+                    detectMutations(e);
+                    for (c in catches) {
+                        detectMutations(c.expr);
+                    }
+                default:
+                    // Recursively check other expressions
+                    haxe.macro.TypedExprTools.iter(expr, detectMutations);
+            }
+        }
+        
+        result.returnsThis = checkReturnsThis(func.expr);
+        detectMutations(func.expr);
+        
+        return result;
     }
     
     /**
