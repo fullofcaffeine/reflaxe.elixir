@@ -6,6 +6,6 @@ defmodule ApplicationResultTools do
     {:Error, reason}
   end
   def ignore() do
-    {2}
+    {:Ignore}
   end
 end

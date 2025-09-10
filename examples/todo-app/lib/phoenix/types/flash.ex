@@ -1,18 +1,18 @@
 defmodule Flash do
   def info(message, title) do
-    %{:type => {0}, :message => message, :title => title, :dismissible => true}
+    %{:type => {:Info}, :message => message, :title => title, :dismissible => true}
   end
   def success(message, title) do
-    %{:type => {1}, :message => message, :title => title, :dismissible => true, :timeout => 5000}
+    %{:type => {:Success}, :message => message, :title => title, :dismissible => true, :timeout => 5000}
   end
   def warning(message, title) do
-    %{:type => {2}, :message => message, :title => title, :dismissible => true}
+    %{:type => {:Warning}, :message => message, :title => title, :dismissible => true}
   end
   def error(message, details, title) do
-    %{:type => {3}, :message => message, :details => details, :title => title, :dismissible => true}
+    %{:type => {:Error}, :message => message, :details => details, :title => title, :dismissible => true}
   end
   def validation_error(message, changeset) do
-    %{:type => {3}, :message => message, :details => (extract_changeset_errors(changeset)), :title => "Validation Failed", :dismissible => true}
+    %{:type => {:Error}, :message => message, :details => (extract_changeset_errors(changeset)), :title => "Validation Failed", :dismissible => true}
   end
   def to_phoenix_flash(flash) do
     %{:type => FlashTypeTools.to_string(flash.type), :message => flash.message, :title => flash.title, :details => flash.details, :dismissible => flash.dismissible, :timeout => flash.timeout, :action => flash.action}

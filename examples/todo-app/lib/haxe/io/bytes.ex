@@ -3,7 +3,7 @@ defmodule Bytes do
   @b nil
   def get_string(struct, pos, len, encoding) do
     if (encoding == nil) do
-      encoding = {0}
+      encoding = {:UTF8}
     end
     if (pos < 0 || len < 0 || pos + len > length(struct)) do
       throw("Out of bounds")

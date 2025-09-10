@@ -2,12 +2,13 @@ defmodule Todo do
   use Ecto.Schema
   import Ecto.Changeset
   schema "todos" do
-    field(:name, :string)
-    field(:email, :string)
-    field(:password_hash, :string)
-    field(:confirmed_at, :naive_datetime)
-    field(:last_login_at, :naive_datetime)
-    field(:active, :boolean, [default: true])
+    field(:title, :string)
+    field(:description, :string)
+    field(:completed, :boolean)
+    field(:priority, :string)
+    field(:due_date, :string)
+    field(:tags, {:array, :string})
+    field(:user_id, :integer)
     timestamps()
   end
   def changeset(todo, params) do

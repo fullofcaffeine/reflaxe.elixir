@@ -1,13 +1,13 @@
 defmodule ChildSpecBuilder do
   def worker(module, args, id) do
-    %{:id => (if (id != nil), do: id, else: module), :start => {module, :start_link, args}, :restart => {0}, :shutdown => {:Timeout, 5000}, :type => {0}, :modules => [module]}
+    %{:id => (if (id != nil), do: id, else: module), :start => {module, :start_link, args}, :restart => {:Permanent}, :shutdown => {:Timeout, 5000}, :type => {:Worker}, :modules => [module]}
   end
   def supervisor(module, args, id) do
-    %{:id => (if (id != nil), do: id, else: module), :start => {module, :start_link, args}, :restart => {0}, :shutdown => {2}, :type => {1}, :modules => [module]}
+    %{:id => (if (id != nil), do: id, else: module), :start => {module, :start_link, args}, :restart => {:Permanent}, :shutdown => {:Infinity}, :type => {:Supervisor}, :modules => [module]}
   end
   def temp_worker(module, args, id) do
     spec = worker(module, args, id)
-    restart = {1}
+    restart = {:Temporary}
     spec
   end
 end

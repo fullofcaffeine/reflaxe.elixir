@@ -15,11 +15,11 @@ defmodule Repo.Migrations.CreateTodos do
     create table(:todos) do
       add :title, :string
       add :description, :string
-      add :completed, :string
+      add :completed, :boolean, default: false
       add :priority, :string
-      add :due_date, :string
-      add :tags, :string
-      add :user_id, :string
+      add :due_date, :naive_datetime
+      add :tags, :map
+      add :user_id, :integer
       timestamps()
     end
     
