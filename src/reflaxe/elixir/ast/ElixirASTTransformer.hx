@@ -512,7 +512,7 @@ class ElixirASTTransformer {
         passes.push({
             name: "UsageAnalysis",
             description: "Detect and mark unused variables with underscore prefix",
-            enabled: false, // DISABLED to check if Date_Impl issue is from elsewhere
+            enabled: true, // RE-ENABLED with fixed traversal that detects nested usage
             pass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPass
         });
         

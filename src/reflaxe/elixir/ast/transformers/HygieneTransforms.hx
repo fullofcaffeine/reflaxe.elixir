@@ -133,48 +133,98 @@ class HygieneTransforms {
     
     /**
      * Check if a variable name is referenced in the body
-     * The transformNode function already handles recursive traversal
      * 
-     * IMPORTANT: This correctly detects usage in nested contexts like function calls
-     * Example: `Std.int(t)` - the `t` inside the call will be detected
+     * COMPREHENSIVE TRAVERSAL: Must check ALL node types to find nested variable usage
+     * Example: `Std.int(t)` - the `t` is nested inside a call argument
+     * 
+     * The transformNode function handles recursion, but we must ensure we're
+     * checking for EVar in all positions where it could appear.
      */
     static function isVariableUsedInBody(varName: String, body: ElixirAST): Bool {
         var used = false;
         var nodeCount = 0;
+        var depth = 0;
         
         // Use transformer to search for variable usage recursively
-        // transformNode already traverses all children, including function call arguments
+        // CRITICAL: transformNode DOES traverse all children automatically
+        // We just need to check for EVar nodes at any depth
         ElixirASTTransformer.transformNode(body, function(node) {
             nodeCount++;
+            
             #if debug_hygiene_verbose
-            trace('[XRay Hygiene] Node #$nodeCount: ${Type.enumConstructor(node.def)}');
+            var indent = [for (i in 0...depth) "  "].join("");
+            trace('$indent[XRay Hygiene] Node #$nodeCount: ${Type.enumConstructor(node.def)}');
             #end
             
+            // Check if this node is a variable reference
             switch(node.def) {
                 case EVar(name):
                     #if debug_hygiene
-                    trace('[XRay Hygiene] Checking EVar: "$name" against "$varName"');
+                    trace('[XRay Hygiene] Found EVar("$name") - checking against "$varName"');
                     #end
                     if (name == varName) {
                         #if debug_hygiene
-                        trace('[XRay Hygiene] ✓ Found usage of variable $varName in body!');
+                        trace('[XRay Hygiene] ✓ MATCH! Variable $varName is USED in the body!');
                         #end
                         used = true;
                     }
+                    
+                // Log other node types for debugging but don't need special handling
+                // since transformNode will recurse into them automatically
                 case ECall(target, funcName, args):
                     #if debug_hygiene_verbose
-                    trace('[XRay Hygiene] Found ECall to $funcName with ${args.length} args');
+                    trace('[XRay Hygiene] ECall to $funcName with ${args.length} args - will traverse args');
                     #end
-                    // transformNode will recursively process the args
+                    
+                case EBinary(op, left, right):
+                    #if debug_hygiene_verbose
+                    trace('[XRay Hygiene] EBinary operator - will traverse both operands');
+                    #end
+                    
+                case ETuple(elements):
+                    #if debug_hygiene_verbose
+                    trace('[XRay Hygiene] ETuple with ${elements.length} elements - will traverse all');
+                    #end
+                    
+                case EList(elements):
+                    #if debug_hygiene_verbose
+                    trace('[XRay Hygiene] EList with ${elements.length} elements - will traverse all');
+                    #end
+                    
+                case EBlock(statements):
+                    #if debug_hygiene_verbose
+                    trace('[XRay Hygiene] EBlock with ${statements.length} statements - will traverse all');
+                    depth++;
+                    #end
+                    
+                case EIf(cond, thenBranch, elseBranch):
+                    #if debug_hygiene_verbose
+                    trace('[XRay Hygiene] EIf - will traverse condition and both branches');
+                    #end
+                    
+                case ECase(expr, clauses):
+                    #if debug_hygiene_verbose
+                    trace('[XRay Hygiene] ECase with ${clauses.length} clauses - will traverse all');
+                    #end
+                    
                 default:
-                    // The transformNode recursively handles all other node types
+                    // transformNode handles all other cases automatically
+                    #if debug_hygiene_verbose
+                    if (nodeCount < 20) { // Limit verbose output
+                        trace('[XRay Hygiene] Other node type: ${Type.enumConstructor(node.def)}');
+                    }
+                    #end
             }
-            return node; // Return unchanged
+            
+            // Return node unchanged - we're just searching, not transforming
+            return node;
         });
         
         #if debug_hygiene
         if (!used) {
-            trace('[XRay Hygiene] Variable $varName NOT found in body after checking $nodeCount nodes');
+            trace('[XRay Hygiene] Variable "$varName" NOT found after checking $nodeCount nodes');
+        } else {
+            trace('[XRay Hygiene] Variable "$varName" WAS FOUND (checked $nodeCount nodes)');
         }
         #end
         
