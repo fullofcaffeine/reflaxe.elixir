@@ -57,6 +57,10 @@ class ElixirASTBuilder {
     // When true, don't convert camelCase parameters to snake_case
     public static var isInClassMethodContext: Bool = false;
     
+    // Track the current receiver parameter name for TThis references
+    // In instance methods, the first parameter is the receiver (usually "struct")
+    public static var currentReceiverParamName: Null<String> = null;
+    
     // Counter for generating unique while loop function names
     static var whileLoopCounter: Int = 0;
     
@@ -232,10 +236,16 @@ class ElixirASTBuilder {
                 ENil;
                 
             case TConst(TThis):
-                // In Elixir, 'this' refers to the first parameter of instance methods (usually 'struct')
-                // This will be handled by the transformer or the function compiler
-                // For now, use a placeholder that will be replaced
-                EVar("struct");
+                // In Elixir, 'this' refers to the first parameter of instance methods
+                // Use the actual receiver parameter name we tracked in TFunction
+                var receiverName = if (currentReceiverParamName != null) {
+                    currentReceiverParamName;
+                } else {
+                    // Fallback to "struct" if we don't have a tracked receiver
+                    // This can happen in certain contexts
+                    "struct";
+                };
+                EVar(receiverName);
                 
             case TConst(TSuper):
                 // Elixir doesn't have super - this needs special handling
@@ -1868,6 +1878,7 @@ class ElixirASTBuilder {
                 }
                 
                 // Process all parameters: handle naming, unused prefixing, and registration
+                var isFirstParam = true;
                 for (arg in f.args) {
                     var originalName = arg.v.name;
                     var idKey = Std.string(arg.v.id);
@@ -1889,12 +1900,9 @@ class ElixirASTBuilder {
                     }
                     #end
                     
-                    // Apply underscore prefix only if our comprehensive check confirms it's unused
-                    var finalName = if (isActuallyUnused && !baseName.startsWith("_")) {
-                        "_" + baseName;
-                    } else {
-                        baseName;
-                    };
+                    // NO LONGER prefix with underscore here - let PrefixUnusedParameters transformer handle it
+                    // This ensures consistent handling between function parameters and their body references
+                    var finalName = baseName;
                     
                     // Register the mapping for TLocal references in the body
                     if (!tempVarRenameMap.exists(idKey)) {
@@ -1917,6 +1925,13 @@ class ElixirASTBuilder {
                         #if debug_ast_pipeline
                         trace('[AST Builder] Abstract this parameter detected, mapping both this1 and this to: $finalName');
                         #end
+                    }
+                    
+                    // Track the first parameter as the receiver for instance methods
+                    // This will be used for TThis references
+                    if (isFirstParam && isInClassMethodContext) {
+                        currentReceiverParamName = finalName;
+                        isFirstParam = false;
                     }
                     
                     // Add the parameter to the function signature

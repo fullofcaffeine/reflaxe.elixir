@@ -11,10 +11,10 @@ else
   Std.string(x)
 end)]
   end
-  def add_char(_struct, _c) do
+  def add_char(struct, c) do
     %{struct | parts: struct.parts ++ [String.from_char_code(c)]}
   end
-  def add_sub(_struct, s, pos, len) do
+  def add_sub(struct, s, pos, len) do
     if (s == nil), do: nil
     substr = if (len == nil), do: s.substr(pos), else: s.substr(pos, len)
     %{struct | parts: struct.parts ++ [substr]}
