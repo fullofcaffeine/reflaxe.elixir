@@ -128,16 +128,58 @@ class Schema {
     /**
      * Mark a function as a changeset generator
      * 
-     * Functions with this annotation are preserved through DCE
-     * and included in the generated Ecto schema module.
+     * ## Purpose
      * 
-     * @example
+     * Functions with this annotation are preserved through Dead Code Elimination (DCE)
+     * and included in the generated Ecto schema module. This is critical because
+     * changeset functions appear "unused" from Haxe's perspective - they're only
+     * called from generated Elixir code.
+     * 
+     * ## How It Works
+     * 
+     * When you add @:changeset to a function:
+     * 1. The compiler detects it during AST transformation
+     * 2. The function is preserved through compilation
+     * 3. It's included in the generated Ecto schema module
+     * 
+     * ## DCE Prevention Strategy
+     * 
+     * We use a simple @:keep approach rather than complex build macros:
+     * - **Simple**: Just add @:keep alongside @:changeset if needed
+     * - **Reliable**: Haxe's built-in DCE respects @:keep
+     * - **Maintainable**: No complex macro infrastructure required
+     * 
+     * ## Example Usage
+     * 
      * ```haxe
      * @:changeset
-     * public static function changeset(entity: MySchema, params: Dynamic): Changeset<MySchema, Dynamic> {
-     *     // Validation logic
+     * @:keep  // Optional: Add if function is being eliminated
+     * public static function changeset(todo: Todo, params: TodoParams): Changeset<Todo, TodoParams> {
+     *     return new Changeset(todo, params)
+     *         .validateRequired(["title", "userId"])
+     *         .validateLength("title", {min: 3, max: 200});
      * }
      * ```
+     * 
+     * ## Generated Elixir
+     * 
+     * ```elixir
+     * def changeset(todo, params) do
+     *   todo
+     *   |> cast(params, [:title, :user_id, :completed])
+     *   |> validate_required([:title, :user_id])
+     *   |> validate_length(:title, min: 3, max: 200)
+     * end
+     * ```
+     * 
+     * ## Automatic Fallback
+     * 
+     * If no @:changeset function is defined, the compiler generates a basic one:
+     * - Casts all fields except id and timestamps
+     * - Makes non-nullable fields required
+     * - Ensures schema always has a working changeset
+     * 
+     * @see docs/03-compiler-development/preserving-functions-through-dce.md For DCE details
      */
     static public var changeset: Dynamic;
 }
