@@ -605,17 +605,50 @@ class AnnotationTransforms {
                 }
         }
         
-        // TEMPORARY: Add basic changeset function if none was generated
-        // This is needed because Haxe's DCE removes unused static functions before Reflaxe sees them
-        // TODO: Find a better way to preserve static functions that are only referenced in __elixir__() blocks
-        if (moduleName == "User") {
+        // Check if a changeset function exists in the body
+        // If not, generate a basic one (this handles DCE issues)
+        var hasChangeset = false;
+        switch(existingBody.def) {
+            case EBlock(stmts):
+                for (stmt in stmts) {
+                    switch(stmt.def) {
+                        case EDef("changeset", _, _, _):
+                            hasChangeset = true;
+                        default:
+                    }
+                }
+            default:
+        }
+        
+        // If no changeset function was found, add a basic one
+        // This ensures schemas always have a changeset function for Ecto compatibility
+        if (!hasChangeset && meta?.schemaFields != null) {
+            var castFields = [];
+            var requiredFields = [];
+            
+            // Extract field names from metadata
+            if (meta.schemaFields != null) {
+                for (field in meta.schemaFields) {
+                    if (field.name != "id" && field.name != "insertedAt" && field.name != "updatedAt") {
+                        castFields.push(':${field.name}');
+                        // Make some fields required based on type
+                        if (field.type != null && field.type.indexOf("Null") == -1 && field.type.indexOf("array") == -1) {
+                            requiredFields.push(field.name);
+                        }
+                    }
+                }
+            }
+            
+            // Generate a basic changeset function
+            var castFieldsStr = castFields.join(", ");
+            var requiredFieldsStr = requiredFields.map(f -> '"$f"').join(", ");
+            var paramName = moduleName.toLowerCase();
+            
             var changesetCode = '
-  def changeset(user, attrs) do
-    user
-    |> cast(attrs, [:name, :email, :active])
-    |> validate_required([:name, :email])
-    |> validate_format(:email, ~r/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)
-    |> unique_constraint(:email)
+  def changeset($paramName, attrs) do
+    $paramName
+    |> cast(attrs, [$castFieldsStr])' + 
+    (requiredFields.length > 0 ? '\n    |> validate_required([$requiredFieldsStr])' : '') + '
   end';
             statements.push(makeAST(ERaw(changesetCode)));
         }
