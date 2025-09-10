@@ -11,10 +11,7 @@ defmodule Todo do
     field(:user_id, :integer)
     timestamps()
   end
-  def changeset(todo, params) do
-    this1 = nil
-    this1 = Ecto.Changeset.change(todo, params)
-    cs = this1
+  def changeset(_todo, _params) do
     atoms = Enum.join(Enum.map(["title", "userId"], fn f -> ":" <> f end), ", ")
     this1 = Ecto.Changeset.validate_required(cs, [__elixir__.call(atoms)])
     opts = %{:min => 3, :max => 200}

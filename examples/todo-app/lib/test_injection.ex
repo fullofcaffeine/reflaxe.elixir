@@ -3,11 +3,9 @@ defmodule TestInjection do
     "Hello from Elixir"
   end
   def test_variable_substitution() do
-    x = 42
     x * 2
   end
   def test_supervisor_call() do
-    children = []
     Supervisor.start_link(children, [strategy: :one_for_one, name: TestSupervisor])
   end
   def test_complex_injection() do

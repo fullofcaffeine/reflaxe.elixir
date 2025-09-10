@@ -19,32 +19,6 @@ defmodule TodoPubSub do
     end
   end
   def message_to_elixir(_message) do
-    base_payload = case (elem(_message, 0)) do
-  0 ->
-    g = elem(_message, 1)
-    %{:type => "todo_created", :todo => (g)}
-  1 ->
-    g = elem(_message, 1)
-    %{:type => "todo_updated", :todo => (g)}
-  2 ->
-    g = elem(_message, 1)
-    %{:type => "todo_deleted", :todo_id => (g)}
-  3 ->
-    g = elem(_message, 1)
-    %{:type => "bulk_update", :action => bulk_action_to_string((g))}
-  4 ->
-    g = elem(_message, 1)
-    %{:type => "user_online", :user_id => (g)}
-  5 ->
-    g = elem(_message, 1)
-    %{:type => "user_offline", :user_id => (g)}
-  6 ->
-    g = elem(_message, 1)
-    g1 = elem(_message, 2)
-    message = g
-    level = g1
-    %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
-end
     Phoenix.SafePubSub.add_timestamp(base_payload)
   end
   def parse_message_impl(msg) do
@@ -52,14 +26,11 @@ end
       Log.trace(Phoenix.SafePubSub.create_malformed_message_error(msg), %{:file_name => "src_haxe/server/pubsub/TodoPubSub.hx", :line_number => 191, :class_name => "server.pubsub.TodoPubSub", :method_name => "parseMessageImpl"})
       :none
     end
-    g = msg.type
     case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
-          bulk_action = parse_bulk_action(msg.action)
           case (bulk_action) do
             {:some, _} ->
-              g = elem(bulk_action, 1)
               {:some, {:BulkUpdate, (g)}}
             :none ->
               :none
@@ -69,10 +40,8 @@ end
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
-          alert_level = parse_alert_level(msg.level)
           case (alert_level) do
             {:some, _} ->
-              g = elem(alert_level, 1)
               {:some, {:SystemAlert, msg.message, (g)}}
             :none ->
               :none
@@ -102,16 +71,10 @@ end
       1 ->
         "delete_completed"
       2 ->
-        g = elem(_action, 1)
-        _priority = g
         "set_priority"
       3 ->
-        g = elem(_action, 1)
-        _tag = g
         "add_tag"
       4 ->
-        g = elem(_action, 1)
-        _tag = g
         "remove_tag"
     end
   end

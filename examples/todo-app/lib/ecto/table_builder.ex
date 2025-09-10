@@ -4,7 +4,7 @@ defmodule TableBuilder do
   @indexes nil
   @constraints nil
   @options nil
-  def add_column(struct, name, type, options) do
+  def add_column(_struct, _name, _type, _options) do
     %{struct | columns: struct.columns ++ [%{:name => name, :type => type, :options => options}]}
   end
   def add_id(struct, name, type) do
@@ -30,13 +30,13 @@ defmodule TableBuilder do
   def add_foreign_key(struct, column_name, referenced_table, options) do
     struct = struct.add_reference(column_name, referenced_table, options)
   end
-  def add_index(struct, columns, options) do
+  def add_index(_struct, _columns, _options) do
     %{struct | indexes: struct.indexes ++ [%{:columns => columns, :options => options}]}
   end
-  def add_unique_constraint(struct, columns, name) do
+  def add_unique_constraint(_struct, _columns, _name) do
     %{struct | constraints: struct.constraints ++ [%{:type => {:Unique}, :columns => columns, :name => name, :expression => nil}]}
   end
-  def add_check_constraint(struct, name, expression) do
+  def add_check_constraint(_struct, _name, _expression) do
     %{struct | constraints: struct.constraints ++ [%{:type => {:Check}, :name => name, :expression => expression, :columns => nil}]}
   end
 end

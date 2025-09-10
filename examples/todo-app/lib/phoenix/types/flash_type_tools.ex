@@ -12,7 +12,6 @@ defmodule FlashTypeTools do
     end
   end
   def from_string(_str) do
-    g = _str.to_lower_case()
     case (g) do
       "error" ->
         {:Error}

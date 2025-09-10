@@ -2476,6 +2476,14 @@ class ElixirASTTransformer {
                 // Just return the node as-is, without calling the transformer
                 return ast;
                 
+            case EDefmodule(name, body):
+                // Transform the module body recursively
+                makeASTWithMeta(
+                    EDefmodule(name, transformNode(body, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+                
             // Literals and simple nodes - no children to transform
             default:
                 ast;
@@ -2708,7 +2716,68 @@ class ElixirASTTransformer {
     static function removeRedundantNilInitPass(ast: ElixirAST): ElixirAST {
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
+                case EDef(name, args, guards, body) if (name == "_new"):
+                    #if debug_ast_transformer
+                    trace('[XRay RemoveRedundantNilInit] Processing _new function');
+                    #end
+                    // Special handling for abstract constructor _new functions
+                    var transformedBody = switch(body.def) {
+                        case EBlock(expressions) if (expressions.length >= 2):
+                            // Look for pattern: this1 = nil; this1 = <value>; this1
+                            var filteredExprs = [];
+                            var i = 0;
+                            while (i < expressions.length) {
+                                var expr = expressions[i];
+                                var shouldSkip = false;
+                                
+                                // Check for this1 = nil
+                                switch(expr.def) {
+                                    case EMatch(PVar("this1"), nilValue):
+                                        switch(nilValue.def) {
+                                            case ENil:
+                                                // Check next expression
+                                                if (i + 1 < expressions.length) {
+                                                    switch(expressions[i + 1].def) {
+                                                        case EMatch(PVar("this1"), value):
+                                                            switch(value.def) {
+                                                                case ENil:
+                                                                    // Don't skip if reassigning to nil
+                                                                default:
+                                                                    // Skip the nil assignment
+                                                                    #if debug_ast_transformer
+                                                                    trace('[XRay RemoveRedundantNilInit] Removing this1 = nil in _new function');
+                                                                    #end
+                                                                    shouldSkip = true;
+                                                            }
+                                                        default:
+                                                    }
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                                
+                                if (!shouldSkip) {
+                                    filteredExprs.push(expr);
+                                }
+                                i++;
+                            }
+                            
+                            if (filteredExprs.length != expressions.length) {
+                                makeASTWithMeta(EBlock(filteredExprs), body.metadata, body.pos);
+                            } else {
+                                body;
+                            }
+                        default:
+                            body;
+                    };
+                    
+                    return makeASTWithMeta(EDef(name, args, guards, transformedBody), node.metadata, node.pos);
+                    
                 case EBlock(expressions):
+                    #if debug_ast_transformer
+                    trace('[XRay RemoveRedundantNilInit] Processing EBlock with ${expressions.length} expressions');
+                    #end
                     var filtered = [];
                     var nilAssignments = new Map<String, Int>(); // Track nil assignments by variable name
                     var i = 0;
@@ -2739,26 +2808,62 @@ class ElixirASTTransformer {
                             case EMatch(PVar(varName), nilValue):
                                 switch(nilValue.def) {
                                     case ENil:
-                                        // Check if this variable is assigned again later
-                                        var j = i + 1;
-                                        while (j < expressions.length) {
-                                            switch(expressions[j].def) {
-                                                case EMatch(PVar(nextVarName), value) if (nextVarName == varName):
-                                                    // Found reassignment - check if the value is not nil
-                                                    switch(value.def) {
-                                                        case ENil:
-                                                            // Another nil assignment, keep looking
-                                                        default:
-                                                            // Non-nil reassignment found - skip the initial nil
-                                                            #if debug_ast_transformer
-                                                            trace('[XRay RemoveRedundantNilInit] Removing redundant nil init for: $varName (reassigned at index $j)');
-                                                            #end
-                                                            shouldSkip = true;
-                                                            break;
-                                                    }
-                                                default:
+                                        // Special handling for 'this1' and similar abstract constructor variables
+                                        // These are ALWAYS immediately reassigned in abstract constructors
+                                        if (varName == "this1" || varName == "this" || varName.startsWith("this")) {
+                                            #if debug_ast_transformer
+                                            trace('[XRay RemoveRedundantNilInit] Found "this1" nil assignment at index $i');
+                                            #end
+                                            // Check immediate next expression for reassignment
+                                            if (i + 1 < expressions.length) {
+                                                #if debug_ast_transformer
+                                                trace('[XRay RemoveRedundantNilInit] Next expr at ${i+1}: ${expressions[i + 1].def}');
+                                                #end
+                                                switch(expressions[i + 1].def) {
+                                                    case EMatch(PVar(nextVarName), value) if (nextVarName == varName):
+                                                        switch(value.def) {
+                                                            case ENil:
+                                                                // Don't skip if it's another nil
+                                                                #if debug_ast_transformer
+                                                                trace('[XRay RemoveRedundantNilInit] Next assignment is also nil, not skipping');
+                                                                #end
+                                                            default:
+                                                                // Non-nil reassignment - skip the initial nil
+                                                                #if debug_ast_transformer
+                                                                trace('[XRay RemoveRedundantNilInit] REMOVING redundant nil init for abstract constructor var: $varName');
+                                                                #end
+                                                                shouldSkip = true;
+                                                        }
+                                                    default:
+                                                        #if debug_ast_transformer
+                                                        trace('[XRay RemoveRedundantNilInit] Next expr is not a match for $varName');
+                                                        #end
+                                                }
                                             }
-                                            j++;
+                                        }
+                                        
+                                        // If not skipped yet, check if this variable is assigned again later
+                                        if (!shouldSkip) {
+                                            var j = i + 1;
+                                            while (j < expressions.length) {
+                                                switch(expressions[j].def) {
+                                                    case EMatch(PVar(nextVarName), value) if (nextVarName == varName):
+                                                        // Found reassignment - check if the value is not nil
+                                                        switch(value.def) {
+                                                            case ENil:
+                                                                // Another nil assignment, keep looking
+                                                            default:
+                                                                // Non-nil reassignment found - skip the initial nil
+                                                                #if debug_ast_transformer
+                                                                trace('[XRay RemoveRedundantNilInit] Removing redundant nil init for: $varName (reassigned at index $j)');
+                                                                #end
+                                                                shouldSkip = true;
+                                                                break;
+                                                        }
+                                                    default:
+                                                }
+                                                j++;
+                                            }
                                         }
                                     default:
                                         // Not a nil assignment
@@ -2798,6 +2903,60 @@ class ElixirASTTransformer {
                     // Handle private function definitions
                     var transformedBody = removeRedundantNilInitPass(body);
                     return makeASTWithMeta(EDefp(name, args, guards, transformedBody), node.metadata, node.pos);
+                    
+                case EParen(inner):
+                    // Handle parenthesized expressions (often contains this1 = nil pattern)
+                    #if debug_ast_transformer
+                    trace('[XRay RemoveRedundantNilInit] Processing EParen');
+                    #end
+                    
+                    // Check if the inner expression is a sequence with redundant nil init
+                    var transformedInner = switch(inner.def) {
+                        case EBlock(expressions) if (expressions.length == 3):
+                            // Pattern: (this1 = nil; this1 = value; this1)
+                            var hasRedundantNil = false;
+                            
+                            // Check for this1 = nil as first expression
+                            switch(expressions[0].def) {
+                                case EMatch(PVar("this1"), nilValue):
+                                    switch(nilValue.def) {
+                                        case ENil:
+                                            // Check second expression is also assignment to this1
+                                            switch(expressions[1].def) {
+                                                case EMatch(PVar("this1"), _):
+                                                    // Check third expression is just this1
+                                                    switch(expressions[2].def) {
+                                                        case EVar("this1"):
+                                                            hasRedundantNil = true;
+                                                        default:
+                                                    }
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                            
+                            if (hasRedundantNil) {
+                                #if debug_ast_transformer
+                                trace('[XRay RemoveRedundantNilInit] Removing redundant nil from EParen block');
+                                #end
+                                // Remove the first expression (this1 = nil)
+                                makeASTWithMeta(
+                                    EBlock([expressions[1], expressions[2]]),
+                                    inner.metadata,
+                                    inner.pos
+                                );
+                            } else {
+                                // Recursively process the block
+                                removeRedundantNilInitPass(inner);
+                            }
+                        default:
+                            // For other patterns, process recursively
+                            removeRedundantNilInitPass(inner);
+                    };
+                    
+                    return makeASTWithMeta(EParen(transformedInner), node.metadata, node.pos);
                     
                 default:
                     return node;
@@ -2989,6 +3148,20 @@ class ElixirASTTransformer {
                             markUsedVars(target); // Continue checking nested expressions
                     }
                     markUsedVars(key); // Also check the key expression
+                case ERaw(code):
+                    // Check if parameter names appear in raw Elixir code
+                    // This handles __elixir__() injection where parameters are referenced
+                    for (name => _ in paramNames) {
+                        // Check if the parameter name appears as a word boundary in the raw code
+                        // This handles cases like "Ecto.Changeset.change(data, params)"
+                        var pattern = '\\b${name}\\b';
+                        if (new EReg(pattern, "").match(code)) {
+                            paramNames.set(name, true); // Mark as used
+                            #if debug_ast_transformer
+                            trace('[XRay PrefixUnusedParams] Found param usage in ERaw: $name in code: ${code.substring(0, 100)}...');
+                            #end
+                        }
+                    }
                 default:
                     iterateAST(ast, markUsedVars);
             }

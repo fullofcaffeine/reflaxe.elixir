@@ -1,7 +1,8 @@
 defmodule BalancedTree do
   @root nil
   def set(struct, key, value) do
-    %{struct | root: struct.set_loop(key, value, struct.root)}
+    root = struct.set_loop(key, value, struct.root)
+    %{struct | root: root}
   end
   def get(struct, _key) do
     node = struct.root
@@ -116,7 +117,7 @@ end)
     if (t.left == nil), do: t.right
     struct.balance(struct.remove_min_binding(t.left), t.key, t.value, t.right)
   end
-  defp balance(struct, l, k, v, r) do
+  defp balance(_struct, l, k, v, r) do
     hl = l.get_height()
     hr = r.get_height()
     if (hl > hr + 2) do
@@ -137,7 +138,7 @@ end)
       end
     end
   end
-  defp compare(struct, k1, k2) do
+  defp compare(_struct, k1, k2) do
     cond do
       k1 < k2 ->
         -1
@@ -150,7 +151,7 @@ end)
   def to_string(struct) do
     if (struct.root == nil), do: "[]", else: "[" <> struct.root.to_string() <> "]"
   end
-  def clear(struct) do
+  def clear(_struct) do
     nil
   end
 end
