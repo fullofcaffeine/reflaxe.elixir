@@ -109,6 +109,14 @@ class ElixirASTTransformer {
             pass: identityPass
         });
         
+        // Resolve clause locals pass (must run very early to fix variable references)
+        passes.push({
+            name: "ResolveClauseLocals",
+            description: "Resolve variable references in case clauses using varIdToName metadata",
+            enabled: true,
+            pass: resolveClauseLocalsPass
+        });
+        
         // Throw statement transformation (must run early to fix complex expressions)
         passes.push({
             name: "ThrowStatementTransform",
@@ -489,15 +497,33 @@ class ElixirASTTransformer {
     /**
      * InlineTempBindingInExpr: Collapse simple temp-binding EBlock into a single expression
      * 
+     * TERMINOLOGY:
+     * - "Collapse" means to transform a two-statement block into a single expression by
+     *   inlining a temporary variable. For example:
+     *   BEFORE: (tmp = Date.now(); DateTime.to_unix(tmp, :millisecond))
+     *   AFTER:  DateTime.to_unix(Date.now(), :millisecond)
+     *   The temporary variable 'tmp' is eliminated by substituting its value directly.
+     * 
      * WHY: Abstract method inlining sometimes produces blocks like:
      *   %{:online_at => (tmp = Date.now(); DateTime.to_unix(tmp, :millisecond))}
      * which is invalid in map field position. We collapse to a single expression:
      *   %{:online_at => DateTime.to_unix(Date.now(), :millisecond)}
      * 
      * WHAT: Detect EBlock([EMatch(PVar(tmp), exprA), exprB]) where exprB contains EVar(tmp)
-     * and replace all occurrences of tmp in exprB with exprA.
+     * and replace all occurrences of tmp in exprB with exprA, eliminating the temp variable.
+     * 
+     * HOW: Two-phase approach to avoid infinite recursion:
+     * 1. Build a parent map to track expression vs statement contexts
+     * 2. Single bottom-up transformation pass that collapses only in expression contexts
+     * 
+     * EDGE CASES:
+     * - Only collapse in expression contexts (map values, function args, etc.)
+     * - Skip collapsing in statement contexts (case clause bodies, function bodies)
+     * - Only collapse if the temp variable is actually used
+     * - Preserve precedence by wrapping substituted expressions in parentheses
      */
     static function inlineTempBindingInExprPass(ast: ElixirAST): ElixirAST {
+        // Helper functions for collapsing logic
         function replaceVar(node: ElixirAST, name: String, replacement: ElixirAST): ElixirAST {
             return transformNode(node, function(n) {
                 return switch(n.def) {
@@ -509,111 +535,179 @@ class ElixirASTTransformer {
                 };
             });
         }
-        return transformNode(ast, function(node) {
-            return switch(node.def) {
+        
+        // Helper to check if a variable is used in an AST
+        function containsVar(node: ElixirAST, varName: String): Bool {
+            var found = false;
+            iterateAST(node, function(n) {
+                switch(n.def) {
+                    case EVar(v) if (v == varName):
+                        found = true;
+                    default:
+                }
+            });
+            return found;
+        }
+        
+        // Determine if we're in an expression context where collapsing is safe
+        function isInExpressionContext(parent: ElixirAST, child: ElixirAST): Bool {
+            if (parent == null) return false;
+            return switch(parent.def) {
+                // Expression contexts where collapsing is safe
+                case EMap(pairs): true; // Map field values
+                case EKeywordList(pairs): true; // Keyword list values
+                case ECall(_, _, _): true; // Function arguments
+                case EBinary(_, _, _): true; // Binary operator operands
+                case EUnary(_, _): true; // Unary operator operand
+                case EParen(_): true; // Parenthesized expressions
+                case EList(_): true; // List elements
+                case ETuple(_): true; // Tuple elements
+                case EMatch(_, _): true; // Right side of assignment/match
+                
+                // Statement contexts where we should NOT collapse
+                case ECase(_, clauses): false; // Case clause bodies are statements
+                case EDef(_, _, _, _): false; // Function bodies are statements
+                case EDefp(_, _, _, _): false; // Private function bodies are statements
+                case EDefmodule(_, _): false; // Module bodies are statements
+                case EBlock(_): false; // Nested blocks are usually statement contexts
+                case EIf(_, _, _): false; // If branches are statement contexts
+                case ECond(clauses): false; // Cond clause bodies are statements
+                
+                default: false; // Conservative: don't collapse unless we're sure
+            };
+        }
+        
+        // Phase 1: Build parent map by walking the tree
+        var parentOf = new haxe.ds.ObjectMap<ElixirAST, ElixirAST>();
+        
+        function walk(node: ElixirAST, parent: Null<ElixirAST>): Void {
+            // Skip null nodes
+            if (node == null) {
+                return;
+            }
+            
+            if (parent != null) {
+                parentOf.set(node, parent);
+            }
+            
+            // Walk all children based on node type
+            switch(node.def) {
+                case EBlock(exprs):
+                    for (e in exprs) walk(e, node);
+                    
+                case ECall(target, method, args):
+                    walk(target, node);
+                    for (a in args) walk(a, node);
+                    
+                case EMap(pairs):
+                    for (p in pairs) walk(p.value, node);
+                    
+                case EKeywordList(pairs):
+                    for (p in pairs) walk(p.value, node);
+                    
+                case ETuple(values):
+                    for (v in values) walk(v, node);
+                    
+                case EList(items):
+                    for (i in items) walk(i, node);
+                    
+                case EBinary(op, left, right):
+                    walk(left, node);
+                    walk(right, node);
+                    
+                case EUnary(op, expr):
+                    walk(expr, node);
+                    
+                case ECase(expr, clauses):
+                    walk(expr, node);
+                    for (c in clauses) {
+                        if (c.guard != null) walk(c.guard, node);
+                        walk(c.body, node);
+                    }
+                    
+                case EIf(cond, thenB, elseB):
+                    walk(cond, node);
+                    walk(thenB, node);
+                    if (elseB != null) walk(elseB, node);
+                    
+                case ECond(clauses):
+                    for (c in clauses) {
+                        walk(c.condition, node);
+                        walk(c.body, node);
+                    }
+                    
+                case EDef(name, args, guards, body):
+                    if (guards != null) walk(guards, node);
+                    walk(body, node);
+                    
+                case EDefp(name, args, guards, body):
+                    if (guards != null) walk(guards, node);
+                    walk(body, node);
+                    
+                case EDefmodule(name, body):
+                    walk(body, node);
+                    
+                case EAssign(name):
+                    // EAssign is for template assigns (@variable), no children
+                    
+                    
+                case EParen(expr):
+                    walk(expr, node);
+                    
+                case EMatch(pattern, expr):
+                    // Pattern is usually not an expression, but walk the expr
+                    walk(expr, node);
+                    
+                // Add more cases as needed for other node types
+                default:
+                    // Leaf nodes or nodes without children
+            }
+        }
+        
+        // Walk the entire tree to build parent map
+        walk(ast, null);
+        
+        // Phase 2: Transform bottom-up, collapsing only when in expression context
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            var parent = parentOf.exists(node) ? parentOf.get(node) : null;
+            var inExpr = parent != null && isInExpressionContext(parent, node);
+            
+            // Check if this is a collapsible block in an expression context
+            var shouldCollapse = switch(node.def) {
+                case EBlock(exprs) if (exprs.length == 2):
+                    inExpr; // Only collapse in expression contexts
+                default:
+                    false;
+            };
+            
+            if (!shouldCollapse) return node;
+            
+            // Try to collapse the block
+            switch(node.def) {
                 case EBlock(exprs) if (exprs.length == 2):
                     switch(exprs[0].def) {
                         case EMatch(PVar(tmp), bindExpr):
-                            // Replace tmp in second expression
                             var second = exprs[1];
-                            // Only collapse if tmp appears at least once; otherwise just return second
-                            var collapsed = replaceVar(second, tmp, bindExpr);
-                            #if debug_temp_binding
-                            trace('[InlineTempBindingInExpr] Collapsing temp binding in block');
-                            trace('[InlineTempBindingInExpr]   tmp      = ' + tmp);
-                            trace('[InlineTempBindingInExpr]   bindExpr = ' + ElixirASTPrinter.print(bindExpr, 0));
-                            trace('[InlineTempBindingInExpr]   second   = ' + ElixirASTPrinter.print(second, 0));
-                            trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
-                            #end
-                            collapsed;
-                        case EBinary(Match, left, bindExpr2):
-                            // Also handle plain binary match: tmp = expr
-                            switch(left.def) {
-                                case EVar(tmp2):
-                                    var second = exprs[1];
-                                    var collapsed = replaceVar(second, tmp2, bindExpr2);
-                                    #if debug_temp_binding
-                                    trace('[InlineTempBindingInExpr] Collapsing (binary) temp binding in block');
-                                    trace('[InlineTempBindingInExpr]   tmp      = ' + tmp2);
-                                    trace('[InlineTempBindingInExpr]   bindExpr = ' + ElixirASTPrinter.print(bindExpr2, 0));
-                                    trace('[InlineTempBindingInExpr]   second   = ' + ElixirASTPrinter.print(second, 0));
-                                    trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
-                                    #end
-                                    collapsed;
-                                default:
-                                    node;
+                            // Check if tmp is actually used in the second expression
+                            if (containsVar(second, tmp)) {
+                                var collapsed = replaceVar(second, tmp, bindExpr);
+                                #if debug_temp_binding
+                                trace('[InlineTempBindingInExpr] Collapsing temp binding in expression context');
+                                trace('[InlineTempBindingInExpr]   tmp      = ' + tmp);
+                                trace('[InlineTempBindingInExpr]   bindExpr = ' + ElixirASTPrinter.print(bindExpr, 0));
+                                trace('[InlineTempBindingInExpr]   second   = ' + ElixirASTPrinter.print(second, 0));
+                                trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
+                                #end
+                                return collapsed;
                             }
                         default:
-                            node;
                     }
-                // Also handle parenthesized blocks like: (tmp = expr; use(tmp))
-                case EParen(inner):
-                    switch(inner.def) {
-                        case EBlock(exprs) if (exprs.length == 2):
-                            switch(exprs[0].def) {
-                                case EMatch(PVar(tmp), bindExpr):
-                                    var second = exprs[1];
-                                    var collapsed = replaceVar(second, tmp, bindExpr);
-                                    #if debug_temp_binding
-                                    trace('[InlineTempBindingInExpr] Collapsing temp binding inside paren');
-                                    trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
-                                    #end
-                                    collapsed;
-                                case EBinary(Match, left, bindExpr2):
-                                    switch(left.def) {
-                                        case EVar(tmp2):
-                                            var second = exprs[1];
-                                            var collapsed = replaceVar(second, tmp2, bindExpr2);
-                                            #if debug_temp_binding
-                                            trace('[InlineTempBindingInExpr] Collapsing (binary) temp binding inside paren');
-                                            trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
-                                            #end
-                                            collapsed;
-                                        default:
-                                            node;
-                                    }
-                                default:
-                                    node;
-                            }
-                        default:
-                            node;
-                    }
-                case EMap(pairs):
-                    // Transform map field values that contain blocks
-                    var transformedPairs = [for (p in pairs) {
-                        var transformedValue = inlineTempBindingInExprPass(p.value);
-                        {key: p.key, value: transformedValue};
-                    }];
-                    makeAST(EMap(transformedPairs));
-                // Also transform keyword list values
-                case EKeywordList(pairs):
-                    var transformedKw = [for (p in pairs) {
-                        var transformedValue = inlineTempBindingInExprPass(p.value);
-                        {key: p.key, value: transformedValue};
-                    }];
-                    makeAST(EKeywordList(transformedKw));
-                // And struct fields
-                case EStruct(module, fields):
-                    var transformedFields = [for (f in fields) {
-                        var transformedValue = inlineTempBindingInExprPass(f.value);
-                        {key: f.key, value: transformedValue};
-                    }];
-                    makeAST(EStruct(module, transformedFields));
-                case EStructUpdate(struct, fields):
-                    var transformedSUFields = [for (f in fields) {
-                        var transformedValue = inlineTempBindingInExprPass(f.value);
-                        {key: f.key, value: transformedValue};
-                    }];
-                    makeAST(EStructUpdate(struct, transformedSUFields));
                 default:
-                    node;
-            };
+            }
+            
+            return node;
         });
     }
-
-    // ========================================================================
-    // Transformation Passes
-    // ========================================================================
     
     /**
      * Throw statement transformation pass
@@ -708,6 +802,73 @@ class ElixirASTTransformer {
      */
     static function identityPass(ast: ElixirAST): ElixirAST {
         return ast;
+    }
+    
+    /**
+     * Resolve Clause Locals Pass
+     * 
+     * WHY: Variables in case clause bodies need to match the names used in patterns.
+     * When Haxe generates temporary variables (_g, g, etc.) for enum parameters,
+     * but our patterns use the actual parameter names (value, reason, etc.),
+     * we need to resolve these references.
+     * 
+     * WHAT: Looks for nodes with varIdToName metadata and rewrites EVar nodes
+     * within them to use the mapped names based on their sourceVarId.
+     * 
+     * HOW: When we encounter a node with varIdToName metadata, we walk its
+     * subtree and rewrite any EVar that has a sourceVarId matching an entry
+     * in the varIdToName map.
+     * 
+     * EDGE CASES:
+     * - Nested case expressions: Each case should have its own varIdToName scope
+     * - String interpolation: Variables inside __elixir__() injections need resolution
+     * - Anonymous functions: May reference outer scope variables
+     */
+    static function resolveClauseLocalsPass(ast: ElixirAST): ElixirAST {
+        #if debug_clause_locals
+        trace('[XRay ResolveClauseLocals] Starting pass');
+        #end
+        
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            // Check if this node has varIdToName metadata
+            if (node.metadata != null && node.metadata.varIdToName != null) {
+                var varIdToName = node.metadata.varIdToName;
+                
+                #if debug_clause_locals
+                trace('[XRay ResolveClauseLocals] Found varIdToName metadata with ${Lambda.count(varIdToName)} mappings');
+                for (id => name in varIdToName) {
+                    trace('  $id -> $name');
+                }
+                #end
+                
+                // Transform all EVar nodes within this subtree
+                return transformNode(node, function(inner: ElixirAST): ElixirAST {
+                    switch(inner.def) {
+                        case EVar(currentName):
+                            // Check if this variable has a sourceVarId that needs remapping
+                            if (inner.metadata != null && inner.metadata.sourceVarId != null) {
+                                var sourceId = inner.metadata.sourceVarId;
+                                if (varIdToName.exists(sourceId)) {
+                                    var newName = varIdToName.get(sourceId);
+                                    
+                                    #if debug_clause_locals
+                                    trace('[XRay ResolveClauseLocals] Remapping variable: $currentName (id:$sourceId) -> $newName');
+                                    #end
+                                    
+                                    // Create new EVar with the mapped name
+                                    return makeASTWithMeta(EVar(newName), inner.metadata, inner.pos);
+                                }
+                            }
+                            return inner;
+                            
+                        default:
+                            return inner;
+                    }
+                });
+            }
+            
+            return node;
+        });
     }
     
     /**

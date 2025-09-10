@@ -67,12 +67,49 @@ class AssignmentExtractionTransforms {
     static function transformAssignments(node: ElixirAST): ElixirAST {
         #if debug_assignment_extraction
         var nodeType = Type.enumConstructor(node.def);
-        if (nodeType == "EMatch" || nodeType == "EBinary") {
+        if (nodeType == "EMatch" || nodeType == "EBinary" || nodeType == "ECase") {
             trace('[XRay AssignmentExtraction] ⚡ Visiting ${nodeType} node');
         }
         #end
         
-        // First, recursively transform children
+        // Special handling for ECase - we need to control how its clauses are transformed
+        switch(node.def) {
+            case ECase(expr, clauses):
+                #if debug_assignment_extraction
+                trace("[XRay AssignmentExtraction] Special ECase handling - preserving clause body statements");
+                #end
+                
+                // Transform the expression being matched
+                var transformedExpr = transformAssignments(expr);
+                
+                // Transform clauses but DON'T extract assignments from their bodies
+                var transformedClauses = [];
+                for (clause in clauses) {
+                    // Transform guard if present
+                    var transformedGuard = clause.guard != null ? transformAssignments(clause.guard) : null;
+                    
+                    // For the body, we just recursively transform but DON'T apply extraction
+                    // because case clause bodies are statement contexts
+                    var transformedBody = transformClauseBody(clause.body);
+                    
+                    transformedClauses.push({
+                        pattern: clause.pattern,
+                        guard: transformedGuard,
+                        body: transformedBody
+                    });
+                }
+                
+                return makeASTWithMeta(
+                    ECase(transformedExpr, transformedClauses),
+                    node.metadata,
+                    node.pos
+                );
+                
+            default:
+                // For all other nodes, use the standard recursive transformation
+        }
+        
+        // Standard recursive transformation for non-ECase nodes
         var transformedNode = ElixirASTTransformer.transformAST(node, transformAssignments);
         
         // Handle null nodes (which can indicate removed nodes)
@@ -154,6 +191,41 @@ class AssignmentExtractionTransforms {
                 }
                 return transformedNode;
                 
+            // Handle case expressions - need special handling for clause bodies
+            case ECase(expr, clauses):
+                #if debug_assignment_extraction
+                trace("[XRay AssignmentExtraction] Processing top-level ECase");
+                trace('[XRay AssignmentExtraction] Number of clauses: ${clauses.length}');
+                #end
+                
+                // Process the matched expression for any embedded assignments
+                var exprResult = extractAndTransformExpression(expr);
+                
+                // Process clauses but preserve variable declarations in their bodies
+                var processedClauses = [];
+                for (clause in clauses) {
+                    // Clause bodies are statement contexts - don't extract assignments
+                    processedClauses.push({
+                        pattern: clause.pattern,
+                        guard: clause.guard,
+                        body: clause.body  // Keep the body as-is, it's already been recursively processed
+                    });
+                }
+                
+                // If the expression had extractions, hoist them
+                if (exprResult.hasExtracted) {
+                    var statements = exprResult.extracted.copy();
+                    statements.push(makeASTWithMeta(
+                        ECase(exprResult.expression, processedClauses),
+                        transformedNode.metadata,
+                        transformedNode.pos
+                    ));
+                    return makeAST(EBlock(statements));
+                } else {
+                    // Return the ECase with original clause bodies 
+                    return transformedNode;
+                }
+                
             // Handle if expressions that might contain assignments in conditions
             case EIf(condition, thenBranch, elseBranch):
                 #if debug_assignment_extraction
@@ -203,11 +275,153 @@ class AssignmentExtractionTransforms {
     }
     
     /**
+     * Transform a case clause body recursively without extracting assignments
+     * 
+     * Case clause bodies are statement contexts where variable declarations
+     * should be preserved, not extracted.
+     */
+    static function transformClauseBody(body: ElixirAST): ElixirAST {
+        #if debug_assignment_extraction
+        trace('[XRay AssignmentExtraction] Transforming clause body type: ${Type.enumConstructor(body.def)}');
+        #end
+        
+        // Simply recurse through the AST structure without extraction
+        switch(body.def) {
+            case EBlock(statements):
+                #if debug_assignment_extraction
+                trace('[XRay AssignmentExtraction] Clause body is EBlock with ${statements.length} statements - preserving all');
+                #end
+                // Transform each statement recursively but keep them all
+                var transformedStatements = [];
+                for (stmt in statements) {
+                    transformedStatements.push(transformClauseBody(stmt));
+                }
+                return makeASTWithMeta(
+                    EBlock(transformedStatements),
+                    body.metadata,
+                    body.pos
+                );
+                
+            // For other node types, apply standard transformation
+            default:
+                return ElixirASTTransformer.transformAST(body, transformAssignments);
+        }
+    }
+    
+    /**
      * Extract assignments from an expression and return both extracted assignments and cleaned expression
+     * 
+     * Context-aware version: Builds a parent map first to understand context,
+     * then only extracts assignments when in expression contexts.
      */
     static function extractAndTransformExpression(expr: ElixirAST): {extracted: Array<ElixirAST>, expression: ElixirAST, hasExtracted: Bool} {
         var extracted = [];
         
+        // Phase 1: Build parent map to understand context
+        var parentOf = new haxe.ds.ObjectMap<ElixirAST, ElixirAST>();
+        
+        function buildParentMap(node: ElixirAST, parent: Null<ElixirAST>): Void {
+            // Skip null nodes
+            if (node == null) {
+                return;
+            }
+            
+            if (parent != null) {
+                parentOf.set(node, parent);
+            }
+            
+            switch(node.def) {
+                case ECase(expr, clauses):
+                    buildParentMap(expr, node);
+                    for (clause in clauses) {
+                        // The clause body's parent is the ECase, which is important for context
+                        buildParentMap(clause.body, node);
+                        if (clause.guard != null) {
+                            buildParentMap(clause.guard, node);
+                        }
+                    }
+                    
+                case EBlock(statements):
+                    for (stmt in statements) {
+                        buildParentMap(stmt, node);
+                    }
+                    
+                case EIf(condition, thenBranch, elseBranch):
+                    buildParentMap(condition, node);
+                    buildParentMap(thenBranch, node);
+                    if (elseBranch != null) {
+                        buildParentMap(elseBranch, node);
+                    }
+                    
+                case EBinary(_, left, right):
+                    buildParentMap(left, node);
+                    buildParentMap(right, node);
+                    
+                case EUnary(_, operand):
+                    buildParentMap(operand, node);
+                    
+                case ECall(target, _, args):
+                    if (target != null) buildParentMap(target, node);
+                    for (arg in args) {
+                        buildParentMap(arg, node);
+                    }
+                    
+                case ERemoteCall(module, _, args):
+                    buildParentMap(module, node);
+                    for (arg in args) {
+                        buildParentMap(arg, node);
+                    }
+                    
+                case EFn(clauses):
+                    for (clause in clauses) {
+                        buildParentMap(clause.body, node);
+                        if (clause.guard != null) {
+                            buildParentMap(clause.guard, node);
+                        }
+                    }
+                    
+                case EParen(inner):
+                    buildParentMap(inner, node);
+                    
+                case EMatch(_, value):
+                    buildParentMap(value, node);
+                    
+                default:
+                    // Leaf nodes or nodes we don't need to traverse
+            }
+        }
+        
+        // Build the parent map
+        buildParentMap(expr, null);
+        
+        // Helper: Check if we're in a statement context (where variable declarations are allowed)
+        function isInStatementContext(node: ElixirAST): Bool {
+            var parent = parentOf.get(node);
+            if (parent == null) {
+                // Top level is a statement context
+                return true;
+            }
+            
+            switch(parent.def) {
+                case ECase(_, _):
+                    // Case clause bodies are statement contexts
+                    return true;
+                    
+                case EBlock(_):
+                    // Blocks can contain statements
+                    return true;
+                    
+                case EFn(_):
+                    // Function clause bodies are statement contexts
+                    return true;
+                    
+                default:
+                    // Check parent's parent
+                    return isInStatementContext(parent);
+            }
+        }
+        
+        // Phase 2: Extract assignments with context awareness
         function extractFromExpr(e: ElixirAST): ElixirAST {
             switch(e.def) {
                 case EMatch(pattern, value):
@@ -471,22 +685,32 @@ class AssignmentExtractionTransforms {
                     for (i in 0...statements.length) {
                         trace('[XRay AssignmentExtraction] Statement $i: ${Type.enumConstructor(statements[i].def)}');
                     }
+                    var inStatementContext = isInStatementContext(e);
+                    trace('[XRay AssignmentExtraction] Block is in statement context: $inStatementContext');
                     #end
                     
-                    // Special case: EBlock with assignments should have those assignments extracted
-                    // This happens when Haxe desugars complex expressions
-                    if (statements.length == 2) {
-                        switch(statements[0].def) {
-                            case EMatch(pattern, value):
-                                #if debug_assignment_extraction
-                                trace('[XRay AssignmentExtraction] Found assignment in block - extracting');
-                                #end
-                                // Extract the assignment
-                                extracted.push(statements[0]);
-                                // Return just the second statement (the actual expression)
-                                return extractFromExpr(statements[1]);
-                            default:
+                    // Only extract assignments if we're NOT in a statement context
+                    // In statement contexts (like case clause bodies), preserve the block as-is
+                    if (!isInStatementContext(e)) {
+                        // Special case: EBlock with assignments should have those assignments extracted
+                        // This happens when Haxe desugars complex expressions
+                        if (statements.length == 2) {
+                            switch(statements[0].def) {
+                                case EMatch(pattern, value):
+                                    #if debug_assignment_extraction
+                                    trace('[XRay AssignmentExtraction] Found assignment in expression context block - extracting');
+                                    #end
+                                    // Extract the assignment
+                                    extracted.push(statements[0]);
+                                    // Return just the second statement (the actual expression)
+                                    return extractFromExpr(statements[1]);
+                                default:
+                            }
                         }
+                    } else {
+                        #if debug_assignment_extraction
+                        trace('[XRay AssignmentExtraction] Block is in statement context - preserving all statements');
+                        #end
                     }
                     
                     // General block processing

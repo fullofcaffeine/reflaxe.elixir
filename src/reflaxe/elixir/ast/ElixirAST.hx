@@ -604,6 +604,7 @@ typedef ElixirMetadata = {
     ?sourceExpr: haxe.macro.Type.TypedExpr,        // Original Haxe expression
     ?sourceLine: Int,               // Line number in Haxe source
     ?sourceFile: String,            // Source file path
+    ?sourceVarId: Int,             // Original TVar.id for variable resolution
     
     // Type Information
     ?type: Type,                   // Haxe type information
@@ -620,6 +621,9 @@ typedef ElixirMetadata = {
     ?inPipeline: Bool,            // Part of pipe chain
     ?inComprehension: Bool,       // Inside for comprehension
     ?inGuard: Bool,               // Inside guard clause
+    
+    // Variable Resolution
+    ?varIdToName: Map<Int, String>, // Clause-local variable renaming mappings
     ?requiresIdiomaticTransform: Bool,  // Enum needs idiomatic compilation
     ?idiomaticEnumType: String,   // Name of the idiomatic enum type
     

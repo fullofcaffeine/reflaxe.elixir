@@ -6,23 +6,34 @@ defmodule TodoAppWeb.UserLive do
     %{:status => "ok", :socket => Phoenix.Component.assign([live_socket, users, nil, Users.change_user(nil), "", false], %{:users => {1}, :selected_user => {2}, :changeset => {3}, :search_term => {4}, :show_form => {5}})}
   end
   def handle_event(event, socket) do
+    live_socket = socket
     case (elem(event, 0)) do
       0 ->
-        handle_new_user((socket))
+        handle_new_user(live_socket)
       1 ->
-        handle_edit_user((g), (socket))
+        g = elem(event, 1)
+        id = g
+        handle_edit_user(id, live_socket)
       2 ->
-        handle_save_user((g), (socket))
+        g = elem(event, 1)
+        params = g
+        handle_save_user(params, live_socket)
       3 ->
-        handle_delete_user((g), (socket))
+        g = elem(event, 1)
+        id = g
+        handle_delete_user(id, live_socket)
       4 ->
-        handle_search(params.search_term, (socket))
+        g = elem(event, 1)
+        params = g
+        handle_search(params.search_term, live_socket)
       5 ->
-        handle_filter_status(params.status, (socket))
+        g = elem(event, 1)
+        params = g
+        handle_filter_status(params.status, live_socket)
       6 ->
-        handle_clear_search((socket))
+        handle_clear_search(live_socket)
       7 ->
-        handle_cancel((socket))
+        handle_cancel(live_socket)
     end
   end
   def handle_new_user(socket) do
@@ -47,8 +58,13 @@ else
 end
     case (result) do
       {:ok, value} ->
+        g = elem(result, 1)
+        _user = value
+        users = Users.list_users(nil)
         %{:status => "noreply", :socket => Phoenix.Component.assign([socket, users, false, nil, Users.change_user(nil)], %{:users => {1}, :show_form => {2}, :selected_user => {3}, :changeset => {4}})}
       {:error, reason} ->
+        g = elem(result, 1)
+        changeset = reason
         %{:status => "noreply", :socket => Phoenix.Component.assign(socket, :changeset, reason)}
     end
   end
@@ -57,8 +73,13 @@ end
     result = Users.delete_user(user)
     case (result) do
       {:ok, value} ->
+        g = elem(result, 1)
+        _deleted_user = value
+        users = Users.list_users(nil)
         %{:status => "noreply", :socket => Phoenix.Component.assign(socket, :users, users)}
       {:error, reason} ->
+        g = elem(result, 1)
+        _changeset = reason
         %{:status => "noreply", :socket => socket}
     end
   end
@@ -73,6 +94,7 @@ end
     %{:status => "noreply", :socket => Phoenix.Component.assign(socket, :users, users)}
   end
   def handle_clear_search(socket) do
+    users = Users.list_users(nil)
     %{:status => "noreply", :socket => Phoenix.Component.assign([socket, users, ""], %{:users => {1}, :search_term => {2}})}
   end
   def handle_cancel(socket) do
@@ -84,7 +106,8 @@ end
   def render_user_list(_assigns) do
     "\n        <div class=\"bg-white rounded-lg shadow-md overflow-hidden\">\n            <table class=\"min-w-full divide-y divide-gray-200\">\n                <thead class=\"bg-gray-50\">\n                    <tr>\n                        <th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">\n                            Name\n                        </th>\n                        <th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">\n                            Email\n                        </th>\n                        <th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">\n                            Age\n                        </th>\n                        <th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">\n                            Status\n                        </th>\n                        <th scope=\"col\" class=\"relative px-6 py-3\">\n                            <span class=\"sr-only\">Actions</span>\n                        </th>\n                    </tr>\n                </thead>\n                <tbody class=\"bg-white divide-y divide-gray-200\">\n                    <%= for user <- @users do %>\n                        <tr class=\"hover:bg-gray-50 transition-colors\">\n                            <td class=\"px-6 py-4 whitespace-nowrap\">\n                                <div class=\"flex items-center\">\n                                    <div class=\"flex-shrink-0 h-10 w-10\">\n                                        <div class=\"h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold\">\n                                            <%= String.first(user.name) %>\n                                        </div>\n                                    </div>\n                                    <div class=\"ml-4\">\n                                        <div class=\"text-sm font-medium text-gray-900\">\n                                            <%= user.name %>\n                                        </div>\n                                    </div>\n                                </div>\n                            </td>\n                            <td class=\"px-6 py-4 whitespace-nowrap\">\n                                <div class=\"text-sm text-gray-900\"><%= user.email %></div>\n                            </td>\n                            <td class=\"px-6 py-4 whitespace-nowrap\">\n                                <div class=\"text-sm text-gray-900\"><%= user.age %></div>\n                            </td>\n                            <td class=\"px-6 py-4 whitespace-nowrap\">\n                                <%= if user.is_active do %>\n                                    <span class=\"px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800\">\n                                        Active\n                                    </span>\n                                <% else %>\n                                    <span class=\"px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800\">\n                                        Inactive\n                                    </span>\n                                <% end %>\n                            </td>\n                            <td class=\"px-6 py-4 whitespace-nowrap text-right text-sm font-medium\">\n                                <button \n                                    phx-click=\"edit_user\" \n                                    phx-value-id={user.id}\n                                    class=\"text-indigo-600 hover:text-indigo-900 mr-3\"\n                                >\n                                    Edit\n                                </button>\n                                <button \n                                    phx-click=\"delete_user\" \n                                    phx-value-id={user.id}\n                                    data-confirm=\"Are you sure you want to delete this user?\"\n                                    class=\"text-red-600 hover:text-red-900\"\n                                >\n                                    Delete\n                                </button>\n                            </td>\n                        </tr>\n                    <% end %>\n                </tbody>\n            </table>\n            \n            <%= if length(@users) == 0 do %>\n                <div class=\"text-center py-12\">\n                    <svg class=\"mx-auto h-12 w-12 text-gray-400\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\">\n                        <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4\" />\n                    </svg>\n                    <h3 class=\"mt-2 text-sm font-medium text-gray-900\">No users found</h3>\n                    <p class=\"mt-1 text-sm text-gray-500\">\n                        <%= if @searchTerm != \"\" do %>\n                            Try adjusting your search criteria\n                        <% else %>\n                            Get started by creating a new user\n                        <% end %>\n                    </p>\n                </div>\n            <% end %>\n    </div>\n        "
   end
-  def render_user_row(_assigns) do
+  def render_user_row(assigns) do
+    user = assigns.user
     ("\n        <tr>\n            <td>" <> user.name <> "</td>\n            <td>" <> user.email <> "</td>\n            <td>" <> user.age <> "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " <> get_status_text(user.active) <> "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        ")
   end
   def get_status_class(active) do
