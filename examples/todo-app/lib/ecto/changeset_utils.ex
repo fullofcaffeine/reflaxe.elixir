@@ -1,25 +1,25 @@
 defmodule ChangesetUtils do
   def unwrap(result) do
     case (result) do
-      {:ok, _} ->
+      {:ok, g} ->
         (g)
-      {:error, _} ->
+      {:error, g} ->
         throw("Changeset validation failed: " <> (if (errors == nil), do: "null", else: errors.to_string()))
     end
   end
   def unwrap_or(result, default_value) do
     case (result) do
-      {:ok, _} ->
+      {:ok, g} ->
         (g)
-      {:error, _} ->
+      {:error, g} ->
         default_value
     end
   end
   def to_option(result) do
     case (result) do
-      {:ok, _} ->
+      {:ok, g} ->
         {:Some, (g)}
-      {:error, _} ->
+      {:error, g} ->
         {:None}
     end
   end
