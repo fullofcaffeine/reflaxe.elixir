@@ -10,8 +10,7 @@ defmodule Log do
     end
     pstr <> ": " <> str
   end
-  def trace(v, infos) do
-    str = format_output(v, infos)
+  def trace(_v, _infos) do
     IO.puts(str)
   end
 end

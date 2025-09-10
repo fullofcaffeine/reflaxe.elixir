@@ -93,8 +93,7 @@ defmodule Sys do
         
 )
   end
-  def sleep(seconds) do
-    milliseconds = Std.int(seconds * 1000)
+  def sleep(_seconds) do
     Process.sleep(milliseconds)
   end
   def system_name() do

@@ -17,7 +17,6 @@ end}
     presences = list("users")
     user_key = Std.string(user_id)
     if (Map.has_key?(presences, user_key)) do
-      entry = Map.get(presences, user_key)
       if (length(entry.metas) > 0) do
         entry.metas[0]
       else
@@ -29,10 +28,9 @@ end}
   def list_online_users(_socket) do
     list("users")
   end
-  def get_users_editing_todo(_socket, todo_id) do
+  def get_users_editing_todo(_socket, _todo_id) do
     all_users = list("users")
     editing_users = []
-    g = all_users.key_value_iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} -> nil end)
     editing_users
   end

@@ -5,12 +5,10 @@ defmodule TodoAppWeb.Gettext.ErrorMessages do
   def invalid_format() do
     TodoAppWeb.Gettext.dgettext("errors", "has invalid format")
   end
-  def too_short(min) do
-    bindings = TranslationBindings_Impl_.set_int(TranslationBindings_Impl_.create(), "count", min)
+  def too_short(_min) do
     TodoAppWeb.Gettext.dgettext("errors", "should be at least %{count} character(s)", bindings)
   end
-  def too_long(max) do
-    bindings = TranslationBindings_Impl_.set_int(TranslationBindings_Impl_.create(), "count", max)
+  def too_long(_max) do
     TodoAppWeb.Gettext.dgettext("errors", "should be at most %{count} character(s)", bindings)
   end
   def not_found() do

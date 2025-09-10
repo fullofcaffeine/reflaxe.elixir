@@ -20,7 +20,6 @@ defmodule HttpStatusTools do
       8 ->
         500
       9 ->
-        g = elem(_status, 1)
         (g)
     end
   end
@@ -49,15 +48,12 @@ defmodule HttpStatusTools do
     end
   end
   def is_success(status) do
-    code = to_int(status)
-    code >= 200 && code < 300
+    (to_int(status)) >= 200 && (to_int(status)) < 300
   end
   def is_client_error(status) do
-    code = to_int(status)
-    code >= 400 && code < 500
+    (to_int(status)) >= 400 && (to_int(status)) < 500
   end
   def is_server_error(status) do
-    code = to_int(status)
-    code >= 500 && code < 600
+    (to_int(status)) >= 500 && (to_int(status)) < 600
   end
 end
