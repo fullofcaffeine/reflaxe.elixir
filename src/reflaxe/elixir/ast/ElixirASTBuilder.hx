@@ -3450,39 +3450,70 @@ class ElixirASTBuilder {
      *      patterns instead of wildcards to avoid undefined variable references
      * WHAT: Detects the extraction pattern and returns parameter names to use in patterns
      * HOW: Looks for TBlock with TVar nodes that extract enum parameters
+     * 
+     * PATTERN DETECTION:
+     * 1. TVar(_g, TEnumParameter(...)) - temp var extraction
+     * 2. TVar(changeset, TLocal(_g)) - assigns temp to pattern var
+     * We need to map temp vars to their final names
      */
     static function analyzeEnumParameterExtraction(caseExpr: TypedExpr): Array<String> {
         var extractedParams = [];
+        var tempVarMapping = new Map<String, {name: String, index: Int}>(); // Maps temp vars to final names
         
         switch(caseExpr.expr) {
             case TBlock(exprs):
-                // Look for TVar nodes that extract enum parameters
+                // First pass: Find TEnumParameter extractions and map temp vars
                 for (expr in exprs) {
                     switch(expr.expr) {
                         case TVar(v, init) if (init != null):
                             switch(init.expr) {
                                 case TEnumParameter(_, ef, index):
-                                    // Found enum parameter extraction
-                                    // The variable name will be used in the body
-                                    var varName = toElixirVarName(v.name);
-                                    if (varName.startsWith("_")) {
-                                        // Strip underscore for the actual variable name
-                                        varName = varName.substr(1);
+                                    // Found enum parameter extraction to temp var
+                                    var tempName = toElixirVarName(v.name);
+                                    if (tempName.startsWith("_")) {
+                                        tempName = tempName.substr(1); // Strip underscore
                                     }
-                                    // Store at the correct index
+                                    // Store temp var info
+                                    tempVarMapping.set(tempName, {name: tempName, index: index});
+                                    
+                                    // Initialize the array if needed
                                     while (extractedParams.length <= index) {
                                         extractedParams.push(null);
                                     }
-                                    extractedParams[index] = varName;
-                                case TLocal(localVar) if (localVar.name.startsWith("_g") || localVar.name == "g"):
-                                    // This is the second part of extraction: value = _g
-                                    // The actual variable name is v.name
-                                    var varName = toElixirVarName(v.name);
-                                    // Don't add if it starts with underscore (unused)
-                                    if (!varName.startsWith("_")) {
-                                        // Try to determine the index from context
-                                        // For now, just add to the list
-                                        extractedParams.push(varName);
+                                    // Initially use the temp var name (will be overridden if there's a TLocal assignment)
+                                    extractedParams[index] = tempName;
+                                    
+                                    #if debug_ast_builder
+                                    trace('[DEBUG ENUM] Found TEnumParameter extraction: temp var "$tempName" at index $index');
+                                    #end
+                                default:
+                            }
+                        default:
+                    }
+                }
+                
+                // Second pass: Find assignments from temp vars to pattern vars
+                for (expr in exprs) {
+                    switch(expr.expr) {
+                        case TVar(v, init) if (init != null):
+                            switch(init.expr) {
+                                case TLocal(localVar):
+                                    var tempName = toElixirVarName(localVar.name);
+                                    if (tempName.startsWith("_")) {
+                                        tempName = tempName.substr(1);
+                                    }
+                                    
+                                    // Check if this is assigning from a known temp var
+                                    if (tempVarMapping.exists(tempName)) {
+                                        var patternName = toElixirVarName(v.name);
+                                        var info = tempVarMapping.get(tempName);
+                                        
+                                        // Update the extracted param with the pattern variable name
+                                        extractedParams[info.index] = patternName;
+                                        
+                                        #if debug_ast_builder
+                                        trace('[DEBUG ENUM] Mapped temp var "$tempName" to pattern var "$patternName" at index ${info.index}');
+                                        #end
                                     }
                                 default:
                             }
@@ -3491,6 +3522,10 @@ class ElixirASTBuilder {
                 }
             default:
         }
+        
+        #if debug_ast_builder
+        trace('[DEBUG ENUM] Final extracted params: $extractedParams');
+        #end
         
         return extractedParams;
     }
