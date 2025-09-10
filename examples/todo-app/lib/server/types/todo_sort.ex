@@ -1,17 +1,17 @@
 defmodule Server.Types.TodoSort do
   def created() do
-    {:Created}
+    {0}
   end
   def priority() do
-    {:Priority}
+    {1}
   end
   def due_date() do
-    {:DueDate}
+    {2}
   end
   def title() do
-    {:Title}
+    {3}
   end
   def status() do
-    {:Status}
+    {4}
   end
 end

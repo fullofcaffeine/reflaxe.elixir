@@ -1,14 +1,14 @@
 defmodule Server.Types.AlertLevel do
   def info() do
-    {:Info}
+    {0}
   end
   def warning() do
-    {:Warning}
+    {1}
   end
   def error() do
-    {:Error}
+    {2}
   end
   def critical() do
-    {:Critical}
+    {3}
   end
 end

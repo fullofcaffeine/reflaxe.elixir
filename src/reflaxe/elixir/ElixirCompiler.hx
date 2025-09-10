@@ -997,6 +997,13 @@ class ElixirCompiler extends GenericCompiler<
         };
         var functions = [];
         
+        // Build an index map for enum constructors
+        var constructorIndexMap = new Map<String, Int>();
+        for (name in enumType.constructs.keys()) {
+            var constructor = enumType.constructs.get(name);
+            constructorIndexMap.set(name, constructor.index);
+        }
+        
         for (option in options) {
             // Each enum constructor becomes a function
             // Use safe function name to handle reserved keywords
@@ -1009,8 +1016,16 @@ class ElixirCompiler extends GenericCompiler<
             }
             
             // Create the tagged tuple return value
-            var atomTag = reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(option.name));
-            var tupleElements = [atomTag];
+            // For non-idiomatic enums, use integer indices; for idiomatic, use atoms
+            var tag = if (isIdiomatic) {
+                reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EAtom(option.name));
+            } else {
+                // Use the constructor's index for non-idiomatic enums
+                var index = constructorIndexMap.get(option.name);
+                if (index == null) index = 0; // Fallback, should not happen
+                reflaxe.elixir.ast.ElixirAST.makeAST(ElixirASTDef.EInteger(index));
+            };
+            var tupleElements = [tag];
             
             // Add constructor arguments to tuple
             for (i in 0...option.args.length) {

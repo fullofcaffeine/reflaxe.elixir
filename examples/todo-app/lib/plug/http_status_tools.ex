@@ -1,6 +1,6 @@
 defmodule HttpStatusTools do
-  def to_int(status) do
-    case (elem(status, 0)) do
+  def to_int(_status) do
+    case (elem(_status, 0)) do
       0 ->
         200
       1 ->
@@ -20,7 +20,7 @@ defmodule HttpStatusTools do
       8 ->
         500
       9 ->
-        g = elem(status, 1)
+        g = elem(_status, 1)
         code = g
         code
     end
@@ -49,15 +49,15 @@ defmodule HttpStatusTools do
         {:Custom, code}
     end
   end
-  def is_success(status) do
+  def is_success(_status) do
     code = to_int(status)
     code >= 200 && code < 300
   end
-  def is_client_error(status) do
+  def is_client_error(_status) do
     code = to_int(status)
     code >= 400 && code < 500
   end
-  def is_server_error(status) do
+  def is_server_error(_status) do
     code = to_int(status)
     code >= 500 && code < 600
   end

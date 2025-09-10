@@ -1,14 +1,14 @@
 defmodule Ecto.ChangesetAction do
   def insert() do
-    {:Insert}
+    {0}
   end
   def update() do
-    {:Update}
+    {1}
   end
   def delete() do
-    {:Delete}
+    {2}
   end
   def replace() do
-    {:Replace}
+    {3}
   end
 end

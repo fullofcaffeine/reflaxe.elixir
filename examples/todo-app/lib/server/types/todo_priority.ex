@@ -1,11 +1,11 @@
 defmodule Server.Types.TodoPriority do
   def low() do
-    {:Low}
+    {0}
   end
   def medium() do
-    {:Medium}
+    {1}
   end
   def high() do
-    {:High}
+    {2}
   end
 end

@@ -1,11 +1,11 @@
 defmodule Server.Types.PubSubTopic do
   def todo_updates() do
-    {:TodoUpdates}
+    {0}
   end
   def user_activity() do
-    {:UserActivity}
+    {1}
   end
   def system_notifications() do
-    {:SystemNotifications}
+    {2}
   end
 end

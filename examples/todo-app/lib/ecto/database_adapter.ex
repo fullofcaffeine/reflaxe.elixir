@@ -1,17 +1,17 @@
 defmodule Ecto.DatabaseAdapter do
   def postgres() do
-    {:Postgres}
+    {0}
   end
   def my_sql() do
-    {:MySQL}
+    {1}
   end
   def sq_lite3() do
-    {:SQLite3}
+    {2}
   end
   def sql_server() do
-    {:SQLServer}
+    {3}
   end
   def in_memory() do
-    {:InMemory}
+    {4}
   end
 end

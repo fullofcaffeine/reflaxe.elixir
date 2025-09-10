@@ -1,8 +1,8 @@
 defmodule Phoenix.EmbedStrategy do
   def replace() do
-    {:Replace}
+    {0}
   end
   def append() do
-    {:Append}
+    {1}
   end
 end
