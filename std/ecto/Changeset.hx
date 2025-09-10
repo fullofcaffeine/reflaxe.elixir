@@ -382,8 +382,7 @@ class ChangesetUtils {
         return switch(result) {
             case Ok(value): value;
             case Error(changeset): 
-                // Test with a simpler variable assignment
-                var errors = "test_error";
+                var errors = changeset.traverseErrors();
                 throw 'Changeset validation failed: $errors';
         };
     }
