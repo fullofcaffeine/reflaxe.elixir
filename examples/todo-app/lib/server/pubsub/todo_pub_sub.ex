@@ -8,8 +8,8 @@ defmodule TodoPubSub do
   def parse_message(msg) do
     Phoenix.SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
   end
-  def topic_to_string(_topic) do
-    case (elem(_topic, 0)) do
+  def topic_to_string(topic) do
+    case (elem(topic, 0)) do
       0 ->
         "todo:updates"
       1 ->
@@ -64,8 +64,8 @@ defmodule TodoPubSub do
         :none
     end
   end
-  defp bulk_action_to_string(_action) do
-    case (elem(_action, 0)) do
+  defp bulk_action_to_string(action) do
+    case (elem(action, 0)) do
       0 ->
         "complete_all"
       1 ->
@@ -94,8 +94,8 @@ defmodule TodoPubSub do
         :none
     end
   end
-  defp alert_level_to_string(_level) do
-    case (elem(_level, 0)) do
+  defp alert_level_to_string(level) do
+    case (elem(level, 0)) do
       0 ->
         "info"
       1 ->

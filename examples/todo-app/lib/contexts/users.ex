@@ -1,22 +1,31 @@
 defmodule Users do
   def list_users(filter) do
     if (filter != nil) do
-      query = Query.from(User)
-      query = if (Map.get(filter, :name) != nil) do
-  EctoQuery_Impl_.where(query, "name", "%" <> Kernel.to_string(filter.name) <> "%")
-else
-  query
-end
-      query = if (Map.get(filter, :email) != nil) do
-  EctoQuery_Impl_.where(query, "email", "%" <> Kernel.to_string(filter.email) <> "%")
-else
-  query
-end
-      query = if (Map.get(filter, :is_active) != nil) do
-  EctoQuery_Impl_.where(query, "active", filter.is_active)
-else
-  query
-end
+      query = Ecto.Queryable.to_query(User)
+      this1 = nil
+      this1 = query
+      query = this1
+      if (Map.get(filter, :name) != nil) do
+        value = "%" <> Kernel.to_string(filter.name) <> "%"
+        new_query = (require Ecto.Query; Ecto.Query.where(query, [q], field(q, ^String.to_existing_atom(Macro.underscore("name"))) == ^value))
+        this1 = nil
+        this1 = new_query
+        query = this1
+      end
+      if (Map.get(filter, :email) != nil) do
+        value = "%" <> Kernel.to_string(filter.email) <> "%"
+        new_query = (require Ecto.Query; Ecto.Query.where(query, [q], field(q, ^String.to_existing_atom(Macro.underscore("email"))) == ^value))
+        this1 = nil
+        this1 = new_query
+        query = this1
+      end
+      if (Map.get(filter, :is_active) != nil) do
+        value = filter.is_active
+        new_query = (require Ecto.Query; Ecto.Query.where(query, [q], field(q, ^String.to_existing_atom(Macro.underscore("active"))) == ^value))
+        this1 = nil
+        this1 = new_query
+        query = this1
+      end
       TodoApp.Repo.all(query)
     end
     TodoApp.Repo.all(User)

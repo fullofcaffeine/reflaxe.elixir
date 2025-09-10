@@ -3148,6 +3148,23 @@ class ElixirASTTransformer {
                             markUsedVars(target); // Continue checking nested expressions
                     }
                     markUsedVars(key); // Also check the key expression
+                case EStructUpdate(struct, fields):
+                    // Check if struct being updated is a parameter
+                    switch(struct.def) {
+                        case EVar(name):
+                            if (paramNames.exists(name)) {
+                                paramNames.set(name, true); // Mark as used
+                                #if debug_ast_transformer
+                                trace('[XRay PrefixUnusedParams] Found struct update on param: $name');
+                                #end
+                            }
+                        default:
+                            markUsedVars(struct); // Continue checking nested expressions
+                    }
+                    // Also check the field values
+                    for (field in fields) {
+                        markUsedVars(field.value);
+                    }
                 case ERaw(code):
                     // Check if parameter names appear in raw Elixir code
                     // This handles __elixir__() injection where parameters are referenced

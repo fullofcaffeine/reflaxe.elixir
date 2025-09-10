@@ -11,6 +11,27 @@ import haxe.functional.Result;
  * Provides a practical, type-safe wrapper around Ecto.Query functions.
  * Uses __elixir__() strategically to generate idiomatic Elixir queries
  * while maintaining full type safety in Haxe.
+ * 
+ * ## CRITICAL: Why `extern inline` is Required
+ * 
+ * All methods using `untyped __elixir__()` MUST be declared as `extern inline` because:
+ * 
+ * 1. **Timing Issue**: Abstract type methods are typed early during import, before Reflaxe
+ *    injects the `__elixir__` identifier. Without `extern inline`, Haxe tries to resolve
+ *    `__elixir__` immediately and fails with "Unknown identifier: __elixir__".
+ * 
+ * 2. **Solution**: `extern inline` delays the typing of the method body until it's actually
+ *    called. By that time, Reflaxe has already injected `__elixir__` into the typing context,
+ *    so it resolves correctly.
+ * 
+ * 3. **Abstract Specifics**: Regular classes don't have this issue because their methods
+ *    aren't forced to be typed immediately. Abstract types are more eagerly processed,
+ *    requiring this workaround.
+ * 
+ * Without `extern inline`, the generated Elixir code would contain undefined variable
+ * references instead of the actual Ecto.Query calls, resulting in compilation errors.
+ * 
+ * @see /CLAUDE.md - Section on "Abstract Types Require `extern inline` for `__elixir__` Injection"
  */
 
 /**
@@ -29,7 +50,7 @@ abstract EctoQuery<T>(Dynamic) {
      * @return The query with the where clause added
      * @deprecated This API needs redesign to properly handle dynamic field queries
      */
-    public function where<V>(fieldName: String, value: V): EctoQuery<T> {
+    extern inline public function where<V>(fieldName: String, value: V): EctoQuery<T> {
         // Use field/2 with a binding and convert string to existing atom
         // Avoids atom leaks and matches Ecto expectations
         var newQuery = untyped __elixir__(
@@ -44,7 +65,7 @@ abstract EctoQuery<T>(Dynamic) {
      * @param associations The associations to preload
      * @return The query with preload added
      */
-    public function preload(associations: Dynamic): EctoQuery<T> {
+    extern inline public function preload(associations: Dynamic): EctoQuery<T> {
         var newQuery = untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.preload({0}, ^{1}))',
             this, associations
@@ -58,7 +79,7 @@ abstract EctoQuery<T>(Dynamic) {
      * @param direction Either "asc" or "desc"
      * @return The query with the order_by clause added
      */
-    public function orderBy(field: String, direction: String = "asc"): EctoQuery<T> {
+    extern inline public function orderBy(field: String, direction: String = "asc"): EctoQuery<T> {
         // Use field/2 with a binding and convert string to existing atom
         var newQuery = if (direction == "desc") {
             untyped __elixir__('(require Ecto.Query; Ecto.Query.order_by({0}, [q], [desc: field(q, ^String.to_existing_atom(Macro.underscore({1})))]))', this, field);
@@ -75,7 +96,7 @@ abstract EctoQuery<T>(Dynamic) {
      * @param count The maximum number of records to return
      * @return The query with the limit applied
      */
-    public function limit(count: Int): EctoQuery<T> {
+    extern inline public function limit(count: Int): EctoQuery<T> {
         // Using import inside the expression to access the macro
         // Using require to make the macro available without importing all functions
         var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.limit({0}, ^{1}))', this, count);
@@ -87,7 +108,7 @@ abstract EctoQuery<T>(Dynamic) {
      * @param count The number of records to skip
      * @return The query with the offset applied
      */
-    public function offset(count: Int): EctoQuery<T> {
+    extern inline public function offset(count: Int): EctoQuery<T> {
         // Using import inside the expression to access the macro
         // Using require to make the macro available without importing all functions
         var newQuery = untyped __elixir__('(require Ecto.Query; Ecto.Query.offset({0}, ^{1}))', this, count);
@@ -99,7 +120,7 @@ abstract EctoQuery<T>(Dynamic) {
      * Used internally when passing to Repo functions
      */
     @:allow(ecto)
-    public inline function toElixirQuery(): Dynamic {
+    extern inline public function toElixirQuery(): Dynamic {
         return this;
     }
 }
@@ -118,7 +139,7 @@ class Query {
      * @param schema The schema class to query
      * @return A new EctoQuery instance
      */
-    public static function from<T>(schema: Class<T>): EctoQuery<T> {
+    extern inline public static function from<T>(schema: Class<T>): EctoQuery<T> {
         // CRITICAL: Ecto.Query.from is a macro that needs the module at compile time
         // We use Ecto.Queryable.to_query/1 which can accept runtime module values
         // This is the recommended way to create queries dynamically
@@ -131,7 +152,7 @@ class Query {
      * @param conditions Map of field names to values
      * @return The query with where conditions added
      */
-    public static function whereAll<T>(query: EctoQuery<T>, conditions: Map<String, Dynamic>): EctoQuery<T> {
+    extern inline public static function whereAll<T>(query: EctoQuery<T>, conditions: Map<String, Dynamic>): EctoQuery<T> {
         // Use Enum.reduce to build up the query with field/2 function for dynamic field access
         // This is the idiomatic way to handle dynamic field names in Ecto
         var elixirQuery = untyped __elixir__(
