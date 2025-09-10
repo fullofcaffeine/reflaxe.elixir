@@ -107,8 +107,21 @@ class HygieneTransforms {
                 // Don't touch already underscored variables
                 if (name.charAt(0) == "_") return pattern;
                 
+                #if debug_hygiene
+                trace('[XRay Hygiene] Checking usage of parameter: $name');
+                #end
+                
                 // Check if variable is used in body
-                if (!isVariableUsedInBody(name, body)) {
+                var isUsed = isVariableUsedInBody(name, body);
+                
+                #if debug_hygiene
+                trace('[XRay Hygiene] Parameter $name is ${isUsed ? "USED" : "UNUSED"}');
+                #end
+                
+                if (!isUsed) {
+                    #if debug_hygiene
+                    trace('[XRay Hygiene] Adding underscore to unused parameter: $name -> _$name');
+                    #end
                     return PVar("_" + name);
                 }
                 return pattern;
@@ -119,22 +132,51 @@ class HygieneTransforms {
     }
     
     /**
-     * Simple check if a variable name is referenced in the body
+     * Check if a variable name is referenced in the body
+     * The transformNode function already handles recursive traversal
+     * 
+     * IMPORTANT: This correctly detects usage in nested contexts like function calls
+     * Example: `Std.int(t)` - the `t` inside the call will be detected
      */
     static function isVariableUsedInBody(varName: String, body: ElixirAST): Bool {
         var used = false;
+        var nodeCount = 0;
         
-        // Use transformer to search for variable usage
+        // Use transformer to search for variable usage recursively
+        // transformNode already traverses all children, including function call arguments
         ElixirASTTransformer.transformNode(body, function(node) {
+            nodeCount++;
+            #if debug_hygiene_verbose
+            trace('[XRay Hygiene] Node #$nodeCount: ${Type.enumConstructor(node.def)}');
+            #end
+            
             switch(node.def) {
                 case EVar(name):
+                    #if debug_hygiene
+                    trace('[XRay Hygiene] Checking EVar: "$name" against "$varName"');
+                    #end
                     if (name == varName) {
+                        #if debug_hygiene
+                        trace('[XRay Hygiene] ✓ Found usage of variable $varName in body!');
+                        #end
                         used = true;
                     }
+                case ECall(target, funcName, args):
+                    #if debug_hygiene_verbose
+                    trace('[XRay Hygiene] Found ECall to $funcName with ${args.length} args');
+                    #end
+                    // transformNode will recursively process the args
                 default:
+                    // The transformNode recursively handles all other node types
             }
             return node; // Return unchanged
         });
+        
+        #if debug_hygiene
+        if (!used) {
+            trace('[XRay Hygiene] Variable $varName NOT found in body after checking $nodeCount nodes');
+        }
+        #end
         
         return used;
     }

@@ -1,11 +1,11 @@
 defmodule TodoPubSub do
-  def subscribe(_topic) do
+  def subscribe(topic) do
     Phoenix.SafePubSub.subscribe_with_converter(topic, &TodoPubSub.topic_to_string/1)
   end
-  def broadcast(_topic, _message) do
+  def broadcast(topic, message) do
     Phoenix.SafePubSub.broadcast_with_converters(topic, message, &TodoPubSub.topic_to_string/1, &TodoPubSub.message_to_elixir/1)
   end
-  def parse_message(_msg) do
+  def parse_message(msg) do
     Phoenix.SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
   end
   def topic_to_string(_topic) do
@@ -53,7 +53,7 @@ defmodule TodoPubSub do
 end
     Phoenix.SafePubSub.add_timestamp(base_payload)
   end
-  def parse_message_impl(_msg) do
+  def parse_message_impl(msg) do
     if (not Phoenix.SafePubSub.is_valid_message(msg)) do
       Log.trace(Phoenix.SafePubSub.create_malformed_message_error(msg), %{:file_name => "src_haxe/server/pubsub/TodoPubSub.hx", :line_number => 191, :class_name => "server.pubsub.TodoPubSub", :method_name => "parseMessageImpl"})
       :none
@@ -123,7 +123,7 @@ end
         "remove_tag"
     end
   end
-  defp parse_bulk_action(_action) do
+  defp parse_bulk_action(action) do
     case (action) do
       "add_tag" ->
         {:AddTag, ""}
@@ -151,7 +151,7 @@ end
         "critical"
     end
   end
-  defp parse_alert_level(_level) do
+  defp parse_alert_level(level) do
     case (level) do
       "critical" ->
         {:Critical}

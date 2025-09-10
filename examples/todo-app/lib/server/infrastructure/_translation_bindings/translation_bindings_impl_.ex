@@ -1,5 +1,5 @@
 defmodule TranslationBindings_Impl_ do
-  defp _new(_map) do
+  defp _new(map) do
     this1 = map
     this1
   end
@@ -8,21 +8,21 @@ defmodule TranslationBindings_Impl_ do
     this1 = map
     this1
   end
-  def set(this1, _key, _value) do
+  def set(this1, key, value) do
     this1 = Map.put(this1, key, value)
     this1
   end
-  def set_int(this1, _key, _value) do
+  def set_int(this1, key, value) do
     value = Std.string(value)
     this1 = Map.put(this1, key, value)
     this1
   end
-  def set_float(this1, _key, _value) do
+  def set_float(this1, key, value) do
     value = Std.string(value)
     this1 = Map.put(this1, key, value)
     this1
   end
-  def set_bool(this1, _key, _value) do
+  def set_bool(this1, key, value) do
     this1 = Map.put(this1, key, (if value, do: "true", else: "false"))
     this1
   end
