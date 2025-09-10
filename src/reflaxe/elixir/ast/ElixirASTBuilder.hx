@@ -12,24 +12,39 @@ using reflaxe.helpers.TypeHelper;
 using StringTools;
 
 /**
- * Synthetic binding context for case clauses
+ * Clause context for case pattern matching
  * 
- * WHY: Handle variables that only exist in generated Elixir code
- * - Haxe optimizer removes "unused" variables that are only referenced in __elixir__() injections
- * - We need to generate these bindings directly in the Elixir AST
+ * WHY: Alpha-renaming to ensure pattern variables match body references
+ * - Haxe uses temporary variables (_g, _g1) for enum parameters
+ * - Patterns should use canonical enum constructor parameter names (value, error)
+ * - Body references need to be renamed to match pattern variables
  * 
- * WHAT: Tracks synthetic let-bindings needed for each case clause
- * - Registers temporary variables that don't exist in Haxe AST
- * - Wraps clause bodies with necessary bindings
- * - Prevents name collisions with real Haxe variables
+ * WHAT: Maps Haxe local variable IDs to canonical pattern names
+ * - Tracks mapping from TVar.id to pattern variable names
+ * - Handles synthetic bindings for variables only in Elixir code
+ * - Prevents name collisions with existing variables
+ * 
+ * HOW: Used during case clause compilation
+ * - Created when analyzing enum patterns
+ * - Consulted when compiling TLocal references
+ * - Ensures consistent naming throughout clause
  */
 class ClauseContext {
+    // Maps Haxe TVar.id to the canonical pattern variable name
+    public var localToName: Map<Int, String> = new Map();
+    
+    // Synthetic bindings for variables that only exist in Elixir
     public var syntheticBindings: Array<{name: String, init: ElixirAST}> = [];
+    
+    // Variables already in scope to avoid collisions
     public var localsInScope: Map<String, Bool> = new Map();
+    
+    // Track which names have been used
     private var usedNames: Map<String, Bool> = new Map();
     
-    public function new(locals: Map<String, Bool>) {
-        this.localsInScope = locals;
+    public function new(?locals: Map<String, Bool>, ?varMapping: Map<Int, String>) {
+        if (locals != null) this.localsInScope = locals;
+        if (varMapping != null) this.localToName = varMapping;
     }
     
     /**
@@ -152,6 +167,10 @@ class ElixirASTBuilder {
     // Variable usage map for context-aware naming
     // Maps variable ID to whether it's used (true) or unused (false)
     public static var variableUsageMap: Null<Map<Int, Bool>> = null;
+    
+    // Current clause context for handling case clause variable mappings
+    // Used for alpha-renaming to ensure pattern variables match body references
+    public static var currentClauseContext: Null<ClauseContext> = null;
     
     /**
      * Reference to the compiler for dependency tracking
@@ -339,8 +358,19 @@ class ElixirASTBuilder {
             // Variables and Binding
             // ================================================================
             case TLocal(v):
-                // Check if this is a renamed parameter (e.g., priority2 -> priority)
+                // First check if we have a clause context with variable mappings
+                // This handles alpha-renaming for case clause variables
                 var varName = v.name;
+                
+                // Check ClauseContext for mapped names (alpha-renaming)
+                if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
+                    varName = currentClauseContext.localToName.get(v.id);
+                    trace('[AST Builder] TLocal: Using mapped name from ClauseContext: ${v.name} (id=${v.id}) -> ${varName}');
+                } else if (currentClauseContext != null && v.name == "error") {
+                    // Debug: show what mappings we DO have
+                    trace('[AST Builder] TLocal: No mapping for ${v.name} (id=${v.id}). Available mappings: ${[for (k in currentClauseContext.localToName.keys()) k + "->" + currentClauseContext.localToName.get(k)].join(", ")}');
+                }
+                
                 var idKey = Std.string(v.id);
                 var wasMapped = false;
                 
@@ -1892,6 +1922,10 @@ class ElixirASTBuilder {
                     // This is critical for determining whether to use wildcards or named patterns
                     var extractedParams = analyzeEnumParameterExtraction(c.expr);
                     
+                    // Create variable mappings for alpha-renaming
+                    // This maps Haxe's temporary variable IDs to canonical pattern names
+                    var varMapping = createVariableMappingsForCase(c.expr, extractedParams, enumType, c.values);
+                    
                     var patterns = if (isIdiomaticEnum && enumType != null) {
                         // For idiomatic enums, convert integer patterns to proper tuple patterns
                         // Pass the actual enum expression and extracted parameters for proper naming
@@ -1900,8 +1934,15 @@ class ElixirASTBuilder {
                         [for (v in c.values) convertPattern(v)];
                     }
                     
-                    // Build the case body after pattern generation
+                    // Set up ClauseContext for alpha-renaming before building the case body
+                    var savedClauseContext = currentClauseContext;
+                    currentClauseContext = new ClauseContext(null, varMapping);
+                    
+                    // Build the case body with the ClauseContext active
                     var body = buildFromTypedExpr(c.expr, variableUsageMap);
+                    
+                    // Restore previous context
+                    currentClauseContext = savedClauseContext;
                     
                     // processEnumCaseBody is disabled - we use VariableUsageAnalyzer instead
                     // which provides more accurate detection across the entire function scope
@@ -3773,12 +3814,23 @@ class ElixirASTBuilder {
                     
                     if (paramCount > 0) {
                         // Constructor with arguments - create tuple pattern
-                        // Use named patterns if parameters are extracted, otherwise wildcards
+                        // Get canonical parameter names from the constructor definition
+                        var canonicalNames = switch(constructor.type) {
+                            case TFun(args, _):
+                                [for (arg in args) arg.name];
+                            default:
+                                [];
+                        };
+                        
+                        // Use canonical names for pattern variables
                         var paramPatterns = [];
                         for (i in 0...paramCount) {
-                            if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null) {
-                                // Use named pattern for extracted parameter
-                                paramPatterns.push(PVar(extractedParams[i]));
+                            // Check if this parameter is actually used in the case body
+                            var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
+                            
+                            if (isUsed && i < canonicalNames.length) {
+                                // Use the canonical parameter name from the constructor definition
+                                paramPatterns.push(PVar(canonicalNames[i]));
                             } else {
                                 // Use wildcard for unused parameter
                                 paramPatterns.push(PWildcard);
@@ -3810,11 +3862,23 @@ class ElixirASTBuilder {
                 if (paramCount == 0) {
                     PLiteral(makeAST(EAtom(atomName)));
                 } else {
-                    // Use named patterns if provided, otherwise wildcards
+                    // Get canonical parameter names from the enum field
+                    var canonicalNames = switch(ef.type) {
+                        case TFun(args, _):
+                            [for (arg in args) arg.name];
+                        default:
+                            [];
+                    };
+                    
+                    // Use canonical names for pattern variables
                     var paramPatterns = [];
                     for (i in 0...paramCount) {
-                        if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null) {
-                            paramPatterns.push(PVar(extractedParams[i]));
+                        // Check if this parameter is actually used in the case body
+                        var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
+                        
+                        if (isUsed && i < canonicalNames.length) {
+                            // Use the canonical parameter name from the constructor definition
+                            paramPatterns.push(PVar(canonicalNames[i]));
                         } else {
                             paramPatterns.push(PWildcard);
                         }
@@ -4534,6 +4598,96 @@ class ElixirASTBuilder {
             case FEnum(_, ef):
                 ef.name;
         }
+    }
+    
+    /**
+     * Create variable mappings for alpha-renaming in case clauses
+     * 
+     * WHY: Haxe's optimizer creates temporary variables (g, g1, etc.) for enum parameters
+     *      but our patterns use canonical names (value, error, etc.). We need to map
+     *      the temp var IDs to the canonical names for proper code generation.
+     * 
+     * WHAT: Creates a Map<Int, String> that maps TVar.id to the canonical pattern name
+     * 
+     * HOW: Analyzes the case body to find TVar declarations that extract enum parameters
+     *      and builds a mapping from the temp var IDs to the canonical names from the pattern
+     */
+    static function createVariableMappingsForCase(caseExpr: TypedExpr, extractedParams: Array<String>, 
+                                                   enumType: Null<EnumType>, values: Array<TypedExpr>): Map<Int, String> {
+        var mapping = new Map<Int, String>();
+        
+        // If we don't have an idiomatic enum, no mapping needed
+        if (enumType == null || !enumType.meta.has(":elixirIdiomatic")) {
+            return mapping;
+        }
+        
+        // Get the constructor for this case
+        if (values.length > 0) {
+            switch(values[0].expr) {
+                case TConst(TInt(index)):
+                    // Get constructor at this index
+                    var constructors = [];
+                    for (name in enumType.constructs.keys()) {
+                        var constructor = enumType.constructs.get(name);
+                        constructors[constructor.index] = constructor;
+                    }
+                    
+                    if (index >= 0 && index < constructors.length && constructors[index] != null) {
+                        var constructor = constructors[index];
+                        
+                        // Get the canonical parameter names from the constructor
+                        var canonicalNames = switch(constructor.type) {
+                            case TFun(args, _):
+                                [for (arg in args) arg.name];
+                            default:
+                                [];
+                        };
+                        
+                        // Now scan the case body to find TVar declarations
+                        function scanForTVars(expr: TypedExpr): Void {
+                            switch(expr.expr) {
+                                case TBlock(exprs):
+                                    for (e in exprs) scanForTVars(e);
+                                    
+                                case TVar(v, init) if (init != null):
+                                    switch(init.expr) {
+                                        case TEnumParameter(_, _, paramIndex):
+                                            // This is a temp var extracting an enum parameter
+                                            // Map it to the canonical name
+                                            if (paramIndex < canonicalNames.length) {
+                                                mapping.set(v.id, canonicalNames[paramIndex]);
+                                                #if debug_ast_pipeline
+                                                trace('[Alpha-renaming] Mapping TVar ${v.name} (id=${v.id}) to canonical name: ${canonicalNames[paramIndex]}');
+                                                #end
+                                            }
+                                            
+                                        case TLocal(tempVar):
+                                            // This might be assigning from a temp var to the actual pattern var
+                                            // If the temp var is already mapped, map this var to the same name
+                                            if (mapping.exists(tempVar.id)) {
+                                                var canonicalName = mapping.get(tempVar.id);
+                                                mapping.set(v.id, canonicalName);
+                                                #if debug_ast_pipeline
+                                                trace('[Alpha-renaming] Mapping TVar ${v.name} (id=${v.id}) from temp ${tempVar.name} to: ${canonicalName}');
+                                                #end
+                                            }
+                                            
+                                        default:
+                                    }
+                                    
+                                default:
+                                    haxe.macro.TypedExprTools.iter(expr, scanForTVars);
+                            }
+                        }
+                        
+                        scanForTVars(caseExpr);
+                    }
+                    
+                default:
+            }
+        }
+        
+        return mapping;
     }
     
     /**
