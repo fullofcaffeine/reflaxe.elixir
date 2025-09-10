@@ -46,9 +46,9 @@ else
   Users.update_user(selected_user, user_params)
 end
     case (result) do
-      {:ok, _} ->
+      {:ok, g} ->
         %{:status => "noreply", :socket => Phoenix.Component.assign([socket, users, false, nil, Users.change_user(nil)], %{:users => {1}, :show_form => {2}, :selected_user => {3}, :changeset => {4}})}
-      {:error, _} ->
+      {:error, g} ->
         %{:status => "noreply", :socket => Phoenix.Component.assign(socket, :changeset, changeset)}
     end
   end
@@ -56,9 +56,9 @@ end
     user = Users.get_user(user_id)
     result = Users.delete_user(user)
     case (result) do
-      {:ok, _} ->
+      {:ok, g} ->
         %{:status => "noreply", :socket => Phoenix.Component.assign(socket, :users, users)}
-      {:error, _} ->
+      {:error, g} ->
         %{:status => "noreply", :socket => socket}
     end
   end

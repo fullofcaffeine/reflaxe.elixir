@@ -1787,15 +1787,19 @@ class ElixirASTBuilder {
                 var isReturnContext = false; // TODO: Will be set via metadata
                 
                 for (c in cases) {
+                    // Analyze the case body FIRST to detect enum parameter extraction
+                    // This is critical for determining whether to use wildcards or named patterns
+                    var extractedParams = analyzeEnumParameterExtraction(c.expr);
+                    
                     var patterns = if (isIdiomaticEnum && enumType != null) {
                         // For idiomatic enums, convert integer patterns to proper tuple patterns
-                        // Pass the actual enum expression for type extraction
-                        [for (v in c.values) convertIdiomaticEnumPatternWithType(v, enumType)];
+                        // Pass the actual enum expression and extracted parameters for proper naming
+                        [for (v in c.values) convertIdiomaticEnumPatternWithExtraction(v, enumType, extractedParams)];
                     } else {
                         [for (v in c.values) convertPattern(v)];
                     }
                     
-                    // Analyze the case body for enum parameter usage
+                    // Build the case body after pattern generation
                     var body = buildFromTypedExpr(c.expr, variableUsageMap);
                     
                     // processEnumCaseBody is disabled - we use VariableUsageAnalyzer instead
@@ -3440,6 +3444,71 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Analyze case body to detect enum parameter extraction patterns
+     * 
+     * WHY: When the case body contains TVar(_g, TEnumParameter(...)), we need to use named
+     *      patterns instead of wildcards to avoid undefined variable references
+     * WHAT: Detects the extraction pattern and returns parameter names to use in patterns
+     * HOW: Looks for TBlock with TVar nodes that extract enum parameters
+     */
+    static function analyzeEnumParameterExtraction(caseExpr: TypedExpr): Array<String> {
+        var extractedParams = [];
+        
+        switch(caseExpr.expr) {
+            case TBlock(exprs):
+                // Look for TVar nodes that extract enum parameters
+                for (expr in exprs) {
+                    switch(expr.expr) {
+                        case TVar(v, init) if (init != null):
+                            switch(init.expr) {
+                                case TEnumParameter(_, ef, index):
+                                    // Found enum parameter extraction
+                                    // The variable name will be used in the body
+                                    var varName = toElixirVarName(v.name);
+                                    if (varName.startsWith("_")) {
+                                        // Strip underscore for the actual variable name
+                                        varName = varName.substr(1);
+                                    }
+                                    // Store at the correct index
+                                    while (extractedParams.length <= index) {
+                                        extractedParams.push(null);
+                                    }
+                                    extractedParams[index] = varName;
+                                case TLocal(localVar) if (localVar.name.startsWith("_g") || localVar.name == "g"):
+                                    // This is the second part of extraction: value = _g
+                                    // The actual variable name is v.name
+                                    var varName = toElixirVarName(v.name);
+                                    // Don't add if it starts with underscore (unused)
+                                    if (!varName.startsWith("_")) {
+                                        // Try to determine the index from context
+                                        // For now, just add to the list
+                                        extractedParams.push(varName);
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                }
+            default:
+        }
+        
+        return extractedParams;
+    }
+    
+    /**
+     * Convert patterns for idiomatic enum switch statements with explicit EnumType and extraction info
+     * 
+     * WHY: When we've already extracted the enum type and know which parameters are used,
+     *      we can generate proper named patterns instead of wildcards
+     * WHAT: Maps integer patterns to proper atom-based tuple patterns with correct variable names
+     * HOW: Uses the provided enum type to map indices to constructor names and extractedParams
+     *      to determine which parameters need named patterns vs wildcards
+     */
+    static function convertIdiomaticEnumPatternWithExtraction(value: TypedExpr, enumType: EnumType, extractedParams: Array<String>): EPattern {
+        return convertIdiomaticEnumPatternWithTypeImpl(value, enumType, extractedParams);
+    }
+    
+    /**
      * Convert patterns for idiomatic enum switch statements with explicit EnumType
      * 
      * WHY: When we've already extracted the enum type, we can use it directly
@@ -3447,6 +3516,13 @@ class ElixirASTBuilder {
      * HOW: Uses the provided enum type to map indices to constructor names
      */
     static function convertIdiomaticEnumPatternWithType(value: TypedExpr, enumType: EnumType): EPattern {
+        return convertIdiomaticEnumPatternWithTypeImpl(value, enumType, null);
+    }
+    
+    /**
+     * Internal implementation for idiomatic enum pattern conversion
+     */
+    static function convertIdiomaticEnumPatternWithTypeImpl(value: TypedExpr, enumType: EnumType, extractedParams: Null<Array<String>>): EPattern {
         return switch(value.expr) {
             // Haxe internally converts enum constructors to integers for switch
             case TConst(TInt(index)):
@@ -3497,10 +3573,19 @@ class ElixirASTBuilder {
                     #end
                     
                     if (paramCount > 0) {
-                        // Constructor with arguments - create tuple pattern with wildcards
-                        // We use wildcards because the actual values are extracted in the body
-                        var wildcards = [for (i in 0...paramCount) PWildcard];
-                        PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
+                        // Constructor with arguments - create tuple pattern
+                        // Use named patterns if parameters are extracted, otherwise wildcards
+                        var paramPatterns = [];
+                        for (i in 0...paramCount) {
+                            if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null) {
+                                // Use named pattern for extracted parameter
+                                paramPatterns.push(PVar(extractedParams[i]));
+                            } else {
+                                // Use wildcard for unused parameter
+                                paramPatterns.push(PWildcard);
+                            }
+                        }
+                        PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
                     } else {
                         // No-argument constructor - just the atom
                         PLiteral(makeAST(EAtom(atomName)));
@@ -3526,8 +3611,16 @@ class ElixirASTBuilder {
                 if (paramCount == 0) {
                     PLiteral(makeAST(EAtom(atomName)));
                 } else {
-                    var wildcards = [for (i in 0...paramCount) PWildcard];
-                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
+                    // Use named patterns if provided, otherwise wildcards
+                    var paramPatterns = [];
+                    for (i in 0...paramCount) {
+                        if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null) {
+                            paramPatterns.push(PVar(extractedParams[i]));
+                        } else {
+                            paramPatterns.push(PWildcard);
+                        }
+                    }
+                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
                 }
                 
             default:
@@ -3559,69 +3652,8 @@ class ElixirASTBuilder {
             default: return convertPattern(value); // Fallback to regular pattern
         };
         
-        return switch(value.expr) {
-            // Haxe internally converts enum constructors to integers for switch
-            case TConst(TInt(index)):
-                // Get the constructor at this index
-                var constructors = enumType.constructs;
-                var constructorNames = [for (name in constructors.keys()) name];
-                constructorNames.sort((a, b) -> a < b ? -1 : 1); // Ensure consistent ordering
-                
-                if (index >= 0 && index < constructorNames.length) {
-                    var constructorName = constructorNames[index];
-                    var constructor = constructors.get(constructorName);
-                    
-                    // Convert to snake_case for idiomatic Elixir
-                    var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(constructor.name);
-                    
-                    // Create proper tuple pattern based on constructor parameters
-                    // Extract parameter count from constructor's type field
-                    var paramCount = 0;
-                    switch(constructor.type) {
-                        case TFun(args, _):
-                            paramCount = args.length;
-                        default:
-                            // No parameters
-                    }
-                    
-                    if (paramCount > 0) {
-                        // Constructor with arguments - create tuple pattern with wildcards
-                        // We use wildcards because the actual values are extracted in the body
-                        var wildcards = [for (i in 0...paramCount) PWildcard];
-                        PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
-                    } else {
-                        // No-argument constructor - just the atom
-                        PLiteral(makeAST(EAtom(atomName)));
-                    }
-                } else {
-                    // Invalid index, use wildcard
-                    PWildcard;
-                }
-                
-            // For actual enum constructor patterns (shouldn't happen in idiomatic switch)
-            case TField(_, FEnum(_, ef)):
-                var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
-                
-                // Extract parameter count from the enum field's type
-                var paramCount = 0;
-                switch(ef.type) {
-                    case TFun(args, _):
-                        paramCount = args.length;
-                    default:
-                        // No parameters
-                }
-                
-                if (paramCount == 0) {
-                    PLiteral(makeAST(EAtom(atomName)));
-                } else {
-                    var wildcards = [for (i in 0...paramCount) PWildcard];
-                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
-                }
-                
-            default:
-                // Fallback to regular pattern conversion
-                convertPattern(value);
-        }
+        // Old implementation - just delegate to the new one without extraction info
+        return convertIdiomaticEnumPatternWithTypeImpl(value, enumType, null);
     }
     
     /**
