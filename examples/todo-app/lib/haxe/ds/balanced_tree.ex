@@ -1,10 +1,10 @@
 defmodule BalancedTree do
   @root nil
-  def set(_struct, _key, _value) do
+  def set(struct, key, value) do
     root = struct.set_loop(key, value, struct.root)
     %{struct | root: root}
   end
-  def get(_struct, _key) do
+  def get(struct, _key) do
     node = struct.root
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
   if (acc_node != nil) do
@@ -18,12 +18,12 @@ defmodule BalancedTree do
 end)
     nil
   end
-  def remove(_struct, _key) do
+  def remove(struct, key) do
     result = struct.remove_loop(key, struct.root)
     if (result != nil), do: result.found
     false
   end
-  def exists(_struct, _key) do
+  def exists(struct, _key) do
     node = struct.root
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
   if (acc_node != nil) do
@@ -49,7 +49,7 @@ end)
     struct.keys_loop(struct.root, ret)
     ArrayIterator.new(ret)
   end
-  def copy(_struct) do
+  def copy(struct) do
     copied = BalancedTree.new()
     root = struct.root
     copied
@@ -69,7 +69,7 @@ end)
       end
     end
   end
-  defp remove_loop(struct, _k, node) do
+  defp remove_loop(struct, k, node) do
     if (node == nil), do: %{:node => nil, :found => false}
     c = struct.compare(k, node.key)
     if (c == 0) do
@@ -86,14 +86,14 @@ end)
       end
     end
   end
-  defp iterator_loop(struct, _node, acc) do
+  defp iterator_loop(struct, node, acc) do
     if (node != nil) do
       struct.iterator_loop(node.left, acc)
       acc = acc ++ [node.value]
       struct.iterator_loop(node.right, acc)
     end
   end
-  defp keys_loop(struct, _node, acc) do
+  defp keys_loop(struct, node, acc) do
     if (node != nil) do
       struct.keys_loop(node.left, acc)
       acc = acc ++ [node.key]
@@ -112,12 +112,12 @@ end)
     if (t.left == nil), do: t
     struct.min_binding(t.left)
   end
-  defp remove_min_binding(struct, _t) do
+  defp remove_min_binding(struct, t) do
     if (t == nil), do: nil
     if (t.left == nil), do: t.right
     struct.balance(struct.remove_min_binding(t.left), t.key, t.value, t.right)
   end
-  defp balance(_struct, l, k, v, r) do
+  defp balance(struct, l, k, v, r) do
     hl = l.get_height()
     hr = r.get_height()
     if (hl > hr + 2) do
@@ -138,7 +138,7 @@ end)
       end
     end
   end
-  defp compare(_struct, _k1, _k2) do
+  defp compare(struct, k1, k2) do
     cond do
       k1 < k2 ->
         -1
@@ -148,10 +148,10 @@ end)
         0
     end
   end
-  def to_string(_struct) do
+  def to_string(struct) do
     if (struct.root == nil), do: "[]", else: "[" <> struct.root.to_string() <> "]"
   end
-  def clear(_struct) do
+  def clear(struct) do
     nil
   end
 end

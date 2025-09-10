@@ -1,5 +1,5 @@
 defmodule EnumValueMap do
-  defp compare(struct, _k1, _k2) do
+  defp compare(struct, k1, k2) do
     d = (Type.enum_index(k1) - Type.enum_index(k2))
     if (d != 0), do: d
     p1 = Type.enum_parameters(k1)
@@ -9,7 +9,7 @@ defmodule EnumValueMap do
     if (length(p1) == 0 && length(p2) == 0), do: 0
     struct.compare_args(p1, p2)
   end
-  defp compare_args(_struct, _a1, _a2) do
+  defp compare_args(struct, a1, _a2) do
     g = 0
     g1 = length(a1)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
@@ -38,13 +38,13 @@ end)
   def keys(struct) do
     struct.iterator()
   end
-  def copy(_struct) do
+  def copy(struct) do
     copied = %{}
     k = struct.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} -> nil end)
     copied
   end
-  def to_string(_struct) do
+  def to_string(struct) do
     s = StringBuf.new()
     s.add("[")
     it = struct.iterator()

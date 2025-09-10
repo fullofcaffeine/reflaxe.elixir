@@ -1,5 +1,5 @@
 defmodule Phoenix.SafePubSub do
-  def subscribe_with_converter(_topic, _topic_converter) do
+  def subscribe_with_converter(topic, topic_converter) do
     pubsub_module = get_pub_sub_module()
     topic_string = topic_converter.(topic)
     subscribe_result = Phoenix.PubSub.subscribe(pubsub_module, topic_string)
@@ -10,7 +10,7 @@ defmodule Phoenix.SafePubSub do
                     _ -> "Unknown subscription error"
                 end)}
   end
-  def broadcast_with_converters(_topic, _message, _topic_converter, _message_converter) do
+  def broadcast_with_converters(topic, message, topic_converter, message_converter) do
     pubsub_module = get_pub_sub_module()
     topic_string = topic_converter.(topic)
     message_payload = message_converter.(message)
@@ -32,7 +32,7 @@ defmodule Phoenix.SafePubSub do
   def create_unknown_message_error(message_type) do
     "Unknown PubSub message type: \"" <> message_type <> "\". Check your message enum definitions."
   end
-  def create_malformed_message_error(_msg) do
+  def create_malformed_message_error(msg) do
     "Malformed PubSub message: " <> (try do
   replacer = nil
   space = nil

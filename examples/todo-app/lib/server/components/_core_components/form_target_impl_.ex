@@ -1,5 +1,5 @@
 defmodule FormTarget_Impl_ do
-  def _new(_target) do
+  def _new(target) do
     this1 = target
     this1
   end

@@ -1,5 +1,5 @@
 defmodule TodoAppWeb.Gettext.UIMessages do
-  def welcome(_name) do
+  def welcome(name) do
     bindings = TranslationBindings_Impl_.set(TranslationBindings_Impl_.create(), "name", name)
     TodoAppWeb.Gettext.gettext("Welcome %{name}!", bindings)
   end
