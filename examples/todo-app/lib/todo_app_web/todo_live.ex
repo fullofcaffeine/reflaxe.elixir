@@ -6,7 +6,7 @@ defmodule TodoAppWeb.TodoLive do
     case (g) do
       {:ok, g} ->
         nil
-      {:error, g} ->
+      {:error, reason} ->
         {:Error, "Failed to subscribe to updates: " <> (g)}
     end
     current_user = get_user_from_session(session)
@@ -117,16 +117,16 @@ end}
     userId = socket.assigns.current_user.id
     changeset = Todo.changeset(Todo.new(), params)
     case (g) do
-      {:ok, g} ->
+      {:ok, updated_socket} ->
         case (g) do
           {:ok, g} ->
             nil
-          {:error, g} ->
+          {:error, reason} ->
             Log.trace("Failed to broadcast todo creation: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 280, :class_name => "server.live.TodoLive", :method_name => "createTodoTyped"})
         end
         updated_socket = load_and_assign_todos(socket)
         SafeAssigns.set_show_form(updated_socket, false)
-      {:error, g} ->
+      {:error, socket} ->
         Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to create todo")
     end
   end
@@ -138,18 +138,18 @@ else
 end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), else: []), :user_id => socket.assigns.current_user.id}
     changeset = Todo.changeset(Todo.new(), todo_params)
     case (g) do
-      {:ok, g} ->
+      {:ok, updated_socket} ->
         case (g) do
           {:ok, g} ->
             nil
-          {:error, g} ->
+          {:error, reason} ->
             Log.trace("Failed to broadcast todo creation: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 317, :class_name => "server.live.TodoLive", :method_name => "createNewTodo"})
         end
         todos = [todo] ++ socket.assigns.todos
         live_socket = socket
         updated_socket = Phoenix.Component.assign([live_socket, todos, false], %{:todos => {1}, :show_form => {2}})
         Phoenix.LiveView.put_flash(updated_socket, {:Success}, "Todo created successfully!")
-      {:error, g} ->
+      {:error, socket} ->
         Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to create todo: " <> Kernel.to_string(reason))
     end
   end
@@ -159,10 +159,10 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
     updated_changeset = Todo.toggle_completed(todo)
     g = TodoApp.Repo.update(updated_changeset)
     updated_todo = case (g) do
-  {:ok, g} ->
+  {:ok, u} ->
     g = elem(g, 1)
     (g)
-  {:error, g} ->
+  {:error, socket} ->
     g = elem(g, 1)
     reason = g
     Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to update todo: " <> Kernel.to_string(reason))
@@ -174,15 +174,15 @@ end
     todo = find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
     case (g) do
-      {:ok, g} ->
+      {:ok, id} ->
         case (g) do
           {:ok, g} ->
             nil
-          {:error, g} ->
+          {:error, reason} ->
             Log.trace("Failed to broadcast todo deletion: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 362, :class_name => "server.live.TodoLive", :method_name => "deleteTodo"})
         end
         remove_todo_from_list(id, socket)
-      {:error, g} ->
+      {:error, socket} ->
         Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to delete todo: " <> Kernel.to_string(reason))
     end
   end
@@ -192,10 +192,10 @@ end
     updated_changeset = Todo.update_priority(todo, priority)
     g = TodoApp.Repo.update(updated_changeset)
     updated_todo = case (g) do
-  {:ok, g} ->
+  {:ok, u} ->
     g = elem(g, 1)
     (g)
-  {:error, g} ->
+  {:error, socket} ->
     g = elem(g, 1)
     reason = g
     Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to update priority: " <> Kernel.to_string(reason))
@@ -213,46 +213,46 @@ end
     TodoApp.Repo.all(query)
   end
   def find_todo(id, todos) do
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, :ok}, fn _, {acc_g, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, g, :ok}, fn _, {acc_todos, acc_g, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.id == id), do: todo
-    {:cont, {acc_g, acc_todos, acc_state}}
+    {:cont, {acc_todos, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_state}}
+    {:halt, {acc_todos, acc_g, acc_state}}
   end
 end)
     nil
   end
   def count_completed(todos) do
     count = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, todos, :ok}, fn _, {acc_g, acc_count, acc_todos, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_g, acc_count, acc_todos, acc_state}}
+    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
   else
-    {:halt, {acc_g, acc_count, acc_todos, acc_state}}
+    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
   end
 end)
     count
   end
   def count_pending(todos) do
     count = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, count, todos, :ok}, fn _, {acc_g, acc_count, acc_todos, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
+    {:cont, {acc_g, acc_count, acc_todos, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
+    {:halt, {acc_g, acc_count, acc_todos, acc_state}}
   end
 end)
     count
@@ -288,11 +288,11 @@ end)
   end
   def complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, pending, :ok}, fn _, {acc_g, acc_pending, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} -> nil end)
     case (g) do
       {:ok, g} ->
         nil
-      {:error, g} ->
+      {:error, reason} ->
         Log.trace("Failed to broadcast bulk complete: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 524, :class_name => "server.live.TodoLive", :method_name => "completeAllTodos"})
     end
     updated_todos = load_todos(socket.assigns.current_user.id)
@@ -328,17 +328,17 @@ end)
     todo = socket.assigns.editing_todo
     changeset = Todo.changeset(todo, params)
     case (g) do
-      {:ok, g} ->
+      {:ok, updated_socket} ->
         case (g) do
           {:ok, g} ->
             nil
-          {:error, g} ->
+          {:error, reason} ->
             Log.trace("Failed to broadcast todo update: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 605, :class_name => "server.live.TodoLive", :method_name => "saveEditedTodoTyped"})
         end
         presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.current_user, nil)
         updated_socket = SafeAssigns.set_editing_todo(presence_socket, nil)
         load_and_assign_todos(updated_socket)
-      {:error, g} ->
+      {:error, socket} ->
         Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to update todo")
     end
   end
@@ -352,17 +352,17 @@ else
 end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), else: nil), :completed => params.completed}
     changeset = Todo.changeset(todo, todo_params)
     case (g) do
-      {:ok, g} ->
+      {:ok, live_socket} ->
         case (g) do
           {:ok, g} ->
             nil
-          {:error, g} ->
+          {:error, reason} ->
             Log.trace("Failed to broadcast todo save: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 642, :class_name => "server.live.TodoLive", :method_name => "saveEditedTodo"})
         end
         updated_socket = update_todo_in_list(updated_todo, socket)
         live_socket = updated_socket
         Phoenix.Component.assign(live_socket, :editing_todo, nil)
-      {:error, g} ->
+      {:error, socket} ->
         Phoenix.LiveView.put_flash(socket, {:Error}, "Failed to save todo: " <> Kernel.to_string(reason))
     end
   end
@@ -409,7 +409,7 @@ end
     online_count = 0
     online_users_list = []
     editing_indicators = []
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, g, :ok}, fn _, {acc_online_count, acc_g, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, online_count, :ok}, fn _, {acc_g, acc_online_count, acc_state} -> nil end)
     if (online_count == 0), do: ""
     "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6\">\n\t\t\t<div class=\"flex items-center justify-between mb-2\">\n\t\t\t\t<h3 class=\"text-sm font-semibold text-gray-700 dark:text-gray-300\">\n\t\t\t\t\t👥 Online Users (" <> Kernel.to_string(online_count) <> ")\n\t\t\t\t</h3>\n\t\t\t</div>\n\t\t\t<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">\n\t\t\t\t" <> Enum.join(online_users_list, "") <> "\n\t\t\t</div>\n\t\t\t" <> (if (length(editing_indicators) > 0) do
   "<div class=\"mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1\">" <> Enum.join(editing_indicators, "") <> "</div>"
@@ -426,14 +426,14 @@ end) <> "\n\t\t</div>"
     if (length(assigns.todos) == 0), do: "\n\t\t\t\t<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-16 text-center\">\n\t\t\t\t\t<div class=\"text-6xl mb-4\">📋</div>\n\t\t\t\t\t<h3 class=\"text-xl font-semibold text-gray-800 dark:text-white mb-2\">\n\t\t\t\t\t\tNo todos yet!\n\t\t\t\t\t</h3>\n\t\t\t\t\t<p class=\"text-gray-600 dark:text-gray-400\">\n\t\t\t\t\t\tClick \"Add New Todo\" to get started.\n\t\t\t\t\t</p>\n\t\t\t\t</div>\n\t\t\t"
     filtered_todos = filter_and_sort_todos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query)
     todo_items = []
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {filtered_todos, g, :ok}, fn _, {acc_filtered_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, filtered_todos, :ok}, fn _, {acc_g, acc_filtered_todos, acc_state} ->
   if (acc_g < length(acc_filtered_todos)) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
     todo_items ++ [render_todo_item(todo, assigns.editing_todo)]
-    {:cont, {acc_filtered_todos, acc_g, acc_state}}
+    {:cont, {acc_g, acc_filtered_todos, acc_state}}
   else
-    {:halt, {acc_filtered_todos, acc_g, acc_state}}
+    {:halt, {acc_g, acc_filtered_todos, acc_state}}
   end
 end)
     Enum.join(todo_items, "\n")
@@ -472,14 +472,14 @@ end) <> "\n\t\t\t\t\t\t\t\t" <> render_tags(todo.tags) <> "\n\t\t\t\t\t\t\t</div
   def render_tags(tags) do
     if (tags == nil || length(tags) == 0), do: ""
     tag_elements = []
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, tags, :ok}, fn _, {acc_g, acc_tags, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tags, g, :ok}, fn _, {acc_tags, acc_g, acc_state} ->
   if (acc_g < length(acc_tags)) do
     tag = tags[g]
     acc_g = acc_g + 1
     tag_elements ++ ["<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>"]
-    {:cont, {acc_g, acc_tags, acc_state}}
+    {:cont, {acc_tags, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_tags, acc_state}}
+    {:halt, {acc_tags, acc_g, acc_state}}
   end
 end)
     Enum.join(tag_elements, "")
