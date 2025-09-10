@@ -1,9 +1,9 @@
 defmodule Mix.Tasks.Haxe.Gen.Migration do
   @moduledoc """
-  Mix task for generating Haxe-based Ecto migrations.
+  Mix task for generating Haxe-based Ecto migrations using the typed Migration DSL.
   
-  Generates a migration file based on a Haxe @:migration annotated class.
-  This integrates Reflaxe.Elixir migrations with the standard Mix workflow.
+  Generates a migration file that extends the Migration abstract class with
+  fluent API for table operations, column definitions, and constraints.
 
   ## Examples
 
@@ -17,7 +17,7 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
     * `--columns` - Comma-separated list of columns (e.g., "name:string,email:string,age:integer")
     * `--index` - Add an index on the specified field(s)
     * `--unique` - Make the index unique
-    * `--haxe-dir` - Directory for Haxe migration files (default: "src_haxe/migrations")
+    * `--haxe-dir` - Directory for Haxe migration files (default: "src_haxe/server/migrations")
     * `--elixir-dir` - Directory for generated Elixir migrations (default: "priv/repo/migrations")
 
   """
@@ -51,7 +51,7 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
   # Generate both Haxe source file and compiled Elixir migration
   defp generate_migration(migration_name, opts) do
     # Configuration
-    haxe_dir = Keyword.get(opts, :haxe_dir, "src_haxe/migrations")
+    haxe_dir = Keyword.get(opts, :haxe_dir, "src_haxe/server/migrations")
     elixir_dir = Keyword.get(opts, :elixir_dir, "priv/repo/migrations")
     table_name = Keyword.get(opts, :table, infer_table_name(migration_name))
     columns = parse_columns(Keyword.get(opts, :columns, ""))
@@ -87,53 +87,56 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
     :ok
   end
 
-  # Generate Haxe migration source file content
+  # Generate Haxe migration source file content using typed Migration DSL
   defp generate_haxe_migration_content(migration_name, table_name, columns, opts) do
     index_field = Keyword.get(opts, :index)
     unique = Keyword.get(opts, :unique, false)
     
-    column_definitions = columns
-    |> Enum.map(fn {name, type} -> "  public var #{name}: #{haxe_type_from_elixir(type)};" end)
+    # Generate column additions using fluent API
+    column_additions = columns
+    |> Enum.map(fn {name, type} -> 
+      nullable = if type in ["string", "integer", "boolean"], do: ", {nullable: false}", else: ""
+      "            .addColumn(\"#{name}\", #{haxe_column_type(type)}#{nullable})"
+    end)
     |> Enum.join("\n")
     
-    index_annotation = if index_field do
-      unique_option = if unique, do: ", unique: true", else: ""
-      "@:index(\"#{index_field}\"#{unique_option})\n"
+    # Generate index creation if specified
+    index_addition = if index_field do
+      if unique do
+        "\n            .addUniqueConstraint([\"#{index_field}\"], \"#{table_name}_#{index_field}_unique\")"
+      else
+        "\n            .addIndex([\"#{index_field}\"])"
+      end
     else
       ""
     end
 
     """
-    package migrations;
+    package server.migrations;
+
+    import ecto.Migration;
+    import ecto.Migration.*;
 
     /**
-     * Generated Haxe migration: #{migration_name}
+     * Migration to create/modify the #{table_name} table
      * 
-     * This migration will create/modify the #{table_name} table.
-     * Customize the fields and operations below, then run `mix compile` 
-     * to generate the corresponding Elixir migration.
+     * Uses the typed Migration DSL for compile-time validation
+     * and idiomatic Elixir code generation.
+     * 
+     * Customize the up() and down() methods as needed.
      */
-    @:migration(table: "#{table_name}")
-    #{index_annotation}class #{migration_name} {
-      
-    #{column_definitions}
-      
-      /**
-       * Custom migration operations
-       * Functions starting with 'migrate' will be included in the migration
-       */
-      public function migrateCustomOperation(): Void {
-        // Add any custom migration logic here
-        // This will be compiled to the migration's change/up function
-      }
-      
-      /**
-       * Rollback operations  
-       * Functions starting with 'rollback' will be included in the down function
-       */
-      public function rollbackCustomOperation(): Void {
-        // Add any custom rollback logic here
-      }
+    @:migration
+    class #{migration_name} extends Migration {
+        
+        override public function up(): Void {
+            createTable("#{table_name}")
+    #{column_additions}
+                .addTimestamps()#{index_addition};
+        }
+        
+        override public function down(): Void {
+            dropTable("#{table_name}");
+        }
     }
     """
   end
@@ -220,15 +223,19 @@ defmodule Mix.Tasks.Haxe.Gen.Migration do
     end)
   end
 
-  # Map Elixir migration types to Haxe types
-  defp haxe_type_from_elixir("string"), do: "String"
-  defp haxe_type_from_elixir("text"), do: "String"
-  defp haxe_type_from_elixir("integer"), do: "Int" 
-  defp haxe_type_from_elixir("boolean"), do: "Bool"
-  defp haxe_type_from_elixir("float"), do: "Float"
-  defp haxe_type_from_elixir("datetime"), do: "Date"
-  defp haxe_type_from_elixir("naive_datetime"), do: "Date"
-  defp haxe_type_from_elixir(_), do: "Dynamic"
+  # Map Elixir migration types to Haxe Migration DSL column types
+  defp haxe_column_type("string"), do: "String()"
+  defp haxe_column_type("text"), do: "Text"
+  defp haxe_column_type("integer"), do: "Integer" 
+  defp haxe_column_type("boolean"), do: "Boolean"
+  defp haxe_column_type("float"), do: "Float"
+  defp haxe_column_type("datetime"), do: "DateTime"
+  defp haxe_column_type("naive_datetime"), do: "DateTime"
+  defp haxe_column_type("json"), do: "Json"
+  defp haxe_column_type("jsonb"), do: "Json"
+  defp haxe_column_type("uuid"), do: "UUID"
+  defp haxe_column_type("binary"), do: "Binary"
+  defp haxe_column_type(_), do: "String()"
 
   # Generate timestamp for migration filename
   defp generate_timestamp do

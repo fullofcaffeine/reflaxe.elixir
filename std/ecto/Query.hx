@@ -40,6 +40,19 @@ abstract EctoQuery<T>(Dynamic) {
     }
     
     /**
+     * Preload associations
+     * @param associations The associations to preload
+     * @return The query with preload added
+     */
+    public function preload(associations: Dynamic): EctoQuery<T> {
+        var newQuery = untyped __elixir__(
+            '(require Ecto.Query; Ecto.Query.preload({0}, ^{1}))',
+            this, associations
+        );
+        return new EctoQuery<T>(newQuery);
+    }
+    
+    /**
      * Add an order_by clause to the query
      * @param field The field to order by
      * @param direction Either "asc" or "desc"

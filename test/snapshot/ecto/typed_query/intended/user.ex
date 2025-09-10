@@ -8,6 +8,7 @@ defmodule User do
     field(:role, :string)
     field(:age, :integer)
     field(:created_at, :string)
+    field(:updated_at, :string)
   end
   
   def changeset(user, attrs) do

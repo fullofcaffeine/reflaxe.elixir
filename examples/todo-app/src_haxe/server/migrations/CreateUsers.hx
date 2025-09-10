@@ -1,78 +1,44 @@
 package server.migrations;
 
+import ecto.Migration;
+import ecto.Migration.*;
+
 /**
- * Generated Haxe migration: CreateUsers
+ * Migration to create the users table with authentication fields
  * 
- * This migration creates the users table with authentication fields
- * and proper indexes for performance and security.
+ * Uses the new typed Migration DSL for compile-time validation
+ * and proper index/constraint generation.
  */
-@:migration({table: "users"})
-@:timestamps
-class CreateUsers {
-  
-  // User identification and profile fields
-  @:field({type: "string", null: false})
-  public var name: String;
-  
-  @:field({type: "string", null: false})
-  public var email: String;
-  
-  // Authentication fields
-  @:field({type: "string", null: false})
-  public var password_hash: String;
-  
-  // Account status and tracking
-  @:field({type: "naive_datetime"})
-  public var confirmed_at: Dynamic;
-  
-  @:field({type: "naive_datetime"})
-  public var last_login_at: Dynamic;
-  
-  @:field({type: "boolean", default: true})
-  public var active: Bool;
-  
-  /**
-   * Migration operations for creating indexes and constraints
-   */
-  public function migrateAddIndexes(): Void {
-    // Add unique index on email for authentication
-    // Note: In real migration DSL this would be:
-    // create unique_index(:users, [:email])
+@:migration
+class CreateUsers extends Migration {
     
-    // Add index on active status for efficient filtering
-    // create index(:users, [:active])
+    public function up(): Void {
+        createTable("users")
+            // User identification and profile fields
+            .addColumn("name", String(), {nullable: false})
+            .addColumn("email", String(), {nullable: false})
+            
+            // Authentication fields
+            .addColumn("password_hash", String(), {nullable: false})
+            .addColumn("confirmed_at", DateTime)
+            .addColumn("last_login_at", DateTime)
+            .addColumn("active", Boolean, {defaultValue: true})
+            
+            // Timestamps
+            .addTimestamps()
+            
+            // Indexes for performance
+            .addUniqueConstraint(["email"], "users_email_unique")
+            .addIndex(["active"])
+            .addIndex(["confirmed_at"])
+            .addIndex(["last_login_at"])
+            
+            // Data integrity constraints
+            .addCheckConstraint("email_format", "email ~ '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'")
+            .addCheckConstraint("name_length", "length(name) >= 2");
+    }
     
-    // Add index on confirmed_at for filtering confirmed users
-    // create index(:users, [:confirmed_at])
-    
-    // Add index on last_login_at for activity tracking
-    // create index(:users, [:last_login_at])
-  }
-  
-  /**
-   * Add constraints for data integrity
-   */
-  public function migrateAddConstraints(): Void {
-    // Add check constraint for email format
-    // Note: In real migration DSL this would be:
-    // create constraint(:users, :email_format, check: "email ~ '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'")
-    
-    // Add check constraint for name length
-    // create constraint(:users, :name_length, check: "length(name) >= 2")
-  }
-  
-  /**
-   * Rollback operations for removing indexes and constraints
-   */
-  public function rollbackRemoveIndexes(): Void {
-    // drop_if_exists index(:users, [:email])
-    // drop_if_exists index(:users, [:active])
-    // drop_if_exists index(:users, [:confirmed_at])
-    // drop_if_exists index(:users, [:last_login_at])
-  }
-  
-  public function rollbackRemoveConstraints(): Void {
-    // drop_if_exists constraint(:users, :email_format)
-    // drop_if_exists constraint(:users, :name_length)
-  }
+    public function down(): Void {
+        dropTable("users");
+    }
 }

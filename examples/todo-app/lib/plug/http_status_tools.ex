@@ -27,23 +27,23 @@ defmodule HttpStatusTools do
   def from_int(code) do
     case (code) do
       200 ->
-        {0}
+        {:Ok}
       201 ->
-        {1}
+        {:Created}
       204 ->
-        {2}
+        {:NoContent}
       400 ->
-        {3}
+        {:BadRequest}
       401 ->
-        {4}
+        {:Unauthorized}
       403 ->
-        {5}
+        {:Forbidden}
       404 ->
-        {6}
+        {:NotFound}
       405 ->
-        {7}
+        {:MethodNotAllowed}
       500 ->
-        {8}
+        {:InternalServerError}
       _ ->
         {:Custom, code}
     end

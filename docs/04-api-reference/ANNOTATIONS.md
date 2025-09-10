@@ -779,6 +779,106 @@ class EmailTools {
 }
 ```
 
+### @:repo - Ecto Repository Configuration
+
+Configures an Ecto repository with typed database adapter settings and automatically generates companion modules.
+
+**Purpose**: The `@:repo` annotation provides a type-safe way to configure Ecto repositories. It replaces the need for manual PostgrexTypes modules by automatically generating them based on the repository configuration.
+
+**Basic Usage**:
+```haxe
+import ecto.DatabaseAdapter;
+
+@:native("TodoApp.Repo")
+@:repo({
+    adapter: Postgres,
+    json: Jason,
+    extensions: [],
+    poolSize: 10
+})
+extern class Repo {
+    // Repository methods are provided by externs
+}
+```
+
+**Generated Elixir (Repo module)**:
+```elixir
+defmodule TodoApp.Repo do
+  use Ecto.Repo, otp_app: :todo_app, adapter: Ecto.Adapters.Postgres
+end
+```
+
+**Generated Elixir (Companion PostgrexTypes module)**:
+```elixir
+:"Elixir.Postgrex.Types".define(TodoApp.PostgrexTypes, [], [{:json, Jason}])
+```
+
+**Configuration Options**:
+```haxe
+typedef RepoConfig = {
+    var adapter: DatabaseAdapter;      // Required: Postgres, MySQL, SQLite3, etc.
+    @:optional var json: JsonLibrary;  // Optional: Jason, Poison, None (default: Jason)
+    @:optional var extensions: Array<PostgresExtension>; // Optional: PostgreSQL extensions
+    @:optional var poolSize: Int;      // Optional: Connection pool size
+}
+```
+
+**Supported Database Adapters**:
+- `Postgres` - PostgreSQL via Ecto.Adapters.Postgres
+- `MySQL` - MySQL via Ecto.Adapters.MyXQL
+- `SQLite3` - SQLite via Ecto.Adapters.SQLite3
+- `SQLServer` - SQL Server via Ecto.Adapters.Tds
+- `InMemory` - In-memory adapter for testing
+
+**JSON Libraries**:
+- `Jason` - Fast JSON library (recommended)
+- `Poison` - Alternative JSON library
+- `None` - No JSON support
+
+**PostgreSQL Extensions** (when using Postgres adapter):
+- `HStore` - Key-value store
+- `PostGIS` - Geographic objects
+- `UUID` - UUID data type
+- `LTREE` - Hierarchical tree-like data
+- `Citext` - Case-insensitive text
+
+**Key Features**:
+- **Type-safe configuration**: Compile-time validation of adapter settings
+- **Automatic PostgrexTypes generation**: No need for manual PostgrexTypes modules
+- **Framework-agnostic**: Works with any Elixir application, not just Phoenix
+- **Clean separation**: Repository configuration separate from implementation
+
+**Why @:repo is Important**:
+- **Eliminates boilerplate**: No more empty PostgrexTypes classes
+- **Type safety**: Configuration errors caught at compile time
+- **Convention over configuration**: Sensible defaults for common cases
+- **Automatic wiring**: The compiler handles module generation and registration
+
+**Migration from Manual Configuration**:
+
+Before (manual PostgrexTypes):
+```haxe
+// Repo.hx
+@:native("TodoApp.Repo")
+extern class Repo {}
+
+// PostgrexTypes.hx (code smell - empty class)
+@:native("TodoApp.PostgrexTypes")
+@:dbTypes({json: "Jason"})
+class PostgrexTypes {}
+```
+
+After (typed @:repo):
+```haxe
+// Repo.hx only - PostgrexTypes generated automatically
+@:native("TodoApp.Repo")
+@:repo({
+    adapter: Postgres,
+    json: Jason
+})
+extern class Repo {}
+```
+
 ### @:appName - Configurable Application Names
 
 Configures the application name for Phoenix applications, enabling reusable code across different projects.

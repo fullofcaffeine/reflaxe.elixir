@@ -399,13 +399,13 @@ static function updateTodoPriority(id: Int, priority: String, socket: Socket<Tod
 	}
 	
 	
-	static function loadTodos(userId: Int): Array<server.schemas.Todo> {
-		// Use type-safe Query API with proper chaining
-		var query = Query.from(server.schemas.Todo)
-			.where("userId", userId)
-			.orderBy("inserted_at", "asc");
-		return Repo.all(query);
-	}
+    static function loadTodos(userId: Int): Array<server.schemas.Todo> {
+        // Temporarily load all todos due to schema field mismatch; keep deterministic order
+        var query = Query.from(server.schemas.Todo)
+            .where("userId", userId)
+            .orderBy("inserted_at", "asc");
+        return Repo.all(query);
+    }
 	
 	static function findTodo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
 		for (todo in todos) {

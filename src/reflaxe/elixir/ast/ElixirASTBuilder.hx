@@ -1380,9 +1380,16 @@ class ElixirASTBuilder {
                             var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
                             EAtom(atomName);
                         } else {
-                            // Regular enums: generate tuples with their index for pattern matching
-                            // Even enum constructors without parameters need to be {index}
-                            ETuple([makeAST(EInteger(ef.index))]);
+                            // Regular enums: generate atom-based tuples
+                            // ColumnType.Integer → {:Integer}
+                            // 
+                            // CRITICAL FIX (2025-01-10): Previously generated {0}, {7} etc using ef.index
+                            // which caused invalid Elixir code in migrations. Now generates proper
+                            // symbolic atoms {:Integer}, {:Boolean}, {:String} that Elixir can understand.
+                            // This ensures enum constructors maintain their symbolic meaning in the
+                            // generated code rather than being reduced to meaningless numeric indices.
+                            var atomName = ef.name;
+                            ETuple([makeAST(EAtom(atomName))]);
                         }
                     case FStatic(classRef, cf):
                         // Static field access

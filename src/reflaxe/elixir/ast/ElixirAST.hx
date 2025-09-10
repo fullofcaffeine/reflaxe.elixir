@@ -654,6 +654,20 @@ typedef ElixirMetadata = {
     ?appName: String,             // Application name for OTP/Phoenix
     ?tableName: String,           // Table name for Ecto schemas
     ?jsonModule: String,          // JSON library module name for Postgrex.Types.define
+    ?poolSize: Int,               // Connection pool size for Repo
+    ?needsPostgrexTypes: Bool,    // Whether to generate companion PostgrexTypes module
+
+    // Schema metadata (for @:schema)
+    // haxeFqcn: Fully Qualified Class Name of the original Haxe type that produced this module.
+    // Why string: metadata travels outside macro-only phases; we resolve it later when needed.
+    // Example: "server.schemas.Todo". Transformers can use this to locate schema info deterministically.
+    ?haxeFqcn: String,
+    // schemaFields: pre-extracted field list from the Haxe class, used by transformers to emit Ecto fields.
+    // Each entry contains the original Haxe field name and a normalized type hint (String, Int, Bool, Date, etc.).
+    // Transformers apply name conversion (snake_case) and map types to Ecto atoms (e.g., Int -> :integer).
+    ?schemaFields: Array<{ name: String, type: String }>,
+    // Whether the original Haxe class had @:timestamps annotation
+    ?hasTimestamps: Bool,
     
     // Optimization Hints
     ?canInline: Bool,             // Can be inlined

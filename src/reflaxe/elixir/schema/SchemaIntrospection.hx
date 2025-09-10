@@ -407,7 +407,17 @@ class SchemaIntrospection {
     static function getHaxeSchemaType(schemaName: String): Null<Type> {
         try {
             #if macro
-            return Context.resolveType(TPath({name: schemaName, pack: []}), Context.currentPos());
+            // Try resolving bare name first
+            var t = Context.resolveType(TPath({name: schemaName, pack: []}), Context.currentPos());
+            if (t != null) return t;
+            // If a fully-qualified name was provided (contains dots), split into pack + name
+            if (schemaName.indexOf(".") != -1) {
+                var parts = schemaName.split(".");
+                var name = parts.pop();
+                var pack = parts;
+                return Context.resolveType(TPath({name: name, pack: pack}), Context.currentPos());
+            }
+            return null;
             #else
             return null;
             #end
@@ -417,10 +427,37 @@ class SchemaIntrospection {
     }
     
     static function parseFieldFromHaxe(field: haxe.macro.Type.ClassField): Null<FieldInfo> {
-        // Simplified field parsing from Haxe class field
+        // Parse basic type info from Haxe field type for better schema emission
+        #if macro
+        var typeStr = switch (field.type) {
+            case TInst(t, _):
+                var n = t.get().name;
+                switch (n) {
+                    case "String": "String";
+                    case "Int": "Int";
+                    case "Bool": "Bool";
+                    case "Date": "NaiveDateTime"; // map Haxe Date to datetime-like
+                    default: "Dynamic";
+                }
+            case TAbstract(t, _):
+                var n = t.get().name;
+                switch (n) {
+                    case "Int": "Int";
+                    case "Bool": "Bool";
+                    case "Single", "Float": "Float";
+                    default: "Dynamic";
+                }
+            case TType(t, _): t.get().name;
+            case _:
+                "Dynamic";
+        }
+        #else
+        var typeStr = "Dynamic";
+        #end
+
         return {
             name: field.name,
-            type: "Dynamic", // Would map from actual Haxe type
+            type: typeStr,
             nullable: true,
             defaultValue: null,
             indexed: false

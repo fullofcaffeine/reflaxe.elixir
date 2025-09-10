@@ -1050,15 +1050,25 @@ class ElixirCompiler extends GenericCompiler<
         var parts = enumType.pack.copy();
         parts.push(enumType.name);
         
-        // Capitalize each part for valid Elixir module names
-        // ecto.ConstraintType -> Ecto.ConstraintType
-        for (i in 0...parts.length) {
-            if (parts[i].length > 0) {
-                parts[i] = parts[i].charAt(0).toUpperCase() + parts[i].substr(1);
+        // Handle nested module paths with underscores
+        // ecto._migration.ConstraintType -> Ecto.Migration.ConstraintType
+        var processedParts = [];
+        for (part in parts) {
+            if (part.length > 0) {
+                // Remove leading underscores and capitalize
+                var cleanPart = part;
+                while (cleanPart.charAt(0) == "_") {
+                    cleanPart = cleanPart.substr(1);
+                }
+                if (cleanPart.length > 0) {
+                    // Capitalize the first letter
+                    cleanPart = cleanPart.charAt(0).toUpperCase() + cleanPart.substr(1);
+                    processedParts.push(cleanPart);
+                }
             }
         }
         
-        return parts.join(".");
+        return processedParts.join(".");
     }
     
     public function generateFunctionReference(functionName: String): String {
