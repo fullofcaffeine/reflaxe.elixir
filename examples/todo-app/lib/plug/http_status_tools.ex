@@ -49,15 +49,15 @@ defmodule HttpStatusTools do
         {:Custom, code}
     end
   end
-  def is_success(_status) do
+  def is_success(status) do
     code = to_int(status)
     code >= 200 && code < 300
   end
-  def is_client_error(_status) do
+  def is_client_error(status) do
     code = to_int(status)
     code >= 400 && code < 500
   end
-  def is_server_error(_status) do
+  def is_server_error(status) do
     code = to_int(status)
     code >= 500 && code < 600
   end

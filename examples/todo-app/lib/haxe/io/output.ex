@@ -1,12 +1,12 @@
 defmodule Output do
   @big_endian nil
-  defp set_big_endian(_struct, b) do
+  defp set_big_endian(struct, b) do
     b
   end
-  def write_byte(_struct, _c) do
+  def write_byte(struct, _c) do
     nil
   end
-  def write_bytes(_struct, _b, _pos, len) do
+  def write_bytes(struct, b, pos, len) do
     if (pos < 0 || len < 0 || pos + len > length(b)) do
       throw("Invalid parameters")
     end
@@ -26,7 +26,7 @@ end)
   def write(struct, b) do
     struct.write_bytes(b, 0, b.length)
   end
-  def write_input(_struct, _i, _bufsize) do
+  def write_input(struct, _i, bufsize) do
     if (bufsize == nil) do
       bufsize = 4096
     end
@@ -44,13 +44,13 @@ end)
   end
 end)
   end
-  def write_string(struct, _s) do
+  def write_string(struct, s) do
     struct.write((Bytes.of_string(s, nil)))
   end
-  def flush(_struct) do
+  def flush(struct) do
     nil
   end
-  def close(_struct) do
+  def close(struct) do
     nil
   end
 end

@@ -11,7 +11,7 @@ defmodule Todo do
     field(:user_id, :integer)
     timestamps()
   end
-  def changeset(_todo, _params) do
+  def changeset(todo, params) do
     this1 = nil
     this1 = Ecto.Changeset.change(todo, params)
     cs = this1
@@ -80,10 +80,10 @@ end
   def toggle_completed(todo) do
     changeset(todo, (%{:completed => not todo.completed}))
   end
-  def update_priority(todo, _priority) do
+  def update_priority(todo, priority) do
     changeset(todo, (%{:priority => priority}))
   end
-  def add_tag(todo, _tag) do
+  def add_tag(todo, tag) do
     tags = if (todo.tags != nil) do
   todo.tags
 else

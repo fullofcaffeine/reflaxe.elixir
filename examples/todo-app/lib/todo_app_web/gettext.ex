@@ -6,10 +6,10 @@ defmodule TodoAppWeb.Gettext do
   def dgettext(_domain, msgid, _bindings) do
     msgid
   end
-  def ngettext(msgid, msgid_plural, _count, _bindings) do
+  def ngettext(msgid, msgid_plural, count, _bindings) do
     if (count == 1), do: msgid, else: msgid_plural
   end
-  def dngettext(_domain, msgid, msgid_plural, _count, _bindings) do
+  def dngettext(_domain, msgid, msgid_plural, count, _bindings) do
     if (count == 1), do: msgid, else: msgid_plural
   end
   def get_locale() do
