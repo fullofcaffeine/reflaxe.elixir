@@ -30,7 +30,7 @@ defmodule TodoPubSub do
       "bulk_update" ->
         if (msg.action != nil) do
           case (bulk_action) do
-            {:some, g} ->
+            {:some, action} ->
               {:some, {:BulkUpdate, (g)}}
             :none ->
               :none
@@ -41,7 +41,7 @@ defmodule TodoPubSub do
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
           case (alert_level) do
-            {:some, g} ->
+            {:some, msg} ->
               {:some, {:SystemAlert, msg.message, (g)}}
             :none ->
               :none

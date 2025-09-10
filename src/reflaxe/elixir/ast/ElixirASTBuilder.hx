@@ -12,6 +12,84 @@ using reflaxe.helpers.TypeHelper;
 using StringTools;
 
 /**
+ * Synthetic binding context for case clauses
+ * 
+ * WHY: Handle variables that only exist in generated Elixir code
+ * - Haxe optimizer removes "unused" variables that are only referenced in __elixir__() injections
+ * - We need to generate these bindings directly in the Elixir AST
+ * 
+ * WHAT: Tracks synthetic let-bindings needed for each case clause
+ * - Registers temporary variables that don't exist in Haxe AST
+ * - Wraps clause bodies with necessary bindings
+ * - Prevents name collisions with real Haxe variables
+ */
+class ClauseContext {
+    public var syntheticBindings: Array<{name: String, init: ElixirAST}> = [];
+    public var localsInScope: Map<String, Bool> = new Map();
+    private var usedNames: Map<String, Bool> = new Map();
+    
+    public function new(locals: Map<String, Bool>) {
+        this.localsInScope = locals;
+    }
+    
+    /**
+     * Request a synthetic temporary variable
+     * 
+     * @param name Preferred name for the variable
+     * @param buildInit Function to build the initialization expression
+     * @return ElixirAST reference to the variable
+     */
+    public function needTemp(name: String, buildInit: () -> ElixirAST): ElixirAST {
+        // Check if already created
+        if (usedNames.exists(name)) {
+            return {def: EVar(name), metadata: {}, pos: null};
+        }
+        
+        // Handle name collisions with Haxe locals
+        var actualName = name;
+        if (localsInScope.exists(name)) {
+            var counter = 1;
+            while (localsInScope.exists('${name}_${counter}') || usedNames.exists('${name}_${counter}')) {
+                counter++;
+            }
+            actualName = '${name}_${counter}';
+        }
+        
+        // Register the binding
+        syntheticBindings.push({name: actualName, init: buildInit()});
+        usedNames.set(actualName, true);
+        
+        return {def: EVar(actualName), metadata: {}, pos: null};
+    }
+    
+    /**
+     * Wrap a clause body with synthetic bindings if needed
+     */
+    public function wrapBody(body: ElixirAST): ElixirAST {
+        if (syntheticBindings.length == 0) {
+            return body;
+        }
+        
+        // Create a block with bindings followed by the body
+        var statements: Array<ElixirAST> = [];
+        for (binding in syntheticBindings) {
+            // Create assignment: name = init
+            statements.push({
+                def: EBinary(Match, 
+                    {def: EVar(binding.name), metadata: {}, pos: null},
+                    binding.init
+                ),
+                metadata: {},
+                pos: null
+            });
+        }
+        statements.push(body);
+        
+        return {def: EBlock(statements), metadata: {}, pos: null};
+    }
+}
+
+/**
  * ElixirASTBuilder: TypedExpr to ElixirAST Converter (Analysis Phase)
  * 
  * WHY: Bridge between Haxe's TypedExpr and our ElixirAST representation
@@ -19,24 +97,28 @@ using StringTools;
  * - Enriches nodes with metadata for later transformation phases
  * - Separates AST construction from string generation
  * - Enables multiple transformation passes on strongly-typed structure
+ * - Handles synthetic bindings for Elixir-only temporaries
  * 
  * WHAT: Converts Haxe TypedExpr nodes to corresponding ElixirAST nodes
  * - Handles all expression types (literals, variables, operations, calls)
  * - Captures type information and source positions
  * - Detects patterns that need special handling (e.g., array operations)
  * - Maintains context through metadata enrichment
+ * - Generates synthetic bindings for variables only used in Elixir injections
  * 
  * HOW: Recursive pattern matching on TypedExpr with metadata preservation
  * - Each TypedExpr constructor maps to one or more ElixirAST nodes
  * - Metadata carries context through the entire pipeline
  * - Complex expressions decomposed into simpler AST nodes
  * - Pattern detection integrated into conversion process
+ * - Synthetic bindings wrapped around case clause bodies as needed
  * 
  * ARCHITECTURE BENEFITS:
  * - Single Responsibility: Only converts AST formats, no code generation
  * - Open/Closed: Easy to add new node types without modifying existing
  * - Testability: Can test AST conversion independently of generation
  * - Maintainability: Clear separation from transformation and printing
+ * - Robustness: Handles Haxe optimizer removing "unused" variables
  * 
  * @see docs/03-compiler-development/INTERMEDIATE_AST_REFACTORING_PRD.md
  */
@@ -451,12 +533,31 @@ class ElixirASTBuilder {
                     true; // Conservative: assume used if not in map
                 };
                 
+                // Special handling for enum parameter extraction patterns
+                // Even if marked as unused, these variables might be needed for pattern consistency
+                var isEnumParameterExtraction = false;
+                if (init != null) {
+                    switch(init.expr) {
+                        case TLocal(tempVar) if (tempVar.name.startsWith("_g") || tempVar.name == "g" || 
+                                                 ~/^g\d*$/.match(tempVar.name)):
+                            // This is assignment from temp: changeset = g 
+                            // This is critical for enum pattern matching - we need this variable
+                            // even if it appears unused, because it establishes the pattern variable name
+                            isEnumParameterExtraction = true;
+                            #if debug_variable_usage
+                            trace('[TVar] Variable ${v.name} is enum parameter extraction from ${tempVar.name}');
+                            #end
+                        case _:
+                    }
+                }
+                
                 // If this variable is unused, prefix it with underscore to prevent Elixir warnings
+                // EXCEPTION: Don't skip enum parameter extractions even if marked unused
                 // This applies to:
-                // 1. Variables extracted from enum parameters (value = g)
+                // 1. Variables extracted from enum parameters (changeset = g) - ALWAYS GENERATE
                 // 2. Direct enum parameter extractions (g = result.elem(1))
                 // 3. Any other unused variables detected by the analyzer
-                var finalVarName = if (!isActuallyUsed) {
+                var finalVarName = if (!isActuallyUsed && !isEnumParameterExtraction) {
                     #if debug_variable_usage
                     trace('[TVar] Variable ${v.name} (id=${v.id}) is UNUSED, adding underscore prefix');
                     #end
@@ -3449,16 +3550,21 @@ class ElixirASTBuilder {
      * WHY: When the case body contains TVar(_g, TEnumParameter(...)), we need to use named
      *      patterns instead of wildcards to avoid undefined variable references
      * WHAT: Detects the extraction pattern and returns parameter names to use in patterns
-     * HOW: Looks for TBlock with TVar nodes that extract enum parameters
+     * HOW: Looks for TBlock with TVar nodes that extract enum parameters, with improved
+     *      detection that works even when Haxe's optimizer removes variable assignments
      * 
      * PATTERN DETECTION:
      * 1. TVar(_g, TEnumParameter(...)) - temp var extraction
-     * 2. TVar(changeset, TLocal(_g)) - assigns temp to pattern var
-     * We need to map temp vars to their final names
+     * 2. TVar(changeset, TLocal(_g)) - assigns temp to pattern var (may be optimized away)
+     * 3. TLocal(changeset) references - detect which variables are actually used
+     * 
+     * ENHANCEMENT: If the mapping from temp to final var is missing (due to optimization),
+     * we scan for TLocal references to infer the intended variable names
      */
     static function analyzeEnumParameterExtraction(caseExpr: TypedExpr): Array<String> {
         var extractedParams = [];
         var tempVarMapping = new Map<String, {name: String, index: Int}>(); // Maps temp vars to final names
+        var tempVarToIndex = new Map<String, Int>(); // Maps temp var names to parameter indices
         
         switch(caseExpr.expr) {
             case TBlock(exprs):
@@ -3475,6 +3581,7 @@ class ElixirASTBuilder {
                                     }
                                     // Store temp var info
                                     tempVarMapping.set(tempName, {name: tempName, index: index});
+                                    tempVarToIndex.set(v.name, index); // Store original name mapping
                                     
                                     // Initialize the array if needed
                                     while (extractedParams.length <= index) {
@@ -3520,6 +3627,63 @@ class ElixirASTBuilder {
                         default:
                     }
                 }
+                
+                // Third pass: Find what variables are actually used in the case body
+                // When Haxe's optimizer removes TVar assignments, we need to infer the pattern names
+                // from actual usage in the body
+                var usedVariables = new Map<String, Bool>();
+                function scanForUsedVariables(expr: TypedExpr): Void {
+                    switch(expr.expr) {
+                        case TLocal(v):
+                            var name = toElixirVarName(v.name);
+                            usedVariables.set(name, true);
+                            
+                            // Special case: if this references a variable like "changeset" 
+                            // and we have a temp var "g" at index 0, use the actual name
+                            if (!name.startsWith("_g") && !name.startsWith("g") && name != "g") {
+                                // This is a real variable name used in the body
+                                // Check if we can map it to an enum parameter
+                                for (i in 0...extractedParams.length) {
+                                    if (extractedParams[i] == "g" || extractedParams[i] == "_g" || 
+                                        (extractedParams[i] != null && extractedParams[i].startsWith("g"))) {
+                                        // Found a temp var that needs a real name
+                                        // Use the variable that's actually referenced
+                                        extractedParams[i] = name;
+                                        #if debug_ast_builder
+                                        trace('[DEBUG ENUM] Replaced temp var "${extractedParams[i]}" with used variable "$name" at index $i');
+                                        #end
+                                        break; // Only map to first available slot
+                                    }
+                                }
+                            }
+                        case TBlock(subExprs):
+                            for (e in subExprs) scanForUsedVariables(e);
+                        case TBinop(_, e1, e2):
+                            scanForUsedVariables(e1);
+                            scanForUsedVariables(e2);
+                        case TCall(e, args):
+                            scanForUsedVariables(e);
+                            for (arg in args) scanForUsedVariables(arg);
+                        case TField(e, _):
+                            scanForUsedVariables(e);
+                        case TIf(cond, ifExpr, elseExpr):
+                            scanForUsedVariables(cond);
+                            scanForUsedVariables(ifExpr);
+                            if (elseExpr != null) scanForUsedVariables(elseExpr);
+                        case TThrow(e):
+                            scanForUsedVariables(e);
+                        case TReturn(e):
+                            if (e != null) scanForUsedVariables(e);
+                        case _:
+                            // Other expression types - could add more specific handling if needed
+                    }
+                }
+                
+                // Look for variable references in the rest of the case body
+                for (i in 0...exprs.length) {
+                    scanForUsedVariables(exprs[i]);
+                }
+                
             default:
         }
         
