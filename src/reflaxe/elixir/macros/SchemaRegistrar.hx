@@ -10,25 +10,61 @@ import haxe.macro.Type;
  * 
  * ## Overview
  * 
- * Following Codex's architectural guidance, this build macro implements a hybrid approach:
+ * This build macro was created following Codex's architectural guidance for a hybrid approach:
  * 1. Collects @:changeset functions during macro phase and stores in a registry
- * 2. Automatically adds @:keep to prevent dead code elimination
+ * 2. Automatically adds @:keep to prevent dead code elimination (DCE)
  * 3. Provides deterministic access to schema metadata for code generation
  * 
- * ## Why This Pattern
+ * ## Why This Pattern Was Considered
  * 
+ * **The Problem**: Functions marked with @:changeset were being eliminated by Haxe's DCE
+ * before reaching the Elixir code generator, because from Haxe's perspective these functions
+ * appear unused (they're only called from generated Elixir code).
+ * 
+ * **Codex's Recommendation**: A hybrid registry + @:keep approach would:
  * - **Deterministic generation**: Registry provides explicit list for codegen
  * - **Preserves semantics**: @:keep ensures functions survive DCE
  * - **Scales well**: Automatic @:keep means contributors don't need to remember
  * - **Minimal bloat**: Only targeted methods are kept, not whole modules
  * 
- * ## Architecture Benefits
+ * ## Why We Chose a Simpler Approach
  * 
- * This solves the fundamental problem where changeset functions were being
- * eliminated by DCE before reaching the code generator. The registry + @:keep
- * pattern ensures functions are both discoverable and preserved.
+ * After implementing this build macro, we discovered:
  * 
- * @see AnnotationTransforms.schemaTransformPass For schema emission
+ * 1. **Registry complexity not needed**: We don't require centralized metadata access
+ *    since the compiler can detect changesets during AST transformation
+ * 
+ * 2. **Storage API deprecated**: `Context.registerModuleReuseCall` is deprecated in Haxe 4.3+
+ *    making cross-module registry storage problematic
+ * 
+ * 3. **@:keep alone sufficient**: Simply adding @:keep metadata solves the DCE problem
+ *    without the overhead of a full registry system
+ * 
+ * 4. **Simpler is better**: Less code to maintain, fewer failure points, easier to debug
+ * 
+ * ## Current Status
+ * 
+ * **This implementation is preserved for reference** but not actively used. Instead:
+ * - Users add @:changeset to mark changeset functions
+ * - The compiler detects these during AST transformation
+ * - If no changeset exists, a basic one is generated
+ * - Users can manually add @:keep if needed (or we could automate this)
+ * 
+ * ## Lessons Learned
+ * 
+ * 1. **Start simple**: Try the simplest solution first (@:keep) before complex infrastructure
+ * 2. **Validate necessity**: Ensure complex patterns are actually needed before implementing
+ * 3. **Consider maintenance**: More complex solutions require more maintenance
+ * 4. **Check API stability**: Ensure required APIs aren't deprecated
+ * 
+ * ## Future Considerations
+ * 
+ * If we need registry functionality in the future (e.g., for cross-schema validation,
+ * dependency analysis, or compile-time relationship checking), this implementation
+ * provides a solid foundation. For now, the simpler @:keep approach meets our needs.
+ * 
+ * @see docs/03-compiler-development/preserving-functions-through-dce.md For detailed comparison
+ * @see AnnotationTransforms.schemaTransformPass For current schema emission
  * @see ecto.Schema For schema definitions
  */
 class SchemaRegistrar {
