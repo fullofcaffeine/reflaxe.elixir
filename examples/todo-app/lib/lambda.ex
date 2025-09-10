@@ -76,7 +76,7 @@ end)
   def fold(it, f, first) do
     acc = first
     v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, acc, :ok}, fn _, {acc_v, acc_acc, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc, v, :ok}, fn _, {acc_acc, acc_v, acc_state} -> nil end)
     acc
   end
   def count(_it, pred) do

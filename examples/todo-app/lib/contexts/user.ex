@@ -13,9 +13,7 @@ defmodule User do
   
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :email, :active])
-    |> validate_required([:name, :email])
-    |> validate_format(:email, ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
-    |> unique_constraint(:email)
+    |> cast(attrs, [:name, :email, :age, :active, :posts])
+    |> validate_required(["name", "email", "age", "active", "posts"])
   end
 end

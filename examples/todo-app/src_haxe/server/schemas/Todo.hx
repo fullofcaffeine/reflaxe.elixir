@@ -20,7 +20,7 @@ typedef TodoParams = {
 /**
  * Todo schema for managing tasks
  */
-@:schema
+@:schema("todos")
 @:timestamps
 class Todo {
 	@:field public var id: Int;

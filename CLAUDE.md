@@ -1854,6 +1854,30 @@ Phoenix.LiveView.put_flash(socket, :info, "Success!")  // Generated snake_case
 
 ## Development Principles
 
+### ⚠️ CRITICAL: Consult Codex Before New Features
+**FUNDAMENTAL RULE: Before implementing any new feature, consult with Codex and reflect on its architectural guidance.**
+
+**Why Codex Consultation Matters:**
+- **Architecture expertise**: Codex has deep knowledge about software architecture patterns
+- **Avoid pitfalls**: Learn from established patterns and avoid common mistakes
+- **Better design**: Get architectural guidance before writing code
+- **Reflective development**: Think through the approach with expert guidance
+
+**How to Consult Codex:**
+1. **Describe the feature** you're about to implement
+2. **Ask for architectural guidance** about the best approach
+3. **Reflect on the answer** and consider alternatives
+4. **Implement with confidence** using the architectural insights
+
+**Example Consultation:**
+```
+"I'm about to implement Schema emission enhancements for Ecto. 
+What architectural patterns should I consider for:
+- Preserving changeset functions through compilation
+- Handling field type mappings
+- Managing associations between schemas"
+```
+
 ### ⚠️ CRITICAL: Abstract Away Dynamic at System Boundaries
 **FUNDAMENTAL RULE: When interfacing with dynamic Elixir systems, ALWAYS provide a fully typed Haxe API. Users should NEVER interact with Dynamic directly.**
 
