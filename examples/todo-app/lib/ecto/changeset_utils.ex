@@ -7,9 +7,9 @@ defmodule ChangesetUtils do
         value
       {:error, reason} ->
         g = elem(result, 1)
-        _changeset = reason
-        errors = "test_error"
-        throw("Changeset validation failed: " <> errors)
+        changeset = reason
+        errors = Ecto.Changeset.traverse_errors(reason, fn {msg, opts} -> msg end)
+        throw("Changeset validation failed: " <> (if (errors == nil), do: "null", else: errors.to_string()))
     end
   end
   def unwrap_or(result, default_value) do
