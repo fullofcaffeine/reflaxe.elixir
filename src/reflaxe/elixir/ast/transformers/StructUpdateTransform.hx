@@ -145,6 +145,22 @@ class StructUpdateTransform {
         
         switch(body.def) {
             case EBlock(exprs):
+                // Check for pattern: field mutation followed by return struct
+                // Transform to single struct update
+                if (exprs.length == 2) {
+                    var mutation = detectAndExtractFieldMutation(exprs[0]);
+                    if (mutation != null && isReturnStruct(exprs[1])) {
+                        #if debug_struct_update_transform
+                        trace('[XRay StructUpdate] Transforming field mutation + return to struct update');
+                        #end
+                        return makeAST(EStructUpdate(
+                            makeAST(EVar("struct")),
+                            [mutation]
+                        ));
+                    }
+                }
+                
+                // Otherwise handle expressions individually
                 var transformedExprs = [];
                 var hasTransformations = false;
                 
@@ -210,6 +226,43 @@ class StructUpdateTransform {
                             ));
                         default:
                     }
+                }
+            default:
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Detect and extract field mutation from any expression
+     */
+    static function detectAndExtractFieldMutation(expr: ElixirAST): Null<{key: String, value: ElixirAST}> {
+        if (expr == null) return null;
+        
+        // Check for field concatenation pattern
+        switch(expr.def) {
+            case EBinary(Concat, left, right):
+                // Check if left side is struct.field access
+                switch(left.def) {
+                    case EField(obj, field):
+                        switch(obj.def) {
+                            case EVar("struct"):
+                                // Found struct.field ++ something
+                                return {
+                                    key: field,
+                                    value: makeAST(EBinary(Concat, left, right))
+                                };
+                            default:
+                        }
+                    default:
+                }
+            case EField(obj, field):
+                // Check for simple field access that might be a mutation
+                switch(obj.def) {
+                    case EVar("struct"):
+                        // This is just struct.field, not a mutation
+                        return null;
+                    default:
                 }
             default:
         }
