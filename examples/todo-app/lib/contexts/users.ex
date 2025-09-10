@@ -2,22 +2,26 @@ defmodule Users do
   def list_users(filter) do
     if (filter != nil) do
       query = Query.from(User)
-      if (Map.get(filter, :name) != nil) do
-        query = EctoQuery_Impl_.where(query, "name", "%" <> Kernel.to_string(filter.name) <> "%")
-      end
-      if (Map.get(filter, :email) != nil) do
-        query = EctoQuery_Impl_.where(query, "email", "%" <> Kernel.to_string(filter.email) <> "%")
-      end
-      if (Map.get(filter, :is_active) != nil) do
-        query = EctoQuery_Impl_.where(query, "active", filter.is_active)
-      end
+      query = if (Map.get(filter, :name) != nil) do
+  EctoQuery_Impl_.where(query, "name", "%" <> Kernel.to_string(filter.name) <> "%")
+else
+  query
+end
+      query = if (Map.get(filter, :email) != nil) do
+  EctoQuery_Impl_.where(query, "email", "%" <> Kernel.to_string(filter.email) <> "%")
+else
+  query
+end
+      query = if (Map.get(filter, :is_active) != nil) do
+  EctoQuery_Impl_.where(query, "active", filter.is_active)
+else
+  query
+end
       TodoApp.Repo.all(query)
     end
     TodoApp.Repo.all(User)
   end
   def change_user(user) do
-    empty_params = %{}
-    this1 = nil
     this1 = Ecto.Changeset.change(user, empty_params)
     this1
   end
@@ -34,12 +38,10 @@ defmodule Users do
   def get_user_safe(id) do
     TodoApp.Repo.get(User, id)
   end
-  def create_user(attrs) do
-    changeset = UserChangeset.changeset(nil, attrs)
+  def create_user(_attrs) do
     TodoApp.Repo.insert(changeset)
   end
-  def update_user(user, attrs) do
-    changeset = UserChangeset.changeset(user, attrs)
+  def update_user(_user, _attrs) do
     TodoApp.Repo.update(changeset)
   end
   def delete_user(user) do

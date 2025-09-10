@@ -5,8 +5,7 @@ defmodule Conn_Impl_ do
   def to_dynamic(this1) do
     this1
   end
-  def get_method(this1) do
-    method = Map.get(this1, String.to_atom("method"))
+  def get_method(_this1) do
     case (method) do
       "DELETE" ->
         {:DELETE}
@@ -37,22 +36,20 @@ defmodule Conn_Impl_ do
     result = %{}
     g = 0
     g1 = Map.keys(headers)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < length(acc_g1)) do
     field = g1[g]
     acc_g = acc_g + 1
     value = Map.get(headers, String.to_atom(field))
     Map.put(result, field, value)
-    {:cont, {acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     result
   end
-  def get_header(this1, name) do
-    headers = get_headers(this1)
-    key = name.to_lower_case()
+  def get_header(_this1, _name) do
     Map.get(headers, key)
   end
   def get_body_params(this1) do
@@ -70,8 +67,7 @@ end)
   def get_assigns(this1) do
     Map.get(this1, String.to_atom("assigns"))
   end
-  def get_assign(this1, key) do
-    assigns = get_assigns(this1)
+  def get_assign(_this1, key) do
     Map.get(assigns, String.to_atom(key))
   end
   def is_halted(this1) do
@@ -85,15 +81,15 @@ end)
     result = %{}
     g = 0
     g1 = Map.keys(headers)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
   if (acc_g < length(acc_g1)) do
     field = g1[g]
     acc_g = acc_g + 1
     value = Map.get(headers, String.to_atom(field))
     Map.put(result, field, value)
-    {:cont, {acc_g, acc_g1, acc_state}}
+    {:cont, {acc_g1, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_g, acc_state}}
   end
 end)
     result

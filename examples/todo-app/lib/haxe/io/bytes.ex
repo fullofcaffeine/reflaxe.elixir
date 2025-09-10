@@ -197,7 +197,7 @@ else
 end
     b = <<before_part::binary, v::little-signed-size(64), after_part::binary>>
   end
-  def read_string(struct, pos, len) do
+  def read_string(struct, _pos, _len) do
     :unicode.characters_to_list(struct, :utf8)
   end
   def to_hex(struct) do

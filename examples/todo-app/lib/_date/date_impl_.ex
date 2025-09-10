@@ -13,7 +13,6 @@ defmodule Date_Impl_ do
             end
   end
   def _new(year, month, day, hour, min, sec) do
-    this1 = nil
     elixir_month = month + 1
     this1 = (
 
@@ -125,12 +124,10 @@ defmodule Date_Impl_ do
     DateTime.compare(a, b) == ":lt"
   end
   defp gte(a, b) do
-    result = DateTime.compare(a, b)
-    result == ":gt" || result == ":eq"
+    (DateTime.compare(a, b)) == ":gt" || (DateTime.compare(a, b)) == ":eq"
   end
   defp lte(a, b) do
-    result = DateTime.compare(a, b)
-    result == ":lt" || result == ":eq"
+    (DateTime.compare(a, b)) == ":lt" || (DateTime.compare(a, b)) == ":eq"
   end
   defp eq(a, b) do
     DateTime.compare(a, b) == ":eq"
