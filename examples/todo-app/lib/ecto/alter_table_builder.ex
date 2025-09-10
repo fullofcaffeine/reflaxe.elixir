@@ -3,7 +3,6 @@ defmodule AlterTableBuilder do
   @operations nil
   def add_column(struct, name, type, options) do
     %{struct | operations: struct.operations ++ [{:AddColumn, name, type, options}]}
-    struct
   end
   def remove_column(struct, name) do
     struct.operations ++ [{:RemoveColumn, name}]

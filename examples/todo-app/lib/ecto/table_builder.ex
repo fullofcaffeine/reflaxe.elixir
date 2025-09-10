@@ -6,7 +6,6 @@ defmodule TableBuilder do
   @options nil
   def add_column(struct, name, type, options) do
     %{struct | columns: struct.columns ++ [%{:name => name, :type => type, :options => options}]}
-    struct
   end
   def add_id(struct, name, type) do
     if (type == {:AutoIncrement}) do
@@ -33,14 +32,11 @@ defmodule TableBuilder do
   end
   def add_index(struct, columns, options) do
     %{struct | indexes: struct.indexes ++ [%{:columns => columns, :options => options}]}
-    struct
   end
   def add_unique_constraint(struct, columns, name) do
     %{struct | constraints: struct.constraints ++ [%{:type => {:Unique}, :columns => columns, :name => name, :expression => nil}]}
-    struct
   end
   def add_check_constraint(struct, name, expression) do
     %{struct | constraints: struct.constraints ++ [%{:type => {:Check}, :name => name, :expression => expression, :columns => nil}]}
-    struct
   end
 end
