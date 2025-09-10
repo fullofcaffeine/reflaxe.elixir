@@ -6,11 +6,12 @@ defmodule Log do
     if (Map.get(infos, :custom_params) != nil) do
       g = 0
       g1 = infos.custom_params
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, str, g1, :ok}, fn _, {acc_g, acc_str, acc_g1, acc_state} -> nil end)
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, str, :ok}, fn _, {acc_g1, acc_g, acc_str, acc_state} -> nil end)
     end
     pstr <> ": " <> str
   end
-  def trace(_v, _infos) do
+  def trace(v, infos) do
+    str = format_output(v, infos)
     IO.puts(str)
   end
 end

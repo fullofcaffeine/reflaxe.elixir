@@ -18,7 +18,39 @@ defmodule TodoPubSub do
         "system:notifications"
     end
   end
-  def message_to_elixir(_message) do
+  def message_to_elixir(message) do
+    base_payload = case (elem(message, 0)) do
+  0 ->
+    g = elem(message, 1)
+    todo = g
+    %{:type => "todo_created", :todo => todo}
+  1 ->
+    g = elem(message, 1)
+    todo = g
+    %{:type => "todo_updated", :todo => todo}
+  2 ->
+    g = elem(message, 1)
+    id = g
+    %{:type => "todo_deleted", :todo_id => id}
+  3 ->
+    g = elem(message, 1)
+    action = g
+    %{:type => "bulk_update", :action => bulk_action_to_string(action)}
+  4 ->
+    g = elem(message, 1)
+    user_id = g
+    %{:type => "user_online", :user_id => user_id}
+  5 ->
+    g = elem(message, 1)
+    user_id = g
+    %{:type => "user_offline", :user_id => user_id}
+  6 ->
+    g = elem(message, 1)
+    g1 = elem(message, 2)
+    message = g
+    level = g1
+    %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
+end
     Phoenix.SafePubSub.add_timestamp(base_payload)
   end
   def parse_message_impl(msg) do
@@ -26,11 +58,15 @@ defmodule TodoPubSub do
       Log.trace(Phoenix.SafePubSub.create_malformed_message_error(msg), %{:file_name => "src_haxe/server/pubsub/TodoPubSub.hx", :line_number => 191, :class_name => "server.pubsub.TodoPubSub", :method_name => "parseMessageImpl"})
       :none
     end
+    g = msg.type
     case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
+          bulk_action = parse_bulk_action(msg.action)
           case (bulk_action) do
             {:some, v} ->
+              g = elem(bulk_action, 1)
+              action = v
               {:BulkUpdate, v}
             :none ->
               :none
@@ -40,8 +76,11 @@ defmodule TodoPubSub do
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
+          alert_level = parse_alert_level(msg.level)
           case (alert_level) do
             {:some, v} ->
+              g = elem(alert_level, 1)
+              level = v
               {:SystemAlert, msg.message, v}
             :none ->
               :none
@@ -71,10 +110,16 @@ defmodule TodoPubSub do
       1 ->
         "delete_completed"
       2 ->
+        g = elem(action, 1)
+        _priority = g
         "set_priority"
       3 ->
+        g = elem(action, 1)
+        _tag = g
         "add_tag"
       4 ->
+        g = elem(action, 1)
+        _tag = g
         "remove_tag"
     end
   end

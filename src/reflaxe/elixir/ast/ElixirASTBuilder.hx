@@ -443,7 +443,12 @@ class ElixirASTBuilder {
                     // Just use the same conversion logic as the declaration
                     toElixirVarName(varName, preserveUnderscore);
                 };
-                EVar(finalName);
+                
+                // Create EVar with sourceVarId metadata for later resolution
+                var varNode = makeAST(EVar(finalName));
+                if (varNode.metadata == null) varNode.metadata = {};
+                varNode.metadata.sourceVarId = v.id;
+                varNode.def;
                 
             case TVar(v, init):
                 #if debug_variable_usage
@@ -1804,10 +1809,15 @@ class ElixirASTBuilder {
                             var bodyExpr = buildFromTypedExpr(el[1], variableUsageMap);
 
                             // Try to inline immediately when the temp var is used exactly once
-                            var usageCount = countVarOccurrencesInAST(bodyExpr, varName);
-                            if (usageCount == 1) {
-                                var inlined = replaceVarInAST(bodyExpr, varName, initExpr);
-                                return inlined.def;
+                            // BUT: Skip inlining in case clause bodies (statement contexts)
+                            // where variable declarations should be preserved
+                            var isInCaseClause = currentClauseContext != null;
+                            if (!isInCaseClause) {
+                                var usageCount = countVarOccurrencesInAST(bodyExpr, varName);
+                                if (usageCount == 1) {
+                                    var inlined = replaceVarInAST(bodyExpr, varName, initExpr);
+                                    return inlined.def;
+                                }
                             }
 
                             // Fallback: keep block, will be handled by transformer/printer later
@@ -1940,6 +1950,11 @@ class ElixirASTBuilder {
                     
                     // Build the case body with the ClauseContext active
                     var body = buildFromTypedExpr(c.expr, variableUsageMap);
+                    
+                    // Attach the varIdToName mapping to the body's metadata
+                    // This allows later transformation passes to resolve variables correctly
+                    if (body.metadata == null) body.metadata = {};
+                    body.metadata.varIdToName = varMapping;
                     
                     // Restore previous context
                     currentClauseContext = savedClauseContext;

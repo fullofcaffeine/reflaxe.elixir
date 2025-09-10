@@ -5,7 +5,8 @@ defmodule Conn_Impl_ do
   def to_dynamic(this1) do
     this1
   end
-  def get_method(_this1) do
+  def get_method(this1) do
+    method = Map.get(this1, String.to_atom("method"))
     case (method) do
       "DELETE" ->
         {:DELETE}
@@ -49,7 +50,9 @@ defmodule Conn_Impl_ do
 end)
     result
   end
-  def get_header(_this1, _name) do
+  def get_header(this1, name) do
+    headers = get_headers(this1)
+    key = name.to_lower_case()
     Map.get(headers, key)
   end
   def get_body_params(this1) do
@@ -67,7 +70,8 @@ end)
   def get_assigns(this1) do
     Map.get(this1, String.to_atom("assigns"))
   end
-  def get_assign(_this1, key) do
+  def get_assign(this1, key) do
+    assigns = get_assigns(this1)
     Map.get(assigns, String.to_atom(key))
   end
   def is_halted(this1) do

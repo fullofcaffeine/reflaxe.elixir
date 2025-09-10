@@ -38,8 +38,9 @@ end)
   def keys(struct) do
     struct.iterator()
   end
-  def copy(_struct) do
+  def copy(struct) do
     copied = %{}
+    k = struct.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} -> nil end)
     copied
   end
@@ -47,6 +48,7 @@ end)
     s = StringBuf.new()
     s.add("[")
     it = struct.iterator()
+    i = it
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, :ok}, fn _, {acc_i, acc_state} -> nil end)
     s.add("]")
     IO.iodata_to_binary(s)
