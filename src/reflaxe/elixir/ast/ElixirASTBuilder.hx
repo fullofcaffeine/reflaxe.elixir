@@ -5927,6 +5927,134 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Convert iterator expression to Elixir AST
+     */
+    static function buildIteratorAST(iterator: TypedExpr, ?variableUsageMap: Map<Int, Bool>): ElixirAST {
+        return switch(iterator.expr) {
+            case TBinop(OpInterval, e1, e2):
+                // Range operator: 0...5 becomes 0..4 (exclusive range in Haxe)
+                var start = buildFromTypedExpr(e1, variableUsageMap);
+                var end = buildFromTypedExpr(e2, variableUsageMap);
+                // Haxe's ... is exclusive, so we need to subtract 1 from end
+                var adjustedEnd = makeAST(EBinary(Subtract, end, makeAST(EInteger(1))));
+                makeAST(ERange(start, adjustedEnd, false));
+            default:
+                // Other iterators (arrays, etc.)
+                buildFromTypedExpr(iterator, variableUsageMap);
+        };
+    }
+    
+    /**
+     * Extract elements from unrolled comprehension pattern
+     */
+    static function extractUnrolledElements(statements: Array<TypedExpr>, ?variableUsageMap: Map<Int, Bool>): Null<Array<ElixirAST>> {
+        if (statements.length < 3) return null;
+        
+        var elements = [];
+        var tempVarName: String = null;
+        
+        // Get temp var from first statement
+        var firstStmt = unwrapMetaParens(statements[0]);
+        switch(firstStmt.expr) {
+            case TVar(v, init) if (init != null):
+                switch(init.expr) {
+                    case TArrayDecl([]):
+                        tempVarName = v.name;
+                    default:
+                        return null;
+                }
+            default:
+                return null;
+        }
+        
+        // Extract elements from concatenations
+        for (i in 1...statements.length - 1) {
+            switch(statements[i].expr) {
+                case TBinop(OpAssign, {expr: TLocal(v)}, rhs) if (v.name == tempVarName):
+                    switch(rhs.expr) {
+                        case TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([value])}) if (v2.name == tempVarName):
+                            // Process value, checking for nested comprehensions
+                            switch(value.expr) {
+                                case TBlock(stmts):
+                                    var nested = tryBuildArrayComprehensionFromBlock(stmts, variableUsageMap);
+                                    if (nested != null) {
+                                        elements.push(nested);
+                                    } else {
+                                        elements.push(buildFromTypedExpr(value, variableUsageMap));
+                                    }
+                                default:
+                                    elements.push(buildFromTypedExpr(value, variableUsageMap));
+                            }
+                        default:
+                    }
+                default:
+            }
+        }
+        
+        return elements.length > 0 ? elements : null;
+    }
+    
+    /**
+     * Try to reconstruct a comprehension from extracted elements
+     */
+    static function tryReconstructFromElements(elements: Array<ElixirAST>): Null<ElixirAST> {
+        // Check if elements follow a simple numeric pattern
+        var isSimpleRange = true;
+        var maxVal = -1;
+        
+        for (i in 0...elements.length) {
+            switch(elements[i].def) {
+                case EInteger(val):
+                    if (val != i) {
+                        isSimpleRange = false;
+                        break;
+                    }
+                    maxVal = val;
+                default:
+                    isSimpleRange = false;
+                    break;
+            }
+        }
+        
+        if (isSimpleRange && maxVal >= 0) {
+            // Reconstruct as: for i <- 0..n, do: i
+            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(maxVal)), false));
+            var generator: EGenerator = {
+                pattern: PVar("i"),
+                expr: range
+            };
+            return makeAST(EFor([generator], [], makeAST(EVar("i")), null, false));
+        }
+        
+        // Check if all elements are nested comprehensions
+        var allComprehensions = true;
+        for (elem in elements) {
+            switch(elem.def) {
+                case EFor(_, _, _, _, _):
+                    // Is a comprehension
+                case EList(_):
+                    // Might be okay
+                default:
+                    allComprehensions = false;
+                    break;
+            }
+        }
+        
+        if (allComprehensions && elements.length > 0) {
+            // Use the first element as template and reconstruct outer comprehension
+            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(elements.length - 1)), false));
+            var generator: EGenerator = {
+                pattern: PVar("i"),
+                expr: range
+            };
+            // Use first element as body template
+            return makeAST(EFor([generator], [], elements[0], null, false));
+        }
+        
+        return null;
+    }
+    
+    /**
      * Helper: Check if expression contains push to specific variable
      */
     static function containsPushToVar(expr: TypedExpr, varName: String): Bool {
@@ -5982,152 +6110,83 @@ class ElixirASTBuilder {
     static function tryBuildArrayComprehensionFromBlock(statements: Array<TypedExpr>, ?variableUsageMap: Map<Int, Bool>): Null<ElixirAST> {
         if (statements.length < 2) return null;
         
-        // Look for pattern: var temp = []; ...ops...; temp
-        var tempVarName: String = null;
-        var tempVarId: Int = -1;
+        #if debug_array_comprehension
+        trace('[Array Comprehension] tryBuildArrayComprehensionFromBlock called with ${statements.length} statements');
+        #end
         
-        // First statement should be temp array initialization
-        // Unwrap any meta/parenthesis wrappers first
-        var firstStmt = unwrapMetaParens(statements[0]);
-        switch(firstStmt.expr) {
-            case TVar(v, init) if (init != null):
-                switch(init.expr) {
-                    case TArrayDecl([]):
-                        tempVarName = v.name;
-                        tempVarId = v.id;
-                    default:
-                        return null;
-                }
-            case TBinop(OpAssign, {expr: TLocal(v)}, init):
-                // Also handle: _g = []
-                switch(init.expr) {
-                    case TArrayDecl([]):
-                        tempVarName = v.name;
-                        tempVarId = v.id;
-                    default:
-                        return null;
-                }
-            default:
-                return null;
-        }
-        
-        // Last statement should return the temp variable (also unwrap)
-        var lastStmt = unwrapMetaParens(statements[statements.length - 1]);
-        var returnsTempVar = false;
-        switch(lastStmt.expr) {
-            case TLocal(v) if (v.name == tempVarName):
-                returnsTempVar = true;
-            default:
-        }
-        
-        if (!returnsTempVar) return null;
-        
-        // Check for Pattern 1: Loop with push
-        var hasLoop = false;
-        for (i in 1...statements.length - 1) {
-            switch(statements[i].expr) {
-                case TFor(_, _, _):
-                    hasLoop = true;
-                    break;
-                default:
-            }
-        }
-        
-        if (hasLoop) {
-            // Handle loop pattern
-            for (i in 1...statements.length - 1) {
-                switch(statements[i].expr) {
-                    case TFor(v, iterExpr, body):
-                        // Check if body is pushing to temp array
-                        var yieldExpr = extractYieldExpression(body, tempVarName, variableUsageMap);
-                        if (yieldExpr != null) {
-                            var pattern = PVar(toElixirVarName(v.name));
-                            var generator = buildFromTypedExpr(iterExpr, variableUsageMap);
-                            
-                            // CRITICAL: Check if the yield expression is itself a TBlock with a comprehension
-                            var bodyAst = switch(yieldExpr.expr) {
-                                case TBlock(stmts):
-                                    // Try to reconstruct nested comprehension
-                                    var nestedComp = tryBuildArrayComprehensionFromBlock(stmts, variableUsageMap);
-                                    if (nestedComp != null) {
-                                        nestedComp;  // Use the reconstructed comprehension
-                                    } else {
-                                        buildFromTypedExpr(yieldExpr, variableUsageMap);
-                                    }
+        // Use our new pattern detection functions
+        if (isComprehensionPattern(statements)) {
+            #if debug_array_comprehension
+            trace('[Array Comprehension] Detected loop-with-push comprehension pattern');
+            #end
+            
+            // Extract comprehension data
+            var data = extractComprehensionData(statements);
+            if (data != null) {
+                #if debug_array_comprehension
+                trace('[Array Comprehension] Extracted data: tempVar=${data.tempVar}, loopVar=${data.loopVar}, isNested=${data.isNested}');
+                #end
+                
+                // Convert iterator to Elixir range
+                var iteratorAst = buildIteratorAST(data.iterator, variableUsageMap);
+                
+                // Build generator
+                var pattern = PVar(toElixirVarName(data.loopVar));
+                var generator: EGenerator = {
+                    pattern: pattern,
+                    expr: iteratorAst
+                };
+                
+                // Process body (handle nested comprehensions)
+                var bodyAst = if (data.isNested) {
+                    switch(data.body.expr) {
+                        case TArrayDecl([elem]):
+                            // Direct nested for in array
+                            switch(elem.expr) {
+                                case TFor(_):
+                                    buildFromTypedExpr(elem, variableUsageMap);
                                 default:
-                                    buildFromTypedExpr(yieldExpr, variableUsageMap);
-                            };
-                            
-                            return makeAST(EFor([{pattern: pattern, expr: generator}], [], bodyAst, null, false));
-                        }
-                    default:
-                }
-            }
-        } else {
-            // Check for Pattern 2: Series of assignments (unrolled comprehension)
-            var values: Array<TypedExpr> = [];
-            var isUnrolledPattern = true;
-            
-            for (i in 1...statements.length - 1) {
-                switch(statements[i].expr) {
-                    case TBinop(OpAssign, {expr: TLocal(v)}, rhs) if (v.name == tempVarName):
-                        // Check if it's _g = _g ++ [value]
-                        switch(rhs.expr) {
-                            case TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([value])}) if (v2.name == tempVarName):
-                                values.push(value);
-                            default:
-                                isUnrolledPattern = false;
-                                break;
-                        }
-                    default:
-                        isUnrolledPattern = false;
-                        break;
-                }
-            }
-            
-            if (isUnrolledPattern && values.length > 0) {
-                // Build elements, checking for nested comprehensions
-                var elements = [];
-                for (value in values) {
-                    switch(value.expr) {
+                                    buildFromTypedExpr(data.body, variableUsageMap);
+                            }
                         case TBlock(stmts):
-                            #if debug_ast_builder
-                            trace('[DEBUG] Found TBlock in unrolled comprehension with ${stmts.length} statements');
-                            for (i in 0...stmts.length) {
-                                trace('[DEBUG]   stmt[$i]: ${stmts[i].expr}');
-                            }
-                            #end
-                            
-                            // Check if this block is a nested comprehension
-                            var nestedComp = tryBuildArrayComprehensionFromBlock(stmts, variableUsageMap);
-                            if (nestedComp != null) {
-                                #if debug_ast_builder
-                                trace('[DEBUG] Detected as nested comprehension');
-                                #end
-                                elements.push(nestedComp);
-                            } else if (looksLikeListBuildingBlock(stmts)) {
-                                #if debug_ast_builder
-                                trace('[DEBUG] Detected as list-building block');
-                                #end
-                                // It's a list-building block (unrolled inner comprehension)
-                                var listElements = extractListElements(stmts);
-                                if (listElements != null && listElements.length > 0) {
-                                    var innerElements = [for (e in listElements) buildFromTypedExpr(e, variableUsageMap)];
-                                    elements.push(makeAST(EList(innerElements)));
-                                } else {
-                                    elements.push(buildFromTypedExpr(value, variableUsageMap));
-                                }
-                            } else {
-                                #if debug_ast_builder
-                                trace('[DEBUG] Not recognized, building as-is');
-                                #end
-                                elements.push(buildFromTypedExpr(value, variableUsageMap));
-                            }
+                            // Nested block comprehension - recurse
+                            var nested = tryBuildArrayComprehensionFromBlock(stmts, variableUsageMap);
+                            if (nested != null) nested else buildFromTypedExpr(data.body, variableUsageMap);
                         default:
-                            elements.push(buildFromTypedExpr(value, variableUsageMap));
+                            buildFromTypedExpr(data.body, variableUsageMap);
                     }
+                } else {
+                    buildFromTypedExpr(data.body, variableUsageMap);
+                };
+                
+                #if debug_array_comprehension
+                trace('[Array Comprehension] Generated EFor comprehension');
+                #end
+                
+                return makeAST(EFor([generator], [], bodyAst, null, false));
+            }
+        } else if (isUnrolledComprehension(statements)) {
+            #if debug_array_comprehension
+            trace('[Array Comprehension] Detected unrolled comprehension pattern');
+            #end
+            
+            // Extract elements from unrolled pattern
+            var elements = extractUnrolledElements(statements, variableUsageMap);
+            if (elements != null && elements.length > 0) {
+                // Try to reconstruct as comprehension if elements follow a pattern
+                var comprehension = tryReconstructFromElements(elements);
+                if (comprehension != null) {
+                    #if debug_array_comprehension
+                    trace('[Array Comprehension] Reconstructed comprehension from unrolled elements');
+                    #end
+                    return comprehension;
+                } else {
+                    // Return as list if no clear pattern
+                    #if debug_array_comprehension
+                    trace('[Array Comprehension] Returning as list - no clear pattern');
+                    #end
+                    return makeAST(EList(elements));
                 }
-                return makeAST(EList(elements));
             }
         }
         
