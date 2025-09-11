@@ -4822,7 +4822,7 @@ class ElixirASTTransformer {
         
         // Check first statement: should be g = []
         var iterVar = switch(stmts[0].def) {
-            case EAssign(EVar(varName), EList([])):
+            case EBinary(Match, {def: EVar(varName)}, {def: EList([])}):
                 varName;
             case _:
                 return null;
@@ -4836,10 +4836,10 @@ class ElixirASTTransformer {
         var elements = [];
         for (i in 1...stmts.length - 1) {
             switch(stmts[i].def) {
-                case EAssign(EVar(v), EBinOp("++", EVar(v2), EList([elem]))) if (v == iterVar && v2 == iterVar):
+                case EBinary(Match, {def: EVar(v)}, {def: EBinary(Concat, {def: EVar(v2)}, {def: EList([elem])})}) if (v == iterVar && v2 == iterVar):
                     // g = g ++ [element]
                     elements.push(elem);
-                case EBinOp("++", EVar(v), EList([elem])) if (v == iterVar):
+                case EBinary(Concat, {def: EVar(v)}, {def: EList([elem])}) if (v == iterVar):
                     // Bare concatenation: g ++ [element] (shouldn't happen after fix, but handle it)
                     elements.push(elem);
                 case _:
@@ -4871,9 +4871,9 @@ class ElixirASTTransformer {
         
         for (i in 0...elements.length) {
             switch(elements[i].def) {
-                case ELiteral(val):
+                case EInteger(val):
                     // Check if it's the expected integer
-                    if (val != Std.string(i)) {
+                    if (val != i) {
                         isSimpleRange = false;
                     }
                 case EList(_):
@@ -4892,16 +4892,22 @@ class ElixirASTTransformer {
         // Generate appropriate comprehension
         if (isSimpleRange) {
             // Simple range comprehension: for i <- 0..n, do: i
-            var range = makeAST(ERange(makeAST(ELiteral("0")), makeAST(ELiteral(Std.string(rangeEnd)))));
-            var iterVarAST = makeAST(EVar("i"));
-            var body = iterVarAST; // Simple case: just return the iterator
+            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(rangeEnd)), false));
+            var generator: EGenerator = {
+                pattern: PVar("i"),
+                expr: range
+            };
+            var body = makeAST(EVar("i")); // Simple case: just return the iterator
             
-            return makeAST(EFor(iterVarAST, range, body, null, null));
+            return makeAST(EFor([generator], [], body, null, null));
         } else if (hasNestedComprehensions) {
             // Nested comprehension: for i <- 0..n, do: for j <- 0..m, do: expr
             // For now, reconstruct the outer comprehension
-            var range = makeAST(ERange(makeAST(ELiteral("0")), makeAST(ELiteral(Std.string(rangeEnd)))));
-            var iterVarAST = makeAST(EVar("i"));
+            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(rangeEnd)), false));
+            var generator: EGenerator = {
+                pattern: PVar("i"),
+                expr: range
+            };
             
             // Use the first element as template for the body (should be consistent)
             var body = elements[0];
@@ -4917,7 +4923,7 @@ class ElixirASTTransformer {
                 case _:
             }
             
-            return makeAST(EFor(iterVarAST, range, body, null, null));
+            return makeAST(EFor([generator], [], body, null, null));
         } else {
             // Complex pattern - keep as-is for now
             #if debug_array_comprehension
@@ -4937,8 +4943,8 @@ class ElixirASTTransformer {
         var isSimpleRange = true;
         for (i in 0...elements.length) {
             switch(elements[i].def) {
-                case ELiteral(val):
-                    if (val != Std.string(i)) {
+                case EInteger(val):
+                    if (val != i) {
                         isSimpleRange = false;
                         break;
                     }
@@ -4951,11 +4957,14 @@ class ElixirASTTransformer {
         if (isSimpleRange) {
             // Reconstruct as: for j <- 0..n, do: j
             var rangeEnd = elements.length - 1;
-            var range = makeAST(ERange(makeAST(ELiteral("0")), makeAST(ELiteral(Std.string(rangeEnd)))));
-            var iterVarAST = makeAST(EVar("j"));
-            var body = iterVarAST;
+            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(rangeEnd)), false));
+            var generator: EGenerator = {
+                pattern: PVar("j"),
+                expr: range
+            };
+            var body = makeAST(EVar("j"));
             
-            return makeAST(EFor(iterVarAST, range, body, null, null));
+            return makeAST(EFor([generator], [], body, null, null));
         }
         
         return null;
