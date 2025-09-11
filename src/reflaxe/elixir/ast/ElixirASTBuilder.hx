@@ -4509,8 +4509,8 @@ class ElixirASTBuilder {
                 if (index >= 0 && index < constructorArray.length && constructorArray[index] != null) {
                     var constructor = constructorArray[index];
                     
-                    // Regular enums use lowercase constructor names
-                    var atomName = constructor.name.toLowerCase();
+                    // Use ElixirAtom for automatic snake_case conversion
+                    var atomName: reflaxe.elixir.ast.naming.ElixirAtom = constructor.name;
                     
                     // Extract parameter count from the constructor's type
                     var paramCount = 0;
@@ -4608,7 +4608,8 @@ class ElixirASTBuilder {
                 
             // For actual enum constructor patterns (shouldn't happen in regular switch)
             case TField(_, FEnum(_, ef)):
-                var atomName = ef.name.toLowerCase();
+                // Use ElixirAtom which automatically converts from EnumField to snake_case
+                var atomName: reflaxe.elixir.ast.naming.ElixirAtom = ef;
                 
                 // Extract parameter count
                 var paramCount = 0;

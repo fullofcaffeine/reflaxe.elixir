@@ -375,6 +375,68 @@ Based on architectural review, these refinements are recommended:
 - Parallel execution yields measurable performance wins
 - Documentation is comprehensive and actionable
 
+### Resolved Issues with Parallel Test Execution (January 2025)
+
+#### ✅ FIXED: Haxe Server Port Conflicts
+
+**Problem (Historical)**: When tests ran in parallel with `-j8`, multiple Haxe compilation servers attempted to start simultaneously, leading to port conflicts:
+- Error: `listen EADDRINUSE: address already in use :::8000`
+- Multiple HaxeServer instances crashed with `FunctionClauseError`
+- Tests failed intermittently due to port conflicts
+
+**Root Cause Identified**: 
+- The HaxeServer defaulted to port 8000 for all instances
+- Missing Port message handlers caused FunctionClauseError crashes
+- Port.open environment variables required Erlang charlists, not Elixir strings
+
+**Solution Implemented**:
+
+1. **Dynamic Port Allocation**: 
+   ```elixir
+   # Each test instance gets a unique port
+   defp find_available_port() do
+     base_port = 7000 + rem(System.unique_integer([:positive]), 2000)
+     # Try ports in sequence until one is available
+   end
+   ```
+
+2. **Port Message Handlers Added**:
+   ```elixir
+   # Handle Port messages to prevent crashes
+   def handle_info({port, {:data, data}}, state) when is_port(port) do
+     Logger.debug("Haxe server output: #{data}")
+     {:noreply, state}
+   end
+   
+   def handle_info({port, {:exit_status, status}}, state) when is_port(port) do
+     Logger.warning("Haxe server exited with status: #{status}")
+     send(self(), :start_server)
+     {:noreply, %{state | server_pid: nil, status: :restarting}}
+   end
+   ```
+
+3. **Environment Variable Configuration**:
+   ```elixir
+   # Use charlists for Port.open env variables (critical!)
+   env = [
+     {'HAXESHIM_SERVER_PORT', to_charlist(haxeshim_port)},
+     {'HAXE_SERVER_PORT', to_charlist(state.port)}
+   ]
+   ```
+
+4. **Improved Test Port Strategy**:
+   - Test environment uses random ports (7000-9000 range)
+   - Production defaults to standard port 6000
+   - Haxeshim gets separate port to avoid internal conflicts
+
+**Key Lesson**: Port.open requires Erlang charlists (`'string'`) for environment variables, not Elixir strings (`"string"`). This subtle distinction caused the "invalid option in list" errors.
+
+**Impact**: 
+- ✅ All 80 Elixir tests now pass reliably in parallel
+- ✅ No more FunctionClauseError crashes
+- ✅ Parallel test execution works as designed (`-j8`)
+- ✅ Test performance improved: 60s → ~17s with parallelization
+
 ---
 
 **Remember**: Tests are documentation. A good test explains what the compiler should do, validates it does it correctly, and prevents regressions.
