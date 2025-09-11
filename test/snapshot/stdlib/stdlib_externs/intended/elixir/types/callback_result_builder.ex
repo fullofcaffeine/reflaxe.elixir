@@ -1,17 +1,17 @@
 defmodule CallbackResultBuilder do
   def init_ok(state) do
-    {:Ok, state}
+    {:ok, state}
   end
   def reply(reply, state) do
-    {:Reply, reply, state}
+    {:reply, reply, state}
   end
   def noreply(state) do
-    {:NoReply, state}
+    {:no_reply, state}
   end
   def stop_normal(state) do
-    {:Stop, :normal, state}
+    {:stop, :normal, state}
   end
   def stop_shutdown(state) do
-    {:Stop, :shutdown, state}
+    {:stop, :shutdown, state}
   end
 end

@@ -8,8 +8,6 @@
   "main.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
-  "haxe/iterators/map_key_value_iterator.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/i_map.ex",
   "haxe/ds/tree_node.ex",

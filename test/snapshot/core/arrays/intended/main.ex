@@ -68,35 +68,7 @@ end)
   def array_comprehensions() do
     squares = [1, 4, 9, 16, 25]
     Log.trace("Squares: " <> Std.string(squares), %{:file_name => "Main.hx", :line_number => 88, :class_name => "Main", :method_name => "arrayComprehensions"})
-    g = []
-    even_squares = if rem(1, 2) == 0 do
-  g = g ++ [1]
-end
-if rem(2, 2) == 0 do
-  g = g ++ [4]
-end
-if rem(3, 2) == 0 do
-  g = g ++ [9]
-end
-if rem(4, 2) == 0 do
-  g = g ++ [16]
-end
-if rem(5, 2) == 0 do
-  g = g ++ [25]
-end
-if rem(6, 2) == 0 do
-  g = g ++ [36]
-end
-if rem(7, 2) == 0 do
-  g = g ++ [49]
-end
-if rem(8, 2) == 0 do
-  g = g ++ [64]
-end
-if rem(9, 2) == 0 do
-  g = g ++ [81]
-end
-g
+    even_squares = for i <- 0..8, (::erlang.rem(i, 2) == 0), do: i
     Log.trace("Even squares: " <> Std.string(even_squares), %{:file_name => "Main.hx", :line_number => 92, :class_name => "Main", :method_name => "arrayComprehensions"})
     g = []
     pairs = g = g ++ [%{:x => 1, :y => 2}]

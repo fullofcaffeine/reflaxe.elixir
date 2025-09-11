@@ -1,16 +1,13 @@
 defmodule MessageQueueData_Impl_ do
   def on_heap() do
-    this1 = nil
     this1 = "on_heap"
     this1
   end
   def off_heap() do
-    this1 = nil
     this1 = "off_heap"
     this1
   end
   defp from_string(s) do
-    this1 = nil
     this1 = s
     this1
   end
@@ -18,7 +15,6 @@ defmodule MessageQueueData_Impl_ do
     this1
   end
   defp _new(location) do
-    this1 = nil
     this1 = location
     this1
   end

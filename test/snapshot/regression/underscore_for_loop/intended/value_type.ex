@@ -1,26 +1,26 @@
 defmodule ValueType do
   def t_null() do
-    {:TNull}
+    {0}
   end
   def t_int() do
-    {:TInt}
+    {1}
   end
   def t_float() do
-    {:TFloat}
+    {2}
   end
   def t_bool() do
-    {:TBool}
+    {3}
   end
   def t_object() do
-    {:TObject}
+    {4}
   end
   def t_class(arg0) do
-    {:TClass, arg0}
+    {5, arg0}
   end
   def t_enum(arg0) do
-    {:TEnum, arg0}
+    {6, arg0}
   end
   def t_unknown() do
-    {:TUnknown}
+    {7}
   end
 end
