@@ -1,0 +1,11 @@
+# Compilation configuration for array comprehension test
+-cp ../../../std
+-cp ../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+-D reflaxe_runtime
+-D debug_array_comprehension
+-D debug_ast_builder
+Main
