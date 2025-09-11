@@ -1,26 +1,26 @@
 defmodule ResultTools do
   def map(_result, transform) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        transform.(value)
-      {:error, error} ->
+        value = g
+        transform.(g)
+      {:error, g} ->
         g = elem(_result, 1)
-        error = error
-        error
+        error = g
+        g
     end
   end
   def flat_map(_result, transform) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        transform.(value)
-      {:error, error} ->
+        value = g
+        transform.(g)
+      {:error, g} ->
         g = elem(_result, 1)
-        error = error
-        error
+        error = g
+        g
     end
   end
   def bind(result, transform) do
@@ -28,105 +28,105 @@ defmodule ResultTools do
   end
   def fold(_result, on_success, on_error) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        on_success.(value)
-      {:error, error} ->
+        value = g
+        on_success.(g)
+      {:error, g} ->
         g = elem(_result, 1)
-        error = error
-        on_error.(error)
+        error = g
+        on_error.(g)
     end
   end
   def is_ok(_result) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         _g = elem(_result, 1)
         true
-      {:error, error} ->
+      {:error, g} ->
         _g = elem(_result, 1)
         false
     end
   end
   def is_error(_result) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         _g = elem(_result, 1)
         false
-      {:error, error} ->
+      {:error, g} ->
         _g = elem(_result, 1)
         true
     end
   end
   def unwrap(_result) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        value
-      {:error, error} ->
+        value = g
+        g
+      {:error, g} ->
         g = elem(_result, 1)
-        error = error
-        throw("Attempted to unwrap Error result: " <> Std.string(error))
+        error = g
+        throw("Attempted to unwrap Error result: " <> Std.string(g))
     end
   end
   def unwrap_or(_result, default_value) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        value
-      {:error, error} ->
+        value = g
+        g
+      {:error, g} ->
         _g = elem(_result, 1)
         default_value
     end
   end
   def unwrap_or_else(_result, error_handler) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        value
-      {:error, error} ->
+        value = g
+        g
+      {:error, g} ->
         g = elem(_result, 1)
-        error = error
-        error_handler.(error)
+        error = g
+        error_handler.(g)
     end
   end
   def filter(_result, predicate, error_value) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        if (predicate.(value)), do: value, else: error_value
-      {:error, error} ->
+        value = g
+        if (predicate.(g)), do: g, else: error_value
+      {:error, g} ->
         g = elem(_result, 1)
-        error = error
-        error
+        error = g
+        g
     end
   end
   def map_error(_result, transform) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        value
-      {:error, error} ->
+        value = g
+        g
+      {:error, g} ->
         g = elem(_result, 1)
-        error = error
-        transform.(error)
+        error = g
+        transform.(g)
     end
   end
   def bimap(_result, on_success, on_error) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        on_success.(value)
-      {:error, error} ->
+        value = g
+        on_success.(g)
+      {:error, g} ->
         g = elem(_result, 1)
-        error = error
-        on_error.(error)
+        error = g
+        on_error.(g)
     end
   end
   def ok(value) do
@@ -155,11 +155,11 @@ end)
   end
   def to_option(_result) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
-        value
-      {:error, error} ->
+        value = g
+        g
+      {:error, g} ->
         _g = elem(_result, 1)
         :none
     end

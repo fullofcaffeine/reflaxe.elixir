@@ -1436,7 +1436,38 @@ class ElixirASTBuilder {
                             // Convert to snake_case for Elixir method names
                             fieldName = toSnakeCase(fieldName);
                             
-                            var objAst = buildFromTypedExpr(obj, variableUsageMap);
+                            // Check if obj is a local variable that might have been renamed in a switch case
+                            var objAst = switch(obj.expr) {
+                                case TLocal(v):
+                                    // Check if this variable was extracted from a pattern match
+                                    // In switch cases like `case Ok(value)`, we might have:
+                                    // 1. A temp variable (like 'value') that extracts from the enum
+                                    // 2. A renamed variable (like 'email') that gets assigned
+                                    // We need to use the renamed variable, not the temp
+                                    
+                                    // First, check if there's a rename mapping for this variable
+                                    var varName = v.name;
+                                    
+                                    // If this is a variable that was part of a pattern extraction,
+                                    // and we have a renamed version, use the renamed version
+                                    // This ensures abstract type methods use the correct variable
+                                    // e.g., Email_Impl_.get_domain(g) not Email_Impl_.get_domain(value)
+                                    
+                                    // Check ClauseContext for mapped names (from pattern matching)
+                                    if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
+                                        var mappedName = currentClauseContext.localToName.get(v.id);
+                                        #if debug_ast_pipeline
+                                        trace('[AST Builder] TCall: Using mapped name from ClauseContext for abstract type: ${v.name} (id=${v.id}) -> ${mappedName}');
+                                        #end
+                                        makeAST(EVar(mappedName));
+                                    } else {
+                                        // No mapping, build the variable normally
+                                        buildFromTypedExpr(obj, variableUsageMap);
+                                    }
+                                    
+                                default:
+                                    buildFromTypedExpr(obj, variableUsageMap);
+                            };
 
                             // Fallback based on the object's type: if it's an extern Elixir class
                             // with @:native("Module"), rewrite instance call to Module.function(obj, ...)
@@ -2413,7 +2444,8 @@ class ElixirASTBuilder {
                 for (c in cases) {
                     // Analyze the case body FIRST to detect enum parameter extraction
                     // This is critical for determining whether to use wildcards or named patterns
-                    var extractedParams = analyzeEnumParameterExtraction(c.expr);
+                    // Pass case values to extract pattern variable names like "email" from case Ok(email):
+                    var extractedParams = analyzeEnumParameterExtraction(c.expr, c.values);
                     
                     // Create variable mappings for alpha-renaming
                     // This maps Haxe's temporary variable IDs to canonical pattern names
@@ -2424,7 +2456,9 @@ class ElixirASTBuilder {
                         // Pass the actual enum expression and extracted parameters for proper naming
                         [for (v in c.values) convertIdiomaticEnumPatternWithExtraction(v, enumType, extractedParams)];
                     } else {
-                        [for (v in c.values) convertPattern(v)];
+                        // For regular enums, also pass extractedParams to ensure correct variable naming
+                        // This fixes the issue where patterns generate {:ok, value} instead of {:ok, email}
+                        [for (v in c.values) convertPatternWithExtraction(v, extractedParams)];
                     }
                     
                     // Set up ClauseContext for alpha-renaming before building the case body
@@ -4081,23 +4115,144 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Convert Haxe values to patterns with extracted parameter names
+     * 
+     * WHY: Regular enums need access to user-specified variable names from switch cases
+     * WHAT: Like convertPattern but uses extractedParams for enum constructor arguments
+     * HOW: When encountering enum constructors, uses extractedParams instead of wildcards
+     */
+    static function convertPatternWithExtraction(value: TypedExpr, extractedParams: Array<String>): EPattern {
+        return switch(value.expr) {
+            // Most cases delegate to regular convertPattern
+            case TConst(_) | TLocal(_) | TArrayDecl(_) | TEnumIndex(_):
+                convertPattern(value);
+                
+            // Enum constructors - the main difference
+            case TCall(e, el) if (isEnumConstructor(e)):
+                // Enum constructor pattern with extracted parameter names
+                var tag = extractEnumTag(e);
+                
+                // For idiomatic enums, convert to snake_case
+                if (hasIdiomaticMetadata(e)) {
+                    tag = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
+                }
+                
+                // Use extracted parameter names instead of wildcards or generic names
+                var args = [];
+                for (i in 0...el.length) {
+                    if (i < extractedParams.length && extractedParams[i] != null) {
+                        // Use the user-specified variable name
+                        args.push(PVar(extractedParams[i]));
+                    } else {
+                        // Fall back to wildcard if no name provided
+                        args.push(PWildcard);
+                    }
+                }
+                
+                // Create tuple pattern {:tag, param1, param2, ...}
+                PTuple([PLiteral(makeAST(EAtom(tag)))].concat(args));
+                
+            // Field access (for enum constructors without arguments)
+            case TField(e, FEnum(enumRef, ef)):
+                // Direct enum constructor reference
+                var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+                
+                // Extract parameter count from the enum field's type
+                var paramCount = 0;
+                switch(ef.type) {
+                    case TFun(args, _):
+                        paramCount = args.length;
+                    default:
+                        // No parameters
+                }
+                
+                if (paramCount == 0) {
+                    // No-argument constructor
+                    PLiteral(makeAST(EAtom(atomName)));
+                } else {
+                    // Constructor with arguments - use extracted param names
+                    var patterns = [];
+                    for (i in 0...paramCount) {
+                        if (i < extractedParams.length && extractedParams[i] != null) {
+                            patterns.push(PVar(extractedParams[i]));
+                        } else {
+                            patterns.push(PWildcard);
+                        }
+                    }
+                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(patterns));
+                }
+                
+            default:
+                // Fall back to regular pattern conversion
+                convertPattern(value);
+        }
+    }
+    
+    /**
+     * Extract pattern variable names from case values
+     * 
+     * WHY: When we have `case Ok(email):`, the pattern variable "email" is in the case values,
+     *      not in the case body. We need to extract these names to generate correct patterns.
+     * WHAT: Extracts variable names from enum constructor patterns in case values
+     * HOW: Analyzes TCall expressions in case values to find pattern variable arguments
+     */
+    static function extractPatternVariableNamesFromValues(values: Array<TypedExpr>): Array<String> {
+        var patternVars = [];
+        
+        for (value in values) {
+            switch(value.expr) {
+                case TCall(e, args):
+                    // This is an enum constructor pattern like Ok(email) or Error(reason)
+                    // Extract the variable names from the arguments
+                    for (i in 0...args.length) {
+                        var arg = args[i];
+                        switch(arg.expr) {
+                            case TLocal(v):
+                                // Pattern variable like "email" in Ok(email)
+                                var varName = toElixirVarName(v.name);
+                                // Ensure array is large enough
+                                while (patternVars.length <= i) {
+                                    patternVars.push(null);
+                                }
+                                patternVars[i] = varName;
+                            default:
+                                // Could be a constant or wildcard
+                        }
+                    }
+                default:
+                    // Not a constructor pattern
+            }
+        }
+        
+        return patternVars;
+    }
+    
+    /**
      * Analyze case body to detect enum parameter extraction patterns
      * 
      * WHY: When the case body contains TVar(_g, TEnumParameter(...)), we need to use named
      *      patterns instead of wildcards to avoid undefined variable references
      * WHAT: Detects the extraction pattern and returns parameter names to use in patterns
-     * HOW: Looks for TBlock with TVar nodes that extract enum parameters, with improved
-     *      detection that works even when Haxe's optimizer removes variable assignments
+     * HOW: FIRST checks case values for pattern variables, THEN looks for TBlock with TVar nodes
      * 
      * PATTERN DETECTION:
-     * 1. TVar(_g, TEnumParameter(...)) - temp var extraction
-     * 2. TVar(changeset, TLocal(_g)) - assigns temp to pattern var (may be optimized away)
-     * 3. TLocal(changeset) references - detect which variables are actually used
+     * 1. Pattern variables in case values (case Ok(email): extracts "email")
+     * 2. TVar(_g, TEnumParameter(...)) - temp var extraction
+     * 3. TVar(changeset, TLocal(_g)) - assigns temp to pattern var (may be optimized away)
+     * 4. TLocal(changeset) references - detect which variables are actually used
      * 
-     * ENHANCEMENT: If the mapping from temp to final var is missing (due to optimization),
-     * we scan for TLocal references to infer the intended variable names
+     * ENHANCEMENT: Prioritizes pattern variables from case values over body analysis
      */
-    static function analyzeEnumParameterExtraction(caseExpr: TypedExpr): Array<String> {
+    static function analyzeEnumParameterExtraction(caseExpr: TypedExpr, caseValues: Array<TypedExpr> = null): Array<String> {
+        // First try to extract pattern variables directly from case values
+        if (caseValues != null) {
+            var patternVars = extractPatternVariableNamesFromValues(caseValues);
+            if (patternVars.length > 0 && patternVars.filter(v -> v != null).length > 0) {
+                // We found pattern variables, use them
+                return patternVars;
+            }
+        }
+        
         var extractedParams = [];
         var tempVarMapping = new Map<String, {name: String, index: Int}>(); // Maps temp vars to final names
         var tempVarToIndex = new Map<String, Int>(); // Maps temp var names to parameter indices
@@ -4168,38 +4323,73 @@ class ElixirASTBuilder {
                 // When Haxe's optimizer removes TVar assignments, we need to infer the pattern names
                 // from actual usage in the body
                 var usedVariables = new Map<String, Bool>();
+                var firstUsedVariables = []; // Track the first non-temp variable used at each index
+                
                 function scanForUsedVariables(expr: TypedExpr): Void {
                     switch(expr.expr) {
                         case TLocal(v):
                             var name = toElixirVarName(v.name);
                             usedVariables.set(name, true);
                             
-                            // Special case: if this references a variable like "changeset" 
-                            // and we have a temp var "g" at index 0, use the actual name
-                            if (!name.startsWith("_g") && !name.startsWith("g") && name != "g") {
-                                // This is a real variable name used in the body
-                                // Check if we can map it to an enum parameter
-                                for (i in 0...extractedParams.length) {
-                                    if (extractedParams[i] == "g" || extractedParams[i] == "_g" || 
-                                        (extractedParams[i] != null && extractedParams[i].startsWith("g"))) {
-                                        // Found a temp var that needs a real name
-                                        // Use the variable that's actually referenced
-                                        extractedParams[i] = name;
-                                        #if debug_ast_builder
-                                        trace('[DEBUG ENUM] Replaced temp var "${extractedParams[i]}" with used variable "$name" at index $i');
-                                        #end
-                                        break; // Only map to first available slot
+                        // Look for the first assignment from TEnumParameter
+                        case TVar(v, init) if (init != null):
+                            switch(init.expr) {
+                                case TEnumParameter(_, _, index):
+                                    // This is extracting an enum parameter
+                                    var varName = toElixirVarName(v.name);
+                                    
+                                    // Ensure array is large enough
+                                    while (firstUsedVariables.length <= index) {
+                                        firstUsedVariables.push(null);
                                     }
-                                }
+                                    
+                                    // If this is not a temp var, use it as the pattern name
+                                    if (!varName.startsWith("_") && !varName.startsWith("g")) {
+                                        firstUsedVariables[index] = varName;
+                                    }
+                                default:
                             }
+                            
+                            // Continue scanning
+                            if (init != null) scanForUsedVariables(init);
+                            
+                        // Look for method calls on enum values to infer the variable name
+                        case TCall(target, el):
+                            // If calling a method on an abstract type (like email.getDomain())
+                            // we can infer that "email" is the variable name
+                            switch(target.expr) {
+                                case TField(obj, _):
+                                    switch(obj.expr) {
+                                        case TLocal(v):
+                                            var name = toElixirVarName(v.name);
+                                            if (!name.startsWith("_g") && !name.startsWith("g") && name != "g") {
+                                                // This is a real variable name used in the body
+                                                // Try to infer which parameter position this should be
+                                                // If we have only one parameter and it's a temp var, replace it
+                                                for (i in 0...extractedParams.length) {
+                                                    if (extractedParams[i] == "g" || extractedParams[i] == "_g" || 
+                                                        (extractedParams[i] != null && extractedParams[i].startsWith("g"))) {
+                                                        // Found a temp var that needs a real name
+                                                        // Use the variable that's actually referenced
+                                                        extractedParams[i] = name;
+                                                        #if debug_ast_builder
+                                                        trace('[DEBUG ENUM] Replaced temp var "${extractedParams[i]}" with used variable "$name" at index $i');
+                                                        #end
+                                                        break; // Only map to first available slot
+                                                    }
+                                                }
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                            // Continue scanning arguments
+                            for (arg in el) scanForUsedVariables(arg);
                         case TBlock(subExprs):
                             for (e in subExprs) scanForUsedVariables(e);
                         case TBinop(_, e1, e2):
                             scanForUsedVariables(e1);
                             scanForUsedVariables(e2);
-                        case TCall(e, args):
-                            scanForUsedVariables(e);
-                            for (arg in args) scanForUsedVariables(arg);
                         case TField(e, _):
                             scanForUsedVariables(e);
                         case TIf(cond, ifExpr, elseExpr):
@@ -4323,9 +4513,11 @@ class ElixirASTBuilder {
                             // Check if this parameter is actually used in the case body
                             var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
                             
-                            if (isUsed && i < canonicalNames.length) {
-                                // Use the canonical parameter name from the constructor definition
-                                paramPatterns.push(PVar(canonicalNames[i]));
+                            if (isUsed) {
+                                // Use the actual pattern variable name from the user's code
+                                // This ensures we generate {:ok, email} when user writes case Ok(email):
+                                // not {:ok, value} based on the enum definition
+                                paramPatterns.push(PVar(extractedParams[i]));
                             } else {
                                 // Use wildcard for unused parameter
                                 paramPatterns.push(PWildcard);
@@ -4372,9 +4564,11 @@ class ElixirASTBuilder {
                         // Check if this parameter is actually used in the case body
                         var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
                         
-                        if (isUsed && i < canonicalNames.length) {
-                            // Use the canonical parameter name from the constructor definition
-                            paramPatterns.push(PVar(canonicalNames[i]));
+                        if (isUsed) {
+                            // Use the actual pattern variable name from the user's code
+                            // This ensures we generate {:ok, email} when user writes case Ok(email):
+                            // not {:ok, value} based on the enum definition
+                            paramPatterns.push(PVar(extractedParams[i]));
                         } else {
                             paramPatterns.push(PWildcard);
                         }
@@ -5112,8 +5306,67 @@ class ElixirASTBuilder {
                                                    enumType: Null<EnumType>, values: Array<TypedExpr>): Map<Int, String> {
         var mapping = new Map<Int, String>();
         
-        // If we don't have an idiomatic enum, no mapping needed
-        if (enumType == null || !enumType.meta.has(":elixirIdiomatic")) {
+        // For non-enum cases, still need to track variable mappings for abstract types
+        // This ensures abstract type methods use the correct renamed variables
+        if (enumType == null) {
+            // Scan for variable assignments that might be renamings
+            // e.g., email = value (where value comes from a pattern)
+            function scanForVariableAssignments(expr: TypedExpr): Void {
+                switch(expr.expr) {
+                    case TBlock(exprs):
+                        for (e in exprs) scanForVariableAssignments(e);
+                        
+                    case TVar(v, init) if (init != null):
+                        switch(init.expr) {
+                            case TLocal(sourceVar):
+                                // This is a variable assignment like email = value
+                                // Map the source variable ID to use the target name
+                                // When we see references to sourceVar.id, we'll use v.name instead
+                                mapping.set(sourceVar.id, toElixirVarName(v.name));
+                                #if debug_ast_pipeline
+                                trace('[Alpha-renaming] Mapping source var ${sourceVar.name} (id=${sourceVar.id}) to use name: ${toElixirVarName(v.name)}');
+                                #end
+                                
+                            default:
+                        }
+                        
+                    default:
+                        haxe.macro.TypedExprTools.iter(expr, scanForVariableAssignments);
+                }
+            }
+            
+            scanForVariableAssignments(caseExpr);
+            return mapping;
+        }
+        
+        // For idiomatic enums, continue with the original logic
+        if (!enumType.meta.has(":elixirIdiomatic")) {
+            // For regular enums, also scan for variable renamings
+            function scanForVariableAssignments(expr: TypedExpr): Void {
+                switch(expr.expr) {
+                    case TBlock(exprs):
+                        for (e in exprs) scanForVariableAssignments(e);
+                        
+                    case TVar(v, init) if (init != null):
+                        switch(init.expr) {
+                            case TLocal(sourceVar):
+                                // This is a variable assignment like email = value
+                                // Map the source variable ID to use the target name
+                                // When we see references to sourceVar.id, we'll use v.name instead
+                                mapping.set(sourceVar.id, toElixirVarName(v.name));
+                                #if debug_ast_pipeline
+                                trace('[Alpha-renaming] Mapping source var ${sourceVar.name} (id=${sourceVar.id}) to use name: ${toElixirVarName(v.name)}');
+                                #end
+                                
+                            default:
+                        }
+                        
+                    default:
+                        haxe.macro.TypedExprTools.iter(expr, scanForVariableAssignments);
+                }
+            }
+            
+            scanForVariableAssignments(caseExpr);
             return mapping;
         }
         
@@ -5149,8 +5402,16 @@ class ElixirASTBuilder {
                                     switch(init.expr) {
                                         case TEnumParameter(_, _, paramIndex):
                                             // This is a temp var extracting an enum parameter
-                                            // Map it to the canonical name
-                                            if (paramIndex < canonicalNames.length) {
+                                            // Map it to the actual extracted pattern variable name (e.g., "g")
+                                            // NOT the canonical name from the enum definition (e.g., "value")
+                                            if (extractedParams != null && paramIndex < extractedParams.length && extractedParams[paramIndex] != null) {
+                                                // Use the extracted pattern variable name
+                                                mapping.set(v.id, toElixirVarName(extractedParams[paramIndex]));
+                                                #if debug_ast_pipeline
+                                                trace('[Alpha-renaming] Mapping TVar ${v.name} (id=${v.id}) to extracted pattern name: ${toElixirVarName(extractedParams[paramIndex])}');
+                                                #end
+                                            } else if (paramIndex < canonicalNames.length) {
+                                                // Fallback to canonical name if no extracted param
                                                 mapping.set(v.id, canonicalNames[paramIndex]);
                                                 #if debug_ast_pipeline
                                                 trace('[Alpha-renaming] Mapping TVar ${v.name} (id=${v.id}) to canonical name: ${canonicalNames[paramIndex]}');

@@ -532,12 +532,20 @@ This file must stay under 40k characters for optimal performance.
 - Reference docs instead of duplicating content
 - Review size after major updates: `wc -c CLAUDE.md`
 
-### ❌ NEVER Add Detailed Technical Content to CLAUDE.md
-When documenting new features or fixes:
-1. **Create or update appropriate docs** in `docs/` directory
-2. **Add only a brief reference** in CLAUDE.md with link to full documentation
-3. **Check character count** before and after: `wc -c CLAUDE.md`
-4. **If over 40k**, identify and move non-essential content out
+### ❌ NEVER Add Detailed Technical Content to Root CLAUDE.md
+When documenting new features, fixes, or insights:
+1. **Use the nearest CLAUDE.md** - Save insights and directives to the nearest CLAUDE.md dir-wise (e.g., `src/reflaxe/elixir/ast/CLAUDE.md` for AST issues)
+2. **Create or update appropriate docs** in `docs/` directory for general documentation
+3. **Add only a brief reference** in root CLAUDE.md with link to full documentation  
+4. **Check character count** before and after: `wc -c CLAUDE.md`
+5. **If over 40k**, identify and move non-essential content to subdirectory CLAUDE.md files
+
+### 📍 CLAUDE.md Hierarchy
+- **Root CLAUDE.md** (`/CLAUDE.md`) - Project-wide conventions, navigation, critical rules only
+- **Module CLAUDE.md** (`src/reflaxe/elixir/CLAUDE.md`) - Compiler-specific development guidance
+- **Component CLAUDE.md** (`src/reflaxe/elixir/ast/CLAUDE.md`) - AST-specific patterns and limitations
+- **Test CLAUDE.md** (`test/CLAUDE.md`) - Testing infrastructure and patterns
+- **Example CLAUDE.md** (`examples/todo-app/CLAUDE.md`) - Application-specific patterns
 
 ## 📁 Project Directory Structure Map
 
