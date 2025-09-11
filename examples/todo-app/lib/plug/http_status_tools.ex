@@ -1,25 +1,25 @@
 defmodule HttpStatusTools do
   def to_int(_status) do
-    case (elem(_status, 0)) do
-      0 ->
+    case (_status) do
+      {:ok} ->
         200
-      1 ->
+      {:created} ->
         201
-      2 ->
+      {:no_content} ->
         204
-      3 ->
+      {:bad_request} ->
         400
-      4 ->
+      {:unauthorized} ->
         401
-      5 ->
+      {:forbidden} ->
         403
-      6 ->
+      {:not_found} ->
         404
-      7 ->
+      {:method_not_allowed} ->
         405
-      8 ->
+      {:internal_server_error} ->
         500
-      9 ->
+      {:custom, code} ->
         g = elem(_status, 1)
         code = g
         code
@@ -28,23 +28,23 @@ defmodule HttpStatusTools do
   def from_int(code) do
     case (code) do
       200 ->
-        {:Ok}
+        {:ok}
       201 ->
-        {:Created}
+        {:created}
       204 ->
-        {:NoContent}
+        {:no_content}
       400 ->
-        {:BadRequest}
+        {:bad_request}
       401 ->
-        {:Unauthorized}
+        {:unauthorized}
       403 ->
-        {:Forbidden}
+        {:forbidden}
       404 ->
-        {:NotFound}
+        {:not_found}
       405 ->
-        {:MethodNotAllowed}
+        {:method_not_allowed}
       500 ->
-        {:InternalServerError}
+        {:internal_server_error}
       _ ->
         {:Custom, code}
     end

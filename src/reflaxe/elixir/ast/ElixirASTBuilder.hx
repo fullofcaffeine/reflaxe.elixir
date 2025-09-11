@@ -1534,7 +1534,12 @@ class ElixirASTBuilder {
                             // symbolic atoms {:Integer}, {:Boolean}, {:String} that Elixir can understand.
                             // This ensures enum constructors maintain their symbolic meaning in the
                             // generated code rather than being reduced to meaningless numeric indices.
-                            var atomName = ef.name;
+                            // Use snake_case for idiomatic Elixir atoms
+                            // TODO: Implement automatic snake_case conversion using Atom abstract type
+                            // This would eliminate the need to manually call toSnakeCase() everywhere.
+                            // See: docs/08-roadmap/AST_AUTO_SNAKE_CASE.md for implementation plan
+                            // Future: ETuple([makeAST(EAtom(ef.name))]); // Automatic conversion!
+                            var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
                             ETuple([makeAST(EAtom(atomName))]);
                         }
                     case FStatic(classRef, cf):
@@ -1907,14 +1912,17 @@ class ElixirASTBuilder {
                 }
                 
                 var enumType = extractEnumTypeFromSwitch(e);
-                var isIdiomaticEnum = if (enumType != null) {
-                    var hasMetadata = enumType.meta.has(":elixirIdiomatic");
-                    trace('[DEBUG ENUM] Found enum ${enumType.name}, has @:elixirIdiomatic: $hasMetadata');
-                    hasMetadata;
+                // Always use idiomatic enum patterns for consistent atom-based matching
+                // This ensures patterns like {:TodoUpdates} match the generated tuples
+                var isIdiomaticEnum = enumType != null;
+                
+                #if debug_enum
+                if (enumType != null) {
+                    trace('[DEBUG ENUM] Found enum ${enumType.name}, treating as idiomatic for atom-based patterns');
                 } else {
                     trace('[DEBUG ENUM] No enum type found in switch target');
-                    false;
-                };
+                }
+                #end
                 
                 var expr = buildFromTypedExpr(e, variableUsageMap).def;
                 var clauses = [];
@@ -2976,25 +2984,10 @@ class ElixirASTBuilder {
                 ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]); // +1 for tag
                 
             case TEnumIndex(e):
-                // Get enum tag index
-                // For idiomatic enums, we match directly on the tuple without elem()
-                // Check if this is an idiomatic enum
-                var isIdiomatic = switch(e.t) {
-                    case TEnum(enumRef, _):
-                        enumRef.get().meta.has(":elixirIdiomatic");
-                    default:
-                        false;
-                };
-                
-                if (isIdiomatic) {
-                    // For idiomatic enums, match directly on the tuple
-                    // The patterns will handle the atom matching
-                    buildFromTypedExpr(e, variableUsageMap).def;
-                } else {
-                    // For regular enums, use elem to get the integer index
-                    var exprAST = buildFromTypedExpr(e, variableUsageMap);
-                    ECall(exprAST, "elem", [makeAST(EInteger(0))]);
-                }
+                // Get enum tag index - always use the enum value directly for atom-based matching
+                // We don't use elem() because we're matching on atom tuples like {:TodoUpdates}
+                // The switch will generate patterns like: {:TodoUpdates} -> ... {:UserActivity} -> ...
+                buildFromTypedExpr(e, variableUsageMap).def;
                 
             case TIdent(s):
                 // Identifier reference
@@ -3571,13 +3564,11 @@ class ElixirASTBuilder {
             // Field access (for enum constructors)
             case TField(e, FEnum(enumRef, ef)):
                 // Direct enum constructor reference
-                var atomName = ef.name;
+                // Always use snake_case for enum atoms (idiomatic Elixir)
+                var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
                 
-                // Check if the enum is idiomatic
-                var isIdiomatic = enumRef.get().meta.has(":elixirIdiomatic");
-                if (isIdiomatic) {
-                    atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
-                }
+                // Check if the enum is idiomatic (now all enums are treated as idiomatic)
+                var isIdiomatic = enumRef.get().meta.has(":elixirIdiomatic") || true; // All enums are idiomatic now
                 
                 // Extract parameter count from the enum field's type
                 var paramCount = 0;
@@ -3857,8 +3848,9 @@ class ElixirASTBuilder {
                         }
                         PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
                     } else {
-                        // No-argument constructor - just the atom
-                        PLiteral(makeAST(EAtom(atomName)));
+                        // No-argument constructor - wrap in tuple for consistency
+                        // This matches how the constructor is generated in TCall case
+                        PTuple([PLiteral(makeAST(EAtom(atomName)))]);
                     }
                 } else {
                     // Invalid index, use wildcard
