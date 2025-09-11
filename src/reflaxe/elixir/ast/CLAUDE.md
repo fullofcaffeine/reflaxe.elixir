@@ -333,21 +333,53 @@ This is challenging because:
 - Haxe's optimizer may remove "unnecessary" assignments
 - Multiple systems (ClauseContext, extractedParams, pattern registry) interact
 
-#### Resolution (January 2025)
+#### New Understanding (January 2025) - NOT a Fundamental Limitation!
 
-After extensive investigation, we've determined this is a **fundamental limitation of Haxe's TypedExpr representation** that cannot be fully solved in the compiler. 
+After re-examination prompted by user feedback, we realize **this is NOT a fundamental limitation** - we DO have the infrastructure to solve this!
 
-**What we've learned**:
-- Pattern variable names (`data` in `case Success(data):`) are not preserved in TypedExpr
-- Haxe generates temp vars (`_g`) and may optimize away the assignments to pattern vars
-- Without the assignments, we can't map temp vars to pattern names
-- This affects ALL Reflaxe compilers, not just ours
+**Critical Insight**: 
+The generated code shows assignments like `data = g`, which means:
+1. We HAVE the pattern variable names (`data`)
+2. We HAVE the mapping to temp vars (`g`)
+3. We just need to use this information correctly
 
-**Accepted Solution**:
-1. **Use generic but meaningful names** in patterns: `g`, `g1`, `g2` (or `value` for single params)
-2. **Ensure correctness**: The code works correctly even with generic names
-3. **Document as known limitation**: Users should be aware of this behavior
-4. **Future consideration**: Work with Haxe team to preserve pattern names in metadata
+**The Real Problem**:
+We're generating a nonsensical hybrid:
+```elixir
+{:success, data} ->     # Pattern uses real name
+  g = elem(status, 1)   # Extraction to temp var
+  data = g              # Assignment from temp to real
+  "..." <> g            # Body uses temp var
+```
+
+This is wrong! We should generate EITHER:
+- **Option A**: Pattern with temp vars, assignments in body
+- **Option B**: Pattern with real names, no extraction needed
+
+**Root Cause**:
+1. Pattern generation uses canonical names from enum definition
+2. Case body still generates TEnumParameter extraction code
+3. Variable references use temp vars through ClauseContext
+4. Result: Mismatched names between pattern and body
+
+**Solution Approach - Two Options**:
+
+**Option 1: Make patterns use temp vars (simpler, more consistent)**
+- Change pattern generation to use `{:success, g}` instead of `{:success, data}`
+- Keep the extraction code `g = elem(status, 1)` (though redundant)
+- Keep the assignment `data = g`
+- Use `data` in the case body after assignment
+- This matches what Haxe's TypedExpr expects
+
+**Option 2: Skip extraction when pattern uses real names (cleaner but complex)**
+- Keep pattern as `{:success, data}`
+- Detect that pattern already extracts to `data`
+- Skip generating `g = elem(status, 1)` extraction
+- Skip generating `data = g` assignment
+- Use `data` directly in case body
+- Requires detecting which TVar nodes to skip
+
+**Recommendation**: Option 1 is simpler and more consistent with how Haxe works. The pattern should use temp vars to match the TypedExpr structure, then assignments rename them to user-friendly names.
 
 ### Action Items
 

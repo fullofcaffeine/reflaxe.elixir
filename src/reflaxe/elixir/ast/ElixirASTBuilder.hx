@@ -3518,7 +3518,11 @@ class ElixirASTBuilder {
                 EThrow(buildFromTypedExpr(e));
                 
             case TEnumParameter(e, ef, index):
-                // Enum field access
+                // Check if we're in a switch case where the pattern already extracted this value
+                // If the pattern uses real variable names, we shouldn't generate elem() extraction
+                
+                // For now, always generate the elem() call - it will be handled by pattern extraction
+                // TODO: Skip this when pattern already extracts the value
                 var exprAST = buildFromTypedExpr(e);
                 var field = ef.name;
                 
