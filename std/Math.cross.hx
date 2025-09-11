@@ -19,6 +19,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+package;
 
 import elixir.ErlangMath;
 
@@ -61,34 +62,21 @@ class Math {
      * Returns the smallest integer value that is not less than v.
      */
     public static inline function ceil(v: Float): Int {
-        #if elixir
         return untyped __elixir__('ceil({0})', v);
-        #else
-        return Std.int(v) + (v > 0 && v != Std.int(v) ? 1 : 0);
-        #end
     }
     
     /**
      * Returns the largest integer value that is not greater than v.
      */
     public static inline function floor(v: Float): Int {
-        #if elixir
         return untyped __elixir__('floor({0})', v);
-        #else
-        var i = Std.int(v);
-        return v < 0 && v != i ? i - 1 : i;
-        #end
     }
     
     /**
      * Returns the closest integer value to v.
      */
     public static inline function round(v: Float): Int {
-        #if elixir
         return untyped __elixir__('round({0})', v);
-        #else
-        return Std.int(v + 0.5);
-        #end
     }
     
     /**
@@ -109,132 +97,84 @@ class Math {
      * Returns the cosine of v (v in radians).
      */
     public static inline function cos(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.cos({0})', v);
-        #else
-        return std.Math.cos(v);
-        #end
     }
     
     /**
      * Returns the sine of v (v in radians).
      */
     public static inline function sin(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.sin({0})', v);
-        #else
-        return std.Math.sin(v);
-        #end
     }
     
     /**
      * Returns the tangent of v (v in radians).
      */
     public static inline function tan(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.tan({0})', v);
-        #else
-        return std.Math.tan(v);
-        #end
     }
     
     /**
      * Returns the arc cosine of v (result in radians).
      */
     public static inline function acos(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.acos({0})', v);
-        #else
-        return std.Math.acos(v);
-        #end
     }
     
     /**
      * Returns the arc sine of v (result in radians).
      */
     public static inline function asin(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.asin({0})', v);
-        #else
-        return std.Math.asin(v);
-        #end
     }
     
     /**
      * Returns the arc tangent of v (result in radians).
      */
     public static inline function atan(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.atan({0})', v);
-        #else
-        return std.Math.atan(v);
-        #end
     }
     
     /**
      * Returns the arc tangent of y/x (result in radians).
      */
     public static inline function atan2(y: Float, x: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.atan2({0}, {1})', y, x);
-        #else
-        return std.Math.atan2(y, x);
-        #end
     }
     
     /**
      * Returns e raised to the power of v.
      */
     public static inline function exp(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.exp({0})', v);
-        #else
-        return std.Math.exp(v);
-        #end
     }
     
     /**
      * Returns the natural logarithm of v.
      */
     public static inline function log(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.log({0})', v);
-        #else
-        return std.Math.log(v);
-        #end
     }
     
     /**
      * Returns base raised to the power of exp.
      */
     public static inline function pow(base: Float, exp: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.pow({0}, {1})', base, exp);
-        #else
-        return std.Math.pow(base, exp);
-        #end
     }
     
     /**
      * Returns the square root of v.
      */
     public static inline function sqrt(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.sqrt({0})', v);
-        #else
-        return std.Math.sqrt(v);
-        #end
     }
     
     /**
      * Returns a random float in the range [0, 1).
      */
     public static inline function random(): Float {
-        #if elixir
         return untyped __elixir__(':rand.uniform()');
-        #else
-        return std.Math.random();
-        #end
     }
     
     /**
@@ -255,32 +195,20 @@ class Math {
      * Returns the integer part of v (removes the fractional part).
      */
     public static inline function ffloor(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.floor({0})', v);
-        #else
-        return floor(v);
-        #end
     }
     
     /**
      * Returns the ceiling of v as a Float.
      */
     public static inline function fceil(v: Float): Float {
-        #if elixir
         return untyped __elixir__(':math.ceil({0})', v);
-        #else
-        return ceil(v);
-        #end
     }
     
     /**
      * Returns v rounded to the nearest integer as a Float.
      */
     public static inline function fround(v: Float): Float {
-        #if elixir
         return untyped __elixir__('Float.round({0})', v);
-        #else
-        return round(v);
-        #end
     }
 }
