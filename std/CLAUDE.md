@@ -173,11 +173,18 @@ The compiler automatically generates runtime support modules from different sour
 
 2. **`Log` module** → Generated from Haxe's standard library
    - Source: `/Users/fullofcaffeine/haxe/versions/4.3.7/std/haxe/Log.hx`
-   - Compiles to `haxe/log.ex` with `trace()` and `formatOutput()` methods
+   - Generates `haxe/log.ex` containing the Log module
+   - When you call `trace("hello")` in Haxe, the compiler transforms it to `Log.trace("hello", metadata)`
+   - The Log.hx class defines the `trace()` and `formatOutput()` methods that handle the actual output
    - Part of official Haxe distribution (haxe.Log package)
-   - The compiler automatically includes this when `trace()` is used
 
-3. **Dependency Tracking**:
+3. **How the Compiler Knows to Use Log.trace()**:
+   - Haxe has a built-in `trace()` function that's part of the language
+   - The Haxe compiler (not our Reflaxe compiler) transforms `trace()` calls into calls to `haxe.Log.trace()`
+   - Our Reflaxe.Elixir compiler sees these as static method calls to the Log class
+   - It then compiles the haxe/Log.hx file to generate the Log module in Elixir
+
+4. **Dependency Tracking**:
    - `ElixirASTBuilder.trackDependency()` tracks which modules are used
    - `ElixirCompiler.moduleDependencies` maintains the dependency graph
    - The compiler generates only the modules that are actually referenced
