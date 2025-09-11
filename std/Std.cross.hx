@@ -1,3 +1,5 @@
+package;
+
 /**
  * Std: Haxe Standard Library Core Functions
  * 
