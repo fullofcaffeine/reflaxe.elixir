@@ -4539,11 +4539,12 @@ class ElixirASTBuilder {
                             // Check if we have an extracted pattern variable name
                             var isExtracted = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
                             
-                            if (isExtracted && !extractedParams[i].startsWith("g")) {
-                                // Use the pattern variable name if it's not a generic name
+                            if (isExtracted) {
+                                // Always use extractedParams (temp vars like g, g1, g2) when available
+                                // This ensures the pattern matches what Haxe generates in the case body
                                 paramPatterns.push(PVar(extractedParams[i]));
                             } else if (i < canonicalNames.length) {
-                                // Fall back to canonical name from enum definition
+                                // Fall back to canonical name from enum definition if no extraction
                                 paramPatterns.push(PVar(canonicalNames[i]));
                             } else {
                                 // Last resort: use wildcard
