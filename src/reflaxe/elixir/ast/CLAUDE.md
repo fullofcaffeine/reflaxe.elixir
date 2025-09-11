@@ -282,6 +282,55 @@ This investigation revealed fundamental insights about variable mapping in compi
 3. **Priority hierarchies** solve conflicts between competing naming systems
 4. **TypedExpr limitations** can be worked around with proper architectural design
 
+## 📚 Critical Lessons from January 2025 Bug Fixes
+
+### NO TEMPORARY FIXES OR WORKAROUNDS
+
+**FUNDAMENTAL RULE**: Never apply band-aid fixes or workarounds. Always solve the root architectural problem.
+
+- **NO TODOs in production code** - Fix issues completely or don't merge
+- **NO string replacements** to patch symptoms
+- **NO special case handling** without understanding the general pattern
+- **NO fallback mechanisms** - fix the primary system instead
+- **ALWAYS use proper types** - Never use Dynamic when a proper type exists
+
+### The TLocal Mapping Fix (January 2025)
+
+**Problem**: Array patterns were generating `x = x` instead of `x = g`
+
+**Root Cause**: The `createVariableMappingsForCase` function was creating mappings for ALL TLocal assignments, including array patterns. This caused the temp variable `g` to be mapped to the pattern variable name `x`, resulting in `x = x`.
+
+**Solution**: For non-enum cases (enumType == null), DON'T create mappings for TLocal assignments. Array patterns need to preserve the natural relationship where `x = g` (x gets value from g).
+
+**Key Insight**: Not all temp variables should be renamed. Array access temps are different from enum extraction temps and need different handling.
+
+### Test Intended Outputs Can Be Wrong
+
+**Discovery**: Several test "intended" outputs contained invalid Elixir syntax that had been perpetuated.
+
+**Examples Found**:
+- `{{k, v}}` patterns (invalid - should be `{k, v}`)
+- Inconsistent variable naming (declaring `i` but using `_i`)
+- Orphaned variable declarations from old compiler bugs
+
+**Lesson**: Always validate that intended outputs are actually correct Elixir code. Don't blindly trust test expectations - they may encode historical bugs.
+
+### Comprehensive Testing Strategy
+
+**RULE**: Test thoroughly at multiple levels:
+
+1. **Unit-level**: Individual pattern types (enums, arrays, tuples)
+2. **Integration-level**: Complex nested patterns
+3. **Validation-level**: Generated Elixir must compile without warnings
+4. **Idiomatic-level**: Generated code should look hand-written
+
+**Test Categories to Always Check**:
+- Enum patterns with multiple parameters
+- Array patterns with destructuring
+- Unused variables (should have underscore prefix)
+- Abstract type method calls within patterns
+- Nested pattern matching
+
 ## 📚 Understanding Haxe's Enum Pattern Compilation
 
 ### Why Redundant Extraction Code is Generated

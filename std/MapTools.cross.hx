@@ -52,7 +52,7 @@ class MapTools {
      * @return Final accumulated value
      */
     public static function reduce<K, V, A>(map: Map<K, V>, initial: A, reducer: (A, K, V) -> A): A {
-        return untyped __elixir__("Enum.reduce({0}, {1}, fn {{k, v}}, acc -> {2}.(acc, k, v) end)", map, initial, reducer);
+        return untyped __elixir__("Enum.reduce({0}, {1}, fn {k, v}, acc -> {2}.(acc, k, v) end)", map, initial, reducer);
     }
     
     /**
@@ -62,7 +62,7 @@ class MapTools {
      * @return True if any entry matches, false otherwise
      */
     public static function any<K, V>(map: Map<K, V>, predicate: (K, V) -> Bool): Bool {
-        return untyped __elixir__("Enum.any?({0}, fn {{k, v}} -> {1}.(k, v) end)", map, predicate);
+        return untyped __elixir__("Enum.any?({0}, fn {k, v} -> {1}.(k, v) end)", map, predicate);
     }
     
     /**
@@ -72,7 +72,7 @@ class MapTools {
      * @return True if all entries match, false otherwise
      */
     public static function all<K, V>(map: Map<K, V>, predicate: (K, V) -> Bool): Bool {
-        return untyped __elixir__("Enum.all?({0}, fn {{k, v}} -> {1}.(k, v) end)", map, predicate);
+        return untyped __elixir__("Enum.all?({0}, fn {k, v} -> {1}.(k, v) end)", map, predicate);
     }
     
     /**
@@ -82,7 +82,7 @@ class MapTools {
      * @return Entry as {key: K, value: V} or null if not found
      */
     public static function find<K, V>(map: Map<K, V>, predicate: (K, V) -> Bool): Null<{key: K, value: V}> {
-        return untyped __elixir__("case Enum.find({0}, fn {{k, v}} -> {1}.(k, v) end) do\n      {{k, v}} -> %{{key: k, value: v}}\n      nil -> nil\n    end", map, predicate);
+        return untyped __elixir__("case Enum.find({0}, fn {k, v} -> {1}.(k, v) end) do\n      {k, v} -> %{key: k, value: v}\n      nil -> nil\n    end", map, predicate);
     }
     
     /**
@@ -109,7 +109,7 @@ class MapTools {
      * @return Array of {key: K, value: V} objects
      */
     public static function toArray<K, V>(map: Map<K, V>): Array<{key: K, value: V}> {
-        return untyped __elixir__("Enum.map({0}, fn {{k, v}} -> %{{key: k, value: v}} end)", map);
+        return untyped __elixir__("Enum.map({0}, fn {k, v} -> %{key: k, value: v} end)", map);
     }
     
     /**
