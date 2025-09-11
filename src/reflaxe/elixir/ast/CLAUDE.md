@@ -379,7 +379,14 @@ This is wrong! We should generate EITHER:
 - Use `data` directly in case body
 - Requires detecting which TVar nodes to skip
 
-**Recommendation**: Option 1 is simpler and more consistent with how Haxe works. The pattern should use temp vars to match the TypedExpr structure, then assignments rename them to user-friendly names.
+**Implemented Solution (January 2025)**: 
+We implemented Option 1 - patterns now use temp vars to match Haxe's TypedExpr:
+- ✅ Patterns correctly use `{:success, g}` instead of `{:success, data}`
+- ✅ Extraction code `g = elem(status, 1)` matches the pattern
+- ✅ Assignment `data = g` renames to user-friendly name
+- ⚠️ Case body still uses `g` instead of `data` after assignment (separate issue)
+
+The pattern mismatch is fixed. The remaining case body issue requires changes to ClauseContext variable resolution, which is a separate architectural challenge.
 
 ### Action Items
 
