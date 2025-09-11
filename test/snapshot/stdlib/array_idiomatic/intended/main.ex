@@ -117,8 +117,6 @@ end
     {:halt, {acc_numbers, acc_g, acc_state}}
   end
 end)
-    iter_current = nil
-    iter_array = nil
     iter_current = 0
     iter_array = numbers
     Log.trace("Iterating with iterator:", %{:file_name => "Main.hx", :line_number => 156, :class_name => "Main", :method_name => "testIteratorFunction"})

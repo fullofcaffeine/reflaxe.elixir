@@ -34,7 +34,7 @@ defmodule GenServerOptionBuilder do
     if (Map.get(options, :debug) == nil) do
       debug = []
     end
-    options.debug.push(:trace)
+    options.debug ++ [:trace]
     options
   end
   def with_log(options) do
@@ -44,7 +44,7 @@ defmodule GenServerOptionBuilder do
     if (Map.get(options, :debug) == nil) do
       debug = []
     end
-    options.debug.push(:log)
+    options.debug ++ [:log]
     options
   end
   def with_statistics(options) do
@@ -54,7 +54,7 @@ defmodule GenServerOptionBuilder do
     if (Map.get(options, :debug) == nil) do
       debug = []
     end
-    options.debug.push(:statistics)
+    options.debug ++ [:statistics]
     options
   end
 end

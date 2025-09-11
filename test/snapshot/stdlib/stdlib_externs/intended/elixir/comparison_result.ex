@@ -1,11 +1,11 @@
 defmodule Elixir.ComparisonResult do
   def less_than() do
-    {:LessThan}
+    {0}
   end
   def equal() do
-    {:Equal}
+    {1}
   end
   def greater_than() do
-    {:GreaterThan}
+    {2}
   end
 end

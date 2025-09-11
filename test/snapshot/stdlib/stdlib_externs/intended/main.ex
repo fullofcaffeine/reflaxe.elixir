@@ -21,7 +21,7 @@ defmodule Main do
     info = Process.process.info(pid)
   end
   defp test_registry_externs() do
-    _registry_spec = Registry.registry.start_link(%{:keys => {0}, :name => String.to_atom("MyRegistry")})
+    _registry_spec = Registry.registry.start_link(%{:keys => {:unique}, :name => String.to_atom("MyRegistry")})
     _register_result = Registry.registry.register("MyRegistry", "user:123", "user_data")
     _lookup_result = Registry.registry.lookup("MyRegistry", "user:123")
     _count = Registry.registry.count("MyRegistry")
@@ -79,16 +79,10 @@ if label != "", do: label <> ": " <> result, else: result
     _ls_result = File.file.ls(".")
     _copy_result = File.file.copy("source.txt", "dest.txt")
     _rename_result = File.file.rename("old.txt", "new.txt")
-    result = File.file.read("text_file.txt")
-    _text_content = if elem(result, -1) == "ok", do: elem(result, 0), else: nil
-    result = File.file.write("output.txt", "content")
-    _write_success = elem(result, -1) == "ok"
-    result = File.file.read("multi_line.txt")
-    content = if elem(result, -1) == "ok", do: elem(result, 0), else: nil
-    _lines = content
-if content != nil, do: content.split("\n"), else: nil
-    result = File.file.mkdir_p("new_dir")
-    _dir_created = elem(result, -1) == "ok"
+    _text_content = if (elem(result, -1) == "ok"), do: elem((File.file.read("text_file.txt")), 0), else: nil
+    _write_success = elem((File.file.write("output.txt", "content")), -1) == "ok"
+    _lines = if (content != nil), do: (if (elem(result, -1) == "ok"), do: elem((File.file.read("multi_line.txt")), 0), else: nil).split("\n"), else: nil
+    _dir_created = elem((File.file.mkdir_p("new_dir")), -1) == "ok"
   end
   defp test_path_externs() do
     _joined = Path.path.join(["home", "user", "documents"])

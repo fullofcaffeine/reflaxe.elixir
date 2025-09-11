@@ -1,12 +1,10 @@
 defmodule Reference_Impl_ do
   def _new(ref) do
-    this1 = nil
     this1 = ref
     this1
   end
   def make() do
     ref = make_ref()
-    this1 = nil
     this1 = ref
     this1
   end
