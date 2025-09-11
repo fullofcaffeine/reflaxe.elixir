@@ -120,16 +120,110 @@ When Haxe compiles switch patterns:
 - `ElixirASTBuilder.hx:4341` - `convertIdiomaticEnumPatternWithExtraction()`
 - `ElixirASTBuilder.hx:2440` - Switch case processing
 
-## 🔧 ClauseContext Variable Mapping System
+## 🔧 ClauseContext Variable Mapping System - Deep Investigation & Solution
 
-**STATUS**: Fixed January 2025
+**STATUS**: Under Active Investigation (January 2025)
 **COMMITS**: (Your recent fix commit hash here)
 
 ### The Problem
 
 When enum patterns extract variables with generic names (like `{:ok, g}`), the case body needs to know that references to the original variable names (like `value`) should use the extracted names (like `g`).
 
-### The Solution
+### Deep Investigation Findings (January 2025)
+
+After extensive investigation into Haxe compiler source, other Reflaxe compilers, and web research, we've discovered:
+
+#### 1. **How Haxe Creates TEnumParameter**
+
+From `haxe/src/typing/matcher.ml` line 1017:
+```ocaml
+mk (TEnumParameter({ e with epos = p },ef,i)) params p
+```
+
+- Haxe generates `TEnumParameter` expressions to extract enum constructor parameters
+- These are created at index positions (0, 1, 2, etc.) for each parameter
+- The expressions are **anonymous** - they don't carry the pattern variable names
+- This is an intentional Haxe design for optimization (uses integer tags)
+
+#### 2. **How Other Reflaxe Compilers Handle It**
+
+**Reflaxe.C#**: 
+- Returns `null` for TEnumParameter - hasn't implemented it yet
+- Shows this is a challenging pattern across Reflaxe implementations
+
+**Reflaxe.CPP**:
+```haxe
+// Line 472 - They generate getter methods for enum parameters
+result = result + access + "get" + enumField.name + "()." + args[index].name;
+```
+- Uses the enum field's argument names from metadata
+- Doesn't rely on pattern variable names at all
+- Generates accessor methods instead of direct extraction
+
+#### 3. **The Real Issue: ClauseContext Interference**
+
+**This is NOT an architectural limitation** but rather a **coordination issue** between our compiler subsystems:
+
+1. **Pattern Phase**: We correctly extract `value` from `case Ok(value):`
+2. **Mapping Phase**: We create mapping `TEnumParameter → value`  
+3. **BUT THEN**: ClauseContext **overrides** this with `TVar(g) → g`
+4. **Result**: The pattern variable name gets lost
+
+The issue is that we have **competing variable mapping systems**:
+- **Pattern extraction** (knows pattern variable names from case)
+- **ClauseContext** (performs alpha-renaming for consistency)
+- **VariableCompiler** (final name resolution)
+
+### The Solution Approach
+
+`★ Insight ─────────────────────────────────────`
+The fix isn't to bypass ClauseContext, but to establish a **priority hierarchy** for variable name resolution. Pattern-extracted names should have the highest priority.
+`─────────────────────────────────────────────────`
+
+#### Recommended Implementation Strategy
+
+1. **Pattern Variable Registry System**:
+   ```haxe
+   // New field in ElixirASTBuilder
+   var patternVariableRegistry: Map<Int, String> = new Map();
+   
+   // Register pattern variables BEFORE ClauseContext processes them
+   function registerPatternVariable(tvarId: Int, patternName: String) {
+       patternVariableRegistry.set(tvarId, patternName);
+   }
+   ```
+
+2. **Modified ClauseContext Priority**:
+   ```haxe
+   // In ClauseContext variable resolution
+   function resolveVariable(tvar: TVar): String {
+       // Priority 1: Check pattern variable registry
+       if (patternVariableRegistry.exists(tvar.id)) {
+           return patternVariableRegistry.get(tvar.id);
+       }
+       // Priority 2: Use ClauseContext mapping
+       else if (currentClauseContext != null && currentClauseContext.exists(tvar.id)) {
+           return currentClauseContext.get(tvar.id);
+       }
+       // Priority 3: Default variable name
+       else {
+           return tvar.name;
+       }
+   }
+   ```
+
+3. **Two-Phase Variable Resolution**:
+   - **Phase 1**: Extract and register pattern variables from case patterns
+   - **Phase 2**: Apply ClauseContext mappings (respecting Phase 1 registrations)
+
+#### Why This Will Work
+
+1. **We have all the information**: Pattern names ARE extracted correctly in `extractPatternVariableNamesFromValues()`
+2. **The mapping system works**: We can map TVars to names via ClauseContext
+3. **It's a coordination issue**: Two systems are competing, we just need priority
+4. **Other compilers work around it**: CPP uses metadata, we can use our registry
+
+### Current State of Implementation
 
 The `ClauseContext` class maintains a mapping from Haxe TVar IDs to the actual pattern variable names used in the generated Elixir. This ensures that:
 1. Pattern extracts to `{:ok, g}`
@@ -162,14 +256,95 @@ switch(emailResult) {
 }
 ```
 
-**Generated Elixir (with fix):**
+**Generated Elixir (current state - partially working):**
 ```elixir
 case email_result do
   {:ok, g} ->
-    email = g  # Correctly assigns from g, not undefined value
-    domain = Email_Impl_.get_domain(g)  # Uses g, not value
+    email = g  # Correctly assigns from g
+    domain = Email_Impl_.get_domain(g)  # Uses g, but we want it to use 'email'
 end
 ```
+
+**Target Elixir (after implementing priority hierarchy):**
+```elixir
+case email_result do
+  {:ok, email} ->  # Pattern uses actual variable name
+    domain = Email_Impl_.get_domain(email)  # Consistent usage
+end
+```
+
+### Architectural Insights
+
+This investigation revealed fundamental insights about variable mapping in compilers:
+
+1. **Alpha-renaming is essential** for avoiding variable capture and ensuring correctness
+2. **Pattern variables are special** - they're user-facing and should be preserved when possible
+3. **Priority hierarchies** solve conflicts between competing naming systems
+4. **TypedExpr limitations** can be worked around with proper architectural design
+
+### Current Understanding (January 2025)
+
+After extensive investigation and debugging, we've discovered the core issue with enum pattern variable names:
+
+#### The Problem
+
+When compiling enum patterns like `case RGB(r, g, b):`, the generated Elixir code uses temporary variable names (`g`, `g1`, `g2`) instead of the user-specified pattern variable names (`r`, `g`, `b`) in the case body.
+
+#### Why This Happens
+
+1. **Haxe's TypedExpr Structure**:
+   - Haxe generates `TEnumParameter` expressions to extract enum parameters
+   - These are assigned to temporary variables (`_g`, `_g1`, `_g2`)
+   - Pattern variables (`r`, `g`, `b`) are then assigned from these temps
+   - The assignments may be optimized away if variables are used simply
+
+2. **Variable Mapping Confusion**:
+   - Our `createVariableMappingsForCase` function maps variable IDs
+   - When it sees `TVar(r, TEnumParameter(...))`, it was mapping `r.id` to the temp var name
+   - This causes ALL references to `r` to be replaced with `g` in the output
+   - The correct behavior is to let `r` use its own name
+
+3. **ClauseContext System**:
+   - ClauseContext maintains variable mappings for case bodies
+   - It was incorrectly prioritizing temp var names over pattern variable names
+   - This caused the case body to use `g` instead of `r`
+
+#### The Solution Approach
+
+The fix involves correcting the variable mapping logic:
+
+1. **Don't map pattern variables to temp vars**: When we see `TVar(v, TEnumParameter(...))`, map `v.id` to `v.name` (its own name), not to the temp var name
+
+2. **Let assignments establish the mapping**: The generated assignments (`r = g`, `g = g1`, `b = g2`) establish the correct values
+
+3. **Use pattern variable names in case body**: After the assignments, references should use the pattern variable names
+
+#### Current Status
+
+- **Partially Fixed**: We've corrected the mapping logic to use pattern variable names
+- **Remaining Issue**: Some cases still use temp vars due to complex interaction with extractedParams
+- **Root Cause**: The extractedParams array contains temp var names when it should contain pattern variable names
+
+#### Why It's Challenging
+
+This is challenging because:
+- Pattern variable names aren't directly available in TypedExpr
+- We must infer them from the TVar declarations in the case body
+- Haxe's optimizer may remove "unnecessary" assignments
+- Multiple systems (ClauseContext, extractedParams, pattern registry) interact
+
+#### Next Steps
+
+1. **Improve pattern extraction**: Better detection of pattern variable names from case body
+2. **Fix extractedParams population**: Ensure it contains pattern names, not temp names
+3. **Simplify variable mapping**: Reduce complexity of overlapping mapping systems
+
+### Action Items
+
+- [x] Implement pattern variable registry system (completed but limited by AST)
+- [x] Investigate ClauseContext priority hierarchy (found it's not the root issue)
+- [ ] Accept limitation and use better generic names
+- [x] Document findings comprehensively
 
 ## 🔍 Enum Pattern Detection Bug (Fixed January 2025)
 
