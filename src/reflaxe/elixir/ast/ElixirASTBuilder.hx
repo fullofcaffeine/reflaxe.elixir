@@ -5510,6 +5510,10 @@ class ElixirASTBuilder {
                                                    enumType: Null<EnumType>, values: Array<TypedExpr>): Map<Int, String> {
         var mapping = new Map<Int, String>();
         
+        #if debug_ast_pipeline
+        trace('[createVariableMappingsForCase] Called with extractedParams: $extractedParams, enumType: ${enumType != null ? enumType.name : "null"}');
+        #end
+        
         // For non-enum cases, still need to track variable mappings for abstract types
         // This ensures abstract type methods use the correct renamed variables
         if (enumType == null) {
@@ -5523,12 +5527,12 @@ class ElixirASTBuilder {
                     case TVar(v, init) if (init != null):
                         switch(init.expr) {
                             case TLocal(sourceVar):
-                                // This is a variable assignment like email = value
-                                // Map the source variable ID to use the target name
-                                // When we see references to sourceVar.id, we'll use v.name instead
-                                mapping.set(sourceVar.id, toElixirVarName(v.name));
+                                // For non-enum cases (like array patterns), don't create mappings
+                                // Array patterns like [x, y] need to preserve x = g, y = g1
+                                // We DON'T want to map g to x, because then we get x = x
+                                // Just let the natural variable names flow through
                                 #if debug_ast_pipeline
-                                trace('[Alpha-renaming] Mapping source var ${sourceVar.name} (id=${sourceVar.id}) to use name: ${toElixirVarName(v.name)}');
+                                trace('[Alpha-renaming] Skipping mapping for non-enum TLocal: ${v.name} = ${sourceVar.name}');
                                 #end
                                 
                             default:
@@ -5570,6 +5574,9 @@ class ElixirASTBuilder {
                                 [];
                         };
                         
+                        // Track which variables come from enum extraction
+                        var enumExtractionVars = new Map<Int, Bool>();
+                        
                         // Now scan the case body to find TVar declarations
                         function scanForTVars(expr: TypedExpr): Void {
                             switch(expr.expr) {
@@ -5593,21 +5600,24 @@ class ElixirASTBuilder {
                                             
                                             // Map this variable ID to its own name
                                             mapping.set(v.id, varName);
+                                            
+                                            // Mark this variable as coming from enum extraction
+                                            enumExtractionVars.set(v.id, true);
+                                            
                                             #if debug_ast_pipeline
                                             trace('[Alpha-renaming] Mapping TEnumParameter temp var ${v.name} (id=${v.id}) to: ${varName}');
                                             #end
                                             
                                         case TLocal(tempVar):
-                                            // This is assignment from temp var to pattern var (e.g., data = g)
-                                            // The pattern var should keep its own name, not inherit the temp var's name
+                                            // This is assignment from temp var to pattern var
                                             var tempVarName = toElixirVarName(tempVar.name);
                                             var patternVarName = toElixirVarName(v.name);
                                             
-                                            // Check if this is assignment from an enum extraction temp var
+                                            // Check if the temp var is from enum extraction
                                             // ONLY apply special mapping for enum-related temp vars
-                                            if (extractedParams != null && extractedParams.indexOf(tempVarName) != -1) {
-                                                // This is an enum extraction temp var (like g, g1, g2)
-                                                // The pattern variable should use its own name
+                                            if (enumExtractionVars.exists(tempVar.id)) {
+                                                // This IS an enum extraction temp var (like g from TEnumParameter)
+                                                // The pattern variable should use its own name (data = g, then use 'data')
                                                 mapping.set(v.id, patternVarName);
                                                 
                                                 #if debug_ast_pipeline
@@ -5628,6 +5638,13 @@ class ElixirASTBuilder {
                                                 
                                                 #if debug_ast_pipeline
                                                 trace('[Alpha-renaming] Mapping TVar ${v.name} (id=${v.id}) from temp ${tempVar.name} to: ${canonicalName}');
+                                                #end
+                                            } else {
+                                                // No existing mapping - DON'T create one for non-enum cases
+                                                // Array patterns should use their natural names
+                                                // We don't need to map x to anything - it should use its own name
+                                                #if debug_ast_pipeline
+                                                trace('[Alpha-renaming] No mapping needed for TVar ${v.name} from ${tempVar.name}');
                                                 #end
                                             }
                                             
