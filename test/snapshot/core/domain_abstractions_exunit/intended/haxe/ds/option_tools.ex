@@ -62,7 +62,7 @@ defmodule OptionTools do
         fn_param.()
     end
   end
-  def or(first, second) do
+  def or_fn(first, second) do
     case (first) do
       {:some, v} ->
         _g = elem(first, 1)
