@@ -16,8 +16,6 @@ defmodule Main do
     Log.trace("Age: " <> Kernel.to_string(age), %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "stringInterpolation"})
     Log.trace("Next year, " <> name <> " will be " <> Kernel.to_string((age + 1)), %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "stringInterpolation"})
     Log.trace("Pi rounded: " <> Kernel.to_string(Std.int(pi * 100 + 0.5) / 100), %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "stringInterpolation"})
-    person_name = nil
-    person_age = nil
     person_name = "Bob"
     person_age = 25
     Log.trace("Person: " <> person_name <> " is " <> Kernel.to_string(person_age) <> " years old", %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "stringInterpolation"})

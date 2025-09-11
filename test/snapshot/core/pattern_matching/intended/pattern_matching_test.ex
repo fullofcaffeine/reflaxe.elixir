@@ -1,13 +1,13 @@
 defmodule PatternMatchingTest do
   def match_color(_color) do
-    case (elem(_color, 0)) do
-      0 ->
+    case (_color) do
+      {:red} ->
         "red"
-      1 ->
+      {:green} ->
         "green"
-      2 ->
+      {:blue} ->
         "blue"
-      3 ->
+      {:rgb, r, g, b} ->
         g = elem(_color, 1)
         g1 = elem(_color, 2)
         g2 = elem(_color, 3)
@@ -18,10 +18,10 @@ defmodule PatternMatchingTest do
     end
   end
   def match_option(_option) do
-    case (elem(_option, 0)) do
-      0 ->
+    case (_option) do
+      {:none} ->
         "none"
-      1 ->
+      {:some, value} ->
         g = elem(_option, 1)
         value = g
         "some(" <> Std.string(value) <> ")"
@@ -81,31 +81,31 @@ defmodule PatternMatchingTest do
     end
   end
   def match_nested(_option) do
-    case (elem(_option, 0)) do
-      0 ->
+    case (_option) do
+      {:none} ->
         "no color"
-      1 ->
+      {:some, value} ->
         g = elem(_option, 1)
-        case (elem(g, 0)) do
-          0 ->
+        case (g) do
+          {:red} ->
             "red color"
-          1 ->
+          {:green} ->
             "green color"
-          2 ->
+          {:blue} ->
             "blue color"
-          3 ->
+          {:rgb, r, g, b} ->
             g1 = elem(g, 1)
             g2 = elem(g, 2)
             g = elem(g, 3)
             r = g1
-            _g = g2
-            _b = g
+            g = g2
+            b = g
             if (r > 128) do
               "bright rgb"
             else
-              _r = g1
-              _g = g2
-              _b = g
+              r = g1
+              g = g2
+              b = g
               "dark rgb"
             end
         end

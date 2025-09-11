@@ -6,8 +6,8 @@ defmodule Main do
     Log.trace("Idiomatic option none: " <> Std.string(none), %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testIdiomaticOption"})
   end
   defp test_literal_option() do
-    some = {:Some, "test"}
-    none = {1}
+    some = {:some, "test"}
+    none = {:none}
     Log.trace("Literal option some: " <> Std.string(some), %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "testLiteralOption"})
     Log.trace("Literal option none: " <> Std.string(none), %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "testLiteralOption"})
   end
@@ -20,22 +20,22 @@ defmodule Main do
   defp test_pattern_matching() do
     user_opt = 42
     case (user_opt) do
-      {:some, _} ->
+      {:some, value} ->
         g = elem(user_opt, 1)
-        value = g
+        value = value
         Log.trace("Got value: " <> Kernel.to_string(value), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "testPatternMatching"})
-      :none ->
+      {:none} ->
         Log.trace("Got none", %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "testPatternMatching"})
     end
     result = "data"
     case (result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(result, 1)
-        data = g
-        Log.trace("Success: " <> data, %{:file_name => "Main.hx", :line_number => 88, :class_name => "Main", :method_name => "testPatternMatching"})
-      {:error, _} ->
+        data = value
+        Log.trace("Success: " <> value, %{:file_name => "Main.hx", :line_number => 88, :class_name => "Main", :method_name => "testPatternMatching"})
+      {:error, reason} ->
         g = elem(result, 1)
-        reason = g
+        reason = reason
         Log.trace("Error: " <> reason, %{:file_name => "Main.hx", :line_number => 90, :class_name => "Main", :method_name => "testPatternMatching"})
     end
   end

@@ -1,6 +1,5 @@
 defmodule Email_Impl_ do
   def _new(email) do
-    this1 = nil
     if (not is_valid_email(email)) do
       throw("Invalid email address: " <> email)
     end
@@ -12,12 +11,10 @@ defmodule Email_Impl_ do
     {:ok, email}
   end
   def get_domain(this1) do
-    at_index = this1.last_index_of("@")
-    this1.substring(at_index + 1)
+    String.slice(this1, (this1.last_index_of("@")) + 1)
   end
   def get_local_part(this1) do
-    at_index = this1.last_index_of("@")
-    this1.substring(0, at_index)
+    String.slice(this1, 0, (this1.last_index_of("@")))
   end
   def has_domain(this1, domain) do
     get_domain(this1).to_lower_case() == domain.to_lower_case()

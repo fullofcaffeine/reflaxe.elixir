@@ -28,7 +28,7 @@ defmodule Main do
     var_args = fn args ->
   sum = 0
   g = 0
-  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, sum, args, :ok}, fn _, {acc_g, acc_sum, acc_args, acc_state} -> nil end)
+  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {args, sum, g, :ok}, fn _, {acc_args, acc_sum, acc_g, acc_state} -> nil end)
   sum
 end
     Log.trace(var_args([1, 2, 3, 4, 5]), %{:file_name => "Main.hx", :line_number => 62, :class_name => "Main", :method_name => "dynamicFunctions"})

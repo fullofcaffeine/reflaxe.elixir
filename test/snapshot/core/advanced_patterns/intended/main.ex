@@ -194,15 +194,15 @@ defmodule Main do
               g7 = g2[0]
               g8 = g2[1]
               g2 = g2[2]
-              _g = g7
-              _h = g8
-              _i = g2
-              _a = g3
-              _b = g4
-              _c = g
-              _f = g1
-              _e = g6
-              _d = g5
+              g = g7
+              h = g8
+              i = g2
+              a = g3
+              b = g4
+              c = g
+              f = g1
+              e = g6
+              d = g5
               "3x3 matrix"
             else
               m = matrix

@@ -91,12 +91,12 @@ defmodule Main do
             DateTime.from_naive!(naive, "Etc/UTC")
 )
     d = this1
-    naive = d.to_naive()
+    naive = DateTime.to_naive(d)
     Log.trace("Converted to NaiveDateTime", %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "testConversions"})
-    _date_only = d.to_date()
+    _date_only = DateTime.to_date(d)
     Log.trace("Converted to Elixir Date (date only)", %{:file_name => "Main.hx", :line_number => 80, :class_name => "Main", :method_name => "testConversions"})
     from_naive = DateTime.from_naive!(naive, "Etc/UTC")
-    Log.trace("Created Date from NaiveDateTime: " <> from_naive.to_iso8601(), %{:file_name => "Main.hx", :line_number => 84, :class_name => "Main", :method_name => "testConversions"})
+    Log.trace("Created Date from NaiveDateTime: " <> DateTime.to_iso8601(from_naive), %{:file_name => "Main.hx", :line_number => 84, :class_name => "Main", :method_name => "testConversions"})
   end
   defp test_utility_methods() do
     Log.trace("=== Utility Methods ===", %{:file_name => "Main.hx", :line_number => 88, :class_name => "Main", :method_name => "testUtilityMethods"})

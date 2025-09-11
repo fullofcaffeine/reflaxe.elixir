@@ -6,20 +6,19 @@ defmodule StringBuf do
     length(joined)
   end
   def add(struct, x) do
-    str = if (x == nil) do
+    struct.parts ++ [(if (x == nil) do
   "null"
 else
   Std.string(x)
-end
-    struct.parts ++ [str]
+end)]
   end
   def add_char(struct, c) do
-    struct.parts ++ [String.from_char_code(c)]
+    %{struct | parts: struct.parts ++ [String.from_char_code(c)]}
   end
   def add_sub(struct, s, pos, len) do
     if (s == nil), do: nil
     substr = if (len == nil), do: s.substr(pos), else: s.substr(pos, len)
-    struct.parts ++ [substr]
+    %{struct | parts: struct.parts ++ [substr]}
   end
   def to_string(struct) do
     IO.iodata_to_binary(struct.parts)

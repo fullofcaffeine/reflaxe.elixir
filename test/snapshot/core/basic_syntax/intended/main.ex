@@ -22,7 +22,7 @@ defmodule Main do
   def factorial(struct, n) do
     result = 1
     i = n
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i, result, :ok}, fn _, {acc_i, acc_result, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i, :ok}, fn _, {acc_result, acc_i, acc_state} -> nil end)
     result
   end
   def day_name(struct, day) do

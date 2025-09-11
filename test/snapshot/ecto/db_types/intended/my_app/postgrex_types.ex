@@ -1,4 +1,1 @@
-defmodule MyApp.PostgrexTypes do
-  Postgrex.Types.define(__MODULE__, [], json: Jason)
-end
-
+Postgrex.Types.define(MyApp.PostgrexTypes, [], json: Jason)

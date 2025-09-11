@@ -1,6 +1,5 @@
 defmodule UserId_Impl_ do
   def _new(id) do
-    this1 = nil
     this1 = id
     this1
   end

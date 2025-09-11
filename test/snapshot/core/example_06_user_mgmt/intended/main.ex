@@ -1,5 +1,0 @@
-Code.require_file("contexts/user_changeset.ex", __DIR__)
-Code.require_file("std.ex", __DIR__)
-Code.require_file("haxe/log.ex", __DIR__)
-Code.require_file("contexts/users.ex", __DIR__)
-Users.main()
