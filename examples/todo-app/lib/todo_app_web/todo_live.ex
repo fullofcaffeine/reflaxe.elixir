@@ -5,13 +5,13 @@ defmodule TodoAppWeb.TodoLive do
     Log.trace("Current time: " <> DateTime.to_iso8601(now), %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 108, :class_name => "server.live.TodoLive", :method_name => "mount"})
     g = TodoPubSub.subscribe({:todo_updates})
     case (g) do
-      {:ok, value} ->
+      {:ok, g} ->
         _g = elem(g, 1)
         nil
-      {:error, error} ->
+      {:error, g} ->
         g = elem(g, 1)
-        reason = error
-        {:error, "Failed to subscribe to updates: " <> error}
+        reason = g
+        {:error, "Failed to subscribe to updates: " <> reason}
     end
     current_user = get_user_from_session(session)
     todos = load_todos(current_user.id)
@@ -22,91 +22,91 @@ defmodule TodoAppWeb.TodoLive do
   end
   def handle_event(event, socket) do
     {:no_reply, (case (event) do
-  {:create_todo, params} ->
+  {:createtodo, params} ->
     g = elem(event, 1)
     params = g
     create_todo_typed(params, socket)
-  {:toggle_todo, id} ->
+  {:toggletodo, id} ->
     g = elem(event, 1)
     id = g
     toggle_todo_status(id, socket)
-  {:delete_todo, id} ->
+  {:deletetodo, id} ->
     g = elem(event, 1)
     id = g
     delete_todo(id, socket)
-  {:edit_todo, id} ->
+  {:edittodo, id} ->
     g = elem(event, 1)
     id = g
     start_editing(id, socket)
-  {:save_todo, params} ->
+  {:savetodo, params} ->
     g = elem(event, 1)
     params = g
     save_edited_todo_typed(params, socket)
-  {:cancel_edit} ->
+  {:canceledit} ->
     presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.current_user, nil)
     SafeAssigns.set_editing_todo(presence_socket, nil)
-  {:filter_todos, filter} ->
+  {:filtertodos, filter} ->
     g = elem(event, 1)
     filter = g
     SafeAssigns.set_filter(socket, filter)
-  {:sort_todos, sortBy} ->
+  {:sorttodos, sortBy} ->
     g = elem(event, 1)
     sort_by = g
     SafeAssigns.set_sort_by(socket, sort_by)
-  {:search_todos, query} ->
+  {:searchtodos, query} ->
     g = elem(event, 1)
     query = g
     SafeAssigns.set_search_query(socket, query)
-  {:toggle_tag, tag} ->
+  {:toggletag, tag} ->
     g = elem(event, 1)
     tag = g
     toggle_tag_filter(tag, socket)
-  {:set_priority, id, priority} ->
+  {:setpriority, id, priority} ->
     g = elem(event, 1)
     g1 = elem(event, 2)
     id = g
     priority = g1
     update_todo_priority(id, priority, socket)
-  {:toggle_form} ->
+  {:toggleform} ->
     SafeAssigns.set_show_form(socket, not socket.assigns.show_form)
-  {:bulk_complete} ->
+  {:bulkcomplete} ->
     complete_all_todos(socket)
-  {:bulk_delete_completed} ->
+  {:bulkdeletecompleted} ->
     delete_completed_todos(socket)
 end)}
   end
   def handle_info(msg, socket) do
     {:no_reply, (g = TodoPubSub.parse_message(msg)
 case (g) do
-  {:some, v} ->
+  {:some, g} ->
     g = elem(g, 1)
-    parsed_msg = v
-    case (v) do
-      {:todo_created, todo} ->
+    parsed_msg = g
+    case (parsed_msg) do
+      {:todocreated, todo} ->
         g = elem(parsed_msg, 1)
         todo = g
         add_todo_to_list(todo, socket)
-      {:todo_updated, todo} ->
+      {:todoupdated, todo} ->
         g = elem(parsed_msg, 1)
         todo = g
         update_todo_in_list(todo, socket)
-      {:todo_deleted, id} ->
+      {:tododeleted, id} ->
         g = elem(parsed_msg, 1)
         id = g
         remove_todo_from_list(id, socket)
-      {:bulk_update, action} ->
+      {:bulkupdate, action} ->
         g = elem(parsed_msg, 1)
         action = g
         handle_bulk_update(action, socket)
-      {:user_online, user_id} ->
+      {:useronline, user_id} ->
         g = elem(parsed_msg, 1)
         _user_id = g
         socket
-      {:user_offline, user_id} ->
+      {:useroffline, user_id} ->
         g = elem(parsed_msg, 1)
         _user_id = g
         socket
-      {:system_alert, message, level} ->
+      {:systemalert, message, level} ->
         g = elem(parsed_msg, 1)
         g1 = elem(parsed_msg, 2)
         message = g
@@ -133,24 +133,24 @@ end)}
     changeset = Todo.changeset(Todo.new(), params)
     g = TodoApp.Repo.insert(changeset)
     case (g) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(g, 1)
-        todo = value
-        g = TodoPubSub.broadcast({:todo_updates}, {:todo_created, value})
+        todo = g
+        g = TodoPubSub.broadcast({:todo_updates}, {:todo_created, todo})
         case (g) do
-          {:ok, value} ->
+          {:ok, g} ->
             _g = elem(g, 1)
             nil
-          {:error, error} ->
+          {:error, g} ->
             g = elem(g, 1)
-            reason = error
-            Log.trace("Failed to broadcast todo creation: " <> error, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 280, :class_name => "server.live.TodoLive", :method_name => "createTodoTyped"})
+            reason = g
+            Log.trace("Failed to broadcast todo creation: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 280, :class_name => "server.live.TodoLive", :method_name => "createTodoTyped"})
         end
         updated_socket = load_and_assign_todos(socket)
         SafeAssigns.set_show_form(updated_socket, false)
-      {:error, reason} ->
+      {:error, g} ->
         g = elem(g, 1)
-        _changeset = reason
+        _changeset = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to create todo")
     end
   end
@@ -163,26 +163,26 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
     changeset = Todo.changeset(Todo.new(), todo_params)
     g = TodoApp.Repo.insert(changeset)
     case (g) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(g, 1)
-        todo = value
-        g = TodoPubSub.broadcast({:todo_updates}, {:todo_created, value})
+        todo = g
+        g = TodoPubSub.broadcast({:todo_updates}, {:todo_created, todo})
         case (g) do
-          {:ok, value} ->
+          {:ok, g} ->
             _g = elem(g, 1)
             nil
-          {:error, error} ->
+          {:error, g} ->
             g = elem(g, 1)
-            reason = error
-            Log.trace("Failed to broadcast todo creation: " <> error, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 317, :class_name => "server.live.TodoLive", :method_name => "createNewTodo"})
+            reason = g
+            Log.trace("Failed to broadcast todo creation: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 317, :class_name => "server.live.TodoLive", :method_name => "createNewTodo"})
         end
-        todos = [value] ++ socket.assigns.todos
+        todos = [todo] ++ socket.assigns.todos
         live_socket = socket
         updated_socket = Phoenix.Component.assign([live_socket, todos, false], %{:todos => {1}, :show_form => {2}})
         Phoenix.LiveView.put_flash(updated_socket, {:success}, "Todo created successfully!")
-      {:error, reason} ->
+      {:error, g} ->
         g = elem(g, 1)
-        reason = reason
+        reason = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to create todo: " <> Kernel.to_string(reason))
     end
   end
@@ -192,13 +192,13 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
     updated_changeset = Todo.toggle_completed(todo)
     g = TodoApp.Repo.update(updated_changeset)
     updated_todo = case (g) do
-  {:ok, value} ->
+  {:ok, g} ->
     g = elem(g, 1)
-    u = value
-    value
-  {:error, reason} ->
+    u = g
+    u
+  {:error, g} ->
     g = elem(g, 1)
-    reason = reason
+    reason = g
     Phoenix.LiveView.put_flash(socket, {:error}, "Failed to update todo: " <> Kernel.to_string(reason))
 end
     TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo})
@@ -209,23 +209,23 @@ end
     if (todo == nil), do: socket
     g = TodoApp.Repo.delete(todo)
     case (g) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(g, 1)
-        _deleted_todo = value
+        _deleted_todo = g
         g = TodoPubSub.broadcast({:todo_updates}, {:todo_deleted, id})
         case (g) do
-          {:ok, value} ->
+          {:ok, g} ->
             _g = elem(g, 1)
             nil
-          {:error, error} ->
+          {:error, g} ->
             g = elem(g, 1)
-            reason = error
-            Log.trace("Failed to broadcast todo deletion: " <> error, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 362, :class_name => "server.live.TodoLive", :method_name => "deleteTodo"})
+            reason = g
+            Log.trace("Failed to broadcast todo deletion: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 362, :class_name => "server.live.TodoLive", :method_name => "deleteTodo"})
         end
         remove_todo_from_list(id, socket)
-      {:error, reason} ->
+      {:error, g} ->
         g = elem(g, 1)
-        reason = reason
+        reason = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to delete todo: " <> Kernel.to_string(reason))
     end
   end
@@ -235,13 +235,13 @@ end
     updated_changeset = Todo.update_priority(todo, priority)
     g = TodoApp.Repo.update(updated_changeset)
     updated_todo = case (g) do
-  {:ok, value} ->
+  {:ok, g} ->
     g = elem(g, 1)
-    u = value
-    value
-  {:error, reason} ->
+    u = g
+    u
+  {:error, g} ->
     g = elem(g, 1)
-    reason = reason
+    reason = g
     Phoenix.LiveView.put_flash(socket, {:error}, "Failed to update priority: " <> Kernel.to_string(reason))
 end
     TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo})
@@ -360,13 +360,13 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} -> nil end)
     g = TodoPubSub.broadcast({:todo_updates}, {:bulk_update, {:complete_all}})
     case (g) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(g, 1)
         nil
-      {:error, error} ->
+      {:error, g} ->
         g = elem(g, 1)
-        reason = error
-        Log.trace("Failed to broadcast bulk complete: " <> error, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 524, :class_name => "server.live.TodoLive", :method_name => "completeAllTodos"})
+        reason = g
+        Log.trace("Failed to broadcast bulk complete: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 524, :class_name => "server.live.TodoLive", :method_name => "completeAllTodos"})
     end
     updated_todos = load_todos(socket.assigns.current_user.id)
     current_assigns = socket.assigns
@@ -404,25 +404,25 @@ end)
     changeset = Todo.changeset(todo, params)
     g = TodoApp.Repo.update(changeset)
     case (g) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(g, 1)
-        updated_todo = value
-        g = TodoPubSub.broadcast({:todo_updates}, {:todo_updated, value})
+        updated_todo = g
+        g = TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo})
         case (g) do
-          {:ok, value} ->
+          {:ok, g} ->
             _g = elem(g, 1)
             nil
-          {:error, error} ->
+          {:error, g} ->
             g = elem(g, 1)
-            reason = error
-            Log.trace("Failed to broadcast todo update: " <> error, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 605, :class_name => "server.live.TodoLive", :method_name => "saveEditedTodoTyped"})
+            reason = g
+            Log.trace("Failed to broadcast todo update: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 605, :class_name => "server.live.TodoLive", :method_name => "saveEditedTodoTyped"})
         end
         presence_socket = TodoAppWeb.Presence.update_user_editing(socket, socket.assigns.current_user, nil)
         updated_socket = SafeAssigns.set_editing_todo(presence_socket, nil)
         load_and_assign_todos(updated_socket)
-      {:error, reason} ->
+      {:error, g} ->
         g = elem(g, 1)
-        _changeset = reason
+        _changeset = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to update todo")
     end
   end
@@ -437,47 +437,47 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
     changeset = Todo.changeset(todo, todo_params)
     g = TodoApp.Repo.update(changeset)
     case (g) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(g, 1)
-        updated_todo = value
-        g = TodoPubSub.broadcast({:todo_updates}, {:todo_updated, value})
+        updated_todo = g
+        g = TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo})
         case (g) do
-          {:ok, value} ->
+          {:ok, g} ->
             _g = elem(g, 1)
             nil
-          {:error, error} ->
+          {:error, g} ->
             g = elem(g, 1)
-            reason = error
-            Log.trace("Failed to broadcast todo save: " <> error, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 642, :class_name => "server.live.TodoLive", :method_name => "saveEditedTodo"})
+            reason = g
+            Log.trace("Failed to broadcast todo save: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 642, :class_name => "server.live.TodoLive", :method_name => "saveEditedTodo"})
         end
-        updated_socket = update_todo_in_list(value, socket)
+        updated_socket = update_todo_in_list(updated_todo, socket)
         live_socket = updated_socket
         Phoenix.Component.assign(live_socket, :editing_todo, nil)
-      {:error, reason} ->
+      {:error, g} ->
         g = elem(g, 1)
-        reason = reason
+        reason = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to save todo: " <> Kernel.to_string(reason))
     end
   end
   def handle_bulk_update(action, socket) do
     case (action) do
-      {:complete_all} ->
+      {:completeall} ->
         updated_todos = load_todos(socket.assigns.current_user.id)
         live_socket = socket
         Phoenix.Component.assign([live_socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
-      {:delete_completed} ->
+      {:deletecompleted} ->
         updated_todos = load_todos(socket.assigns.current_user.id)
         live_socket = socket
         Phoenix.Component.assign([live_socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
-      {:set_priority, priority} ->
+      {:setpriority, priority} ->
         g = elem(action, 1)
         _priority = g
         socket
-      {:add_tag, tag} ->
+      {:addtag, tag} ->
         g = elem(action, 1)
         _tag = g
         socket
-      {:remove_tag, tag} ->
+      {:removetag, tag} ->
         g = elem(action, 1)
         _tag = g
         socket
