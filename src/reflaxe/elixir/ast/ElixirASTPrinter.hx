@@ -1207,31 +1207,36 @@ class ElixirASTPrinter {
     static function printFunctionArg(arg: ElixirAST): String {
         if (arg == null) return "";
         
-        // Check if this is an inline if expression
-        var needsParens = switch(arg.def) {
+        // Check what kind of expression this is
+        switch(arg.def) {
             case EIf(condition, thenBranch, elseBranch):
                 // An if expression needs parentheses when used as a function argument
                 // if it will be printed inline (single line)
                 // We consider it inline if:
                 // 1. It has the keepInlineInAssignment metadata (null coalescing)
                 // 2. Or both branches are simple expressions (ternary operator)
-                if (arg.metadata != null && arg.metadata.keepInlineInAssignment == true) {
+                var needsParens = if (arg.metadata != null && arg.metadata.keepInlineInAssignment == true) {
                     true;
                 } else {
                     // Check if branches are simple enough to be printed inline
                     var thenSimple = isSimpleExpression(thenBranch);
                     var elseSimple = elseBranch != null ? isSimpleExpression(elseBranch) : true;
                     thenSimple && elseSimple;
+                };
+                
+                if (needsParens) {
+                    return '(' + print(arg, 0) + ')';
+                } else {
+                    return print(arg, 0);
                 }
+                
+            case EBlock(expressions) if (expressions.length > 1):
+                // Multi-statement blocks in function arguments must be wrapped
+                // in immediately-invoked anonymous functions
+                return '(fn -> ' + print(arg, 0) + ' end).()';
+                
             default:
-                false;
-        };
-        
-        // Wrap in parentheses if needed
-        if (needsParens) {
-            return '(' + print(arg, 0) + ')';
-        } else {
-            return print(arg, 0);
+                return print(arg, 0);
         }
     }
     
