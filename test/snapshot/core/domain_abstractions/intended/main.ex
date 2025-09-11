@@ -14,20 +14,20 @@ defmodule Main do
     Log.trace("=== Email Validation Tests ===", %{:file_name => "Main.hx", :line_number => 44, :class_name => "Main", :method_name => "testEmailValidation"})
     email_result = Email_Impl_.parse("user@example.com")
     case (email_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(email_result, 1)
-        email = g
-        domain = Email_Impl_.get_domain(email)
-        local_part = Email_Impl_.get_local_part(email)
+        email = value
+        domain = Email_Impl_.get_domain(value)
+        local_part = Email_Impl_.get_local_part(value)
         Log.trace("Valid email - Domain: " <> domain <> ", Local: " <> local_part, %{:file_name => "Main.hx", :line_number => 52, :class_name => "Main", :method_name => "testEmailValidation"})
-        is_example_domain = Email_Impl_.has_domain(email, "example.com")
+        is_example_domain = Email_Impl_.has_domain(value, "example.com")
         Log.trace("Is example.com domain: " <> Std.string(is_example_domain), %{:file_name => "Main.hx", :line_number => 56, :class_name => "Main", :method_name => "testEmailValidation"})
-        normalized = Email_Impl_.normalize(email)
+        normalized = Email_Impl_.normalize(value)
         Log.trace("Normalized: " <> Email_Impl_.to_string(normalized), %{:file_name => "Main.hx", :line_number => 60, :class_name => "Main", :method_name => "testEmailValidation"})
-      {:error, _} ->
+      {:error, error} ->
         g = elem(email_result, 1)
-        reason = g
-        Log.trace("Unexpected email validation failure: " <> reason, %{:file_name => "Main.hx", :line_number => 63, :class_name => "Main", :method_name => "testEmailValidation"})
+        reason = error
+        Log.trace("Unexpected email validation failure: " <> error, %{:file_name => "Main.hx", :line_number => 63, :class_name => "Main", :method_name => "testEmailValidation"})
     end
     invalid_emails = ["invalid-email", "@example.com", "user@", "user@@example.com", "", "user space@example.com"]
     g = 0
@@ -45,14 +45,14 @@ defmodule Main do
     Log.trace("=== UserId Validation Tests ===", %{:file_name => "Main.hx", :line_number => 101, :class_name => "Main", :method_name => "testUserIdValidation"})
     valid_ids = ["user123", "Alice", "Bob42", "testUser"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, valid_ids, :ok}, fn _, {acc_g, acc_valid_ids, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {valid_ids, g, :ok}, fn _, {acc_valid_ids, acc_g, acc_state} -> nil end)
     invalid_ids = ["ab", "user@123", "user 123", "user-123", "", (
 Enum.join((g = []
 g1 = 0
 Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, :ok}, fn _, {acc_g1, acc_state} ->
   if (acc_g1 < 60) do
     _i = acc_g1 = acc_g1 + 1
-    g ++ ["a"]
+    g = g ++ ["a"]
     {:cont, {acc_g1, acc_state}}
   else
     {:halt, {acc_g1, acc_state}}
@@ -61,7 +61,7 @@ end)
 g), "")
 )]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_ids, :ok}, fn _, {acc_g, acc_invalid_ids, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_ids, g, :ok}, fn _, {acc_invalid_ids, acc_g, acc_state} -> nil end)
     id1_result = UserId_Impl_.parse("User123")
     id2_result = UserId_Impl_.parse("user123")
     if (ResultTools.is_ok(id1_result) && ResultTools.is_ok(id2_result)) do
@@ -76,46 +76,46 @@ g), "")
     Log.trace("=== PositiveInt Arithmetic Tests ===", %{:file_name => "Main.hx", :line_number => 158, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
     valid_numbers = [1, 5, 42, 100, 999]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, valid_numbers, :ok}, fn _, {acc_g, acc_valid_numbers, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {valid_numbers, g, :ok}, fn _, {acc_valid_numbers, acc_g, acc_state} -> nil end)
     invalid_numbers = [0, -1, -42, -100]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_numbers, :ok}, fn _, {acc_g, acc_invalid_numbers, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_numbers, g, :ok}, fn _, {acc_invalid_numbers, acc_g, acc_state} -> nil end)
     five = ResultTools.unwrap(PositiveInt_Impl_.parse(5))
     ten = ResultTools.unwrap(PositiveInt_Impl_.parse(10))
     g = PositiveInt_Impl_.safe_sub(five, ten)
     case (g) do
-      {:ok, _} ->
+      {:ok, value} ->
         _g = elem(g, 1)
         Log.trace("ERROR: Subtraction that should fail succeeded", %{:file_name => "Main.hx", :line_number => 213, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
-      {:error, _} ->
+      {:error, error} ->
         g = elem(g, 1)
-        reason = g
-        Log.trace("Correctly prevented invalid subtraction: " <> reason, %{:file_name => "Main.hx", :line_number => 215, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+        reason = error
+        Log.trace("Correctly prevented invalid subtraction: " <> error, %{:file_name => "Main.hx", :line_number => 215, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
     end
     twenty = ResultTools.unwrap(PositiveInt_Impl_.parse(20))
     four = ResultTools.unwrap(PositiveInt_Impl_.parse(4))
     three = ResultTools.unwrap(PositiveInt_Impl_.parse(3))
     g = PositiveInt_Impl_.safe_div(twenty, four)
     case (g) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(g, 1)
-        result = g
-        Log.trace("20 / 4 = " <> PositiveInt_Impl_.to_string(result), %{:file_name => "Main.hx", :line_number => 225, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
-      {:error, _} ->
+        result = value
+        Log.trace("20 / 4 = " <> PositiveInt_Impl_.to_string(value), %{:file_name => "Main.hx", :line_number => 225, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+      {:error, error} ->
         g = elem(g, 1)
-        reason = g
-        Log.trace("Division failed: " <> reason, %{:file_name => "Main.hx", :line_number => 227, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+        reason = error
+        Log.trace("Division failed: " <> error, %{:file_name => "Main.hx", :line_number => 227, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
     end
     g = PositiveInt_Impl_.safe_div(twenty, three)
     case (g) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(g, 1)
-        result = g
-        Log.trace("20 / 3 = " <> PositiveInt_Impl_.to_string(result) <> " (unexpected success)", %{:file_name => "Main.hx", :line_number => 232, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
-      {:error, _} ->
+        result = value
+        Log.trace("20 / 3 = " <> PositiveInt_Impl_.to_string(value) <> " (unexpected success)", %{:file_name => "Main.hx", :line_number => 232, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+      {:error, error} ->
         g = elem(g, 1)
-        reason = g
-        Log.trace("20 / 3 correctly failed (not exact): " <> reason, %{:file_name => "Main.hx", :line_number => 234, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+        reason = error
+        Log.trace("20 / 3 correctly failed (not exact): " <> error, %{:file_name => "Main.hx", :line_number => 234, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
     end
   end
   defp test_non_empty_string_operations() do
@@ -125,10 +125,10 @@ g), "")
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {valid_strings, g, :ok}, fn _, {acc_valid_strings, acc_g, acc_state} -> nil end)
     invalid_strings = ["", "   ", "\t\n"]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_strings, :ok}, fn _, {acc_g, acc_invalid_strings, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_strings, g, :ok}, fn _, {acc_invalid_strings, acc_g, acc_state} -> nil end)
     whitespace_strings = ["  hello  ", "\tworld\n", "  test  "]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, whitespace_strings, :ok}, fn _, {acc_g, acc_whitespace_strings, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {whitespace_strings, g, :ok}, fn _, {acc_whitespace_strings, acc_g, acc_state} -> nil end)
     test_str = ResultTools.unwrap(NonEmptyString_Impl_.parse("Hello World"))
     starts_with_hello = NonEmptyString_Impl_.starts_with(test_str, "Hello")
     ends_with_world = NonEmptyString_Impl_.ends_with(test_str, "World")
@@ -136,14 +136,14 @@ g), "")
     Log.trace("String operations - Starts with \"Hello\": " <> Std.string(starts_with_hello) <> ", Ends with \"World\": " <> Std.string(ends_with_world) <> ", Contains space: " <> Std.string(contains_space), %{:file_name => "Main.hx", :line_number => 307, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
     g = NonEmptyString_Impl_.safe_replace(test_str, "World", "Universe")
     case (g) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(g, 1)
-        replaced = g
-        Log.trace("Replaced \"World\" with \"Universe\": " <> NonEmptyString_Impl_.to_string(replaced), %{:file_name => "Main.hx", :line_number => 312, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
-      {:error, _} ->
+        replaced = value
+        Log.trace("Replaced \"World\" with \"Universe\": " <> NonEmptyString_Impl_.to_string(value), %{:file_name => "Main.hx", :line_number => 312, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+      {:error, error} ->
         g = elem(g, 1)
-        reason = g
-        Log.trace("Replacement failed: " <> reason, %{:file_name => "Main.hx", :line_number => 314, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+        reason = error
+        Log.trace("Replacement failed: " <> error, %{:file_name => "Main.hx", :line_number => 314, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
     end
     parts = NonEmptyString_Impl_.split_non_empty(test_str, " ")
     Log.trace("Split by space: " <> Kernel.to_string(length(parts)) <> " parts", %{:file_name => "Main.hx", :line_number => 319, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
@@ -171,24 +171,24 @@ end)
     Log.trace("String chain result: " <> NonEmptyString_Impl_.to_string(string_chain), %{:file_name => "Main.hx", :line_number => 358, :class_name => "Main", :method_name => "testFunctionalComposition"})
     composition_result = build_user_profile("user123", "  alice@example.com  ", "5")
     case (composition_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(composition_result, 1)
-        profile = g
+        profile = value
         Log.trace("User profile created successfully:", %{:file_name => "Main.hx", :line_number => 364, :class_name => "Main", :method_name => "testFunctionalComposition"})
-        Log.trace("  UserId: " <> UserId_Impl_.to_string(profile.user_id), %{:file_name => "Main.hx", :line_number => 365, :class_name => "Main", :method_name => "testFunctionalComposition"})
-        Log.trace("  Email: " <> Email_Impl_.to_string(profile.email), %{:file_name => "Main.hx", :line_number => 366, :class_name => "Main", :method_name => "testFunctionalComposition"})
-        Log.trace("  Score: " <> PositiveInt_Impl_.to_string(profile.score), %{:file_name => "Main.hx", :line_number => 367, :class_name => "Main", :method_name => "testFunctionalComposition"})
-      {:error, _} ->
+        Log.trace("  UserId: " <> UserId_Impl_.to_string(value.user_id), %{:file_name => "Main.hx", :line_number => 365, :class_name => "Main", :method_name => "testFunctionalComposition"})
+        Log.trace("  Email: " <> Email_Impl_.to_string(value.email), %{:file_name => "Main.hx", :line_number => 366, :class_name => "Main", :method_name => "testFunctionalComposition"})
+        Log.trace("  Score: " <> PositiveInt_Impl_.to_string(value.score), %{:file_name => "Main.hx", :line_number => 367, :class_name => "Main", :method_name => "testFunctionalComposition"})
+      {:error, error} ->
         g = elem(composition_result, 1)
-        reason = g
-        Log.trace("User profile creation failed: " <> reason, %{:file_name => "Main.hx", :line_number => 369, :class_name => "Main", :method_name => "testFunctionalComposition"})
+        reason = error
+        Log.trace("User profile creation failed: " <> error, %{:file_name => "Main.hx", :line_number => 369, :class_name => "Main", :method_name => "testFunctionalComposition"})
     end
   end
   defp test_error_handling() do
     Log.trace("=== Error Handling Tests ===", %{:file_name => "Main.hx", :line_number => 377, :class_name => "Main", :method_name => "testErrorHandling"})
     invalid_inputs = [%{:email => "invalid-email", :user_id => "ab", :score => "0"}, %{:email => "user@domain", :user_id => "user@123", :score => "-5"}, %{:email => "", :user_id => "", :score => "not-a-number"}]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, invalid_inputs, :ok}, fn _, {acc_g, acc_invalid_inputs, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {invalid_inputs, g, :ok}, fn _, {acc_invalid_inputs, acc_g, acc_state} -> nil end)
     Log.trace("Testing edge cases that should succeed:", %{:file_name => "Main.hx", :line_number => 396, :class_name => "Main", :method_name => "testErrorHandling"})
     edge_cases = [%{:email => "a@b.co", :user_id => "usr", :score => "1"}, %{:email => "very.long.email.address@very.long.domain.name.example.com", :user_id => "user123456789", :score => "999"}]
     g = 0
@@ -199,29 +199,29 @@ end)
     registration_data = [%{:user_id => "alice123", :email => "alice@example.com", :preferred_name => "Alice Smith"}, %{:user_id => "bob456", :email => "bob.jones@company.org", :preferred_name => "Bob"}, %{:user_id => "charlie", :email => "charlie@test.dev", :preferred_name => "Charlie Brown"}]
     valid_users = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, registration_data, :ok}, fn _, {acc_g, acc_registration_data, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {registration_data, g, :ok}, fn _, {acc_registration_data, acc_g, acc_state} ->
   if (acc_g < length(acc_registration_data)) do
     user_data = registration_data[g]
     acc_g = acc_g + 1
     user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
     nil
-    {:cont, {acc_g, acc_registration_data, acc_state}}
+    {:cont, {acc_registration_data, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_registration_data, acc_state}}
+    {:halt, {acc_registration_data, acc_g, acc_state}}
   end
 end)
     Log.trace("Successfully created " <> Kernel.to_string(length(valid_users)) <> " users", %{:file_name => "Main.hx", :line_number => 439, :class_name => "Main", :method_name => "testRealWorldScenarios"})
     config_data = [%{:timeout => "30", :retries => "3", :name => "production"}, %{:timeout => "0", :retries => "5", :name => ""}, %{:timeout => "60", :retries => "-1", :name => "test"}]
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, config_data, :ok}, fn _, {acc_g, acc_config_data, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {config_data, g, :ok}, fn _, {acc_config_data, acc_g, acc_state} ->
   if (acc_g < length(acc_config_data)) do
     config = config_data[g]
     acc_g = acc_g + 1
     config_result = validate_configuration(config.timeout, config.retries, config.name)
     nil
-    {:cont, {acc_g, acc_config_data, acc_state}}
+    {:cont, {acc_config_data, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_config_data, acc_state}}
+    {:halt, {acc_config_data, acc_g, acc_state}}
   end
 end)
   end

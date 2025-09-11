@@ -1,11 +1,11 @@
 defmodule ValidationState do
   def valid() do
-    {:Valid}
+    {0}
   end
   def invalid(arg0) do
-    {:Invalid, arg0}
+    {1, arg0}
   end
   def pending(arg0) do
-    {:Pending, arg0}
+    {2, arg0}
   end
 end

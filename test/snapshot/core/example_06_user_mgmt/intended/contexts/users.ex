@@ -15,12 +15,10 @@ defmodule Users do
     nil
   end
   def create_user(attrs) do
-    changeset = UserChangeset.changeset(nil, attrs)
-    if (changeset != nil), do: %{:status => "ok", :user => nil}, else: %{:status => "error", :changeset => changeset}
+    if (changeset != nil), do: %{:status => "ok", :user => nil}, else: %{:status => "error", :changeset => (UserChangeset.changeset(nil, attrs))}
   end
   def update_user(user, attrs) do
-    changeset = UserChangeset.changeset(user, attrs)
-    if (changeset != nil), do: %{:status => "ok", :user => user}, else: %{:status => "error", :changeset => changeset}
+    if (changeset != nil), do: %{:status => "ok", :user => user}, else: %{:status => "error", :changeset => (UserChangeset.changeset(user, attrs))}
   end
   def delete_user(user) do
     update_user(user, %{:active => false})

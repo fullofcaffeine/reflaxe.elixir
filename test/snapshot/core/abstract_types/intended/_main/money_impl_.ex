@@ -1,6 +1,5 @@
 defmodule Money_Impl_ do
   def _new(cents) do
-    this1 = nil
     this1 = cents
     this1
   end

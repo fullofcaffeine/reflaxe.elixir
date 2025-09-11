@@ -20,20 +20,20 @@ defmodule Main do
   defp test_pattern_matching() do
     user = Bob
     _result = case (user) do
-  {:some, _} ->
+  {:some, v} ->
     g = elem(user, 1)
-    name = g
-    "Hello, " <> name
-  :none ->
+    name = v
+    "Hello, " <> v
+  {:none} ->
     "Hello, anonymous"
 end
     scores = [1, 2, 3]
     _total = case (scores) do
-  {:some, _} ->
+  {:some, v} ->
     g = elem(scores, 1)
-    score_list = g
-    length(score_list)
-  :none ->
+    score_list = v
+    length(v)
+  {:none} ->
     0
 end
     process_user(Charlie)
@@ -41,11 +41,11 @@ end
   end
   defp process_user(_user) do
     case (_user) do
-      {:some, _} ->
+      {:some, v} ->
         g = elem(_user, 1)
-        name = g
-        Log.trace("Processing user: " <> name, %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "processUser"})
-      :none ->
+        name = v
+        Log.trace("Processing user: " <> v, %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "processUser"})
+      {:none} ->
         Log.trace("No user to process", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "processUser"})
     end
   end

@@ -3,6 +3,6 @@ defmodule UserOption do
     arg0
   end
   def none() do
-    :None
+    :none
   end
 end

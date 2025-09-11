@@ -1,25 +1,25 @@
 defmodule ResultTools do
   def map(_result, transform) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         transform.(value)
-      {:error, _} ->
+      {:error, error} ->
         g = elem(_result, 1)
-        error = g
+        error = error
         error
     end
   end
   def flat_map(_result, transform) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         transform.(value)
-      {:error, _} ->
+      {:error, error} ->
         g = elem(_result, 1)
-        error = g
+        error = error
         error
     end
   end
@@ -28,104 +28,104 @@ defmodule ResultTools do
   end
   def fold(_result, on_success, on_error) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         on_success.(value)
-      {:error, _} ->
+      {:error, error} ->
         g = elem(_result, 1)
-        error = g
+        error = error
         on_error.(error)
     end
   end
   def is_ok(_result) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         _g = elem(_result, 1)
         true
-      {:error, _} ->
+      {:error, error} ->
         _g = elem(_result, 1)
         false
     end
   end
   def is_error(_result) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         _g = elem(_result, 1)
         false
-      {:error, _} ->
+      {:error, error} ->
         _g = elem(_result, 1)
         true
     end
   end
   def unwrap(_result) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         value
-      {:error, _} ->
+      {:error, error} ->
         g = elem(_result, 1)
-        error = g
+        error = error
         throw("Attempted to unwrap Error result: " <> Std.string(error))
     end
   end
   def unwrap_or(_result, default_value) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         value
-      {:error, _} ->
+      {:error, error} ->
         _g = elem(_result, 1)
         default_value
     end
   end
   def unwrap_or_else(_result, error_handler) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         value
-      {:error, _} ->
+      {:error, error} ->
         g = elem(_result, 1)
-        error = g
+        error = error
         error_handler.(error)
     end
   end
   def filter(_result, predicate, error_value) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         if (predicate.(value)), do: value, else: error_value
-      {:error, _} ->
+      {:error, error} ->
         g = elem(_result, 1)
-        error = g
+        error = error
         error
     end
   end
   def map_error(_result, transform) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         value
-      {:error, _} ->
+      {:error, error} ->
         g = elem(_result, 1)
-        error = g
+        error = error
         transform.(error)
     end
   end
   def bimap(_result, on_success, on_error) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         on_success.(value)
-      {:error, _} ->
+      {:error, error} ->
         g = elem(_result, 1)
-        error = g
+        error = error
         on_error.(error)
     end
   end
@@ -138,29 +138,28 @@ defmodule ResultTools do
   def sequence(results) do
     values = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, results, :ok}, fn _, {acc_g, acc_results, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {results, g, :ok}, fn _, {acc_results, acc_g, acc_state} ->
   if (acc_g < length(acc_results)) do
     result = results[g]
     acc_g = acc_g + 1
     nil
-    {:cont, {acc_g, acc_results, acc_state}}
+    {:cont, {acc_results, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_results, acc_state}}
+    {:halt, {acc_results, acc_g, acc_state}}
   end
 end)
     {:ok, values}
   end
   def traverse(array, transform) do
-    results = Enum.map(array, transform)
-    sequence(results)
+    sequence((Enum.map(array, transform)))
   end
   def to_option(_result) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         value
-      {:error, _} ->
+      {:error, error} ->
         _g = elem(_result, 1)
         :none
     end

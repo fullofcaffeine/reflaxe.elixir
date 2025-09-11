@@ -1,13 +1,13 @@
 defmodule Main do
   def color_to_string(_color) do
-    case (elem(_color, 0)) do
-      0 ->
+    case (_color) do
+      {:red} ->
         "red"
-      1 ->
+      {:green} ->
         "green"
-      2 ->
+      {:blue} ->
         "blue"
-      3 ->
+      {:rgb, r, g, b} ->
         g = elem(_color, 1)
         g1 = elem(_color, 2)
         g2 = elem(_color, 3)
@@ -18,22 +18,22 @@ defmodule Main do
     end
   end
   def get_value(_opt, default_value) do
-    case (elem(_opt, 0)) do
-      0 ->
+    case (_opt) do
+      {:some, value} ->
         g = elem(_opt, 1)
         v = g
         v
-      1 ->
+      {:none} ->
         default_value
     end
   end
   def tree_sum(_tree) do
-    case (elem(_tree, 0)) do
-      0 ->
+    case (_tree) do
+      {:leaf, value} ->
         g = elem(_tree, 1)
         value = g
         value
-      1 ->
+      {:node, left, right} ->
         g = elem(_tree, 1)
         g1 = elem(_tree, 2)
         left = g
@@ -42,7 +42,7 @@ defmodule Main do
     end
   end
   def describe_rgb(_color) do
-    if (elem(_color, 0) == 3) do
+    if (_color == 3) do
       g = elem(_color, 1)
       g1 = elem(_color, 2)
       g2 = elem(_color, 3)
@@ -64,9 +64,9 @@ defmodule Main do
           if (b > 200 && r < 50 && g < 50) do
             "mostly blue"
           else
-            _r = g
-            _g = g1
-            _b = g2
+            r = g
+            g = g1
+            b = g2
             "mixed color"
           end
         end
@@ -76,10 +76,10 @@ defmodule Main do
     end
   end
   def compare_trees(_t1, _t2) do
-    case (elem(_t1, 0)) do
-      0 ->
+    case (_t1) do
+      {:leaf, value} ->
         g = elem(_t1, 1)
-        if (elem(_t2, 0) == 0) do
+        if (_t2 == 0) do
           g1 = elem(_t2, 1)
           v2 = g1
           v1 = g
@@ -87,10 +87,10 @@ defmodule Main do
         else
           false
         end
-      1 ->
+      {:node, left, right} ->
         g = elem(_t1, 1)
         g1 = elem(_t1, 2)
-        if (elem(_t2, 0) == 1) do
+        if (_t2 == 1) do
           g2 = elem(_t2, 1)
           g3 = elem(_t2, 2)
           l2 = g2
@@ -104,16 +104,16 @@ defmodule Main do
     end
   end
   def main() do
-    color = {:RGB, 255, 128, 0}
+    color = {:rgb, 255, 128, 0}
     Log.trace(color_to_string(color), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "main"})
-    some = {:Some, "Hello"}
-    none = {1}
+    some = {:some, "Hello"}
+    none = {:none}
     Log.trace(get_value(some, "default"), %{:file_name => "Main.hx", :line_number => 84, :class_name => "Main", :method_name => "main"})
     Log.trace(get_value(none, "default"), %{:file_name => "Main.hx", :line_number => 85, :class_name => "Main", :method_name => "main"})
-    tree = {:Node, {:Leaf, 1}, {:Node, {:Leaf, 2}, {:Leaf, 3}}}
+    tree = {:node, {:leaf, 1}, {:node, {:leaf, 2}, {:leaf, 3}}}
     Log.trace(tree_sum(tree), %{:file_name => "Main.hx", :line_number => 92, :class_name => "Main", :method_name => "main"})
-    Log.trace(describe_r_g_b({:RGB, 250, 10, 10}), %{:file_name => "Main.hx", :line_number => 95, :class_name => "Main", :method_name => "main"})
-    tree2 = {:Node, {:Leaf, 1}, {:Node, {:Leaf, 2}, {:Leaf, 3}}}
+    Log.trace(describe_r_g_b({:rgb, 250, 10, 10}), %{:file_name => "Main.hx", :line_number => 95, :class_name => "Main", :method_name => "main"})
+    tree2 = {:node, {:leaf, 1}, {:node, {:leaf, 2}, {:leaf, 3}}}
     Log.trace(compare_trees(tree, tree2), %{:file_name => "Main.hx", :line_number => 99, :class_name => "Main", :method_name => "main"})
   end
 end

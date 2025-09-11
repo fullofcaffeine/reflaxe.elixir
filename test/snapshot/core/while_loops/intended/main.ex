@@ -28,7 +28,7 @@ end)
     if (rem(acc_k, 2) != 0) do
       throw(:continue)
     end
-    evens ++ [acc_k]
+    evens = evens ++ [acc_k]
     {:cont, {acc_k, acc_state}}
   else
     {:halt, {acc_k, acc_state}}
@@ -47,7 +47,7 @@ end)
   end
 end)
     outer = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner, outer, :ok}, fn _, {acc_inner, acc_outer, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {outer, inner, :ok}, fn _, {acc_outer, acc_inner, acc_state} -> nil end)
     a = 0
     b = 10
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {a, b, :ok}, fn _, {acc_a, acc_b, acc_state} ->

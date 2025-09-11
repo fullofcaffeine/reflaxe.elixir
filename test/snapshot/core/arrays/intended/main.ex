@@ -26,13 +26,13 @@ defmodule Main do
 end)
     g = 0
     g1 = length(fruits)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g, :ok}, fn _, {acc_g1, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     Log.trace("" <> Kernel.to_string(i) <> ": " <> fruits[i], %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "arrayIteration"})
-    {:cont, {acc_g1, acc_g, acc_state}}
+    {:cont, {acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_g, acc_state}}
+    {:halt, {acc_g, acc_g1, acc_state}}
   end
 end)
     i = 0
@@ -66,45 +66,45 @@ end)
     Log.trace("Sorted: " <> Std.string(unsorted), %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "arrayMethods"})
   end
   def array_comprehensions() do
-    g = []
-    g = g ++ [1]
-    g = g ++ [4]
-    g = g ++ [9]
-    g = g ++ [16]
-    g = g ++ [25]
-    squares = g
-g
+    squares = [1, 4, 9, 16, 25]
     Log.trace("Squares: " <> Std.string(squares), %{:file_name => "Main.hx", :line_number => 88, :class_name => "Main", :method_name => "arrayComprehensions"})
     g = []
-    g = g ++ [1]
-    g = g ++ [4]
-    g = g ++ [9]
-    g = g ++ [16]
-    g = g ++ [25]
-    g = g ++ [36]
-    g = g ++ [49]
-    g = g ++ [64]
-    g = g ++ [81]
-    even_squares = if rem(1, 2) == 0, do: g
-if rem(2, 2) == 0, do: g
-if rem(3, 2) == 0, do: g
-if rem(4, 2) == 0, do: g
-if rem(5, 2) == 0, do: g
-if rem(6, 2) == 0, do: g
-if rem(7, 2) == 0, do: g
-if rem(8, 2) == 0, do: g
-if rem(9, 2) == 0, do: g
+    even_squares = if rem(1, 2) == 0 do
+  g = g ++ [1]
+end
+if rem(2, 2) == 0 do
+  g = g ++ [4]
+end
+if rem(3, 2) == 0 do
+  g = g ++ [9]
+end
+if rem(4, 2) == 0 do
+  g = g ++ [16]
+end
+if rem(5, 2) == 0 do
+  g = g ++ [25]
+end
+if rem(6, 2) == 0 do
+  g = g ++ [36]
+end
+if rem(7, 2) == 0 do
+  g = g ++ [49]
+end
+if rem(8, 2) == 0 do
+  g = g ++ [64]
+end
+if rem(9, 2) == 0 do
+  g = g ++ [81]
+end
 g
     Log.trace("Even squares: " <> Std.string(even_squares), %{:file_name => "Main.hx", :line_number => 92, :class_name => "Main", :method_name => "arrayComprehensions"})
     g = []
-    g = g ++ [%{:x => 1, :y => 2}]
-    g = g ++ [%{:x => 1, :y => 3}]
-    g = g ++ [%{:x => 2, :y => 1}]
-    g = g ++ [%{:x => 2, :y => 3}]
-    g = g ++ [%{:x => 3, :y => 1}]
-    g = g ++ [%{:x => 3, :y => 2}]
-    pairs = g
-g
+    pairs = g = g ++ [%{:x => 1, :y => 2}]
+g = g ++ [%{:x => 1, :y => 3}]
+g = g ++ [%{:x => 2, :y => 1}]
+g = g ++ [%{:x => 2, :y => 3}]
+g = g ++ [%{:x => 3, :y => 1}]
+g = g ++ [%{:x => 3, :y => 2}]
 nil
 g
     Log.trace("Pairs: " <> Std.string(pairs), %{:file_name => "Main.hx", :line_number => 96, :class_name => "Main", :method_name => "arrayComprehensions"})
@@ -114,24 +114,19 @@ g
     Log.trace("Matrix element [1][2]: " <> Kernel.to_string(matrix[1][2]), %{:file_name => "Main.hx", :line_number => 108, :class_name => "Main", :method_name => "multiDimensional"})
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {matrix, g, g, :ok}, fn _, {acc_matrix, acc_g, acc_g, acc_state} -> nil end)
-    g = []
-    g = g ++ [g = []
-g ++ [0]
-g ++ [1]
-g ++ [2]
-g]
-    g = g ++ [g = []
-g ++ [3]
-g ++ [4]
-g ++ [5]
-g]
-    g = g ++ [g = []
-g ++ [6]
-g ++ [7]
-g ++ [8]
-g]
-    grid = g
-g
+    grid = [(fn -> g = []
+g = g ++ [0]
+g = g ++ [1]
+g = g ++ [2]
+g end).(), (fn -> g = []
+g = g ++ [3]
+g = g ++ [4]
+g = g ++ [5]
+g end).(), (fn -> g = []
+g = g ++ [6]
+g = g ++ [7]
+g = g ++ [8]
+g end).()]
     Log.trace("Grid: " <> Std.string(grid), %{:file_name => "Main.hx", :line_number => 119, :class_name => "Main", :method_name => "multiDimensional"})
   end
   def process_array(arr) do
@@ -140,15 +135,18 @@ g
   def first_n(arr, n) do
     g = []
     g1 = 0
-    b = length(arr)
-    g2 = Std.int((if n < b, do: n, else: b))
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g2, g1, :ok}, fn _, {acc_g2, acc_g1, acc_state} ->
+    g2 = Std.int(if (n < b) do
+  n
+else
+  (length(arr))
+end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g2, :ok}, fn _, {acc_g1, acc_g2, acc_state} ->
   if (acc_g1 < acc_g2) do
     i = acc_g1 = acc_g1 + 1
-    g ++ [arr[i]]
-    {:cont, {acc_g2, acc_g1, acc_state}}
+    g = g ++ [arr[i]]
+    {:cont, {acc_g1, acc_g2, acc_state}}
   else
-    {:halt, {acc_g2, acc_g1, acc_state}}
+    {:halt, {acc_g1, acc_g2, acc_state}}
   end
 end)
     g

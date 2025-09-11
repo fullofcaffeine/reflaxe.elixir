@@ -8,9 +8,9 @@ defmodule Main do
             DateTime.from_naive!(naive, "Etc/UTC")
 )
     d = this1
-    obj = %{:y => d.year, :m => (d.month - 1), :dd => d.day, :dow => date = d.to_date()
+    obj = %{:y => d.year, :m => (d.month - 1), :dd => d.day, :dow => (fn -> date = DateTime.to_date(d)
 dow = Date.day_of_week(date)
-if (dow == 7), do: 0, else: dow, :hh => d.hour, :mm => d.minute, :ss => d.second}
+if (dow == 7), do: 0, else: dow end).(), :hh => d.hour, :mm => d.minute, :ss => d.second}
     Log.trace(Std.string(obj), nil)
   end
 end

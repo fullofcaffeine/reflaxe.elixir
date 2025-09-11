@@ -13,7 +13,6 @@ defmodule Date_Impl_ do
             end
   end
   def _new(year, month, day, hour, min, sec) do
-    this1 = nil
     elixir_month = month + 1
     this1 = (
 
@@ -23,7 +22,7 @@ defmodule Date_Impl_ do
     this1
   end
   def get_time(this1) do
-    this1.to_unix("millisecond")
+    DateTime.to_unix(this1, "millisecond")
   end
   def get_full_year(this1) do
     this1.year
@@ -35,7 +34,7 @@ defmodule Date_Impl_ do
     this1.day
   end
   def get_day(this1) do
-    date = this1.to_date()
+    date = DateTime.to_date(this1)
     dow = Date.day_of_week(date)
     if (dow == 7), do: 0, else: dow
   end
@@ -49,7 +48,7 @@ defmodule Date_Impl_ do
     this1.second
   end
   def to_string(this1) do
-    this1.to_iso8601()
+    DateTime.to_iso8601(this1)
   end
   def get_utc_full_year(this1) do
     this1.year
@@ -61,7 +60,7 @@ defmodule Date_Impl_ do
     this1.day
   end
   def get_utc_day(this1) do
-    date = this1.to_date()
+    date = DateTime.to_date(this1)
     dow = Date.day_of_week(date)
     if (dow == 7), do: 0, else: dow
   end
@@ -87,10 +86,10 @@ defmodule Date_Impl_ do
     DateTime.compare(this1, other)
   end
   def to_naive_date_time(this1) do
-    this1.to_naive()
+    DateTime.to_naive(this1)
   end
   def to_elixir_date(this1) do
-    this1.to_date()
+    DateTime.to_date(this1)
   end
   def from_naive_date_time(dt) do
     DateTime.from_naive!(dt, "Etc/UTC")

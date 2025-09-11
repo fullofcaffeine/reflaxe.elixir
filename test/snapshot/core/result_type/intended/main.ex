@@ -1,7 +1,6 @@
 defmodule Main do
   def parse_number(input) do
-    parsed = Std.parse_int(input)
-    if (parsed != nil), do: {:ok, parsed}, else: {:error, "Invalid number: " <> input}
+    if (parsed != nil), do: {:ok, (Std.parse_int(input))}, else: {:error, "Invalid number: " <> input}
   end
   def divide_numbers(a, _b) do
     ResultTools.flat_map(parse_number(a), fn _num_a -> ResultTools.flat_map(parse_number(_b), fn num_b -> if (num_b == 0), do: {:error, "Division by zero"}, else: {:ok, _num_a / num_b} end) end)
@@ -11,14 +10,14 @@ defmodule Main do
   end
   def handle_result(_result) do
     case (_result) do
-      {:ok, _} ->
+      {:ok, value} ->
         g = elem(_result, 1)
-        value = g
+        value = value
         "Success: " <> Kernel.to_string(value)
-      {:error, _} ->
+      {:error, error} ->
         g = elem(_result, 1)
-        message = g
-        "Error: " <> message
+        message = error
+        "Error: " <> error
     end
   end
   def get_value_or_default(result) do

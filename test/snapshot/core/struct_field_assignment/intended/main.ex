@@ -1,6 +1,5 @@
 defmodule Main do
   def main() do
-    test = TestStruct.new()
-    test.write(nil)
+    (TestStruct.new()).write(nil)
   end
 end

@@ -1,6 +1,5 @@
 defmodule PositiveInt_Impl_ do
   def _new(value) do
-    this1 = nil
     if (value <= 0) do
       throw("Value must be positive, got: " <> Kernel.to_string(value))
     end
@@ -80,11 +79,10 @@ defmodule PositiveInt_Impl_ do
     this1 == value
   end
   def from_abs(value) do
-    abs = if (value < 0) do
+    parse((if (value < 0) do
   -value
 else
   value
-end
-    parse(abs)
+end))
   end
 end
