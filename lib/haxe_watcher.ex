@@ -263,11 +263,19 @@ defmodule HaxeWatcher do
       Logger.warning("No valid directories to watch: #{inspect(state.dirs)}")
       {:error, :no_valid_directories}
     else
-      # Check if FileSystem module is available
-      if Code.ensure_loaded?(FileSystem) do
-        case FileSystem.start_link(dirs: existing_dirs) do
+      # Dynamic dispatch: Instead of directly calling FileSystem.start_link/1 (which causes
+      # compile-time warnings if FileSystem is not available), we use Module.concat and apply
+      # to defer the function resolution to runtime. This allows the code to compile without
+      # warnings even when FileSystem is not installed, and gracefully handles its absence.
+      #
+      # Dynamic dispatch means calling functions indirectly through runtime lookups rather
+      # than direct compile-time references. This is useful for optional dependencies.
+      fs = Module.concat(Elixir, FileSystem)
+      
+      if Code.ensure_loaded?(fs) and function_exported?(fs, :start_link, 1) do
+        case apply(fs, :start_link, [[dirs: existing_dirs]]) do
           {:ok, pid} ->
-            FileSystem.subscribe(pid)
+            _ = apply(fs, :subscribe, [pid])
             {:ok, pid}
             
           {:error, reason} ->
