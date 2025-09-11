@@ -282,6 +282,109 @@ This investigation revealed fundamental insights about variable mapping in compi
 3. **Priority hierarchies** solve conflicts between competing naming systems
 4. **TypedExpr limitations** can be worked around with proper architectural design
 
+## 📚 Understanding Haxe's Enum Pattern Compilation
+
+### Why Redundant Extraction Code is Generated
+
+**CRITICAL INSIGHT**: Haxe generates redundant extraction code because it doesn't know that Elixir patterns can extract values directly.
+
+#### The Redundant Extraction Pattern
+
+When you see this generated code:
+```elixir
+case status do
+  {:success, g} ->
+    g = elem(status, 1)   # ❌ Redundant extraction
+    data = g              # Assignment to user variable
+    "Got data: " <> g     # Should use 'data'
+end
+```
+
+The line `g = elem(status, 1)` is redundant because the pattern `{:success, g}` already extracts the value into `g`.
+
+#### Why Haxe Generates This
+
+**1. Haxe's Internal Compilation Model:**
+- Haxe compiles to many targets (JavaScript, C++, Java, etc.)
+- Most targets DON'T have pattern matching with extraction
+- Haxe uses a universal intermediate representation (TypedExpr)
+
+**2. How Haxe Transforms Patterns:**
+```haxe
+// Original Haxe code
+switch(result) {
+    case Success(data):
+        trace(data);
+}
+
+// Step 1: Haxe converts to index-based matching
+switch(elem(result, 0)) {  // Check the tag (0 = Success)
+    case 0:
+        // Step 2: Extract the parameter
+        _g = elem(result, 1);  // TEnumParameter expression
+        
+        // Step 3: Assign to pattern variable
+        data = _g;
+        
+        // Step 4: Use the variable
+        trace(data);
+}
+```
+
+**3. Why the Extraction is Redundant in Elixir:**
+
+In Elixir, pattern matching ALREADY extracts values:
+```elixir
+# Elixir pattern matching extracts 'data' directly
+case result do
+  {:success, data} ->  # 'data' is extracted here!
+    # No need for: data = elem(result, 1)
+    IO.inspect(data)
+end
+```
+
+But Haxe doesn't know this! It generates extraction code for ALL targets.
+
+**4. Why We Keep the Redundant Code:**
+
+We could theoretically skip generating the `elem()` extraction, but:
+- **Complexity**: Would require detecting when extraction is redundant
+- **Safety**: The redundant assignment doesn't hurt (Elixir optimizes it away)
+- **Consistency**: Keeps our compiler simpler and more predictable
+- **Edge cases**: Some complex patterns might actually need the extraction
+
+#### The Variable Usage Problem
+
+The real issue isn't the redundant extraction, but that the case body uses the wrong variable:
+
+```elixir
+{:success, g} ->
+  g = elem(status, 1)   # Redundant but harmless
+  data = g              # Renames 'g' to 'data'
+  "Got data: " <> g     # ❌ BUG: Should use 'data', not 'g'
+```
+
+This happens because our variable mapping system has conflicting priorities:
+1. Pattern extracts to `g`
+2. Assignment creates `data = g`
+3. Case body should use `data` after the assignment
+4. But our ClauseContext still maps references to `g`
+
+#### Why We Need AST Transformations
+
+**The transformations are needed to bridge the gap between Haxe's universal model and Elixir's specific features:**
+
+1. **Haxe assumes imperative semantics** → Transform to functional Elixir
+2. **Haxe generates index-based matching** → Transform to pattern matching
+3. **Haxe creates temp variables** → Transform to use user-friendly names
+4. **Haxe doesn't know about Elixir patterns** → Transform to idiomatic patterns
+
+Without these transformations, the generated Elixir would:
+- Use integer indices instead of atoms
+- Have imperative-style variable mutations
+- Use generic temp variable names everywhere
+- Not leverage Elixir's pattern matching power
+
 ### Current Understanding (January 2025)
 
 After extensive investigation and debugging, we've discovered the core issue with enum pattern variable names:
@@ -319,19 +422,46 @@ The fix involves correcting the variable mapping logic:
 
 3. **Use pattern variable names in case body**: After the assignments, references should use the pattern variable names
 
-#### Current Status
+#### Current Status (January 2025)
 
-- **Partially Fixed**: We've corrected the mapping logic to use pattern variable names
-- **Remaining Issue**: Some cases still use temp vars due to complex interaction with extractedParams
-- **Root Cause**: The extractedParams array contains temp var names when it should contain pattern variable names
+- **✅ Fixed**: Enum detection bug - regular enums now correctly use canonical names from enum definition
+- **✅ Fixed**: Pattern generation - patterns now use canonical names (`{:rgb, r, g, b}`) instead of temp vars
+- **⚠️ Partial Fix**: Case body variable resolution - some improvements but still issues with array patterns
+- **❌ Known Issue**: TLocal mapping fix causes regressions in array pattern matching (x=x assignments)
+- **Root Cause Identified**: The challenge is distinguishing between enum extraction temp vars and other temp vars (like array access)
 
-#### Why It's Challenging
+## 📚 Lessons Learned from Enum Pattern Investigation (January 2025)
 
-This is challenging because:
-- Pattern variable names aren't directly available in TypedExpr
-- We must infer them from the TVar declarations in the case body
-- Haxe's optimizer may remove "unnecessary" assignments
-- Multiple systems (ClauseContext, extractedParams, pattern registry) interact
+### Key Discoveries
+
+1. **Enum Detection Bug Fixed**: Regular enums were incorrectly being treated as idiomatic enums (line 2423)
+   - Solution: Check for `@:elixirIdiomatic` metadata explicitly
+   - Impact: Restored canonical name usage for regular enums
+
+2. **Canonical vs Temp Names Clarified**:
+   - **Canonical names**: From enum constructor definition (e.g., `RGB(r, g, b)`)
+   - **Temp names**: Generated by Haxe during extraction (e.g., `g`, `g1`, `g2`)
+   - **Pattern names**: What user writes in case pattern (not available in TypedExpr!)
+
+3. **TLocal Mapping Complexity**:
+   - Array access generates temp vars too (not just enum extraction)
+   - Can't distinguish enum temp vars from array temp vars easily
+   - Overly broad fixes cause regressions (x=x assignments)
+
+### What Works Now
+- ✅ Regular enum patterns use canonical names: `{:rgb, r, g, b}`
+- ✅ Redundant extraction is understood and documented
+- ✅ Abstract type enums correctly use generic names when needed
+
+### What Still Needs Work
+- ⚠️ Case body variable resolution after pattern assignments
+- ⚠️ Distinguishing enum extraction temps from other temps
+- ⚠️ Complete solution without regressions
+
+### Architectural Insights
+- Haxe's TypedExpr is optimized for imperative targets, not pattern matching
+- Multiple variable mapping systems can conflict (ClauseContext, pattern registry, extractedParams)
+- Surgical fixes are better than broad changes to avoid regressions
 
 #### New Understanding (January 2025) - NOT a Fundamental Limitation!
 
