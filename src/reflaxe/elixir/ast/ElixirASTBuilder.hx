@@ -3519,15 +3519,40 @@ class ElixirASTBuilder {
                 
             case TEnumParameter(e, ef, index):
                 // Check if we're in a switch case where the pattern already extracted this value
-                // If the pattern uses real variable names, we shouldn't generate elem() extraction
+                // This happens when the pattern like {:ok, g} already extracted the value into g
                 
-                // For now, always generate the elem() call - it will be handled by pattern extraction
-                // TODO: Skip this when pattern already extracts the value
-                var exprAST = buildFromTypedExpr(e);
-                var field = ef.name;
+                // First, check if the expression is a TLocal that's been mapped in ClauseContext
+                var skipExtraction = false;
+                switch(e.expr) {
+                    case TLocal(v):
+                        // If we have a ClauseContext and this variable is mapped,
+                        // it means the pattern already extracted it
+                        if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
+                            // The pattern already extracted this value, just return the variable reference
+                            var mappedName = currentClauseContext.localToName.get(v.id);
+                            skipExtraction = true;
+                            EVar(mappedName);
+                        } else {
+                            skipExtraction = false;
+                        }
+                    case _:
+                        skipExtraction = false;
+                }
                 
-                // Will be transformed to proper pattern extraction
-                ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]); // +1 for tag
+                if (!skipExtraction) {
+                    // Normal case: generate the elem() extraction
+                    var exprAST = buildFromTypedExpr(e);
+                    var field = ef.name;
+                    
+                    // Will be transformed to proper pattern extraction
+                    ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]); // +1 for tag
+                } else {
+                    // Already handled above in the TLocal case
+                    EVar(currentClauseContext.localToName.get(switch(e.expr) {
+                        case TLocal(v): v.id;
+                        case _: throw "Unexpected: should be TLocal";
+                    }));
+                }
                 
             case TEnumIndex(e):
                 // Get enum tag index - always use the enum value directly for atom-based matching
