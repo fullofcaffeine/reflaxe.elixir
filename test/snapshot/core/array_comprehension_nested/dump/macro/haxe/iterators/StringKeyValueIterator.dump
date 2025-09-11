@@ -1,0 +1,20 @@
+class haxe.iterators.StringKeyValueIterator {
+
+	public inline function new(s:String) {
+		this.offset = 0;
+		this.s = s;
+	}
+
+	@:value(0)
+	var offset:Int;
+
+	var s:String;
+
+	public inline function hasNext() {
+		return this.offset < this.s.length;
+	}
+
+	public inline function next() {
+		return {key : this.offset, value : StringTools.fastCodeAt(this.s, this.offset ++)};
+	}
+}

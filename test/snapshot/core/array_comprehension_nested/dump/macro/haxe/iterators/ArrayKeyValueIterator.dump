@@ -1,0 +1,21 @@
+class haxe.iterators.ArrayKeyValueIterator<T> {
+
+	public inline function new(array:Array<haxe.iterators.ArrayKeyValueIterator.T>) {
+		this.current = 0;
+		this.array = array;
+	}
+
+	var array(default,ctor):Array<haxe.iterators.ArrayKeyValueIterator.T>;
+
+	@:value(0)
+	var current:Int;
+
+	public inline function hasNext() {
+		return this.current < this.array.length;
+	}
+
+	public inline function next() {
+		var index = this.current ++;
+		return {key : index, value : this.array[index]};
+	}
+}

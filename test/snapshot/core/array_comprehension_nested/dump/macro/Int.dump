@@ -1,0 +1,2 @@
+@:coreType @:notNull @:runtimeValue
+abstract Int to Float {}

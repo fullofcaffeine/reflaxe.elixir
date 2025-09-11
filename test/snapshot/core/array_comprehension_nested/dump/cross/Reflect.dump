@@ -1,0 +1,77 @@
+@:directlyUsed @:used @:coreApi
+class Reflect {
+
+	@:has_untyped
+	public static function field(o:Dynamic, field:String) {
+		return __elixir__("Map.get({0}, String.to_existing_atom({1}))", o, field);
+	}
+
+	@:has_untyped
+	public static function setField(o:Dynamic, field:String, value:Dynamic) {
+		__elixir__("Map.put({0}, String.to_atom({1}), {2})", o, field, value);
+	}
+
+	@:has_untyped
+	public static function fields(o:Dynamic) {
+		return __elixir__("Map.keys({0}) |> Enum.map(&Atom.to_string/1)", o);
+	}
+
+	@:has_untyped
+	public static function hasField(o:Dynamic, field:String) {
+		return __elixir__("Map.has_key?({0}, String.to_existing_atom({1}))", o, field);
+	}
+
+	public static function deleteField(o:Dynamic, field:String) {
+		return Reflect.hasField(o, field);
+	}
+
+	@:has_untyped
+	public static function isObject(v:Dynamic) {
+		return __elixir__("is_map({0})", v);
+	}
+
+	public static inline function copy<T>(o:copy.T) {
+		return o;
+	}
+
+	@:has_untyped
+	public static function callMethod(o:Dynamic, func:haxe.Function, args:Array<Dynamic>) {
+		return __elixir__("apply({0}, {1})", func, args);
+	}
+
+	public static function compare<T>(a:compare.T, b:compare.T) {
+		var sa = Std.string(a);
+		var sb = Std.string(b);
+		if ((sa < sb)) return -1;
+		if ((sa > sb)) return 1;
+		return 0;
+	}
+
+	@:has_untyped
+	public static function isEnumValue(v:Dynamic) {
+		return __elixir__("is_tuple({0}) and tuple_size({0}) >= 1 and is_atom(elem({0}, 0))", v);
+	}
+
+	@:has_untyped
+	public static function isFunction(f:Dynamic) {
+		return __elixir__("Kernel.is_function({0})", f);
+	}
+
+	@:has_untyped
+	public static function compareMethods(f1:Dynamic, f2:Dynamic) {
+		return __elixir__("{0} == {1}", f1, f2);
+	}
+
+	public static function getProperty(o:Dynamic, field:String) {
+		return Reflect.field(o, field);
+	}
+
+	public static function setProperty(o:Dynamic, field:String, value:Dynamic) {
+		Reflect.setField(o, field, value);
+	}
+
+	@:has_untyped
+	public static function makeVarArgs(f:Array<Dynamic> -> Dynamic) {
+		return __elixir__("fn args -> {0}.(args) end", f);
+	}
+}

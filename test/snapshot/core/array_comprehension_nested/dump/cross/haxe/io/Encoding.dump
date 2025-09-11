@@ -1,0 +1,9 @@
+@:directlyUsed @:used @:flatEnum
+enum haxe.io.Encoding {
+	UTF8;
+	UTF16LE;
+	UTF16BE;
+	UTF32LE;
+	UTF32BE;
+	RawNative;
+}

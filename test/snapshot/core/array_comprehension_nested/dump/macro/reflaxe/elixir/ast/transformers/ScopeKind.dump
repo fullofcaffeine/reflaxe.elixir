@@ -1,0 +1,12 @@
+@:flatEnum
+enum reflaxe.elixir.ast.transformers.ScopeKind {
+	Module;
+	Function;
+	Clause;
+	Block;
+	CompGen;
+	CompFilter;
+	Rescue;
+	Receive;
+	With;
+}

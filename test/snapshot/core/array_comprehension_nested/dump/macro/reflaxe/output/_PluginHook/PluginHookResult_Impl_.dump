@@ -1,0 +1,60 @@
+private class reflaxe.output._PluginHook.PluginHookResult_Impl_ {
+
+	public static inline function isIgnore(this:reflaxe.output.IPluginHookResult<reflaxe.output.PluginHookResult.T>) {
+		return @:ast(switch (this) {
+	case IgnorePlugin:
+		true;	
+	case _:
+		false;	
+}) if (enumIndex this == 0) {
+			{
+				true;
+			};
+		} else {
+			false;
+		};
+	}
+
+	public static inline function isOutputNothing(this:reflaxe.output.IPluginHookResult<reflaxe.output.PluginHookResult.T>) {
+		return @:ast(switch (this) {
+	case OutputNothing:
+		true;	
+	case _:
+		false;	
+}) if (enumIndex this == 1) {
+			{
+				true;
+			};
+		} else {
+			false;
+		};
+	}
+
+	public static inline function isOverwriteOutput(this:reflaxe.output.IPluginHookResult<reflaxe.output.PluginHookResult.T>) {
+		return @:ast(switch (this) {
+	case OverwriteOutput(output):
+		output;	
+	case _:
+		null;	
+}) if (enumIndex this == 2) {
+			var ` = this[0];
+			{
+				var output = `;
+				{
+					output;
+				};
+			};
+		} else {
+			null;
+		};
+	}
+
+	@:from
+	public static function fromT<T>(obj:Null<fromT.T>) {
+		return if (obj == null) {
+			reflaxe.output.IPluginHookResult.IgnorePlugin;
+		} else {
+			reflaxe.output.IPluginHookResult.OverwriteOutput(obj);
+		};
+	}
+}

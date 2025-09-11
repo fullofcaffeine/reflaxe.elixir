@@ -1,0 +1,13 @@
+private class haxe._Int64.___Int64 {
+
+	public inline function new(high:haxe.Int32, low:haxe.Int32) {
+		this.high = high;
+		this.low = low;
+	}
+
+	public var high:haxe.Int32;
+
+	public var low:haxe.Int32;
+
+	public function toString() return haxe._Int64.Int64_Impl_.toString(cast this)
+}

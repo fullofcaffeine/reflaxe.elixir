@@ -3,6 +3,7 @@ package reflaxe.elixir.ast;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 using StringTools;
 
 /**
@@ -65,6 +66,9 @@ class ElixirASTTransformer {
         trace('[XRay AST Transformer] Starting transformation pipeline');
         trace('[XRay AST Transformer] AST type: ${Type.enumConstructor(ast.def)}');
         trace('[XRay AST Transformer] AST metadata: ${ast.metadata}');
+        #end
+        #if debug_unrolled_comprehension
+        trace('[DEBUG Transform] ElixirASTTransformer.transform() called');
         #end
         
         #if debug_ast_structure
@@ -352,6 +356,25 @@ class ElixirASTTransformer {
         });
         #end
         
+        // Unrolled comprehension optimization pass (MUST run before effect lifting)
+        // TODO: Fix implementation - functions need to be moved before this reference
+        /*
+        passes.push({
+            name: "UnrolledComprehensionOptimization",
+            description: "Optimize unrolled array comprehensions with bare concatenations",
+            enabled: true,
+            pass: unrolledComprehensionOptimizationPass
+        });
+        */
+        
+        // Effect lifting for list literals pass
+        passes.push({
+            name: "ListEffectLifting",
+            description: "Lift side-effecting expressions out of list literals",
+            enabled: true,
+            pass: listEffectLiftingPass
+        });
+        
         // Immutability transformation pass
         #if !disable_immutability_transform
         passes.push({
@@ -530,6 +553,14 @@ class ElixirASTTransformer {
             description: "Transform == comparisons to pattern matching",
             enabled: false, // TEMP: Disabled - needs more testing
             pass: reflaxe.elixir.ast.transformers.HygieneTransforms.equalityToPatternPass
+        });
+        
+        // Fix bare concatenations in blocks
+        passes.push({
+            name: "FixBareConcatenations",
+            description: "Convert bare concatenations in blocks to assignments",
+            enabled: true,
+            pass: fixBareConcatenationsPass
         });
         
         // Return only enabled passes
@@ -1176,7 +1207,8 @@ class ElixirASTTransformer {
                                                 trace('[XRay PhoenixComponentImport] Checking option: $opt');
                                                 #end
                                                 switch(opt.def) {
-                                                    case EAtom("live_view"):
+                                                    // Pattern matching with abstract types requires guard clause
+                                                case EAtom(atom) if (atom == "live_view"):
                                                         #if debug_phoenix_component_import
                                                         trace('[XRay PhoenixComponentImport] Found :live_view option - will skip Phoenix.Component');
                                                         #end
@@ -1446,7 +1478,7 @@ class ElixirASTTransformer {
                             // s.charCodeAt(pos) -> :binary.at(s, pos)
                             makeASTWithMeta(
                                 ERemoteCall(
-                                    makeAST(EAtom("binary")),
+                                    makeAST(EAtom(ElixirAtom.raw("binary"))),
                                     "at",
                                     [target].concat(args)
                                 ),
@@ -1596,7 +1628,7 @@ class ElixirASTTransformer {
                                     transformedBody,
                                     makeAST(ECall(null, funcName, []))
                                 ])),
-                                makeAST(EAtom("ok"))
+                                makeAST(EAtom(ElixirAtom.ok()))
                             ))
                         )
                     );
@@ -1926,7 +1958,9 @@ class ElixirASTTransformer {
                         if (attr.name == "import" && attr.value != null) {
                             // Check if it's importing Bitwise
                             switch(attr.value.def) {
-                                case EAtom("Bitwise") | EVar("Bitwise"):
+                                case EAtom(atomVal) if (atomVal == "Bitwise"):
+                                    hasImport = true;
+                                case EVar("Bitwise"):
                                     hasImport = true;
                                 default:
                             }
@@ -1942,7 +1976,7 @@ class ElixirASTTransformer {
                         var newAttributes = attributes.copy();
                         newAttributes.insert(0, {
                             name: "import",
-                            value: makeAST(EAtom("Bitwise"))
+                            value: makeAST(EAtom(ElixirAtom.raw("Bitwise")))
                         });
                         
                         #if debug_bitwise_import
@@ -1955,6 +1989,141 @@ class ElixirASTTransformer {
                             node.pos
                         );
                     }
+                    return node;
+                    
+                default:
+                    return node;
+            }
+        });
+    }
+    
+    /**
+     * List Effect Lifting Pass
+     * 
+     * WHY: Elixir doesn't allow assignments or side-effecting expressions inside list literals.
+     * The malformed pattern `g = g ++ [g = [] ...]` creates illegal syntax.
+     * 
+     * WHAT: Detects and lifts side-effecting expressions out of list literals.
+     * - Identifies assignments and other side effects within EList elements
+     * - Extracts them to statements before the list construction
+     * - Replaces them with pure variable references
+     * 
+     * HOW: Transforms EList nodes by:
+     * 1. Scanning elements for side effects (assignments, blocks)
+     * 2. Extracting effects to temporary variables
+     * 3. Building the list with pure expressions only
+     * 
+     * Example:
+     * Input:  [g = [], g = g ++ [1], g]
+     * Output: g = []; g = g ++ [1]; [g]
+     */
+    static function listEffectLiftingPass(ast: ElixirAST): ElixirAST {
+        #if debug_effect_lifting
+        trace('[XRay ListEffectLifting] Starting pass');
+        #end
+        
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EList(elements):
+                    #if debug_effect_lifting
+                    trace('[XRay ListEffectLifting] Processing list with ${elements.length} elements');
+                    #end
+                    
+                    // Check if any element has side effects
+                    var hasEffects = false;
+                    var liftedStatements: Array<ElixirAST> = [];
+                    var pureElements: Array<ElixirAST> = [];
+                    
+                    for (i in 0...elements.length) {
+                        var elem = elements[i];
+                        #if debug_effect_lifting
+                        trace('[XRay ListEffectLifting] Checking element $i: ${ElixirASTPrinter.print(elem, 0).substring(0, 50)}');
+                        #end
+                        
+                        switch(elem.def) {
+                            case EMatch(left, right):
+                                // Assignment inside list - needs lifting
+                                #if debug_effect_lifting
+                                trace('[XRay ListEffectLifting] Found assignment in element $i');
+                                #end
+                                hasEffects = true;
+                                liftedStatements.push(elem);
+                                // Replace with just the variable reference
+                                switch(left) {
+                                    case PVar(name):
+                                        pureElements.push(makeAST(EVar(name)));
+                                    default:
+                                        // For other patterns, convert to a simple variable
+                                        pureElements.push(makeAST(EVar("_lifted_var")));
+                                }
+                                
+                            case EBlock(exprs) if (exprs.length > 0):
+                                // Block inside list - extract statements, keep last expression
+                                #if debug_effect_lifting
+                                trace('[XRay ListEffectLifting] Found block in element $i with ${exprs.length} expressions');
+                                #end
+                                hasEffects = true;
+                                for (j in 0...exprs.length - 1) {
+                                    liftedStatements.push(exprs[j]);
+                                }
+                                pureElements.push(exprs[exprs.length - 1]);
+                                
+                            case EBinary(Concat, left, right):
+                                // Check if this is a nested problematic pattern
+                                switch(right.def) {
+                                    case EList(innerElements) if (innerElements.length > 0):
+                                        // Check if inner list has assignments
+                                        var innerHasEffects = false;
+                                        for (innerElem in innerElements) {
+                                            switch(innerElem.def) {
+                                                case EMatch(_, _) | EBlock(_):
+                                                    innerHasEffects = true;
+                                                    break;
+                                                default:
+                                            }
+                                        }
+                                        if (innerHasEffects) {
+                                            #if debug_effect_lifting
+                                            trace('[XRay ListEffectLifting] Found nested list with effects');
+                                            #end
+                                            // Process the inner list recursively
+                                            var processedInner = listEffectLiftingPass(makeAST(right.def));
+                                            switch(processedInner.def) {
+                                                case EBlock(stmts) if (stmts.length > 0):
+                                                    hasEffects = true;
+                                                    // Add all but last statement to lifted
+                                                    for (k in 0...stmts.length - 1) {
+                                                        liftedStatements.push(stmts[k]);
+                                                    }
+                                                    // Keep the concatenation with cleaned list
+                                                    pureElements.push(makeAST(EBinary(Concat, left, stmts[stmts.length - 1])));
+                                                default:
+                                                    pureElements.push(elem);
+                                            }
+                                        } else {
+                                            pureElements.push(elem);
+                                        }
+                                    default:
+                                        pureElements.push(elem);
+                                }
+                                
+                            default:
+                                // Pure expression, keep as-is
+                                pureElements.push(elem);
+                        }
+                    }
+                    
+                    if (hasEffects) {
+                        #if debug_effect_lifting
+                        trace('[XRay ListEffectLifting] Lifting ${liftedStatements.length} statements');
+                        #end
+                        
+                        // Return a block with lifted statements followed by pure list
+                        var allStatements = liftedStatements.copy();
+                        allStatements.push(makeAST(EList(pureElements)));
+                        return makeAST(EBlock(allStatements));
+                    }
+                    
                     return node;
                     
                 default:
@@ -2215,8 +2384,9 @@ class ElixirASTTransformer {
                         trace('[XRay StatementContext] Checking ERemoteCall: module=${module.def}, func=$funcName, args=${args.length}');
                         #end
                         // Check for immutable operations that need reassignment in statement context
-                        var moduleName = switch(module.def) {
-                            case EAtom(name) | EVar(name): name;
+                        var moduleName: Null<String> = switch(module.def) {
+                            case EAtom(atom): atom; // ElixirAtom implicitly converts to String
+                            case EVar(name): name;  // name is already String
                             default: null;
                         };
                         
@@ -2373,7 +2543,7 @@ class ElixirASTTransformer {
                 case ECall(target, "pop", []):
                     // array.pop() becomes List.delete_at(array, -1)
                     makeAST(ERemoteCall(
-                        makeAST(EAtom("List")),
+                        makeAST(EAtom(ElixirAtom.raw("List"))),
                         "delete_at",
                         [target, makeAST(EInteger(-1))]
                     ));
@@ -4190,7 +4360,7 @@ class ElixirASTTransformer {
                     return cleanedExprs[0];
                 } else if (cleanedExprs.length == 0) {
                     // Empty block, return nil
-                    return makeAST(EAtom("nil"));
+                    return makeAST(EAtom(ElixirAtom.nil()));
                 } else {
                     return {
                         def: EBlock(cleanedExprs),
@@ -4519,8 +4689,278 @@ class ElixirASTTransformer {
         
         return renameInAST(ast);
     }
+    
+    /**
+     * Fix Bare Concatenations Pass
+     * 
+     * WHY: When array.push() is transformed to concatenation, nested blocks can contain
+     *      bare concatenations like `g ++ [0]` which are invalid as statements in Elixir.
+     * 
+     * WHAT: Converts bare concatenation statements to assignments.
+     * 
+     * HOW: Detects EBinary(Concat, EVar(name), ...) in statement position and wraps
+     *      them with EBinary(Match, EVar(name), ...) to create valid assignments.
+     */
+    static function fixBareConcatenationsPass(ast: ElixirAST): ElixirAST {
+        function fixConcatenations(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                case EBlock(statements):
+                    var fixedStatements = [];
+                    for (stmt in statements) {
+                        var fixed = switch(stmt.def) {
+                            // Check for bare concatenation: var ++ [value]
+                            case EBinary(Concat, left, right):
+                                switch(left.def) {
+                                    case EVar(name):
+                                        // Convert to assignment: var = var ++ [value]
+                                        makeAST(EBinary(Match, left, stmt));
+                                    default:
+                                        // Keep as-is if not a simple variable
+                                        stmt;
+                                }
+                            default:
+                                // Recursively fix nested blocks
+                                fixConcatenations(stmt);
+                        };
+                        fixedStatements.push(fixed);
+                    }
+                    makeAST(EBlock(fixedStatements));
+                    
+                case EList(elements):
+                    // Fix elements inside list literals
+                    var fixedElements = [for (e in elements) fixConcatenations(e)];
+                    makeAST(EList(fixedElements));
+                    
+                default:
+                    // Recursively apply to all children
+                    transformAST(node, fixConcatenations);
+            };
+        }
+        
+        return fixConcatenations(ast);
+    }
+    
+    /**
+     * Unrolled Comprehension Reconstruction Pass
+     * 
+     * WHY: Haxe completely unrolls array comprehensions with constant ranges at compile-time,
+     *      converting `[for (i in 0...3) i]` into imperative code with temp variables and 
+     *      concatenations. This creates invalid Elixir with bare concatenation expressions
+     *      like `g ++ [0]` appearing as statements inside list literals.
+     * 
+     * WHAT: Detects blocks marked with isUnrolledComprehension metadata and reconstructs
+     *       them back into idiomatic Elixir `for` comprehensions.
+     * 
+     * HOW: 1. Looks for Block nodes with isUnrolledComprehension metadata
+     *      2. Analyzes the block to extract iteration pattern (range, values)
+     *      3. Reconstructs as EFor(iterVar, range, body)
+     *      4. Handles nested comprehensions by recursively processing inner blocks
+     * 
+     * EDGE CASES:
+     * - Empty comprehensions (0...0 range)
+     * - Single element comprehensions (0...1)
+     * - Deeply nested comprehensions (3+ levels)
+     * - Mixed constant and variable ranges
+     * 
+     * @see docs/03-compiler-development/ARRAY_COMPREHENSION_RECONSTRUCTION.md
+     */
+    static function unrolledComprehensionReconstructionPass(ast: ElixirAST): ElixirAST {
+        #if debug_array_comprehension
+        trace('[Array Comprehension Transform] Starting reconstruction pass');
+        #end
+        #if debug_unrolled_comprehension
+        trace('[DEBUG Transform] unrolledComprehensionReconstructionPass called');
+        #end
+        
+        function reconstructComprehension(ast: ElixirAST): ElixirAST {
+            return switch(ast.def) {
+                case EBlock(stmts) if (ast.metadata != null && ast.metadata.isUnrolledComprehension == true):
+                    #if debug_array_comprehension
+                    trace('[Array Comprehension Transform] ✓ Found marked block with ${stmts.length} statements');
+                    trace('[Array Comprehension Transform]   Metadata: ${ast.metadata}');
+                    #end
+                    
+                    // Analyze the block to reconstruct comprehension
+                    var comprehension = analyzeAndReconstructComprehension(stmts);
+                    if (comprehension != null) {
+                        #if debug_array_comprehension
+                        trace('[Array Comprehension Transform] ✓ Successfully reconstructed as for comprehension');
+                        #end
+                        comprehension;
+                    } else {
+                        #if debug_array_comprehension
+                        trace('[Array Comprehension Transform] ✗ Could not reconstruct, keeping as block');
+                        #end
+                        ast;
+                    }
+                    
+                case _:
+                    // Recursively transform children
+                    transformAST(ast, reconstructComprehension);
+            };
+        }
+        
+        return reconstructComprehension(ast);
+    }
+    
+    /**
+     * Analyze an unrolled comprehension block and reconstruct as EFor
+     * 
+     * Pattern to detect:
+     * - g = []                    (initialization)
+     * - g = g ++ [...]           (accumulation statements)
+     * - g                        (return value)
+     * 
+     * Reconstructs as: for i <- 0..n, do: expression
+     */
+    static function analyzeAndReconstructComprehension(stmts: Array<ElixirAST>): Null<ElixirAST> {
+        if (stmts.length < 3) return null;
+        
+        #if debug_array_comprehension
+        trace('[Array Comprehension Transform] Analyzing block for reconstruction');
+        #end
+        
+        // Check first statement: should be g = []
+        var iterVar = switch(stmts[0].def) {
+            case EAssign(EVar(varName), EList([])):
+                varName;
+            case _:
+                return null;
+        };
+        
+        #if debug_array_comprehension
+        trace('[Array Comprehension Transform]   Found initialization: $iterVar = []');
+        #end
+        
+        // Extract elements from accumulation statements
+        var elements = [];
+        for (i in 1...stmts.length - 1) {
+            switch(stmts[i].def) {
+                case EAssign(EVar(v), EBinOp("++", EVar(v2), EList([elem]))) if (v == iterVar && v2 == iterVar):
+                    // g = g ++ [element]
+                    elements.push(elem);
+                case EBinOp("++", EVar(v), EList([elem])) if (v == iterVar):
+                    // Bare concatenation: g ++ [element] (shouldn't happen after fix, but handle it)
+                    elements.push(elem);
+                case _:
+                    // Unknown pattern
+                    #if debug_array_comprehension
+                    trace('[Array Comprehension Transform]   Unknown statement pattern: ${stmts[i].def}');
+                    #end
+            }
+        }
+        
+        #if debug_array_comprehension
+        trace('[Array Comprehension Transform]   Extracted ${elements.length} elements');
+        #end
+        
+        // Check last statement: should return the variable
+        var returnsVar = switch(stmts[stmts.length - 1].def) {
+            case EVar(v) if (v == iterVar): true;
+            case _: false;
+        };
+        
+        if (!returnsVar || elements.length == 0) return null;
+        
+        // Determine the range from element count
+        var rangeEnd = elements.length - 1;
+        
+        // Check if elements are simple integers (0, 1, 2...) or nested comprehensions
+        var isSimpleRange = true;
+        var hasNestedComprehensions = false;
+        
+        for (i in 0...elements.length) {
+            switch(elements[i].def) {
+                case ELiteral(val):
+                    // Check if it's the expected integer
+                    if (val != Std.string(i)) {
+                        isSimpleRange = false;
+                    }
+                case EList(_):
+                    // Nested list - likely a nested comprehension
+                    hasNestedComprehensions = true;
+                    isSimpleRange = false;
+                case _:
+                    isSimpleRange = false;
+            }
+        }
+        
+        #if debug_array_comprehension
+        trace('[Array Comprehension Transform]   Simple range: $isSimpleRange, Nested: $hasNestedComprehensions');
+        #end
+        
+        // Generate appropriate comprehension
+        if (isSimpleRange) {
+            // Simple range comprehension: for i <- 0..n, do: i
+            var range = makeAST(ERange(makeAST(ELiteral("0")), makeAST(ELiteral(Std.string(rangeEnd)))));
+            var iterVarAST = makeAST(EVar("i"));
+            var body = iterVarAST; // Simple case: just return the iterator
+            
+            return makeAST(EFor(iterVarAST, range, body, null, null));
+        } else if (hasNestedComprehensions) {
+            // Nested comprehension: for i <- 0..n, do: for j <- 0..m, do: expr
+            // For now, reconstruct the outer comprehension
+            var range = makeAST(ERange(makeAST(ELiteral("0")), makeAST(ELiteral(Std.string(rangeEnd)))));
+            var iterVarAST = makeAST(EVar("i"));
+            
+            // Use the first element as template for the body (should be consistent)
+            var body = elements[0];
+            
+            // If the body is a list, check if it can be reconstructed as a nested comprehension
+            switch(body.def) {
+                case EList(innerElements):
+                    // Check if inner elements follow a pattern
+                    var innerComprehension = tryReconstructInnerComprehension(innerElements);
+                    if (innerComprehension != null) {
+                        body = innerComprehension;
+                    }
+                case _:
+            }
+            
+            return makeAST(EFor(iterVarAST, range, body, null, null));
+        } else {
+            // Complex pattern - keep as-is for now
+            #if debug_array_comprehension
+            trace('[Array Comprehension Transform]   Complex pattern, not reconstructing');
+            #end
+            return null;
+        }
+    }
+    
+    /**
+     * Try to reconstruct an inner comprehension from a list of elements
+     */
+    static function tryReconstructInnerComprehension(elements: Array<ElixirAST>): Null<ElixirAST> {
+        if (elements.length == 0) return null;
+        
+        // Check if elements follow a simple numeric pattern
+        var isSimpleRange = true;
+        for (i in 0...elements.length) {
+            switch(elements[i].def) {
+                case ELiteral(val):
+                    if (val != Std.string(i)) {
+                        isSimpleRange = false;
+                        break;
+                    }
+                case _:
+                    isSimpleRange = false;
+                    break;
+            }
+        }
+        
+        if (isSimpleRange) {
+            // Reconstruct as: for j <- 0..n, do: j
+            var rangeEnd = elements.length - 1;
+            var range = makeAST(ERange(makeAST(ELiteral("0")), makeAST(ELiteral(Std.string(rangeEnd)))));
+            var iterVarAST = makeAST(EVar("j"));
+            var body = iterVarAST;
+            
+            return makeAST(EFor(iterVarAST, range, body, null, null));
+        }
+        
+        return null;
+    }
 }
-
 
 /**
  * SupervisorOptionsTransformPass: Convert supervisor options from map to keyword list
@@ -4648,8 +5088,8 @@ class SupervisorOptionsTransformPass {
                 var hasName = false;
                 
                 for (pair in pairs) {
-                    var keyName = switch(pair.key.def) {
-                        case EAtom(name): name;
+                    var keyName: Null<String> = switch(pair.key.def) {
+                        case EAtom(atom): atom; // ElixirAtom implicitly converts to String
                         case _: null;
                     };
                     

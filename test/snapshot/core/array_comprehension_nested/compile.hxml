@@ -1,0 +1,9 @@
+# Compilation configuration for nested array comprehension test
+-cp ../../../../std
+-cp ../../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out
+-D reflaxe_runtime
+Main

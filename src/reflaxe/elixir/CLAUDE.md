@@ -105,6 +105,7 @@ class ElixirCompiler extends GenericCompiler<ElixirAST, ElixirAST, ElixirAST, El
 - Use string manipulation instead of AST processing
 - Skip testing with `npm test` after changes
 - Commit without verifying todo-app compiles
+- Add redundant `#if macro` guards inside files already wrapped in `#if (macro || reflaxe_runtime)`
 
 ### ✅ ALWAYS Do This:
 - **Research idiomatic Elixir patterns FIRST** before translating any Haxe pattern
@@ -200,6 +201,38 @@ override function compileClass(classType: ClassType, varFields: Array<String>): 
     return super.compileClass(classType, varFields);
 }
 ```
+
+## 🚨 Common Mistakes to Avoid
+
+### Redundant Conditional Compilation Guards
+**MISTAKE**: Adding `#if macro` guards inside files already wrapped in `#if (macro || reflaxe_runtime)`
+
+```haxe
+// ❌ WRONG: Redundant guard
+#if (macro || reflaxe_runtime)
+abstract ElixirAtom(String) {
+    #if macro  // <-- REDUNDANT!
+    @:from static function fromEnumField(ef: EnumField): ElixirAtom {
+        return new ElixirAtom(ef.name);
+    }
+    #end
+}
+#end
+
+// ✅ RIGHT: File-level guard is sufficient
+#if (macro || reflaxe_runtime)
+abstract ElixirAtom(String) {
+    @:from static function fromEnumField(ef: EnumField): ElixirAtom {
+        return new ElixirAtom(ef.name);  // EnumField available in both macro and reflaxe_runtime
+    }
+}
+#end
+```
+
+**KEY INSIGHT**: 
+- `#if (macro || reflaxe_runtime)` means the code exists ONLY during compilation
+- Both `macro` and `reflaxe_runtime` contexts have access to macro types like `EnumField`
+- Additional `#if macro` is only needed if you want code ONLY in macro context, not reflaxe_runtime
 
 ## 🧪 Testing Compiler Changes
 

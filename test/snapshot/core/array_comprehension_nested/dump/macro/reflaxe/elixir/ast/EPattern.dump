@@ -1,0 +1,13 @@
+enum reflaxe.elixir.ast.EPattern {
+	PVar(name:String);
+	PLiteral(value:reflaxe.elixir.ast.ElixirAST);
+	PTuple(elements:Array<reflaxe.elixir.ast.EPattern>);
+	PList(elements:Array<reflaxe.elixir.ast.EPattern>);
+	PCons(head:reflaxe.elixir.ast.EPattern, tail:reflaxe.elixir.ast.EPattern);
+	PMap(pairs:Array<{ value : reflaxe.elixir.ast.EPattern, key : reflaxe.elixir.ast.ElixirAST }>);
+	PStruct(module:String, fields:Array<{ value : reflaxe.elixir.ast.EPattern, key : String }>);
+	PPin(pattern:reflaxe.elixir.ast.EPattern);
+	PWildcard;
+	PAlias(varName:String, pattern:reflaxe.elixir.ast.EPattern);
+	PBinary(segments:Array<reflaxe.elixir.ast.PBinarySegment>);
+}

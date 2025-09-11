@@ -1,0 +1,2 @@
+@:forward @:coreType
+abstract Null<T> from Null.T to Null.T {}

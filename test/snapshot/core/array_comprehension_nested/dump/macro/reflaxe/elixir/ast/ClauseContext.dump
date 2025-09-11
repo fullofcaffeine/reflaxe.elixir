@@ -1,0 +1,73 @@
+class reflaxe.elixir.ast.ClauseContext {
+
+	public function new(locals:Null<Map<String, Bool>> = null, varMapping:Null<Map<Int, String>> = null) {
+		this.usedNames = new haxe.ds.StringMap();
+		this.localsInScope = new haxe.ds.StringMap();
+		this.syntheticBindings = [];
+		this.localToName = new haxe.ds.IntMap();
+		if ((locals != null)) this.localsInScope = locals;
+		if ((varMapping != null)) this.localToName = varMapping;
+	}
+
+	@:value(new Map())
+	public var localToName:Map<Int, String>;
+
+	@:value([])
+	public var syntheticBindings:Array<{ name : String, init : reflaxe.elixir.ast.ElixirAST }>;
+
+	@:value(new Map())
+	public var localsInScope:Map<String, Bool>;
+
+	@:value(new Map())
+	var usedNames:Map<String, Bool>;
+
+	public function needTemp(name:String, buildInit:() -> reflaxe.elixir.ast.ElixirAST) {
+		if ({
+			var this = this.usedNames;
+			cast this.exists(name);
+		}) {
+			return {def : reflaxe.elixir.ast.ElixirASTDef.EVar(name), metadata : {}, pos : null};
+		};
+		var actualName = name;
+		if ({
+			var this = this.localsInScope;
+			cast this.exists(name);
+		}) {
+			var counter = 1;
+			while ({
+				var this = this.localsInScope;
+				cast this.exists("" + name + "_" + counter);
+			} || {
+				var this = this.usedNames;
+				cast this.exists("" + name + "_" + counter);
+			}) {
+				counter ++;
+			};
+			actualName = "" + name + "_" + counter;
+		};
+		this.syntheticBindings.push({name : actualName, init : buildInit()});
+		{
+			var this = this.usedNames;
+			cast this.set(actualName, true);
+		};
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EVar(actualName), metadata : {}, pos : null};
+	}
+
+	public function wrapBody(body:reflaxe.elixir.ast.ElixirAST) {
+		if (this.syntheticBindings.length == 0) {
+			return body;
+		};
+		var statements = [];
+		{
+			var ` = 0;
+			var ` = this.syntheticBindings;
+			while (` < `.length) {
+				var binding = `[`];
+				++ `;
+				statements.push({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {def : reflaxe.elixir.ast.ElixirASTDef.EVar(binding.name), metadata : {}, pos : null}, binding.init), metadata : {}, pos : null});
+			};
+		};
+		statements.push(body);
+		return {def : reflaxe.elixir.ast.ElixirASTDef.EBlock(statements), metadata : {}, pos : null};
+	}
+}

@@ -1,0 +1,1445 @@
+private class haxe._Int64.Int64_Impl_ {
+
+	@:noCompletion
+	static inline function _new(x:haxe._Int64.__Int64) {
+		var this;
+		this = x;
+		return cast this;
+	}
+
+	public static inline function copy(this:haxe._Int64.__Int64) return {
+		var high = cast this.high;
+		var low = cast this.low;
+		var x = new haxe._Int64.___Int64(high, low);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	public static inline function make(high:haxe.Int32, low:haxe.Int32) return {
+		var x = new haxe._Int64.___Int64(high, low);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	@:from
+	public static inline function ofInt(x:Int) return {
+		var x = new haxe._Int64.___Int64(x >> 31, x);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	public static inline function toInt(x:haxe.Int64) {
+		if (cast x.high != cast x.low >> 31) {
+			throw "Overflow";
+		};
+		return cast x.low;
+	}
+
+	@:deprecated("haxe.Int64.is() is deprecated. Use haxe.Int64.isInt64() instead")
+	public static inline function is(val:Dynamic) {
+		return Std.isOfType(val, haxe._Int64.___Int64);
+	}
+
+	public static inline function isInt64(val:Dynamic) return Std.isOfType(val, haxe._Int64.___Int64)
+
+	@:deprecated("Use high instead")
+	public static inline function getHigh(x:haxe.Int64) return cast x.high
+
+	@:deprecated("Use low instead")
+	public static inline function getLow(x:haxe.Int64) return cast x.low
+
+	public static inline function isNeg(x:haxe.Int64) return cast x.high < 0
+
+	public static inline function isZero(x:haxe.Int64) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(0, 0);
+			var this;
+			this = x;
+			cast this;
+		};
+		cast x.high == cast b.high && cast x.low == cast b.low;
+	}
+
+	public static inline function compare(a:haxe.Int64, b:haxe.Int64) {
+		var v = cast (cast cast a.high - cast cast b.high);
+		v = if (v != 0) {
+			v;
+		} else {
+			haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+		};
+		return if (cast a.high < 0) {
+			(if (cast b.high < 0) {
+				v;
+			} else {
+				-1;
+			});
+		} else {
+			(if (cast b.high >= 0) {
+				v;
+			} else {
+				1;
+			});
+		};
+	}
+
+	public static inline function ucompare(a:haxe.Int64, b:haxe.Int64) {
+		var v = haxe._Int32.Int32_Impl_.ucompare(cast a.high, cast b.high);
+		return if (v != 0) {
+			v;
+		} else {
+			haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+		};
+	}
+
+	public static inline function toStr(x:haxe.Int64) return haxe._Int64.Int64_Impl_.toString(x)
+
+	static function toString(this:haxe._Int64.__Int64) {
+		var i = cast this;
+		if ({
+			var b = @:implicitCast {
+				var x = new haxe._Int64.___Int64(0, 0);
+				var this;
+				this = x;
+				cast this;
+			};
+			cast i.high == cast b.high && cast i.low == cast b.low;
+		}) {
+			return "0";
+		};
+		var str = "";
+		var neg = false;
+		if (cast i.high < 0) {
+			neg = true;
+		};
+		var ten = @:implicitCast {
+			var x = new haxe._Int64.___Int64(10 >> 31, 10);
+			var this;
+			this = x;
+			cast cast this;
+		};
+		while ({
+			var b = @:implicitCast {
+				var x = new haxe._Int64.___Int64(0, 0);
+				var this;
+				this = x;
+				cast this;
+			};
+			cast i.high != cast b.high || cast i.low != cast b.low;
+		}) {
+			var r = haxe._Int64.Int64_Impl_.divMod(i, ten);
+			if (cast r.modulus.high < 0) {
+				str = {
+					var this = {
+						var x = r.modulus;
+						var high = ~ cast x.high;
+						var low = cast ~ cast cast x.low + 1;
+						if ((low == 0)) cast {
+							var ret = high ++;
+							high = cast high;
+							ret;
+						};
+						{
+							var x = new haxe._Int64.___Int64(high, low);
+							var this;
+							this = x;
+							cast this;
+						};
+					};
+					cast this.low;
+				} + str;
+				i = {
+					var x = r.quotient;
+					var high = ~ cast x.high;
+					var low = cast (~ cast cast x.low + 1);
+					if (low == 0) {
+						cast {
+							var ret = high ++;
+							high = (cast high);
+							ret;
+						};
+					};
+					{
+						var x = new haxe._Int64.___Int64(high, low);
+						var this;
+						this = x;
+						cast cast this;
+					};
+				};
+			} else {
+				str = cast r.modulus.low + str;
+				i = r.quotient;
+			};
+		};
+		if (neg) {
+			str = "-" + str;
+		};
+		return str;
+	}
+
+	public static inline function parseString(sParam:String) {
+		return haxe.Int64Helper.parseString(sParam);
+	}
+
+	public static inline function fromFloat(f:Float) {
+		return haxe.Int64Helper.fromFloat(f);
+	}
+
+	public static function divMod(dividend:haxe.Int64, divisor:haxe.Int64) {
+		if (cast divisor.high == 0) {
+			@:ast(switch (divisor.low) {
+	case 0:
+		throw "divide by zero";	
+	case 1:
+		return { quotient : dividend.copy(), modulus : 0 };	
+}) {
+				var ` = cast divisor.low;
+				switch (`) {
+					case 0: {
+						{
+							throw "divide by zero";
+						};
+					};
+					case 1: {
+						{
+							return {quotient : {
+								var high = cast cast dividend.high;
+								var low = cast cast dividend.low;
+								var x = new haxe._Int64.___Int64(high, low);
+								var this;
+								this = x;
+								cast cast this;
+							}, modulus : @:implicitCast {
+								var x = new haxe._Int64.___Int64(0 >> 31, 0);
+								var this;
+								this = x;
+								cast cast this;
+							}};
+						};
+					};
+				};
+			};
+		};
+		var divSign = cast dividend.high < 0 != cast divisor.high < 0;
+		var modulus = if (cast dividend.high < 0) {
+			{
+				var high = ~ cast dividend.high;
+				var low = cast (~ cast cast dividend.low + 1);
+				if (low == 0) {
+					cast {
+						var ret = high ++;
+						high = (cast high);
+						ret;
+					};
+				};
+				{
+					var x = new haxe._Int64.___Int64(high, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			};
+		} else {
+			{
+				var high = cast cast dividend.high;
+				var low = cast cast dividend.low;
+				var x = new haxe._Int64.___Int64(high, low);
+				var this;
+				this = x;
+				cast cast this;
+			};
+		};
+		divisor = if (cast divisor.high < 0) {
+			{
+				var high = ~ cast divisor.high;
+				var low = cast (~ cast cast divisor.low + 1);
+				if (low == 0) {
+					cast {
+						var ret = high ++;
+						high = (cast high);
+						ret;
+					};
+				};
+				{
+					var x = new haxe._Int64.___Int64(high, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			};
+		} else {
+			divisor;
+		};
+		var quotient = @:implicitCast {
+			var x = new haxe._Int64.___Int64(0 >> 31, 0);
+			var this;
+			this = x;
+			cast cast this;
+		};
+		var mask = @:implicitCast {
+			var x = new haxe._Int64.___Int64(1 >> 31, 1);
+			var this;
+			this = x;
+			cast cast this;
+		};
+		while (! cast divisor.high < 0) {
+			var cmp = {
+				var v = haxe._Int32.Int32_Impl_.ucompare(cast divisor.high, cast modulus.high);
+				if (v != 0) {
+					v;
+				} else {
+					haxe._Int32.Int32_Impl_.ucompare(cast divisor.low, cast modulus.low);
+				};
+			};
+			divisor = {
+				var b = 1;
+				b &= 63;
+				if (b == 0) {
+					{
+						var high = cast cast divisor.high;
+						var low = cast cast divisor.low;
+						var x = new haxe._Int64.___Int64(high, low);
+						var this;
+						this = x;
+						cast cast this;
+					};
+				} else {
+					if (b < 32) {
+						{
+							var high = cast divisor.high << b | cast divisor.low >>> 32 - b;
+							var low = cast divisor.low << b;
+							var x = new haxe._Int64.___Int64(high, low);
+							var this;
+							this = x;
+							cast cast this;
+						};
+					} else {
+						{
+							var high = cast divisor.low << b - 32;
+							var x = new haxe._Int64.___Int64(high, 0);
+							var this;
+							this = x;
+							cast cast this;
+						};
+					};
+				};
+			};
+			mask = {
+				var b = 1;
+				b &= 63;
+				if (b == 0) {
+					{
+						var high = cast cast mask.high;
+						var low = cast cast mask.low;
+						var x = new haxe._Int64.___Int64(high, low);
+						var this;
+						this = x;
+						cast cast this;
+					};
+				} else {
+					if (b < 32) {
+						{
+							var high = cast mask.high << b | cast mask.low >>> 32 - b;
+							var low = cast mask.low << b;
+							var x = new haxe._Int64.___Int64(high, low);
+							var this;
+							this = x;
+							cast cast this;
+						};
+					} else {
+						{
+							var high = cast mask.low << b - 32;
+							var x = new haxe._Int64.___Int64(high, 0);
+							var this;
+							this = x;
+							cast cast this;
+						};
+					};
+				};
+			};
+			if (cmp >= 0) {
+				break;
+			};
+		};
+		while ({
+			var b = @:implicitCast {
+				var x = new haxe._Int64.___Int64(0, 0);
+				var this;
+				this = x;
+				cast this;
+			};
+			cast mask.high != cast b.high || cast mask.low != cast b.low;
+		}) {
+			if ({
+				var v = haxe._Int32.Int32_Impl_.ucompare(cast modulus.high, cast divisor.high);
+				if (v != 0) {
+					v;
+				} else {
+					haxe._Int32.Int32_Impl_.ucompare(cast modulus.low, cast divisor.low);
+				};
+			} >= 0) {
+				quotient = {
+					var high = cast quotient.high | cast mask.high;
+					var low = cast quotient.low | cast mask.low;
+					var x = new haxe._Int64.___Int64(high, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+				modulus = {
+					var high = cast (cast cast modulus.high - cast cast divisor.high);
+					var low = cast (cast cast modulus.low - cast cast divisor.low);
+					if (haxe._Int32.Int32_Impl_.ucompare(cast modulus.low, cast divisor.low) < 0) {
+						cast {
+							var ret = high --;
+							high = (cast high);
+							ret;
+						};
+					};
+					{
+						var x = new haxe._Int64.___Int64(high, low);
+						var this;
+						this = x;
+						cast cast this;
+					};
+				};
+			};
+			mask = {
+				var b = 1;
+				b &= 63;
+				if (b == 0) {
+					{
+						var high = cast cast mask.high;
+						var low = cast cast mask.low;
+						var x = new haxe._Int64.___Int64(high, low);
+						var this;
+						this = x;
+						cast cast this;
+					};
+				} else {
+					if (b < 32) {
+						{
+							var high = cast mask.high >>> b;
+							var low = cast mask.high << 32 - b | cast mask.low >>> b;
+							var x = new haxe._Int64.___Int64(high, low);
+							var this;
+							this = x;
+							cast cast this;
+						};
+					} else {
+						{
+							var low = cast mask.high >>> b - 32;
+							var x = new haxe._Int64.___Int64(0, low);
+							var this;
+							this = x;
+							cast cast this;
+						};
+					};
+				};
+			};
+			divisor = {
+				var b = 1;
+				b &= 63;
+				if (b == 0) {
+					{
+						var high = cast cast divisor.high;
+						var low = cast cast divisor.low;
+						var x = new haxe._Int64.___Int64(high, low);
+						var this;
+						this = x;
+						cast cast this;
+					};
+				} else {
+					if (b < 32) {
+						{
+							var high = cast divisor.high >>> b;
+							var low = cast divisor.high << 32 - b | cast divisor.low >>> b;
+							var x = new haxe._Int64.___Int64(high, low);
+							var this;
+							this = x;
+							cast cast this;
+						};
+					} else {
+						{
+							var low = cast divisor.high >>> b - 32;
+							var x = new haxe._Int64.___Int64(0, low);
+							var this;
+							this = x;
+							cast cast this;
+						};
+					};
+				};
+			};
+		};
+		if (divSign) {
+			quotient = {
+				var high = ~ cast quotient.high;
+				var low = cast (~ cast cast quotient.low + 1);
+				if (low == 0) {
+					cast {
+						var ret = high ++;
+						high = (cast high);
+						ret;
+					};
+				};
+				{
+					var x = new haxe._Int64.___Int64(high, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			};
+		};
+		if (cast dividend.high < 0) {
+			modulus = {
+				var high = ~ cast modulus.high;
+				var low = cast (~ cast cast modulus.low + 1);
+				if (low == 0) {
+					cast {
+						var ret = high ++;
+						high = (cast high);
+						ret;
+					};
+				};
+				{
+					var x = new haxe._Int64.___Int64(high, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			};
+		};
+		return {quotient : quotient, modulus : modulus};
+	}
+
+	@:op(-A)
+	public static inline function neg(x:haxe.Int64) {
+		var high = ~ cast x.high;
+		var low = cast (~ cast cast x.low + 1);
+		if (low == 0) {
+			cast {
+				var ret = high ++;
+				high = (cast high);
+				ret;
+			};
+		};
+		return {
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+	}
+
+	@:op(++A)
+	static inline function preIncrement(this:haxe._Int64.__Int64) {
+		this = {
+			var high = cast cast this.high;
+			var low = cast cast this.low;
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+		cast {
+			var ret = this.low ++;
+			this.low = (cast this.low);
+			ret;
+		};
+		if (this.low == 0) {
+			cast {
+				var ret = this.high ++;
+				this.high = (cast this.high);
+				ret;
+			};
+		};
+		return cast this;
+	}
+
+	@:op(A++)
+	static inline function postIncrement(this:haxe._Int64.__Int64) {
+		var ret = this;
+		{
+			this = {
+				var high = cast cast cast this.high;
+				var low = cast cast cast this.low;
+				var x = new haxe._Int64.___Int64(high, low);
+				var this;
+				this = x;
+				cast cast this;
+			};
+			cast {
+				var ret = cast this.low ++;
+				cast this.low = (cast cast this.low);
+				ret;
+			};
+			if (cast this.low == 0) {
+				cast {
+					var ret = cast this.high ++;
+					cast this.high = (cast cast this.high);
+					ret;
+				};
+			};
+			cast cast this;
+		};
+		return ret;
+	}
+
+	@:op(--A)
+	static inline function preDecrement(this:haxe._Int64.__Int64) {
+		this = {
+			var high = cast cast this.high;
+			var low = cast cast this.low;
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+		if (this.low == 0) {
+			cast {
+				var ret = this.high --;
+				this.high = (cast this.high);
+				ret;
+			};
+		};
+		cast {
+			var ret = this.low --;
+			this.low = (cast this.low);
+			ret;
+		};
+		return cast this;
+	}
+
+	@:op(A--)
+	static inline function postDecrement(this:haxe._Int64.__Int64) {
+		var ret = this;
+		{
+			this = {
+				var high = cast cast cast this.high;
+				var low = cast cast cast this.low;
+				var x = new haxe._Int64.___Int64(high, low);
+				var this;
+				this = x;
+				cast cast this;
+			};
+			if (cast this.low == 0) {
+				cast {
+					var ret = cast this.high --;
+					cast this.high = (cast cast this.high);
+					ret;
+				};
+			};
+			cast {
+				var ret = cast this.low --;
+				cast this.low = (cast cast this.low);
+				ret;
+			};
+			cast cast this;
+		};
+		return ret;
+	}
+
+	@:op(A + B)
+	public static inline function add(a:haxe.Int64, b:haxe.Int64) {
+		var high = cast (cast cast a.high + cast cast b.high);
+		var low = cast (cast cast a.low + cast cast b.low);
+		if (haxe._Int32.Int32_Impl_.ucompare(low, cast a.low) < 0) {
+			cast {
+				var ret = high ++;
+				high = (cast high);
+				ret;
+			};
+		};
+		return {
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+	}
+
+	@:op(A + B) @:commutative
+	static inline function addInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		var high = cast (cast cast a.high + cast cast b.high);
+		var low = cast (cast cast a.low + cast cast b.low);
+		if (haxe._Int32.Int32_Impl_.ucompare(low, cast a.low) < 0) {
+			cast {
+				var ret = high ++;
+				high = (cast high);
+				ret;
+			};
+		};
+		{
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+	}
+
+	@:op(A - B)
+	public static inline function sub(a:haxe.Int64, b:haxe.Int64) {
+		var high = cast (cast cast a.high - cast cast b.high);
+		var low = cast (cast cast a.low - cast cast b.low);
+		if (haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low) < 0) {
+			cast {
+				var ret = high --;
+				high = (cast high);
+				ret;
+			};
+		};
+		return {
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+	}
+
+	@:op(A - B)
+	static inline function subInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		var high = cast (cast cast a.high - cast cast b.high);
+		var low = cast (cast cast a.low - cast cast b.low);
+		if (haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low) < 0) {
+			cast {
+				var ret = high --;
+				high = (cast high);
+				ret;
+			};
+		};
+		{
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+	}
+
+	@:op(A - B)
+	static inline function intSub(a:Int, b:haxe.Int64) return {
+		var a = @:implicitCast {
+			var x = new haxe._Int64.___Int64(a >> 31, a);
+			var this;
+			this = x;
+			cast this;
+		};
+		var high = cast (cast cast a.high - cast cast b.high);
+		var low = cast (cast cast a.low - cast cast b.low);
+		if (haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low) < 0) {
+			cast {
+				var ret = high --;
+				high = (cast high);
+				ret;
+			};
+		};
+		{
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+	}
+
+	@:op(A * B)
+	public static inline function mul(a:haxe.Int64, b:haxe.Int64) {
+		var mask = 65535;
+		var al = cast a.low & mask;
+		var ah = cast a.low >>> 16;
+		var bl = cast b.low & mask;
+		var bh = cast b.low >>> 16;
+		var p00 = al * bl;
+		var p10 = ah * bl;
+		var p01 = al * bh;
+		var p11 = ah * bh;
+		var low = p00;
+		var high = cast (cast cast cast p11 + (cast p01 >>> 16) + cast p10 >>> 16);
+		p01 <<= 16;
+		low = cast (cast low + cast p01);
+		if (haxe._Int32.Int32_Impl_.ucompare(low, p01) < 0) {
+			cast {
+				var ret = high ++;
+				high = (cast high);
+				ret;
+			};
+		};
+		p10 <<= 16;
+		low = cast (cast low + cast p10);
+		if (haxe._Int32.Int32_Impl_.ucompare(low, p10) < 0) {
+			cast {
+				var ret = high ++;
+				high = (cast high);
+				ret;
+			};
+		};
+		high = cast (cast high + cast cast cast cast a.low * cast b.high + cast cast a.high * cast b.low);
+		return {
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+	}
+
+	@:op(A * B) @:commutative
+	static inline function mulInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		var mask = 65535;
+		var al = cast a.low & mask;
+		var ah = cast a.low >>> 16;
+		var bl = cast b.low & mask;
+		var bh = cast b.low >>> 16;
+		var p00 = al * bl;
+		var p10 = ah * bl;
+		var p01 = al * bh;
+		var p11 = ah * bh;
+		var low = p00;
+		var high = cast (cast cast cast p11 + (cast p01 >>> 16) + cast p10 >>> 16);
+		p01 <<= 16;
+		low = cast (cast low + cast p01);
+		if (haxe._Int32.Int32_Impl_.ucompare(low, p01) < 0) {
+			cast {
+				var ret = high ++;
+				high = (cast high);
+				ret;
+			};
+		};
+		p10 <<= 16;
+		low = cast (cast low + cast p10);
+		if (haxe._Int32.Int32_Impl_.ucompare(low, p10) < 0) {
+			cast {
+				var ret = high ++;
+				high = (cast high);
+				ret;
+			};
+		};
+		high = cast (cast high + cast cast cast cast a.low * cast b.high + cast cast a.high * cast b.low);
+		{
+			var x = new haxe._Int64.___Int64(high, low);
+			var this;
+			this = x;
+			cast cast this;
+		};
+	}
+
+	@:op(A / B)
+	public static inline function div(a:haxe.Int64, b:haxe.Int64) return haxe._Int64.Int64_Impl_.divMod(a, b).quotient
+
+	@:op(A / B)
+	static inline function divInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		haxe._Int64.Int64_Impl_.divMod(a, b).quotient;
+	}
+
+	@:op(A / B)
+	static inline function intDiv(a:Int, b:haxe.Int64) return @:implicitCast {
+		var x = {
+			var x = {
+				var a = @:implicitCast {
+					var x = new haxe._Int64.___Int64(a >> 31, a);
+					var this;
+					this = x;
+					cast this;
+				};
+				haxe._Int64.Int64_Impl_.divMod(a, b).quotient;
+			};
+			if ((cast x.high != cast x.low >> 31)) throw "Overflow";
+			cast x.low;
+		};
+		var x = new haxe._Int64.___Int64(x >> 31, x);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	@:op(A % B)
+	public static inline function mod(a:haxe.Int64, b:haxe.Int64) return haxe._Int64.Int64_Impl_.divMod(a, b).modulus
+
+	@:op(A % B)
+	static inline function modInt(a:haxe.Int64, b:Int) return @:implicitCast {
+		var x = {
+			var x = {
+				var b = @:implicitCast {
+					var x = new haxe._Int64.___Int64(b >> 31, b);
+					var this;
+					this = x;
+					cast this;
+				};
+				haxe._Int64.Int64_Impl_.divMod(a, b).modulus;
+			};
+			if ((cast x.high != cast x.low >> 31)) throw "Overflow";
+			cast x.low;
+		};
+		var x = new haxe._Int64.___Int64(x >> 31, x);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	@:op(A % B)
+	static inline function intMod(a:Int, b:haxe.Int64) return @:implicitCast {
+		var x = {
+			var x = {
+				var a = @:implicitCast {
+					var x = new haxe._Int64.___Int64(a >> 31, a);
+					var this;
+					this = x;
+					cast this;
+				};
+				haxe._Int64.Int64_Impl_.divMod(a, b).modulus;
+			};
+			if ((cast x.high != cast x.low >> 31)) throw "Overflow";
+			cast x.low;
+		};
+		var x = new haxe._Int64.___Int64(x >> 31, x);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	@:op(A == B)
+	public static inline function eq(a:haxe.Int64, b:haxe.Int64) return cast a.high == cast b.high && cast a.low == cast b.low
+
+	@:op(A == B) @:commutative
+	static inline function eqInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		cast a.high == cast b.high && cast a.low == cast b.low;
+	}
+
+	@:op(A != B)
+	public static inline function neq(a:haxe.Int64, b:haxe.Int64) return cast a.high != cast b.high || cast a.low != cast b.low
+
+	@:op(A != B) @:commutative
+	static inline function neqInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		cast a.high != cast b.high || cast a.low != cast b.low;
+	}
+
+	@:op(A < B)
+	static inline function lt(a:haxe.Int64, b:haxe.Int64) return {
+		var v = cast (cast cast a.high - cast cast b.high);
+		v = if (v != 0) {
+			v;
+		} else {
+			haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+		};
+		if (cast a.high < 0) {
+			(if (cast b.high < 0) {
+				v;
+			} else {
+				-1;
+			});
+		} else {
+			(if (cast b.high >= 0) {
+				v;
+			} else {
+				1;
+			});
+		};
+	} < 0
+
+	@:op(A < B)
+	static inline function ltInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		{
+			var v = cast (cast cast a.high - cast cast b.high);
+			v = if (v != 0) {
+				v;
+			} else {
+				haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+			};
+			if (cast a.high < 0) {
+				(if (cast b.high < 0) {
+					v;
+				} else {
+					-1;
+				});
+			} else {
+				(if (cast b.high >= 0) {
+					v;
+				} else {
+					1;
+				});
+			};
+		} < 0;
+	}
+
+	@:op(A < B)
+	static inline function intLt(a:Int, b:haxe.Int64) return {
+		var a = @:implicitCast {
+			var x = new haxe._Int64.___Int64(a >> 31, a);
+			var this;
+			this = x;
+			cast this;
+		};
+		{
+			var v = cast (cast cast a.high - cast cast b.high);
+			v = if (v != 0) {
+				v;
+			} else {
+				haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+			};
+			if (cast a.high < 0) {
+				(if (cast b.high < 0) {
+					v;
+				} else {
+					-1;
+				});
+			} else {
+				(if (cast b.high >= 0) {
+					v;
+				} else {
+					1;
+				});
+			};
+		} < 0;
+	}
+
+	@:op(A <= B)
+	static inline function lte(a:haxe.Int64, b:haxe.Int64) return {
+		var v = cast (cast cast a.high - cast cast b.high);
+		v = if (v != 0) {
+			v;
+		} else {
+			haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+		};
+		if (cast a.high < 0) {
+			(if (cast b.high < 0) {
+				v;
+			} else {
+				-1;
+			});
+		} else {
+			(if (cast b.high >= 0) {
+				v;
+			} else {
+				1;
+			});
+		};
+	} <= 0
+
+	@:op(A <= B)
+	static inline function lteInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		{
+			var v = cast (cast cast a.high - cast cast b.high);
+			v = if (v != 0) {
+				v;
+			} else {
+				haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+			};
+			if (cast a.high < 0) {
+				(if (cast b.high < 0) {
+					v;
+				} else {
+					-1;
+				});
+			} else {
+				(if (cast b.high >= 0) {
+					v;
+				} else {
+					1;
+				});
+			};
+		} <= 0;
+	}
+
+	@:op(A <= B)
+	static inline function intLte(a:Int, b:haxe.Int64) return {
+		var a = @:implicitCast {
+			var x = new haxe._Int64.___Int64(a >> 31, a);
+			var this;
+			this = x;
+			cast this;
+		};
+		{
+			var v = cast (cast cast a.high - cast cast b.high);
+			v = if (v != 0) {
+				v;
+			} else {
+				haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+			};
+			if (cast a.high < 0) {
+				(if (cast b.high < 0) {
+					v;
+				} else {
+					-1;
+				});
+			} else {
+				(if (cast b.high >= 0) {
+					v;
+				} else {
+					1;
+				});
+			};
+		} <= 0;
+	}
+
+	@:op(A > B)
+	static inline function gt(a:haxe.Int64, b:haxe.Int64) return {
+		var v = cast (cast cast a.high - cast cast b.high);
+		v = if (v != 0) {
+			v;
+		} else {
+			haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+		};
+		if (cast a.high < 0) {
+			(if (cast b.high < 0) {
+				v;
+			} else {
+				-1;
+			});
+		} else {
+			(if (cast b.high >= 0) {
+				v;
+			} else {
+				1;
+			});
+		};
+	} > 0
+
+	@:op(A > B)
+	static inline function gtInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		{
+			var v = cast (cast cast a.high - cast cast b.high);
+			v = if (v != 0) {
+				v;
+			} else {
+				haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+			};
+			if (cast a.high < 0) {
+				(if (cast b.high < 0) {
+					v;
+				} else {
+					-1;
+				});
+			} else {
+				(if (cast b.high >= 0) {
+					v;
+				} else {
+					1;
+				});
+			};
+		} > 0;
+	}
+
+	@:op(A > B)
+	static inline function intGt(a:Int, b:haxe.Int64) return {
+		var a = @:implicitCast {
+			var x = new haxe._Int64.___Int64(a >> 31, a);
+			var this;
+			this = x;
+			cast this;
+		};
+		{
+			var v = cast (cast cast a.high - cast cast b.high);
+			v = if (v != 0) {
+				v;
+			} else {
+				haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+			};
+			if (cast a.high < 0) {
+				(if (cast b.high < 0) {
+					v;
+				} else {
+					-1;
+				});
+			} else {
+				(if (cast b.high >= 0) {
+					v;
+				} else {
+					1;
+				});
+			};
+		} > 0;
+	}
+
+	@:op(A >= B)
+	static inline function gte(a:haxe.Int64, b:haxe.Int64) return {
+		var v = cast (cast cast a.high - cast cast b.high);
+		v = if (v != 0) {
+			v;
+		} else {
+			haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+		};
+		if (cast a.high < 0) {
+			(if (cast b.high < 0) {
+				v;
+			} else {
+				-1;
+			});
+		} else {
+			(if (cast b.high >= 0) {
+				v;
+			} else {
+				1;
+			});
+		};
+	} >= 0
+
+	@:op(A >= B)
+	static inline function gteInt(a:haxe.Int64, b:Int) return {
+		var b = @:implicitCast {
+			var x = new haxe._Int64.___Int64(b >> 31, b);
+			var this;
+			this = x;
+			cast this;
+		};
+		{
+			var v = cast (cast cast a.high - cast cast b.high);
+			v = if (v != 0) {
+				v;
+			} else {
+				haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+			};
+			if (cast a.high < 0) {
+				(if (cast b.high < 0) {
+					v;
+				} else {
+					-1;
+				});
+			} else {
+				(if (cast b.high >= 0) {
+					v;
+				} else {
+					1;
+				});
+			};
+		} >= 0;
+	}
+
+	@:op(A >= B)
+	static inline function intGte(a:Int, b:haxe.Int64) return {
+		var a = @:implicitCast {
+			var x = new haxe._Int64.___Int64(a >> 31, a);
+			var this;
+			this = x;
+			cast this;
+		};
+		{
+			var v = cast (cast cast a.high - cast cast b.high);
+			v = if (v != 0) {
+				v;
+			} else {
+				haxe._Int32.Int32_Impl_.ucompare(cast a.low, cast b.low);
+			};
+			if (cast a.high < 0) {
+				(if (cast b.high < 0) {
+					v;
+				} else {
+					-1;
+				});
+			} else {
+				(if (cast b.high >= 0) {
+					v;
+				} else {
+					1;
+				});
+			};
+		} >= 0;
+	}
+
+	@:op(~A)
+	static inline function complement(a:haxe.Int64) return {
+		var high = ~ cast a.high;
+		var low = ~ cast a.low;
+		var x = new haxe._Int64.___Int64(high, low);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	@:op(A & B)
+	public static inline function and(a:haxe.Int64, b:haxe.Int64) return {
+		var high = cast a.high & cast b.high;
+		var low = cast a.low & cast b.low;
+		var x = new haxe._Int64.___Int64(high, low);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	@:op(A | B)
+	public static inline function or(a:haxe.Int64, b:haxe.Int64) return {
+		var high = cast a.high | cast b.high;
+		var low = cast a.low | cast b.low;
+		var x = new haxe._Int64.___Int64(high, low);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	@:op(A ^ B)
+	public static inline function xor(a:haxe.Int64, b:haxe.Int64) return {
+		var high = cast a.high ^ cast b.high;
+		var low = cast a.low ^ cast b.low;
+		var x = new haxe._Int64.___Int64(high, low);
+		var this;
+		this = x;
+		cast cast this;
+	}
+
+	@:op(A << B)
+	public static inline function shl(a:haxe.Int64, b:Int) {
+		b &= 63;
+		return if (b == 0) {
+			{
+				var high = cast cast a.high;
+				var low = cast cast a.low;
+				var x = new haxe._Int64.___Int64(high, low);
+				var this;
+				this = x;
+				cast cast this;
+			};
+		} else {
+			if (b < 32) {
+				{
+					var high = cast a.high << b | cast a.low >>> 32 - b;
+					var low = cast a.low << b;
+					var x = new haxe._Int64.___Int64(high, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			} else {
+				{
+					var high = cast a.low << b - 32;
+					var x = new haxe._Int64.___Int64(high, 0);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			};
+		};
+	}
+
+	@:op(A >> B)
+	public static inline function shr(a:haxe.Int64, b:Int) {
+		b &= 63;
+		return if (b == 0) {
+			{
+				var high = cast cast a.high;
+				var low = cast cast a.low;
+				var x = new haxe._Int64.___Int64(high, low);
+				var this;
+				this = x;
+				cast cast this;
+			};
+		} else {
+			if (b < 32) {
+				{
+					var high = cast a.high >> b;
+					var low = cast a.high << 32 - b | cast a.low >>> b;
+					var x = new haxe._Int64.___Int64(high, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			} else {
+				{
+					var high = cast a.high >> 31;
+					var low = cast a.high >> b - 32;
+					var x = new haxe._Int64.___Int64(high, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			};
+		};
+	}
+
+	@:op(A >>> B)
+	public static inline function ushr(a:haxe.Int64, b:Int) {
+		b &= 63;
+		return if (b == 0) {
+			{
+				var high = cast cast a.high;
+				var low = cast cast a.low;
+				var x = new haxe._Int64.___Int64(high, low);
+				var this;
+				this = x;
+				cast cast this;
+			};
+		} else {
+			if (b < 32) {
+				{
+					var high = cast a.high >>> b;
+					var low = cast a.high << 32 - b | cast a.low >>> b;
+					var x = new haxe._Int64.___Int64(high, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			} else {
+				{
+					var low = cast a.high >>> b - 32;
+					var x = new haxe._Int64.___Int64(0, low);
+					var this;
+					this = x;
+					cast cast this;
+				};
+			};
+		};
+	}
+
+	public static var high(get,never):haxe.Int32;
+
+	static inline function get_high(this:haxe._Int64.__Int64) return this.high
+
+	static inline function set_high(this:haxe._Int64.__Int64, x:haxe.Int32) return this.high = x
+
+	public static var low(get,never):haxe.Int32;
+
+	static inline function get_low(this:haxe._Int64.__Int64) return this.low
+
+	static inline function set_low(this:haxe._Int64.__Int64, x:haxe.Int32) return this.low = x
+}

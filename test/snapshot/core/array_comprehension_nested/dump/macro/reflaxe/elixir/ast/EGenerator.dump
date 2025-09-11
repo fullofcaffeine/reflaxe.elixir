@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.EGenerator = { pattern : reflaxe.elixir.ast.EPattern, expr : reflaxe.elixir.ast.ElixirAST }

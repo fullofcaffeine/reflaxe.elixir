@@ -1,0 +1,7 @@
+enum haxe.macro.DisplayKind {
+	DKCall;
+	DKDot;
+	DKStructure;
+	DKMarked;
+	DKPattern(outermost:Bool);
+}

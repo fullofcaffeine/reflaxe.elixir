@@ -1,0 +1,151 @@
+@:coreApi
+class haxe.Exception {
+
+	public function new(message:String, previous:Null<haxe.Exception> = null, native:Null<Any> = null) {
+		this.__skipStack = 0;
+		this.__exceptionMessage = message;
+		this.__previousException = previous;
+		if ((native != null)) {
+			this.__nativeStack = haxe.NativeStackTrace.exceptionStack();
+			this.__nativeException = native;
+		} else {
+			this.__nativeStack = haxe.NativeStackTrace.callStack();
+			this.__nativeException = this;
+		};
+	}
+
+	public var message(get,never):String;
+
+	public var stack(get,never):haxe.CallStack;
+
+	public var previous(get,never):Null<haxe.Exception>;
+
+	public var native(get,never):Any;
+
+	@:noCompletion
+	var __exceptionMessage:String;
+
+	@:noCompletion
+	var __exceptionStack:Null<haxe.CallStack>;
+
+	@:noCompletion
+	var __nativeStack:haxe.CallStack;
+
+	@:value(0) @:noCompletion @:ifFeature("haxe.Exception.get_stack")
+	var __skipStack:Int;
+
+	@:noCompletion
+	var __nativeException:Any;
+
+	@:noCompletion
+	var __previousException:Null<haxe.Exception>;
+
+	function unwrap() {
+		return this.__nativeException;
+	}
+
+	@:ifFeature("haxe.Exception.thrown")
+	public function toString() {
+		return this.get_message();
+	}
+
+	public function details() {
+		return if (this.get_previous() == null) {
+			"Exception: " + this.toString() + {
+				var tmp = this.get_stack();
+				if (tmp == null) "null" else haxe._CallStack.CallStack_Impl_.toString(tmp);
+			};
+		} else {
+			var result = "";
+			var e = this;
+			var prev = null;
+			while (e != null) {
+				if (prev == null) {
+					result = "Exception: " + e.get_message() + {
+						var tmp = e.get_stack();
+						if (tmp == null) "null" else haxe._CallStack.CallStack_Impl_.toString(tmp);
+					} + result;
+				} else {
+					var prevStack = haxe._CallStack.CallStack_Impl_.subtract(e.get_stack(), prev.get_stack());
+					result = "Exception: " + e.get_message() + if (prevStack == null) "null" else haxe._CallStack.CallStack_Impl_.toString(prevStack) + "\n\nNext " + result;
+				};
+				prev = e;
+				e = e.get_previous();
+			};
+			result;
+		};
+	}
+
+	@:noCompletion @:ifFeature("haxe.Exception.get_stack")
+	inline function __shiftStack() {
+		this.__skipStack ++;
+	}
+
+	@:noCompletion @:ifFeature("haxe.Exception.get_stack")
+	inline function __unshiftStack() {
+		this.__skipStack --;
+	}
+
+	function get_message() {
+		return this.__exceptionMessage;
+	}
+
+	function get_previous() {
+		return this.__previousException;
+	}
+
+	function get_native() {
+		return this.__nativeException;
+	}
+
+	function get_stack() {
+		return @:ast(switch __exceptionStack {
+	case null:
+		__exceptionStack = if (__skipStack > 0) {
+			__nativeStack.asArray().slice(__skipStack);
+		} else {
+			__nativeStack;
+		};	
+	case s:
+		s;	
+}) {
+			var ` = this.__exceptionStack;
+			if (` == null) {
+				this.__exceptionStack = if (this.__skipStack > 0) {
+					cast this.__nativeStack.slice(this.__skipStack, null);
+				} else {
+					this.__nativeStack;
+				};
+			} else {
+				var s = `;
+				{
+					s;
+				};
+			};
+		};
+	}
+
+	static function caught(value:Any) {
+		if (Std.isOfType(value, haxe.Exception)) {
+			return @:implicitCast cast cast cast value;
+		} else {
+			var e = new haxe.ValueException(value, null, value);
+			{
+				e.__skipStack --;
+			};
+			return e;
+		};
+	}
+
+	static function thrown(value:Any) {
+		if (Std.isOfType(value, haxe.Exception)) {
+			return (@:implicitCast cast cast cast value).get_native();
+		} else {
+			var e = new haxe.ValueException(value, null, null);
+			{
+				e.__skipStack ++;
+			};
+			return e;
+		};
+	}
+}

@@ -1,0 +1,106 @@
+@:require(sys) @:coreApi
+class Sys {
+
+	public static function print
+
+	public static function println
+
+	public static function args
+
+	public static function getEnv
+
+	public static function putEnv
+
+	public static function environment
+
+	public static function sleep
+
+	public static function setTimeLocale
+
+	public static function getCwd
+
+	public static function setCwd
+
+	public static function systemName
+
+	static function _command
+
+	public static function command(cmd:String, args:Null<Array<String>> = null) {
+		if (args == null) {
+			return Sys._command(cmd);
+		} else {
+			@:ast(switch (systemName()) {
+	case "Windows":
+		cmd = [for (a  in  [StringTools.replace(cmd, "/", "\\")].concat(args)) SysTools.quoteWinArg(a, true)].join(" ");
+		return _command(cmd);	
+	case _:
+		cmd = [cmd].concat(args).map(SysTools.quoteUnixArg).join(" ");
+		return _command(cmd);	
+}) {
+				var ` = Sys.systemName();
+				if (` == "Windows") {
+					{
+						cmd = {
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = [StringTools.replace(cmd, "/", "\\")].concat(args);
+								while (` < `.length) {
+									var a = `[`];
+									++ `;
+									`.push(haxe.SysTools.quoteWinArg(a, true));
+								};
+							};
+							`;
+						}.join(" ");
+						return Sys._command(cmd);
+					};
+				} else {
+					cmd = {
+						var _this = [cmd].concat(args);
+						var f = haxe.SysTools.quoteUnixArg;
+						{
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = _this;
+								while (` < `.length) {
+									var v = `[`];
+									++ `;
+									`.push(f(v));
+								};
+							};
+							`;
+						};
+					}.join(" ");
+					return Sys._command(cmd);
+				};
+			};
+		};
+	}
+
+	public static function executablePath() {
+		return Sys.programPath();
+	}
+
+	public static function exit
+
+	public static function time
+
+	public static function cpuTime
+
+	public static function programPath
+
+	public static function getChar
+
+	public static function stdin
+
+	public static function stdout
+
+	public static function stderr
+
+	static function __init__() {
+		var _ = (null);
+		var _ = (null);
+	}
+}

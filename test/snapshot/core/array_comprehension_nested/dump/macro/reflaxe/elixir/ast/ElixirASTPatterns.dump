@@ -1,0 +1,578 @@
+class reflaxe.elixir.ast.ElixirASTPatterns {
+
+	public static function isInlineExpansionBlock(block:Array<haxe.macro.TypedExpr>) {
+		if (block.length == 2) {
+			return @:ast(switch ([block[0].expr, block[1].expr]) {
+	case [TVar(tmpVar, init), TIf(cond, _, elseExpr)] if (init != null && elseExpr != null):
+		isNullCheckCondition(cond, tmpVar.id);	
+	case _:
+		false;	
+}) {
+				var ` = block[0].expr;
+				var ` = block[1].expr;
+				if (enumIndex ` == 13) {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 16) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var cond = `;
+							var elseExpr = `;
+							var init = `;
+							var tmpVar = `;
+							if (init != null && elseExpr != null) {
+								reflaxe.elixir.ast.ElixirASTPatterns.isNullCheckCondition(cond, tmpVar.id);
+							} else {
+								false;
+							};
+						};
+					} else {
+						false;
+					};
+				} else {
+					false;
+				};
+			};
+		} else {
+			if (block.length >= 3) {
+				return reflaxe.elixir.ast.ElixirASTPatterns.isComplexInlineExpansionBlock(block);
+			};
+		};
+		return false;
+	}
+
+	static function isComplexInlineExpansionBlock(block:Array<haxe.macro.TypedExpr>) {
+		return false;
+	}
+
+	static function containsBinaryOp(expr:haxe.macro.TypedExpr) {
+		if (expr == null) {
+			return false;
+		};
+		return @:ast(switch (expr.expr) {
+	case TBinop(_, _, _):
+		true;	
+	case TParenthesis(e):
+		containsBinaryOp(e);	
+	case _:
+		false;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							reflaxe.elixir.ast.ElixirASTPatterns.containsBinaryOp(e);
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	public static function transformInlineExpansion(block:Array<haxe.macro.TypedExpr>, buildFromTypedExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toElixirVarName:String -> String) {
+		if (block.length >= 3 && reflaxe.elixir.ast.ElixirASTPatterns.isComplexInlineExpansionBlock(block)) {
+			return reflaxe.elixir.ast.ElixirASTPatterns.transformComplexInlineExpansion(block, buildFromTypedExpr, toElixirVarName);
+		};
+		var pattern = reflaxe.elixir.ast.ElixirASTPatterns.extractInlineExpansionPattern(block);
+		if (pattern == null) {
+			throw "Invalid inline expansion pattern";
+		};
+		var initAst = buildFromTypedExpr(pattern.init);
+		var tmpVarName = toElixirVarName(if (pattern.tmpVar.name.charAt(0) == "_") {
+			pattern.tmpVar.name.substr(1, null);
+		} else {
+			pattern.tmpVar.name;
+		});
+		var isEqNull = @:ast(switch (pattern.cond.expr) {
+	case TBinop(OpEq, _, _):
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = pattern.cond.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 5) {
+					{
+						true;
+					};
+				} else {
+					false;
+				};
+			} else {
+				false;
+			};
+		};
+		var nullBranch = if (isEqNull) {
+			pattern.thenExpr;
+		} else {
+			pattern.elseExpr;
+		};
+		var nonNullBranch = if (isEqNull) {
+			pattern.elseExpr;
+		} else {
+			pattern.thenExpr;
+		};
+		{};
+		var ifExpr = {
+			var def = reflaxe.elixir.ast.ElixirASTDef.EIf({def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Equal, {def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(tmpVarName), initAst), metadata : {}}, {def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}}), metadata : {}}, buildFromTypedExpr(nullBranch), buildFromTypedExpr(nonNullBranch));
+			{def : def, metadata : {}};
+		};
+		if (ifExpr.metadata == null) {
+			ifExpr.metadata = {};
+		};
+		ifExpr.metadata.keepInlineInAssignment = true;
+		return ifExpr.def;
+	}
+
+	static function extractInlineExpansionPattern(block:Array<haxe.macro.TypedExpr>) {
+		if (block.length != 2) {
+			return null;
+		};
+		return @:ast(switch ([block[0].expr, block[1].expr]) {
+	case [TVar(tmpVar, init), TIf(cond, thenExpr, elseExpr)] if (init != null && elseExpr != null && isNullCheckCondition(cond, tmpVar.id)):
+		{ tmpVar : tmpVar, init : init, cond : cond, thenExpr : thenExpr, elseExpr : elseExpr };	
+	case _:
+		null;	
+}) {
+			var ` = block[0].expr;
+			var ` = block[1].expr;
+			if (enumIndex ` == 13) {
+				var ` = `[0];
+				var ` = `[1];
+				if (enumIndex ` == 16) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenExpr = `;
+						var elseExpr = `;
+						var init = `;
+						var tmpVar = `;
+						if (init != null && elseExpr != null && reflaxe.elixir.ast.ElixirASTPatterns.isNullCheckCondition(cond, tmpVar.id)) {
+							{tmpVar : tmpVar, init : init, cond : cond, thenExpr : thenExpr, elseExpr : elseExpr};
+						} else {
+							null;
+						};
+					};
+				} else {
+					null;
+				};
+			} else {
+				null;
+			};
+		};
+	}
+
+	static function isNullCheckCondition(cond:haxe.macro.TypedExpr, varId:Int) {
+		return @:ast(switch (cond.expr) {
+	case TBinop(OpEq | OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }):
+		v.id == varId;	
+	case _:
+		false;	
+}) {
+			var ` = cond.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				switch (enumIndex `) {
+					case 5: {
+						{
+							var ` = `.expr;
+							var ` = `.pos;
+							var ` = `.t;
+							if (enumIndex ` == 1) {
+								var ` = `[0];
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										if (enumIndex ` == 4) {
+											{
+												var v = `;
+												{
+													v.id == varId;
+												};
+											};
+										} else {
+											false;
+										};
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					};
+					case 6: {
+						{
+							var ` = `.expr;
+							var ` = `.pos;
+							var ` = `.t;
+							if (enumIndex ` == 1) {
+								var ` = `[0];
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										if (enumIndex ` == 4) {
+											{
+												var v = `;
+												{
+													v.id == varId;
+												};
+											};
+										} else {
+											false;
+										};
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					};
+					default: {
+						false;
+					}
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function transformComplexInlineExpansion(block:Array<haxe.macro.TypedExpr>, buildFromTypedExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toElixirVarName:String -> String) {
+		var lastExpr = block[block.length - 1];
+		return buildFromTypedExpr(lastExpr).def;
+	}
+
+	public static function isNullCoalescingBlock(block:Array<haxe.macro.TypedExpr>) {
+		if (block.length != 2) {
+			return false;
+		};
+		return @:ast(switch ([block[0].expr, block[1].expr]) {
+	case [TVar(tmpVar, init), TBinop(OpNullCoal, { expr : TLocal(v) }, _)] if (v.id == tmpVar.id && init != null):
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = block[0].expr;
+			var ` = block[1].expr;
+			if (enumIndex ` == 13) {
+				var ` = `[0];
+				var ` = `[1];
+				if (enumIndex ` == 3) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 24) {
+						{
+							var ` = `.expr;
+							var ` = `.pos;
+							var ` = `.t;
+							if (enumIndex ` == 1) {
+								var ` = `[0];
+								{
+									var v = `;
+									var init = `;
+									var tmpVar = `;
+									if (v.id == tmpVar.id && init != null) {
+										true;
+									} else {
+										false;
+									};
+								};
+							} else {
+								false;
+							};
+						};
+					} else {
+						false;
+					};
+				} else {
+					false;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	public static function detectArrayOperationPattern(body:haxe.macro.TypedExpr) {
+		@:ast(switch (body.expr) {
+	case TBlock(exprs) if (exprs.length >= 3):
+		var hasArrayAccess = false;
+		var hasIncrement = false;
+		var hasPush = false;
+		var isFilter = false;
+		for (expr  in  exprs) {
+			switch (expr.expr) {
+				case TVar(tvar, init):
+					if (init != null) {
+						switch (init.expr) {
+							case TArray(_, _):
+								hasArrayAccess = true;							
+							case _:
+						};
+					};				
+				case TUnop(OpIncrement | OpDecrement, _, _):
+					hasIncrement = true;				
+				case TCall({ expr : TField(_, FInstance(_, _, cf)) }, args) if (cf.get().name == "push"):
+					hasPush = true;				
+				case TIf(_, thenExpr, _):
+					switch (thenExpr.expr) {
+						case TCall({ expr : TField(_, FInstance(_, _, cf)) }, _) if (cf.get().name == "push"):
+							hasPush = true;
+							isFilter = true;						
+						case TBlock([{ expr : TCall({ expr : TField(_, FInstance(_, _, cf)) }, _) }]) if (cf.get().name == "push"):
+							hasPush = true;
+							isFilter = true;						
+						case _:
+					};				
+				case _:
+			};
+		};
+		if (hasArrayAccess && hasIncrement && hasPush) {
+			return isFilter ? "filter" : "map";
+		};	
+	case _:
+}) {
+			var ` = body.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					if (exprs.length >= 3) {
+						var hasArrayAccess = false;
+						var hasIncrement = false;
+						var hasPush = false;
+						var isFilter = false;
+						{
+							var ` = 0;
+							while (` < exprs.length) {
+								var expr = exprs[`];
+								++ `;
+								@:ast(switch (expr.expr) {
+	case TVar(tvar, init):
+		if (init != null) {
+			switch (init.expr) {
+				case TArray(_, _):
+					hasArrayAccess = true;				
+				case _:
+			};
+		};	
+	case TUnop(OpIncrement | OpDecrement, _, _):
+		hasIncrement = true;	
+	case TCall({ expr : TField(_, FInstance(_, _, cf)) }, args) if (cf.get().name == "push"):
+		hasPush = true;	
+	case TIf(_, thenExpr, _):
+		switch (thenExpr.expr) {
+			case TCall({ expr : TField(_, FInstance(_, _, cf)) }, _) if (cf.get().name == "push"):
+				hasPush = true;
+				isFilter = true;			
+			case TBlock([{ expr : TCall({ expr : TField(_, FInstance(_, _, cf)) }, _) }]) if (cf.get().name == "push"):
+				hasPush = true;
+				isFilter = true;			
+			case _:
+		};	
+	case _:
+}) {
+									var ` = expr.expr;
+									switch (enumIndex `) {
+										case 9: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var ` = `.expr;
+												var ` = `.pos;
+												var ` = `.t;
+												if (enumIndex ` == 4) {
+													var ` = `[0];
+													var ` = `[1];
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														{
+															var cf = `;
+															var args = `;
+															if (cf.get().name == "push") {
+																hasPush = true;
+															} else {};
+														};
+													} else {};
+												} else {};
+											};
+										};
+										case 11: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											switch (enumIndex `) {
+												case 0, 1: {
+													{
+														hasIncrement = true;
+													};
+												};
+												default: {}
+											};
+										};
+										case 13: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var tvar = `;
+												var init = `;
+												{
+													if (init != null) {
+														@:ast(switch (init.expr) {
+	case TArray(_, _):
+		hasArrayAccess = true;	
+	case _:
+}) {
+															var ` = init.expr;
+															if (enumIndex ` == 2) {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	hasArrayAccess = true;
+																};
+															} else {};
+														};
+													};
+												};
+											};
+										};
+										case 16: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var thenExpr = `;
+												{
+													@:ast(switch (thenExpr.expr) {
+	case TCall({ expr : TField(_, FInstance(_, _, cf)) }, _) if (cf.get().name == "push"):
+		hasPush = true;
+		isFilter = true;	
+	case TBlock([{ expr : TCall({ expr : TField(_, FInstance(_, _, cf)) }, _) }]) if (cf.get().name == "push"):
+		hasPush = true;
+		isFilter = true;	
+	case _:
+}) {
+														var ` = thenExpr.expr;
+														switch (enumIndex `) {
+															case 9: {
+																var ` = `[0];
+																var ` = `[1];
+																{
+																	var ` = `.expr;
+																	var ` = `.pos;
+																	var ` = `.t;
+																	if (enumIndex ` == 4) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		if (enumIndex ` == 0) {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			{
+																				var cf = `;
+																				if (cf.get().name == "push") {
+																					hasPush = true;
+																					isFilter = true;
+																				} else {};
+																			};
+																		} else {};
+																	} else {};
+																};
+															};
+															case 14: {
+																var ` = `[0];
+																if (`.length == 1) {
+																	var ` = `[0];
+																	{
+																		var ` = `.expr;
+																		var ` = `.pos;
+																		var ` = `.t;
+																		if (enumIndex ` == 9) {
+																			var ` = `[0];
+																			var ` = `[1];
+																			{
+																				var ` = `.expr;
+																				var ` = `.pos;
+																				var ` = `.t;
+																				if (enumIndex ` == 4) {
+																					var ` = `[0];
+																					var ` = `[1];
+																					if (enumIndex ` == 0) {
+																						var ` = `[0];
+																						var ` = `[1];
+																						var ` = `[2];
+																						{
+																							var cf = `;
+																							if (cf.get().name == "push") {
+																								hasPush = true;
+																								isFilter = true;
+																							} else {};
+																						};
+																					} else {};
+																				} else {};
+																			};
+																		} else {};
+																	};
+																} else {};
+															};
+															default: {}
+														};
+													};
+												};
+											};
+										};
+										default: {}
+									};
+								};
+							};
+						};
+						if (hasArrayAccess && hasIncrement && hasPush) {
+							return if (isFilter) {
+								"filter";
+							} else {
+								"map";
+							};
+						};
+					} else {};
+				};
+			} else {};
+		};
+		return null;
+	}
+}

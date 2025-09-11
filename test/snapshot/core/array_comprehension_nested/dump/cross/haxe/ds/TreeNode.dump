@@ -1,0 +1,30 @@
+@:directlyUsed @:used
+class haxe.ds.TreeNode<K, V> {
+
+	@:value({ h : -1 })
+	public function new(l:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>, k:haxe.ds.TreeNode.K, v:haxe.ds.TreeNode.V, r:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>, h:Int = -1) {
+		this.left = l;
+		this.key = k;
+		this.value = v;
+		this.right = r;
+		this._height = if ((h == -1)) 1 else h;
+	}
+
+	public var left:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>;
+
+	public var right:haxe.ds.TreeNode<haxe.ds.TreeNode.K, haxe.ds.TreeNode.V>;
+
+	public var key:haxe.ds.TreeNode.K;
+
+	public var value:haxe.ds.TreeNode.V;
+
+	public var _height:Int;
+
+	public function get_height() {
+		return this._height;
+	}
+
+	public function toString() {
+		return (if ((this.left == null)) "" else this.left.toString() + ", ") + ("" + Std.string(this.key) + " => " + Std.string(this.value)) + (if ((this.right == null)) "" else ", " + this.right.toString());
+	}
+}

@@ -1,0 +1,1 @@
+typedef haxe.display.Range = { start : haxe.display.Position, end : haxe.display.Position }

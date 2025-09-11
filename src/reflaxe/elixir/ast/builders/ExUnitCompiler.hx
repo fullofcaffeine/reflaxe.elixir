@@ -12,6 +12,7 @@ import reflaxe.elixir.ast.ElixirAST.EBinaryOp;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirASTPrinter;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 
 /**
  * ExUnitCompiler: Transforms Assert class method calls into ExUnit assertions
@@ -114,7 +115,7 @@ class ExUnitCompiler {
                 if (args.length >= 1) {
                     // Create pattern match for Option.Some
                     var pattern = makeAST(ETuple([
-                        makeAST(EAtom("some")),
+                        makeAST(EAtom(ElixirAtom.raw("some"))),
                         makeAST(EUnderscore)
                     ]));
                     var matchCall = makeAST(ECall(
@@ -130,7 +131,7 @@ class ExUnitCompiler {
             case "isNone":
                 // Assert.isNone(option, ?message) -> assert option == :none, message
                 if (args.length >= 1) {
-                    var comparison = makeAST(EBinary(Equal, args[0], makeAST(EAtom("none"))));
+                    var comparison = makeAST(EBinary(Equal, args[0], makeAST(EAtom(ElixirAtom.raw("none")))));
                     var message = args.length > 1 ? args[1] : makeAST(ENil);
                     return makeAST(EMacroCall("assert", [comparison], message));
                 }
@@ -140,7 +141,7 @@ class ExUnitCompiler {
                 // Assert.isOk(result, ?message) -> assert match?({:ok, _}, result), message
                 if (args.length >= 1) {
                     var pattern = makeAST(ETuple([
-                        makeAST(EAtom("ok")),
+                        makeAST(EAtom(ElixirAtom.ok())),
                         makeAST(EUnderscore)
                     ]));
                     var matchCall = makeAST(ECall(
@@ -157,7 +158,7 @@ class ExUnitCompiler {
                 // Assert.isError(result, ?message) -> assert match?({:error, _}, result), message
                 if (args.length >= 1) {
                     var pattern = makeAST(ETuple([
-                        makeAST(EAtom("error")),
+                        makeAST(EAtom(ElixirAtom.error())),
                         makeAST(EUnderscore)
                     ]));
                     var matchCall = makeAST(ECall(

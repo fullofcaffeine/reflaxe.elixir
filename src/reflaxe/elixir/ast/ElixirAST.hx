@@ -5,6 +5,7 @@ package reflaxe.elixir.ast;
 import haxe.macro.Type;
 import haxe.macro.Type.TypedExpr;
 import haxe.macro.Expr.Position;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 
 /**
  * ElixirAST: Strongly-Typed Intermediate AST for Reflaxe.Elixir
@@ -160,7 +161,7 @@ enum ElixirASTDef {
     // ========================================================================
     
     /** Atom literal */
-    EAtom(value: String);
+    EAtom(value: ElixirAtom);
     
     /** String literal */
     EString(value: String);
@@ -622,6 +623,10 @@ typedef ElixirMetadata = {
     ?inComprehension: Bool,       // Inside for comprehension
     ?inGuard: Bool,               // Inside guard clause
     
+    // Array Comprehension Reconstruction
+    ?isUnrolledComprehension: Bool, // Block contains unrolled array comprehension
+    ?comprehensionElements: Int,    // Number of elements in unrolled comprehension
+    
     // Variable Resolution
     ?varIdToName: Map<Int, String>, // Clause-local variable renaming mappings
     ?requiresIdiomaticTransform: Bool,  // Enum needs idiomatic compilation
@@ -774,7 +779,7 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
     
     // First element should be the constructor tag (atom)
     var tag = switch(elements[0].def) {
-        case EAtom(name): name;
+        case EAtom(name): name; // name is now ElixirAtom
         default: return node; // Not an enum constructor pattern
     };
     
@@ -834,13 +839,13 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
                                 
                                 for (pair in pairs) {
                                     switch(pair.key.def) {
-                                        case EAtom("key"):
+                                        case EAtom(atom) if (atom == "key"):
                                             // Extract the key name from the value
                                             switch(pair.value.def) {
                                                 case EString(s): keyName = s;
                                                 default: isKeyValueConfig = false;
                                             }
-                                        case EAtom("value"):
+                                        case EAtom(atom) if (atom == "value"):
                                             // This is the actual value
                                             keyValue = pair.value;
                                         default:
@@ -865,7 +870,7 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
                                         switch(keyValue.def) {
                                             case EString(s) if (s == "unique" || s == "duplicate"):
                                                 // Convert to atom for Registry configuration
-                                                makeAST(EAtom(s), keyValue.pos);
+                                                makeAST(EAtom(ElixirAtom.raw(s)), keyValue.pos);
                                             default:
                                                 keyValue;
                                         }

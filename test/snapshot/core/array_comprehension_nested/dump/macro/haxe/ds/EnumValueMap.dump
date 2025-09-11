@@ -1,0 +1,71 @@
+class haxe.ds.EnumValueMap<K:EnumValue, V> extends haxe.ds.BalancedTree<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V> implements haxe.IMap<haxe.ds.EnumValueMap.K, haxe.ds.EnumValueMap.V> {
+
+	public function new() super()
+
+	function compare(k1:EnumValue, k2:EnumValue) {
+		var d = Type.enumIndex(k1) - Type.enumIndex(k2);
+		if (d != 0) {
+			return d;
+		};
+		var p1 = Type.enumParameters(k1);
+		var p2 = Type.enumParameters(k2);
+		var ld = p1.length - p2.length;
+		if (ld != 0) {
+			return ld;
+		};
+		if (p1.length == 0 && p2.length == 0) {
+			return 0;
+		};
+		return this.compareArgs(p1, p2);
+	}
+
+	function compareArgs(a1:Array<Dynamic>, a2:Array<Dynamic>) {
+		{
+			var ` = 0;
+			var ` = a1.length;
+			while (` < `) {
+				var i = ` ++;
+				var d = this.compareArg(a1[i], a2[i]);
+				if (d != 0) {
+					return d;
+				};
+			};
+		};
+		return 0;
+	}
+
+	function compareArg(v1:Dynamic, v2:Dynamic) {
+		if (Reflect.isEnumValue(v1) && Reflect.isEnumValue(v2)) {
+			return this.compare(v1, v2);
+		};
+		return Reflect.compare(v1, v2);
+	}
+
+	public inline function keys() {
+		return cast this.iterator();
+	}
+
+	public function copy() {
+		var copied = new haxe.ds.EnumValueMap();
+		for (k in cast this.iterator()) {
+			copied.set(k, this.get(k));
+		};
+		return copied;
+	}
+
+	public function toString() {
+		var s = new StringBuf();
+		s.add("[");
+		var it = cast this.iterator();
+		for (i in it) {
+			s.add(Std.string(i));
+			s.add(" => ");
+			s.add(Std.string(this.get(i)));
+			if (it.hasNext()) {
+				s.add(", ");
+			};
+		};
+		s.add("]");
+		return s.toString();
+	}
+}

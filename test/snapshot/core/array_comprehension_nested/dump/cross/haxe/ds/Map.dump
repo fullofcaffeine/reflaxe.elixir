@@ -1,0 +1,2 @@
+@:transitive @:multiType(@:followWithAbstracts K)
+abstract haxe.ds.Map<K, V> {}

@@ -302,7 +302,28 @@ class ElixirASTPrinter {
             // Data Structures
             // ================================================================
             case EList(elements):
-                '[' + [for (e in elements) print(e, 0)].join(', ') + ']';
+                // Multi-statement blocks inside list literals need special handling
+                // Invalid Elixir: [g = [], g ++ [0], g]  
+                // Valid Elixir: [(fn -> g = []; g = g ++ [0]; g end).()]
+                // Even better: Use proper comprehension [for i <- 0..1, do: i]
+                '[' + [for (e in elements) {
+                    switch(e.def) {
+                        case EBlock(exprs) if (exprs.length > 1):
+                            // Multi-statement block in list context must be wrapped
+                            // in immediately-invoked anonymous function for valid Elixir
+                            #if debug_ast_printer
+                            trace('[Printer] Wrapping block with ${exprs.length} expressions in list');
+                            #end
+                            '(fn -> ' + print(e, 0) + ' end).()';
+                        case EBlock(exprs):
+                            #if debug_ast_printer
+                            trace('[Printer] Single expression block in list, not wrapping');
+                            #end
+                            print(e, 0);
+                        default:
+                            print(e, 0);
+                    }
+                }].join(', ') + ']';
                 
             case ETuple(elements):
                 '{' + [for (e in elements) print(e, 0)].join(', ') + '}';
@@ -580,10 +601,11 @@ class ElixirASTPrinter {
                 // Atoms with dots MUST be quoted in Elixir - this is a syntax requirement
                 // Examples: :"TodoApp.PubSub", :"Postgrex.TypeManager"
                 // Without dots, atoms don't need quoting: :duplicate, :ok
-                if (value.indexOf('.') != -1) {
-                    ':"' + value + '"';
+                var atomStr: String = value; // ElixirAtom has implicit to String conversion
+                if (atomStr.indexOf('.') != -1) {
+                    ':"' + atomStr + '"';
                 } else {
-                    ':' + value;
+                    ':' + atomStr;
                 }
                 
             case EString(value):

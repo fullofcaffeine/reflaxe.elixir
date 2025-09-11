@@ -1,0 +1,128 @@
+@:nullSafety(Off)
+class reflaxe.elixir.PhoenixMapper {
+
+	public static function isPhoenixContext(classType:haxe.macro.ClassType) {
+		return reflaxe.helpers.NameMetaHelper.hasMeta(classType, ":context");
+	}
+
+	public static function isPhoenixController(classType:haxe.macro.ClassType) {
+		if (classType.superClass == null) {
+			return false;
+		};
+		var superClassName = reflaxe.helpers.NameMetaHelper.getNameOrNative(classType.superClass.t.get());
+		return superClassName.indexOf("Phoenix.Controller", null) != -1 || superClassName.indexOf("PhoenixController", null) != -1;
+	}
+
+	public static function isPhoenixLiveView(classType:haxe.macro.ClassType) {
+		if (classType.superClass == null) {
+			return false;
+		};
+		var superClassName = reflaxe.helpers.NameMetaHelper.getNameOrNative(classType.superClass.t.get());
+		return superClassName.indexOf("Phoenix.LiveView", null) != -1 || superClassName.indexOf("PhoenixLiveView", null) != -1;
+	}
+
+	public static function generatePhoenixContext(classType:haxe.macro.ClassType) {
+		var moduleName = reflaxe.elixir.ast.NameUtils.getElixirModuleName(reflaxe.helpers.NameMetaHelper.getNameOrNative(classType));
+		var contextName = reflaxe.elixir.PhoenixMapper.getPhoenixContextName(classType);
+		var result = new StringBuf();
+		result.add("defmodule " + moduleName + " do\n");
+		result.add("  @moduledoc \"\"\"\n");
+		result.add("  The " + contextName + " context - Generated from Haxe @:context class\n");
+		result.add("  \"\"\"\n\n");
+		result.add("  import Ecto.Query, warn: false\n");
+		result.add("  alias " + reflaxe.elixir.PhoenixMapper.getRepoModuleName() + "\n\n");
+		return result.toString();
+	}
+
+	public static function generatePhoenixController(classType:haxe.macro.ClassType) {
+		var moduleName = reflaxe.elixir.ast.NameUtils.getElixirModuleName(reflaxe.helpers.NameMetaHelper.getNameOrNative(classType));
+		var result = new StringBuf();
+		result.add("defmodule " + moduleName + " do\n");
+		result.add("  use " + reflaxe.elixir.PhoenixMapper.getAppModuleName() + "Web, :controller\n\n");
+		result.add("  @moduledoc \"\"\"\n");
+		result.add("  Phoenix Controller - Generated from Haxe\n");
+		result.add("  \"\"\"\n\n");
+		return result.toString();
+	}
+
+	public static function generatePhoenixLiveView(classType:haxe.macro.ClassType) {
+		var moduleName = reflaxe.elixir.ast.NameUtils.getElixirModuleName(reflaxe.helpers.NameMetaHelper.getNameOrNative(classType));
+		var result = new StringBuf();
+		result.add("defmodule " + moduleName + " do\n");
+		result.add("  use " + reflaxe.elixir.PhoenixMapper.getAppModuleName() + "Web, :live_view\n\n");
+		result.add("  @moduledoc \"\"\"\n");
+		result.add("  Phoenix LiveView - Generated from Haxe\n");
+		result.add("  \"\"\"\n\n");
+		result.add("  import Phoenix.LiveView.Helpers\n");
+		result.add("  alias Phoenix.LiveView.Socket\n\n");
+		return result.toString();
+	}
+
+	public static function generateEctoImports() {
+		var result = new StringBuf();
+		result.add("  import Ecto\n");
+		result.add("  import Ecto.Changeset\n");
+		result.add("  import Ecto.Query\n\n");
+		return result.toString();
+	}
+
+	public static function getPhoenixContextName(classType:haxe.macro.ClassType) {
+		var contextMeta = classType.meta.extract(":context");
+		if (contextMeta.length > 0 && contextMeta[0].params != null && contextMeta[0].params.length > 0) {
+			@:ast(switch (contextMeta[0].params[0].expr) {
+	case EConst(CString(s, _)):
+		return s;	
+	default:
+}) {
+				var ` = contextMeta[0].params[0].expr;
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					if (enumIndex ` == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var s = `;
+							{
+								return s;
+							};
+						};
+					} else {};
+				} else {};
+			};
+		};
+		var className = reflaxe.helpers.NameMetaHelper.getNameOrNative(classType);
+		if (StringTools.endsWith(className, "Context")) {
+			className = className.substr(0, className.length - 7);
+		};
+		return className;
+	}
+
+	public static function getRepoModuleName() {
+		return "MyApp.Repo";
+	}
+
+	public static function getAppModuleName() {
+		return "MyApp";
+	}
+
+	public static function getPhoenixResourceName(className:String) {
+		var name = className;
+		if (StringTools.endsWith(name, "Controller")) {
+			name = name.substr(0, name.length - 10);
+		};
+		var snakeName = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+		return reflaxe.elixir.PhoenixMapper.pluralize(snakeName);
+	}
+
+	static function pluralize(singular:String) {
+		if (StringTools.endsWith(singular, "y")) {
+			return singular.substr(0, singular.length - 1) + "ies";
+		} else {
+			if (StringTools.endsWith(singular, "s") || StringTools.endsWith(singular, "sh") || StringTools.endsWith(singular, "ch")) {
+				return singular + "es";
+			} else {
+				return singular + "s";
+			};
+		};
+	}
+}

@@ -1,0 +1,9 @@
+-cp std
+-cp src
+-cp test/snapshot/core/array_comprehension_nested
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=test/snapshot/core/array_comprehension_nested/out-simple
+-D reflaxe_runtime
+-D debug_ast_builder
+TestSimple

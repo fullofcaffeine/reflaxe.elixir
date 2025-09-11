@@ -1,0 +1,9 @@
+@:flatEnum
+enum reflaxe.elixir.ast.transformers.ContainerContext {
+	DefParam;
+	FnParam;
+	CaseClause;
+	ReceiveClause;
+	WithClause;
+	MatchLHS;
+}

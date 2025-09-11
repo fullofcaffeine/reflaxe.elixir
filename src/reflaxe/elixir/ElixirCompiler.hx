@@ -26,6 +26,7 @@ import reflaxe.elixir.SourceMapWriter;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -873,7 +874,7 @@ class ElixirCompiler extends GenericCompiler<
         if (metadata.jsonModule != null) {
             // Create a keyword list element for json: Jason
             var jsonAtom = reflaxe.elixir.ast.ElixirAST.makeAST(
-                reflaxe.elixir.ast.ElixirASTDef.EAtom("json")
+                reflaxe.elixir.ast.ElixirASTDef.EAtom(ElixirAtom.raw("json"))
             );
             var jsonModule = reflaxe.elixir.ast.ElixirAST.makeAST(
                 reflaxe.elixir.ast.ElixirASTDef.EVar(metadata.jsonModule)
