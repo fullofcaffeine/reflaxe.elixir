@@ -10,41 +10,41 @@ defmodule TodoPubSub do
   end
   def topic_to_string(_topic) do
     case (_topic) do
-      {:todoupdates} ->
+      {:todo_updates} ->
         "todo:updates"
-      {:useractivity} ->
+      {:user_activity} ->
         "user:activity"
-      {:systemnotifications} ->
+      {:system_notifications} ->
         "system:notifications"
     end
   end
   def message_to_elixir(_message) do
     base_payload = case (_message) do
-  {:todocreated, todo} ->
+  {:todo_created, todo} ->
     g = elem(_message, 1)
     todo = g
     %{:type => "todo_created", :todo => todo}
-  {:todoupdated, todo} ->
+  {:todo_updated, todo} ->
     g = elem(_message, 1)
     todo = g
     %{:type => "todo_updated", :todo => todo}
-  {:tododeleted, id} ->
+  {:todo_deleted, id} ->
     g = elem(_message, 1)
     id = g
     %{:type => "todo_deleted", :todo_id => id}
-  {:bulkupdate, action} ->
+  {:bulk_update, action} ->
     g = elem(_message, 1)
     action = g
     %{:type => "bulk_update", :action => bulk_action_to_string(action)}
-  {:useronline, user_id} ->
+  {:user_online, user_id} ->
     g = elem(_message, 1)
     user_id = g
     %{:type => "user_online", :user_id => user_id}
-  {:useroffline, user_id} ->
+  {:user_offline, user_id} ->
     g = elem(_message, 1)
     user_id = g
     %{:type => "user_offline", :user_id => user_id}
-  {:systemalert, message, level} ->
+  {:system_alert, message, level} ->
     g = elem(_message, 1)
     g1 = elem(_message, 2)
     message = g
@@ -105,19 +105,19 @@ end
   end
   defp bulk_action_to_string(_action) do
     case (_action) do
-      {:completeall} ->
+      {:complete_all} ->
         "complete_all"
-      {:deletecompleted} ->
+      {:delete_completed} ->
         "delete_completed"
-      {:setpriority, priority} ->
+      {:set_priority, priority} ->
         g = elem(_action, 1)
         _priority = g
         "set_priority"
-      {:addtag, tag} ->
+      {:add_tag, tag} ->
         g = elem(_action, 1)
         _tag = g
         "add_tag"
-      {:removetag, tag} ->
+      {:remove_tag, tag} ->
         g = elem(_action, 1)
         _tag = g
         "remove_tag"

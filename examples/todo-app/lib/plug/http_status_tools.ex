@@ -5,19 +5,19 @@ defmodule HttpStatusTools do
         200
       {:created} ->
         201
-      {:nocontent} ->
+      {:no_content} ->
         204
-      {:badrequest} ->
+      {:bad_request} ->
         400
       {:unauthorized} ->
         401
       {:forbidden} ->
         403
-      {:notfound} ->
+      {:not_found} ->
         404
-      {:methodnotallowed} ->
+      {:method_not_allowed} ->
         405
-      {:internalservererror} ->
+      {:internal_server_error} ->
         500
       {:custom, code} ->
         g = elem(_status, 1)

@@ -1,0 +1,882 @@
+
+> reflaxe-elixir@0.1.0 test
+> make -C test -j8 && npm run test:elixir-validate && npm run test:mix
+
+Running all tests (use -j N to control parallelism)...
+# Respect jobserver: do not force -j here; top-level -j will propagate
+Running array_map_idiomatic...
+Running ast/pipeline_test...
+Running bootstrap_external/basic...
+Running bootstrap_inline/basic...
+Running bootstrap/log_dependency...
+Running bootstrap/multiple_dependencies...
+Running bootstrap/no_dependencies...
+Running bootstrap/std_dependency...
+✅ bootstrap/no_dependencies (1s)
+Running core/abstract_types...
+✅ array_map_idiomatic (1s)
+✅ bootstrap/std_dependency (1s)
+Running core/advanced_patterns...
+Running core/array_comprehension_nested...
+✅ bootstrap_external/basic (1s)
+Running core/array_map_idiomatic...
+✅ bootstrap/multiple_dependencies (1s)
+✅ ast/pipeline_test (1s)
+✅ bootstrap/log_dependency (1s)
+Running core/arrays...
+Running core/basic_syntax...
+Running core/classes...
+✅ bootstrap_inline/basic (1s)
+Running core/domain_abstractions...
+✅ core/array_map_idiomatic (1s)
+Running core/domain_abstractions_exunit...
+✅ core/abstract_types (1s)
+Running core/dynamic...
+✅ core/advanced_patterns (1s)
+Running core/elixir_idiomatic...
+✅ core/array_comprehension_nested (1s)
+Running core/elixir_injection_test...
+✅ core/basic_syntax (1s)
+❌ core/classes - Output mismatch (1s)
+Running core/ElixirInjection...
+Running core/enhanced_pattern_matching...
+❌ core/arrays - Output mismatch (1s)
+Running core/enhanced_patterns...
+✅ core/enhanced_patterns (1s)
+Running core/enum_with_index_optimization...
+❌ core/domain_abstractions - Output mismatch (2s)
+Running core/enums...
+✅ core/ElixirInjection (1s)
+Running core/example_01_simple...
+❌ core/domain_abstractions_exunit - Output mismatch (1s)
+✅ core/dynamic (1s)
+Running core/example_02_mix...
+Running core/example_04_ecto...
+✅ core/elixir_injection_test (1s)
+❌ core/elixir_idiomatic - Output mismatch (1s)
+Running core/example_06_user_mgmt...
+Running core/exunit_simple...
+✅ core/enhanced_pattern_matching (1s)
+Running core/idiomatic_loops...
+✅ core/example_04_ecto (1s)
+Running core/ImportOptimizer_SimpleTest...
+✅ core/enum_with_index_optimization (1s)
+Running core/InjectionDebug...
+✅ core/exunit_simple (1s)
+Running core/inline_if_function_args...
+✅ core/enums (1s)
+Running core/js_async_await...
+✅ core/example_01_simple (1s)
+Running core/LambdaVariableScope...
+✅ core/example_02_mix (1s)
+✅ core/example_06_user_mgmt (1s)
+Running core/loop_patterns...
+Running core/loop_variable_assignment...
+✅ core/js_async_await (0s)
+Running core/loop_variable_mapping...
+✅ core/InjectionDebug (0s)
+Running core/MapIdiomatic...
+✅ core/idiomatic_loops (1s)
+Running core/maps...
+✅ core/inline_if_function_args (0s)
+Running core/maps_functional...
+✅ core/LambdaVariableScope (1s)
+Running core/metadata_test...
+✅ core/ImportOptimizer_SimpleTest (1s)
+Running core/module_syntax...
+✅ core/loop_variable_assignment (1s)
+Running core/mutable_ops...
+✅ core/loop_patterns (1s)
+Running core/native_annotation_test...
+✅ core/module_syntax (0s)
+Running core/optimization_pipeline...
+✅ core/MapIdiomatic (1s)
+Running core/option_type...
+❌ core/maps_functional - Output mismatch (1s)
+Running core/parameter_naming...
+✅ core/metadata_test (1s)
+❌ core/maps - Output mismatch (2s)
+Running core/pattern_matching...
+Running core/PatternMatching_Enhanced...
+✅ core/mutable_ops (1s)
+✅ core/loop_variable_mapping (2s)
+Running core/protocol...
+Running core/result_type...
+✅ core/native_annotation_test (1s)
+Running core/simple_for_loop...
+✅ core/optimization_pipeline (1s)
+Running core/source_map_basic...
+✅ core/parameter_naming (1s)
+Running core/source_map_validation...
+❌ core/option_type - Output mismatch (2s)
+Running core/SourceMapGeneration...
+✅ core/pattern_matching (1s)
+Running core/SourceMapTracking...
+✅ core/PatternMatching_Enhanced (1s)
+Running core/strings...
+✅ core/protocol (1s)
+Running core/struct_field_assignment...
+✅ core/simple_for_loop (1s)
+Running core/try_catch...
+✅ core/source_map_basic (1s)
+Running core/typedef_compilation...
+❌ core/result_type - Output mismatch (1s)
+Running core/while_loops...
+✅ core/source_map_validation (1s)
+Running date/conversion_roundtrip...
+✅ core/struct_field_assignment (0s)
+Running date/elixir_extensions...
+✅ core/SourceMapGeneration (1s)
+Running date/instance_access...
+✅ core/SourceMapTracking (1s)
+Running date/now_gettime_in_map...
+❌ core/strings - Output mismatch (1s)
+Running date/presence_metadata...
+✅ core/try_catch (1s)
+Running date/standard_api_comprehensive...
+✅ core/while_loops (1s)
+Running date/unix_units...
+✅ core/typedef_compilation (1s)
+Running ecto/advanced_ecto...
+✅ date/conversion_roundtrip (1s)
+Running ecto/changeset...
+✅ date/elixir_extensions (1s)
+Running ecto/db_types...
+✅ date/instance_access (1s)
+Running ecto/db_types_extensions...
+✅ date/now_gettime_in_map (1s)
+Running ecto/db_types_sugar...
+✅ date/presence_metadata (1s)
+Running ecto/ecto_error_test...
+✅ ecto/changeset (1s)
+Running ecto/ecto_integration...
+✅ ecto/advanced_ecto (1s)
+✅ date/standard_api_comprehensive (1s)
+Running ecto/ecto_schema...
+Running ecto/migration...
+✅ date/unix_units (1s)
+Running ecto/migration_create_table...
+✅ ecto/db_types (1s)
+Running ecto/migration_validation...
+✅ ecto/db_types_extensions (0s)
+Running ecto/query...
+✅ ecto/db_types_sugar (0s)
+Running ecto/repository...
+❌ ecto/ecto_error_test - Output mismatch (1s)
+Running ecto/typed_query...
+❌ ecto/ecto_schema - Output mismatch (1s)
+Running ElixirInjection...
+❌ ecto/migration - Output mismatch (1s)
+Running HygieneTransformUsageDetection...
+❌ ecto/ecto_integration - Output mismatch (1s)
+Running NullCoalescingOperator...
+❌ ecto/query - Output mismatch (1s)
+Running otp/behavior...
+❌ ecto/repository - Output mismatch (1s)
+Running otp/otp_genserver...
+❌ ecto/migration_create_table - Output mismatch (1s)
+Running otp/otp_supervision...
+❌ ecto/typed_query - Compilation failed (0s)
+Running otp/type_safe_child_specs...
+✅ ecto/migration_validation (1s)
+Running phoenix/hxx_template...
+❌ ElixirInjection - Output mismatch (0s)
+Running phoenix/liveview_basic...
+✅ HygieneTransformUsageDetection (0s)
+Running phoenix/router...
+❌ NullCoalescingOperator - Output mismatch (0s)
+Running phoenix/RouterBuildMacro...
+❌ otp/behavior - Output mismatch (1s)
+❌ otp/otp_genserver - Output mismatch (1s)
+Running phoenix/RouterBuildMacro_InvalidAction...
+Running phoenix/RouterBuildMacro_InvalidController...
+❌ phoenix/RouterBuildMacro - Output mismatch (1s)
+Running phoenix/RouterBuildMacro_MultipleInvalid...
+❌ phoenix/liveview_basic - Output mismatch (1s)
+Running phoenix/RouterBuildMacro_ValidController...
+❌ otp/otp_supervision - Output mismatch (1s)
+Running phoenix/template...
+❌ phoenix/router - Output mismatch (1s)
+❌ otp/type_safe_child_specs - Output mismatch (1s)
+Running regression/array_push_if_expression...
+Running regression/class_instance_methods...
+❌ phoenix/hxx_template - Output mismatch (1s)
+Running regression/collision_renamed_vars...
+❌ phoenix/template - Output mismatch (1s)
+Running regression/complex_binary_expression...
+❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (1s)
+❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (1s)
+Running regression/conditional_array_comprehension...
+Running regression/elixir_injection_with_proper_architecture...
+❌ phoenix/RouterBuildMacro_MultipleInvalid - Output mismatch (1s)
+Running regression/enum_pattern_names...
+❌ phoenix/RouterBuildMacro_ValidController - Output mismatch (1s)
+Running regression/enum_snake_case_patterns...
+❌ regression/class_instance_methods - Output mismatch (1s)
+❌ regression/array_push_if_expression - Output mismatch (1s)
+Running regression/enum_switch_parameter...
+Running regression/function_parameter_underscore...
+❌ regression/collision_renamed_vars - Output mismatch (1s)
+Running regression/ImplicitImports...
+❌ regression/complex_binary_expression - Output mismatch (1s)
+Running regression/IncrementDecrementPattern...
+❌ regression/elixir_injection_with_proper_architecture - Output mismatch (1s)
+Running regression/InlineExpansion...
+✅ regression/conditional_array_comprehension (1s)
+Running regression/json_printer_temp_vars...
+✅ regression/enum_pattern_names (1s)
+Running regression/nested_switch_variable_consistency...
+❌ regression/function_parameter_underscore - Output mismatch (1s)
+Running regression/OrphanedEnumParameters...
+✅ regression/enum_snake_case_patterns (1s)
+Running regression/PhoenixWebAnnotation...
+❌ regression/ImplicitImports - Output mismatch (1s)
+Running regression/property_setters...
+❌ regression/PhoenixWebAnnotation - Output mismatch (1s)
+❌ regression/enum_switch_parameter - Output mismatch (2s)
+Running regression/ReflectOperations...
+Running regression/StatementSeparation...
+❌ regression/IncrementDecrementPattern - Output mismatch (1s)
+Running regression/StdFunctions...
+❌ regression/InlineExpansion - Output mismatch (1s)
+Running regression/StructFieldUpdate...
+❌ regression/json_printer_temp_vars - Output mismatch (1s)
+Running regression/temp_result_switch_fix...
+❌ regression/nested_switch_variable_consistency - Output mismatch (1s)
+Running regression/temp_variable_optimization...
+❌ regression/OrphanedEnumParameters - Output mismatch (1s)
+Running regression/troubleshooting_patterns...
+❌ regression/property_setters - Output mismatch (1s)
+Running regression/tuple_elem_access...
+❌ regression/ReflectOperations - Compilation failed (0s)
+Running regression/underscore_for_loop...
+✅ regression/troubleshooting_patterns (0s)
+Running regression/underscore_prefix_consistency...
+❌ regression/StatementSeparation - Output mismatch (1s)
+Running regression/unused_parameters...
+❌ regression/StructFieldUpdate - Output mismatch (1s)
+❌ regression/StdFunctions - Output mismatch (1s)
+Running regression/variable_name_digits...
+Running stdlib/array_cross_operations...
+❌ regression/temp_result_switch_fix - Output mismatch (1s)
+Running stdlib/array_idiomatic...
+❌ regression/temp_variable_optimization - Output mismatch (1s)
+Running stdlib/ReflectFieldsLoop...
+❌ regression/tuple_elem_access - Output mismatch (1s)
+Running stdlib/stdlib_externs...
+❌ regression/unused_parameters - Output mismatch (0s)
+✅ regression/underscore_for_loop (1s)
+✅ regression/underscore_prefix_consistency (1s)
+✅ regression/variable_name_digits (1s)
+✅ stdlib/array_cross_operations (1s)
+✅ stdlib/array_idiomatic (1s)
+✅ stdlib/ReflectFieldsLoop (1s)
+✅ stdlib/stdlib_externs (1s)
+
+========================================
+Test Results (AST Pipeline): 78/134 passed
+\033[0;31mFAILED: 56 test(s)\033[0m
+  ❌ core/classes - Output mismatch (1s)
+  ❌ core/arrays - Output mismatch (1s)
+  ❌ core/domain_abstractions - Output mismatch (2s)
+  ❌ core/domain_abstractions_exunit - Output mismatch (1s)
+  ❌ core/elixir_idiomatic - Output mismatch (1s)
+  ❌ core/maps_functional - Output mismatch (1s)
+  ❌ core/maps - Output mismatch (2s)
+  ❌ core/option_type - Output mismatch (2s)
+  ❌ core/result_type - Output mismatch (1s)
+  ❌ core/strings - Output mismatch (1s)
+  ❌ ecto/ecto_error_test - Output mismatch (1s)
+  ❌ ecto/ecto_schema - Output mismatch (1s)
+  ❌ ecto/migration - Output mismatch (1s)
+  ❌ ecto/ecto_integration - Output mismatch (1s)
+  ❌ ecto/query - Output mismatch (1s)
+  ❌ ecto/repository - Output mismatch (1s)
+  ❌ ecto/migration_create_table - Output mismatch (1s)
+  ❌ ecto/typed_query - Compilation failed (0s)
+  ❌ ElixirInjection - Output mismatch (0s)
+  ❌ NullCoalescingOperator - Output mismatch (0s)
+  ❌ otp/behavior - Output mismatch (1s)
+  ❌ otp/otp_genserver - Output mismatch (1s)
+  ❌ phoenix/RouterBuildMacro - Output mismatch (1s)
+  ❌ phoenix/liveview_basic - Output mismatch (1s)
+  ❌ otp/otp_supervision - Output mismatch (1s)
+  ❌ phoenix/router - Output mismatch (1s)
+  ❌ otp/type_safe_child_specs - Output mismatch (1s)
+  ❌ phoenix/hxx_template - Output mismatch (1s)
+  ❌ phoenix/template - Output mismatch (1s)
+  ❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (1s)
+  ❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (1s)
+  ❌ phoenix/RouterBuildMacro_MultipleInvalid - Output mismatch (1s)
+  ❌ phoenix/RouterBuildMacro_ValidController - Output mismatch (1s)
+  ❌ regression/class_instance_methods - Output mismatch (1s)
+  ❌ regression/array_push_if_expression - Output mismatch (1s)
+  ❌ regression/collision_renamed_vars - Output mismatch (1s)
+  ❌ regression/complex_binary_expression - Output mismatch (1s)
+  ❌ regression/elixir_injection_with_proper_architecture - Output mismatch (1s)
+  ❌ regression/function_parameter_underscore - Output mismatch (1s)
+  ❌ regression/ImplicitImports - Output mismatch (1s)
+  ❌ regression/PhoenixWebAnnotation - Output mismatch (1s)
+  ❌ regression/enum_switch_parameter - Output mismatch (2s)
+  ❌ regression/IncrementDecrementPattern - Output mismatch (1s)
+  ❌ regression/InlineExpansion - Output mismatch (1s)
+  ❌ regression/json_printer_temp_vars - Output mismatch (1s)
+  ❌ regression/nested_switch_variable_consistency - Output mismatch (1s)
+  ❌ regression/OrphanedEnumParameters - Output mismatch (1s)
+  ❌ regression/property_setters - Output mismatch (1s)
+  ❌ regression/ReflectOperations - Compilation failed (0s)
+  ❌ regression/StatementSeparation - Output mismatch (1s)
+  ❌ regression/StructFieldUpdate - Output mismatch (1s)
+  ❌ regression/StdFunctions - Output mismatch (1s)
+  ❌ regression/temp_result_switch_fix - Output mismatch (1s)
+  ❌ regression/temp_variable_optimization - Output mismatch (1s)
+  ❌ regression/tuple_elem_access - Output mismatch (1s)
+  ❌ regression/unused_parameters - Output mismatch (0s)
+
+> reflaxe-elixir@0.1.0 test:elixir-validate
+> make -C test validate-elixir
+
+Running Elixir syntax validation...
+=== Elixir Syntax Validation ===
+Validating generated Elixir code in /REDACTED_LOCAL_PATH
+
+
+=== Validation Summary ===
+Total tests validated: 129
+[0;32mPassed: 129[0m
+[0;31mFailed: 0[0m
+
+[0;32mAll Elixir syntax validation passed![0m
+
+> reflaxe-elixir@0.1.0 test:mix
+> MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --max-cases 1 --timeout 120000
+
+==> file_system
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
+    │           ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:71:11
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
+    │                 ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:71:17
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
+    │                           ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:71:27
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
+    │                                 ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:71:33
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
+    │                                                ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:71:48
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
+    │                                                      ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:71:54
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
+    │                                                                  ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:71:66
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
+    │                                                                        ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:71:72
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │           ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:11
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │                 ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:17
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │                           ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:27
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │                                 ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:33
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │                                           ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:43
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │                                                 ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:49
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │                                                           ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:59
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │                                                                               ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:79
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │                                                                                          ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:90
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
+    │                                                                                                ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:72:96
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 84 │     parse_options(t, result -- ['-r'])
+    │                                 ~
+    │
+    └─ lib/file_system/backends/fs_inotify.ex:84:33
+
+     warning: using single-quoted strings to represent charlists is deprecated.
+     Use ~c"" if you indeed want a charlist or use "" instead.
+     You may run "mix format --migrate" to change all single-quoted
+     strings to use the ~c sigil and fix this warning.
+     │
+ 104 │         bash_args = ['-c', '#{executable_path()} "$0" "$@" & PID=$!; read a; kill -KILL $PID']
+     │                      ~
+     │
+     └─ lib/file_system/backends/fs_inotify.ex:104:22
+
+     warning: using single-quoted strings to represent charlists is deprecated.
+     Use ~c"" if you indeed want a charlist or use "" instead.
+     You may run "mix format --migrate" to change all single-quoted
+     strings to use the ~c sigil and fix this warning.
+     │
+ 104 │         bash_args = ['-c', '#{executable_path()} "$0" "$@" & PID=$!; read a; kill -KILL $PID']
+     │                            ~
+     │
+     └─ lib/file_system/backends/fs_inotify.ex:104:28
+
+     warning: using single-quoted strings to represent charlists is deprecated.
+     Use ~c"" if you indeed want a charlist or use "" instead.
+     You may run "mix format --migrate" to change all single-quoted
+     strings to use the ~c sigil and fix this warning.
+     │
+ 109 │               bash_args ++ ['--'] ++ port_args
+     │                             ~
+     │
+     └─ lib/file_system/backends/fs_inotify.ex:109:29
+
+     warning: using single-quoted strings to represent charlists is deprecated.
+     Use ~c"" if you indeed want a charlist or use "" instead.
+     You may run "mix format --migrate" to change all single-quoted
+     strings to use the ~c sigil and fix this warning.
+     │
+ 116 │           {:spawn_executable, '/bin/sh'},
+     │                               ~
+     │
+     └─ lib/file_system/backends/fs_inotify.ex:116:31
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 94 │         args = ['-F' | dirs |> Enum.map(&Path.absname/1) |> Enum.map(&to_charlist/1)]
+    │                 ~
+    │
+    └─ lib/file_system/backends/fs_mac.ex:94:17
+
+     warning: using single-quoted strings to represent charlists is deprecated.
+     Use ~c"" if you indeed want a charlist or use "" instead.
+     You may run "mix format --migrate" to change all single-quoted
+     strings to use the ~c sigil and fix this warning.
+     │
+ 103 │         ['--latency=#{latency / 1}' | result]
+     │          ~
+     │
+     └─ lib/file_system/backends/fs_mac.ex:103:10
+
+     warning: using single-quoted strings to represent charlists is deprecated.
+     Use ~c"" if you indeed want a charlist or use "" instead.
+     You may run "mix format --migrate" to change all single-quoted
+     strings to use the ~c sigil and fix this warning.
+     │
+ 111 │     parse_options(t, ['--no-defer' | result])
+     │                       ~
+     │
+     └─ lib/file_system/backends/fs_mac.ex:111:23
+
+     warning: using single-quoted strings to represent charlists is deprecated.
+     Use ~c"" if you indeed want a charlist or use "" instead.
+     You may run "mix format --migrate" to change all single-quoted
+     strings to use the ~c sigil and fix this warning.
+     │
+ 121 │     parse_options(t, ['--with-root' | result])
+     │                       ~
+     │
+     └─ lib/file_system/backends/fs_mac.ex:121:23
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 83 │           '--format', format, '--quiet', '-m', '-r'
+    │           ~
+    │
+    └─ lib/file_system/backends/fs_windows.ex:83:11
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 83 │           '--format', format, '--quiet', '-m', '-r'
+    │                               ~
+    │
+    └─ lib/file_system/backends/fs_windows.ex:83:31
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 83 │           '--format', format, '--quiet', '-m', '-r'
+    │                                          ~
+    │
+    └─ lib/file_system/backends/fs_windows.ex:83:42
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 83 │           '--format', format, '--quiet', '-m', '-r'
+    │                                                ~
+    │
+    └─ lib/file_system/backends/fs_windows.ex:83:48
+
+    warning: using single-quoted strings to represent charlists is deprecated.
+    Use ~c"" if you indeed want a charlist or use "" instead.
+    You may run "mix format --migrate" to change all single-quoted
+    strings to use the ~c sigil and fix this warning.
+    │
+ 95 │     parse_options(t, result -- ['-r'])
+    │                                 ~
+    │
+    └─ lib/file_system/backends/fs_windows.ex:95:33
+
+     warning: using single-quoted strings to represent charlists is deprecated.
+     Use ~c"" if you indeed want a charlist or use "" instead.
+     You may run "mix format --migrate" to change all single-quoted
+     strings to use the ~c sigil and fix this warning.
+     │
+ 247 │       {'HAXESHIM_SERVER_PORT', to_charlist(haxeshim_port)},
+     │        ~
+     │
+     └─ lib/haxe_server.ex:247:8
+
+     warning: using single-quoted strings to represent charlists is deprecated.
+     Use ~c"" if you indeed want a charlist or use "" instead.
+     You may run "mix format --migrate" to change all single-quoted
+     strings to use the ~c sigil and fix this warning.
+     │
+ 248 │       {'HAXE_SERVER_PORT', to_charlist(state.port)}
+     │        ~
+     │
+     └─ lib/haxe_server.ex:248:8
+
+    warning: variable "include_changeset" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 76 │     include_changeset = Keyword.get(opts, :changeset, true)
+    │     ~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/mix/tasks/haxe.gen.context.ex:76:5: Mix.Tasks.Haxe.Gen.Context.generate_context/4
+
+    warning: variable "repo_module" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 77 │     repo_module = Keyword.get(opts, :repo, "Repo")
+    │     ~~~~~~~~~~~
+    │
+    └─ lib/mix/tasks/haxe.gen.context.ex:77:5: Mix.Tasks.Haxe.Gen.Context.generate_context/4
+
+     warning: variable "context_attrs" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 128 │   defp generate_haxe_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
+     │                                                                                           ~~~~~~~~~~~~~
+     │
+     └─ lib/mix/tasks/haxe.gen.context.ex:128:91: Mix.Tasks.Haxe.Gen.Context.generate_haxe_context_content/9
+
+     warning: variable "context_name" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 332 │   defp generate_context_business_methods(context_name, schema_name, belongs_to, has_many, has_one) do
+     │                                          ~~~~~~~~~~~~
+     │
+     └─ lib/mix/tasks/haxe.gen.context.ex:332:42: Mix.Tasks.Haxe.Gen.Context.generate_context_business_methods/5
+
+     warning: variable "field" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 397 │     Enum.map_join(belongs_to, "", fn {parent_schema, field} ->
+     │                                                      ~
+     │
+     └─ lib/mix/tasks/haxe.gen.context.ex:397:54: Mix.Tasks.Haxe.Gen.Context.generate_filter_methods/2
+
+     warning: variable "context_attrs" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 433 │   defp generate_elixir_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
+     │                                                                                             ~~~~~~~~~~~~~
+     │
+     └─ lib/mix/tasks/haxe.gen.context.ex:433:93: Mix.Tasks.Haxe.Gen.Context.generate_elixir_context_content/9
+
+     warning: variable "schema_attrs" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 433 │   defp generate_elixir_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
+     │                                                                               ~~~~~~~~~~~~
+     │
+     └─ lib/mix/tasks/haxe.gen.context.ex:433:79: Mix.Tasks.Haxe.Gen.Context.generate_elixir_context_content/9
+
+     warning: variable "table_name" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 433 │   defp generate_elixir_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
+     │                                                                   ~~~~~~~~~~
+     │
+     └─ lib/mix/tasks/haxe.gen.context.ex:433:67: Mix.Tasks.Haxe.Gen.Context.generate_elixir_context_content/9
+
+     warning: variable "app_module" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 571 │   defp generate_elixir_business_methods(schema_name, belongs_to, has_many, has_one, app_module, repo_module) do
+     │                                                                                     ~~~~~~~~~~
+     │
+     └─ lib/mix/tasks/haxe.gen.context.ex:571:85: Mix.Tasks.Haxe.Gen.Context.generate_elixir_business_methods/6
+
+     warning: variable "config" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 815 │   defp generate_function_components(config) do
+     │                                     ~~~~~~
+     │
+     └─ lib/mix/tasks/haxe.gen.live.ex:815:37: Mix.Tasks.Haxe.Gen.Live.generate_function_components/1
+
+warning: test/snapshot/core/enhanced_pattern_matching/intended/enhanced_pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/core/enhanced_pattern_matching/out/enhanced_pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/core/pattern_matching/intended/pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/core/pattern_matching/out/pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/core/source_map_basic/intended/source_map_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/core/source_map_basic/out/source_map_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/core/source_map_validation/intended/source_map_validation_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/core/source_map_validation/out/source_map_validation_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/RouterBuildMacro_InvalidAction/intended/invalid_action_router_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/RouterBuildMacro_InvalidAction/out/invalid_action_router_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/RouterBuildMacro_InvalidController/intended/invalid_controller_router_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/RouterBuildMacro_InvalidController/out/invalid_controller_router_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/RouterBuildMacro_MultipleInvalid/intended/multiple_invalid_router_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/RouterBuildMacro_MultipleInvalid/out/multiple_invalid_router_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/RouterBuildMacro_ValidController/intended/valid_router_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/RouterBuildMacro_ValidController/out/valid_router_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/regression/property_setters/intended/property_setter_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/regression/property_setters/out/property_setter_test.ex does not match "*_test.exs" and won't be loaded
+Running ExUnit with seed: 916629, max_cases: 1
+
+.
+17:37:03.639 [info] Haxe server started on port 7008
+..
+17:37:04.425 [info] Haxe server started on port 8779
+.
+17:37:05.176 [info] Haxe server started on port 8907
+..
+17:37:05.678 [info] Haxe server started on port 7517
+.
+17:37:06.180 [info] Haxe server started on port 7265
+.
+17:37:06.927 [info] Haxe server started on port 7644
+
+17:37:06.928 [info] HaxeServer terminating: :normal
+.
+17:37:07.033 [error] Failed to start Haxe server: Failed to start Haxe server: Erlang error: :enoent
+.
+17:37:07.732 [info] Haxe server started on port 7519
+.
+17:37:08.486 [info] Haxe server started on port 7647
+.
+17:37:08.988 [error] Failed to start Haxe server: Haxe server process exited immediately
+.
+17:37:08.988 [debug] Haxe server output: node:events:502
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::7001
+    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+    at listenInCluster (node:net:1965:12)
+    at Server.listen (node:net:2067:7)
+    at haxeshim_CompilerServer.waitOnPort (/REDACTED_LOCAL_PATH)
+    at new haxeshim_CompilerServer (/REDACTED_LOCAL_PATH)
+    at haxeshim_HaxeCli.dispatch (/REDACTED_LOCAL_PATH)
+    at haxeshim_HaxeCli.run (/REDACTED_LOCAL_PATH)
+    at /REDACTED_LOCAL_PATH
+    at D.invoke (/REDACTED_LOCAL_PATH)
+    at tink_core_CallbackList.invoke (/REDACTED_LOCAL_PATH)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1944:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  code: 'EADDRINUSE',
+  errno: -48,
+  syscall: 'listen',
+  address: '::',
+  port: 7001
+}
+
+Node.js v20.19.3
+
+
+17:37:08.988 [warning] Haxe server exited with status: 1
+.
+17:37:09.490 [info] Haxe server started on port 7772
+...
+17:37:10.255 [info] Haxe server started on port 8028
+.Compiling Haxe files...
+Compiling Haxe files from src_haxe to lib
+Using build file: build.hxml
+Using direct Haxe compilation
+Running: /REDACTED_LOCAL_PATH build.hxml
+
+== Compilation error in Haxe files ==
+ error: Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.
+
+
+Hint: Run 'mix haxe.errors' for detailed error analysis
+      Run 'mix haxe.errors --json' for LLM-friendly format
+✅ Mix task returned: {:error, [%Mix.Task.Compiler.Diagnostic{file: nil, source: nil, severity: :error, message: "Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.\n", position: {0, 0}, compiler_name: "haxe", span: nil, details: %{line: nil, message: "Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.\n", type: :compilation_error, file: nil, column_start: nil, column_end: nil, raw_line: "Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.\n"}, stacktrace: []}]}
+✅ Mix integration test completed
+.✅ Error handling works gracefully
+.✅ Performance test completed - detection: 0ms, check: 0ms
+.Compiling Haxe files from /REDACTED_TMP_PATH to /REDACTED_TMP_PATH
+Using build file: /REDACTED_TMP_PATH
+Using direct Haxe compilation
+Running: /REDACTED_LOCAL_PATH /REDACTED_TMP_PATH
+⚠️  Compilation failed as expected (likely no Haxe available): Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.
+
+✅ Core compilation workflow test completed successfully
+.
+17:37:10.934 [info] Haxe server started on port 8031
+
+17:37:10.934 [info] HaxeServer terminating: :normal
+✅ HaxeServer started successfully
+✅ File watching components initialized successfully
+............Compiling Haxe files from /REDACTED_TMP_PATH to /REDACTED_TMP_PATH
+Using build file: /REDACTED_TMP_PATH
+......Compiling Haxe files from /REDACTED_TMP_PATH to /REDACTED_TMP_PATH
+Using build file: /REDACTED_TMP_PATH
+
+17:37:11.630 [info] Haxe server started on port 8156
+Using direct Haxe compilation
+Running: /REDACTED_LOCAL_PATH /REDACTED_TMP_PATH
+
+17:37:11.723 [info] HaxeServer terminating: :normal
+........................................
+Finished in 8.8 seconds (0.00s async, 8.8s sync)
+80 tests, 0 failures
