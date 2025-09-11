@@ -46,7 +46,7 @@ defmodule HttpStatusTools do
       500 ->
         {:internal_server_error}
       _ ->
-        {:Custom, code}
+        {:custom, code}
     end
   end
   def is_success(status) do
