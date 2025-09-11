@@ -1,0 +1,4 @@
+enum haxe.macro.FieldKind {
+	FVar(read:haxe.macro.VarAccess, write:haxe.macro.VarAccess);
+	FMethod(k:haxe.macro.MethodKind);
+}

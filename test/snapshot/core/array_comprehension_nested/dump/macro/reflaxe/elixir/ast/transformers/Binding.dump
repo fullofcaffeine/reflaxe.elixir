@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.transformers.Binding = { used : Bool, slotIndex : Int, path : Array<Int>, name : String, kind : reflaxe.elixir.ast.transformers.BindingKind, context : reflaxe.elixir.ast.transformers.ContainerContext, containerId : Int }

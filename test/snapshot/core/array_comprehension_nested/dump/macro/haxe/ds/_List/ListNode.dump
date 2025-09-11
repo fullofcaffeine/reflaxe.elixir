@@ -1,0 +1,15 @@
+private class haxe.ds._List.ListNode<T> {
+
+	public function new(item:haxe.ds._List.ListNode.T, next:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>) {
+		this.item = item;
+		this.next = next;
+	}
+
+	public var item:haxe.ds._List.ListNode.T;
+
+	public var next:haxe.ds._List.ListNode<haxe.ds._List.ListNode.T>;
+
+	public static inline function create<T>(item:create.T, next:haxe.ds._List.ListNode<create.T>) {
+		return new haxe.ds._List.ListNode(item, next);
+	}
+}

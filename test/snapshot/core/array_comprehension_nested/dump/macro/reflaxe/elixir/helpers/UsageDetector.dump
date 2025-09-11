@@ -1,0 +1,509 @@
+class reflaxe.elixir.helpers.UsageDetector {
+
+	public static function isVariableUsed(varId:Int, expr:haxe.macro.TypedExpr) {
+		if (expr == null) {
+			return false;
+		};
+		return @:ast(switch (expr.expr) {
+	case TLocal(v) if (v.id == varId):
+		true;	
+	case TNew(_, _, args):
+		for (arg  in  args) {
+			if (isVariableUsed(varId, arg)) {
+				return true;
+			};
+		};
+		false;	
+	case TCall(e, args):
+		if (isVariableUsed(varId, e)) return true;
+		for (arg  in  args) {
+			if (isVariableUsed(varId, arg)) return true;
+		};
+		false;	
+	case TReturn(e):
+		e != null ? isVariableUsed(varId, e) : false;	
+	case TIf(econd, eif, eelse):
+		isVariableUsed(varId, econd) || isVariableUsed(varId, eif) || (eelse != null ? isVariableUsed(varId, eelse) : false);	
+	case TBinop(_, e1, e2):
+		isVariableUsed(varId, e1) || isVariableUsed(varId, e2);	
+	case TUnop(_, _, e):
+		isVariableUsed(varId, e);	
+	case TArray(e1, e2):
+		isVariableUsed(varId, e1) || isVariableUsed(varId, e2);	
+	case TField(e, _):
+		isVariableUsed(varId, e);	
+	case TBlock(exprs):
+		for (e  in  exprs) {
+			if (isVariableUsed(varId, e)) return true;
+		};
+		false;	
+	case TSwitch(e, cases, edef):
+		if (isVariableUsed(varId, e)) return true;
+		for (c  in  cases) {
+			if (isVariableUsed(varId, c.expr)) return true;
+		};
+		edef != null ? isVariableUsed(varId, edef) : false;	
+	case TTry(e, catches):
+		if (isVariableUsed(varId, e)) return true;
+		for (c  in  catches) {
+			if (isVariableUsed(varId, c.expr)) return true;
+		};
+		false;	
+	case TWhile(econd, e, _):
+		isVariableUsed(varId, econd) || isVariableUsed(varId, e);	
+	case TFor(v, e1, e2):
+		if (v.id == varId) return false;
+		isVariableUsed(varId, e1) || isVariableUsed(varId, e2);	
+	case TObjectDecl(fields):
+		for (f  in  fields) {
+			if (isVariableUsed(varId, f.expr)) return true;
+		};
+		false;	
+	case TArrayDecl(el):
+		for (e  in  el) {
+			if (isVariableUsed(varId, e)) return true;
+		};
+		false;	
+	case TCast(e, _):
+		isVariableUsed(varId, e);	
+	case TMeta(_, e):
+		isVariableUsed(varId, e);	
+	case TParenthesis(e):
+		isVariableUsed(varId, e);	
+	case _:
+		false;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v.id == varId) {
+							true;
+						} else {
+							false;
+						};
+					};
+				};
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e1) || reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e2);
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e1) || reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e2);
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e);
+						};
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e);
+						};
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						var fields = `;
+						{
+							{
+								var ` = 0;
+								while (` < fields.length) {
+									var f = fields[`];
+									++ `;
+									if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, f.expr)) {
+										return true;
+									};
+								};
+							};
+							false;
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					{
+						var el = `;
+						{
+							{
+								var ` = 0;
+								while (` < el.length) {
+									var e = el[`];
+									++ `;
+									if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e)) {
+										return true;
+									};
+								};
+							};
+							false;
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var args = `;
+						{
+							if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e)) {
+								return true;
+							};
+							{
+								var ` = 0;
+								while (` < args.length) {
+									var arg = args[`];
+									++ `;
+									if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, arg)) {
+										return true;
+									};
+								};
+							};
+							false;
+						};
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var args = `;
+						{
+							{
+								var ` = 0;
+								while (` < args.length) {
+									var arg = args[`];
+									++ `;
+									if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, arg)) {
+										return true;
+									};
+								};
+							};
+							false;
+						};
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						{
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e);
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var e = exprs[`];
+									++ `;
+									if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e)) {
+										return true;
+									};
+								};
+							};
+							false;
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							if (v.id == varId) {
+								return false;
+							};
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e1) || reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e2);
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var econd = `;
+						var eif = `;
+						var eelse = `;
+						{
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, econd) || reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, eif) || (if (eelse != null) {
+								reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, eelse);
+							} else {
+								false;
+							});
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var econd = `;
+						var e = `;
+						{
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, econd) || reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e);
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						var cases = `;
+						var edef = `;
+						{
+							if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e)) {
+								return true;
+							};
+							{
+								var ` = 0;
+								while (` < cases.length) {
+									var c = cases[`];
+									++ `;
+									if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, c.expr)) {
+										return true;
+									};
+								};
+							};
+							if (edef != null) {
+								reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, edef);
+							} else {
+								false;
+							};
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var catches = `;
+						{
+							if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e)) {
+								return true;
+							};
+							{
+								var ` = 0;
+								while (` < catches.length) {
+									var c = catches[`];
+									++ `;
+									if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, c.expr)) {
+										return true;
+									};
+								};
+							};
+							false;
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							if (e != null) {
+								reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e);
+							} else {
+								false;
+							};
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e);
+						};
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, e);
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	public static function isParameterUnused(param:haxe.macro.TVar, functionBody:haxe.macro.TypedExpr) {
+		var isUsed = reflaxe.elixir.helpers.UsageDetector.isVariableUsed(param.id, functionBody);
+		if (! isUsed && functionBody != null) {
+			isUsed = reflaxe.elixir.helpers.UsageDetector.checkNewExpressionUsage(param.id, functionBody);
+		};
+		return ! isUsed;
+	}
+
+	static function checkNewExpressionUsage(varId:Int, expr:haxe.macro.TypedExpr) {
+		if (expr == null) {
+			return false;
+		};
+		return @:ast(switch (expr.expr) {
+	case TBlock(exprs):
+		for (e  in  exprs) {
+			if (checkNewExpressionUsage(varId, e)) return true;
+		};
+		false;	
+	case TVar(_, init) if (init != null):
+		checkNewExpressionUsage(varId, init);	
+	case TNew(_, _, args):
+		for (arg  in  args) {
+			if (arg != null && switch (arg.expr) {
+				case TLocal(v):
+					v.id == varId;				
+				default:
+					isVariableUsed(varId, arg);				
+			}) return true;
+		};
+		false;	
+	case TReturn(e):
+		e != null ? checkNewExpressionUsage(varId, e) : false;	
+	default:
+		isVariableUsed(varId, expr);	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var args = `;
+						{
+							{
+								var ` = 0;
+								while (` < args.length) {
+									var arg = args[`];
+									++ `;
+									if (arg != null && @:ast(switch (arg.expr) {
+	case TLocal(v):
+		v.id == varId;	
+	default:
+		isVariableUsed(varId, arg);	
+}) {
+										var ` = arg.expr;
+										if (enumIndex ` == 1) {
+											var ` = `[0];
+											{
+												var v = `;
+												{
+													v.id == varId;
+												};
+											};
+										} else {
+											reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, arg);
+										};
+									}) {
+										return true;
+									};
+								};
+							};
+							false;
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var init = `;
+						if (init != null) {
+							reflaxe.elixir.helpers.UsageDetector.checkNewExpressionUsage(varId, init);
+						} else {
+							reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, expr);
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var e = exprs[`];
+									++ `;
+									if (reflaxe.elixir.helpers.UsageDetector.checkNewExpressionUsage(varId, e)) {
+										return true;
+									};
+								};
+							};
+							false;
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							if (e != null) {
+								reflaxe.elixir.helpers.UsageDetector.checkNewExpressionUsage(varId, e);
+							} else {
+								false;
+							};
+						};
+					};
+				};
+				default: {
+					reflaxe.elixir.helpers.UsageDetector.isVariableUsed(varId, expr);
+				}
+			};
+		};
+	}
+}

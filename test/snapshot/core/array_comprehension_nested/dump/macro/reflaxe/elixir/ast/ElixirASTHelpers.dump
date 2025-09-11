@@ -1,0 +1,323 @@
+class reflaxe.elixir.ast.ElixirASTHelpers {
+
+	public static inline function ast() {
+		return new reflaxe.elixir.ast.ASTBuilder();
+	}
+
+	public static inline function make(def:reflaxe.elixir.ast.ElixirASTDef, metadata:Null<reflaxe.elixir.ast.ElixirMetadata> = null) {
+		return {def : def, metadata : if (metadata != null) {
+			metadata;
+		} else {}, pos : null};
+	}
+
+	public static function isNullCoalescingPattern(expr:haxe.macro.TypedExpr) {
+		if (expr == null) {
+			return null;
+		};
+		@:ast(switch (expr.expr) {
+	case TMeta({ name : ":mergeBlock" }, { expr : TBlock([varExpr, ifExpr]) }):
+		return checkNullCoalescingBlock(varExpr, ifExpr);	
+	case TBlock([varExpr, ifExpr]):
+		return checkNullCoalescingBlock(varExpr, ifExpr);	
+	default:
+		return null;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 14: {
+					var ` = `[0];
+					if (`.length == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var varExpr = `;
+							var ifExpr = `;
+							{
+								return reflaxe.elixir.ast.ElixirASTHelpers.checkNullCoalescingBlock(varExpr, ifExpr);
+							};
+						};
+					} else {
+						return null;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ` = `.name;
+						var ` = `.params;
+						var ` = `.pos;
+						if (` == ":mergeBlock") {
+							{
+								var ` = `.expr;
+								var ` = `.pos;
+								var ` = `.t;
+								if (enumIndex ` == 14) {
+									var ` = `[0];
+									if (`.length == 2) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var varExpr = `;
+											var ifExpr = `;
+											{
+												return reflaxe.elixir.ast.ElixirASTHelpers.checkNullCoalescingBlock(varExpr, ifExpr);
+											};
+										};
+									} else {
+										return null;
+									};
+								} else {
+									return null;
+								};
+							};
+						} else {
+							return null;
+						};
+					};
+				};
+				default: {
+					return null;
+				}
+			};
+		};
+	}
+
+	static function checkNullCoalescingBlock(varExpr:haxe.macro.TypedExpr, ifExpr:haxe.macro.TypedExpr) {
+		@:ast(switch (varExpr.expr) {
+	case TVar(tmpVar, init) if (init != null):
+		switch (ifExpr.expr) {
+			case TIf(condition, thenBranch, elseBranch):
+				var isNullCheck = switch (condition.expr) {
+					case TParenthesis({ expr : TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }) }):
+						v.id == tmpVar.id;					
+					case TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }):
+						v.id == tmpVar.id;					
+					default:
+						false;					
+				};
+				if (isNullCheck) {
+					return { tempVar : tmpVar, initExpr : init, defaultExpr : elseBranch };
+				};			
+			default:
+		};	
+	default:
+}) {
+			var ` = varExpr.expr;
+			if (enumIndex ` == 13) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var tmpVar = `;
+					var init = `;
+					if (init != null) {
+						@:ast(switch (ifExpr.expr) {
+	case TIf(condition, thenBranch, elseBranch):
+		var isNullCheck = switch (condition.expr) {
+			case TParenthesis({ expr : TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }) }):
+				v.id == tmpVar.id;			
+			case TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }):
+				v.id == tmpVar.id;			
+			default:
+				false;			
+		};
+		if (isNullCheck) {
+			return { tempVar : tmpVar, initExpr : init, defaultExpr : elseBranch };
+		};	
+	default:
+}) {
+							var ` = ifExpr.expr;
+							if (enumIndex ` == 16) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								{
+									var condition = `;
+									var thenBranch = `;
+									var elseBranch = `;
+									{
+										var isNullCheck = @:ast(switch (condition.expr) {
+	case TParenthesis({ expr : TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }) }):
+		v.id == tmpVar.id;	
+	case TBinop(OpNotEq, { expr : TLocal(v) }, { expr : TConst(TNull) }):
+		v.id == tmpVar.id;	
+	default:
+		false;	
+}) {
+											var ` = condition.expr;
+											switch (enumIndex `) {
+												case 3: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													if (enumIndex ` == 6) {
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 1) {
+																var ` = `[0];
+																{
+																	var ` = `.expr;
+																	var ` = `.pos;
+																	var ` = `.t;
+																	if (enumIndex ` == 0) {
+																		var ` = `[0];
+																		if (enumIndex ` == 4) {
+																			{
+																				var v = `;
+																				{
+																					v.id == tmpVar.id;
+																				};
+																			};
+																		} else {
+																			false;
+																		};
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+												case 6: {
+													var ` = `[0];
+													{
+														var ` = `.expr;
+														var ` = `.pos;
+														var ` = `.t;
+														if (enumIndex ` == 3) {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															if (enumIndex ` == 6) {
+																{
+																	var ` = `.expr;
+																	var ` = `.pos;
+																	var ` = `.t;
+																	if (enumIndex ` == 1) {
+																		var ` = `[0];
+																		{
+																			var ` = `.expr;
+																			var ` = `.pos;
+																			var ` = `.t;
+																			if (enumIndex ` == 0) {
+																				var ` = `[0];
+																				if (enumIndex ` == 4) {
+																					{
+																						var v = `;
+																						{
+																							v.id == tmpVar.id;
+																						};
+																					};
+																				} else {
+																					false;
+																				};
+																			} else {
+																				false;
+																			};
+																		};
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														} else {
+															false;
+														};
+													};
+												};
+												default: {
+													false;
+												}
+											};
+										};
+										if (isNullCheck) {
+											return {tempVar : tmpVar, initExpr : init, defaultExpr : elseBranch};
+										};
+									};
+								};
+							} else {};
+						};
+					} else {};
+				};
+			} else {};
+		};
+		return null;
+	}
+
+	public static function makeNullCoalescing(tempVarName:String, initExpr:reflaxe.elixir.ast.ElixirAST, defaultExpr:reflaxe.elixir.ast.ElixirAST) {
+		var assignment = {
+			var metadata = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(tempVarName), initExpr), metadata : if (metadata != null) {
+				metadata;
+			} else {}, pos : null};
+		};
+		var condition = {
+			var metadata = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, {
+				var metadata = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EParen(assignment), metadata : if ((metadata != null)) metadata else {}, pos : null};
+			}, {
+				var metadata = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : if ((metadata != null)) metadata else {}, pos : null};
+			}), metadata : if (metadata != null) {
+				metadata;
+			} else {}, pos : null};
+		};
+		var thenBranch = {
+			var metadata = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EVar(tempVarName), metadata : if (metadata != null) {
+				metadata;
+			} else {}, pos : null};
+		};
+		var ifExpr = {
+			var metadata = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EIf(condition, thenBranch, defaultExpr), metadata : if (metadata != null) {
+				metadata;
+			} else {}, pos : null};
+		};
+		if (ifExpr.metadata == null) {
+			ifExpr.metadata = {};
+		};
+		ifExpr.metadata.keepInlineInAssignment = true;
+		return ifExpr;
+	}
+
+	public static function toElixirVarName(name:String) {
+		if (name.charAt(0) == "_" && name.charAt(1) == "g") {
+			return name;
+		};
+		if (name.charAt(0) == "_" && name.length > 1) {
+			name = name.substr(1, null);
+		};
+		var result = "";
+		{
+			var ` = 0;
+			var ` = name.length;
+			while (` < `) {
+				var i = ` ++;
+				var char = name.charAt(i);
+				var charCode = char.charCodeAt(0);
+				var isUppercaseLetter = (charCode >= 65 && charCode <= 90);
+				if (i > 0 && isUppercaseLetter) {
+					result += "_" + char.toLowerCase();
+				} else {
+					result += char.toLowerCase();
+				};
+			};
+		};
+		var reservedKeywords = ["true", "false", "nil", "and", "or", "not", "in", "when", "fn", "do", "end", "catch", "rescue", "after", "else", "__MODULE__", "__FILE__", "__DIR__", "__ENV__", "__CALLER__"];
+		if (reservedKeywords.indexOf(result, null) >= 0) {
+			result = result + "_param";
+		};
+		return result;
+	}
+}

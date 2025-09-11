@@ -2,6 +2,7 @@ package reflaxe.elixir.ast.transformers;
 
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 
 using reflaxe.elixir.ast.ElixirASTTransformer;
 
@@ -275,10 +276,11 @@ class ReduceWhileAccumulatorTransform {
                         case ETuple([atom, accTuple]):
                             // This is a return statement {:cont, acc} or {:halt, acc}
                             switch(atom.def) {
-                                case EAtom("cont" | "halt"):
+                                // OR patterns like "cont" | "halt" don't work with abstract types, use guard clause instead
+                                case EAtom(atom) if (atom == "cont" || atom == "halt"):
                                     // Build new accumulator with updates
                                     var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, localUpdates);
-                                    transformedExprs.push(makeAST(ETuple([atom, newAcc])));
+                                    transformedExprs.push(makeAST(ETuple([makeAST(EAtom(atom)), newAcc])));
                                     
                                 default:
                                     transformedExprs.push(expr);
@@ -299,10 +301,11 @@ class ReduceWhileAccumulatorTransform {
             case ETuple([atom, accTuple]):
                 // Direct return of {:cont/:halt, accumulator}
                 switch(atom.def) {
-                    case EAtom("cont" | "halt"):
+                    // OR patterns like "cont" | "halt" don't work with abstract types, use guard clause instead
+                    case EAtom(atom) if (atom == "cont" || atom == "halt"):
                         // Apply any accumulated updates
                         var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, accUpdates);
-                        return makeAST(ETuple([atom, newAcc]));
+                        return makeAST(ETuple([makeAST(EAtom(atom)), newAcc]));
                     default:
                         return body;
                 }
@@ -381,7 +384,7 @@ class ReduceWhileAccumulatorTransform {
     static function isEnumModule(module: ElixirAST): Bool {
         return switch(module.def) {
             case EVar("Enum"): true;
-            case EAtom("Elixir.Enum"): true;
+            case EAtom(atom) if (atom == "Elixir.Enum"): true;
             default: false;
         };
     }

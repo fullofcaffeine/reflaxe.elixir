@@ -1,0 +1,647 @@
+class reflaxe.input.ClassHierarchyTracker {
+
+	@:value(false)
+	public static var initialized(default,null):Bool = false;
+
+	@:value([])
+	static var classData:Map<String, reflaxe.input.ClassHierarchyClassData> = {
+		{};
+		new haxe.ds.StringMap();
+	};
+
+	public static function getAllDirectChildClasses(cls:Null<haxe.macro.ClassType>) {
+		if (! reflaxe.input.ClassHierarchyTracker.initialized) {
+			throw "The `trackClassHierarchy` option must be enabled to use this `ClassHierarchyTracker` function.";
+		};
+		if (cls == null) {
+			return [];
+		};
+		var name = reflaxe.helpers.BaseTypeHelper.globalName(cls, null);
+		var data = {
+			var this = reflaxe.input.ClassHierarchyTracker.classData;
+			cast this.get(name);
+		};
+		return if (data != null) {
+			data.children;
+		} else {
+			[];
+		};
+	}
+
+	public static function getAllChildClasses(cls:haxe.macro.ClassType) {
+		var result = [];
+		{
+			var ` = 0;
+			var ` = reflaxe.input.ClassHierarchyTracker.getAllDirectChildClasses(cls);
+			while (` < `.length) {
+				var c = `[`];
+				++ `;
+				if (! result.contains(c)) {
+					result.push(c);
+				};
+				{
+					var ` = 0;
+					var ` = reflaxe.input.ClassHierarchyTracker.getAllChildClasses(c);
+					while (` < `.length) {
+						var cChild = `[`];
+						++ `;
+						if (! result.contains(cChild)) {
+							result.push(cChild);
+						};
+					};
+				};
+			};
+		};
+		return result;
+	}
+
+	public static function getAllParentClasses(cls:haxe.macro.ClassType) {
+		return if (cls.superClass != null) {
+			var superClass = cls.superClass.t.get();
+			[superClass].concat(reflaxe.input.ClassHierarchyTracker.getAllParentClasses(superClass));
+		} else {
+			[];
+		};
+	}
+
+	@:value({ resultArray : null, params : null })
+	public static function getAllParentTypes(cls:haxe.macro.ClassType, params:Null<Array<haxe.macro.Type>> = null, resultArray:Null<Array<haxe.macro.Type>> = null) {
+		return if (cls.superClass != null) {
+			var clsRef = cls.superClass.t;
+			if (params == null) {
+				params = {
+					var _this = cls.params;
+					{
+						var ` = [];
+						{
+							var ` = 0;
+							var ` = _this;
+							while (` < `.length) {
+								var v = `[`];
+								++ `;
+								`.push(function(c:haxe.macro.TypeParameter) {
+									return c.t;
+								}(v));
+							};
+						};
+						`;
+					};
+				};
+			};
+			var newParams = cls.superClass.params;
+			var superClass = haxe.macro.TypeTools.applyTypeParameters(haxe.macro.Type.TInst(clsRef, newParams), cls.params, params);
+			if (resultArray == null) {
+				resultArray = [];
+			};
+			resultArray.push(superClass);
+			reflaxe.input.ClassHierarchyTracker.getAllParentTypes(clsRef.get(), newParams, resultArray);
+			resultArray;
+		} else {
+			[];
+		};
+	}
+
+	public static function getAllParentInterfaces(cls:haxe.macro.ClassType) {
+		var result = {
+			var _this = cls.interfaces;
+			{
+				var ` = [];
+				{
+					var ` = 0;
+					var ` = _this;
+					while (` < `.length) {
+						var v = `[`];
+						++ `;
+						`.push(function(int:{ t : haxe.macro.Ref<haxe.macro.ClassType>, params : Array<haxe.macro.Type> }) {
+							return int.t.get();
+						}(v));
+					};
+				};
+				`;
+			};
+		};
+		if (cls.superClass != null) {
+			{
+				var ` = 0;
+				var ` = reflaxe.input.ClassHierarchyTracker.getAllParentInterfaces(cls.superClass.t.get());
+				while (` < `.length) {
+					var int = `[`];
+					++ `;
+					if (! result.contains(int)) {
+						result.push(int);
+					};
+				};
+			};
+		};
+		return result;
+	}
+
+	@:value({ resultArray : null, params : null })
+	public static function getAllParentInterfaceTypes(cls:haxe.macro.ClassType, params:Null<Array<haxe.macro.Type>> = null, resultArray:Null<Array<haxe.macro.Type>> = null) {
+		if (params == null) {
+			params = {
+				var _this = cls.params;
+				{
+					var ` = [];
+					{
+						var ` = 0;
+						var ` = _this;
+						while (` < `.length) {
+							var v = `[`];
+							++ `;
+							`.push(function(c:haxe.macro.TypeParameter) {
+								return c.t;
+							}(v));
+						};
+					};
+					`;
+				};
+			};
+		};
+		if (resultArray == null) {
+			resultArray = [];
+		};
+		{
+			var ` = 0;
+			var ` = cls.interfaces;
+			while (` < `.length) {
+				var int = `[`];
+				++ `;
+				resultArray.push(haxe.macro.TypeTools.applyTypeParameters(haxe.macro.Type.TInst(int.t, int.params), cls.params, params));
+			};
+		};
+		if (cls.superClass != null) {
+			reflaxe.input.ClassHierarchyTracker.getAllParentInterfaceTypes(cls.superClass.t.get(), cls.superClass.params, resultArray);
+		};
+		return resultArray;
+	}
+
+	public static function funcHasChildOverride(superClass:haxe.macro.ClassType, superClassField:haxe.macro.ClassField, isStatic:Bool) {
+		{
+			var ` = 0;
+			var ` = reflaxe.input.ClassHierarchyTracker.getAllChildClasses(superClass);
+			while (` < `.length) {
+				var child = `[`];
+				++ `;
+				if (reflaxe.input.ClassHierarchyTracker.getFieldsOfName(child, superClassField.name) != null) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	public static function childFuncIsCovariant(childClass:haxe.macro.ClassType, childClassField:haxe.macro.ClassField, isStatic:Bool) {
+		return reflaxe.input.ClassHierarchyTracker.funcGetCovariantBaseType(childClass, childClassField, isStatic) != null;
+	}
+
+	public static function getAllParentTypesAndInterfaces(childClass:haxe.macro.ClassType) {
+		var result = reflaxe.input.ClassHierarchyTracker.getAllParentTypes(childClass, null, null);
+		result.reverse();
+		reflaxe.input.ClassHierarchyTracker.getAllParentInterfaceTypes(childClass, null, result);
+		return result;
+	}
+
+	@:value([])
+	static var getFieldsOfName_cache:Map<String, Map<String, Array<haxe.macro.ClassField>>> = {
+		{};
+		new haxe.ds.StringMap();
+	};
+
+	static function getFieldsOfName(cls:haxe.macro.ClassType, fieldName:String) {
+		var uniqueClassId = reflaxe.helpers.ArrayHelper.joinAppend(cls.pack, ".") + cls.name;
+		if (! {
+			var this = reflaxe.input.ClassHierarchyTracker.getFieldsOfName_cache;
+			cast this.exists(uniqueClassId);
+		}) {
+			var fieldMap = {
+				{};
+				new haxe.ds.StringMap();
+			};
+			var add = function(field:haxe.macro.ClassField) {
+				var arr = {
+					var key = field.name;
+					fieldMap.get(key);
+				};
+				if (arr == null) {
+					arr = [];
+					{
+						var key = field.name;
+						fieldMap.set(key, arr);
+					};
+				};
+				arr.push(field);
+			};
+			{
+				var ` = 0;
+				var ` = cls.statics.get();
+				while (` < `.length) {
+					var field = `[`];
+					++ `;
+					add(field);
+				};
+			};
+			{
+				var ` = 0;
+				var ` = cls.fields.get();
+				while (` < `.length) {
+					var field = `[`];
+					++ `;
+					add(field);
+				};
+			};
+			{
+				var this = reflaxe.input.ClassHierarchyTracker.getFieldsOfName_cache;
+				cast this.set(uniqueClassId, fieldMap);
+			};
+		};
+		return {
+			var this = {
+				var maybe = {
+					var this = reflaxe.input.ClassHierarchyTracker.getFieldsOfName_cache;
+					cast this.get(uniqueClassId);
+				};
+				cast {
+					if ((maybe == null)) throw "Trusted on null value.";
+					@:nullSafety(Off) maybe;
+				};
+			};
+			cast this.get(fieldName);
+		};
+	}
+
+	public static function funcGetCovariantBaseType(childClass:haxe.macro.ClassType, childClassField:haxe.macro.ClassField, isStatic:Bool) {
+		var childData = reflaxe.helpers.ClassFieldHelper.findFuncData(childClassField, childClass, null);
+		{
+			var ` = 0;
+			var ` = reflaxe.input.ClassHierarchyTracker.getAllParentTypesAndInterfaces(childClass);
+			while (` < `.length) {
+				var p = `[`];
+				++ `;
+				var decl = @:ast(switch (p) {
+	case TInst(clsRef, params):
+		{ cls : clsRef.get(), params : params };	
+	case _:
+		throw "Impossible";	
+}) if (enumIndex p == 2) {
+					var ` = p[0];
+					var ` = p[1];
+					{
+						var clsRef = `;
+						var params = `;
+						{
+							{cls : clsRef.get(), params : params};
+						};
+					};
+				} else {
+					throw "Impossible";
+				};
+				var possibleFields = reflaxe.input.ClassHierarchyTracker.getFieldsOfName(decl.cls, childClassField.name);
+				if (possibleFields == null) {
+					continue;
+				};
+				{
+					var ` = 0;
+					while (` < possibleFields.length) {
+						var field = possibleFields[`];
+						++ `;
+						if (reflaxe.input.ClassHierarchyTracker.isCovariant(reflaxe.helpers.ClassFieldHelper.findFuncData(field, decl.cls, null), childData)) {
+							return haxe.macro.TypeTools.applyTypeParameters(reflaxe.helpers.TypeHelper.getTFunReturn(field.type), decl.cls.params, decl.params);
+						};
+					};
+				};
+			};
+		};
+		return null;
+	}
+
+	public static function funcIsCovariant(childClass:haxe.macro.ClassType, childClassField:haxe.macro.ClassField, isStatic:Bool) {
+		return reflaxe.input.ClassHierarchyTracker.funcGetCovariantBaseType(childClass, childClassField, isStatic) != null;
+	}
+
+	public static function superFuncIsCovariant(superClass:haxe.macro.ClassType, superClassField:haxe.macro.ClassField, isStatic:Bool) {
+		var superFieldData = reflaxe.helpers.ClassFieldHelper.findFuncData(superClassField, superClass, null);
+		{
+			var ` = 0;
+			var ` = reflaxe.input.ClassHierarchyTracker.getAllChildClasses(superClass);
+			while (` < `.length) {
+				var child = `[`];
+				++ `;
+				var possibleFields = reflaxe.input.ClassHierarchyTracker.getFieldsOfName(child, superClassField.name);
+				if (possibleFields == null) {
+					continue;
+				};
+				{
+					var ` = 0;
+					while (` < possibleFields.length) {
+						var field = possibleFields[`];
+						++ `;
+						if (reflaxe.input.ClassHierarchyTracker.isCovariant(superFieldData, reflaxe.helpers.ClassFieldHelper.findFuncData(field, child, null))) {
+							return true;
+						};
+					};
+				};
+			};
+		};
+		return false;
+	}
+
+	static function isCovariant(superField:Null<reflaxe.data.ClassFuncData>, childField:Null<reflaxe.data.ClassFuncData>) {
+		if (superField == null || childField == null) {
+			return false;
+		};
+		if (! reflaxe.input.ClassHierarchyTracker.isOverride(superField, childField)) {
+			return false;
+		};
+		var superFieldRet = reflaxe.helpers.TypeHelper.getTFunReturn(superField.field.type);
+		var childFieldRet = reflaxe.helpers.TypeHelper.getTFunReturn(childField.field.type);
+		if (superFieldRet == null || childFieldRet == null) {
+			return false;
+		};
+		superFieldRet = haxe.macro.Context.follow(superFieldRet, null);
+		childFieldRet = haxe.macro.Context.follow(childFieldRet, null);
+		if (reflaxe.helpers.TypeHelper.isTypeParameter(superFieldRet) || reflaxe.helpers.TypeHelper.isTypeParameter(childFieldRet)) {
+			return false;
+		};
+		return Std.string(superFieldRet) != Std.string(childFieldRet);
+	}
+
+	static function isOverride(superField:reflaxe.data.ClassFuncData, childField:reflaxe.data.ClassFuncData) {
+		if (superField.field.name != childField.field.name) {
+			return false;
+		};
+		if (superField.field.overloads.get().length == 0 && childField.field.overloads.get().length == 0) {
+			return true;
+		};
+		return superField.argumentsMatch(childField);
+	}
+
+	public static function findAllChildOverrides(superField:reflaxe.data.ClassFuncData) {
+		var result = [];
+		{
+			var ` = 0;
+			var ` = reflaxe.input.ClassHierarchyTracker.getAllChildClasses(superField.classType);
+			while (` < `.length) {
+				var child = `[`];
+				++ `;
+				var possibleFields = reflaxe.input.ClassHierarchyTracker.getFieldsOfName(child, superField.field.name);
+				if (possibleFields == null) {
+					continue;
+				};
+				{
+					var ` = 0;
+					while (` < possibleFields.length) {
+						var field = possibleFields[`];
+						++ `;
+						var data = reflaxe.helpers.ClassFieldHelper.findFuncData(field, child, null);
+						if (data != null && reflaxe.input.ClassHierarchyTracker.isOverride(superField, data)) {
+							result.push(data);
+						};
+					};
+				};
+			};
+		};
+		return result;
+	}
+
+	public static function getParentOverrideChain(childField:reflaxe.data.ClassFuncData) {
+		var result = [];
+		{
+			var ` = 0;
+			var ` = reflaxe.input.ClassHierarchyTracker.getAllParentTypesAndInterfaces(childField.classType);
+			while (` < `.length) {
+				var parent = `[`];
+				++ `;
+				var decl = @:ast(switch (parent) {
+	case TInst(clsRef, params):
+		{ cls : clsRef.get(), params : params };	
+	case _:
+		throw "Impossible";	
+}) if (enumIndex parent == 2) {
+					var ` = parent[0];
+					var ` = parent[1];
+					{
+						var clsRef = `;
+						var params = `;
+						{
+							{cls : clsRef.get(), params : params};
+						};
+					};
+				} else {
+					throw "Impossible";
+				};
+				{
+					var ` = 0;
+					var ` = decl.cls.fields.get();
+					while (` < `.length) {
+						var field = `[`];
+						++ `;
+						var data = reflaxe.helpers.ClassFieldHelper.findFuncDataFromType(field, parent);
+						if (data != null && reflaxe.input.ClassHierarchyTracker.isOverride(data, childField)) {
+							result.push(data);
+						};
+					};
+				};
+			};
+		};
+		return result;
+	}
+
+	public static function getParentOverrideChainNoAbstracts(childField:reflaxe.data.ClassFuncData) {
+		var result = [];
+		{
+			var ` = 0;
+			var ` = reflaxe.input.ClassHierarchyTracker.getAllParentTypes(childField.classType, null, null);
+			while (` < `.length) {
+				var parent = `[`];
+				++ `;
+				var decl = @:ast(switch (parent) {
+	case TInst(clsRef, params):
+		{ cls : clsRef.get(), params : params };	
+	case _:
+		throw "Impossible";	
+}) if (enumIndex parent == 2) {
+					var ` = parent[0];
+					var ` = parent[1];
+					{
+						var clsRef = `;
+						var params = `;
+						{
+							{cls : clsRef.get(), params : params};
+						};
+					};
+				} else {
+					throw "Impossible";
+				};
+				{
+					var ` = 0;
+					var ` = decl.cls.fields.get();
+					while (` < `.length) {
+						var field = `[`];
+						++ `;
+						if (field.isAbstract) {
+							continue;
+						};
+						var data = reflaxe.helpers.ClassFieldHelper.findFuncDataFromType(field, parent);
+						if (data != null && reflaxe.input.ClassHierarchyTracker.isOverride(data, childField)) {
+							result.push(data);
+						};
+					};
+				};
+			};
+		};
+		return result;
+	}
+
+	public static function funcIsOverride(childField:reflaxe.data.ClassFuncData) {
+		var chain = reflaxe.input.ClassHierarchyTracker.getParentOverrideChainNoAbstracts(childField);
+		return chain.length > 0;
+	}
+
+	public static function findAllOverrides(field:reflaxe.data.ClassFuncData) {
+		return reflaxe.input.ClassHierarchyTracker.getParentOverrideChain(field).concat(reflaxe.input.ClassHierarchyTracker.findAllChildOverrides(field));
+	}
+
+	public static function getNonRepeatInterfaces(cls:haxe.macro.ClassType) {
+		if (cls.superClass == null || cls.interfaces.length == 0) {
+			return cls.interfaces;
+		};
+		var result = [];
+		{
+			var ` = 0;
+			var ` = cls.interfaces;
+			while (` < `.length) {
+				var int = `[`];
+				++ `;
+				var intName = reflaxe.helpers.BaseTypeHelper.globalName(int.t.get(), null);
+				var c = cls;
+				var exists = false;
+				while (c.superClass != null) {
+					c = c.superClass.t.get();
+					{
+						var ` = 0;
+						var ` = c.interfaces;
+						while (` < `.length) {
+							var superInt = `[`];
+							++ `;
+							if (reflaxe.helpers.BaseTypeHelper.globalName(superInt.t.get(), null) == intName) {
+								exists = true;
+								break;
+							};
+						};
+					};
+					if (exists) {
+						break;
+					};
+				};
+				if (! exists) {
+					result.push(int);
+				};
+			};
+		};
+		return result;
+	}
+
+	public static function processAllClasses(modules:Null<Array<haxe.macro.ModuleType>>) {
+		if (modules != null) {
+			{
+				var ` = 0;
+				while (` < modules.length) {
+					var mt = modules[`];
+					++ `;
+					reflaxe.input.ClassHierarchyTracker.processModule(mt);
+				};
+			};
+			reflaxe.input.ClassHierarchyTracker.initialized = true;
+		};
+	}
+
+	static function processModule(mt:haxe.macro.ModuleType) {
+		@:ast(switch (mt) {
+	case TClassDecl(clsRef):
+		{
+			processClass(clsRef.get());
+		};	
+	case TTypeDecl(defRef):
+		{
+			var mt = Context.follow(TypeHelper.fromModuleType(mt)).toModuleType();
+			if (mt != null) {
+				processModule(mt);
+			};
+		};	
+	case _:
+}) switch (enumIndex mt) {
+			case 0: {
+				var ` = mt[0];
+				{
+					var clsRef = `;
+					{
+						{
+							reflaxe.input.ClassHierarchyTracker.processClass(clsRef.get());
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = mt[0];
+				{
+					var defRef = `;
+					{
+						{
+							var mt = reflaxe.helpers.TypeHelper.toModuleType(haxe.macro.Context.follow(reflaxe.helpers.TypeHelper.fromModuleType(mt), null));
+							if (mt != null) {
+								reflaxe.input.ClassHierarchyTracker.processModule(mt);
+							};
+						};
+					};
+				};
+			};
+			default: {}
+		};
+	}
+
+	static function processClass(cls:haxe.macro.ClassType) {
+		if (reflaxe.helpers.ClassTypeHelper.isTypeParameter(cls)) {
+			return;
+		};
+		if (cls.superClass != null) {
+			reflaxe.input.ClassHierarchyTracker.addDirectChild(cls.superClass.t.get(), cls);
+		};
+		{
+			var ` = 0;
+			var ` = cls.interfaces;
+			while (` < `.length) {
+				var int = `[`];
+				++ `;
+				reflaxe.input.ClassHierarchyTracker.addDirectChild(int.t.get(), cls);
+			};
+		};
+	}
+
+	static function addDirectChild(baseCls:Null<haxe.macro.ClassType>, childCls:Null<haxe.macro.ClassType>) {
+		if (baseCls == null) {
+			return;
+		};
+		if (childCls == null) {
+			return;
+		};
+		var id = reflaxe.helpers.BaseTypeHelper.globalName(baseCls, null);
+		if (! {
+			var this = reflaxe.input.ClassHierarchyTracker.classData;
+			cast this.exists(id);
+		}) {
+			{
+				var this = reflaxe.input.ClassHierarchyTracker.classData;
+				var value = new reflaxe.input.ClassHierarchyClassData(baseCls);
+				cast this.set(id, value);
+			};
+		};
+		var data = {
+			var this = reflaxe.input.ClassHierarchyTracker.classData;
+			cast this.get(id);
+		};
+		if (data != null) {
+			data.addChild(childCls);
+		};
+	}
+}

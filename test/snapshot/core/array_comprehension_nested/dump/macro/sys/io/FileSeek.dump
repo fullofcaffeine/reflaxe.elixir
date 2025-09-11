@@ -1,0 +1,6 @@
+@:flatEnum
+enum sys.io.FileSeek {
+	SeekBegin;
+	SeekCur;
+	SeekEnd;
+}

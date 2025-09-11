@@ -1,0 +1,9 @@
+-cp ../../../../std
+-cp ../../../../src
+-cp .
+-lib reflaxe
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir_output=out-bare
+-D reflaxe_runtime
+-D debug_ast_builder
+TestBareConcatenation

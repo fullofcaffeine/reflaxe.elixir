@@ -1,0 +1,1336 @@
+class haxe.macro.TypedExprTools {
+
+	static function with(e:haxe.macro.TypedExpr, edef:Null<haxe.macro.TypedExprDef> = null, t:Null<haxe.macro.Type> = null) {
+		return {expr : if (edef == null) {
+			e.expr;
+		} else {
+			edef;
+		}, pos : e.pos, t : if (t == null) {
+			e.t;
+		} else {
+			t;
+		}};
+	}
+
+	public static function map(e:haxe.macro.TypedExpr, f:haxe.macro.TypedExpr -> haxe.macro.TypedExpr) {
+		return @:ast(switch (e.expr) {
+	case TConst(_) | TLocal(_) | TBreak | TContinue | TTypeExpr(_) | TIdent(_):
+		e;	
+	case TArray(e1, e2):
+		with(e, TArray(f(e1), f(e2)));	
+	case TBinop(op, e1, e2):
+		with(e, TBinop(op, f(e1), f(e2)));	
+	case TFor(v, e1, e2):
+		with(e, TFor(v, f(e1), f(e2)));	
+	case TWhile(e1, e2, flag):
+		with(e, TWhile(f(e1), f(e2), flag));	
+	case TThrow(e1):
+		with(e, TThrow(f(e1)));	
+	case TEnumParameter(e1, ef, i):
+		with(e, TEnumParameter(f(e1), ef, i));	
+	case TEnumIndex(e1):
+		with(e, TEnumIndex(f(e1)));	
+	case TField(e1, fa):
+		with(e, TField(f(e1), fa));	
+	case TParenthesis(e1):
+		with(e, TParenthesis(f(e1)));	
+	case TUnop(op, pre, e1):
+		with(e, TUnop(op, pre, f(e1)));	
+	case TArrayDecl(el):
+		with(e, TArrayDecl(el.map(f)));	
+	case TNew(t, pl, el):
+		with(e, TNew(t, pl, el.map(f)));	
+	case TBlock(el):
+		with(e, TBlock(el.map(f)));	
+	case TObjectDecl(fl):
+		with(e, TObjectDecl(fl.map(function(field) return { name : field.name, expr : f(field.expr) })));	
+	case TCall(e1, el):
+		with(e, TCall(f(e1), el.map(f)));	
+	case TVar(v, eo):
+		with(e, TVar(v, eo == null ? null : f(eo)));	
+	case TFunction(fu):
+		with(e, TFunction({ t : fu.t, args : fu.args, expr : f(fu.expr) }));	
+	case TIf(e1, e2, e3):
+		with(e, TIf(f(e1), f(e2), e3 == null ? null : f(e3)));	
+	case TSwitch(e1, cases, e2):
+		with(e, TSwitch(f(e1), cases.map(function(c) return { values : c.values.map(f), expr : f(c.expr) }), e2 == null ? null : f(e2)));	
+	case TTry(e1, catches):
+		with(e, TTry(f(e1), catches.map(function(c) return { v : c.v, expr : f(c.expr) })));	
+	case TReturn(e1):
+		with(e, TReturn(e1 == null ? null : f(e1)));	
+	case TCast(e1, mt):
+		with(e, TCast(f(e1), mt));	
+	case TMeta(m, e1):
+		with(e, TMeta(m, f(e1)));	
+}) {
+			var ` = e.expr;
+			switch (@:exhaustive enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					{
+						e;
+					};
+				};
+				case 1: {
+					var ` = `[0];
+					{
+						e;
+					};
+				};
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TArray(f(e1), f(e2)), null);
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TBinop(op, f(e1), f(e2)), null);
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var fa = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TField(f(e1), fa), null);
+						};
+					};
+				};
+				case 5: {
+					var ` = `[0];
+					{
+						e;
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TParenthesis(f(e1)), null);
+						};
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						var fl = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TObjectDecl({
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = fl;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(function(field:{ name : String, expr : haxe.macro.TypedExpr }) {
+											return {name : field.name, expr : f(field.expr)};
+										}(v));
+									};
+								};
+								`;
+							}), null);
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					{
+						var el = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TArrayDecl({
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = el;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(f(v));
+									};
+								};
+								`;
+							}), null);
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var el = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TCall(f(e1), {
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = el;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(f(v));
+									};
+								};
+								`;
+							}), null);
+						};
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var t = `;
+						var pl = `;
+						var el = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TNew(t, pl, {
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = el;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(f(v));
+									};
+								};
+								`;
+							}), null);
+						};
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var pre = `;
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TUnop(op, pre, f(e1)), null);
+						};
+					};
+				};
+				case 12: {
+					var ` = `[0];
+					{
+						var fu = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TFunction({t : fu.t, args : fu.args, expr : f(fu.expr)}), null);
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var eo = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TVar(v, if (eo == null) {
+								null;
+							} else {
+								f(eo);
+							}), null);
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var el = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TBlock({
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = el;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(f(v));
+									};
+								};
+								`;
+							}), null);
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TFor(v, f(e1), f(e2)), null);
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						var e3 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TIf(f(e1), f(e2), if (e3 == null) {
+								null;
+							} else {
+								f(e3);
+							}), null);
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						var flag = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TWhile(f(e1), f(e2), flag), null);
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var cases = `;
+						var e2 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TSwitch(f(e1), {
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = cases;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(function(c:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }) {
+											return {values : {
+												var _this = c.values;
+												{
+													var ` = [];
+													{
+														var ` = 0;
+														var ` = _this;
+														while ((` < `.length)) {
+															var v = `[`];
+															++ `;
+															`.push(f(v));
+														};
+													};
+													`;
+												};
+											}, expr : f(c.expr)};
+										}(v));
+									};
+								};
+								`;
+							}, if (e2 == null) {
+								null;
+							} else {
+								f(e2);
+							}), null);
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var catches = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TTry(f(e1), {
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = catches;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(function(c:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }) {
+											return {v : c.v, expr : f(c.expr)};
+										}(v));
+									};
+								};
+								`;
+							}), null);
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TReturn(if (e1 == null) {
+								null;
+							} else {
+								f(e1);
+							}), null);
+						};
+					};
+				};
+				case 21, 22: {
+					{
+						e;
+					};
+				};
+				case 23: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TThrow(f(e1)), null);
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var mt = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TCast(f(e1), mt), null);
+						};
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var m = `;
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TMeta(m, f(e1)), null);
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var ef = `;
+						var i = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TEnumParameter(f(e1), ef, i), null);
+						};
+					};
+				};
+				case 27: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TEnumIndex(f(e1)), null);
+						};
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					{
+						e;
+					};
+				};
+			};
+		};
+	}
+
+	public static function iter(e:haxe.macro.TypedExpr, f:haxe.macro.TypedExpr -> Void) {
+		@:ast(switch (e.expr) {
+	case TConst(_) | TLocal(_) | TBreak | TContinue | TTypeExpr(_) | TIdent(_):
+	case TArray(e1, e2) | TBinop(_, e1, e2) | TFor(_, e1, e2) | TWhile(e1, e2, _):
+		f(e1);
+		f(e2);	
+	case TThrow(e1) | TEnumParameter(e1, _, _) | TEnumIndex(e1) | TField(e1, _) | TParenthesis(e1) | TUnop(_, _, e1) | TCast(e1, _) | TMeta(_, e1):
+		f(e1);	
+	case TArrayDecl(el) | TNew(_, _, el) | TBlock(el):
+		for (e  in  el) f(e);	
+	case TObjectDecl(fl):
+		for (field  in  fl) f(field.expr);	
+	case TCall(e1, el):
+		f(e1);
+		for (e  in  el) f(e);	
+	case TVar(_, e1) | TReturn(e1):
+		if (e1 != null) f(e1);	
+	case TFunction(fu):
+		f(fu.expr);	
+	case TIf(e1, e2, e3):
+		f(e1);
+		f(e2);
+		if (e3 != null) f(e3);	
+	case TSwitch(e1, cases, e2):
+		f(e1);
+		for (c  in  cases) {
+			for (v  in  c.values) f(v);
+			f(c.expr);
+		};
+		if (e2 != null) f(e2);	
+	case TTry(e1, catches):
+		f(e1);
+		for (c  in  catches) f(c.expr);	
+}) {
+			var ` = e.expr;
+			switch (@:exhaustive enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					{};
+				};
+				case 1: {
+					var ` = `[0];
+					{};
+				};
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							f(e1);
+							f(e2);
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							f(e1);
+							f(e2);
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						{
+							f(e1);
+						};
+					};
+				};
+				case 5: {
+					var ` = `[0];
+					{};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							f(e1);
+						};
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						var fl = `;
+						{
+							{
+								var ` = 0;
+								while (` < fl.length) {
+									var field = fl[`];
+									++ `;
+									f(field.expr);
+								};
+							};
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					{
+						var el = `;
+						{
+							{
+								var ` = 0;
+								while (` < el.length) {
+									var e = el[`];
+									++ `;
+									f(e);
+								};
+							};
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var el = `;
+						{
+							f(e1);
+							{
+								var ` = 0;
+								while (` < el.length) {
+									var e = el[`];
+									++ `;
+									f(e);
+								};
+							};
+						};
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var el = `;
+						{
+							{
+								var ` = 0;
+								while (` < el.length) {
+									var e = el[`];
+									++ `;
+									f(e);
+								};
+							};
+						};
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						{
+							f(e1);
+						};
+					};
+				};
+				case 12: {
+					var ` = `[0];
+					{
+						var fu = `;
+						{
+							f(fu.expr);
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						{
+							if (e1 != null) {
+								f(e1);
+							};
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var el = `;
+						{
+							{
+								var ` = 0;
+								while (` < el.length) {
+									var e = el[`];
+									++ `;
+									f(e);
+								};
+							};
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							f(e1);
+							f(e2);
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						var e3 = `;
+						{
+							f(e1);
+							f(e2);
+							if (e3 != null) {
+								f(e3);
+							};
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							f(e1);
+							f(e2);
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var cases = `;
+						var e2 = `;
+						{
+							f(e1);
+							{
+								var ` = 0;
+								while (` < cases.length) {
+									var c = cases[`];
+									++ `;
+									{
+										var ` = 0;
+										var ` = c.values;
+										while (` < `.length) {
+											var v = `[`];
+											++ `;
+											f(v);
+										};
+									};
+									f(c.expr);
+								};
+							};
+							if (e2 != null) {
+								f(e2);
+							};
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var catches = `;
+						{
+							f(e1);
+							{
+								var ` = 0;
+								while (` < catches.length) {
+									var c = catches[`];
+									++ `;
+									f(c.expr);
+								};
+							};
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							if (e1 != null) {
+								f(e1);
+							};
+						};
+					};
+				};
+				case 21, 22: {
+					{};
+				};
+				case 23: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							f(e1);
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						{
+							f(e1);
+						};
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						{
+							f(e1);
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						{
+							f(e1);
+						};
+					};
+				};
+				case 27: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							f(e1);
+						};
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					{};
+				};
+			};
+		};
+	}
+
+	public static function mapWithType(e:haxe.macro.TypedExpr, f:haxe.macro.TypedExpr -> haxe.macro.TypedExpr, ft:haxe.macro.Type -> haxe.macro.Type, fv:haxe.macro.TVar -> haxe.macro.TVar) {
+		return @:ast(switch (e.expr) {
+	case TConst(_) | TBreak | TContinue | TTypeExpr(_) | TIdent(_):
+		with(e, ft(e.t));	
+	case TLocal(v):
+		with(e, TLocal(fv(v)), ft(e.t));	
+	case TArray(e1, e2):
+		with(e, TArray(f(e1), f(e2)), ft(e.t));	
+	case TBinop(op, e1, e2):
+		with(e, TBinop(op, f(e1), f(e2)), ft(e.t));	
+	case TFor(v, e1, e2):
+		with(e, TFor(fv(v), f(e1), f(e2)), ft(e.t));	
+	case TWhile(e1, e2, flag):
+		with(e, TWhile(f(e1), f(e2), flag), ft(e.t));	
+	case TThrow(e1):
+		with(e, TThrow(f(e1)), ft(e.t));	
+	case TEnumParameter(e1, ef, i):
+		with(e, TEnumParameter(f(e1), ef, i), ft(e.t));	
+	case TEnumIndex(e1):
+		with(e, TEnumIndex(f(e1)), ft(e.t));	
+	case TField(e1, fa):
+		with(e, TField(f(e1), fa), ft(e.t));	
+	case TParenthesis(e1):
+		with(e, TParenthesis(e1), ft(e.t));	
+	case TUnop(op, pre, e1):
+		with(e, TUnop(op, pre, f(e1)), ft(e.t));	
+	case TArrayDecl(el):
+		with(e, TArrayDecl(el.map(f)), ft(e.t));	
+	case TNew(t, pl, el):
+		with(e, TNew(t, pl, el.map(f)), ft(e.t));	
+	case TBlock(el):
+		with(e, TBlock(el.map(f)), ft(e.t));	
+	case TObjectDecl(fl):
+		with(e, TObjectDecl(fl.map(function(field) return { name : field.name, expr : f(field.expr) })), ft(e.t));	
+	case TCall(e1, el):
+		with(e, TCall(f(e1), el.map(f)), ft(e.t));	
+	case TVar(v, eo):
+		with(e, TVar(fv(v), eo == null ? null : f(eo)), ft(e.t));	
+	case TFunction(fu):
+		with(e, TFunction({ t : ft(fu.t), args : fu.args.map(function(arg) return { v : fv(arg.v), value : arg.value }), expr : f(fu.expr) }), ft(e.t));	
+	case TIf(e1, e2, e3):
+		with(e, TIf(f(e1), f(e2), e3 == null ? null : f(e3)), ft(e.t));	
+	case TSwitch(e1, cases, e2):
+		with(e, TSwitch(f(e1), cases.map(function(c) return { values : c.values.map(f), expr : f(c.expr) }), e2 == null ? null : f(e2)), ft(e.t));	
+	case TTry(e1, catches):
+		with(e, TTry(f(e1), catches.map(function(c) return { v : fv(c.v), expr : f(c.expr) })), ft(e.t));	
+	case TReturn(e1):
+		with(e, TReturn(e1 == null ? null : f(e1)), ft(e.t));	
+	case TCast(e1, mt):
+		with(e, TCast(f(e1), mt), ft(e.t));	
+	case TMeta(m, e1):
+		with(e, TMeta(m, f(e1)), ft(e.t));	
+}) {
+			var ` = e.expr;
+			switch (@:exhaustive enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					{
+						haxe.macro.TypedExprTools.with(e, null, ft(e.t));
+					};
+				};
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TLocal(fv(v)), ft(e.t));
+						};
+					};
+				};
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TArray(f(e1), f(e2)), ft(e.t));
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TBinop(op, f(e1), f(e2)), ft(e.t));
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var fa = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TField(f(e1), fa), ft(e.t));
+						};
+					};
+				};
+				case 5: {
+					var ` = `[0];
+					{
+						haxe.macro.TypedExprTools.with(e, null, ft(e.t));
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TParenthesis(e1), ft(e.t));
+						};
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						var fl = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TObjectDecl({
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = fl;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(function(field:{ name : String, expr : haxe.macro.TypedExpr }) {
+											return {name : field.name, expr : f(field.expr)};
+										}(v));
+									};
+								};
+								`;
+							}), ft(e.t));
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					{
+						var el = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TArrayDecl({
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = el;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(f(v));
+									};
+								};
+								`;
+							}), ft(e.t));
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var el = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TCall(f(e1), {
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = el;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(f(v));
+									};
+								};
+								`;
+							}), ft(e.t));
+						};
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var t = `;
+						var pl = `;
+						var el = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TNew(t, pl, {
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = el;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(f(v));
+									};
+								};
+								`;
+							}), ft(e.t));
+						};
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var pre = `;
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TUnop(op, pre, f(e1)), ft(e.t));
+						};
+					};
+				};
+				case 12: {
+					var ` = `[0];
+					{
+						var fu = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TFunction({t : ft(fu.t), args : {
+								var _this = fu.args;
+								{
+									var ` = [];
+									{
+										var ` = 0;
+										var ` = _this;
+										while (` < `.length) {
+											var v = `[`];
+											++ `;
+											`.push(function(arg:{ value : Null<haxe.macro.TypedExpr>, v : haxe.macro.TVar }) {
+												return {v : fv(arg.v), value : arg.value};
+											}(v));
+										};
+									};
+									`;
+								};
+							}, expr : f(fu.expr)}), ft(e.t));
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var eo = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TVar(fv(v), if (eo == null) {
+								null;
+							} else {
+								f(eo);
+							}), ft(e.t));
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var el = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TBlock({
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = el;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(f(v));
+									};
+								};
+								`;
+							}), ft(e.t));
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TFor(fv(v), f(e1), f(e2)), ft(e.t));
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						var e3 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TIf(f(e1), f(e2), if (e3 == null) {
+								null;
+							} else {
+								f(e3);
+							}), ft(e.t));
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var e2 = `;
+						var flag = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TWhile(f(e1), f(e2), flag), ft(e.t));
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var cases = `;
+						var e2 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TSwitch(f(e1), {
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = cases;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(function(c:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }) {
+											return {values : {
+												var _this = c.values;
+												{
+													var ` = [];
+													{
+														var ` = 0;
+														var ` = _this;
+														while ((` < `.length)) {
+															var v = `[`];
+															++ `;
+															`.push(f(v));
+														};
+													};
+													`;
+												};
+											}, expr : f(c.expr)};
+										}(v));
+									};
+								};
+								`;
+							}, if (e2 == null) {
+								null;
+							} else {
+								f(e2);
+							}), ft(e.t));
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var catches = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TTry(f(e1), {
+								var ` = [];
+								{
+									var ` = 0;
+									var ` = catches;
+									while (` < `.length) {
+										var v = `[`];
+										++ `;
+										`.push(function(c:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }) {
+											return {v : fv(c.v), expr : f(c.expr)};
+										}(v));
+									};
+								};
+								`;
+							}), ft(e.t));
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TReturn(if (e1 == null) {
+								null;
+							} else {
+								f(e1);
+							}), ft(e.t));
+						};
+					};
+				};
+				case 21, 22: {
+					{
+						haxe.macro.TypedExprTools.with(e, null, ft(e.t));
+					};
+				};
+				case 23: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TThrow(f(e1)), ft(e.t));
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var mt = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TCast(f(e1), mt), ft(e.t));
+						};
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var m = `;
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TMeta(m, f(e1)), ft(e.t));
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e1 = `;
+						var ef = `;
+						var i = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TEnumParameter(f(e1), ef, i), ft(e.t));
+						};
+					};
+				};
+				case 27: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							haxe.macro.TypedExprTools.with(e, haxe.macro.TypedExprDef.TEnumIndex(f(e1)), ft(e.t));
+						};
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					{
+						haxe.macro.TypedExprTools.with(e, null, ft(e.t));
+					};
+				};
+			};
+		};
+	}
+
+	@:value({ pretty : false })
+	public static function toString(t:haxe.macro.TypedExpr, pretty:Null<Bool> = false) {
+		return haxe.macro.Context.sExpr(t, pretty);
+	}
+}

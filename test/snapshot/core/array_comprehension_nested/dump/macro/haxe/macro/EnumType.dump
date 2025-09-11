@@ -1,0 +1,1 @@
+typedef haxe.macro.EnumType = { pos : haxe.macro.Position, params : Array<haxe.macro.TypeParameter>, pack : Array<String>, names : Array<String>, name : String, module : String, meta : haxe.macro.MetaAccess, isPrivate : Bool, isExtern : Bool, exclude : () -> Void, doc : Null<String>, constructs : Map<String, haxe.macro.EnumField> }

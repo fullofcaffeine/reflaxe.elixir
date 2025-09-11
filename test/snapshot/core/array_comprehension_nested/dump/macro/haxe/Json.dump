@@ -1,0 +1,10 @@
+class haxe.Json {
+
+	public static inline function parse(text:String) {
+		return new haxe.format.JsonParser(text).doParse();
+	}
+
+	public static inline function stringify(value:Dynamic, replacer:Null<(key : Dynamic, value : Dynamic) -> Dynamic> = null, space:Null<String> = null) {
+		return haxe.format.JsonPrinter.print(value, replacer, space);
+	}
+}

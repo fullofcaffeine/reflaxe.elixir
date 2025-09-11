@@ -1,0 +1,184 @@
+class reflaxe.helpers.ModuleTypeHelper {
+
+	public static function getCommonData(type:haxe.macro.ModuleType) {
+		return @:ast(switch (type) {
+	case TClassDecl(c):
+		c.get();	
+	case TEnumDecl(e):
+		e.get();	
+	case TTypeDecl(t):
+		t.get();	
+	case TAbstract(a):
+		a.get();	
+}) switch (@:exhaustive enumIndex type) {
+			case 0: {
+				var ` = type[0];
+				{
+					var c = `;
+					{
+						c.get();
+					};
+				};
+			};
+			case 1: {
+				var ` = type[0];
+				{
+					var e = `;
+					{
+						e.get();
+					};
+				};
+			};
+			case 2: {
+				var ` = type[0];
+				{
+					var t = `;
+					{
+						t.get();
+					};
+				};
+			};
+			case 3: {
+				var ` = type[0];
+				{
+					var a = `;
+					{
+						a.get();
+					};
+				};
+			};
+		};
+	}
+
+	public static function getPos(type:haxe.macro.ModuleType) {
+		return reflaxe.helpers.ModuleTypeHelper.getCommonData(type).pos;
+	}
+
+	public static function getModule(type:haxe.macro.ModuleType) {
+		return reflaxe.helpers.ModuleTypeHelper.getCommonData(type).module;
+	}
+
+	public static function getPath(type:haxe.macro.ModuleType) {
+		var data = reflaxe.helpers.ModuleTypeHelper.getCommonData(type);
+		return if (StringTools.endsWith(data.module, data.name)) {
+			data.module;
+		} else {
+			data.module + "." + data.name;
+		};
+	}
+
+	public static function getNameOrNative(type:haxe.macro.ModuleType) {
+		return reflaxe.helpers.NameMetaHelper.getNameOrNative(reflaxe.helpers.ModuleTypeHelper.getCommonData(type));
+	}
+
+	public static function getUniqueId(type:haxe.macro.ModuleType) {
+		var prefix = @:ast(switch (type) {
+	case TClassDecl(_):
+		"C";	
+	case TEnumDecl(_):
+		"E";	
+	case TTypeDecl(_):
+		"T";	
+	case TAbstract(_):
+		"A";	
+}) switch (@:exhaustive enumIndex type) {
+			case 0: {
+				var ` = type[0];
+				{
+					"C";
+				};
+			};
+			case 1: {
+				var ` = type[0];
+				{
+					"E";
+				};
+			};
+			case 2: {
+				var ` = type[0];
+				{
+					"T";
+				};
+			};
+			case 3: {
+				var ` = type[0];
+				{
+					"A";
+				};
+			};
+		};
+		var d = reflaxe.helpers.ModuleTypeHelper.getCommonData(type);
+		return prefix + "|" + d.pack.join("_") + reflaxe.helpers.BaseTypeHelper.globalName(d, false);
+	}
+
+	public static function equals(type:Null<haxe.macro.ModuleType>, other:Null<haxe.macro.ModuleType>) {
+		if (type == null || other == null) {
+			return false;
+		};
+		return reflaxe.helpers.ModuleTypeHelper.getUniqueId(type) == reflaxe.helpers.ModuleTypeHelper.getUniqueId(other);
+	}
+
+	public static function isClass(type:haxe.macro.ModuleType) {
+		return @:ast(switch (type) {
+	case TClassDecl(_):
+		true;	
+	case _:
+		false;	
+}) if (enumIndex type == 0) {
+			var ` = type[0];
+			{
+				true;
+			};
+		} else {
+			false;
+		};
+	}
+
+	public static function isEnum(type:haxe.macro.ModuleType) {
+		return @:ast(switch (type) {
+	case TEnumDecl(_):
+		true;	
+	case _:
+		false;	
+}) if (enumIndex type == 1) {
+			var ` = type[0];
+			{
+				true;
+			};
+		} else {
+			false;
+		};
+	}
+
+	public static function isTypedef(type:haxe.macro.ModuleType) {
+		return @:ast(switch (type) {
+	case TTypeDecl(_):
+		true;	
+	case _:
+		false;	
+}) if (enumIndex type == 2) {
+			var ` = type[0];
+			{
+				true;
+			};
+		} else {
+			false;
+		};
+	}
+
+	public static function isAbstract(type:haxe.macro.ModuleType) {
+		return @:ast(switch (type) {
+	case TAbstract(_):
+		true;	
+	case _:
+		false;	
+}) if (enumIndex type == 3) {
+			var ` = type[0];
+			{
+				true;
+			};
+		} else {
+			false;
+		};
+	}
+}

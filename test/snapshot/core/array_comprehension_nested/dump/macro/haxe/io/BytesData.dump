@@ -1,0 +1,1 @@
+typedef haxe.io.BytesData = haxe.io._BytesData.NativeBytesDataAbstract

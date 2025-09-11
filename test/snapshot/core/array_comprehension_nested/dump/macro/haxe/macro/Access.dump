@@ -1,0 +1,14 @@
+@:flatEnum
+enum haxe.macro.Access {
+	APublic;
+	APrivate;
+	AStatic;
+	AOverride;
+	ADynamic;
+	AInline;
+	AMacro;
+	AFinal;
+	AExtern;
+	AAbstract;
+	AOverload;
+}
