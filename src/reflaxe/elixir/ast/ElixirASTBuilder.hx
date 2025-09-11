@@ -366,10 +366,10 @@ class ElixirASTBuilder {
                 // Check ClauseContext for mapped names (alpha-renaming)
                 if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
                     varName = currentClauseContext.localToName.get(v.id);
-                    trace('[AST Builder] TLocal: Using mapped name from ClauseContext: ${v.name} (id=${v.id}) -> ${varName}');
+                    // trace('[AST Builder] TLocal: Using mapped name from ClauseContext: ${v.name} (id=${v.id}) -> ${varName}');
                 } else if (currentClauseContext != null && v.name == "error") {
                     // Debug: show what mappings we DO have
-                    trace('[AST Builder] TLocal: No mapping for ${v.name} (id=${v.id}). Available mappings: ${[for (k in currentClauseContext.localToName.keys()) k + "->" + currentClauseContext.localToName.get(k)].join(", ")}');
+                    // trace('[AST Builder] TLocal: No mapping for ${v.name} (id=${v.id}). Available mappings: ${[for (k in currentClauseContext.localToName.keys()) k + "->" + currentClauseContext.localToName.get(k)].join(", ")}');
                 }
                 
                 var idKey = Std.string(v.id);
@@ -540,10 +540,10 @@ class ElixirASTBuilder {
                             }
                             
                             if (isConditionalComp) {
-                                trace('[DEBUG] Found conditional comprehension for var ${v.name}');
+                                // trace('[DEBUG] Found conditional comprehension for var ${v.name}');
                                 var reconstructed = tryReconstructConditionalComprehension(blockStmts, tempVarName, variableUsageMap);
                                 if (reconstructed != null) {
-                                    trace('[DEBUG] Successfully reconstructed as for comprehension');
+                                    // trace('[DEBUG] Successfully reconstructed as for comprehension');
                                     return EMatch(PVar(toElixirVarName(v.name)), reconstructed);
                                 }
                             }
@@ -1849,7 +1849,7 @@ class ElixirASTBuilder {
                     // This is a comprehension like [for (i in 0...3) expr]
                     // Return the TFor directly as EFor, not wrapped in EList
                     #if debug_ast_builder
-                    trace('[AST Builder] Detected array comprehension, treating as EFor instead of EList');
+                    // trace('[AST Builder] Detected array comprehension, treating as EFor instead of EList');
                     #end
                     buildFromTypedExpr(el[0], variableUsageMap).def;
                 } 
@@ -2015,7 +2015,7 @@ class ElixirASTBuilder {
                 var comprehension = tryBuildArrayComprehensionFromBlock(el, variableUsageMap);
                 if (comprehension != null) {
                     #if debug_ast_builder
-                    trace('[AST Builder] Successfully reconstructed array comprehension from imperative block');
+                    // trace('[AST Builder] Successfully reconstructed array comprehension from imperative block');
                     #end
                     comprehension.def;
                 }
@@ -2132,7 +2132,7 @@ class ElixirASTBuilder {
                 
                 // Special case: Check for conditional comprehension pattern first
                 // This is when we have var g = []; followed by a nested block with if statements
-                trace('[DEBUG] Checking TBlock with ${el.length} elements for conditional comprehension');
+                // trace('[DEBUG] Checking TBlock with ${el.length} elements for conditional comprehension');
                 if (el.length >= 2) {
                     var isConditionalComprehension = false;
                     var tempVarName = "";
@@ -6424,14 +6424,14 @@ class ElixirASTBuilder {
                         case TIdent("__mod__"):
                             // This is a modulo operation, use Elixir's rem
                             return makeAST(ERemoteCall(
-                                makeAST(EAtom(":erlang")),
+                                makeAST(EAtom("erlang")),
                                 "rem",
                                 argsAST
                             ));
                         case TField(_, FStatic(_, cf)) if (cf.get().name == "mod"):
                             // Static field access for mod
                             return makeAST(ERemoteCall(
-                                makeAST(EAtom(":erlang")),
+                                makeAST(EAtom("erlang")),
                                 "rem",
                                 argsAST
                             ));
@@ -6448,7 +6448,7 @@ class ElixirASTBuilder {
                     var left = transformExpr(e1, true);  // First arg should be replaced with loop var
                     var right = transformExpr(e2, false); // Second arg should stay as is
                     return makeAST(ERemoteCall(
-                        makeAST(EAtom(":erlang")),
+                        makeAST(EAtom("erlang")),
                         "rem",
                         [left, right]
                     ));
@@ -6487,8 +6487,9 @@ class ElixirASTBuilder {
                     return makeAST(EBinary(binOp, left, right));
                     
                 case TParenthesis(e):
-                    // Handle parentheses
-                    return makeAST(EParen(transformExpr(e, isFirstArgOfMod)));
+                    // For filter conditions, don't add parentheses - Elixir doesn't allow them
+                    // Just return the inner expression
+                    return transformExpr(e, isFirstArgOfMod);
                     
                 default:
                     // For other expressions, use the default builder

@@ -1,12 +1,10 @@
 defmodule AgentRef_Impl_ do
   def from_pid(pid) do
-    this1 = nil
     this1 = pid
     this1
   end
   def named(name) do
     ref = __elixir__.call(":" <> name)
-    this1 = nil
     this1 = ref
     this1
   end
@@ -20,7 +18,6 @@ defmodule AgentRef_Impl_ do
     this1
   end
   defp from_dynamic(d) do
-    this1 = nil
     this1 = d
     this1
   end
@@ -28,7 +25,6 @@ defmodule AgentRef_Impl_ do
     this1
   end
   defp _new(ref) do
-    this1 = nil
     this1 = ref
     this1
   end

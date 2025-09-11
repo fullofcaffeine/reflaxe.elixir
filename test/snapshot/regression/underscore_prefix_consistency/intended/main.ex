@@ -14,15 +14,15 @@ defmodule Main do
   end
   defp test_pattern_matching_unused() do
     g = get_some_value()
-    result = case (elem(g, 0)) do
-  0 ->
+    result = case (g) do
+  {:some, value} ->
     g = elem(g, 1)
     g1 = g.metadata
     g = g.value
-    __meta = g1
+    _meta = g1
     v = g
     v
-  1 ->
+  {:none} ->
     0
 end
     Log.trace(result, %{:file_name => "Main.hx", :line_number => 57, :class_name => "Main", :method_name => "testPatternMatchingUnused"})
@@ -33,6 +33,6 @@ end
     Log.trace(mapped, %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testLambdaUnused"})
   end
   defp get_some_value() do
-    {:Some, %{:value => 42, :metadata => "test"}}
+    {:some, %{:value => 42, :metadata => "test"}}
   end
 end
