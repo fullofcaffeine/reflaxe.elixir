@@ -884,7 +884,7 @@ class ModuleBuilder {
             #end
             
             if (func.expr() != null) {
-                var funcName = NameUtils.toSnakeCase(func.name);
+                var funcName = NameUtils.toSafeElixirFunctionName(func.name);
                 var funcExpr = func.expr();
                 
                 // Extract parameters and body from the function expression
@@ -961,7 +961,7 @@ class ModuleBuilder {
             }
             
             if (func.expr() != null) {
-                var funcName = NameUtils.toSnakeCase(func.name);
+                var funcName = NameUtils.toSafeElixirFunctionName(func.name);
                 var funcExpr = func.expr();
                 
                 // Extract parameters and body from the function expression
@@ -1037,7 +1037,7 @@ class ModuleBuilder {
         for (func in funcFields) {
             var funcExpr = func.expr();
             if (funcExpr != null) {
-                var funcName = NameUtils.toSnakeCase(func.name);
+                var funcName = NameUtils.toSafeElixirFunctionName(func.name);
                 
                 // Extract the function body from the TypedExpr
                 switch(funcExpr.expr) {
@@ -1089,7 +1089,7 @@ class ModuleBuilder {
         for (func in funcFields) {
             var funcExpr = func.expr();
             if (funcExpr != null) {
-                var funcName = NameUtils.toSnakeCase(func.name);
+                var funcName = NameUtils.toSafeElixirFunctionName(func.name);
                 
                 // Extract the function body from the TypedExpr
                 switch(funcExpr.expr) {
@@ -1191,7 +1191,7 @@ class ModuleBuilder {
         for (func in funcFields) {
             var funcExpr = func.expr();
             if (funcExpr != null) {
-                var funcName = NameUtils.toSnakeCase(func.name);
+                var funcName = NameUtils.toSafeElixirFunctionName(func.name);
                 
                 // Get usage map for proper parameter naming
                 var functionUsageMap = switch(funcExpr.expr) {
@@ -1271,7 +1271,7 @@ class ModuleBuilder {
         for (func in funcFields) {
             var funcExpr = func.expr();
             if (funcExpr != null) {
-                var funcName = NameUtils.toSnakeCase(func.name);
+                var funcName = NameUtils.toSafeElixirFunctionName(func.name);
                 
                 // Check if this function has @:test or :elixir.test metadata
                 var isTest = false;
