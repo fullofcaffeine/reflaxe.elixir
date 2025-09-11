@@ -162,27 +162,46 @@ abstract Result<T,E> {
 - Any other core Haxe standard library class
 
 **How Core Classes Are Actually Generated:**
-The compiler automatically generates runtime support modules when they're used:
-- **`Std` module** → Generated as `std.ex` in output with methods like `string()`, `int()`, `parseFloat()`, etc.
-- **`Log` module** → Generated as `haxe/log.ex` with `trace()` and `formatOutput()` methods
-- **Usage tracking** → The compiler tracks dependencies via `trackDependency()` calls
-- **Automatic output** → When code uses `trace()` or `Std.string()`, the compiler generates the needed modules
+
+The compiler automatically generates runtime support modules from different sources:
+
+1. **`Std` module** → Generated from `/std/Std.cross.hx`
+   - Our custom implementation with Elixir-specific optimizations
+   - Compiles to `std.ex` with methods like `string()`, `int()`, `parseFloat()`
+   - Uses `untyped __elixir__()` for native Elixir implementations
+   - Located at: `/Users/fullofcaffeine/workspace/code/haxe.elixir/std/Std.cross.hx`
+
+2. **`Log` module** → Generated from Haxe's standard library
+   - Source: `/Users/fullofcaffeine/haxe/versions/4.3.7/std/haxe/Log.hx`
+   - Compiles to `haxe/log.ex` with `trace()` and `formatOutput()` methods
+   - Part of official Haxe distribution (haxe.Log package)
+   - The compiler automatically includes this when `trace()` is used
+
+3. **Dependency Tracking**:
+   - `ElixirASTBuilder.trackDependency()` tracks which modules are used
+   - `ElixirCompiler.moduleDependencies` maintains the dependency graph
+   - The compiler generates only the modules that are actually referenced
 
 **Example Generated Structure:**
 ```
 out/
 ├── main.ex           # Your compiled code
-├── std.ex            # Auto-generated Std module
+├── std.ex            # From std/Std.cross.hx (our custom implementation)
 ├── haxe/
-│   └── log.ex        # Auto-generated Log module for trace support
-└── other_modules.ex  # Other dependencies
+│   └── log.ex        # From Haxe stdlib's haxe/Log.hx
+└── map_tools.ex      # From std/MapTools.cross.hx (if used)
 ```
 
-**Instead of Creating Core Classes:**
-- Use `.cross.hx` extension for cross-platform utility classes (e.g., `MapTools.cross.hx`)
-- Core functionality like `trace()` is transformed by the compiler directly
-- The compiler handles `Std.string()`, `Std.int()` etc. through its own mechanisms
-- These generated modules are NOT part of the Haxe standard library - they're runtime support
+**Cross-Platform Files (.cross.hx)**:
+- Use `.cross.hx` extension for cross-platform utility classes
+- Examples: `MapTools.cross.hx`, `Std.cross.hx`
+- These override or extend Haxe's default implementations
+- Provide Elixir-specific optimizations using `__elixir__()`
+
+**Instead of Creating Core Classes in std/**:
+- Never create `Log.hx` - it comes from Haxe's standard library
+- Use `Std.cross.hx` for custom Std implementation (already exists)
+- The compiler automatically handles the compilation and inclusion
 
 ### ✅ ALWAYS Do This:
 - Define test types in `/std/phoenix/test/` and `/std/ecto/test/`
