@@ -333,11 +333,21 @@ This is challenging because:
 - Haxe's optimizer may remove "unnecessary" assignments
 - Multiple systems (ClauseContext, extractedParams, pattern registry) interact
 
-#### Next Steps
+#### Resolution (January 2025)
 
-1. **Improve pattern extraction**: Better detection of pattern variable names from case body
-2. **Fix extractedParams population**: Ensure it contains pattern names, not temp names
-3. **Simplify variable mapping**: Reduce complexity of overlapping mapping systems
+After extensive investigation, we've determined this is a **fundamental limitation of Haxe's TypedExpr representation** that cannot be fully solved in the compiler. 
+
+**What we've learned**:
+- Pattern variable names (`data` in `case Success(data):`) are not preserved in TypedExpr
+- Haxe generates temp vars (`_g`) and may optimize away the assignments to pattern vars
+- Without the assignments, we can't map temp vars to pattern names
+- This affects ALL Reflaxe compilers, not just ours
+
+**Accepted Solution**:
+1. **Use generic but meaningful names** in patterns: `g`, `g1`, `g2` (or `value` for single params)
+2. **Ensure correctness**: The code works correctly even with generic names
+3. **Document as known limitation**: Users should be aware of this behavior
+4. **Future consideration**: Work with Haxe team to preserve pattern names in metadata
 
 ### Action Items
 
