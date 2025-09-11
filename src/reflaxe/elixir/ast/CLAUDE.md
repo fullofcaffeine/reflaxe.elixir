@@ -727,6 +727,55 @@ npx haxe compile.hxml -D debug_ast_pipeline
 2. **Incorrect patterns** - Verify extractedParams array
 3. **Variable mismatches** - Check ClauseContext mappings
 4. **Unused variables** - Verify VariableUsageAnalyzer
+5. **Enum constructor naming** - Use ElixirAtom for automatic snake_case conversion
+
+## 🎯 Naming Convention System with ElixirAtom (January 2025)
+
+**STATUS**: Implemented and in use
+**LOCATION**: `src/reflaxe/elixir/ast/naming/ElixirAtom.hx`
+
+### The Solution: ElixirAtom Abstract Type
+
+We have an abstract type that automatically handles snake_case conversion for enum constructors and other atoms:
+
+```haxe
+// Instead of manual conversion:
+var atomName = constructor.name.toLowerCase();  // ❌ WRONG: "TodoUpdates" → "todoupdates"
+var atomName = NameUtils.toSnakeCase(constructor.name);  // Works but verbose
+
+// Use ElixirAtom:
+var atomName: ElixirAtom = constructor.name;  // ✅ AUTOMATIC: "TodoUpdates" → "todo_updates"
+var atomName: ElixirAtom = ef;  // ✅ Works directly with EnumField via @:from
+```
+
+### Key Features of ElixirAtom
+
+1. **Automatic snake_case conversion** - Converts CamelCase to snake_case automatically
+2. **EnumField support** - Has `@:from` conversion for direct EnumField usage
+3. **String support** - Has `@:from` conversion for any String
+4. **Escape hatch** - `ElixirAtom.raw()` for special cases like `__MODULE__`
+5. **Zero runtime cost** - All inline functions, expanded at compile time
+
+### Usage in AST Builder
+
+When working with enum patterns:
+```haxe
+// For enum constructors from EnumType
+case TConst(TInt(index)):
+    var constructor = constructorArray[index];
+    var atomName: ElixirAtom = constructor.name;  // Automatic conversion
+
+// For enum fields directly
+case TField(_, FEnum(_, ef)):
+    var atomName: ElixirAtom = ef;  // Direct EnumField conversion
+```
+
+### Why This Matters
+
+- **Consistency** - All enum constructors get proper snake_case atoms
+- **No manual conversion** - No need to remember toSnakeCase() calls
+- **Type safety** - Can't accidentally pass unconverted strings
+- **DRY principle** - Conversion logic in one place
 
 ## 🚀 Future Improvements
 

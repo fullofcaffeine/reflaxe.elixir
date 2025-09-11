@@ -167,6 +167,21 @@ defmodule HaxeServer do
   end
 
   @impl GenServer
+  def handle_info({port, {:data, data}}, state) when is_port(port) do
+    # Log the output from Haxe server for debugging
+    Logger.debug("Haxe server output: #{data}")
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info({port, {:exit_status, status}}, state) when is_port(port) do
+    Logger.warning("Haxe server exited with status: #{status}")
+    # Restart the server
+    send(self(), :start_server)
+    {:noreply, %{state | server_pid: nil, status: :restarting}}
+  end
+
+  @impl GenServer
   def handle_call(:status, _from, state) do
     response = case state.status do
       :running -> {:ok, :running}
@@ -216,10 +231,27 @@ defmodule HaxeServer do
     cmd = state.haxe_cmd
     args = state.haxe_args ++ ["--wait", to_string(state.port)]
     
+    # Generate a unique port for haxeshim's internal server to avoid conflicts
+    # when running tests in parallel
+    haxeshim_port = if Mix.env() == :test do
+      # Use a different range than the wait port to avoid conflicts
+      9000 + rem(System.unique_integer([:positive]), 1000)
+    else
+      8000
+    end
+    
+    # Set environment variable for haxeshim (if it supports it)
+    # Also set HAXE_SERVER_PORT for compatibility
+    # Port.open requires charlists (Erlang strings) for env variables
+    env = [
+      {'HAXESHIM_SERVER_PORT', to_charlist(haxeshim_port)},
+      {'HAXE_SERVER_PORT', to_charlist(state.port)}
+    ]
+    
     try do
       port = Port.open(
         {:spawn_executable, System.find_executable(cmd) || cmd},
-        [:binary, :exit_status, :stderr_to_stdout, args: args]
+        [:binary, :exit_status, :stderr_to_stdout, {:args, args}, {:env, env}]
       )
       
       # Give the server a moment to start
@@ -269,19 +301,19 @@ defmodule HaxeServer do
   end
   
   defp find_available_port() do
-    # Try to find an available port between 7000-9000
-    :rand.seed(:exsplus, :os.timestamp())
+    # Use process ID and timestamp to ensure uniqueness in parallel tests
+    base_port = 7000 + rem(System.unique_integer([:positive]), 2000)
     
-    Enum.reduce_while(1..10, nil, fn _, acc ->
-      port = 7000 + :rand.uniform(2000)
+    Enum.reduce_while(0..20, nil, fn offset, _acc ->
+      port = base_port + offset
       case :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true]) do
         {:ok, socket} ->
           :gen_tcp.close(socket)
           {:halt, port}
         {:error, _} ->
-          {:cont, acc}
+          {:cont, nil}
       end
-    end) || 8000  # Fallback to 8000 if no port found
+    end) || 8000 + :rand.uniform(1000)  # Better fallback with randomization
   end
   
   defp find_project_root() do
