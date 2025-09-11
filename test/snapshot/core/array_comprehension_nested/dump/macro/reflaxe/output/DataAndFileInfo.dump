@@ -1,0 +1,27 @@
+class reflaxe.output.DataAndFileInfo<T> {
+
+	public function new(data:reflaxe.output.DataAndFileInfo.T, baseType:haxe.macro.BaseType, overrideFileName:Null<String>, overrideDirectory:Null<String>) {
+		this.data = data;
+		this.baseType = baseType;
+		this.overrideFileName = overrideFileName;
+		this.overrideDirectory = overrideDirectory;
+	}
+
+	public var data(default,null):reflaxe.output.DataAndFileInfo.T;
+
+	public var baseType(default,null):haxe.macro.BaseType;
+
+	@:maybeUsed
+	public var overrideFileName(default,null):Null<String>;
+
+	@:maybeUsed
+	public var overrideDirectory(default,null):Null<String>;
+
+	public function with<T>(newData:with.T) {
+		return new reflaxe.output.DataAndFileInfo(newData, this.baseType, this.overrideFileName, this.overrideDirectory);
+	}
+
+	public function withOutput(output:reflaxe.output.StringOrBytes) {
+		return new reflaxe.output.DataAndFileInfo(output, this.baseType, this.overrideFileName, this.overrideDirectory);
+	}
+}

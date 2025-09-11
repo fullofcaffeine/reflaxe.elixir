@@ -1,0 +1,12 @@
+extern class haxe.EnumTools {
+
+	static inline function getName<T>(e:Enum<getName.T>):String;
+
+	static inline function createByName<T>(e:Enum<createByName.T>, constr:String, params:Null<Array<Dynamic>>):createByName.T;
+
+	static inline function createByIndex<T>(e:Enum<createByIndex.T>, index:Int, params:Null<Array<Dynamic>>):createByIndex.T;
+
+	static inline function createAll<T>(e:Enum<createAll.T>):Array<createAll.T>;
+
+	static inline function getConstructors<T>(e:Enum<getConstructors.T>):Array<String>;
+}

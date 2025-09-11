@@ -1,0 +1,45 @@
+@:used
+class haxe.io.Output {
+
+	public var bigEndian(default,set):Bool;
+
+	function set_bigEndian(b:Bool) {
+		return b;
+	}
+
+	public function writeByte(c:Int) {}
+
+	public function writeBytes(b:haxe.io.Bytes, pos:Int, len:Int) {
+		if ((pos < 0 || len < 0 || pos + len > b.length)) throw "Invalid parameters";
+		var k = len;
+		while ((k > 0)) {
+			this.writeByte(b.get(pos));
+			pos ++;
+			k --;
+		};
+		return len;
+	}
+
+	public function write(b:haxe.io.Bytes) {
+		this.writeBytes(b, 0, b.length);
+	}
+
+	public function writeInput(i:haxe.io.Input, bufsize:Null<Int> = null) {
+		if ((bufsize == null)) bufsize = 4096;
+		var buf = haxe.io.Bytes.alloc(bufsize);
+		while ((true)) {
+			var len = i.readBytes(buf, 0, bufsize);
+			if ((len == 0)) break;
+			this.writeBytes(buf, 0, len);
+		};
+	}
+
+	public function writeString(s:String) {
+		var b = haxe.io.Bytes.ofString(s, null);
+		this.write(b);
+	}
+
+	public function flush() {}
+
+	public function close() {}
+}

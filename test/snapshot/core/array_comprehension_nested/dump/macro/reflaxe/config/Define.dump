@@ -1,0 +1,2 @@
+@:enum
+abstract reflaxe.config.Define from String to String {}

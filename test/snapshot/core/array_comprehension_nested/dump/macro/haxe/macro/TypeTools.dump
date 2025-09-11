@@ -1,0 +1,688 @@
+class haxe.macro.TypeTools {
+
+	static function nullable(complexType:haxe.macro.ComplexType) return cast haxe.macro.ComplexType.TPath({pack : [], name : "Null", params : [haxe.macro.TypeParam.TPType(complexType)]})
+
+	static function toField(cf:haxe.macro.ClassField) return {
+		var varAccessToString = function(va:haxe.macro.VarAccess, getOrSet:String) return {
+			@:ast(switch (va) {
+	case AccNormal | AccCtor:
+		"default";	
+	case AccNo:
+		"null";	
+	case AccNever:
+		"never";	
+	case AccResolve:
+		throw "Invalid TAnonymous";	
+	case AccCall:
+		getOrSet;	
+	case AccInline:
+		"default";	
+	case AccRequire(_, _):
+		"default";	
+}) switch (@:exhaustive enumIndex va) {
+				case 1: {
+					{
+						"null";
+					};
+				};
+				case 2: {
+					{
+						"never";
+					};
+				};
+				case 3: {
+					{
+						throw "Invalid TAnonymous";
+					};
+				};
+				case 4: {
+					{
+						getOrSet;
+					};
+				};
+				case 5: {
+					{
+						"default";
+					};
+				};
+				case 6: {
+					var ` = va[0];
+					var ` = va[1];
+					{
+						"default";
+					};
+				};
+				case 0, 7: {
+					{
+						"default";
+					};
+				};
+			};
+		};
+		var access = if (cf.isPublic) {
+			[haxe.macro.Access.APublic];
+		} else {
+			[haxe.macro.Access.APrivate];
+		};
+		if (cf.meta.has(":final")) {
+			access.push(haxe.macro.Access.AFinal);
+		};
+		if (cf.params.length == 0) {
+			{name : cf.name, doc : cf.doc, access : access, kind : @:ast(switch ([cf.kind, cf.type]) {
+	case [FVar(read, write), ret]:
+		FProp(varAccessToString(read, "get"), varAccessToString(write, "set"), toComplexType(ret), null);	
+	case [FMethod(_), TFun(args, ret)]:
+		FFun({ args : [for (a  in  args) { name : a.name, opt : a.opt, type : toComplexType(a.t) }], ret : toComplexType(ret), expr : null });	
+	default:
+		throw "Invalid TAnonymous";	
+}) {
+				var ` = cf.kind;
+				var ` = cf.type;
+				switch (@:exhaustive enumIndex `) {
+					case 0: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var read = `;
+							var write = `;
+							var ret = `;
+							{
+								haxe.macro.FieldType.FProp(varAccessToString(read, "get"), varAccessToString(write, "set"), haxe.macro.TypeTools.toComplexType(ret), null);
+							};
+						};
+					};
+					case 1: {
+						var ` = `[0];
+						if (enumIndex ` == 4) {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var args = `;
+								var ret = `;
+								{
+									haxe.macro.FieldType.FFun({args : {
+										var ` = [];
+										{
+											var ` = 0;
+											while (` < args.length) {
+												var a = args[`];
+												++ `;
+												`.push({name : a.name, opt : cast a.opt, type : haxe.macro.TypeTools.toComplexType(a.t)});
+											};
+										};
+										`;
+									}, ret : haxe.macro.TypeTools.toComplexType(ret), expr : null});
+								};
+							};
+						} else {
+							throw "Invalid TAnonymous";
+						};
+					};
+				};
+			}, pos : cf.pos, meta : cf.meta.get()};
+		} else {
+			throw "Invalid TAnonymous";
+		};
+	}
+
+	public static function toComplexType(type:Null<haxe.macro.Type>) return {
+		haxe.macro.Context.toComplexType(type);
+	}
+
+	static function toTypeParam(type:haxe.macro.Type) return {
+		@:ast(switch (type) {
+	case TInst(_.get() => { kind : KExpr(e) }, _):
+		TPExpr(e);	
+	case _:
+		TPType(toComplexType(type));	
+}) if (enumIndex type == 2) {
+			var ` = type[0];
+			var ` = type[1];
+			{
+				var _hx_tmp;
+				{
+					var ` = (_hx_tmp = `.get()).constructor;
+					var ` = _hx_tmp.doc;
+					var ` = _hx_tmp.fields;
+					var ` = _hx_tmp.init;
+					var ` = _hx_tmp.interfaces;
+					var ` = _hx_tmp.isAbstract;
+					var ` = _hx_tmp.isExtern;
+					var ` = _hx_tmp.isFinal;
+					var ` = _hx_tmp.isInterface;
+					var ` = _hx_tmp.isPrivate;
+					var ` = _hx_tmp.kind;
+					var ` = _hx_tmp.meta;
+					var ` = _hx_tmp.module;
+					var ` = _hx_tmp.name;
+					var ` = _hx_tmp.overrides;
+					var ` = _hx_tmp.pack;
+					var ` = _hx_tmp.params;
+					var ` = _hx_tmp.pos;
+					var ` = _hx_tmp.statics;
+					var ` = _hx_tmp.superClass;
+					if (enumIndex ` == 3) {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								haxe.macro.TypeParam.TPExpr(e);
+							};
+						};
+					} else {
+						haxe.macro.TypeParam.TPType(haxe.macro.TypeTools.toComplexType(type));
+					};
+				};
+			};
+		} else {
+			haxe.macro.TypeParam.TPType(haxe.macro.TypeTools.toComplexType(type));
+		};
+	}
+
+	static function toTypePath(baseType:haxe.macro.BaseType, params:Array<haxe.macro.Type>) return {
+		var module = baseType.module;
+		{pack : baseType.pack, name : module.substring(module.lastIndexOf(".", null) + 1, null), sub : baseType.name, params : {
+			var ` = [];
+			{
+				var ` = 0;
+				while (` < params.length) {
+					var t = params[`];
+					++ `;
+					`.push(haxe.macro.TypeTools.toTypeParam(t));
+				};
+			};
+			`;
+		}};
+	}
+
+	public static inline function follow(t:haxe.macro.Type, once:Null<Bool> = null) return haxe.macro.Context.follow(t, once)
+
+	@:value({ once : false })
+	public static inline function followWithAbstracts(t:haxe.macro.Type, once:Bool = false) return haxe.macro.Context.followWithAbstracts(t, once)
+
+	public static inline function unify(t1:haxe.macro.Type, t2:haxe.macro.Type) return haxe.macro.Context.unify(t1, t2)
+
+	public static function getClass(t:haxe.macro.Type) return if (t == null) {
+		null;
+	} else {
+		@:ast(switch (follow(t)) {
+	case TInst(c, _):
+		c.get();	
+	case _:
+		throw "Class instance expected";	
+}) {
+			var ` = {
+				var once = null;
+				haxe.macro.Context.follow(t, once);
+			};
+			if (enumIndex ` == 2) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var c = `;
+					{
+						c.get();
+					};
+				};
+			} else {
+				throw "Class instance expected";
+			};
+		};
+	}
+
+	public static function getEnum(t:haxe.macro.Type) return if (t == null) {
+		null;
+	} else {
+		@:ast(switch (follow(t)) {
+	case TEnum(e, _):
+		e.get();	
+	case _:
+		throw "Enum instance expected";	
+}) {
+			var ` = {
+				var once = null;
+				haxe.macro.Context.follow(t, once);
+			};
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var e = `;
+					{
+						e.get();
+					};
+				};
+			} else {
+				throw "Enum instance expected";
+			};
+		};
+	}
+
+	public static function applyTypeParameters(t:haxe.macro.Type, typeParameters:Array<haxe.macro.TypeParameter>, concreteTypes:Array<haxe.macro.Type>) {
+		if (typeParameters.length != concreteTypes.length) {
+			throw "Incompatible arguments: " + typeParameters.length + " type parameters and " + concreteTypes.length + " concrete types";
+		} else {
+			if (typeParameters.length == 0) {
+				return t;
+			};
+		};
+		return haxe.macro.Context.load("apply_params", 3)(typeParameters, concreteTypes, t);
+	}
+
+	static function applyParams(typeParameters:Array<haxe.macro.TypeParameter>, concreteTypes:Array<haxe.macro.Type>, t:haxe.macro.Type) {
+		return null;
+	}
+
+	public static function map(t:haxe.macro.Type, f:haxe.macro.Type -> haxe.macro.Type) {
+		return @:ast(switch (t) {
+	case TMono(tm):
+		switch (tm.get()) {
+			case null:
+				t;			
+			case var t:
+				f(t);			
+		};	
+	case TEnum(_, []) | TInst(_, []) | TType(_, []):
+		t;	
+	case TEnum(en, tl):
+		TEnum(en, tl.map(f));	
+	case TInst(cl, tl):
+		TInst(cl, tl.map(f));	
+	case TType(t2, tl):
+		TType(t2, tl.map(f));	
+	case TAbstract(a, tl):
+		TAbstract(a, tl.map(f));	
+	case TFun(args, ret):
+		TFun(args.map(function(arg) return { name : arg.name, opt : arg.opt, t : f(arg.t) }), f(ret));	
+	case TAnonymous(an):
+		TAnonymous(Context.load("map_anon_ref", 2)(an, f));	
+	case TDynamic(t2):
+		t == t2 ? t : TDynamic(f(t2));	
+	case TLazy(ft):
+		var ft = ft();
+		var ft2 = f(ft);
+		ft == ft2 ? t : ft2;	
+}) switch (@:exhaustive enumIndex t) {
+			case 0: {
+				var ` = t[0];
+				{
+					var tm = `;
+					{
+						@:ast(switch (tm.get()) {
+	case null:
+		t;	
+	case var t:
+		f(t);	
+}) {
+							var ` = tm.get();
+							if (` == null) {
+								t;
+							} else {
+								var t = `;
+								{
+									f(t);
+								};
+							};
+						};
+					};
+				};
+			};
+			case 1: {
+				var ` = t[0];
+				var ` = t[1];
+				if (`.length == 0) {
+					{
+						t;
+					};
+				} else {
+					var tl = `;
+					var en = `;
+					{
+						haxe.macro.Type.TEnum(en, {
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = tl;
+								while (` < `.length) {
+									var v = `[`];
+									++ `;
+									`.push(f(v));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 2: {
+				var ` = t[0];
+				var ` = t[1];
+				if (`.length == 0) {
+					{
+						t;
+					};
+				} else {
+					var tl = `;
+					var cl = `;
+					{
+						haxe.macro.Type.TInst(cl, {
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = tl;
+								while (` < `.length) {
+									var v = `[`];
+									++ `;
+									`.push(f(v));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 3: {
+				var ` = t[0];
+				var ` = t[1];
+				if (`.length == 0) {
+					{
+						t;
+					};
+				} else {
+					var tl = `;
+					var t2 = `;
+					{
+						haxe.macro.Type.TType(t2, {
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = tl;
+								while (` < `.length) {
+									var v = `[`];
+									++ `;
+									`.push(f(v));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+			case 4: {
+				var ` = t[0];
+				var ` = t[1];
+				{
+					var args = `;
+					var ret = `;
+					{
+						haxe.macro.Type.TFun({
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = args;
+								while (` < `.length) {
+									var v = `[`];
+									++ `;
+									`.push(function(arg:{ t : haxe.macro.Type, opt : Bool, name : String }) {
+										return {name : arg.name, opt : arg.opt, t : f(arg.t)};
+									}(v));
+								};
+							};
+							`;
+						}, f(ret));
+					};
+				};
+			};
+			case 5: {
+				var ` = t[0];
+				{
+					var an = `;
+					{
+						haxe.macro.Type.TAnonymous(haxe.macro.Context.load("map_anon_ref", 2)(an, f));
+					};
+				};
+			};
+			case 6: {
+				var ` = t[0];
+				{
+					var t2 = `;
+					{
+						if (t == t2) {
+							t;
+						} else {
+							haxe.macro.Type.TDynamic(f(t2));
+						};
+					};
+				};
+			};
+			case 7: {
+				var ` = t[0];
+				{
+					var ft = `;
+					{
+						var ft = ft();
+						var ft2 = f(ft);
+						if (ft == ft2) {
+							t;
+						} else {
+							ft2;
+						};
+					};
+				};
+			};
+			case 8: {
+				var ` = t[0];
+				var ` = t[1];
+				{
+					var a = `;
+					var tl = `;
+					{
+						haxe.macro.Type.TAbstract(a, {
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = tl;
+								while (` < `.length) {
+									var v = `[`];
+									++ `;
+									`.push(f(v));
+								};
+							};
+							`;
+						});
+					};
+				};
+			};
+		};
+	}
+
+	public static function iter(t:haxe.macro.Type, f:haxe.macro.Type -> Void) {
+		@:ast(switch (t) {
+	case TMono(tm):
+		var t = tm.get();
+		if (t != null) f(t);	
+	case TEnum(_, tl) | TInst(_, tl) | TType(_, tl) | TAbstract(_, tl):
+		for (t  in  tl) f(t);	
+	case TDynamic(t2):
+		if (t != t2) f(t2);	
+	case TLazy(ft):
+		f(ft());	
+	case TAnonymous(an):
+		for (field  in  an.get().fields) f(field.type);	
+	case TFun(args, ret):
+		for (arg  in  args) f(arg.t);
+		f(ret);	
+}) switch (@:exhaustive enumIndex t) {
+			case 0: {
+				var ` = t[0];
+				{
+					var tm = `;
+					{
+						var t = tm.get();
+						if (t != null) {
+							f(t);
+						};
+					};
+				};
+			};
+			case 1: {
+				var ` = t[0];
+				var ` = t[1];
+				{
+					var tl = `;
+					{
+						{
+							var ` = 0;
+							while (` < tl.length) {
+								var t = tl[`];
+								++ `;
+								f(t);
+							};
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = t[0];
+				var ` = t[1];
+				{
+					var tl = `;
+					{
+						{
+							var ` = 0;
+							while (` < tl.length) {
+								var t = tl[`];
+								++ `;
+								f(t);
+							};
+						};
+					};
+				};
+			};
+			case 3: {
+				var ` = t[0];
+				var ` = t[1];
+				{
+					var tl = `;
+					{
+						{
+							var ` = 0;
+							while (` < tl.length) {
+								var t = tl[`];
+								++ `;
+								f(t);
+							};
+						};
+					};
+				};
+			};
+			case 4: {
+				var ` = t[0];
+				var ` = t[1];
+				{
+					var args = `;
+					var ret = `;
+					{
+						{
+							var ` = 0;
+							while (` < args.length) {
+								var arg = args[`];
+								++ `;
+								f(arg.t);
+							};
+						};
+						f(ret);
+					};
+				};
+			};
+			case 5: {
+				var ` = t[0];
+				{
+					var an = `;
+					{
+						{
+							var ` = 0;
+							var ` = an.get().fields;
+							while (` < `.length) {
+								var field = `[`];
+								++ `;
+								f(field.type);
+							};
+						};
+					};
+				};
+			};
+			case 6: {
+				var ` = t[0];
+				{
+					var t2 = `;
+					{
+						if (t != t2) {
+							f(t2);
+						};
+					};
+				};
+			};
+			case 7: {
+				var ` = t[0];
+				{
+					var ft = `;
+					{
+						f(ft());
+					};
+				};
+			};
+			case 8: {
+				var ` = t[0];
+				var ` = t[1];
+				{
+					var tl = `;
+					{
+						{
+							var ` = 0;
+							while (` < tl.length) {
+								var t = tl[`];
+								++ `;
+								f(t);
+							};
+						};
+					};
+				};
+			};
+		};
+	}
+
+	public static function toString(t:haxe.macro.Type) {
+		return haxe.macro.Context.load("s_type", 1)(t);
+	}
+
+	public static function setVarName(t:haxe.macro.TVar, name:String) {
+		haxe.macro.Context.load("set_var_name", 2)(t, name);
+	}
+
+	public static function toModuleType(t:haxe.macro.Type) {
+		return haxe.macro.Context.load("type_to_module_type", 1)(t);
+	}
+
+	public static function fromModuleType(mt:haxe.macro.ModuleType) {
+		return haxe.macro.Context.load("module_type_to_type", 1)(mt);
+	}
+
+	@:value({ isStatic : false })
+	public static function findField(c:haxe.macro.ClassType, name:String, isStatic:Bool = false) {
+		var field = Lambda.find((if (isStatic) {
+			c.statics;
+		} else {
+			c.fields;
+		}).get(), function(field:haxe.macro.ClassField) return field.name == name);
+		return if (field != null) {
+			field;
+		} else {
+			if (c.superClass != null) {
+				haxe.macro.TypeTools.findField(c.superClass.t.get(), name, isStatic);
+			} else {
+				null;
+			};
+		};
+	}
+}

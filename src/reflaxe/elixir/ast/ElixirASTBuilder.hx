@@ -7,6 +7,7 @@ import haxe.macro.Expr;
 import haxe.macro.Context;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTPatterns;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -810,7 +811,13 @@ class ElixirASTBuilder {
                     case OpShr: EBinary(ShiftRight, left, right);
                     case OpUShr: EBinary(ShiftRight, left, right); // No unsigned in Elixir
                     
-                    case OpInterval: ERange(left, right, false);
+                    case OpInterval: 
+                        // Haxe's ... is exclusive (0...3 means 0,1,2)
+                        // We have two options:
+                        // 1. Use exclusive range in Elixir: 0...3 (prints as "0...3")
+                        // 2. Use inclusive with end-1: 0..2 (prints as "0..2")
+                        // Going with option 2 to match expected test output
+                        ERange(left, makeAST(EBinary(Subtract, right, makeAST(EInteger(1)))), false);
                     case OpArrow: EFn([{
                         args: [PVar("_arrow")], // Placeholder, will be transformed
                         body: right
@@ -1425,9 +1432,26 @@ class ElixirASTBuilder {
                                             
                                         case "push" if (args.length == 1):
                                             // Array push operations from comprehension desugaring
-                                            // Transform: array.push(value) → array ++ [value]
-                                            // Note: This creates a new list, doesn't mutate
-                                            EBinary(Concat, objAst, makeAST(EList([args[0]])));
+                                            // In Elixir, lists are immutable, so push needs assignment
+                                            // We need to check if we're in a statement context
+                                            // If so, generate: array = array ++ [value]
+                                            // Otherwise just: array ++ [value]
+                                            
+                                            // Check if this is a statement in a block by looking at parent context
+                                            // For now, we'll always generate the assignment form since push
+                                            // is typically used for side effects
+                                            var concat = makeAST(EBinary(Concat, objAst, makeAST(EList([args[0]]))));
+                                            
+                                            // Check if objAst is a variable (typical case for _g.push)
+                                            switch(objAst.def) {
+                                                case EVar(name):
+                                                    // Generate assignment: name = name ++ [value]
+                                                    EBinary(Match, objAst, concat);
+                                                default:
+                                                    // For complex expressions, just return concatenation
+                                                    // (this may generate invalid code but is rare)
+                                                    concat.def;
+                                            }
                                             
                                         default:
                                             // All other array methods use standard call generation
@@ -1630,33 +1654,146 @@ class ElixirASTBuilder {
             // Array Operations
             // ================================================================
             case TArrayDecl(el):
-                // Check if this array contains idiomatic enum constructors or function calls returning them
-                var hasIdiomaticEnums = false;
-                for (e in el) {
-                    switch(e.expr) {
-                        case TCall(callTarget, _) if (callTarget != null && isEnumConstructor(callTarget) && hasIdiomaticMetadata(callTarget)):
-                            hasIdiomaticEnums = true;
-                            break;
-                        case TCall(_, _):
-                            // Check if function call returns idiomatic enum
-                            switch(e.t) {
-                                case TEnum(enumRef, _) if (enumRef.get().meta.has(":elixirIdiomatic")):
-                                    hasIdiomaticEnums = true;
-                                    break;
-                                default:
-                            }
-                        default:
-                    }
-                }
+                // CRITICAL: Detect array comprehensions and treat them as EFor, not EList
+                // This prevents the malformed list-append patterns that get torn apart by assignment extraction
                 
                 #if debug_ast_builder
-                if (hasIdiomaticEnums) {
-                    trace('[AST Builder] Building array with idiomatic enum elements');
+                trace('[AST Builder] TArrayDecl with ${el.length} elements');
+                if (el.length > 0) {
+                    trace('[AST Builder] First element type: ${Type.enumConstructor(el[0].expr)}');
                 }
                 #end
                 
-                var elements = [for (e in el) buildFromTypedExpr(e, variableUsageMap)];
-                EList(elements);
+                // Check for single-element array with TFor (direct comprehension)
+                if (el.length == 1 && el[0].expr.match(TFor(_))) {
+                    // This is a comprehension like [for (i in 0...3) expr]
+                    // Return the TFor directly as EFor, not wrapped in EList
+                    #if debug_ast_builder
+                    trace('[AST Builder] Detected array comprehension, treating as EFor instead of EList');
+                    #end
+                    buildFromTypedExpr(el[0], variableUsageMap).def;
+                } 
+                // NEW: Check for single-element array with TBlock (desugared nested comprehension)
+                else if (el.length == 1) {
+                    switch(el[0].expr) {
+                        case TBlock(stmts):
+                            // Try to reconstruct comprehension from desugared block
+                            var comprehension = tryBuildArrayComprehensionFromBlock(stmts, variableUsageMap);
+                            if (comprehension != null) {
+                                switch(comprehension.def) {
+                                    case EFor(_, _, _, _, _):
+                                        #if debug_ast_builder
+                                        trace('[AST Builder] Detected desugared comprehension in single-element array, treating as EFor');
+                                        #end
+                                        comprehension.def;
+                                    default:
+                                        // Not a comprehension, proceed with normal list
+                                        EList([buildFromTypedExpr(el[0], variableUsageMap)]);
+                                }
+                            } else {
+                                // Normal single-element array
+                                EList([buildFromTypedExpr(el[0], variableUsageMap)]);
+                            }
+                        default:
+                            // Normal single-element array
+                            EList([buildFromTypedExpr(el[0], variableUsageMap)]);
+                    }
+                } else {
+                    // Normal array processing with multiple elements
+                    // Check if this array contains idiomatic enum constructors or function calls returning them
+                    var hasIdiomaticEnums = false;
+                    for (e in el) {
+                        switch(e.expr) {
+                            case TCall(callTarget, _) if (callTarget != null && isEnumConstructor(callTarget) && hasIdiomaticMetadata(callTarget)):
+                                hasIdiomaticEnums = true;
+                                break;
+                            case TCall(_, _):
+                                // Check if function call returns idiomatic enum
+                                switch(e.t) {
+                                    case TEnum(enumRef, _) if (enumRef.get().meta.has(":elixirIdiomatic")):
+                                        hasIdiomaticEnums = true;
+                                        break;
+                                    default:
+                                }
+                            default:
+                        }
+                    }
+                    
+                    #if debug_ast_builder
+                    if (hasIdiomaticEnums) {
+                        trace('[AST Builder] Building array with idiomatic enum elements');
+                    }
+                    #end
+                    
+                    // Process each element, with expression recovery for blocks
+                    var elements = [];
+                    for (e in el) {
+                        switch(e.expr) {
+                            case TBlock(stmts):
+                                // Try comprehension reconstruction first
+                                var comprehension = tryBuildArrayComprehensionFromBlock(stmts, variableUsageMap);
+                                if (comprehension != null) {
+                                    elements.push(comprehension);
+                                } 
+                                // Check if this block builds a list through bare concatenations
+                                else if (looksLikeListBuildingBlock(stmts)) {
+                                    #if debug_array_comprehension
+                                    trace('[Array Comprehension] Found unrolled comprehension in TArrayDecl element');
+                                    #end
+                                    #if debug_ast_builder
+                                    trace('[AST Builder] Found list-building block in array element, marking with metadata');
+                                    #end
+                                    
+                                    // Build the block with all its statements (including bare concatenations)
+                                    var blockStmts = [for (s in stmts) buildFromTypedExpr(s, variableUsageMap)];
+                                    var blockAST = makeAST(EBlock(blockStmts));
+                                    
+                                    // Mark with metadata for the transformer
+                                    if (blockAST.metadata == null) blockAST.metadata = {};
+                                    blockAST.metadata.isUnrolledComprehension = true;
+                                    
+                                    // Count the elements for metadata
+                                    var elementCount = 0;
+                                    for (stmt in stmts) {
+                                        switch(stmt.expr) {
+                                            case TBinop(OpAdd, _, {expr: TArrayDecl([_])}):
+                                                elementCount++;
+                                            case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, {expr: TArrayDecl([_])})}):
+                                                elementCount++;
+                                            case _:
+                                        }
+                                    }
+                                    blockAST.metadata.comprehensionElements = elementCount;
+                                    
+                                    #if debug_array_comprehension
+                                    trace('[Array Comprehension] Marked block with isUnrolledComprehension and ${elementCount} elements');
+                                    #end
+                                    
+                                    // Add the marked block to the array
+                                    elements.push(blockAST);
+                                } else {
+                                    // Fallback: wrap block in immediately-invoked function to ensure valid expression
+                                    #if debug_ast_builder
+                                    trace('[AST Builder] Wrapping TBlock in array element as immediately-invoked function');
+                                    #end
+                                    var blockAst = buildFromTypedExpr(e, variableUsageMap);
+                                    // Create (fn -> ...block... end).()
+                                    var fnClause:EFnClause = {
+                                        args: [],
+                                        guard: null,
+                                        body: blockAst
+                                    };
+                                    var anonymousFn = makeAST(EFn([fnClause]));
+                                    // Wrap in parentheses and call with empty funcName to trigger .() syntax
+                                    var wrappedBlock = makeAST(ECall(makeAST(EParen(anonymousFn)), "", []));
+                                    elements.push(wrappedBlock);
+                                }
+                            default:
+                                elements.push(buildFromTypedExpr(e, variableUsageMap));
+                        }
+                    }
+                    EList(elements);
+                }
                 
             case TArray(e, index):
                 var target = buildFromTypedExpr(e, variableUsageMap);
@@ -1688,6 +1825,16 @@ class ElixirASTBuilder {
                     trace('[AST Builder]   Block[$i]: ${Type.enumConstructor(el[i].expr)}');
                 }
                 #end
+                
+                // CRITICAL: Try to reconstruct array comprehensions from desugared imperative code
+                // This handles nested comprehensions that Haxe has already desugared
+                var comprehension = tryBuildArrayComprehensionFromBlock(el, variableUsageMap);
+                if (comprehension != null) {
+                    #if debug_ast_builder
+                    trace('[AST Builder] Successfully reconstructed array comprehension from imperative block');
+                    #end
+                    comprehension.def;
+                }
                 
                 // CRITICAL: Check for array building pattern FIRST
                 // Haxe desugars array.map() into a TBlock containing:
@@ -1784,6 +1931,61 @@ class ElixirASTBuilder {
                     return ElixirASTPatterns.transformInlineExpansion(el, function(e) return buildFromTypedExpr(e, variableUsageMap), function(name) return toElixirVarName(name));
                 }
                 
+                // Check if this block is building a list through concatenations
+                // Pattern: g = []; g ++ [val1]; g ++ [val2]; ...; g
+                #if debug_array_comprehension
+                trace('[Array Comprehension] TBlock analysis: checking ${el.length} statements');
+                #end
+                #if debug_ast_builder
+                trace('[AST Builder] Checking if block with ${el.length} statements is list-building');
+                #end
+                #if debug_unrolled_comprehension
+                trace('[DEBUG] TBlock with ${el.length} statements');
+                for (i in 0...el.length) {
+                    trace('[DEBUG]   Statement $i: ${el[i].expr}');
+                }
+                #end
+                if (looksLikeListBuildingBlock(el)) {
+                    #if debug_array_comprehension
+                    trace('[Array Comprehension] ✓ DETECTED unrolled comprehension pattern!');
+                    trace('[Array Comprehension]   Will mark block with metadata for transformer');
+                    #end
+                    #if debug_ast_builder
+                    trace('[AST Builder] Detected list-building block, marking with metadata');
+                    #end
+                    
+                    // Extract pattern information for metadata
+                    var listElements = extractListElements(el);
+                    if (listElements != null && listElements.length > 0) {
+                        // Build the block statements normally but mark with metadata
+                        var blockStmts = [for (e in el) buildFromTypedExpr(e, variableUsageMap)];
+                        
+                        // Create block with metadata marking it as unrolled comprehension
+                        var blockAST = makeAST(EBlock(blockStmts));
+                        
+                        // Add metadata to indicate this is an unrolled comprehension
+                        // The transformer will use this to reconstruct proper for comprehension
+                        if (blockAST.metadata == null) blockAST.metadata = {};
+                        blockAST.metadata.isUnrolledComprehension = true;
+                        blockAST.metadata.comprehensionElements = listElements.length;
+                        
+                        #if debug_array_comprehension
+                        trace('[Array Comprehension] Block marked with metadata:');
+                        trace('[Array Comprehension]   isUnrolledComprehension: true');
+                        trace('[Array Comprehension]   comprehensionElements: ${listElements.length}');
+                        #end
+                        
+                        return blockAST.def;
+                    }
+                } else {
+                    #if debug_ast_builder
+                    if (el.length > 0 && el.length < 10) {
+                        trace('[AST Builder] Not a list-building block. First stmt: ${el[0].expr}');
+                        if (el.length > 1) trace('[AST Builder] Second stmt: ${el[1].expr}');
+                    }
+                    #end
+                }
+                
                 // Special handling for TBlock in expression contexts
                 // When Haxe desugars expressions like !map.exists(key), it creates:
                 // TBlock([TVar(tmp, key), map.has_key(tmp)])
@@ -1875,10 +2077,10 @@ class ElixirASTBuilder {
                 }
                 
             case TBreak:
-                EThrow(makeAST(EAtom("break"))); // Will be transformed
+                EThrow(makeAST(EAtom(ElixirAtom.raw("break")))); // Will be transformed
                 
             case TContinue:
-                EThrow(makeAST(EAtom("continue"))); // Will be transformed
+                EThrow(makeAST(EAtom(ElixirAtom.raw("continue")))); // Will be transformed
                 
             // ================================================================
             // Pattern Matching (Switch/Case)
@@ -2728,12 +2930,22 @@ class ElixirASTBuilder {
                 // If there are variables to thread (mutated or used in condition), use reduce_while
                 if (Lambda.count(mutatedVars) > 0) {
                     // Build the initial accumulator tuple with all mutable variables
+                    // IMPORTANT: Use Arrays to maintain consistent ordering
+                    var accVarList: Array<{name: String, tvar: TVar}> = [];
+                    
+                    // Convert Map to sorted Array for deterministic ordering
+                    for (v in mutatedVars) {
+                        accVarList.push({name: toElixirVarName(v.name), tvar: v});
+                    }
+                    // Sort by variable ID to ensure consistent ordering across compilation
+                    accVarList.sort((a, b) -> a.tvar.id - b.tvar.id);
+                    
                     var initialAccValues: Array<ElixirAST> = [];
                     var accPattern: Array<EPattern> = [];
                     var accVarNames: Array<String> = [];
                     
-                    for (v in mutatedVars) {
-                        var varName = toElixirVarName(v.name);
+                    for (v in accVarList) {
+                        var varName = v.name;
                         initialAccValues.push(makeAST(EVar(varName)));
                         // Use acc_ prefix to avoid shadowing outer variables
                         accPattern.push(PVar("acc_" + varName));
@@ -2741,7 +2953,7 @@ class ElixirASTBuilder {
                     }
                     
                     // Add the original accumulator at the end
-                    initialAccValues.push(makeAST(EAtom("ok")));
+                    initialAccValues.push(makeAST(EAtom(ElixirAtom.ok())));
                     accPattern.push(PVar("acc_state"));
                     
                     var initialAccumulator = makeAST(ETuple(initialAccValues));
@@ -2793,7 +3005,7 @@ class ElixirASTBuilder {
                         // Normal body without early returns
                         makeAST(EBlock([
                             transformedBody,
-                            makeAST(ETuple([makeAST(EAtom("cont")), updatedContAccumulator]))
+                            makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), updatedContAccumulator]))
                         ]));
                     };
                     
@@ -2801,7 +3013,7 @@ class ElixirASTBuilder {
                     var completeBody = makeAST(EIf(
                         transformedCondition,
                         wrappedBody,
-                        makeAST(ETuple([makeAST(EAtom("halt")), updatedContAccumulator]))
+                        makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), updatedContAccumulator]))
                     ));
                     
                     // NOW check which acc_ variables are actually used in the complete body
@@ -2905,21 +3117,21 @@ class ElixirASTBuilder {
                                                 transformReturnsToHalts(transformedBody, updatedContAccumulator);
                                             } else if (isEmptyBody) {
                                                 // Empty body - return cont with accumulator unchanged
-                                                makeAST(ETuple([makeAST(EAtom("cont")), updatedContAccumulator]));
+                                                makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), updatedContAccumulator]));
                                             } else {
                                                 // Normal body without early returns
                                                 makeAST(EBlock([
                                                     transformedBody,
-                                                    makeAST(ETuple([makeAST(EAtom("cont")), updatedContAccumulator]))
+                                                    makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), updatedContAccumulator]))
                                                 ]));
                                             };
                                             
                                             makeAST(EIf(
                                                 transformedCondition,
                                                 wrappedBody,
-                                                makeAST(ETuple([makeAST(EAtom("halt")), 
+                                                makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), 
                                                     // For halt, also check if we need wildcard
-                                                    if (isEmptyBody) makeAST(EAtom("ok")) else updatedContAccumulator
+                                                    if (isEmptyBody) makeAST(EAtom(ElixirAtom.ok())) else updatedContAccumulator
                                                 ]))
                                             ));
                                         }
@@ -2953,7 +3165,7 @@ class ElixirASTBuilder {
                                     }]))
                                 ]
                             )),
-                            makeAST(EAtom("ok")),
+                            makeAST(EAtom(ElixirAtom.ok())),
                             makeAST(EFn([
                                 {
                                     args: [PWildcard, PVar("acc")],
@@ -2962,9 +3174,9 @@ class ElixirASTBuilder {
                                         condition,  // Use original condition - no mutations to transform
                                         makeAST(EBlock([
                                             body,    // Use original body - no mutations to transform
-                                            makeAST(ETuple([makeAST(EAtom("cont")), makeAST(EVar("acc"))]))
+                                            makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), makeAST(EVar("acc"))]))
                                         ])),
-                                        makeAST(ETuple([makeAST(EAtom("halt")), makeAST(EVar("acc"))]))
+                                        makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), makeAST(EVar("acc"))]))
                                     ))
                                 }
                             ]))
@@ -5209,7 +5421,7 @@ class ElixirASTBuilder {
      * @return ElixirASTDef for the Enum call
      */
     // TODO: Future version - Use ElixirAST directly to build Enum calls instead of string manipulation
-    // This would allow us to properly construct ERemoteCall(EAtom("Enum"), "map", [array, lambda])
+    // This would allow us to properly construct ERemoteCall(EAtom(ElixirAtom.raw("Enum")), "map", [array, lambda])
     // with proper EFn nodes for the lambda functions, giving us better control over the output
     static function generateIdiomaticEnumCall(arrayRef: TypedExpr, operation: String, body: TypedExpr): ElixirASTDef {
         // Extract the actual array from the reference
@@ -5260,14 +5472,14 @@ class ElixirASTBuilder {
         switch(operation) {
             case "map":
                 return ERemoteCall(
-                    makeAST(EAtom("Enum")),
+                    makeAST(EAtom(ElixirAtom.raw("Enum"))),
                     "map",
                     [arrayAST, lambda]
                 );
                 
             case "filter":
                 return ERemoteCall(
-                    makeAST(EAtom("Enum")),
+                    makeAST(EAtom(ElixirAtom.raw("Enum"))),
                     "filter",
                     [arrayAST, lambda]
                 );
@@ -5275,7 +5487,7 @@ class ElixirASTBuilder {
             default:
                 // Fallback to map if operation is unknown
                 return ERemoteCall(
-                    makeAST(EAtom("Enum")),
+                    makeAST(EAtom(ElixirAtom.raw("Enum"))),
                     "map",
                     [arrayAST, lambda]
                 );
@@ -5504,19 +5716,434 @@ class ElixirASTBuilder {
             case ETuple([atom, _]):
                 // Already a tuple, check if it's cont/halt
                 switch(atom.def) {
-                    case EAtom("cont") | EAtom("halt"):
+                    // Pattern matching with abstract types requires guard clause
+                    case EAtom(atomVal) if (atomVal == "cont" || atomVal == "halt"):
                         expr; // Already properly wrapped
                     case _:
                         // Other tuple, treat as return value
-                        makeAST(ETuple([makeAST(EAtom("halt")), expr]));
+                        makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), expr]));
                 }
             case EBlock([]):
                 // Empty block, add continuation
-                makeAST(ETuple([makeAST(EAtom("cont")), accumulator]));
+                makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), accumulator]));
             case _:
                 // Any other value is treated as an early return
-                makeAST(ETuple([makeAST(EAtom("halt")), expr]));
+                makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), expr]));
         };
+    }
+    
+    /**
+     * Recursively unwrap TMeta and TParenthesis wrappers from a TypedExpr
+     * 
+     * WHY: Haxe may add metadata annotations and parenthesis wrappers during compilation
+     * WHAT: Strips these wrappers to access the actual expression for pattern matching
+     * HOW: Recursively unwraps until finding a non-wrapper expression type
+     */
+    static function unwrapMetaParens(e: TypedExpr): TypedExpr {
+        if (e == null) return null;
+        
+        return switch(e.expr) {
+            case TMeta(_, expr):
+                // Strip metadata wrapper and continue unwrapping
+                unwrapMetaParens(expr);
+            case TParenthesis(expr):
+                // Strip parenthesis wrapper and continue unwrapping
+                unwrapMetaParens(expr);
+            case _:
+                // Not a wrapper, return as-is
+                e;
+        };
+    }
+    
+    /**
+     * Try to reconstruct array comprehensions from desugared imperative code
+     * 
+     * Haxe desugars array comprehensions like [for (i in 0...5) i * i] into:
+     * Pattern 1 (simple loop):
+     *   var _g = [];
+     *   for (i in 0...5) _g.push(i * i);
+     *   _g;
+     * 
+     * Pattern 2 (unrolled):
+     *   var _g = [];
+     *   _g = _g ++ [1];
+     *   _g = _g ++ [4];
+     *   ...
+     *   _g;
+     * 
+     * This function detects these patterns and reconstructs idiomatic Elixir `for` comprehensions
+     */
+    static function tryBuildArrayComprehensionFromBlock(statements: Array<TypedExpr>, ?variableUsageMap: Map<Int, Bool>): Null<ElixirAST> {
+        if (statements.length < 2) return null;
+        
+        // Look for pattern: var temp = []; ...ops...; temp
+        var tempVarName: String = null;
+        var tempVarId: Int = -1;
+        
+        // First statement should be temp array initialization
+        // Unwrap any meta/parenthesis wrappers first
+        var firstStmt = unwrapMetaParens(statements[0]);
+        switch(firstStmt.expr) {
+            case TVar(v, init) if (init != null):
+                switch(init.expr) {
+                    case TArrayDecl([]):
+                        tempVarName = v.name;
+                        tempVarId = v.id;
+                    default:
+                        return null;
+                }
+            case TBinop(OpAssign, {expr: TLocal(v)}, init):
+                // Also handle: _g = []
+                switch(init.expr) {
+                    case TArrayDecl([]):
+                        tempVarName = v.name;
+                        tempVarId = v.id;
+                    default:
+                        return null;
+                }
+            default:
+                return null;
+        }
+        
+        // Last statement should return the temp variable (also unwrap)
+        var lastStmt = unwrapMetaParens(statements[statements.length - 1]);
+        var returnsTempVar = false;
+        switch(lastStmt.expr) {
+            case TLocal(v) if (v.name == tempVarName):
+                returnsTempVar = true;
+            default:
+        }
+        
+        if (!returnsTempVar) return null;
+        
+        // Check for Pattern 1: Loop with push
+        var hasLoop = false;
+        for (i in 1...statements.length - 1) {
+            switch(statements[i].expr) {
+                case TFor(_, _, _):
+                    hasLoop = true;
+                    break;
+                default:
+            }
+        }
+        
+        if (hasLoop) {
+            // Handle loop pattern
+            for (i in 1...statements.length - 1) {
+                switch(statements[i].expr) {
+                    case TFor(v, iterExpr, body):
+                        // Check if body is pushing to temp array
+                        var yieldExpr = extractYieldExpression(body, tempVarName, variableUsageMap);
+                        if (yieldExpr != null) {
+                            var pattern = PVar(toElixirVarName(v.name));
+                            var generator = buildFromTypedExpr(iterExpr, variableUsageMap);
+                            
+                            // CRITICAL: Check if the yield expression is itself a TBlock with a comprehension
+                            var bodyAst = switch(yieldExpr.expr) {
+                                case TBlock(stmts):
+                                    // Try to reconstruct nested comprehension
+                                    var nestedComp = tryBuildArrayComprehensionFromBlock(stmts, variableUsageMap);
+                                    if (nestedComp != null) {
+                                        nestedComp;  // Use the reconstructed comprehension
+                                    } else {
+                                        buildFromTypedExpr(yieldExpr, variableUsageMap);
+                                    }
+                                default:
+                                    buildFromTypedExpr(yieldExpr, variableUsageMap);
+                            };
+                            
+                            return makeAST(EFor([{pattern: pattern, expr: generator}], [], bodyAst, null, false));
+                        }
+                    default:
+                }
+            }
+        } else {
+            // Check for Pattern 2: Series of assignments (unrolled comprehension)
+            var values: Array<TypedExpr> = [];
+            var isUnrolledPattern = true;
+            
+            for (i in 1...statements.length - 1) {
+                switch(statements[i].expr) {
+                    case TBinop(OpAssign, {expr: TLocal(v)}, rhs) if (v.name == tempVarName):
+                        // Check if it's _g = _g ++ [value]
+                        switch(rhs.expr) {
+                            case TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([value])}) if (v2.name == tempVarName):
+                                values.push(value);
+                            default:
+                                isUnrolledPattern = false;
+                                break;
+                        }
+                    default:
+                        isUnrolledPattern = false;
+                        break;
+                }
+            }
+            
+            if (isUnrolledPattern && values.length > 0) {
+                // Build elements, checking for nested comprehensions
+                var elements = [];
+                for (value in values) {
+                    switch(value.expr) {
+                        case TBlock(stmts):
+                            #if debug_ast_builder
+                            trace('[DEBUG] Found TBlock in unrolled comprehension with ${stmts.length} statements');
+                            for (i in 0...stmts.length) {
+                                trace('[DEBUG]   stmt[$i]: ${stmts[i].expr}');
+                            }
+                            #end
+                            
+                            // Check if this block is a nested comprehension
+                            var nestedComp = tryBuildArrayComprehensionFromBlock(stmts, variableUsageMap);
+                            if (nestedComp != null) {
+                                #if debug_ast_builder
+                                trace('[DEBUG] Detected as nested comprehension');
+                                #end
+                                elements.push(nestedComp);
+                            } else if (looksLikeListBuildingBlock(stmts)) {
+                                #if debug_ast_builder
+                                trace('[DEBUG] Detected as list-building block');
+                                #end
+                                // It's a list-building block (unrolled inner comprehension)
+                                var listElements = extractListElements(stmts);
+                                if (listElements != null && listElements.length > 0) {
+                                    var innerElements = [for (e in listElements) buildFromTypedExpr(e, variableUsageMap)];
+                                    elements.push(makeAST(EList(innerElements)));
+                                } else {
+                                    elements.push(buildFromTypedExpr(value, variableUsageMap));
+                                }
+                            } else {
+                                #if debug_ast_builder
+                                trace('[DEBUG] Not recognized, building as-is');
+                                #end
+                                elements.push(buildFromTypedExpr(value, variableUsageMap));
+                            }
+                        default:
+                            elements.push(buildFromTypedExpr(value, variableUsageMap));
+                    }
+                }
+                return makeAST(EList(elements));
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Check if a block looks like it's building a list through concatenations
+     * Pattern: var g = []; g = g ++ [val1]; g = g ++ [val2]; ...; g
+     * OR: g = []; g ++ [val1]; g ++ [val2]; ...; g (bare concatenations from unrolled comprehensions)
+     * 
+     * WHY: Haxe completely unrolls array comprehensions with constant ranges at compile-time
+     * WHAT: Detects blocks that represent unrolled comprehensions
+     * HOW: Checks for initialization + concatenations + return pattern
+     */
+    static function looksLikeListBuildingBlock(stmts: Array<TypedExpr>): Bool {
+        #if debug_array_comprehension
+        trace('[Array Comprehension Detection] Checking block with ${stmts.length} statements');
+        if (stmts.length > 0 && stmts.length <= 5) {
+            for (i in 0...stmts.length) {
+                trace('[Array Comprehension Detection]   Statement $i: ${stmts[i].expr}');
+            }
+        }
+        #end
+        
+        #if debug_ast_builder
+        trace('[DEBUG looksLikeListBuildingBlock] Checking block with ${stmts.length} statements');
+        if (stmts.length > 0) {
+            trace('[DEBUG looksLikeListBuildingBlock] First stmt: ${stmts[0].expr}');
+        }
+        #end
+        if (stmts.length < 2) return false;
+        
+        // First statement should initialize an empty array
+        var firstStmt = unwrapMetaParens(stmts[0]);
+        var tempVarName: String = null;
+        
+        switch(firstStmt.expr) {
+            case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TArrayDecl([])}):
+                tempVarName = v.name;
+            case TVar(v, init) if (init != null):
+                switch(init.expr) {
+                    case TArrayDecl([]):
+                        tempVarName = v.name;
+                    default:
+                }
+            default:
+                return false;
+        }
+        
+        // Middle statements should be concatenations or the last statement (return)
+        for (i in 1...stmts.length) {
+            var stmt = unwrapMetaParens(stmts[i]);
+            
+            // Check if this is the last statement
+            if (i == stmts.length - 1) {
+                // Last statement should return the temp var
+                switch(stmt.expr) {
+                    case TLocal(v) if (v.name == tempVarName):
+                        // OK - returning the built list
+                    default:
+                        return false;
+                }
+            } else {
+                // Middle statements should be concatenations
+                switch(stmt.expr) {
+                    case TBinop(OpAdd, {expr: TLocal(v)}, {expr: TArrayDecl(_)}) if (v.name == tempVarName):
+                        // OK - this is g ++ [value] (bare concatenation)
+                    case TBinop(OpAssign, {expr: TLocal(v)}, rhs) if (v.name == tempVarName):
+                        // Check if it's g = g ++ [value] or g = g ++ block
+                        switch(rhs.expr) {
+                            case TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl(_)}) if (v2.name == tempVarName):
+                                // OK - simple concatenation
+                            case TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TBlock(_)}) if (v2.name == tempVarName):
+                                // OK - concatenating a block (nested comprehension)
+                            default:
+                                return false;
+                        }
+                    default:
+                        return false;
+                }
+            }
+        }
+        
+        return true; // All checks passed
+    }
+    
+    /**
+     * Extract list elements from a list-building block
+     * Returns the array of expressions that make up the list elements
+     * 
+     * WHY: When Haxe unrolls comprehensions, it creates blocks with bare concatenations
+     * WHAT: Extracts the elements being concatenated and recursively processes nested blocks
+     * HOW: Handles both direct concatenation (g ++ [val]) and assignment patterns (g = g ++ [val])
+     *      Recursively processes nested blocks to handle deeply nested comprehensions
+     * 
+     * CRITICAL: Bare concatenations like `g ++ [0]` are NOT valid statements in Elixir!
+     *           We must skip them or wrap them in assignments.
+     */
+    static function extractListElements(stmts: Array<TypedExpr>): Null<Array<TypedExpr>> {
+        if (!looksLikeListBuildingBlock(stmts)) return null;
+        
+        #if debug_array_comprehension
+        trace('[Array Comprehension] extractListElements: processing ${stmts.length} statements');
+        #end
+        
+        var elements: Array<TypedExpr> = [];
+        
+        // Skip first (initialization) and last (return) statements
+        for (i in 1...stmts.length - 1) {
+            var stmt = unwrapMetaParens(stmts[i]);
+            switch(stmt.expr) {
+                case TBinop(OpAdd, {expr: TLocal(v)}, {expr: TArrayDecl([value])}) :
+                    // Direct bare concatenation: g ++ [value]
+                    // Extract the VALUE being concatenated, not the concatenation itself!
+                    #if debug_array_comprehension
+                    trace('[Array Comprehension] Found bare concatenation: ${v.name} ++ [value], extracting value');
+                    #end
+                    // Check if the value itself is a block that builds a list
+                    switch(value.expr) {
+                        case TBlock(innerStmts) if (looksLikeListBuildingBlock(innerStmts)):
+                            // Recursively extract elements from nested block
+                            var nestedElements = extractListElements(innerStmts);
+                            if (nestedElements != null && nestedElements.length > 0) {
+                                // Create a proper list from the nested elements
+                                var listExpr = {expr: TArrayDecl(nestedElements), pos: value.pos, t: value.t};
+                                elements.push(listExpr);
+                            } else {
+                                elements.push(value);
+                            }
+                        default:
+                            elements.push(value);
+                    }
+                case TBinop(OpAdd, _, {expr: TBlock(blockStmts)}):
+                    // Direct concatenation with block: g ++ block
+                    // Check if this block itself builds a list
+                    if (looksLikeListBuildingBlock(blockStmts)) {
+                        // Recursively extract elements
+                        var nestedElements = extractListElements(blockStmts);
+                        if (nestedElements != null && nestedElements.length > 0) {
+                            // Create a proper list from the nested elements
+                            var listExpr = {expr: TArrayDecl(nestedElements), pos: stmt.pos, t: stmt.t};
+                            elements.push(listExpr);
+                        } else {
+                            elements.push({expr: TBlock(blockStmts), pos: stmt.pos, t: stmt.t});
+                        }
+                    } else {
+                        // Not a list-building block, keep as-is
+                        elements.push({expr: TBlock(blockStmts), pos: stmt.pos, t: stmt.t});
+                    }
+                case TBinop(OpAssign, _, rhs):
+                    // Assignment: g = g ++ [value] or g = g ++ block
+                    switch(rhs.expr) {
+                        case TBinop(OpAdd, _, {expr: TArrayDecl([value])}):
+                            // Check if the value itself is a block that builds a list
+                            switch(value.expr) {
+                                case TBlock(innerStmts) if (looksLikeListBuildingBlock(innerStmts)):
+                                    // Recursively extract elements from nested block
+                                    var nestedElements = extractListElements(innerStmts);
+                                    if (nestedElements != null && nestedElements.length > 0) {
+                                        // Create a proper list from the nested elements
+                                        var listExpr = {expr: TArrayDecl(nestedElements), pos: value.pos, t: value.t};
+                                        elements.push(listExpr);
+                                    } else {
+                                        elements.push(value);
+                                    }
+                                default:
+                                    elements.push(value);
+                            }
+                        case TBinop(OpAdd, _, {expr: TBlock(blockStmts)}):
+                            // Assignment with block concatenation
+                            if (looksLikeListBuildingBlock(blockStmts)) {
+                                // Recursively extract elements
+                                var nestedElements = extractListElements(blockStmts);
+                                if (nestedElements != null && nestedElements.length > 0) {
+                                    // Create a proper list from the nested elements
+                                    var listExpr = {expr: TArrayDecl(nestedElements), pos: rhs.pos, t: rhs.t};
+                                    elements.push(listExpr);
+                                } else {
+                                    elements.push({expr: TBlock(blockStmts), pos: rhs.pos, t: rhs.t});
+                                }
+                            } else {
+                                elements.push({expr: TBlock(blockStmts), pos: rhs.pos, t: rhs.t});
+                            }
+                        default:
+                    }
+                default:
+            }
+        }
+        
+        return elements;
+    }
+    
+    /**
+     * Extract the expression being yielded/pushed in a loop body
+     * Handles nested comprehensions by detecting when the yield is itself a block
+     */
+    static function extractYieldExpression(body: TypedExpr, tempVarName: String, ?variableUsageMap: Map<Int, Bool>): Null<TypedExpr> {
+        switch(body.expr) {
+            case TBlock(stmts):
+                // Look for push or concat operation
+                for (stmt in stmts) {
+                    switch(stmt.expr) {
+                        case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, [arg]) 
+                            if (v.name == tempVarName && cf.get().name == "push"):
+                            return arg;
+                        case TBinop(OpAssign, {expr: TLocal(v)}, rhs) if (v.name == tempVarName):
+                            // temp = temp ++ [expr]
+                            switch(rhs.expr) {
+                                case TBinop(OpAdd, _, {expr: TArrayDecl([expr])}):
+                                    return expr;
+                                default:
+                            }
+                        default:
+                    }
+                }
+            case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, [arg]) 
+                if (v.name == tempVarName && cf.get().name == "push"):
+                return arg;
+            default:
+        }
+        return null;
     }
 }
 

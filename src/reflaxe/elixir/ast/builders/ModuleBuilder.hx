@@ -12,6 +12,7 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.NameUtils;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 
 /**
  * ModuleBuilder: Responsible for building Elixir module AST nodes from Haxe classes
@@ -832,7 +833,7 @@ class ModuleBuilder {
             var options = [];
             if (metadata.jsonModule != null) {
                 // Create a keyword list element for json: Jason
-                var jsonAtom = makeAST(EAtom("json"));
+                var jsonAtom = makeAST(EAtom(ElixirAtom.raw("json")));
                 var jsonModule = makeAST(EVar(metadata.jsonModule));
                 var keywordElement = makeAST(ETuple([jsonAtom, jsonModule]));
                 options.push(keywordElement);

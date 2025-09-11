@@ -10,6 +10,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.EKeywordPair;
 import reflaxe.elixir.ast.ElixirAST.EMapPair;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 
 /**
  * AnnotationTransforms: AST transformation passes for annotation-based modules
@@ -115,7 +116,7 @@ class AnnotationTransforms {
         
         // @session_options configuration
         var sessionOptions = makeAST(EKeywordList([
-            {key: "store", value: makeAST(EAtom("cookie"))},
+            {key: "store", value: makeAST(EAtom(ElixirAtom.raw("cookie")))},
             {key: "key", value: makeAST(EString('_${appName}_key'))},
             {key: "signing_salt", value: makeAST(EString('generated_salt_${Std.int(Math.random() * 1000000)}'))},
             {key: "same_site", value: makeAST(EString("Lax"))}
@@ -172,8 +173,8 @@ class AnnotationTransforms {
         
         var telemetryOptions = makeAST(EKeywordList([
             {key: "event_prefix", value: makeAST(EList([
-                makeAST(EAtom("phoenix")),
-                makeAST(EAtom("endpoint"))
+                makeAST(EAtom(ElixirAtom.raw("phoenix"))),
+                makeAST(EAtom(ElixirAtom.raw("endpoint")))
             ]))}
         ]));
         statements.push(makeAST(ECall(null, "plug", [
@@ -184,9 +185,9 @@ class AnnotationTransforms {
         // plug Plug.Parsers
         var parsersOptions = makeAST(EKeywordList([
             {key: "parsers", value: makeAST(EList([
-                makeAST(EAtom("urlencoded")),
-                makeAST(EAtom("multipart")),
-                makeAST(EAtom("json"))
+                makeAST(EAtom(ElixirAtom.raw("urlencoded"))),
+                makeAST(EAtom(ElixirAtom.raw("multipart"))),
+                makeAST(EAtom(ElixirAtom.raw("json")))
             ]))},
             {key: "pass", value: makeAST(EList([makeAST(EString("*/*"))]))},
             {key: "json_decoder", value: makeAST(ERemoteCall(
@@ -268,7 +269,7 @@ class AnnotationTransforms {
         
         // use TodoAppWeb, :live_view
         statements.push(makeAST(EUse(appNamePart + "Web", [
-            makeAST(EAtom("live_view"))
+            makeAST(EAtom(ElixirAtom.raw("live_view")))
         ])));
         
         // Add existing functions from the body
@@ -478,7 +479,7 @@ class AnnotationTransforms {
         // Add: use AppNameWeb, :controller
         statements.push(makeAST(EUse(
             webModuleName,
-            [makeAST(EAtom("controller"))]
+            [makeAST(EAtom(ElixirAtom.raw("controller")))]
         )));
         
         // Add the existing body
@@ -556,21 +557,20 @@ class AnnotationTransforms {
             for (f in meta.schemaFields) {
                 // Skip primary key id (Ecto adds by default)
                 if (f.name == "id") continue;
-                var snake = reflaxe.elixir.ast.NameUtils.toSnakeCase(f.name);
                 switch (f.type) {
                     case "Int":
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("integer")) ])));
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("integer"))) ])));
                     case "Bool":
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("boolean")) ])));
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("boolean"))) ])));
                     case "NaiveDateTime":
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("naive_datetime")) ])));
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("naive_datetime"))) ])));
                     case "Float":
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("float")) ])));
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("float"))) ])));
                     case "Array<String>":
                         // Use {:array, :string}
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(ETuple([makeAST(EAtom("array")), makeAST(EAtom("string"))])) ])));
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("array"))), makeAST(EAtom(ElixirAtom.raw("string")))])) ])));
                     case _:
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(snake)), makeAST(EAtom("string")) ])));
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("string"))) ])));
                 }
             }
         }
@@ -859,7 +859,7 @@ class AnnotationTransforms {
                 makeAST(EMatch(
                     EPattern.PVar("opts"),
                     makeAST(EKeywordList([
-                        {key: "strategy", value: makeAST(EAtom("one_for_one"))},
+                        {key: "strategy", value: makeAST(EAtom(ElixirAtom.raw("one_for_one")))},
                         {key: "name", value: makeAST(EVar(moduleName + ".Supervisor"))}
                     ]))
                 )),
@@ -979,11 +979,11 @@ class AnnotationTransforms {
         var controllerBody = makeAST(EQuote([], makeAST(EBlock([
             makeAST(EUse("Phoenix.Controller", [
                 makeAST(EKeywordList([
-                    {key: "formats", value: makeAST(EList([makeAST(EAtom("html")), makeAST(EAtom("json"))]))},
+                    {key: "formats", value: makeAST(EList([makeAST(EAtom(ElixirAtom.raw("html"))), makeAST(EAtom(ElixirAtom.raw("json")))]))},
                     {key: "layouts", value: makeAST(EKeywordList([
                         {key: "html", value: makeAST(ETuple([
                             makeAST(EVar(moduleName + ".Layouts")),
-                            makeAST(EAtom("app"))
+                            makeAST(EAtom(ElixirAtom.raw("app")))
                         ]))}
                     ]))}
                 ]))
@@ -1005,7 +1005,7 @@ class AnnotationTransforms {
                 makeAST(EKeywordList([
                     {key: "layout", value: makeAST(ETuple([
                         makeAST(EVar(moduleName + ".Layouts")),
-                        makeAST(EAtom("app"))
+                        makeAST(EAtom(ElixirAtom.raw("app")))
                     ]))}
                 ]))
             ])),
@@ -1255,7 +1255,7 @@ class AnnotationTransforms {
             // Create keyword list [async: true] for ExUnit.Case options
             statements.push(makeAST(EUse("ExUnit.Case", [
                 makeAST(EKeywordList([
-                    {key: "async", value: makeAST(EAtom("true"))}
+                    {key: "async", value: makeAST(EAtom(ElixirAtom.true_()))}
                 ]))
             ])));
         } else {
@@ -1345,7 +1345,7 @@ class AnnotationTransforms {
                                             [makeAST(EFn([{args: [], guard: null, body: body}]))]
                                         )
                                     ),
-                                    makeAST(EAtom("ok"))
+                                    makeAST(EAtom(ElixirAtom.ok()))
                                 ])
                             );
                             var teardownBlock = makeAST(
@@ -1368,7 +1368,7 @@ class AnnotationTransforms {
                                             [makeAST(EFn([{args: [], guard: null, body: body}]))]
                                         )
                                     ),
-                                    makeAST(EAtom("ok"))
+                                    makeAST(EAtom(ElixirAtom.ok()))
                                 ])
                             );
                             var teardownAllBlock = makeAST(

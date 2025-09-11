@@ -1,0 +1,6 @@
+@:flatEnum
+enum reflaxe.elixir.ast.builders.BootstrapStrategy {
+	Inline;
+	InlineDeterministic;
+	External;
+}

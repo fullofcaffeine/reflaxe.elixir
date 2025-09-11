@@ -1,0 +1,146 @@
+@:used
+class haxe.ds.BalancedTree<K, V> implements haxe.IMap<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V> {
+
+	public function new() {}
+
+	var root:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>;
+
+	public function set(key:haxe.ds.BalancedTree.K, value:haxe.ds.BalancedTree.V) {
+		this.root = this.setLoop(key, value, this.root);
+	}
+
+	public function get(key:haxe.ds.BalancedTree.K) {
+		var node = this.root;
+		while ((node != null)) {
+			var c = this.compare(key, node.key);
+			if ((c == 0)) return node.value;
+			if ((c < 0)) node = node.left else node = node.right;
+		};
+		return null;
+	}
+
+	public function remove(key:haxe.ds.BalancedTree.K) {
+		var result = this.removeLoop(key, this.root);
+		if ((result != null)) {
+			this.root = result.node;
+			return result.found;
+		};
+		return false;
+	}
+
+	public function exists(key:haxe.ds.BalancedTree.K) {
+		var node = this.root;
+		while ((node != null)) {
+			var c = this.compare(key, node.key);
+			if ((c == 0)) return true else if ((c < 0)) node = node.left else node = node.right;
+		};
+		return false;
+	}
+
+	public function iterator() {
+		var ret = [];
+		this.iteratorLoop(this.root, ret);
+		return new haxe.iterators.ArrayIterator(ret);
+	}
+
+	@:runtime
+	public inline function keyValueIterator() {
+		return new haxe.iterators.MapKeyValueIterator(this);
+	}
+
+	public function keys() {
+		var ret = [];
+		this.keysLoop(this.root, ret);
+		return new haxe.iterators.ArrayIterator(ret);
+	}
+
+	public function copy() {
+		var copied = new haxe.ds.BalancedTree();
+		copied.root = this.root;
+		return copied;
+	}
+
+	function setLoop(k:haxe.ds.BalancedTree.K, v:haxe.ds.BalancedTree.V, node:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) {
+		if ((node == null)) return new haxe.ds.TreeNode(null, k, v, null, -1);
+		var c = this.compare(k, node.key);
+		return if ((c == 0)) new haxe.ds.TreeNode(node.left, k, v, node.right, node.get_height()) else if ((c < 0)) {
+			var nl = this.setLoop(k, v, node.left);
+			this.balance(nl, node.key, node.value, node.right);
+		} else {
+			var nr = this.setLoop(k, v, node.right);
+			this.balance(node.left, node.key, node.value, nr);
+		};
+	}
+
+	function removeLoop(k:haxe.ds.BalancedTree.K, node:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) {
+		if ((node == null)) return {node : null, found : false};
+		var c = this.compare(k, node.key);
+		if ((c == 0)) return {node : this.merge(node.left, node.right), found : true} else if ((c < 0)) {
+			var result = this.removeLoop(k, node.left);
+			if ((result != null && result.found)) return {node : this.balance(result.node, node.key, node.value, node.right), found : true};
+			return {node : node, found : false};
+		} else {
+			var result = this.removeLoop(k, node.right);
+			if ((result != null && result.found)) return {node : this.balance(node.left, node.key, node.value, result.node), found : true};
+			return {node : node, found : false};
+		};
+	}
+
+	function iteratorLoop(node:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc:Array<haxe.ds.BalancedTree.V>) {
+		if ((node != null)) {
+			this.iteratorLoop(node.left, acc);
+			acc.push(node.value);
+			this.iteratorLoop(node.right, acc);
+		};
+	}
+
+	function keysLoop(node:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, acc:Array<haxe.ds.BalancedTree.K>) {
+		if ((node != null)) {
+			this.keysLoop(node.left, acc);
+			acc.push(node.key);
+			this.keysLoop(node.right, acc);
+		};
+	}
+
+	function merge(t1:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, t2:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) {
+		if ((t1 == null)) return t2;
+		if ((t2 == null)) return t1;
+		var t = this.minBinding(t2);
+		if ((t == null)) return t1;
+		return this.balance(t1, t.key, t.value, this.removeMinBinding(t2));
+	}
+
+	function minBinding(t:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) {
+		if ((t == null)) return null;
+		if ((t.left == null)) return t;
+		return this.minBinding(t.left);
+	}
+
+	function removeMinBinding(t:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) {
+		if ((t == null)) return null;
+		if ((t.left == null)) return t.right;
+		return this.balance(this.removeMinBinding(t.left), t.key, t.value, t.right);
+	}
+
+	function balance(l:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>, k:haxe.ds.BalancedTree.K, v:haxe.ds.BalancedTree.V, r:haxe.ds.TreeNode<haxe.ds.BalancedTree.K, haxe.ds.BalancedTree.V>) {
+		var hl = l.get_height();
+		var hr = r.get_height();
+		return if ((hl > hr + 2)) {
+			if ((l.left.get_height() >= l.right.get_height())) new haxe.ds.TreeNode(l.left, l.key, l.value, new haxe.ds.TreeNode(l.right, k, v, r, -1), -1) else new haxe.ds.TreeNode(new haxe.ds.TreeNode(l.left, l.key, l.value, l.right.left, -1), l.right.key, l.right.value, new haxe.ds.TreeNode(l.right.right, k, v, r, -1), -1);
+		} else if ((hr > hl + 2)) {
+			if ((r.right.get_height() > r.left.get_height())) new haxe.ds.TreeNode(new haxe.ds.TreeNode(l, k, v, r.left, -1), r.key, r.value, r.right, -1) else new haxe.ds.TreeNode(new haxe.ds.TreeNode(l, k, v, r.left.left, -1), r.left.key, r.left.value, new haxe.ds.TreeNode(r.left.right, r.key, r.value, r.right, -1), -1);
+		} else new haxe.ds.TreeNode(l, k, v, r, (if ((hl > hr)) hl else hr) + 1);
+	}
+
+	function compare(k1:haxe.ds.BalancedTree.K, k2:haxe.ds.BalancedTree.K) {
+		return Reflect.compare(k1, k2);
+	}
+
+	public function toString() {
+		return if ((this.root == null)) "[]" else "[" + this.root.toString() + "]";
+	}
+
+	public function clear() {
+		this.root = null;
+	}
+}

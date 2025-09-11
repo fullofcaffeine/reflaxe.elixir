@@ -1,0 +1,38 @@
+class haxe.iterators.StringIteratorUnicode {
+
+	public inline function new(s:String) {
+		this.offset = 0;
+		this.s = s;
+	}
+
+	@:value(0)
+	var offset:Int;
+
+	var s:String;
+
+	@:maybeUsed
+	public inline function hasNext() {
+		return this.offset < this.s.length;
+	}
+
+	@:maybeUsed @:access(StringTools)
+	public inline function next() {
+		var c = {
+			var s = this.s;
+			var index = this.offset ++;
+			var c = StringTools.fastCodeAt(s, index);
+			if (c >= 55296 && c <= 56319) {
+				c = ((c - 55232) << 10) | (StringTools.fastCodeAt(s, index + 1) & 1023);
+			};
+			c;
+		};
+		if (c >= 65536) {
+			this.offset ++;
+		};
+		return c;
+	}
+
+	public static inline function unicodeIterator(s:String) {
+		return new haxe.iterators.StringIteratorUnicode(s);
+	}
+}

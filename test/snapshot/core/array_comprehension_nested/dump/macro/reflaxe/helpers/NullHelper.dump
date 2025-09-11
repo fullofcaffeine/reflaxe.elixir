@@ -1,0 +1,26 @@
+class reflaxe.helpers.NullHelper {
+
+	public static inline function or<T>(maybe:Null<or.T>, defaultVal:or.T) {
+		return if (maybe != null) {
+			maybe;
+		} else {
+			defaultVal;
+		};
+	}
+
+	public static inline function trustMe<T>(maybe:Null<trustMe.T>) {
+		return cast {
+			if (maybe == null) {
+				throw "Trusted on null value.";
+			};
+			@:nullSafety(Off) maybe;
+		};
+	}
+
+	public static inline function orError<T>(maybe:Null<orError.T>, errorString:String) {
+		if (maybe == null) {
+			throw errorString;
+		};
+		@:nullSafety(Off) return maybe;
+	}
+}
