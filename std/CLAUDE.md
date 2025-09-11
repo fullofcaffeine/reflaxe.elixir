@@ -147,11 +147,42 @@ abstract Result<T,E> {
 ## 🎯 Standard Library Development Rules ⚠️ CRITICAL
 
 ### ❌ NEVER Do This:
+- **Create Std.hx, Log.hx or other core Haxe classes in std/** - These are handled by the compiler
 - Define test infrastructure types in application code
 - Create duplicated functionality across different std modules
 - Use Dynamic for standard library APIs
 - Implement escape hatches in standard library
 - Break type safety for convenience
+
+### ⚠️ CRITICAL: Core Haxe Classes Rule
+**NEVER create these files in std/ directory:**
+- `Std.hx` - Core Haxe class handled by compiler
+- `Log.hx` - Trace/logging handled by compiler transformation
+- `Math.hx` - Core math functions handled by compiler
+- Any other core Haxe standard library class
+
+**How Core Classes Are Actually Generated:**
+The compiler automatically generates runtime support modules when they're used:
+- **`Std` module** → Generated as `std.ex` in output with methods like `string()`, `int()`, `parseFloat()`, etc.
+- **`Log` module** → Generated as `haxe/log.ex` with `trace()` and `formatOutput()` methods
+- **Usage tracking** → The compiler tracks dependencies via `trackDependency()` calls
+- **Automatic output** → When code uses `trace()` or `Std.string()`, the compiler generates the needed modules
+
+**Example Generated Structure:**
+```
+out/
+├── main.ex           # Your compiled code
+├── std.ex            # Auto-generated Std module
+├── haxe/
+│   └── log.ex        # Auto-generated Log module for trace support
+└── other_modules.ex  # Other dependencies
+```
+
+**Instead of Creating Core Classes:**
+- Use `.cross.hx` extension for cross-platform utility classes (e.g., `MapTools.cross.hx`)
+- Core functionality like `trace()` is transformed by the compiler directly
+- The compiler handles `Std.string()`, `Std.int()` etc. through its own mechanisms
+- These generated modules are NOT part of the Haxe standard library - they're runtime support
 
 ### ✅ ALWAYS Do This:
 - Define test types in `/std/phoenix/test/` and `/std/ecto/test/`
