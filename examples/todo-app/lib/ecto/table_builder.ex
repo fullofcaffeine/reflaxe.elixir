@@ -24,7 +24,7 @@ defmodule TableBuilder do
     if (options != nil) do
       column_options = %{:nullable => false, :on_delete => options.on_delete, :on_update => options.on_update}
     end
-    struct = struct.add_column(column_name, {:References, referenced_table}, column_options)
+    struct = struct.add_column(column_name, {:references, referenced_table}, column_options)
     struct
   end
   def add_foreign_key(struct, column_name, referenced_table, options) do

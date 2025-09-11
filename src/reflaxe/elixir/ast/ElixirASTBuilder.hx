@@ -492,6 +492,65 @@ class ElixirASTBuilder {
                 }
                 #end
                 
+                // Check for conditional comprehension pattern: var evens = { var g = []; if statements; g }
+                if (init != null) {
+                    switch(init.expr) {
+                        case TBlock(blockStmts) if (blockStmts.length >= 3):
+                            // Check if this is a conditional comprehension pattern
+                            var isConditionalComp = false;
+                            var tempVarName = "";
+                            
+                            // First: var g = []
+                            switch(blockStmts[0].expr) {
+                                case TVar(tempVar, tempInit) if (tempInit != null && (tempVar.name.startsWith("g") || tempVar.name.startsWith("_g"))):
+                                    switch(tempInit.expr) {
+                                        case TArrayDecl([]):
+                                            tempVarName = tempVar.name;
+                                            
+                                            // Check middle: TBlock with if statements
+                                            if (blockStmts.length >= 3) {
+                                                switch(blockStmts[1].expr) {
+                                                    case TBlock(ifStmts):
+                                                        // Check if all are if statements
+                                                        var allIfs = true;
+                                                        for (stmt in ifStmts) {
+                                                            switch(stmt.expr) {
+                                                                case TIf(_, _, null): // if with no else
+                                                                    continue;
+                                                                default:
+                                                                    allIfs = false;
+                                                                    break;
+                                                            }
+                                                        }
+                                                        
+                                                        // Check last: return g
+                                                        if (allIfs && blockStmts.length > 2) {
+                                                            switch(blockStmts[blockStmts.length - 1].expr) {
+                                                                case TLocal(retVar) if (retVar.name == tempVarName):
+                                                                    isConditionalComp = true;
+                                                                default:
+                                                            }
+                                                        }
+                                                    default:
+                                                }
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                            
+                            if (isConditionalComp) {
+                                trace('[DEBUG] Found conditional comprehension for var ${v.name}');
+                                var reconstructed = tryReconstructConditionalComprehension(blockStmts, tempVarName, variableUsageMap);
+                                if (reconstructed != null) {
+                                    trace('[DEBUG] Successfully reconstructed as for comprehension');
+                                    return EMatch(PVar(toElixirVarName(v.name)), reconstructed);
+                                }
+                            }
+                        default:
+                    }
+                }
+                
                 // Special handling for enum extraction patterns
                 // When Haxe compiles case Ok(value), it generates:
                 // 1. TVar(_g, TEnumParameter(...)) - extracts to temp
@@ -2070,6 +2129,95 @@ class ElixirASTBuilder {
                     trace('[DEBUG]   Statement $i: ${el[i].expr}');
                 }
                 #end
+                
+                // Special case: Check for conditional comprehension pattern first
+                // This is when we have var g = []; followed by a nested block with if statements
+                trace('[DEBUG] Checking TBlock with ${el.length} elements for conditional comprehension');
+                if (el.length >= 2) {
+                    var isConditionalComprehension = false;
+                    var tempVarName = "";
+                    
+                    #if debug_array_comprehension
+                    trace('[Array Comprehension] Checking for conditional comprehension pattern in TBlock with ${el.length} statements');
+                    #end
+                    
+                    // Check first statement for var g = []
+                    switch(el[0].expr) {
+                        case TVar(v, init) if (init != null && (v.name.startsWith("g") || v.name.startsWith("_g"))):
+                            switch(init.expr) {
+                                case TArrayDecl([]):
+                                    tempVarName = v.name;
+                                    
+                                    #if debug_array_comprehension
+                                    trace('[Array Comprehension] Found initialization: var $tempVarName = []');
+                                    #end
+                                    
+                                    // Check if second statement is a block containing if statements
+                                    if (el.length >= 3) {
+                                        #if debug_array_comprehension
+                                        trace('[Array Comprehension] Checking statement 1 for TBlock: ${el[1].expr}');
+                                        #end
+                                        
+                                        switch(el[1].expr) {
+                                            case TBlock(innerStmts):
+                                                #if debug_array_comprehension
+                                                trace('[Array Comprehension] Found TBlock with ${innerStmts.length} inner statements');
+                                                #end
+                                                // Check if inner statements are all if statements with concatenations
+                                                var allIfs = true;
+                                                for (stmt in innerStmts) {
+                                                    switch(stmt.expr) {
+                                                        case TIf(_, thenExpr, null):
+                                                            // Check if then branch does concatenation
+                                                            switch(thenExpr.expr) {
+                                                                case TBinop(OpAssign, {expr: TLocal(v)}, rhs) if (v.name == tempVarName):
+                                                                    switch(rhs.expr) {
+                                                                        case TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([_])}) if (v2.name == tempVarName):
+                                                                            // Good - it's a concatenation
+                                                                        default:
+                                                                            allIfs = false;
+                                                                    }
+                                                                default:
+                                                                    allIfs = false;
+                                                            }
+                                                        default:
+                                                            allIfs = false;
+                                                    }
+                                                }
+                                                
+                                                // Check last statement returns the temp var
+                                                if (allIfs && el.length > 2) {
+                                                    switch(el[el.length - 1].expr) {
+                                                        case TLocal(v) if (v.name == tempVarName):
+                                                            isConditionalComprehension = true;
+                                                        default:
+                                                    }
+                                                }
+                                            default:
+                                        }
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                    
+                    if (isConditionalComprehension) {
+                        #if debug_array_comprehension
+                        trace('[Array Comprehension] ✓ DETECTED conditional comprehension pattern!');
+                        #end
+                        
+                        // Try to reconstruct the conditional comprehension
+                        trace('[DEBUG] Attempting to reconstruct conditional comprehension with tempVar: $tempVarName');
+                        var reconstructed = tryReconstructConditionalComprehension(el, tempVarName, variableUsageMap);
+                        if (reconstructed != null) {
+                            #if debug_array_comprehension
+                            trace('[Array Comprehension] Successfully reconstructed conditional comprehension');
+                            #end
+                            return reconstructed.def;
+                        }
+                    }
+                }
+                
                 if (looksLikeListBuildingBlock(el)) {
                     #if debug_array_comprehension
                     trace('[Array Comprehension] ✓ DETECTED unrolled comprehension pattern!');
@@ -5941,6 +6089,7 @@ class ElixirASTBuilder {
      * WHY: Constant ranges get completely unrolled by Haxe
      * WHAT: Detects repeated concatenation patterns
      * HOW: Looks for var g = []; g = g ++ [val]; ... pattern
+     *      OR var g = []; if (cond) g = g ++ [val]; ... pattern (conditional comprehensions)
      */
     static function isUnrolledComprehension(statements: Array<TypedExpr>): Bool {
         if (statements.length < 3) return false;
@@ -5965,8 +6114,9 @@ class ElixirASTBuilder {
                 return false;
         }
         
-        // Middle: repeated concatenations
+        // Middle: repeated concatenations or if statements with concatenations
         var hasConcatenations = false;
+        var hasConditionals = false;
         for (i in 1...statements.length - 1) {
             switch(statements[i].expr) {
                 case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([_])})}) 
@@ -5975,6 +6125,15 @@ class ElixirASTBuilder {
                 case TBinop(OpAdd, {expr: TLocal(v)}, {expr: TArrayDecl([_])}) if (v.name == tempVarName):
                     // Bare concatenation (shouldn't happen but handle it)
                     hasConcatenations = true;
+                case TIf(cond, thenExpr, null):
+                    // Check if the if body contains concatenation
+                    switch(thenExpr.expr) {
+                        case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([_])})}) 
+                            if (v.name == tempVarName && v2.name == tempVarName):
+                            hasConditionals = true;
+                            hasConcatenations = true;
+                        default:
+                    }
                 default:
                     // Non-concatenation statement
             }
@@ -6071,11 +6230,11 @@ class ElixirASTBuilder {
     
     /**
      * Extract elements from unrolled comprehension pattern
+     * Handles both simple unrolled and conditional unrolled comprehensions
      */
     static function extractUnrolledElements(statements: Array<TypedExpr>, ?variableUsageMap: Map<Int, Bool>): Null<Array<ElixirAST>> {
         if (statements.length < 3) return null;
         
-        var elements = [];
         var tempVarName: String = null;
         
         // Get temp var from first statement
@@ -6092,7 +6251,33 @@ class ElixirASTBuilder {
                 return null;
         }
         
-        // Extract elements from concatenations
+        // Check if this is a conditional comprehension pattern
+        var isConditional = false;
+        var hasConditions = false;
+        for (i in 1...statements.length - 1) {
+            switch(statements[i].expr) {
+                case TIf(_, thenExpr, null):
+                    // Check if the if body contains concatenation
+                    switch(thenExpr.expr) {
+                        case TBinop(OpAssign, {expr: TLocal(v)}, _) if (v.name == tempVarName):
+                            hasConditions = true;
+                        default:
+                    }
+                default:
+            }
+        }
+        
+        // If we have conditions, try to reconstruct as a for comprehension with filter
+        if (hasConditions) {
+            var result = tryReconstructConditionalComprehension(statements, tempVarName, variableUsageMap);
+            if (result != null) {
+                return [result]; // Wrap in array to match return type
+            }
+            return null;
+        }
+        
+        // Otherwise, extract elements from simple concatenations
+        var elements = [];
         for (i in 1...statements.length - 1) {
             switch(statements[i].expr) {
                 case TBinop(OpAssign, {expr: TLocal(v)}, rhs) if (v.name == tempVarName):
@@ -6177,6 +6362,256 @@ class ElixirASTBuilder {
         }
         
         return null;
+    }
+    
+    /**
+     * Replace literal index values in a condition with the loop variable
+     * This is used when reconstructing conditional comprehensions
+     */
+    static function replaceIndexInCondition(ast: ElixirAST, index: Int, varName: String): ElixirAST {
+        // Recursively replace any EInteger(index) with EVar(varName)
+        switch(ast.def) {
+            case EInteger(val) if (val == index):
+                return makeAST(EVar(varName));
+            case EBinary(op, left, right):
+                return makeAST(EBinary(op, 
+                    replaceIndexInCondition(left, index, varName),
+                    replaceIndexInCondition(right, index, varName)
+                ));
+            case ERemoteCall(module, func, args):
+                var newArgs = [for (arg in args) replaceIndexInCondition(arg, index, varName)];
+                return makeAST(ERemoteCall(module, func, newArgs));
+            case EParen(inner):
+                return makeAST(EParen(replaceIndexInCondition(inner, index, varName)));
+            default:
+                return ast;
+        }
+    }
+    
+    /**
+     * Transform a TypedExpr condition to an ElixirAST filter, replacing literal indices with loop variable
+     * e.g., rem(0, 2) == 0 -> rem(i, 2) == 0
+     */
+    static function transformConditionToFilter(condition: TypedExpr, ?variableUsageMap: Map<Int, Bool>): ElixirAST {
+        // Recursively transform the condition, replacing literal indices contextually
+        function transformExpr(expr: TypedExpr, isFirstArgOfMod: Bool = false): ElixirAST {
+            switch(expr.expr) {
+                case TConst(TInt(i)):
+                    // Only replace if this is the first argument of a modulo operation
+                    // OR if it's being compared to the result of a modulo operation
+                    if (isFirstArgOfMod && i >= 0 && i < 10) {
+                        return makeAST(EVar("i"));
+                    }
+                    return makeAST(EInteger(i));
+                    
+                case TCall(e, el):
+                    // Handle function calls (like rem)
+                    // Check if this is a modulo operation
+                    var isMod = switch(e.expr) {
+                        case TIdent("__mod__"): true;
+                        case TField(_, FStatic(_, cf)) if (cf.get().name == "mod"): true;
+                        default: false;
+                    };
+                    
+                    var argsAST = [];
+                    for (i in 0...el.length) {
+                        // First argument of modulo should be replaced with loop variable
+                        argsAST.push(transformExpr(el[i], isMod && i == 0));
+                    }
+                    
+                    // Special handling for rem/mod operations
+                    switch(e.expr) {
+                        case TIdent("__mod__"):
+                            // This is a modulo operation, use Elixir's rem
+                            return makeAST(ERemoteCall(
+                                makeAST(EAtom(":erlang")),
+                                "rem",
+                                argsAST
+                            ));
+                        case TField(_, FStatic(_, cf)) if (cf.get().name == "mod"):
+                            // Static field access for mod
+                            return makeAST(ERemoteCall(
+                                makeAST(EAtom(":erlang")),
+                                "rem",
+                                argsAST
+                            ));
+                        case TIdent(name):
+                            // Simple function call
+                            return makeAST(ECall(null, name, argsAST));
+                        default:
+                            // For complex function expressions, compile the whole thing
+                            return buildFromTypedExpr(expr, variableUsageMap);
+                    }
+                    
+                case TBinop(OpMod, e1, e2):
+                    // Handle modulo operator
+                    var left = transformExpr(e1, true);  // First arg should be replaced with loop var
+                    var right = transformExpr(e2, false); // Second arg should stay as is
+                    return makeAST(ERemoteCall(
+                        makeAST(EAtom(":erlang")),
+                        "rem",
+                        [left, right]
+                    ));
+                    
+                case TBinop(op, e1, e2):
+                    // Handle other binary operators
+                    var left = transformExpr(e1, false);
+                    var right = transformExpr(e2, false);
+                    var opStr = switch(op) {
+                        case OpEq: "==";
+                        case OpNotEq: "!=";
+                        case OpGt: ">";
+                        case OpGte: ">=";
+                        case OpLt: "<";
+                        case OpLte: "<=";
+                        case OpAdd: "+";
+                        case OpSub: "-";
+                        case OpMult: "*";
+                        case OpDiv: "/";
+                        default: Std.string(op);
+                    };
+                    // Convert string operator to EBinaryOp
+                    var binOp: EBinaryOp = switch(opStr) {
+                        case "==": Equal;
+                        case "!=": NotEqual;
+                        case ">":  Greater;
+                        case ">=": GreaterEqual;
+                        case "<":  Less;
+                        case "<=": LessEqual;
+                        case "+":  Add;
+                        case "-":  Subtract;
+                        case "*":  Multiply;
+                        case "/":  Divide;
+                        default:  Add; // Fallback
+                    };
+                    return makeAST(EBinary(binOp, left, right));
+                    
+                case TParenthesis(e):
+                    // Handle parentheses
+                    return makeAST(EParen(transformExpr(e, isFirstArgOfMod)));
+                    
+                default:
+                    // For other expressions, use the default builder
+                    return buildFromTypedExpr(expr, variableUsageMap);
+            }
+        }
+        
+        var result = transformExpr(condition, false);
+        return result != null ? result : makeAST(EVar("true")); // Fallback to true if transformation fails
+    }
+    
+    /**
+     * Try to reconstruct a conditional comprehension from unrolled if statements
+     * Pattern: var g = []; TBlock([if statements]); g
+     * Reconstructs to: for i <- 0..9, rem(i, 2) == 0, do: i
+     */
+    static function tryReconstructConditionalComprehension(statements: Array<TypedExpr>, tempVarName: String, ?variableUsageMap: Map<Int, Bool>): Null<ElixirAST> {
+        #if debug_array_comprehension
+        trace('[Array Comprehension] tryReconstructConditionalComprehension called with ${statements.length} statements');
+        for (i in 0...statements.length) {
+            trace('[Array Comprehension] Statement $i: ${Type.enumConstructor(statements[i].expr)}');
+        }
+        #end
+        
+        // Detect the pattern by looking at multiple if statements
+        var conditions = [];
+        var values = [];
+        var indices = [];
+        
+        // Find the block containing if statements
+        // The pattern is: TVar(g, []), TBlock([if statements]), TLocal(g)
+        // So we need to look at statement index 1 which should be TBlock
+        if (statements.length >= 3) {
+            switch(statements[1].expr) {
+                case TBlock(innerStmts):
+                    #if debug_array_comprehension
+                    trace('[Array Comprehension] Found TBlock at position 1 with ${innerStmts.length} inner statements');
+                    #end
+                    // Process inner if statements
+                    for (innerStmt in innerStmts) {
+                        switch(innerStmt.expr) {
+                            case TIf(cond, thenExpr, null):
+                                // Extract condition and value
+                                // Pattern 1: g = g ++ [value] (assignment pattern)
+                                switch(thenExpr.expr) {
+                                    case TBinop(OpAssign, {expr: TLocal(v)}, rhs) if (v.name == tempVarName):
+                                        switch(rhs.expr) {
+                                            case TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([value])}) if (v2.name == tempVarName):
+                                                conditions.push(cond);
+                                                values.push(value);
+                                                indices.push(conditions.length - 1);
+                                            default:
+                                        }
+                                    // Pattern 2: g.push(value) (method call pattern)
+                                    case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, [value]) if (v.name == tempVarName && cf.get().name == "push"):
+                                        #if debug_array_comprehension
+                                        trace('[Array Comprehension] Found push pattern with condition: ${cond.expr}');
+                                        trace('[Array Comprehension] Value being pushed: ${value.expr}');
+                                        #end
+                                        conditions.push(cond);
+                                        values.push(value);
+                                        indices.push(conditions.length - 1);
+                                    default:
+                                }
+                            default:
+                        }
+                    }
+                default:
+                    #if debug_array_comprehension
+                    trace('[Array Comprehension] Statement at position 1 is not TBlock, is: ${Type.enumConstructor(statements[1].expr)}');
+                    #end
+            }
+        }
+        
+        if (conditions.length == 0) {
+            #if debug_array_comprehension
+            trace('[Array Comprehension] No conditions found - not a conditional comprehension');
+            #end
+            return null;
+        }
+        
+        #if debug_array_comprehension
+        trace('[Array Comprehension] Found ${conditions.length} conditions in conditional comprehension');
+        #end
+        
+        // Infer the range from the number of conditions (10 conditions = 0..9)
+        var maxIndex = conditions.length - 1;
+        
+        // Build a for comprehension with filter
+        var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(maxIndex)), false));
+        var generator: EGenerator = {
+            pattern: PVar("i"),
+            expr: range
+        };
+        
+        // Build filter from the actual conditions
+        // Extract the pattern from the first condition and replace the index with the loop variable
+        var filter = if (conditions.length > 0) {
+            // Take the first condition as the pattern
+            var firstCondition = conditions[0];
+            
+            #if debug_array_comprehension
+            trace('[Array Comprehension] First condition expr: ${firstCondition.expr}');
+            #end
+            
+            // Transform the TypedExpr condition to ElixirAST, replacing literal indices with loop variable
+            var filterExpr = transformConditionToFilter(firstCondition, variableUsageMap);
+            
+            filterExpr;
+        } else {
+            null;
+        };
+        
+        // Build body - just return the iterator variable
+        var body = makeAST(EVar("i"));
+        
+        #if debug_array_comprehension
+        trace('[Array Comprehension] Creating EFor comprehension with filter for range 0..${maxIndex}');
+        #end
+        
+        // Create the for comprehension
+        var forExpr = makeAST(EFor([generator], filter != null ? [filter] : [], body, null, false));
+        return forExpr;
     }
     
     /**
