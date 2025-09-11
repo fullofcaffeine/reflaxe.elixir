@@ -629,11 +629,132 @@ class ElixirASTBuilder {
                             ifExpr;
                             
                         case _:
-                            // Regular init expression
-                            var builtInit = buildFromTypedExpr(init, variableUsageMap);
+                            // Check if init is an unrolled array comprehension pattern
+                            // Pattern: TBlock containing "g = []" followed by "g = g ++ [value]" statements
+                            var initExpr = switch(init.expr) {
+                                case TBlock(stmts) if (stmts.length > 2):
+                                    #if debug_array_patterns
+                                    trace('[XRay ArrayPattern] Checking TBlock with ${stmts.length} statements for unrolled comprehension');
+                                    for (i in 0...stmts.length) {
+                                        trace('[XRay ArrayPattern]   stmt[$i]: ${Type.enumConstructor(stmts[i].expr)}');
+                                        // Check if stmt[1] is a nested TBlock
+                                        if (i == 1) {
+                                            switch(stmts[i].expr) {
+                                                case TBlock(innerStmts):
+                                                    trace('[XRay ArrayPattern]     stmt[1] is a TBlock with ${innerStmts.length} inner statements');
+                                                    for (j in 0...Std.int(Math.min(3, innerStmts.length))) {
+                                                        trace('[XRay ArrayPattern]       inner[$j]: ${Type.enumConstructor(innerStmts[j].expr)}');
+                                                    }
+                                                default:
+                                            }
+                                        }
+                                    }
+                                    #end
+                                    
+                                    // Check for unrolled comprehension pattern:
+                                    // 1. First stmt: var g = []
+                                    // 2. Middle stmts: g = g ++ [value]
+                                    // 3. Last stmt: g (return the temp var)
+                                    var isUnrolled = false;
+                                    var tempVarName = "";
+                                    var values = [];
+                                    
+                                    // Check first statement
+                                    if (stmts.length > 0) {
+                                        switch(stmts[0].expr) {
+                                            case TVar(v, initExpr) if (initExpr != null && (v.name.startsWith("g") || v.name.startsWith("_g"))):
+                                                #if debug_array_patterns
+                                                trace('[XRay ArrayPattern] Found TVar for ${v.name}, checking init type: ${initExpr != null ? Type.enumConstructor(initExpr.expr) : "null"}');
+                                                #end
+                                                switch(initExpr.expr) {
+                                                    case TArrayDecl([]):
+                                                        isUnrolled = true;
+                                                        tempVarName = v.name;
+                                                        #if debug_array_patterns
+                                                        trace('[XRay ArrayPattern] First statement matches: var ${v.name} = []');
+                                                        #end
+                                                    default:
+                                                        #if debug_array_patterns
+                                                        trace('[XRay ArrayPattern] First statement init is not empty array');
+                                                        #end
+                                                }
+                                            default:
+                                                #if debug_array_patterns
+                                                trace('[XRay ArrayPattern] First statement is not a TVar with g-prefix');
+                                                #end
+                                        }
+                                    }
+                                    
+                                    // If first statement matches, check for concatenations
+                                    // Note: The concatenations might be in a nested TBlock at position 1
+                                    if (isUnrolled && stmts.length > 1) {
+                                        var concatStatements = [];
+                                        
+                                        // Check if stmt[1] is a nested TBlock
+                                        switch(stmts[1].expr) {
+                                            case TBlock(innerStmts):
+                                                // Concatenations are inside this nested block
+                                                concatStatements = innerStmts;
+                                            default:
+                                                // Concatenations are directly in the main block
+                                                concatStatements = [for (i in 1...stmts.length - 1) stmts[i]];
+                                        }
+                                        
+                                        // Now check all concatenation/push statements
+                                        for (stmt in concatStatements) {
+                                            switch(stmt.expr) {
+                                                // Pattern 1: g = g ++ [value]
+                                                case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([elem])})})
+                                                    if (v.name == tempVarName && v2.name == tempVarName):
+                                                    // Found concatenation: g = g ++ [value]
+                                                    values.push(elem);
+                                                    
+                                                // Pattern 2: g.push(value) - this is what Haxe generates for constant ranges
+                                                case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, [arg])
+                                                    if (v.name == tempVarName && cf.get().name == "push"):
+                                                    // Found push: g.push(value)
+                                                    values.push(arg);
+                                                    
+                                                default:
+                                                    // Not a concatenation or push, continue
+                                            }
+                                        }
+                                        
+                                        // If we found no values, it's not an unrolled comprehension
+                                        if (values.length == 0) {
+                                            isUnrolled = false;
+                                        }
+                                    }
+                                    
+                                    // Check last statement returns the temp var
+                                    if (isUnrolled && stmts.length > 0) {
+                                        switch(stmts[stmts.length - 1].expr) {
+                                            case TLocal(v) if (v.name == tempVarName):
+                                                // Valid pattern
+                                            default:
+                                                isUnrolled = false;
+                                        }
+                                    }
+                                    
+                                    if (isUnrolled && values.length > 0) {
+                                        #if debug_array_patterns
+                                        trace('[XRay ArrayPattern] TVar init detected as unrolled comprehension with ${values.length} values');
+                                        #end
+                                        
+                                        // Build a proper list from the extracted values
+                                        var valueASTs = [for (v in values) buildFromTypedExpr(v, variableUsageMap)];
+                                        makeAST(EList(valueASTs));
+                                    } else {
+                                        // Not an unrolled comprehension, build normally
+                                        buildFromTypedExpr(init, variableUsageMap);
+                                    }
+                                    
+                                default:
+                                    // Regular init expression
+                                    buildFromTypedExpr(init, variableUsageMap);
+                            };
                             
-                            
-                            builtInit;
+                            initExpr;
                     };
                     
                     var result = makeAST(EMatch(
@@ -1744,33 +1865,37 @@ class ElixirASTBuilder {
                                     trace('[AST Builder] Found list-building block in array element, marking with metadata');
                                     #end
                                     
-                                    // Build the block with all its statements (including bare concatenations)
-                                    var blockStmts = [for (s in stmts) buildFromTypedExpr(s, variableUsageMap)];
-                                    var blockAST = makeAST(EBlock(blockStmts));
-                                    
-                                    // Mark with metadata for the transformer
-                                    if (blockAST.metadata == null) blockAST.metadata = {};
-                                    blockAST.metadata.isUnrolledComprehension = true;
-                                    
-                                    // Count the elements for metadata
-                                    var elementCount = 0;
-                                    for (stmt in stmts) {
-                                        switch(stmt.expr) {
-                                            case TBinop(OpAdd, _, {expr: TArrayDecl([_])}):
-                                                elementCount++;
-                                            case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, {expr: TArrayDecl([_])})}):
-                                                elementCount++;
-                                            case _:
-                                        }
+                                    // Extract just the values being concatenated, not the entire block
+                                    var extractedElements = extractListElements(stmts);
+                                    if (extractedElements != null && extractedElements.length > 0) {
+                                        #if debug_array_comprehension
+                                        trace('[Array Comprehension] Successfully extracted ${extractedElements.length} values from unrolled pattern');
+                                        #end
+                                        // Build AST for each extracted value and return as a proper list
+                                        var valueASTs = [for (elem in extractedElements) buildFromTypedExpr(elem, variableUsageMap)];
+                                        elements.push(makeAST(EList(valueASTs)));
+                                    } else {
+                                        // Fallback: if extraction failed, try building the block normally
+                                        #if debug_ast_builder
+                                        trace('[AST Builder] List element extraction failed, using block fallback');
+                                        #end
+                                        var blockStmts = [for (s in stmts) buildFromTypedExpr(s, variableUsageMap)];
+                                        var blockAST = makeAST(EBlock(blockStmts));
+                                        
+                                        // Mark with metadata for potential transformer handling
+                                        if (blockAST.metadata == null) blockAST.metadata = {};
+                                        blockAST.metadata.isUnrolledComprehension = true;
+                                        
+                                        // Wrap in immediately-invoked function to ensure valid Elixir
+                                        var fnClause:EFnClause = {
+                                            args: [],
+                                            guard: null,
+                                            body: blockAST
+                                        };
+                                        var anonymousFn = makeAST(EFn([fnClause]));
+                                        var wrappedBlock = makeAST(ECall(makeAST(EParen(anonymousFn)), "", []));
+                                        elements.push(wrappedBlock);
                                     }
-                                    blockAST.metadata.comprehensionElements = elementCount;
-                                    
-                                    #if debug_array_comprehension
-                                    trace('[Array Comprehension] Marked block with isUnrolledComprehension and ${elementCount} elements');
-                                    #end
-                                    
-                                    // Add the marked block to the array
-                                    elements.push(blockAST);
                                 } else {
                                     // Fallback: wrap block in immediately-invoked function to ensure valid expression
                                     #if debug_ast_builder
