@@ -17,11 +17,11 @@ defmodule Main do
     g = []
     k = Map.keys(map)
     Log.trace("After clear, keys: " <> Std.string(Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
-  if acc_k.has_next() do
-    g ++ [acc_k]
-    {:cont, {acc_k.next(), acc_state}}
+  if (acc_k.has_next()) do
+    g = g ++ [(acc_k.next())]
+    {:cont, {acc_k, acc_state}}
   else
-    {:halt, {acc_k.next(), acc_state}}
+    {:halt, {acc_k, acc_state}}
   end
 end)
 g), %{:file_name => "Main.hx", :line_number => 37, :class_name => "Main", :method_name => "stringMap"})
@@ -39,10 +39,10 @@ g), %{:file_name => "Main.hx", :line_number => 37, :class_name => "Main", :metho
     k = Map.keys(map)
     keys = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
   if (acc_k.has_next()) do
-    g ++ [acc_k]
-    {:cont, {acc_k.next(), acc_state}}
+    g = g ++ [(acc_k.next())]
+    {:cont, {acc_k, acc_state}}
   else
-    {:halt, {acc_k.next(), acc_state}}
+    {:halt, {acc_k, acc_state}}
   end
 end)
 g
@@ -50,7 +50,7 @@ g
     k = Map.keys(map)
     values = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
   if (acc_k.has_next()) do
-    g ++ [Map.get(map, acc_k)]
+    g = g ++ [Map.get(map, acc_k)]
     {:cont, {acc_k.next(), acc_state}}
   else
     {:halt, {acc_k.next(), acc_state}}
@@ -146,14 +146,14 @@ g
   end
   def enum_map() do
     map = %{}
-    map = Map.put(map, {0}, "FF0000")
-    map = Map.put(map, {1}, "00FF00")
-    map = Map.put(map, {2}, "0000FF")
+    map = Map.put(map, {:red}, "FF0000")
+    map = Map.put(map, {:green}, "00FF00")
+    map = Map.put(map, {:blue}, "0000FF")
     Log.trace("Enum map:", %{:file_name => "Main.hx", :line_number => 198, :class_name => "Main", :method_name => "enumMap"})
     color = map.iterator()
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {color, :ok}, fn _, {acc_color, acc_state} -> nil end)
-    if (Map.has_key?(map, {0})) do
-      Log.trace("Red color code: #" <> Kernel.to_string(Map.get(map, {0})), %{:file_name => "Main.hx", :line_number => 205, :class_name => "Main", :method_name => "enumMap"})
+    if (Map.has_key?(map, {:red})) do
+      Log.trace("Red color code: #" <> Kernel.to_string(Map.get(map, {:red})), %{:file_name => "Main.hx", :line_number => 205, :class_name => "Main", :method_name => "enumMap"})
     end
   end
   def process_map(input) do

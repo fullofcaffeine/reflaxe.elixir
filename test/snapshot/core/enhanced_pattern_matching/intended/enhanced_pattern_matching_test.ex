@@ -1,19 +1,19 @@
 defmodule EnhancedPatternMatchingTest do
   def match_status(_status) do
-    case (elem(_status, 0)) do
-      0 ->
+    case (_status) do
+      {:idle} ->
         "Currently idle"
-      1 ->
+      {:working, task} ->
         g = elem(_status, 1)
         task = g
         "Working on: " <> task
-      2 ->
+      {:completed, result, duration} ->
         g = elem(_status, 1)
         g1 = elem(_status, 2)
         result = g
         duration = g1
         "Completed \"" <> result <> "\" in " <> Kernel.to_string(duration) <> "ms"
-      3 ->
+      {:failed, error, retries} ->
         g = elem(_status, 1)
         g1 = elem(_status, 2)
         error = g
@@ -22,10 +22,10 @@ defmodule EnhancedPatternMatchingTest do
     end
   end
   def incomplete_match(_status) do
-    case (elem(_status, 0)) do
-      0 ->
+    case (_status) do
+      {:idle} ->
         "idle"
-      1 ->
+      {:working, task} ->
         g = elem(_status, 1)
         task = g
         "working: " <> task
@@ -34,15 +34,15 @@ defmodule EnhancedPatternMatchingTest do
     end
   end
   def match_nested_result(_result) do
-    case (elem(_result, 0)) do
+    case (_result) do
       0 ->
         g = elem(_result, 1)
-        case (elem(g, 0)) do
-          0 ->
+        case (g) do
+          {:success, value} ->
             g = elem(g, 1)
             value = g
             "Double success: " <> Std.string(value)
-          1 ->
+          {:error, error, context} ->
             g1 = elem(g, 1)
             g = elem(g, 2)
             inner_error = g1
@@ -58,10 +58,10 @@ defmodule EnhancedPatternMatchingTest do
     end
   end
   def match_with_complex_guards(_status, priority, is_urgent) do
-    case (elem(_status, 0)) do
-      0 ->
+    case (_status) do
+      {:idle} ->
         "idle"
-      1 ->
+      {:working, task} ->
         g = elem(_status, 1)
         task = g
         if (priority > 5 && is_urgent) do
@@ -80,7 +80,7 @@ defmodule EnhancedPatternMatchingTest do
             end
           end
         end
-      2 ->
+      {:completed, result, duration} ->
         g = elem(_status, 1)
         g1 = elem(_status, 2)
         result = g
@@ -94,11 +94,11 @@ defmodule EnhancedPatternMatchingTest do
             "Normal completion: " <> result
           else
             result = g
-            _duration = g1
+            duration = g1
             "Slow completion: " <> result
           end
         end
-      3 ->
+      {:failed, error, retries} ->
         g = elem(_status, 1)
         g1 = elem(_status, 2)
         error = g
@@ -107,7 +107,7 @@ defmodule EnhancedPatternMatchingTest do
           "Recoverable failure: " <> error
         else
           error = g
-          _retries = g1
+          retries = g1
           "Permanent failure: " <> error
         end
     end
@@ -170,7 +170,7 @@ defmodule EnhancedPatternMatchingTest do
   end
   def chain_result_operations(input) do
     step1 = validate_input(input)
-    step2 = case (elem(step1, 0)) do
+    step2 = case (step1) do
   0 ->
     g = elem(step1, 1)
     validated = g
@@ -184,12 +184,12 @@ defmodule EnhancedPatternMatchingTest do
     if (context == nil) do
       context = ""
     end
-    result = {:Error, error, context}
+    result = {:error, error, context}
     this1 = nil
     this1 = result
     this1
 end
-    step3 = case (elem(step2, 0)) do
+    step3 = case (step2) do
   0 ->
     g = elem(step2, 1)
     processed = g
@@ -203,7 +203,7 @@ end
     if (context == nil) do
       context = ""
     end
-    result = {:Error, error, context}
+    result = {:error, error, context}
     this1 = nil
     this1 = result
     this1
@@ -245,28 +245,23 @@ end
     if (input == "") do
       "empty string"
     else
-      s = input
       if (length(s) == 1) do
-        "single character: \"" <> s <> "\""
+        "single character: \"" <> (input) <> "\""
       else
-        s = input
         if (s.substr(0, 7) == "prefix_") do
-          "has prefix: \"" <> s <> "\""
+          "has prefix: \"" <> (input) <> "\""
         else
-          s = input
           if (s.substr((length(s) - 7)) == "_suffix") do
-            "has suffix: \"" <> s <> "\""
+            "has suffix: \"" <> (input) <> "\""
           else
-            s = input
             if (s.index_of("@") > -1) do
-              "contains @: \"" <> s <> "\""
+              "contains @: \"" <> (input) <> "\""
             else
               s = input
               if (length(s) > 100) do
                 "very long string"
               else
-                s = input
-                "regular string: \"" <> s <> "\""
+                "regular string: \"" <> (input) <> "\""
               end
             end
           end
@@ -302,10 +297,10 @@ end
     end
   end
   def match_validation_state(_state) do
-    case (elem(_state, 0)) do
-      0 ->
+    case (_state) do
+      {:valid} ->
         "Data is valid"
-      1 ->
+      {:invalid, errors} ->
         g = elem(_state, 1)
         errors = g
         if (length(errors) == 1) do
@@ -319,7 +314,7 @@ end
             "No specific errors"
           end
         end
-      2 ->
+      {:pending, validator} ->
         g = elem(_state, 1)
         validator = g
         "Validation pending by: " <> validator
@@ -349,8 +344,7 @@ end
       if (context == nil) do
         context = ""
       end
-      result = {:Error, "Empty input", context}
-      this1 = nil
+      result = {:error, "Empty input", context}
       this1 = result
       this1
     end
@@ -359,14 +353,12 @@ end
       if (context == nil) do
         context = ""
       end
-      result = {:Error, "Input too long", context}
-      this1 = nil
+      result = {:error, "Input too long", context}
       this1 = result
       this1
     end
     value = input.to_lower_case()
-    result = {:Success, value}
-    this1 = nil
+    result = {:success, value}
     this1 = result
     this1
   end
@@ -376,14 +368,12 @@ end
       if (context == nil) do
         context = ""
       end
-      result = {:Error, "Data contains error keyword", context}
-      this1 = nil
+      result = {:error, "Data contains error keyword", context}
       this1 = result
       this1
     end
     value = data.to_upper_case()
-    result = {:Success, value}
-    this1 = nil
+    result = {:success, value}
     this1 = result
     this1
   end
@@ -393,32 +383,30 @@ end
       if (context == nil) do
         context = ""
       end
-      result = {:Error, "No data to format", context}
-      this1 = nil
+      result = {:error, "No data to format", context}
       this1 = result
       this1
     end
-    result = {:Success, "Formatted: [" <> data <> "]"}
-    this1 = nil
+    result = {:success, "Formatted: [" <> data <> "]"}
     this1 = result
     this1
   end
   def main() do
     Log.trace("Enhanced pattern matching compilation test", %{:file_name => "Main.hx", :line_number => 231, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
-    Log.trace(match_status({:Working, "compile"}), %{:file_name => "Main.hx", :line_number => 234, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
-    Log.trace(match_status({:Completed, "success", 1500}), %{:file_name => "Main.hx", :line_number => 235, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
-    Log.trace(incomplete_match({:Failed, "timeout", 2}), %{:file_name => "Main.hx", :line_number => 238, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
-    result = {:Success, "deep value"}
+    Log.trace(match_status({:working, "compile"}), %{:file_name => "Main.hx", :line_number => 234, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_status({:completed, "success", 1500}), %{:file_name => "Main.hx", :line_number => 235, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(incomplete_match({:failed, "timeout", 2}), %{:file_name => "Main.hx", :line_number => 238, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    result = {:success, "deep value"}
     this1 = nil
     this1 = result
     value = this1
-    result = {:Success, value}
+    result = {:success, value}
     this1 = nil
     this1 = result
     nested_success = value
 this1
     Log.trace(match_nested_result(nested_success), %{:file_name => "Main.hx", :line_number => 242, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
-    Log.trace(match_with_complex_guards({:Working, "urgent task"}, 8, true), %{:file_name => "Main.hx", :line_number => 245, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_with_complex_guards({:working, "urgent task"}, 8, true), %{:file_name => "Main.hx", :line_number => 245, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
     Log.trace(match_with_range_guards(85, "score"), %{:file_name => "Main.hx", :line_number => 248, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
     Log.trace(match_with_range_guards(25, "temperature"), %{:file_name => "Main.hx", :line_number => 249, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
     Log.trace(chain_result_operations("valid input"), %{:file_name => "Main.hx", :line_number => 252, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
@@ -429,8 +417,8 @@ this1
     Log.trace(match_string_patterns("test@example.com"), %{:file_name => "Main.hx", :line_number => 261, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
     Log.trace(match_object_patterns(%{:name => "Alice", :age => 25, :active => true}), %{:file_name => "Main.hx", :line_number => 264, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
     Log.trace(match_object_patterns(%{:name => "Bob", :age => 16, :active => true}), %{:file_name => "Main.hx", :line_number => 265, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
-    Log.trace(match_validation_state({:Invalid, ["Required field missing", "Invalid format"]}), %{:file_name => "Main.hx", :line_number => 268, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
-    Log.trace(match_validation_state({:Pending, "security_validator"}), %{:file_name => "Main.hx", :line_number => 269, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_validation_state({:invalid, ["Required field missing", "Invalid format"]}), %{:file_name => "Main.hx", :line_number => 268, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
+    Log.trace(match_validation_state({:pending, "security_validator"}), %{:file_name => "Main.hx", :line_number => 269, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
     Log.trace(match_binary_pattern("test"), %{:file_name => "Main.hx", :line_number => 272, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
     Log.trace(match_binary_pattern(""), %{:file_name => "Main.hx", :line_number => 273, :class_name => "EnhancedPatternMatchingTest", :method_name => "main"})
   end

@@ -18,10 +18,10 @@ defmodule Main do
     Log.trace("Constructor: year=" <> Kernel.to_string(d1.year) <> ", month=" <> Kernel.to_string(((d1.month - 1))) <> ", day=" <> Kernel.to_string(d1.day), %{:file_name => "Main.hx", :line_number => 18, :class_name => "Main", :method_name => "testConstructors"})
     Log.trace("Time: " <> Kernel.to_string(d1.hour) <> ":" <> Kernel.to_string(d1.minute) <> ":" <> Kernel.to_string(d1.second), %{:file_name => "Main.hx", :line_number => 19, :class_name => "Main", :method_name => "testConstructors"})
     now = DateTime.utc_now()
-    Log.trace("Date.now() returned a date: " <> now.to_iso8601(), %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "testConstructors"})
+    Log.trace("Date.now() returned a date: " <> DateTime.to_iso8601(now), %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "testConstructors"})
     timestamp = 1.7040672e+12
     d2 = DateTime.from_unix!(Std.int(timestamp), "millisecond")
-    Log.trace("fromTime(" <> Kernel.to_string(timestamp) <> "): " <> d2.to_iso8601(), %{:file_name => "Main.hx", :line_number => 28, :class_name => "Main", :method_name => "testConstructors"})
+    Log.trace("fromTime(" <> Kernel.to_string(timestamp) <> "): " <> DateTime.to_iso8601(d2), %{:file_name => "Main.hx", :line_number => 28, :class_name => "Main", :method_name => "testConstructors"})
     iso_string = "2024-03-15T14:30:00Z"
     d3 = Date_Impl_.from_string(iso_string)
     Log.trace("fromString(\"" <> iso_string <> "\"): year=" <> Kernel.to_string(d3.year) <> ", month=" <> Kernel.to_string(((d3.month - 1))), %{:file_name => "Main.hx", :line_number => 33, :class_name => "Main", :method_name => "testConstructors"})
@@ -42,12 +42,12 @@ defmodule Main do
     Log.trace("getHours(): " <> Kernel.to_string(d.hour), %{:file_name => "Main.hx", :line_number => 45, :class_name => "Main", :method_name => "testGetters"})
     Log.trace("getMinutes(): " <> Kernel.to_string(d.minute), %{:file_name => "Main.hx", :line_number => 46, :class_name => "Main", :method_name => "testGetters"})
     Log.trace("getSeconds(): " <> Kernel.to_string(d.second), %{:file_name => "Main.hx", :line_number => 47, :class_name => "Main", :method_name => "testGetters"})
-    date = d.to_date()
+    date = DateTime.to_date(d)
     dow = Date.day_of_week(date)
     Log.trace("getDay(): " <> Kernel.to_string((if dow == 7, do: 0, else: dow)), %{:file_name => "Main.hx", :line_number => 51, :class_name => "Main", :method_name => "testGetters"})
-    ms = d.to_unix("millisecond")
+    ms = Date_Impl_.get_time(d)
     Log.trace("getTime(): " <> Kernel.to_string(ms) <> " milliseconds since epoch", %{:file_name => "Main.hx", :line_number => 55, :class_name => "Main", :method_name => "testGetters"})
-    Log.trace("toString(): " <> d.to_iso8601(), %{:file_name => "Main.hx", :line_number => 58, :class_name => "Main", :method_name => "testGetters"})
+    Log.trace("toString(): " <> DateTime.to_iso8601(d), %{:file_name => "Main.hx", :line_number => 58, :class_name => "Main", :method_name => "testGetters"})
   end
   defp test_utc_methods() do
     Log.trace("=== UTC Method Tests ===", %{:file_name => "Main.hx", :line_number => 62, :class_name => "Main", :method_name => "testUTCMethods"})
@@ -62,7 +62,7 @@ defmodule Main do
     Log.trace("getUTCFullYear(): " <> Kernel.to_string(d.year), %{:file_name => "Main.hx", :line_number => 66, :class_name => "Main", :method_name => "testUTCMethods"})
     Log.trace("getUTCMonth(): " <> Kernel.to_string(((d.month - 1))), %{:file_name => "Main.hx", :line_number => 67, :class_name => "Main", :method_name => "testUTCMethods"})
     Log.trace("getUTCDate(): " <> Kernel.to_string(d.day), %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "testUTCMethods"})
-    date = d.to_date()
+    date = DateTime.to_date(d)
     dow = Date.day_of_week(date)
     Log.trace("getUTCDay(): " <> Kernel.to_string((if dow == 7, do: 0, else: dow)), %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testUTCMethods"})
     Log.trace("getUTCHours(): " <> Kernel.to_string(d.hour), %{:file_name => "Main.hx", :line_number => 70, :class_name => "Main", :method_name => "testUTCMethods"})
@@ -89,7 +89,7 @@ defmodule Main do
             DateTime.from_naive!(naive, "Etc/UTC")
 )
     sunday = this1
-    date = sunday.to_date()
+    date = DateTime.to_date(sunday)
     dow = Date.day_of_week(date)
     Log.trace("Sunday getDay(): " <> Kernel.to_string((if dow == 7, do: 0, else: dow)), %{:file_name => "Main.hx", :line_number => 86, :class_name => "Main", :method_name => "testConversions"})
     this1 = nil
@@ -100,7 +100,7 @@ defmodule Main do
             DateTime.from_naive!(naive, "Etc/UTC")
 )
     monday = this1
-    date = monday.to_date()
+    date = DateTime.to_date(monday)
     dow = Date.day_of_week(date)
     Log.trace("Monday getDay(): " <> Kernel.to_string((if dow == 7, do: 0, else: dow)), %{:file_name => "Main.hx", :line_number => 90, :class_name => "Main", :method_name => "testConversions"})
     this1 = nil
@@ -111,7 +111,7 @@ defmodule Main do
             DateTime.from_naive!(naive, "Etc/UTC")
 )
     original = this1
-    timestamp = original.to_unix("millisecond")
+    timestamp = Date_Impl_.get_time(original)
     restored = DateTime.from_unix!(Std.int(timestamp), "millisecond")
     Log.trace("Roundtrip test:", %{:file_name => "Main.hx", :line_number => 96, :class_name => "Main", :method_name => "testConversions"})
     Log.trace("  Original: " <> Kernel.to_string(original.year) <> "-" <> Kernel.to_string(((original.month - 1))) <> "-" <> Kernel.to_string(original.day), %{:file_name => "Main.hx", :line_number => 97, :class_name => "Main", :method_name => "testConversions"})

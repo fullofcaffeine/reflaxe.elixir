@@ -1,6 +1,5 @@
 defmodule NonEmptyString_Impl_ do
   def _new(value) do
-    this1 = nil
     if (value == nil || length(value) == 0) do
       throw("String cannot be empty or null")
     end
@@ -75,7 +74,9 @@ defmodule NonEmptyString_Impl_ do
   if (acc_g < length(acc_parts)) do
     part = parts[g]
     acc_g = acc_g + 1
-    if (length(part) > 0), do: result ++ [part]
+    if (length(part) > 0) do
+      result = result ++ [part]
+    end
     {:cont, {acc_parts, acc_g, acc_state}}
   else
     {:halt, {acc_parts, acc_g, acc_state}}

@@ -5,26 +5,26 @@ defmodule UserId_Impl_ do
     this1 = nil
     g = validate(user_id)
     case (g) do
-      {:ok, _} ->
+      {:ok, value} ->
         _g = elem(g, 1)
         this1 = user_id
-      {:error, _} ->
+      {:error, error} ->
         g = elem(g, 1)
-        reason = g
-        throw(reason)
+        reason = error
+        throw(error)
     end
     this1
   end
   def parse(user_id) do
     g = validate(user_id)
     case (g) do
-      {:ok, _} ->
+      {:ok, value} ->
         _g = elem(g, 1)
         user_id
-      {:error, _} ->
+      {:error, error} ->
         g = elem(g, 1)
-        reason = g
-        reason
+        reason = error
+        error
     end
   end
   def length(this1) do

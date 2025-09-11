@@ -1,14 +1,14 @@
 defmodule Status do
   def idle() do
-    {:Idle}
+    {0}
   end
   def working(arg0) do
-    {:Working, arg0}
+    {1, arg0}
   end
   def completed(arg0, arg1) do
-    {:Completed, arg0, arg1}
+    {2, arg0, arg1}
   end
   def failed(arg0, arg1) do
-    {:Failed, arg0, arg1}
+    {3, arg0, arg1}
   end
 end

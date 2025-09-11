@@ -1,14 +1,14 @@
 defmodule Color do
   def red() do
-    {:Red}
+    {0}
   end
   def green() do
-    {:Green}
+    {1}
   end
   def blue() do
-    {:Blue}
+    {2}
   end
   def rgb(arg0, arg1, arg2) do
-    {:RGB, arg0, arg1, arg2}
+    {3, arg0, arg1, arg2}
   end
 end

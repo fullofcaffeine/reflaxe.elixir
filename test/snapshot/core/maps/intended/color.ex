@@ -1,11 +1,11 @@
 defmodule Color do
   def red() do
-    {:Red}
+    {0}
   end
   def green() do
-    {:Green}
+    {1}
   end
   def blue() do
-    {:Blue}
+    {2}
   end
 end

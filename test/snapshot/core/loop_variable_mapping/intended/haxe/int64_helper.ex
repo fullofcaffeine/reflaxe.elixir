@@ -1,8 +1,6 @@
 defmodule Int64Helper do
   import Bitwise
   def parse_string(s_param) do
-    base_low = nil
-    base_high = nil
     base_high = 0
     base_low = 10
     x = ___Int64.new(0, 0)
@@ -22,7 +20,7 @@ defmodule Int64Helper do
     len = length(s)
     g = 0
     g1 = len
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {digit_high, low, high, p10, digit_low, high, p10, this1, b_high, b_high, p01, this1, multiplier, b_low, high, high, high, low, this1, g, b_low, current, p01, low, p01, p10, g1, :ok}, fn _, {acc_digit_high, acc_low, acc_high, acc_p10, acc_digit_low, acc_high, acc_p10, acc_this1, acc_b_high, acc_b_high, acc_p01, acc_this1, acc_multiplier, acc_b_low, acc_high, acc_high, acc_high, acc_low, acc_this1, acc_g, acc_b_low, acc_current, acc_p01, acc_low, acc_p01, acc_p10, acc_g1, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {current, multiplier, p10, p01, low, high, high, this1, p10, p01, low, high, high, this1, p10, p01, low, high, this1, g, g1, digit_high, digit_low, b_high, b_low, b_high, b_low, :ok}, fn _, {acc_current, acc_multiplier, acc_p10, acc_p01, acc_low, acc_high, acc_high, acc_this1, acc_p10, acc_p01, acc_low, acc_high, acc_high, acc_this1, acc_p10, acc_p01, acc_low, acc_high, acc_this1, acc_g, acc_g1, acc_digit_high, acc_digit_low, acc_b_high, acc_b_low, acc_b_high, acc_b_low, acc_state} -> nil end)
     current
   end
   def from_float(f) do
@@ -47,7 +45,7 @@ else
   no_fractions
 end
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {this1, a_high, b, this1, result, this1, this1, high, i, rest, a_low, :ok}, fn _, {acc_this1, acc_a_high, acc_b, acc_this1, acc_result, acc_this1, acc_this1, acc_high, acc_i, acc_rest, acc_a_low, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, rest, i, b, this1, this1, this1, high, this1, a_high, a_low, :ok}, fn _, {acc_result, acc_rest, acc_i, acc_b, acc_this1, acc_this1, acc_this1, acc_high, acc_this1, acc_a_high, acc_a_low, acc_state} -> nil end)
     if neg do
       high = ~~~result.high
       low = ~~~result.low + 1

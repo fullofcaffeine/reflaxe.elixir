@@ -8,8 +8,7 @@ defmodule CallStack_Impl_ do
   end
   def exception_stack(full_stack) do
     e_stack = NativeStackTrace.to_haxe(NativeStackTrace.exception_stack())
-    this1 = if full_stack, do: e_stack, else: subtract(e_stack, call_stack())
-    this1
+    (if full_stack, do: e_stack, else: subtract(e_stack, call_stack()))
   end
   def to_string(stack) do
     b = StringBuf.new()
@@ -31,7 +30,7 @@ end)
   def subtract(this1, stack) do
     start_index = -1
     i = -1
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, i, this1, start_index, :ok}, fn _, {acc_g, acc_i, acc_this1, acc_start_index, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {this1, start_index, i, g, :ok}, fn _, {acc_this1, acc_start_index, acc_i, acc_g, acc_state} -> nil end)
     if (start_index >= 0) do
       if (end_param == nil) do
         Enum.slice(this1, 0..-1//1)
@@ -55,19 +54,19 @@ end)
     if (item1 == nil) do
       if (item2 == nil), do: true, else: false
     else
-      case (elem(item1, 0)) do
+      case (item1) do
         0 ->
           if (item2 == nil) do
             false
           else
-            if (elem(item2, 0) == 0), do: true, else: false
+            if (item2 == 0), do: true, else: false
           end
         1 ->
           g = elem(item1, 1)
           if (item2 == nil) do
             false
           else
-            if (elem(item2, 0) == 1) do
+            if (item2 == 1) do
               g1 = elem(item2, 1)
               m2 = g1
               m1 = g
@@ -84,7 +83,7 @@ end)
           if (item2 == nil) do
             false
           else
-            if (elem(item2, 0) == 2) do
+            if (item2 == 2) do
               g4 = elem(item2, 1)
               g5 = elem(item2, 2)
               g6 = elem(item2, 3)
@@ -108,7 +107,7 @@ end)
           if (item2 == nil) do
             false
           else
-            if (elem(item2, 0) == 3) do
+            if (item2 == 3) do
               g2 = elem(item2, 1)
               g3 = elem(item2, 2)
               class2 = g2
@@ -125,7 +124,7 @@ end)
           if (item2 == nil) do
             false
           else
-            if (elem(item2, 0) == 4) do
+            if (item2 == 4) do
               g1 = elem(item2, 1)
               v2 = g1
               v1 = g
@@ -139,25 +138,24 @@ end)
   end
   defp exception_to_string(e) do
     if (e.get_previous() == nil) do
-      tmp = e.get_stack()
-      "Exception: " <> e.to_string() <> (if tmp == nil, do: "null", else: to_string(tmp))
+      "Exception: " <> e.to_string() <> (if (tmp == nil), do: "null", else: to_string((e.get_stack())))
     end
     result = ""
     e = e
     prev = nil
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {prev, e, result, :ok}, fn _, {acc_prev, acc_e, acc_result, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, e, prev, :ok}, fn _, {acc_result, acc_e, acc_prev, acc_state} -> nil end)
     result
   end
   defp item_to_string(b, _s) do
-    case (elem(_s, 0)) do
-      0 ->
+    case (_s) do
+      {:c_function} ->
         b.add("a C function")
-      1 ->
+      {:module, m} ->
         g = elem(_s, 1)
         m = g
         b.add("module ")
         b.add(m)
-      2 ->
+      {:file_pos, s, file, line, column} ->
         g = elem(_s, 1)
         g1 = elem(_s, 2)
         g2 = elem(_s, 3)
@@ -178,7 +176,7 @@ end)
           b.add(col)
         end
         if (s != nil), do: b.add(")")
-      3 ->
+      {:method, classname, method} ->
         g = elem(_s, 1)
         g1 = elem(_s, 2)
         cname = g
@@ -186,7 +184,7 @@ end)
         b.add((if (cname == nil), do: "<unknown>", else: cname))
         b.add(".")
         b.add(meth)
-      4 ->
+      {:local_function, v} ->
         g = elem(_s, 1)
         n = g
         b.add("local function #")
