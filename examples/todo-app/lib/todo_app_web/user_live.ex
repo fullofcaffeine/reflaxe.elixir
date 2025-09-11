@@ -8,17 +8,17 @@ defmodule TodoAppWeb.UserLive do
   def handle_event(event, socket) do
     live_socket = socket
     case (event) do
-      {:new_user} ->
+      {:newuser} ->
         handle_new_user(live_socket)
-      {:edit_user, id} ->
+      {:edituser, id} ->
         g = elem(event, 1)
         id = g
         handle_edit_user(id, live_socket)
-      {:save_user, params} ->
+      {:saveuser, params} ->
         g = elem(event, 1)
         params = g
         handle_save_user(params, live_socket)
-      {:delete_user, id} ->
+      {:deleteuser, id} ->
         g = elem(event, 1)
         id = g
         handle_delete_user(id, live_socket)
@@ -26,11 +26,11 @@ defmodule TodoAppWeb.UserLive do
         g = elem(event, 1)
         params = g
         handle_search(params.search_term, live_socket)
-      {:filter_status, params} ->
+      {:filterstatus, params} ->
         g = elem(event, 1)
         params = g
         handle_filter_status(params.status, live_socket)
-      {:clear_search} ->
+      {:clearsearch} ->
         handle_clear_search(live_socket)
       {:cancel} ->
         handle_cancel(live_socket)
@@ -57,29 +57,29 @@ else
   Users.update_user(selected_user, user_params)
 end
     case (result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(result, 1)
-        _user = value
+        _user = g
         users = Users.list_users(nil)
         %{:status => "noreply", :socket => Phoenix.Component.assign([socket, users, false, nil, Users.change_user(nil)], %{:users => {1}, :show_form => {2}, :selected_user => {3}, :changeset => {4}})}
-      {:error, reason} ->
+      {:error, g} ->
         g = elem(result, 1)
-        changeset = reason
-        %{:status => "noreply", :socket => Phoenix.Component.assign(socket, :changeset, reason)}
+        changeset = g
+        %{:status => "noreply", :socket => Phoenix.Component.assign(socket, :changeset, changeset)}
     end
   end
   def handle_delete_user(user_id, socket) do
     user = Users.get_user(user_id)
     result = Users.delete_user(user)
     case (result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(result, 1)
-        _deleted_user = value
+        _deleted_user = g
         users = Users.list_users(nil)
         %{:status => "noreply", :socket => Phoenix.Component.assign(socket, :users, users)}
-      {:error, reason} ->
+      {:error, g} ->
         g = elem(result, 1)
-        _changeset = reason
+        _changeset = g
         %{:status => "noreply", :socket => socket}
     end
   end
