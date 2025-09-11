@@ -12,8 +12,6 @@
   "int_iterator.ex",
   "haxe/stack_item.ex",
   "haxe/log.ex",
-  "haxe/iterators/map_key_value_iterator.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/io/output.ex",
   "haxe/io/input.ex",

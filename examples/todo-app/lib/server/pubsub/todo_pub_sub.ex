@@ -67,7 +67,7 @@ end
             {:some, v} ->
               g = elem(bulk_action, 1)
               action = v
-              {:BulkUpdate, v}
+              {:bulk_update, v}
             {:none} ->
               :none
           end
@@ -81,7 +81,7 @@ end
             {:some, v} ->
               g = elem(alert_level, 1)
               level = v
-              {:SystemAlert, msg.message, v}
+              {:system_alert, msg.message, v}
             {:none} ->
               :none
           end
@@ -89,15 +89,15 @@ end
           :none
         end
       "todo_created" ->
-        if (msg.todo != nil), do: {:TodoCreated, msg.todo}, else: :none
+        if (msg.todo != nil), do: {:todo_created, msg.todo}, else: :none
       "todo_deleted" ->
-        if (msg.todo_id != nil), do: {:TodoDeleted, msg.todo_id}, else: :none
+        if (msg.todo_id != nil), do: {:todo_deleted, msg.todo_id}, else: :none
       "todo_updated" ->
-        if (msg.todo != nil), do: {:TodoUpdated, msg.todo}, else: :none
+        if (msg.todo != nil), do: {:todo_updated, msg.todo}, else: :none
       "user_offline" ->
-        if (msg.user_id != nil), do: {:UserOffline, msg.user_id}, else: :none
+        if (msg.user_id != nil), do: {:user_offline, msg.user_id}, else: :none
       "user_online" ->
-        if (msg.user_id != nil), do: {:UserOnline, msg.user_id}, else: :none
+        if (msg.user_id != nil), do: {:user_online, msg.user_id}, else: :none
       _ ->
         Log.trace(Phoenix.SafePubSub.create_unknown_message_error(msg.type), %{:file_name => "src_haxe/server/pubsub/TodoPubSub.hx", :line_number => 223, :class_name => "server.pubsub.TodoPubSub", :method_name => "parseMessageImpl"})
         :none
@@ -126,15 +126,15 @@ end
   defp parse_bulk_action(action) do
     case (action) do
       "add_tag" ->
-        {:AddTag, ""}
+        {:add_tag, ""}
       "complete_all" ->
         {:complete_all}
       "delete_completed" ->
         {:delete_completed}
       "remove_tag" ->
-        {:RemoveTag, ""}
+        {:remove_tag, ""}
       "set_priority" ->
-        {:SetPriority, {:medium}}
+        {:set_priority, {:medium}}
       _ ->
         :none
     end

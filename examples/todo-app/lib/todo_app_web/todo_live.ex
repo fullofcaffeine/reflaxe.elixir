@@ -11,17 +11,17 @@ defmodule TodoAppWeb.TodoLive do
       {:error, error} ->
         g = elem(g, 1)
         reason = error
-        {:Error, "Failed to subscribe to updates: " <> error}
+        {:error, "Failed to subscribe to updates: " <> error}
     end
     current_user = get_user_from_session(session)
     todos = load_todos(current_user.id)
     presence_socket = TodoAppWeb.Presence.track_user(socket, current_user)
     assigns = %{:todos => todos, :filter => "all", :sort_by => "created", :current_user => current_user, :editing_todo => nil, :show_form => false, :search_query => "", :selected_tags => [], :total_todos => length(todos), :completed_todos => count_completed(todos), :pending_todos => count_pending(todos), :online_users => %{}}
     updated_socket = Phoenix.LiveView.assign(presence_socket, assigns)
-    {:Ok, updated_socket}
+    {:ok, updated_socket}
   end
   def handle_event(event, socket) do
-    {:NoReply, (case (event) do
+    {:no_reply, (case (event) do
   {:create_todo, params} ->
     g = elem(event, 1)
     params = g
@@ -76,7 +76,7 @@ defmodule TodoAppWeb.TodoLive do
 end)}
   end
   def handle_info(msg, socket) do
-    {:NoReply, (g = TodoPubSub.parse_message(msg)
+    {:no_reply, (g = TodoPubSub.parse_message(msg)
 case (g) do
   {:some, v} ->
     g = elem(g, 1)
@@ -136,7 +136,7 @@ end)}
       {:ok, value} ->
         g = elem(g, 1)
         todo = value
-        g = TodoPubSub.broadcast({:todo_updates}, {:TodoCreated, value})
+        g = TodoPubSub.broadcast({:todo_updates}, {:todo_created, value})
         case (g) do
           {:ok, value} ->
             _g = elem(g, 1)
@@ -166,7 +166,7 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
       {:ok, value} ->
         g = elem(g, 1)
         todo = value
-        g = TodoPubSub.broadcast({:todo_updates}, {:TodoCreated, value})
+        g = TodoPubSub.broadcast({:todo_updates}, {:todo_created, value})
         case (g) do
           {:ok, value} ->
             _g = elem(g, 1)
@@ -201,7 +201,7 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
     reason = reason
     Phoenix.LiveView.put_flash(socket, {:error}, "Failed to update todo: " <> Kernel.to_string(reason))
 end
-    TodoPubSub.broadcast({:todo_updates}, {:TodoUpdated, updated_todo})
+    TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo})
     update_todo_in_list(updated_todo, socket)
   end
   def delete_todo(id, socket) do
@@ -212,7 +212,7 @@ end
       {:ok, value} ->
         g = elem(g, 1)
         _deleted_todo = value
-        g = TodoPubSub.broadcast({:todo_updates}, {:TodoDeleted, id})
+        g = TodoPubSub.broadcast({:todo_updates}, {:todo_deleted, id})
         case (g) do
           {:ok, value} ->
             _g = elem(g, 1)
@@ -244,7 +244,7 @@ end
     reason = reason
     Phoenix.LiveView.put_flash(socket, {:error}, "Failed to update priority: " <> Kernel.to_string(reason))
 end
-    TodoPubSub.broadcast({:todo_updates}, {:TodoUpdated, updated_todo})
+    TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo})
     update_todo_in_list(updated_todo, socket)
   end
   def add_todo_to_list(todo, socket) do
@@ -294,16 +294,16 @@ end)
   def count_completed(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {count, todos, g, :ok}, fn _, {acc_count, acc_todos, acc_g, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_count, acc_todos, acc_g, acc_state}}
+    {:cont, {acc_todos, acc_count, acc_g, acc_state}}
   else
-    {:halt, {acc_count, acc_todos, acc_g, acc_state}}
+    {:halt, {acc_todos, acc_count, acc_g, acc_state}}
   end
 end)
     count
@@ -311,16 +311,16 @@ end)
   def count_pending(todos) do
     count = 0
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, todos, count, :ok}, fn _, {acc_g, acc_todos, acc_count, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
   if (acc_g < length(acc_todos)) do
     todo = todos[g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1
     end
-    {:cont, {acc_g, acc_todos, acc_count, acc_state}}
+    {:cont, {acc_todos, acc_count, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_todos, acc_count, acc_state}}
+    {:halt, {acc_todos, acc_count, acc_g, acc_state}}
   end
 end)
     count
@@ -357,8 +357,8 @@ end)
   def complete_all_todos(socket) do
     pending = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, pending, :ok}, fn _, {acc_g, acc_pending, acc_state} -> nil end)
-    g = TodoPubSub.broadcast({:todo_updates}, {:BulkUpdate, {:complete_all}})
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pending, g, :ok}, fn _, {acc_pending, acc_g, acc_state} -> nil end)
+    g = TodoPubSub.broadcast({:todo_updates}, {:bulk_update, {:complete_all}})
     case (g) do
       {:ok, value} ->
         g = elem(g, 1)
@@ -387,7 +387,7 @@ end)
     {:halt, {acc_completed, acc_g, acc_state}}
   end
 end)
-    TodoPubSub.broadcast({:todo_updates}, {:BulkUpdate, {:delete_completed}})
+    TodoPubSub.broadcast({:todo_updates}, {:bulk_update, {:delete_completed}})
     remaining = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     current_assigns = socket.assigns
     complete_assigns = %{:todos => remaining, :filter => current_assigns.filter, :sort_by => current_assigns.sort_by, :current_user => current_assigns.current_user, :editing_todo => current_assigns.editing_todo, :show_form => current_assigns.show_form, :search_query => current_assigns.search_query, :selected_tags => current_assigns.selected_tags, :total_todos => length(remaining), :completed_todos => 0, :pending_todos => length(remaining), :online_users => current_assigns.online_users}
@@ -407,7 +407,7 @@ end)
       {:ok, value} ->
         g = elem(g, 1)
         updated_todo = value
-        g = TodoPubSub.broadcast({:todo_updates}, {:TodoUpdated, value})
+        g = TodoPubSub.broadcast({:todo_updates}, {:todo_updated, value})
         case (g) do
           {:ok, value} ->
             _g = elem(g, 1)
@@ -440,7 +440,7 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
       {:ok, value} ->
         g = elem(g, 1)
         updated_todo = value
-        g = TodoPubSub.broadcast({:todo_updates}, {:TodoUpdated, value})
+        g = TodoPubSub.broadcast({:todo_updates}, {:todo_updated, value})
         case (g) do
           {:ok, value} ->
             _g = elem(g, 1)
@@ -509,7 +509,7 @@ end
     online_users_list = []
     editing_indicators = []
     g = (assigns.online_users).key_value_iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, online_count, :ok}, fn _, {acc_g, acc_online_count, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {online_count, g, :ok}, fn _, {acc_online_count, acc_g, acc_state} -> nil end)
     if (online_count == 0), do: ""
     "<div class=\"bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6\">\n\t\t\t<div class=\"flex items-center justify-between mb-2\">\n\t\t\t\t<h3 class=\"text-sm font-semibold text-gray-700 dark:text-gray-300\">\n\t\t\t\t\t👥 Online Users (" <> Kernel.to_string(online_count) <> ")\n\t\t\t\t</h3>\n\t\t\t</div>\n\t\t\t<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">\n\t\t\t\t" <> Enum.join(online_users_list, "") <> "\n\t\t\t</div>\n\t\t\t" <> (if (length(editing_indicators) > 0) do
   "<div class=\"mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1\">" <> Enum.join(editing_indicators, "") <> "</div>"
@@ -531,7 +531,7 @@ end) <> "\n\t\t</div>"
   if (acc_g < length(acc_filtered_todos)) do
     todo = filtered_todos[g]
     acc_g = acc_g + 1
-    todo_items ++ [render_todo_item(todo, assigns.editing_todo)]
+    todo_items = todo_items ++ [render_todo_item(todo, assigns.editing_todo)]
     {:cont, {acc_filtered_todos, acc_g, acc_state}}
   else
     {:halt, {acc_filtered_todos, acc_g, acc_state}}
@@ -574,14 +574,14 @@ end) <> "\n\t\t\t\t\t\t\t\t" <> render_tags(todo.tags) <> "\n\t\t\t\t\t\t\t</div
     if (tags == nil || length(tags) == 0), do: ""
     tag_elements = []
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, tags, :ok}, fn _, {acc_g, acc_tags, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tags, g, :ok}, fn _, {acc_tags, acc_g, acc_state} ->
   if (acc_g < length(acc_tags)) do
     tag = tags[g]
     acc_g = acc_g + 1
-    tag_elements ++ ["<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>"]
-    {:cont, {acc_g, acc_tags, acc_state}}
+    tag_elements = tag_elements ++ ["<button phx-click=\"toggle_tag\" phx-value-tag=\"" <> tag <> "\" class=\"px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200\">#" <> tag <> "</button>"]
+    {:cont, {acc_tags, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_tags, acc_state}}
+    {:halt, {acc_tags, acc_g, acc_state}}
   end
 end)
     Enum.join(tag_elements, "")

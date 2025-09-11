@@ -9,7 +9,6 @@
   "haxe/test/test_case.ex",
   "haxe/test/assert.ex",
   "haxe/stack_item.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/functional/result.ex",
   "haxe/ds/option.ex",

@@ -12,7 +12,6 @@
   "haxe/validation/_non_empty_string/non_empty_string_impl_.ex",
   "haxe/validation/_email/email_impl_.ex",
   "haxe/stack_item.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/functional/result_tools.ex",
   "haxe/functional/result.ex",

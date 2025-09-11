@@ -1,9 +1,9 @@
 defmodule ApplicationResultTools do
   def ok(state) do
-    {:Ok, state}
+    {:ok, state}
   end
   def error(reason) do
-    {:Error, reason}
+    {:error, reason}
   end
   def ignore() do
     {:ignore}

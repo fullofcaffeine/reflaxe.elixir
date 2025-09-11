@@ -48,7 +48,7 @@ defmodule TodoAppWeb do
   end
   def verified_routes() do
     quote do
-      use Phoenix.VerifiedRoutes, endpoint: :"TodoAppWeb.Endpoint", router: :"TodoAppWeb.Router", statics: TodoAppWeb.static_paths()
+      use Phoenix.VerifiedRoutes, endpoint: :"todo_app_web.endpoint", router: :"todo_app_web.router", statics: TodoAppWeb.static_paths()
     end
   end
   def channel() do
