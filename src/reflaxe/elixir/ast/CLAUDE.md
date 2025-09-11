@@ -293,6 +293,7 @@ This investigation revealed fundamental insights about variable mapping in compi
 - **NO special case handling** without understanding the general pattern
 - **NO fallback mechanisms** - fix the primary system instead
 - **ALWAYS use proper types** - Never use Dynamic when a proper type exists
+- **NO incomplete fixes** - If a fix causes regressions, understand and fix the root cause
 
 ### The TLocal Mapping Fix (January 2025)
 
@@ -330,6 +331,34 @@ This investigation revealed fundamental insights about variable mapping in compi
 - Unused variables (should have underscore prefix)
 - Abstract type method calls within patterns
 - Nested pattern matching
+- Standard library code generation (check for syntax errors)
+- Cross-cutting concerns (variable mapping across different contexts)
+
+### Standard Library Bugs Can Break Everything
+
+**Discovery**: MapTools.cross.hx had invalid Elixir syntax in `__elixir__()` calls
+
+**Problem**: Double-brace patterns `{{k, v}}` were used instead of single braces `{k, v}`
+
+**Impact**: All code using MapTools generated syntactically invalid Elixir
+
+**Lesson**: Standard library code is critical infrastructure. Always:
+- Test generated output for syntax validity
+- Ensure `__elixir__()` code is valid Elixir
+- Don't assume externs and stdlib are bug-free
+- Write comprehensive tests for stdlib modules
+
+### Debugging Complex Variable Mapping Issues
+
+**Strategy Used**: When fixing the TLocal mapping issue:
+
+1. **Add comprehensive debug traces** to understand actual behavior
+2. **Test minimal cases first** (simple array patterns)
+3. **Test complex cases** (enum patterns with multiple params)
+4. **Check for regressions** immediately after each change
+5. **Document the fix thoroughly** to prevent future confusion
+
+**Key Insight**: Debug-first development prevents assumptions. Always instrument the code to see what's actually happening before attempting fixes.
 
 ## 📚 Understanding Haxe's Enum Pattern Compilation
 
