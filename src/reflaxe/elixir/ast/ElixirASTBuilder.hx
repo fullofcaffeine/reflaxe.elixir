@@ -2418,13 +2418,15 @@ class ElixirASTBuilder {
                 }
                 
                 var enumType = extractEnumTypeFromSwitch(e);
-                // Always use idiomatic enum patterns for consistent atom-based matching
-                // This ensures patterns like {:TodoUpdates} match the generated tuples
-                var isIdiomaticEnum = enumType != null;
+                // All enums generate tuple patterns for idiomatic Elixir
+                // But only @:elixirIdiomatic enums use generic name extraction
+                var hasEnumType = enumType != null;
+                var isIdiomaticEnum = enumType != null && enumType.meta.has(":elixirIdiomatic");
                 
                 #if debug_enum
                 if (enumType != null) {
-                    trace('[DEBUG ENUM] Found enum ${enumType.name}, treating as idiomatic for atom-based patterns');
+                    var idiomaticStatus = isIdiomaticEnum ? "idiomatic (uses generic extraction)" : "regular (preserves pattern names)";
+                    trace('[DEBUG ENUM] Found enum ${enumType.name}, ${idiomaticStatus}');
                 } else {
                     trace('[DEBUG ENUM] No enum type found in switch target');
                 }
@@ -2451,13 +2453,20 @@ class ElixirASTBuilder {
                     // This maps Haxe's temporary variable IDs to canonical pattern names
                     var varMapping = createVariableMappingsForCase(c.expr, extractedParams, enumType, c.values);
                     
-                    var patterns = if (isIdiomaticEnum && enumType != null) {
-                        // For idiomatic enums, convert integer patterns to proper tuple patterns
-                        // Pass the actual enum expression and extracted parameters for proper naming
-                        [for (v in c.values) convertIdiomaticEnumPatternWithExtraction(v, enumType, extractedParams)];
+                    var patterns = if (hasEnumType && enumType != null) {
+                        // All enums generate tuple patterns for idiomatic Elixir output
+                        // The difference is in the parameter extraction logic:
+                        // - Idiomatic enums: Use generic extraction (g, g1, g2) due to limitations
+                        // - Regular enums: Try to preserve pattern variable names (r, g, b)
+                        if (isIdiomaticEnum) {
+                            // Idiomatic enums use generic extraction
+                            [for (v in c.values) convertIdiomaticEnumPatternWithExtraction(v, enumType, extractedParams)];
+                        } else {
+                            // Regular enums also generate tuple patterns but try to preserve names
+                            [for (v in c.values) convertRegularEnumPatternWithExtraction(v, enumType, extractedParams)];
+                        }
                     } else {
-                        // For regular enums, also pass extractedParams to ensure correct variable naming
-                        // This fixes the issue where patterns generate {:ok, value} instead of {:ok, email}
+                        // Non-enum patterns or unknown enum types
                         [for (v in c.values) convertPatternWithExtraction(v, extractedParams)];
                     }
                     
@@ -4445,6 +4454,125 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Convert patterns for regular enum switch statements with pattern variable extraction
+     * 
+     * WHY: Regular enums (without @:elixirIdiomatic) should generate tuple patterns with
+     *      user-specified variable names (r, g, b) instead of generic names (g, g1, g2)
+     * WHAT: Maps integer patterns to tuple patterns preserving pattern variable names from case values
+     * HOW: Similar to idiomatic pattern conversion but uses pattern variable names from case values
+     *      instead of the generic extraction logic
+     */
+    static function convertRegularEnumPatternWithExtraction(value: TypedExpr, enumType: EnumType, extractedParams: Array<String>): EPattern {
+        return switch(value.expr) {
+            // Haxe internally converts enum constructors to integers for switch
+            case TConst(TInt(index)):
+                // Get the constructor at this index
+                var constructors = enumType.constructs;
+                
+                // Build array of constructors in definition order (by index)
+                var constructorArray = [];
+                for (name in constructors.keys()) {
+                    var constructor = constructors.get(name);
+                    constructorArray[constructor.index] = constructor;
+                }
+                
+                if (index >= 0 && index < constructorArray.length && constructorArray[index] != null) {
+                    var constructor = constructorArray[index];
+                    
+                    // Regular enums use lowercase constructor names
+                    var atomName = constructor.name.toLowerCase();
+                    
+                    // Extract parameter count from the constructor's type
+                    var paramCount = 0;
+                    switch(constructor.type) {
+                        case TFun(args, _):
+                            paramCount = args.length;
+                        default:
+                            // No parameters
+                    }
+                    
+                    if (paramCount > 0) {
+                        // Constructor with arguments - create tuple pattern
+                        // For regular enums, try to use pattern variable names from case values
+                        // Fall back to canonical names if extraction failed
+                        var paramPatterns = [];
+                        
+                        // Get canonical parameter names from constructor definition
+                        var canonicalNames = switch(constructor.type) {
+                            case TFun(args, _):
+                                [for (arg in args) arg.name];
+                            default:
+                                [];
+                        };
+                        
+                        for (i in 0...paramCount) {
+                            // Check if we have an extracted pattern variable name
+                            var isExtracted = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
+                            
+                            if (isExtracted && !extractedParams[i].startsWith("g")) {
+                                // Use the pattern variable name if it's not a generic name
+                                paramPatterns.push(PVar(extractedParams[i]));
+                            } else if (i < canonicalNames.length) {
+                                // Fall back to canonical name from enum definition
+                                paramPatterns.push(PVar(canonicalNames[i]));
+                            } else {
+                                // Last resort: use wildcard
+                                paramPatterns.push(PWildcard);
+                            }
+                        }
+                        PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
+                    } else {
+                        // No-argument constructor
+                        PTuple([PLiteral(makeAST(EAtom(atomName)))]);
+                    }
+                } else {
+                    // Invalid index, use wildcard
+                    PWildcard;
+                }
+                
+            // For actual enum constructor patterns (shouldn't happen in regular switch)
+            case TField(_, FEnum(_, ef)):
+                var atomName = ef.name.toLowerCase();
+                
+                // Extract parameter count
+                var paramCount = 0;
+                switch(ef.type) {
+                    case TFun(args, _):
+                        paramCount = args.length;
+                    default:
+                }
+                
+                if (paramCount > 0) {
+                    // Use extracted parameters or canonical names
+                    var canonicalNames = switch(ef.type) {
+                        case TFun(args, _):
+                            [for (arg in args) arg.name];
+                        default:
+                            [];
+                    };
+                    
+                    var paramPatterns = [];
+                    for (i in 0...paramCount) {
+                        if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
+                            paramPatterns.push(PVar(extractedParams[i]));
+                        } else if (i < canonicalNames.length) {
+                            paramPatterns.push(PVar(canonicalNames[i]));
+                        } else {
+                            paramPatterns.push(PWildcard);
+                        }
+                    }
+                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
+                } else {
+                    PTuple([PLiteral(makeAST(EAtom(atomName)))]);
+                }
+                
+            // Other patterns delegate to regular pattern conversion
+            default:
+                convertPatternWithExtraction(value, extractedParams);
+        }
+    }
+    
+    /**
      * Internal implementation for idiomatic enum pattern conversion
      */
     static function convertIdiomaticEnumPatternWithTypeImpl(value: TypedExpr, enumType: EnumType, extractedParams: Null<Array<String>>): EPattern {
@@ -5339,36 +5467,10 @@ class ElixirASTBuilder {
             return mapping;
         }
         
-        // For idiomatic enums, continue with the original logic
-        if (!enumType.meta.has(":elixirIdiomatic")) {
-            // For regular enums, also scan for variable renamings
-            function scanForVariableAssignments(expr: TypedExpr): Void {
-                switch(expr.expr) {
-                    case TBlock(exprs):
-                        for (e in exprs) scanForVariableAssignments(e);
-                        
-                    case TVar(v, init) if (init != null):
-                        switch(init.expr) {
-                            case TLocal(sourceVar):
-                                // This is a variable assignment like email = value
-                                // Map the source variable ID to use the target name
-                                // When we see references to sourceVar.id, we'll use v.name instead
-                                mapping.set(sourceVar.id, toElixirVarName(v.name));
-                                #if debug_ast_pipeline
-                                trace('[Alpha-renaming] Mapping source var ${sourceVar.name} (id=${sourceVar.id}) to use name: ${toElixirVarName(v.name)}');
-                                #end
-                                
-                            default:
-                        }
-                        
-                    default:
-                        haxe.macro.TypedExprTools.iter(expr, scanForVariableAssignments);
-                }
-            }
-            
-            scanForVariableAssignments(caseExpr);
-            return mapping;
-        }
+        // For both regular and idiomatic enums, we need to map TEnumParameter extractions
+        // The difference is how we determine the target names:
+        // - Idiomatic enums: Use extractedParams (generic names like g, g1, g2)
+        // - Regular enums: Use canonical names from enum definition (r, g, b)
         
         // Get the constructor for this case
         if (values.length > 0) {
@@ -5402,21 +5504,22 @@ class ElixirASTBuilder {
                                     switch(init.expr) {
                                         case TEnumParameter(_, _, paramIndex):
                                             // This is a temp var extracting an enum parameter
-                                            // Map it to the actual extracted pattern variable name (e.g., "g")
-                                            // NOT the canonical name from the enum definition (e.g., "value")
-                                            if (extractedParams != null && paramIndex < extractedParams.length && extractedParams[paramIndex] != null) {
-                                                // Use the extracted pattern variable name
-                                                mapping.set(v.id, toElixirVarName(extractedParams[paramIndex]));
-                                                #if debug_ast_pipeline
-                                                trace('[Alpha-renaming] Mapping TVar ${v.name} (id=${v.id}) to extracted pattern name: ${toElixirVarName(extractedParams[paramIndex])}');
-                                                #end
-                                            } else if (paramIndex < canonicalNames.length) {
-                                                // Fallback to canonical name if no extracted param
-                                                mapping.set(v.id, canonicalNames[paramIndex]);
-                                                #if debug_ast_pipeline
-                                                trace('[Alpha-renaming] Mapping TVar ${v.name} (id=${v.id}) to canonical name: ${canonicalNames[paramIndex]}');
-                                                #end
+                                            // Map the temp var ID to its actual name (g, g1, g2)
+                                            // This is used when we later see TLocal references to this var
+                                            var tempVarName = toElixirVarName(v.name);
+                                            if (tempVarName.startsWith("_")) {
+                                                tempVarName = tempVarName.substr(1); // _g -> g
                                             }
+                                            
+                                            // Generate indexed names for subsequent params (g, g1, g2)
+                                            if (paramIndex > 0) {
+                                                tempVarName = "g" + paramIndex;
+                                            }
+                                            
+                                            mapping.set(v.id, tempVarName);
+                                            #if debug_ast_pipeline
+                                            trace('[Alpha-renaming] Mapping TEnumParameter temp var ${v.name} (id=${v.id}) to actual name: ${tempVarName}');
+                                            #end
                                             
                                         case TLocal(tempVar):
                                             // This might be assigning from a temp var to the actual pattern var

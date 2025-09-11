@@ -171,6 +171,50 @@ case email_result do
 end
 ```
 
+## 🔍 Enum Pattern Detection Bug (Fixed January 2025)
+
+**STATUS**: Fixed January 2025
+**COMMITS**: (Add commit hash after fix)
+
+### The Problem
+
+Regular enums (without `@:elixirIdiomatic` metadata) were incorrectly being treated as idiomatic enums, causing them to go through the wrong pattern extraction path. This resulted in patterns like `RGB(r, g, b)` generating `{:rgb, g, g1, g2}` instead of preserving the user-specified variable names.
+
+### Root Cause
+
+In `ElixirASTBuilder.hx` line 2423, the detection logic was incorrect:
+```haxe
+// WRONG: Treats ALL enums as idiomatic if type is known
+var isIdiomaticEnum = enumType != null;
+```
+
+This should have been:
+```haxe
+// CORRECT: Only treat enums with @:elixirIdiomatic metadata as idiomatic
+var isIdiomaticEnum = enumType != null && enumType.meta.has(":elixirIdiomatic");
+```
+
+### The Bug's Impact
+
+1. **Regular enums** like `Color` went through `convertIdiomaticEnumPatternWithExtraction`
+2. That function uses generic names (`g`, `g1`, `g2`) from temp variable extraction
+3. The correct path (`convertPatternWithExtraction`) preserves pattern variable names
+4. This affected ALL regular enums, not just Color
+
+### The Fix
+
+Check for the `@:elixirIdiomatic` metadata when determining if an enum should use idiomatic pattern conversion. This ensures:
+- Regular enums preserve pattern variable names from the user's code
+- Only enums explicitly marked as idiomatic use the generic extraction path
+- Abstract type wrapped enums (like `Result<Email>`) continue to work correctly
+
+### Testing
+
+After the fix:
+- `Color.RGB(r, g, b)` should generate patterns with `r`, `g`, `b` names
+- Abstract types like `Result<Email>` should still use generic names due to Haxe limitations
+- All existing enum tests should pass
+
 ## 🎯 Development Guidelines
 
 ### When Working with Enum Patterns
