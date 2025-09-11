@@ -31,7 +31,7 @@ defmodule ChangesetUtils do
         {:Some, value}
       {:error, reason} ->
         _g = elem(_result, 1)
-        {:None}
+        {:none}
     end
   end
 end

@@ -1,13 +1,13 @@
 defmodule FlashTypeTools do
   def to_string(_type) do
-    case (elem(_type, 0)) do
-      0 ->
+    case (_type) do
+      {:info} ->
         "info"
-      1 ->
+      {:success} ->
         "success"
-      2 ->
+      {:warning} ->
         "warning"
-      3 ->
+      {:error} ->
         "error"
     end
   end
@@ -15,38 +15,38 @@ defmodule FlashTypeTools do
     g = _str.to_lower_case()
     case (g) do
       "error" ->
-        {:Error}
+        {:error}
       "info" ->
-        {:Info}
+        {:info}
       "success" ->
-        {:Success}
+        {:success}
       "warning" ->
-        {:Warning}
+        {:warning}
       _ ->
-        {:Info}
+        {:info}
     end
   end
   def get_css_class(_type) do
-    case (elem(_type, 0)) do
-      0 ->
+    case (_type) do
+      {:info} ->
         "bg-blue-50 border-blue-200 text-blue-800"
-      1 ->
+      {:success} ->
         "bg-green-50 border-green-200 text-green-800"
-      2 ->
+      {:warning} ->
         "bg-yellow-50 border-yellow-200 text-yellow-800"
-      3 ->
+      {:error} ->
         "bg-red-50 border-red-200 text-red-800"
     end
   end
   def get_icon_name(_type) do
-    case (elem(_type, 0)) do
-      0 ->
+    case (_type) do
+      {:info} ->
         "information-circle"
-      1 ->
+      {:success} ->
         "check-circle"
-      2 ->
+      {:warning} ->
         "exclamation-triangle"
-      3 ->
+      {:error} ->
         "x-circle"
     end
   end
