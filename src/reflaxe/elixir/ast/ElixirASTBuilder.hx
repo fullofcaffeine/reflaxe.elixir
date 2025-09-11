@@ -162,6 +162,11 @@ class ElixirASTBuilder {
     // Counter for generating unique while loop function names
     static var whileLoopCounter: Int = 0;
     
+    // Pattern Variable Registry: Maps TVar IDs to their pattern-extracted names
+    // This has HIGHEST priority for variable naming - pattern names should be preserved
+    // Key is TVar.id, value is the pattern variable name (e.g., "data", "error", "code")
+    public static var patternVariableRegistry: Map<Int, String> = new Map();
+    
     // Current module being compiled (for detecting same-module static calls)
     public static var currentModule: String = null;
     
@@ -359,12 +364,21 @@ class ElixirASTBuilder {
             // Variables and Binding
             // ================================================================
             case TLocal(v):
-                // First check if we have a clause context with variable mappings
-                // This handles alpha-renaming for case clause variables
+                // Variable name resolution with priority hierarchy:
+                // 1. Pattern Variable Registry (highest priority - preserves user-specified names)
+                // 2. ClauseContext mappings (alpha-renaming for consistency)
+                // 3. Default variable name (fallback)
                 var varName = v.name;
                 
-                // Check ClauseContext for mapped names (alpha-renaming)
-                if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
+                // Priority 1: Check Pattern Variable Registry
+                if (patternVariableRegistry.exists(v.id)) {
+                    varName = patternVariableRegistry.get(v.id);
+                    #if debug_ast_pipeline
+                    trace('[AST Builder] TLocal: Using pattern-extracted name from registry: ${v.name} (id=${v.id}) -> ${varName}');
+                    #end
+                }
+                // Priority 2: Check ClauseContext for mapped names (alpha-renaming)
+                else if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
                     varName = currentClauseContext.localToName.get(v.id);
                     // trace('[AST Builder] TLocal: Using mapped name from ClauseContext: ${v.name} (id=${v.id}) -> ${varName}');
                 } else if (currentClauseContext != null && v.name == "error") {
@@ -4255,9 +4269,20 @@ class ElixirASTBuilder {
     static function analyzeEnumParameterExtraction(caseExpr: TypedExpr, caseValues: Array<TypedExpr> = null): Array<String> {
         // First try to extract pattern variables directly from case values
         if (caseValues != null) {
+            #if debug_ast_builder
+            trace('[analyzeEnumParameterExtraction] Case values:');
+            for (i in 0...caseValues.length) {
+                var val = caseValues[i];
+                trace('  Value $i: ${val.expr}');
+            }
+            #end
+            
             var patternVars = extractPatternVariableNamesFromValues(caseValues);
             if (patternVars.length > 0 && patternVars.filter(v -> v != null).length > 0) {
                 // We found pattern variables, use them
+                #if debug_ast_pipeline
+                trace('[analyzeEnumParameterExtraction] Found pattern variables from case values: ${patternVars}');
+                #end
                 return patternVars;
             }
         }
@@ -4318,8 +4343,9 @@ class ElixirASTBuilder {
                                         // Update the extracted param with the pattern variable name
                                         extractedParams[info.index] = patternName;
                                         
-                                        #if debug_ast_builder
+                                        #if debug_ast_pipeline
                                         trace('[DEBUG ENUM] Mapped temp var "$tempName" to pattern var "$patternName" at index ${info.index}');
+                                        trace('[DEBUG ENUM] extractedParams after mapping: ${extractedParams}');
                                         #end
                                     }
                                 default:
@@ -5504,21 +5530,21 @@ class ElixirASTBuilder {
                                     switch(init.expr) {
                                         case TEnumParameter(_, _, paramIndex):
                                             // This is a temp var extracting an enum parameter
-                                            // Map the temp var ID to its actual name (g, g1, g2)
-                                            // This is used when we later see TLocal references to this var
-                                            var tempVarName = toElixirVarName(v.name);
-                                            if (tempVarName.startsWith("_")) {
-                                                tempVarName = tempVarName.substr(1); // _g -> g
+                                            // DON'T map this to extractedParams - use the variable's own name!
+                                            // The variable v represents the pattern variable (like "r" in RGB(r,g,b))
+                                            // We should use its name, not the temp var name
+                                            
+                                            var varName = toElixirVarName(v.name);
+                                            
+                                            // Only strip underscore if it's a compiler-generated temp var
+                                            if (varName.startsWith("_g")) {
+                                                varName = varName.substr(1); // _g -> g
                                             }
                                             
-                                            // Generate indexed names for subsequent params (g, g1, g2)
-                                            if (paramIndex > 0) {
-                                                tempVarName = "g" + paramIndex;
-                                            }
-                                            
-                                            mapping.set(v.id, tempVarName);
+                                            // Map this variable ID to its own name
+                                            mapping.set(v.id, varName);
                                             #if debug_ast_pipeline
-                                            trace('[Alpha-renaming] Mapping TEnumParameter temp var ${v.name} (id=${v.id}) to actual name: ${tempVarName}');
+                                            trace('[Alpha-renaming] Mapping TEnumParameter temp var ${v.name} (id=${v.id}) to: ${varName}');
                                             #end
                                             
                                         case TLocal(tempVar):
@@ -5527,6 +5553,15 @@ class ElixirASTBuilder {
                                             if (mapping.exists(tempVar.id)) {
                                                 var canonicalName = mapping.get(tempVar.id);
                                                 mapping.set(v.id, canonicalName);
+                                                
+                                                // Also register in pattern registry if tempVar is registered
+                                                if (patternVariableRegistry.exists(tempVar.id)) {
+                                                    patternVariableRegistry.set(v.id, canonicalName);
+                                                    #if debug_ast_pipeline
+                                                    trace('[Pattern Registry] Propagating pattern name to ${v.name} (id=${v.id}) -> ${canonicalName}');
+                                                    #end
+                                                }
+                                                
                                                 #if debug_ast_pipeline
                                                 trace('[Alpha-renaming] Mapping TVar ${v.name} (id=${v.id}) from temp ${tempVar.name} to: ${canonicalName}');
                                                 #end
