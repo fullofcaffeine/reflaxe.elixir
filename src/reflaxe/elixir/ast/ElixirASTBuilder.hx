@@ -5756,6 +5756,212 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Detect if statements match array comprehension pattern
+     * 
+     * WHY: Haxe desugars comprehensions before we see them, need to detect patterns
+     * WHAT: Checks for var _g = []; for(...) _g.push(...); _g pattern
+     * HOW: Structural pattern matching without hardcoding variable names
+     */
+    static function isComprehensionPattern(statements: Array<TypedExpr>): Bool {
+        if (statements.length < 3) return false;
+        
+        #if debug_array_comprehension
+        trace('[Array Comprehension] Checking ${statements.length} statements for comprehension pattern');
+        #end
+        
+        // Pattern: var temp = []; for loop; return temp
+        var firstStmt = unwrapMetaParens(statements[0]);
+        var tempVarName: String = null;
+        
+        // Check initialization
+        switch(firstStmt.expr) {
+            case TVar(v, init) if (init != null):
+                switch(init.expr) {
+                    case TArrayDecl([]):
+                        tempVarName = v.name;
+                    default:
+                        return false;
+                }
+            default:
+                return false;
+        }
+        
+        // Check for loop with push
+        var hasLoopWithPush = false;
+        for (i in 1...statements.length - 1) {
+            switch(statements[i].expr) {
+                case TFor(v, iterator, body):
+                    // Check if body contains push to temp var
+                    if (containsPushToVar(body, tempVarName)) {
+                        hasLoopWithPush = true;
+                        break;
+                    }
+                default:
+            }
+        }
+        
+        // Check last statement returns temp var
+        var lastStmt = statements[statements.length - 1];
+        var returnsTemp = switch(lastStmt.expr) {
+            case TLocal(v) if (v.name == tempVarName): true;
+            default: false;
+        };
+        
+        return hasLoopWithPush && returnsTemp;
+    }
+    
+    /**
+     * Detect if statements represent an unrolled comprehension
+     * 
+     * WHY: Constant ranges get completely unrolled by Haxe
+     * WHAT: Detects repeated concatenation patterns
+     * HOW: Looks for var g = []; g = g ++ [val]; ... pattern
+     */
+    static function isUnrolledComprehension(statements: Array<TypedExpr>): Bool {
+        if (statements.length < 3) return false;
+        
+        #if debug_array_comprehension
+        trace('[Array Comprehension] Checking for unrolled comprehension pattern');
+        #end
+        
+        // First: var temp = []
+        var firstStmt = unwrapMetaParens(statements[0]);
+        var tempVarName: String = null;
+        
+        switch(firstStmt.expr) {
+            case TVar(v, init) if (init != null):
+                switch(init.expr) {
+                    case TArrayDecl([]):
+                        tempVarName = v.name;
+                    default:
+                        return false;
+                }
+            default:
+                return false;
+        }
+        
+        // Middle: repeated concatenations
+        var hasConcatenations = false;
+        for (i in 1...statements.length - 1) {
+            switch(statements[i].expr) {
+                case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, {expr: TArrayDecl([_])})}) 
+                    if (v.name == tempVarName && v2.name == tempVarName):
+                    hasConcatenations = true;
+                case TBinop(OpAdd, {expr: TLocal(v)}, {expr: TArrayDecl([_])}) if (v.name == tempVarName):
+                    // Bare concatenation (shouldn't happen but handle it)
+                    hasConcatenations = true;
+                default:
+                    // Non-concatenation statement
+            }
+        }
+        
+        // Last: return temp var
+        var lastStmt = statements[statements.length - 1];
+        var returnsTemp = switch(lastStmt.expr) {
+            case TLocal(v) if (v.name == tempVarName): true;
+            default: false;
+        };
+        
+        return hasConcatenations && returnsTemp;
+    }
+    
+    /**
+     * Extract comprehension data from desugared statements
+     * 
+     * WHY: Need to extract variable, iterator, and body for reconstruction
+     * WHAT: Returns structured data about the comprehension
+     * HOW: Pattern matches to extract relevant parts
+     */
+    static function extractComprehensionData(statements: Array<TypedExpr>): Null<{
+        tempVar: String,
+        loopVar: String,
+        iterator: TypedExpr,
+        body: TypedExpr,
+        isNested: Bool
+    }> {
+        if (statements.length < 3) return null;
+        
+        var firstStmt = unwrapMetaParens(statements[0]);
+        var tempVarName: String = null;
+        
+        // Get temp var from initialization
+        switch(firstStmt.expr) {
+            case TVar(v, init) if (init != null):
+                switch(init.expr) {
+                    case TArrayDecl([]):
+                        tempVarName = v.name;
+                    default:
+                        return null;
+                }
+            default:
+                return null;
+        }
+        
+        // Find the for loop
+        for (i in 1...statements.length - 1) {
+            switch(statements[i].expr) {
+                case TFor(v, iterator, body):
+                    // Extract push body
+                    var pushBody = extractPushBody(body, tempVarName);
+                    if (pushBody != null) {
+                        // Check if body is itself a comprehension (nested)
+                        var isNested = switch(pushBody.expr) {
+                            case TArrayDecl([{expr: TFor(_)}]): true;
+                            case TBlock(stmts) if (isComprehensionPattern(stmts) || isUnrolledComprehension(stmts)): true;
+                            default: false;
+                        };
+                        
+                        return {
+                            tempVar: tempVarName,
+                            loopVar: v.name,
+                            iterator: iterator,
+                            body: pushBody,
+                            isNested: isNested
+                        };
+                    }
+                default:
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Helper: Check if expression contains push to specific variable
+     */
+    static function containsPushToVar(expr: TypedExpr, varName: String): Bool {
+        return switch(expr.expr) {
+            case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, _) if (v.name == varName && cf.get().name == "push"):
+                true;
+            case TBlock(el):
+                for (e in el) {
+                    if (containsPushToVar(e, varName)) return true;
+                }
+                false;
+            default:
+                false;
+        };
+    }
+    
+    /**
+     * Helper: Extract the expression being pushed
+     */
+    static function extractPushBody(expr: TypedExpr, varName: String): Null<TypedExpr> {
+        return switch(expr.expr) {
+            case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, [arg]) if (v.name == varName && cf.get().name == "push"):
+                arg;
+            case TBlock(el):
+                for (e in el) {
+                    var result = extractPushBody(e, varName);
+                    if (result != null) return result;
+                }
+                null;
+            default:
+                null;
+        };
+    }
+    
+    /**
      * Try to reconstruct array comprehensions from desugared imperative code
      * 
      * Haxe desugars array comprehensions like [for (i in 0...5) i * i] into:
