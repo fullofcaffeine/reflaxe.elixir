@@ -1,6 +1,4 @@
 defmodule Atom_Impl_ do
-  # Static inline constants are not compiled as module attributes
-  # They are inlined at compile time in Haxe
   def _new(s) do
     this1 = s
     this1
