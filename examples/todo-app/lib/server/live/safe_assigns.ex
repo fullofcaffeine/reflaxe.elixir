@@ -38,7 +38,7 @@ defmodule SafeAssigns do
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
   if (acc_g < length(acc_todos)) do
-    todo = todos[g]
+    todo = acc_todos[acc_g]
     acc_g = acc_g + 1
     if (todo.completed) do
       acc_count = acc_count + 1
@@ -55,7 +55,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
   if (acc_g < length(acc_todos)) do
-    todo = todos[g]
+    todo = acc_todos[acc_g]
     acc_g = acc_g + 1
     if (not todo.completed) do
       acc_count = acc_count + 1

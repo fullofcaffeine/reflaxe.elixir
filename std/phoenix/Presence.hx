@@ -101,9 +101,66 @@ typedef Topic = String;
 
 /**
  * Presence entry containing accumulated metadata for a key
+ * 
+ * ## What is TMeta?
+ * 
+ * TMeta is a generic type parameter that represents the type of metadata attached to each presence.
+ * It allows you to use type-safe custom metadata structures instead of Dynamic.
+ * 
+ * ## Why Generic?
+ * 
+ * Phoenix.Presence can track any kind of metadata about presences. By making PresenceEntry
+ * generic with TMeta, we enable compile-time type safety for your application's specific
+ * metadata structure.
+ * 
+ * ## Examples
+ * 
+ * ```haxe
+ * // Define your custom metadata type
+ * typedef UserMeta = {
+ *     var onlineAt: Float;
+ *     var userName: String;
+ *     var status: String;
+ * }
+ * 
+ * // Use it with PresenceEntry
+ * var userPresence: PresenceEntry<UserMeta> = Presence.getByKey(socket, "user_123");
+ * 
+ * // Access metadata with full type safety
+ * for (meta in userPresence.metas) {
+ *     trace(meta.userName);  // Type-safe access to userName
+ *     trace(meta.status);    // Type-safe access to status
+ * }
+ * ```
+ * 
+ * ## Common Patterns
+ * 
+ * 1. **Simple metadata**: Just tracking when user came online
+ *    ```haxe
+ *    typedef SimpleMeta = { onlineAt: Float }
+ *    ```
+ * 
+ * 2. **Rich metadata**: Tracking user state and activity
+ *    ```haxe
+ *    typedef RichMeta = {
+ *        onlineAt: Float,
+ *        userName: String,
+ *        avatar: String,
+ *        currentPage: String,
+ *        editingItemId: Null<Int>
+ *    }
+ *    ```
+ * 
+ * 3. **Using Dynamic**: When you don't need type safety
+ *    ```haxe
+ *    var presence: PresenceEntry<Dynamic> = Presence.getByKey(socket, key);
+ *    ```
+ * 
+ * @param TMeta The type of metadata attached to each presence. Can be any type including
+ *              Dynamic for untyped metadata, or a custom typedef/class for type-safe access.
  */
-typedef PresenceEntry = {
-    var metas: Array<PresenceMeta>;
+typedef PresenceEntry<TMeta> = {
+    var metas: Array<TMeta>;
 };
 
 /**
@@ -319,7 +376,7 @@ extern class Presence {
      * @param key Presence key to get
      */
     @:native("get_by_key")
-    public static function getByKey(socketOrTopic: Dynamic, key: PresenceKey): Array<PresenceEntry>;
+    public static function getByKey<TMeta>(socketOrTopic: Dynamic, key: PresenceKey): Array<PresenceEntry<TMeta>>;
 }
 
 /**
