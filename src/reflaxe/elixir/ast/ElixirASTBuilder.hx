@@ -2526,6 +2526,26 @@ class ElixirASTBuilder {
             // Control Flow (Basic)
             // ================================================================
             case TIf(econd, eif, eelse):
+                #if debug_loop_transformation
+                // Debug nested if statements in loop bodies - specifically for meta variable issue
+                switch(eif.expr) {
+                    case TBlock(exprs):
+                        trace('[XRay LoopTransform] TIf then branch is TBlock with ${exprs.length} expressions');
+                        for (i in 0...exprs.length) {
+                            switch(exprs[i].expr) {
+                                case TVar(v, _):
+                                    trace('[XRay LoopTransform]   TBlock[$i]: TVar ${v.name}');
+                                default:
+                                    trace('[XRay LoopTransform]   TBlock[$i]: ${Type.enumConstructor(exprs[i].expr)}');
+                            }
+                        }
+                    case TVar(v, _):
+                        trace('[XRay LoopTransform] TIf then branch: TVar ${v.name}');
+                    default:
+                        trace('[XRay LoopTransform] TIf then branch: ${Type.enumConstructor(eif.expr)}');
+                }
+                #end
+                
                 // Check if the condition is an inline expansion block
                 var condition = switch(econd.expr) {
                     case TBlock(el) if (ElixirASTPatterns.isInlineExpansionBlock(el)):
@@ -3977,7 +3997,18 @@ class ElixirASTBuilder {
                     
                     // Transform condition and body to use acc_ variables BEFORE building the function
                     var transformedCondition = transformVariableReferences(condition, varMapping);
+                    
+                    #if debug_state_threading
+                    trace('[State Threading] Body BEFORE transformation:');
+                    trace(ElixirASTPrinter.printAST(body));
+                    #end
+                    
                     var transformedBody = transformVariableReferences(body, varMapping);
+                    
+                    #if debug_state_threading
+                    trace('[State Threading] Body AFTER transformation:');
+                    trace(ElixirASTPrinter.printAST(transformedBody));
+                    #end
                     
                     // Check if the body contains early returns that need special handling
                     var bodyHasReturn = checkForEarlyReturns(transformedBody);
@@ -7055,7 +7086,15 @@ class ElixirASTBuilder {
                         // This is an assignment to a tracked variable
                         // Replace with acc_ version
                         PVar(varMapping.get(name));
+                    case PVar(name):
+                        // This is a new local variable declaration
+                        // Keep the original name - don't transform it
+                        #if debug_state_threading
+                        trace('[Transform] New local variable declaration: $name (not in mapping)');
+                        #end
+                        pattern;
                     case _:
+                        // Other pattern types - keep as-is
                         pattern;
                 };
                 
