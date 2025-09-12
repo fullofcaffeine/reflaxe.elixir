@@ -10,14 +10,14 @@ defmodule Main do
   end
   def handle_result(_result) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
+        value = g
         "Success: " <> Kernel.to_string(value)
-      {:error, error} ->
+      {:error, g} ->
         g = elem(_result, 1)
-        message = error
-        "Error: " <> error
+        message = g
+        "Error: " <> message
     end
   end
   def get_value_or_default(result) do

@@ -1,23 +1,23 @@
 defmodule Reflaxe.Elixir.Macros.HttpMethod do
   def get() do
-    {:GET}
+    {0}
   end
   def post() do
-    {:POST}
+    {1}
   end
   def put() do
-    {:PUT}
+    {2}
   end
   def delete() do
-    {:DELETE}
+    {3}
   end
   def patch() do
-    {:PATCH}
+    {4}
   end
   def live() do
-    {:LIVE}
+    {5}
   end
   def live_dashboard() do
-    {:LIVE_DASHBOARD}
+    {6}
   end
 end

@@ -4,24 +4,24 @@ defmodule Main do
     valid_email = Email_Impl_.parse("user@example.com")
     assert match?({:ok, _}, valid_email)
     case (valid_email) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(valid_email, 1)
-        email = value
-        actual = Email_Impl_.get_domain(value)
+        email = g
+        actual = Email_Impl_.get_domain(email)
         assert actual == "example.com"
-        actual = Email_Impl_.get_local_part(value)
+        actual = Email_Impl_.get_local_part(email)
         assert actual == "user"
-        condition = Email_Impl_.has_domain(value, "example.com")
+        condition = Email_Impl_.has_domain(email, "example.com")
         assert condition
-        condition = Email_Impl_.has_domain(value, "other.com")
+        condition = Email_Impl_.has_domain(email, "other.com")
         assert not condition
-        normalized = Email_Impl_.normalize(value)
+        normalized = Email_Impl_.normalize(email)
         actual = Email_Impl_.to_string(normalized)
         assert actual == "user@example.com"
-      {:error, error} ->
+      {:error, g} ->
         g = elem(valid_email, 1)
-        reason = error
-        flunk("Valid email should not fail: " <> error)
+        reason = g
+        flunk("Valid email should not fail: " <> reason)
     end
     invalid_email = Email_Impl_.parse("not-an-email")
     assert match?({:error, _}, invalid_email)
@@ -32,21 +32,21 @@ defmodule Main do
     user_id = UserId_Impl_.parse("User123")
     assert match?({:ok, _}, user_id)
     case (user_id) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(user_id, 1)
-        id = value
-        actual = UserId_Impl_.to_string(UserId_Impl_.normalize(value))
+        id = g
+        actual = UserId_Impl_.to_string(UserId_Impl_.normalize(id))
         assert actual == "user123"
-        condition = UserId_Impl_.starts_with(value, "User")
+        condition = UserId_Impl_.starts_with(id, "User")
         assert condition
-        condition = UserId_Impl_.starts_with_ignore_case(value, "user")
+        condition = UserId_Impl_.starts_with_ignore_case(id, "user")
         assert condition
-        actual = UserId_Impl_.length(value)
+        actual = UserId_Impl_.length(id)
         assert actual == 7
-      {:error, error} ->
+      {:error, g} ->
         g = elem(user_id, 1)
-        reason = error
-        flunk("Valid user ID should not fail: " <> error)
+        reason = g
+        flunk("Valid user ID should not fail: " <> reason)
     end
     empty_user_id = UserId_Impl_.parse("")
     assert match?({:error, _}, empty_user_id)
@@ -73,15 +73,15 @@ defmodule Main do
         diff = PositiveInt_Impl_.safe_sub(a, b)
         assert match?({:ok, _}, diff)
         case (diff) do
-          {:ok, value} ->
+          {:ok, g} ->
             g = elem(diff, 1)
-            result = value
-            actual = PositiveInt_Impl_.to_int(value)
+            result = g
+            actual = PositiveInt_Impl_.to_int(result)
             assert actual == 2
-          {:error, error} ->
+          {:error, g} ->
             g = elem(diff, 1)
-            reason = error
-            flunk("Subtraction should not fail: " <> error)
+            reason = g
+            flunk("Subtraction should not fail: " <> reason)
         end
         invalid_diff = PositiveInt_Impl_.safe_sub(b, a)
         assert match?({:error, _}, invalid_diff)
@@ -100,46 +100,46 @@ defmodule Main do
     str = NonEmptyString_Impl_.parse("  hello world  ")
     assert match?({:ok, _}, str)
     case (str) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(str, 1)
-        s = value
-        trimmed = NonEmptyString_Impl_.safe_trim(value)
+        s = g
+        trimmed = NonEmptyString_Impl_.safe_trim(s)
         assert match?({:ok, _}, trimmed)
         case (trimmed) do
-          {:ok, value} ->
+          {:ok, g} ->
             g = elem(trimmed, 1)
-            trimmed_str = value
-            actual = NonEmptyString_Impl_.to_string(value)
+            trimmed_str = g
+            actual = NonEmptyString_Impl_.to_string(trimmed_str)
             assert actual == "hello world"
-          {:error, error} ->
+          {:error, g} ->
             g = elem(trimmed, 1)
-            reason = error
-            flunk("Trim should not fail: " <> error)
+            reason = g
+            flunk("Trim should not fail: " <> reason)
         end
-        upper = NonEmptyString_Impl_.to_upper_case(value)
+        upper = NonEmptyString_Impl_.to_upper_case(s)
         actual = NonEmptyString_Impl_.to_string(upper)
         assert actual == "  HELLO WORLD  "
-        lower = NonEmptyString_Impl_.to_lower_case(value)
+        lower = NonEmptyString_Impl_.to_lower_case(s)
         actual = NonEmptyString_Impl_.to_string(lower)
         assert actual == "  hello world  "
-        actual = NonEmptyString_Impl_.length(value)
+        actual = NonEmptyString_Impl_.length(s)
         assert actual == 15
-      {:error, error} ->
+      {:error, g} ->
         g = elem(str, 1)
-        reason = error
-        flunk("Valid non-empty string should not fail: " <> error)
+        reason = g
+        flunk("Valid non-empty string should not fail: " <> reason)
     end
     empty = NonEmptyString_Impl_.parse("")
     assert match?({:error, _}, empty)
     whitespace_only = NonEmptyString_Impl_.parse("   ")
     assert match?({:ok, _}, whitespace_only)
     case (whitespace_only) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(whitespace_only, 1)
-        ws = value
-        trimmed = NonEmptyString_Impl_.safe_trim(value)
+        ws = g
+        trimmed = NonEmptyString_Impl_.safe_trim(ws)
         assert match?({:error, _}, trimmed)
-      {:error, error} ->
+      {:error, g} ->
         _g = elem(whitespace_only, 1)
         flunk("Whitespace-only should parse")
     end
@@ -148,14 +148,14 @@ defmodule Main do
     domain_result = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@example.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
     assert match?({:ok, _}, domain_result)
     case (domain_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(domain_result, 1)
-        domain = value
-        assert value == "example.com"
-      {:error, error} ->
+        domain = g
+        assert domain == "example.com"
+      {:error, g} ->
         g = elem(domain_result, 1)
-        reason = error
-        flunk("Domain extraction should not fail: " <> error)
+        reason = g
+        flunk("Domain extraction should not fail: " <> reason)
     end
     failed_filter = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@wrong.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
     assert match?({:error, _}, failed_filter)
@@ -165,10 +165,10 @@ defmodule Main do
     email_option = ResultTools.to_option(email_result)
     assert match?({:some, _}, email_option)
     case (email_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(email_option, 1)
-        email = v
-        actual = Email_Impl_.get_domain(v)
+        email = g
+        actual = Email_Impl_.get_domain(email)
         assert actual == "example.com"
       {:none} ->
         flunk("Valid email should not be None")
@@ -180,25 +180,25 @@ defmodule Main do
   test "error handling" do
     invalid_email = Email_Impl_.parse("invalid-email")
     case (invalid_email) do
-      {:ok, value} ->
+      {:ok, g} ->
         _g = elem(invalid_email, 1)
         flunk("Invalid email should not parse")
-      {:error, error} ->
+      {:error, message} ->
         g = elem(invalid_email, 1)
-        message = error
-        condition = error.index_of("Invalid email") >= 0
+        message = g
+        condition = message.index_of("Invalid email") >= 0
         assert condition
     end
     large_int = PositiveInt_Impl_.parse(1000000)
     assert match?({:ok, _}, large_int)
     case (large_int) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(large_int, 1)
-        large = value
-        doubled = PositiveInt_Impl_.multiply(value, value)
+        large = g
+        doubled = PositiveInt_Impl_.multiply(large, large)
         condition = PositiveInt_Impl_.to_int(doubled) > 0
         assert condition
-      {:error, error} ->
+      {:error, g} ->
         _g = elem(large_int, 1)
         flunk("Large integer should parse")
     end

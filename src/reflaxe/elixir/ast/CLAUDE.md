@@ -777,6 +777,118 @@ case TField(_, FEnum(_, ef)):
 - **Type safety** - Can't accidentally pass unconverted strings
 - **DRY principle** - Conversion logic in one place
 
+## 🔍 TEnumParameter Extraction Bug Fix & Idiomatic Pattern Matching (September 2025)
+
+**STATUS**: Fixed - MAJOR IMPROVEMENT
+**COMMITS**: edcb270e, (current fix commit)
+
+### The Breakthrough Improvement
+
+This fix resulted in a MAJOR code quality improvement. The compiler now generates **idiomatic Elixir pattern matching** instead of integer-based index checking!
+
+#### Before (Integer Index Checking):
+```elixir
+# Old output - mechanical and non-idiomatic
+case (elem(msg, 0)) do
+  0 ->  # Integer index for :created
+    g = elem(msg, 1)
+    content = g
+    Log.trace("Created: " <> content)
+  1 ->  # Integer index for :updated
+    g = elem(msg, 1)
+    g1 = elem(msg, 2)
+    id = g
+    content = g1
+    Log.trace("Updated " <> id <> ": " <> content)
+```
+
+#### After (Idiomatic Pattern Matching):
+```elixir
+# New output - idiomatic and readable!
+case msg do
+  {:created, content} ->
+    g = elem(msg, 1)  # Redundant but harmless
+    content = g
+    Log.trace("Created: " <> content)
+  {:updated, id, content} ->
+    g = elem(msg, 1)  # Redundant but harmless
+    g1 = elem(msg, 2)
+    id = g
+    content = g1
+    Log.trace("Updated " <> id <> ": " <> content)
+```
+
+### The Problem That Led to This Fix
+
+When Haxe generates switch cases with ignored enum parameters (using `_`), it still creates `TEnumParameter` expressions to extract values. However, in Elixir's pattern matching, when we use patterns like `{:ok, g}` where the value is `{:ok, nil}`, the variable `g` already contains `nil` - it's been extracted by the pattern match itself.
+
+The issue occurs when TEnumParameter then tries to extract from the already-extracted value:
+```elixir
+# Pattern matching extracts nil into g
+case result do
+  {:ok, g} ->  # g = nil (extracted from {:ok, nil})
+    _g = elem(g, 1)  # ❌ ERROR: trying elem(nil, 1) instead of elem(result, 1)
+```
+
+### Root Cause
+
+TEnumParameter was designed for targets without pattern matching. In those targets, you need explicit extraction:
+```javascript
+// JavaScript-like target
+if (result.tag === "Ok") {
+  var g = result.values[0];  // Manual extraction needed
+}
+```
+
+But Elixir's pattern matching does extraction automatically, so when TEnumParameter generates `elem(g, 1)`, it's trying to extract from an already-extracted value.
+
+### The Solution
+
+Modified `ElixirASTBuilder.hx` (lines 3520-3595) to detect when the variable being accessed is a temporary variable from pattern extraction (like `g`, `g1`, `g2`). In these cases, we skip the redundant `elem()` call and just return the variable itself:
+
+```haxe
+case TEnumParameter(e, ef, index):
+    // Check if this looks like a temp var from pattern extraction
+    if (varName == "g" || (varName.startsWith("g") && varName.charAt(1) >= '0' && varName.charAt(1) <= '9')) {
+        // Skip extraction - variable already contains the extracted value
+        return EVar(varName);
+    } else {
+        // Normal extraction for non-pattern-matched cases
+        return ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]);
+    }
+```
+
+### Test Scenario
+
+Created test in `test/tests/EnumIgnoredParameter/` to validate the fix:
+```haxe
+// Test ignored parameter - should NOT generate elem() extraction
+switch (subscribe()) {
+    case Ok(_):  // Ignored parameter
+        trace("Subscription successful");
+    case Error(msg):
+        trace("Error: " + msg);
+}
+```
+
+Before fix: Generated `_g = elem(g, 1)` causing ArgumentError when `g` is nil
+After fix: Generated `_g = g` which doesn't cause runtime errors
+
+### Why We Keep the Assignment
+
+Even though `_g = g` seems redundant, we keep it because:
+1. It maintains consistency with Haxe's compilation model
+2. Elixir's compiler optimizes it away
+3. Removing it would require complex AST analysis to determine which assignments to skip
+4. The assignment is harmless and doesn't affect runtime performance
+
+### Lessons Learned
+
+1. **Pattern matching vs manual extraction**: Elixir's pattern matching is fundamentally different from imperative extraction
+2. **Temp variable detection**: Variables like `g`, `g1`, `g2` are Haxe's convention for extracted values
+3. **Defensive coding**: The fix handles both pattern-matched and non-pattern cases correctly
+4. **Test coverage**: Always create regression tests for runtime errors, not just compilation errors
+
 ## 🚀 Future Improvements
 
 ### Planned Enhancements

@@ -4,7 +4,7 @@ defmodule OptionTools do
       {:some, g} ->
         g = elem(_option, 1)
         value = g
-        transform.(g)
+        transform.(value)
       {:none} ->
         :none
     end
@@ -14,7 +14,7 @@ defmodule OptionTools do
       {:some, g} ->
         g = elem(_option, 1)
         value = g
-        transform.(g)
+        transform.(value)
       {:none} ->
         :none
     end
@@ -27,7 +27,7 @@ defmodule OptionTools do
       {:some, g} ->
         g = elem(_option, 1)
         inner = g
-        g
+        inner
       {:none} ->
         :none
     end
@@ -37,7 +37,7 @@ defmodule OptionTools do
       {:some, g} ->
         g = elem(_option, 1)
         value = g
-        if (predicate.(g)), do: g, else: :none
+        if (predicate.(value)), do: value, else: :none
       {:none} ->
         :none
     end
@@ -47,7 +47,7 @@ defmodule OptionTools do
       {:some, g} ->
         g = elem(_option, 1)
         value = g
-        g
+        value
       {:none} ->
         default_value
     end
@@ -57,7 +57,7 @@ defmodule OptionTools do
       {:some, g} ->
         g = elem(_option, 1)
         value = g
-        g
+        value
       {:none} ->
         fn_param.()
     end
@@ -133,7 +133,7 @@ end)
       {:some, g} ->
         g = elem(_option, 1)
         value = g
-        g
+        value
       {:none} ->
         error
     end
@@ -143,7 +143,7 @@ end)
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        g
+        value
       {:error, g} ->
         _g = elem(_result, 1)
         :none
@@ -157,7 +157,7 @@ end)
       {:some, g} ->
         g = elem(_option, 1)
         value = g
-        g
+        value
       {:none} ->
         nil
     end
@@ -167,7 +167,7 @@ end)
       {:some, g} ->
         g = elem(_option, 1)
         value = g
-        %{:reply => g, :status => "ok"}
+        %{:reply => value, :status => "ok"}
       {:none} ->
         %{:reply => nil, :status => "none"}
     end
@@ -177,7 +177,7 @@ end)
       {:some, g} ->
         g = elem(_option, 1)
         value = g
-        g
+        value
       {:none} ->
         throw("Expected Some value but got None: " <> _message)
     end
@@ -193,7 +193,7 @@ end)
       {:some, g} ->
         g = elem(option, 1)
         value = g
-        fn_param.(g)
+        fn_param.(value)
       {:none} ->
         nil
     end

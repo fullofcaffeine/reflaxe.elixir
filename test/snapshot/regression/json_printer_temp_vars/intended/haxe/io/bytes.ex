@@ -3,7 +3,7 @@ defmodule Bytes do
   @b nil
   def get_string(struct, pos, len, encoding) do
     if (encoding == nil) do
-      encoding = {0}
+      encoding = {:utf8}
     end
     if (pos < 0 || len < 0 || pos + len > length(struct)) do
       throw("Out of bounds")
@@ -204,8 +204,7 @@ end
     Base.encode16(struct.b, case: :lower)
   end
   def alloc(length) do
-    b = :binary.copy(<<0>>, length)
-    Bytes.new(length, b)
+    Bytes.new(length, (:binary.copy(<<0>>, length)))
   end
   def of_string(s, _encoding) do
     binary = :unicode.characters_to_binary(s, :utf8)
@@ -221,7 +220,6 @@ end
     Bytes.new(length, binary)
   end
   def of_data(b) do
-    length = byte_size(b)
-    Bytes.new(length, b)
+    Bytes.new((byte_size(b)), b)
   end
 end

@@ -1,6 +1,5 @@
 defmodule TaskRef_Impl_ do
   def _new(task) do
-    this1 = nil
     this1 = task
     this1
   end

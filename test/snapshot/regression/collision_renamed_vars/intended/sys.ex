@@ -15,7 +15,7 @@ defmodule Sys do
     :standard_error
   end
   def get_char(echo) do
-    char = (
+    ((
 
             # Save current terminal settings
             {:ok, old_settings} = :io.getopts(:standard_io)
@@ -37,8 +37,7 @@ defmodule Sys do
                 _ -> 0
             end
         
-)
-    char
+))
   end
   def environment() do
     env = %{}

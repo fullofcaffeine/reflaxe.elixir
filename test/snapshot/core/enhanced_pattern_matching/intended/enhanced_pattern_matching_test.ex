@@ -39,12 +39,12 @@ defmodule EnhancedPatternMatchingTest do
         g = elem(_result, 1)
         case (g) do
           {:success, value} ->
-            g = elem(g, 1)
+            g = g
             value = g
             "Double success: " <> Std.string(value)
           {:error, error, context} ->
-            g1 = elem(g, 1)
-            g = elem(g, 2)
+            g1 = g
+            g = g
             inner_error = g1
             inner_context = g
             "Outer success, inner error: " <> inner_error <> " (context: " <> inner_context <> ")"

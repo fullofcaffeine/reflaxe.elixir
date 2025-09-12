@@ -27,7 +27,6 @@ end
     Log.trace("Spec: " <> Std.string(spec), %{:file_name => "Main.hx", :line_number => 32, :class_name => "Main", :method_name => "testTernaryInFunction"})
   end
   defp create_spec(module, args, id) do
-    actual_id = if (id != nil), do: id, else: module
-    %{:id => actual_id, :module => module, :args => args}
+    %{:id => (if (id != nil), do: id, else: module), :module => module, :args => args}
   end
 end

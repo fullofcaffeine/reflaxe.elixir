@@ -7,67 +7,38 @@ defmodule TestApp.Application do
     test_application_children()
   end
   defp test_type_safe_child_specs() do
-    pubsub_children_1 = nil
-    pubsub_children_0 = nil
-    pubsub_children_0 = {Phoenix.PubSub, [name: :"TestApp.PubSub"]}
-    pubsub_children_1 = {Phoenix.PubSub, [name: :"CustomName.PubSub"]}
-    module_children_2 = nil
-    module_children_1 = nil
-    module_children_0 = nil
-    config = nil
-    module_children_0 = if config != nil, do: {TestApp.Repo, config}, else: TestApp.Repo
+    pubsub_children_0 = {Phoenix.PubSub, [name: TestApp.PubSub]}
+    pubsub_children_1 = {Phoenix.PubSub, [name: CustomName.PubSub]}
+    module_children_0 = if (config != nil), do: {TestApp.Repo, (nil)}, else: TestApp.Repo
     module_children_1 = TestAppWeb.Endpoint
     module_children_2 = TestApp.Telemetry
-    configured_children_2 = nil
-    configured_children_1 = nil
-    configured_children_0 = nil
-    config = [%{:key => "database", :value => "test_db"}, %{:key => "pool_size", :value => 5}]
-    configured_children_0 = if config != nil, do: {TestApp.Repo, config}, else: TestApp.Repo
+    configured_children_0 = if (config != nil), do: {TestApp.Repo, ([%{:key => "database", :value => "test_db"}, %{:key => "pool_size", :value => 5}])}, else: TestApp.Repo
     configured_children_1 = TestAppWeb.Endpoint
-    args = [%{:name => "TestApp.Presence", :pubsub_server => "TestApp.PubSub"}]
-    configured_children_2 = if args != nil && length(args) > 0, do: {TestApp.Presence, args}, else: TestApp.Presence
+    configured_children_2 = if (args != nil && length(args) > 0), do: {TestApp.Presence, ([%{:name => "TestApp.Presence", :pubsub_server => "TestApp.PubSub"}])}, else: TestApp.Presence
     Log.trace("Basic TypeSafeChildSpec compilation test completed", %{:file_name => "Main.hx", :line_number => 61, :class_name => "Main", :method_name => "testTypeSafeChildSpecs"})
   end
   defp test_child_spec_builders() do
-    direct_children_3 = nil
-    direct_children_2 = nil
-    direct_children_1 = nil
-    direct_children_0 = nil
-    direct_children_0 = {Phoenix.PubSub, [name: :"TestApp.PubSub"]}
-    config = nil
-    direct_children_1 = if config != nil, do: {TestApp.Repo, config}, else: TestApp.Repo
+    direct_children_0 = {Phoenix.PubSub, [name: TestApp.PubSub]}
+    direct_children_1 = if (config != nil), do: {TestApp.Repo, (nil)}, else: TestApp.Repo
     direct_children_2 = TestAppWeb.Endpoint
     direct_children_3 = TestApp.Telemetry
     Log.trace("Direct TypeSafeChildSpec test completed", %{:file_name => "Main.hx", :line_number => 78, :class_name => "Main", :method_name => "testChildSpecBuilders"})
   end
   defp test_complex_child_specs() do
-    complex_children_1 = nil
-    complex_children_0 = nil
-    complex_children_0 = %{:id => "MyComplexWorker", :start => {MyComplexWorker, :start_link, ["complex_worker_args"]}, :restart => {0}, :shutdown => {:Timeout, 5000}, :type => {0}}
-    complex_children_1 = %{:id => "AnotherWorker", :start => {AnotherWorker, :start_link, ["another_worker_args"]}, :restart => {2}, :shutdown => {2}, :type => {0}}
+    complex_children_0 = %{:id => "MyComplexWorker", :start => {MyComplexWorker, :start_link, ["complex_worker_args"]}, :restart => {:permanent}, :shutdown => {:timeout, 5000}, :type => {:worker}}
+    complex_children_1 = %{:id => "AnotherWorker", :start => {AnotherWorker, :start_link, ["another_worker_args"]}, :restart => {:transient}, :shutdown => {:infinity}, :type => {:worker}}
     Log.trace("Complex TypeSafeChildSpec test completed", %{:file_name => "Main.hx", :line_number => 105, :class_name => "Main", :method_name => "testComplexChildSpecs"})
   end
   defp test_application_children() do
-    type_safe_children_6 = nil
-    type_safe_children_5 = nil
-    type_safe_children_4 = nil
-    type_safe_children_3 = nil
-    type_safe_children_2 = nil
-    type_safe_children_1 = nil
-    type_safe_children_0 = nil
-    type_safe_children_0 = {Phoenix.PubSub, [name: :"TestApp.PubSub"]}
-    config = [%{:key => "database", :value => "test_app_dev"}, %{:key => "pool_size", :value => 10}, %{:key => "timeout", :value => 15000}]
-    type_safe_children_1 = if config != nil, do: {TestApp.Repo, config}, else: TestApp.Repo
+    type_safe_children_0 = {Phoenix.PubSub, [name: TestApp.PubSub]}
+    type_safe_children_1 = if (config != nil), do: {TestApp.Repo, ([%{:key => "database", :value => "test_app_dev"}, %{:key => "pool_size", :value => 10}, %{:key => "timeout", :value => 15000}])}, else: TestApp.Repo
     type_safe_children_2 = TestAppWeb.Endpoint
     type_safe_children_3 = TestApp.Telemetry
-    args = [%{:name => "TestApp.Presence", :pubsub_server => "TestApp.PubSub"}]
-    type_safe_children_4 = if args != nil && length(args) > 0, do: {TestApp.Presence, args}, else: TestApp.Presence
-    type_safe_children_5 = %{:id => "BackgroundWorker", :start => {BackgroundWorker, :start_link, ["background_worker_args"]}, :restart => {0}, :shutdown => {:Timeout, 10000}, :type => {0}}
-    type_safe_children_6 = %{:id => "TaskSupervisor", :start => {TaskSupervisor, :start_link, ["task_supervisor_args"]}, :restart => {0}, :shutdown => {2}, :type => {1}}
-    mixed_children_1 = nil
-    mixed_children_0 = nil
-    mixed_children_0 = {Phoenix.PubSub, [name: :"TestApp.PubSub"]}
-    mixed_children_1 = %{:id => "legacy_worker", :start => {LegacyWorker, :start_link, [%{}]}, :restart => {1}, :shutdown => {:Timeout, 1000}, :type => {0}}
+    type_safe_children_4 = if (args != nil && length(args) > 0), do: {TestApp.Presence, ([%{:name => "TestApp.Presence", :pubsub_server => "TestApp.PubSub"}])}, else: TestApp.Presence
+    type_safe_children_5 = %{:id => "BackgroundWorker", :start => {BackgroundWorker, :start_link, ["background_worker_args"]}, :restart => {:permanent}, :shutdown => {:timeout, 10000}, :type => {:worker}}
+    type_safe_children_6 = %{:id => "TaskSupervisor", :start => {TaskSupervisor, :start_link, ["task_supervisor_args"]}, :restart => {:permanent}, :shutdown => {:infinity}, :type => {:supervisor}}
+    mixed_children_0 = {Phoenix.PubSub, [name: TestApp.PubSub]}
+    mixed_children_1 = %{:id => "legacy_worker", :start => {LegacyWorker, :start_link, [%{}]}, :restart => {:temporary}, :shutdown => {:timeout, 1000}, :type => {:worker}}
     Log.trace("Application children test completed", %{:file_name => "Main.hx", :line_number => 172, :class_name => "Main", :method_name => "testApplicationChildren"})
   end
   def start(_type, _args) do

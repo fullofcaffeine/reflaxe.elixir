@@ -1,28 +1,23 @@
 defmodule GenServerRef_Impl_ do
   def _new(ref) do
-    this1 = nil
     this1 = ref
     this1
   end
   def from_pid(pid) do
-    this1 = nil
     this1 = pid
     this1
   end
   def from_name(name) do
     ref = __elixir__.call("String.to_atom(" <> name <> ")")
-    this1 = nil
     this1 = ref
     this1
   end
   def from_via(via) do
-    this1 = nil
     this1 = via
     this1
   end
   def global(name) do
     ref = __elixir__.call("{:global, String.to_atom(" <> name <> ")}")
-    this1 = nil
     this1 = ref
     this1
   end

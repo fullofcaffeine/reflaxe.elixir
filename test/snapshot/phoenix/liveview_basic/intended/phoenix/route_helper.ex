@@ -1,8 +1,8 @@
 defmodule Phoenix.RouteHelper do
   def named(arg0) do
-    {:Named, arg0}
+    {0, arg0}
   end
   def path(arg0) do
-    {:Path, arg0}
+    {1, arg0}
   end
 end

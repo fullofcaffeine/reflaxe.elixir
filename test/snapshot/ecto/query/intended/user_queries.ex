@@ -24,8 +24,7 @@ defmodule UserQueries do
     from("users", "u", %{:left_join => %{:table => "posts", :alias => "p", :on => "p.user_id == u.id"}, :group_by => "u.id", :having => "count(p.id) >= " <> Kernel.to_string(min_posts), :select => %{:user => "u", :post_count => "count(p.id)"}})
   end
   def get_top_users() do
-    subquery = from("posts", "p", %{:group_by => "p.user_id", :select => %{:user_id => "p.user_id", :count => "count(p.id)"}})
-    from("users", "u", %{:join => %{:table => subquery, :alias => "s", :on => "s.user_id == u.id"}, :where => %{:count_gt => 10}, :select => "u"})
+    from("users", "u", %{:join => %{:table => (from("posts", "p", %{:group_by => "p.user_id", :select => %{:user_id => "p.user_id", :count => "count(p.id)"}})), :alias => "s", :on => "s.user_id == u.id"}, :where => %{:count_gt => 10}, :select => "u"})
   end
   def get_users_with_associations() do
     from("users", "u", %{:preload => ["posts", "profile", "comments"], :select => "u"})
@@ -38,15 +37,21 @@ defmodule UserQueries do
   end
   def search_users(filters) do
     query = from("users", "u", %{:select => "u"})
-    if (filters.name != nil) do
-      query = where(query, "u", %{:name_ilike => filters.name})
-    end
-    if (filters.email != nil) do
-      query = where(query, "u", %{:email => filters.email})
-    end
-    if (filters.min_age != nil) do
-      query = where(query, "u", %{:age_gte => filters.min_age})
-    end
+    query = if (filters.name != nil) do
+  where(query, "u", %{:name_ilike => filters.name})
+else
+  query
+end
+    query = if (filters.email != nil) do
+  where(query, "u", %{:email => filters.email})
+else
+  query
+end
+    query = if (filters.min_age != nil) do
+  where(query, "u", %{:age_gte => filters.min_age})
+else
+  query
+end
     query
   end
   defp from(_table, _alias, _opts) do

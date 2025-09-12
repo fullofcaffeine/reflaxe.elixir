@@ -3,7 +3,7 @@ defmodule TaskResultHelper do
     if (result == nil) do
       false
     else
-      case (elem(result, 0)) do
+      case (result) do
         0 ->
           _g = elem(result, 1)
           true
@@ -17,7 +17,7 @@ defmodule TaskResultHelper do
     if (result == nil) do
       nil
     else
-      case (elem(result, 0)) do
+      case (result) do
         0 ->
           g = elem(result, 1)
           value = g
@@ -32,7 +32,7 @@ defmodule TaskResultHelper do
     if (result == nil) do
       nil
     else
-      case (elem(result, 0)) do
+      case (result) do
         0 ->
           _g = elem(result, 1)
           nil

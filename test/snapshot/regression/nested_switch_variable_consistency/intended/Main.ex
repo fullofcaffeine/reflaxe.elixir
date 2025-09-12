@@ -2,43 +2,43 @@ defmodule Main do
   defp parse_message(msg) do
     case (msg) do
       "alert" ->
-        {:Some, {:SystemAlert, "Warning"}}
+        {:some, {:system_alert, "Warning"}}
       "create" ->
-        {:Some, {:TodoCreated, %{:id => 1, :title => "Test"}}}
+        {:some, {:todo_created, %{:id => 1, :title => "Test"}}}
       "delete" ->
-        {:Some, {:TodoDeleted, 1}}
+        {:some, {:todo_deleted, 1}}
       "update" ->
-        {:Some, {:TodoUpdated, %{:id => 1, :title => "Updated"}}}
+        {:some, {:todo_updated, %{:id => 1, :title => "Updated"}}}
       _ ->
-        {1}
+        {:none}
     end
   end
   def main() do
     msg = "create"
     g = parse_message(msg)
-    case (elem(g, 0)) do
-      0 ->
-        g = elem(g, 1)
+    case (g) do
+      {:some, value} ->
+        g = g
         parsed_msg = g
-        case (elem(parsed_msg, 0)) do
-          0 ->
+        case (parsed_msg) do
+          {:todo_created, todo} ->
             g = elem(parsed_msg, 1)
             todo = g
             Log.trace("Todo created: " <> Std.string(todo.title), %{:file_name => "Main.hx", :line_number => 51, :class_name => "Main", :method_name => "main"})
-          1 ->
+          {:todo_updated, todo} ->
             g = elem(parsed_msg, 1)
             todo = g
             Log.trace("Todo updated: " <> Std.string(todo.title), %{:file_name => "Main.hx", :line_number => 53, :class_name => "Main", :method_name => "main"})
-          2 ->
+          {:todo_deleted, id} ->
             g = elem(parsed_msg, 1)
             id = g
             Log.trace("Todo deleted: " <> Kernel.to_string(id), %{:file_name => "Main.hx", :line_number => 55, :class_name => "Main", :method_name => "main"})
-          3 ->
+          {:system_alert, message} ->
             g = elem(parsed_msg, 1)
             message = g
             Log.trace("Alert: " <> message, %{:file_name => "Main.hx", :line_number => 57, :class_name => "Main", :method_name => "main"})
         end
-      1 ->
+      {:none} ->
         Log.trace("No message parsed", %{:file_name => "Main.hx", :line_number => 60, :class_name => "Main", :method_name => "main"})
     end
   end

@@ -48,7 +48,7 @@ defmodule TestAppWeb do
   end
   def verified_routes() do
     quote do
-      use Phoenix.VerifiedRoutes, endpoint: :"TestAppWeb.Endpoint", router: :"TestAppWeb.Router", statics: TestAppWeb.static_paths()
+      use Phoenix.VerifiedRoutes, endpoint: :"test_app_web.endpoint", router: :"test_app_web.router", statics: TestAppWeb.static_paths()
     end
   end
   def channel() do

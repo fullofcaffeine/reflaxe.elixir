@@ -20,22 +20,22 @@ defmodule Main do
   defp test_pattern_matching() do
     user_opt = 42
     case (user_opt) do
-      {:some, value} ->
+      {:some, g} ->
         g = elem(user_opt, 1)
-        value = value
+        value = g
         Log.trace("Got value: " <> Kernel.to_string(value), %{:file_name => "Main.hx", :line_number => 79, :class_name => "Main", :method_name => "testPatternMatching"})
       {:none} ->
         Log.trace("Got none", %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "testPatternMatching"})
     end
     result = "data"
     case (result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(result, 1)
-        data = value
-        Log.trace("Success: " <> value, %{:file_name => "Main.hx", :line_number => 88, :class_name => "Main", :method_name => "testPatternMatching"})
-      {:error, reason} ->
+        data = g
+        Log.trace("Success: " <> data, %{:file_name => "Main.hx", :line_number => 88, :class_name => "Main", :method_name => "testPatternMatching"})
+      {:error, g} ->
         g = elem(result, 1)
-        reason = reason
+        reason = g
         Log.trace("Error: " <> reason, %{:file_name => "Main.hx", :line_number => 90, :class_name => "Main", :method_name => "testPatternMatching"})
     end
   end

@@ -16,7 +16,7 @@ defmodule Main do
     map.clear()
     g = []
     k = Map.keys(map)
-    Log.trace("After clear, keys: " <> Std.string(Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
+    Log.trace("After clear, keys: " <> Std.string((fn -> Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
   if (acc_k.has_next()) do
     g = g ++ [(acc_k.next())]
     {:cont, {acc_k, acc_state}}
@@ -24,7 +24,7 @@ defmodule Main do
     {:halt, {acc_k, acc_state}}
   end
 end)
-g), %{:file_name => "Main.hx", :line_number => 37, :class_name => "Main", :method_name => "stringMap"})
+g end).()), %{:file_name => "Main.hx", :line_number => 37, :class_name => "Main", :method_name => "stringMap"})
   end
   def int_map() do
     map = %{}

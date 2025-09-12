@@ -4,11 +4,11 @@ defmodule ResultTools do
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        transform.(g)
+        transform.(value)
       {:error, g} ->
         g = elem(_result, 1)
         error = g
-        g
+        error
     end
   end
   def flat_map(_result, transform) do
@@ -16,11 +16,11 @@ defmodule ResultTools do
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        transform.(g)
+        transform.(value)
       {:error, g} ->
         g = elem(_result, 1)
         error = g
-        g
+        error
     end
   end
   def bind(result, transform) do
@@ -31,11 +31,11 @@ defmodule ResultTools do
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        on_success.(g)
+        on_success.(value)
       {:error, g} ->
         g = elem(_result, 1)
         error = g
-        on_error.(g)
+        on_error.(error)
     end
   end
   def is_ok(_result) do
@@ -63,11 +63,11 @@ defmodule ResultTools do
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        g
+        value
       {:error, g} ->
         g = elem(_result, 1)
         error = g
-        throw("Attempted to unwrap Error result: " <> Std.string(g))
+        throw("Attempted to unwrap Error result: " <> Std.string(error))
     end
   end
   def unwrap_or(_result, default_value) do
@@ -75,7 +75,7 @@ defmodule ResultTools do
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        g
+        value
       {:error, g} ->
         _g = elem(_result, 1)
         default_value
@@ -86,11 +86,11 @@ defmodule ResultTools do
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        g
+        value
       {:error, g} ->
         g = elem(_result, 1)
         error = g
-        error_handler.(g)
+        error_handler.(error)
     end
   end
   def filter(_result, predicate, error_value) do
@@ -98,11 +98,11 @@ defmodule ResultTools do
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        if (predicate.(g)), do: g, else: error_value
+        if (predicate.(value)), do: value, else: error_value
       {:error, g} ->
         g = elem(_result, 1)
         error = g
-        g
+        error
     end
   end
   def map_error(_result, transform) do
@@ -110,11 +110,11 @@ defmodule ResultTools do
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        g
+        value
       {:error, g} ->
         g = elem(_result, 1)
         error = g
-        transform.(g)
+        transform.(error)
     end
   end
   def bimap(_result, on_success, on_error) do
@@ -122,11 +122,11 @@ defmodule ResultTools do
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        on_success.(g)
+        on_success.(value)
       {:error, g} ->
         g = elem(_result, 1)
         error = g
-        on_error.(g)
+        on_error.(error)
     end
   end
   def ok(value) do
@@ -158,7 +158,7 @@ end)
       {:ok, g} ->
         g = elem(_result, 1)
         value = g
-        g
+        value
       {:error, g} ->
         _g = elem(_result, 1)
         :none

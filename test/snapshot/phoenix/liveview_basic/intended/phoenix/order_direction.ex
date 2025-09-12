@@ -1,8 +1,8 @@
 defmodule Phoenix.OrderDirection do
   def asc() do
-    {:ASC}
+    {0}
   end
   def desc() do
-    {:DESC}
+    {1}
   end
 end

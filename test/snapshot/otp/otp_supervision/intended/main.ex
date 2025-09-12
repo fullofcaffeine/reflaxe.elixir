@@ -6,7 +6,7 @@ defmodule Main do
     test_supervision_tree()
   end
   defp test_supervisor() do
-    children = [%{:id => "worker1", :start => {MyWorker, :start_link, [%{:name => "worker1"}]}, :restart => {0}, :type => {0}}, %{:id => "worker2", :start => {MyWorker, :start_link, [%{:name => "worker2"}]}, :restart => {1}, :type => {0}}, %{:id => "sub_supervisor", :start => {SubSupervisor, :start_link, [%{}]}, :restart => {0}, :type => {1}}]
+    children = [%{:id => "worker1", :start => {MyWorker, :start_link, [%{:name => "worker1"}]}, :restart => {:permanent}, :type => {:worker}}, %{:id => "worker2", :start => {MyWorker, :start_link, [%{:name => "worker2"}]}, :restart => {:temporary}, :type => {:worker}}, %{:id => "sub_supervisor", :start => {SubSupervisor, :start_link, [%{}]}, :restart => {:permanent}, :type => {:supervisor}}]
     options = [strategy: :one_for_one, max_restarts: 5, max_seconds: 10]
     result = Supervisor.start_link(children, options)
     supervisor = result
@@ -15,7 +15,7 @@ defmodule Main do
     Supervisor.restart_child(supervisor, "worker1")
     Supervisor.terminate_child(supervisor, "worker2")
     Supervisor.delete_child(supervisor, "worker2")
-    new_child = %{:id => "dynamic", :start => {DynamicWorker, :start_link, [%{}]}, :restart => {2}, :type => {0}}
+    new_child = %{:id => "dynamic", :start => {DynamicWorker, :start_link, [%{}]}, :restart => {:transient}, :type => {:worker}}
     Supervisor.start_child(supervisor, new_child)
     stats = Supervisor.count_children(supervisor)
     Log.trace("Active workers: " <> stats.workers <> ", Supervisors: " <> stats.supervisors, %{:file_name => "Main.hx", :line_number => 89, :class_name => "Main", :method_name => "testSupervisor"})
@@ -66,7 +66,7 @@ end)
   fun = funs[g1]
   if acc_g1 < length(acc_funs) do
     acc_g1 = acc_g1 + 1
-    g ++ [Task.task.async(fun)]
+    g = g ++ [Task.task.async(fun)]
     {:cont, {acc_funs, acc_g1, acc_state}}
   else
     {:halt, {acc_funs, acc_g1, acc_state}}
@@ -76,14 +76,14 @@ g
     g = []
     g1 = 0
     concurrent_results = tasks
-Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, tasks, :ok}, fn _, {acc_g1, acc_tasks, acc_state} ->
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tasks, g1, :ok}, fn _, {acc_tasks, acc_g1, acc_state} ->
   task = tasks[g1]
   if (acc_g1 < length(acc_tasks)) do
     acc_g1 = acc_g1 + 1
-    g ++ [Task.task.await(task)]
-    {:cont, {acc_g1, acc_tasks, acc_state}}
+    g = g ++ [Task.task.await(task)]
+    {:cont, {acc_tasks, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_tasks, acc_state}}
+    {:halt, {acc_tasks, acc_g1, acc_state}}
   end
 end)
 g
@@ -96,7 +96,7 @@ end)
   Task.task.shutdown(task)
   nil
 else
-  case (elem(result, 0)) do
+  case (result) do
     0 ->
       g = elem(result, 1)
       value = g
@@ -128,28 +128,28 @@ end
       funs = [fn -> 100 end, fn -> 200 end, fn -> 300 end]
       g = []
       g1 = 0
-      tasks = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, funs, :ok}, fn _, {acc_g1, acc_funs, acc_state} ->
+      tasks = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {funs, g1, :ok}, fn _, {acc_funs, acc_g1, acc_state} ->
   fun = funs[g1]
   if acc_g1 < length(acc_funs) do
     acc_g1 = acc_g1 + 1
-    g ++ [Task.Supervisor.task._supervisor.async(supervisor, fun)]
-    {:cont, {acc_g1, acc_funs, acc_state}}
+    g = g ++ [Task.Supervisor.task._supervisor.async(supervisor, fun)]
+    {:cont, {acc_funs, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_funs, acc_state}}
+    {:halt, {acc_funs, acc_g1, acc_state}}
   end
 end)
 g
       g = []
       g1 = 0
       concurrent_results = tasks
-Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, tasks, :ok}, fn _, {acc_g1, acc_tasks, acc_state} ->
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {tasks, g1, :ok}, fn _, {acc_tasks, acc_g1, acc_state} ->
   task = tasks[g1]
   if (acc_g1 < length(acc_tasks)) do
     acc_g1 = acc_g1 + 1
-    g ++ [Task.task.await(task)]
-    {:cont, {acc_g1, acc_tasks, acc_state}}
+    g = g ++ [Task.task.await(task)]
+    {:cont, {acc_tasks, acc_g1, acc_state}}
   else
-    {:halt, {acc_g1, acc_tasks, acc_state}}
+    {:halt, {acc_tasks, acc_g1, acc_state}}
   end
 end)
 g
@@ -157,7 +157,7 @@ g
     end
   end
   defp test_supervision_tree() do
-    children = [%{:id => "worker1", :start => {Worker1, :start_link, [%{}]}, :restart => {0}, :type => {0}}, %{:id => "worker2", :start => {Worker2, :start_link, [%{}]}, :restart => {1}, :type => {0}}, %{:id => "worker3", :start => {Worker3, :start_link, [%{}]}, :restart => {2}, :type => {0}}]
+    children = [%{:id => "worker1", :start => {Worker1, :start_link, [%{}]}, :restart => {:permanent}, :type => {:worker}}, %{:id => "worker2", :start => {Worker2, :start_link, [%{}]}, :restart => {:temporary}, :type => {:worker}}, %{:id => "worker3", :start => {Worker3, :start_link, [%{}]}, :restart => {:transient}, :type => {:worker}}]
     options = [strategy: :one_for_all, max_restarts: 10, max_seconds: 60]
     result = Supervisor.start_link(children, options)
     supervisor = result
@@ -165,14 +165,14 @@ g
     Log.trace("Supervisor - Workers: " <> stats.workers <> ", Supervisors: " <> stats.supervisors, %{:file_name => "Main.hx", :line_number => 271, :class_name => "Main", :method_name => "testSupervisionTree"})
     children_list = Supervisor.which_children(supervisor)
     g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, children_list, :ok}, fn _, {acc_g, acc_children_list, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {children_list, g, :ok}, fn _, {acc_children_list, acc_g, acc_state} ->
   if (acc_g < length(acc_children_list)) do
     child = children_list[g]
     acc_g = acc_g + 1
     Log.trace("Child: " <> Std.string(child._0) <> ", Type: " <> Std.string(child._2), %{:file_name => "Main.hx", :line_number => 276, :class_name => "Main", :method_name => "testSupervisionTree"})
-    {:cont, {acc_g, acc_children_list, acc_state}}
+    {:cont, {acc_children_list, acc_g, acc_state}}
   else
-    {:halt, {acc_g, acc_children_list, acc_state}}
+    {:halt, {acc_children_list, acc_g, acc_state}}
   end
 end)
     Supervisor.restart_child(supervisor, "worker1")

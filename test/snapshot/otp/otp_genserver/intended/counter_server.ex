@@ -7,8 +7,7 @@ defmodule CounterServer do
     %{:reply => state.count, :state => state}
   end
   def handle_call_increment(struct, _from, state) do
-    new_state = %{:count => state.count + 1}
-    %{:reply => new_state.count, :state => new_state}
+    %{:reply => new_state.count, :state => (%{:count => state.count + 1})}
   end
   def handle_cast_reset(struct, _state) do
     %{:noreply => %{:count => 0}}

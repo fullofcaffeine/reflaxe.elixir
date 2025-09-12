@@ -1,7 +1,6 @@
 defmodule FormTemplate do
   def render_form(action, method) do
-    csrf = get_csrf_token()
-    "<form action='" <> action <> "' method='" <> method <> "'>" <> "<input type='hidden' name='_csrf_token' value='" <> csrf <> "'>" <> "<div class='form-group'>" <> "<label for='name'>Name:</label>" <> "<input type='text' id='name' name='name' required>" <> "</div>" <> "<button type='submit'>Submit</button>" <> "</form>"
+    "<form action='" <> action <> "' method='" <> method <> "'>" <> "<input type='hidden' name='_csrf_token' value='" <> (get_csrf_token()) <> "'>" <> "<div class='form-group'>" <> "<label for='name'>Name:</label>" <> "<input type='text' id='name' name='name' required>" <> "</div>" <> "<button type='submit'>Submit</button>" <> "</form>"
   end
   def render_with_helpers(errors) do
     if (length(errors) == 0), do: "<div class='no-errors'></div>"
@@ -11,7 +10,7 @@ defmodule FormTemplate do
   if (acc_g < length(acc_errors)) do
     error = errors[g]
     acc_g = acc_g + 1
-    error_items ++ ["<li class='error-item'>" <> error <> "</li>"]
+    error_items = error_items ++ ["<li class='error-item'>" <> error <> "</li>"]
     {:cont, {acc_errors, acc_g, acc_state}}
   else
     {:halt, {acc_errors, acc_g, acc_state}}
