@@ -1,7 +1,7 @@
 defmodule TodoAppWeb.Presence do
   use Phoenix.Presence, otp_app: :todo_app
   def track_user(socket, user) do
-    track(socket, "users", Std.string(user.id), (%{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => user.name, :user_email => user.email, :avatar => nil, :editing_todo_id => nil, :editing_started_at => nil}))
+    track(socket, Std.string(user.id), (%{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => user.name, :user_email => user.email, :avatar => nil, :editing_todo_id => nil, :editing_started_at => nil}))
   end
   def update_user_editing(socket, user, todo_id) do
     current_meta = get_user_presence(socket, user.id)
@@ -11,13 +11,13 @@ defmodule TodoAppWeb.Presence do
 else
   nil
 end}
-    update(socket, "users", Std.string(user.id), updated_meta)
+    update(socket, Std.string(user.id), updated_meta)
   end
-  defp get_user_presence(_socket, user_id) do
-    presences = list("users")
+  defp get_user_presence(socket, user_id) do
+    presences = list(socket)
     user_key = Std.string(user_id)
-    if (Map.has_key?(presences, user_key)) do
-      entry = Map.get(presences, user_key)
+    if (Map.has_key?(presences, String.to_atom(user_key))) do
+      entry = Map.get(presences, String.to_atom(user_key))
       if (length(entry.metas) > 0) do
         entry.metas[0]
       else
@@ -26,14 +26,29 @@ end}
     end
     nil
   end
-  def list_online_users(_socket) do
-    list("users")
+  def list_online_users(socket) do
+    list(socket)
   end
-  def get_users_editing_todo(_socket, todo_id) do
-    all_users = list("users")
+  def get_users_editing_todo(socket, todo_id) do
+    all_users = list(socket)
     editing_users = []
-    g = all_users.key_value_iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, :ok}, fn _, {acc_g, acc_state} -> nil end)
+    g = 0
+    g1 = Map.keys(all_users)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
+  if (acc_g < length(acc_g1)) do
+    user_id = acc_g1[acc_g]
+    acc_g = acc_g + 1
+    entry = Map.get(all_users, String.to_atom(user_id))
+    if (length(entry.metas) > 0) do
+      if (meta.editing_todo_id == todo_id) do
+        editing_users = editing_users ++ [(entry.metas[0])]
+      end
+    end
+    {:cont, {acc_g, acc_g1, acc_state}}
+  else
+    {:halt, {acc_g, acc_g1, acc_state}}
+  end
+end)
     editing_users
   end
 end

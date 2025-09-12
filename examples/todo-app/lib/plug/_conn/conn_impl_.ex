@@ -39,7 +39,7 @@ defmodule Conn_Impl_ do
     g1 = Map.keys(headers)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < length(acc_g1)) do
-    field = g1[g]
+    field = acc_g1[acc_g]
     acc_g = acc_g + 1
     value = Map.get(headers, String.to_atom(field))
     Map.put(result, field, value)
@@ -87,7 +87,7 @@ end)
     g1 = Map.keys(headers)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < length(acc_g1)) do
-    field = g1[g]
+    field = acc_g1[acc_g]
     acc_g = acc_g + 1
     value = Map.get(headers, String.to_atom(field))
     Map.put(result, field, value)

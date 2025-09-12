@@ -1,8 +1,7 @@
 package server.presence;
 
 import phoenix.Phoenix.Socket;
-import phoenix.Phoenix.Presence;
-import phoenix.Phoenix.PresenceEntry;
+import phoenix.Presence;
 import phoenix.LiveSocket;
 import server.types.Types.User;
 
@@ -22,8 +21,8 @@ typedef PresenceMeta = {
     var editingStartedAt: Null<Float>;  // When they started editing
 }
 
-// PresenceEntry is now imported from the framework layer (phoenix.Phoenix.PresenceEntry)
-// This ensures consistency across all Phoenix applications
+// PresenceEntry is defined in phoenix.Presence module as a generic typedef
+// This provides type-safe presence metadata across all Phoenix applications
 
 /**
  * Idiomatic Phoenix Presence implementation with type-safe Haxe augmentation
@@ -55,7 +54,8 @@ class TodoPresence {
             editingStartedAt: null
         };
         // Single presence entry per user - the Phoenix way
-        return Presence.track(socket, "users", Std.string(user.id), meta);
+        // Note: When using @:presence, the compiler will inject self() as first arg
+        return Presence.track(socket, Std.string(user.id), meta);
     }
     
     /**
@@ -87,17 +87,19 @@ class TodoPresence {
         };
         
         // Phoenix pattern: update existing presence rather than track/untrack
-        return Presence.update(socket, "users", Std.string(user.id), updatedMeta);
+        // Note: When using @:presence, the compiler will inject self() as first arg
+        return Presence.update(socket, Std.string(user.id), updatedMeta);
     }
     
     /**
      * Helper to get current user presence metadata
      */
     static function getUserPresence<T>(socket: Socket<T>, userId: Int): Null<PresenceMeta> {
-        var presences = Presence.listTopic("users");
+        var presences = Presence.list(socket);  // Use socket instead of topic
+        // Note: presences is a Dynamic map, need to use Reflect
         var userKey = Std.string(userId);
-        if (presences.exists(userKey)) {
-            var entry = presences.get(userKey);
+        if (Reflect.hasField(presences, userKey)) {
+            var entry: phoenix.Presence.PresenceEntry<PresenceMeta> = Reflect.field(presences, userKey);
             return entry.metas.length > 0 ? entry.metas[0] : null;
         }
         return null;
@@ -106,9 +108,10 @@ class TodoPresence {
     /**
      * Get list of users currently online
      */
-    public static function listOnlineUsers<T>(socket: Socket<T>): Map<String, PresenceEntry<PresenceMeta>> {
-        // Use framework-level Presence abstraction instead of __elixir__()
-        return Presence.listTopic("users");
+    public static function listOnlineUsers<T>(socket: Socket<T>): Dynamic {
+        // Get all presences for the socket's topic
+        // Returns a Dynamic map of user_id -> PresenceEntry
+        return Presence.list(socket);
     }
     
     /**
@@ -118,10 +121,12 @@ class TodoPresence {
      * querying separate topics - more maintainable and Phoenix-like.
      */
     public static function getUsersEditingTodo<T>(socket: Socket<T>, todoId: Int): Array<PresenceMeta> {
-        var allUsers = Presence.listTopic("users");
+        var allUsers = Presence.list(socket);
         var editingUsers = [];
         
-        for (userId => entry in allUsers) {
+        // Iterate over Dynamic presence map using Reflect
+        for (userId in Reflect.fields(allUsers)) {
+            var entry: phoenix.Presence.PresenceEntry<PresenceMeta> = Reflect.field(allUsers, userId);
             if (entry.metas.length > 0) {
                 var meta = entry.metas[0];
                 if (meta.editingTodoId == todoId) {
