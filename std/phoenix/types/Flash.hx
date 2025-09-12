@@ -158,10 +158,10 @@ class Flash {
      * Create an info flash message
      * 
      * @param message Primary message text
-     * @param title Optional title
+     * @param title Title (use null if not needed)
      * @return FlashMessage Structured flash message
      */
-    public static function info(message: String, ?title: String): FlashMessage {
+    public static function info(message: String, title: String): FlashMessage {
         return {
             type: Info,
             message: message,
@@ -174,10 +174,10 @@ class Flash {
      * Create a success flash message
      * 
      * @param message Primary message text
-     * @param title Optional title
+     * @param title Title (use null if not needed)
      * @return FlashMessage Structured flash message
      */
-    public static function success(message: String, ?title: String): FlashMessage {
+    public static function success(message: String, title: String): FlashMessage {
         return {
             type: Success,
             message: message,
@@ -191,10 +191,10 @@ class Flash {
      * Create a warning flash message
      * 
      * @param message Primary message text
-     * @param title Optional title
+     * @param title Title (use null if not needed)
      * @return FlashMessage Structured flash message
      */
-    public static function warning(message: String, ?title: String): FlashMessage {
+    public static function warning(message: String, title: String): FlashMessage {
         return {
             type: Warning,
             message: message,
@@ -207,11 +207,11 @@ class Flash {
      * Create an error flash message
      * 
      * @param message Primary message text
-     * @param details Optional array of error details
-     * @param title Optional title
+     * @param details Array of error details (use null if not needed)
+     * @param title Title (use null if not needed)
      * @return FlashMessage Structured flash message
      */
-    public static function error(message: String, ?details: Array<String>, ?title: String): FlashMessage {
+    public static function error(message: String, details: Array<String>, title: String): FlashMessage {
         return {
             type: Error,
             message: message,
@@ -337,16 +337,16 @@ class FlashMapTools {
         var messages: Array<FlashMessage> = [];
         
         if (flashMap.info != null) {
-            messages.push(Flash.info(flashMap.info));
+            messages.push(Flash.info(flashMap.info, null));
         }
         if (flashMap.success != null) {
-            messages.push(Flash.success(flashMap.success));
+            messages.push(Flash.success(flashMap.success, null));
         }
         if (flashMap.warning != null) {
-            messages.push(Flash.warning(flashMap.warning));
+            messages.push(Flash.warning(flashMap.warning, null));
         }
         if (flashMap.error != null) {
-            messages.push(Flash.error(flashMap.error));
+            messages.push(Flash.error(flashMap.error, null, null));
         }
         
         return messages;

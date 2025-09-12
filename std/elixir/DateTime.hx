@@ -200,8 +200,12 @@ extern class NaiveDateTime {
 
 /**
  * Time units for datetime operations
+ * 
+ * Uses the Atom type for type-safe atom generation in Elixir.
+ * These compile to proper Elixir atoms (:second, :millisecond, etc.)
+ * not string literals.
  */
-enum abstract TimeUnit(String) to String {
+enum abstract TimeUnit(elixir.types.Atom) to elixir.types.Atom {
     var Second = "second";
     var Millisecond = "millisecond";
     var Microsecond = "microsecond";

@@ -3,7 +3,7 @@ defmodule Date_Impl_ do
     DateTime.utc_now()
   end
   def from_time(t) do
-    DateTime.from_unix!(Std.int(t), "millisecond")
+    DateTime.from_unix!(Std.int(t), :millisecond)
   end
   def from_string(s) do
     
@@ -22,7 +22,7 @@ defmodule Date_Impl_ do
     this1
   end
   def get_time(this1) do
-    DateTime.to_unix(this1, "millisecond")
+    DateTime.to_unix(this1, :millisecond)
   end
   def get_full_year(this1) do
     this1.year

@@ -334,7 +334,64 @@ class ElixirASTBuilder {
                 EFloat(Std.parseFloat(f));
                 
             case TConst(TString(s)):
-                EString(s);
+                /**
+                 * STRING OR ATOM GENERATION BASED ON TYPE
+                 * 
+                 * WHY: We need to distinguish between regular strings and atoms.
+                 * The Atom abstract type (elixir.types.Atom) indicates when a
+                 * string literal should be compiled to an Elixir atom.
+                 * 
+                 * WHAT: Check the expression's type to determine if it's an Atom
+                 * abstract. If so, generate an atom; otherwise, a string.
+                 * 
+                 * HOW:
+                 * 1. Check if expr.t is an abstract type
+                 * 2. If the abstract's underlying type path is "elixir.types.Atom"
+                 * 3. Generate EAtom instead of EString
+                 * 
+                 * EXAMPLE:
+                 * - var s: String = "hello" → EString("hello")
+                 * - var a: Atom = "ok" → EAtom("ok")
+                 * - TimeUnit.Millisecond → EAtom("millisecond")
+                 */
+                // Check if this string has the Atom type
+                var isAtom = false;
+                #if debug_atom_generation
+                trace('[Atom Debug TConst] String "${s}" with type: ${expr.t}');
+                #end
+                switch(expr.t) {
+                    case TAbstract(ref, _):
+                        var abstractType = ref.get();
+                        #if debug_atom_generation
+                        trace('[Atom Debug TConst] Abstract type: ${abstractType.pack.join(".")}.${abstractType.name}');
+                        #end
+                        // Check if this is the Atom abstract type
+                        if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Atom") {
+                            isAtom = true;
+                            #if debug_atom_generation
+                            trace('[Atom Debug TConst] DETECTED: String is Atom type!');
+                            #end
+                        }
+                    case _:
+                        #if debug_atom_generation
+                        trace('[Atom Debug TConst] Not an abstract type: ${expr.t}');
+                        #end
+                        // Not an abstract type
+                }
+                
+                if (isAtom) {
+                    #if debug_atom_generation
+                    trace('[Atom Debug TConst] Generating atom :${s}');
+                    #end
+                    // Generate atom for Atom-typed strings
+                    EAtom(s);
+                } else {
+                    #if debug_atom_generation
+                    trace('[Atom Debug TConst] Generating string "${s}"');
+                    #end
+                    // Regular string
+                    EString(s);
+                }
                 
             case TConst(TBool(b)):
                 EBoolean(b);
@@ -1205,12 +1262,137 @@ class ElixirASTBuilder {
                                                 args.push(target);
                                         }
                                     default:
-                                        // Not a function, compile normally
-                                        args.push(buildFromTypedExpr(arg, variableUsageMap));
+                                        // Not a function, check if it's an Atom type
+                                        var field = cf.get();
+                                        var isAtomField = false;
+                                        
+                                        // Check if this is an enum abstract field with Atom underlying type
+                                        // For enum abstract fields like TimeUnit.Millisecond, the field type
+                                        // will be String (the resolved type), not Atom (the abstract type).
+                                        // So we need to check the containing class instead.
+                                        var classType = classRef.get();
+                                        
+                                        // Check if the class is an abstract impl (like TimeUnit_Impl_)
+                                        #if debug_atom_generation
+                                        trace('[Atom Debug] Checking static field ${field.name} of class ${classType.name}');
+                                        trace('[Atom Debug] Class kind: ${classType.kind}');
+                                        trace('[Atom Debug] Field type: ${field.type}');
+                                        trace('[Atom Debug] Field expr: ${field.expr()}');
+                                        #end
+                                        
+                                        switch (classType.kind) {
+                                            case KAbstractImpl(abstractRef):
+                                                // Get the abstract type definition
+                                                var abstractType = abstractRef.get();
+                                                #if debug_atom_generation
+                                                trace('[Atom Debug] Abstract type: ${abstractType.name}');
+                                                trace('[Atom Debug] Abstract underlying type: ${abstractType.type}');
+                                                #end
+                                                // Check the underlying type of the abstract
+                                                switch (abstractType.type) {
+                                                    case TAbstract(underlyingRef, _):
+                                                        var underlyingType = underlyingRef.get();
+                                                        #if debug_atom_generation
+                                                        trace('[Atom Debug] Underlying abstract: ${underlyingType.pack.join(".")}.${underlyingType.name}');
+                                                        #end
+                                                        if (underlyingType.pack.join(".") == "elixir.types" && underlyingType.name == "Atom") {
+                                                            isAtomField = true;
+                                                            #if debug_atom_generation
+                                                            trace('[Atom Debug] Field IS an Atom type!');
+                                                            #end
+                                                        }
+                                                    case _:
+                                                        #if debug_atom_generation
+                                                        trace('[Atom Debug] Abstract type is not TAbstract');
+                                                        #end
+                                                }
+                                            case _:
+                                                #if debug_atom_generation
+                                                trace('[Atom Debug] Class is not an abstract impl');
+                                                #end
+                                        }
+                                        
+                                        if (isAtomField && field.expr() != null) {
+                                            // Get the field's expression value
+                                            #if debug_atom_generation
+                                            trace('[Atom Debug TCall] Field has expr, checking value...');
+                                            #end
+                                            switch (field.expr().expr) {
+                                                case TConst(TString(s)):
+                                                    // This is the string value of the enum abstract field
+                                                    // Generate an atom directly
+                                                    #if debug_atom_generation
+                                                    trace('[Atom Debug TCall] String value "${s}" -> generating atom :${s}');
+                                                    #end
+                                                    args.push(makeAST(EAtom(s)));
+                                                case _:
+                                                    #if debug_atom_generation
+                                                    trace('[Atom Debug TCall] Not a string constant, compiling normally');
+                                                    #end
+                                                    // Not a string constant, compile normally
+                                                    args.push(buildFromTypedExpr(arg, variableUsageMap));
+                                            }
+                                        } else {
+                                            #if debug_atom_generation
+                                            if (isAtomField) {
+                                                trace('[Atom Debug TCall] Atom field but no expr');
+                                            } else {
+                                                trace('[Atom Debug TCall] Not an atom field');
+                                            }
+                                            #end
+                                            // Not an Atom type, compile normally
+                                            args.push(buildFromTypedExpr(arg, variableUsageMap));
+                                        }
                                 }
                             default:
-                                // Not a static field, compile normally
-                                args.push(buildFromTypedExpr(arg, variableUsageMap));
+                                // Check if this argument has the Atom abstract type
+                                var isAtomType = false;
+                                switch(arg.t) {
+                                    case TAbstract(abstractRef, _):
+                                        var abstractType = abstractRef.get();
+                                        if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Atom") {
+                                            isAtomType = true;
+                                        }
+                                    case _:
+                                }
+                                
+                                if (isAtomType) {
+                                    // If it's an Atom type, check if it's a string constant and convert to atom
+                                    switch(arg.expr) {
+                                        case TConst(TString(s)):
+                                            // Direct string constant with Atom type
+                                            args.push(makeAST(EAtom(s)));
+                                        case TField(_, FStatic(classRef, cf)):
+                                            // Static field access (like TimeUnit.Millisecond)
+                                            var field = cf.get();
+                                            if (field.expr() != null) {
+                                                switch(field.expr().expr) {
+                                                    case TConst(TString(s)):
+                                                        // The field has a constant string value
+                                                        args.push(makeAST(EAtom(s)));
+                                                    default:
+                                                        // Not a constant, compile normally
+                                                        args.push(buildFromTypedExpr(arg, variableUsageMap));
+                                                }
+                                            } else {
+                                                // No expression, compile normally
+                                                args.push(buildFromTypedExpr(arg, variableUsageMap));
+                                            }
+                                        default:
+                                            // Other expressions with Atom type
+                                            var builtArg = buildFromTypedExpr(arg, variableUsageMap);
+                                            // If it was built as a string, convert to atom
+                                            switch(builtArg.def) {
+                                                case EString(s):
+                                                    args.push(makeAST(EAtom(s)));
+                                                default:
+                                                    args.push(builtArg);
+                                            }
+                                    }
+                                } else {
+                                    // Not an Atom type, compile normally
+                                    args.push(buildFromTypedExpr(arg, variableUsageMap));
+                                }
                         }
                     }
                     
@@ -1795,30 +1977,128 @@ class ElixirASTBuilder {
                         // Static field access
                         var className = classRef.get().name;
                         var fieldName = extractFieldName(fa);
-                        // Convert to snake_case for Elixir function names
-                        fieldName = toSnakeCase(fieldName);
                         
-                        // Always use full qualification for function references
-                        // When a static method is passed as a function reference (not called directly),
-                        // it needs to be fully qualified even within the same module
-                        if (false) { // Disabled for now - always qualify
-                            // Same module - just use the function name without module prefix
-                            // This allows private functions to be called without qualification
-                            EVar(fieldName);
+                        #if debug_atom_generation
+                        trace('[Atom Debug TField] FStatic access: ${className}.${fieldName}');
+                        #end
+                        
+                        /**
+                         * ENUM ABSTRACT WITH ATOM TYPE DETECTION
+                         * 
+                         * WHY: Enum abstract fields like TimeUnit.Millisecond lose their
+                         * abstract type information when accessed. We need to check if
+                         * the field's value should be an atom.
+                         * 
+                         * WHAT: Check if the field's type indicates it should be an Atom
+                         * and if it has a constant string value.
+                         * 
+                         * HOW: 
+                         * 1. Check the field's type to see if it's elixir.types.Atom
+                         * 2. If it has a constant expression, extract the string value
+                         * 3. Generate an EAtom instead of a field access
+                         */
+                        var field = cf.get();
+                        var isAtomField = false;
+                        
+                        // Check if the field's type is elixir.types.Atom
+                        // For enum abstract fields, the field type resolves to String,
+                        // so we also need to check the containing class
+                        switch (field.type) {
+                            case TAbstract(abstractRef, _):
+                                var abstractType = abstractRef.get();
+                                if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Atom") {
+                                    isAtomField = true;
+                                }
+                            case _:
+                        }
+                        
+                        // If not detected via field type, check the containing class
+                        // This handles enum abstract fields like TimeUnit.Millisecond
+                        if (!isAtomField) {
+                            var classType = classRef.get();
+                            #if debug_atom_generation
+                            trace('[Atom Debug TField] Checking class ${classType.name} kind: ${classType.kind}');
+                            #end
+                            switch (classType.kind) {
+                                case KAbstractImpl(abstractRef):
+                                    // Get the abstract type definition
+                                    var abstractType = abstractRef.get();
+                                    #if debug_atom_generation
+                                    trace('[Atom Debug TField] Found abstract impl: ${abstractType.name}');
+                                    trace('[Atom Debug TField] Abstract type: ${abstractType.type}');
+                                    #end
+                                    // Check the underlying type of the abstract
+                                    switch (abstractType.type) {
+                                        case TAbstract(underlyingRef, _):
+                                            var underlyingType = underlyingRef.get();
+                                            #if debug_atom_generation
+                                            trace('[Atom Debug TField] Underlying type: ${underlyingType.pack.join(".")}.${underlyingType.name}');
+                                            #end
+                                            if (underlyingType.pack.join(".") == "elixir.types" && underlyingType.name == "Atom") {
+                                                isAtomField = true;
+                                                #if debug_atom_generation
+                                                trace('[Atom Debug TField] DETECTED: Field is Atom type!');
+                                                #end
+                                            }
+                                        case _:
+                                    }
+                                case _:
+                            }
+                        }
+                        
+                        // If this is an Atom-typed field with a constant value, generate an atom
+                        if (isAtomField && field.expr() != null) {
+                            #if debug_atom_generation
+                            trace('[Atom Debug TField] Field has expr, extracting value...');
+                            #end
+                            // Get the field's expression value
+                            switch (field.expr().expr) {
+                                case TConst(TString(s)):
+                                    // This is the string value of the enum abstract field
+                                    // Generate an atom directly
+                                    #if debug_atom_generation
+                                    trace('[Atom Debug TField] Extracted string value: "${s}" -> generating atom :${s}');
+                                    #end
+                                    EAtom(s);
+                                case _:
+                                    #if debug_atom_generation
+                                    trace('[Atom Debug TField] Field expr is not TConst(TString), falling through');
+                                    #end
+                                    // Not a string constant, fall back to normal field access
+                                    fieldName = toSnakeCase(fieldName);
+                                    var target = buildFromTypedExpr(e, variableUsageMap);
+                                    EField(target, fieldName);
+                            }
                         } else {
-                            // Different module or no current module context - use full qualification
-                            var target = buildFromTypedExpr(e, variableUsageMap);
+                            #if debug_atom_generation
+                            trace('[Atom Debug TField] Not an atom field or no expr, using normal field access');
+                            #end
+                            // Normal static field access
+                            // Convert to snake_case for Elixir function names
+                            fieldName = toSnakeCase(fieldName);
                             
-                            // For static fields on extern classes with @:native, we already have the full module name
-                            // in the target. Just return EField which will be handled properly by TCall
-                            // when this is used in a function call context.
-                            //
-                            // The TCall handler will detect that this is a static method call on an extern class
-                            // and will generate the proper ERemoteCall.
-                            //
-                            // Note: Function references are now handled at the TCall level
-                            // when a function is passed as an argument to another function
-                            EField(target, fieldName);
+                            // Always use full qualification for function references
+                            // When a static method is passed as a function reference (not called directly),
+                            // it needs to be fully qualified even within the same module
+                            if (false) { // Disabled for now - always qualify
+                                // Same module - just use the function name without module prefix
+                                // This allows private functions to be called without qualification
+                                EVar(fieldName);
+                            } else {
+                                // Different module or no current module context - use full qualification
+                                var target = buildFromTypedExpr(e, variableUsageMap);
+                                
+                                // For static fields on extern classes with @:native, we already have the full module name
+                                // in the target. Just return EField which will be handled properly by TCall
+                                // when this is used in a function call context.
+                                //
+                                // The TCall handler will detect that this is a static method call on an extern class
+                                // and will generate the proper ERemoteCall.
+                                //
+                                // Note: Function references are now handled at the TCall level
+                                // when a function is passed as an argument to another function
+                                EField(target, fieldName);
+                            }
                         }
                     case FAnon(cf):
                         // Anonymous field access - check for tuple pattern

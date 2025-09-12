@@ -70,7 +70,7 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @param data The struct being changed
      * @param params The typed parameters
      */
-    public inline function new(data: T, params: P) {
+    extern inline public function new(data: T, params: P) {
         this = untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, params);
     }
     
@@ -426,11 +426,12 @@ class ChangesetUtils {
      * @return The successful value
      * @throws String if the changeset has errors
      */
-    public static function unwrap<T, P>(result: Result<T, Changeset<T, P>>): T {
+    extern inline public static function unwrap<T, P>(result: Result<T, Changeset<T, P>>): T {
         return switch(result) {
             case Ok(value): value;
             case Error(changeset): 
-                var errors = changeset.traverseErrors();
+                // Call traverseErrors directly via untyped since it's an abstract method
+                var errors = untyped __elixir__('Ecto.Changeset.traverse_errors({0}, fn {msg, opts} -> msg end)', changeset);
                 throw 'Changeset validation failed: $errors';
         };
     }
