@@ -27,17 +27,24 @@ class EctoQueryMacros {
      * Generates: from(t in Todo, ...)
      */
     public static macro function from<T>(schemaClass: ExprOf<Class<T>>): ExprOf<ecto.TypedQuery.TypedQuery<T>> {
-        var classType = getClassType(schemaClass);
-        var tableName = SchemaIntrospection.getTableName(classType);
-        
-        // Generate the Ecto.Query.from expression
-        return macro {
-            var query = untyped __elixir__(
-                '(require Ecto.Query; Ecto.Query.from(t in {0}))',
-                $v{classType.name}
-            );
-            new ecto.TypedQuery.TypedQuery<$schemaClass>(query);
-        };
+        try {
+            var classType = getClassType(schemaClass);
+            var schemaInfo = SchemaIntrospection.getSchemaInfo(classType.name);
+            var tableName = schemaInfo != null ? schemaInfo.tableName : classType.name;
+            
+            // Generate the Ecto.Query.from expression
+            // Return a TypedQuery instance directly
+            return macro {
+                var query = untyped __elixir__(
+                    '(require Ecto.Query; Ecto.Query.from(t in {0}, []))',
+                    $v{classType.name}
+                );
+                new ecto.TypedQuery.TypedQuery(query);
+            };
+        } catch (e: Dynamic) {
+            Context.error('Failed to process from() macro: ' + Std.string(e), Context.currentPos());
+            return macro null;
+        }
     }
     
     /**
@@ -53,7 +60,7 @@ class EctoQueryMacros {
         // Validate fields exist in schema
         var classType = getQueryType(query);
         for (field in fieldAccesses) {
-            if (!SchemaIntrospection.hasField(classType, field)) {
+            if (!SchemaIntrospection.hasField(classType.name, field)) {
                 Context.error('Field "$field" does not exist in ${classType.name}', Context.currentPos());
             }
         }
@@ -67,7 +74,7 @@ class EctoQueryMacros {
                 $query.query,
                 $v{elixirCondition}
             );
-            new ecto.TypedQuery.TypedQuery<$classType>(newQuery);
+            new ecto.TypedQuery.TypedQuery(newQuery);
         };
     }
     
@@ -83,7 +90,7 @@ class EctoQueryMacros {
         // Validate fields
         var classType = getQueryType(query);
         for (clause in orderClauses) {
-            if (!SchemaIntrospection.hasField(classType, clause.field)) {
+            if (!SchemaIntrospection.hasField(classType.name, clause.field)) {
                 Context.error('Field "${clause.field}" does not exist in ${classType.name}', Context.currentPos());
             }
         }
@@ -97,7 +104,7 @@ class EctoQueryMacros {
                 $query.query,
                 $v{elixirOrder}
             );
-            new ecto.TypedQuery.TypedQuery<$classType>(newQuery);
+            new ecto.TypedQuery.TypedQuery(newQuery);
         };
     }
     
@@ -113,7 +120,7 @@ class EctoQueryMacros {
         // Validate fields exist
         var classType = getQueryType(query);
         for (field in fields) {
-            if (!SchemaIntrospection.hasField(classType, field.source)) {
+            if (!SchemaIntrospection.hasField(classType.name, field.source)) {
                 Context.error('Field "${field.source}" does not exist in ${classType.name}', Context.currentPos());
             }
         }
@@ -127,7 +134,7 @@ class EctoQueryMacros {
                 $query.query,
                 $v{elixirSelect}
             );
-            new ecto.TypedQuery.TypedQuery<$R>(newQuery);
+            new ecto.TypedQuery.TypedQuery(newQuery);
         };
     }
     
@@ -144,7 +151,7 @@ class EctoQueryMacros {
         
         // Validate association exists
         var classType = getQueryType(query);
-        if (!SchemaIntrospection.hasAssociation(classType, assocName)) {
+        if (!SchemaIntrospection.hasAssociation(classType.name, assocName)) {
             Context.error('Association "$assocName" does not exist in ${classType.name}', Context.currentPos());
         }
         
@@ -168,7 +175,7 @@ class EctoQueryMacros {
                     $v{toSnakeCase(assocName)}
                 );
             };
-            new ecto.TypedQuery.TypedQuery<$classType>(newQuery);
+            new ecto.TypedQuery.TypedQuery(newQuery);
         };
     }
     
@@ -183,7 +190,7 @@ class EctoQueryMacros {
         // Validate all associations exist
         var classType = getQueryType(query);
         for (assoc in assocNames) {
-            if (!SchemaIntrospection.hasAssociation(classType, assoc)) {
+            if (!SchemaIntrospection.hasAssociation(classType.name, assoc)) {
                 Context.error('Association "$assoc" does not exist in ${classType.name}', Context.currentPos());
             }
         }
@@ -197,7 +204,7 @@ class EctoQueryMacros {
                 $query.query,
                 $v{elixirAssocs}
             );
-            new ecto.TypedQuery.TypedQuery<$classType>(newQuery);
+            new ecto.TypedQuery.TypedQuery(newQuery);
         };
     }
     
