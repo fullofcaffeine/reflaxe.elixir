@@ -1,14 +1,14 @@
 defmodule Result do
   def success(arg0, arg1) do
-    {:Success, arg0, arg1}
+    {0, arg0, arg1}
   end
   def warning(arg0) do
-    {:Warning, arg0}
+    {1, arg0}
   end
   def error(arg0, arg1) do
-    {:Error, arg0, arg1}
+    {2, arg0, arg1}
   end
   def pending() do
-    {:Pending}
+    {3}
   end
 end

@@ -1,11 +1,11 @@
 defmodule Content do
   def text(arg0) do
-    {:Text, arg0}
+    {0, arg0}
   end
   def number(arg0) do
-    {:Number, arg0}
+    {1, arg0}
   end
   def empty() do
-    {:Empty}
+    {2}
   end
 end

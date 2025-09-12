@@ -48,7 +48,7 @@ defmodule AlternateAppWeb do
   end
   def verified_routes() do
     quote do
-      use Phoenix.VerifiedRoutes, endpoint: :"AlternateAppWeb.Endpoint", router: :"AlternateAppWeb.Router", statics: AlternateAppWeb.static_paths()
+      use Phoenix.VerifiedRoutes, endpoint: :"alternate_app_web.endpoint", router: :"alternate_app_web.router", statics: AlternateAppWeb.static_paths()
     end
   end
   def channel() do

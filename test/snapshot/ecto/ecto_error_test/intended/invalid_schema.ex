@@ -2,12 +2,13 @@ defmodule InvalidSchema do
   use Ecto.Schema
   import Ecto.Changeset
   schema "invalid_schemas" do
-    field(:name, :string)
-    field(:email, :string)
-    field(:password_hash, :string)
-    field(:confirmed_at, :naive_datetime)
-    field(:last_login_at, :naive_datetime)
-    field(:active, :boolean, [default: true])
-    timestamps()
+    field(:valid_field, :string)
+    field(:invalid_type_field, :string)
+  end
+  
+  def changeset(invalidschema, attrs) do
+    invalidschema
+    |> cast(attrs, [:validField, :invalidTypeField])
+    |> validate_required(["validField", "invalidTypeField"])
   end
 end

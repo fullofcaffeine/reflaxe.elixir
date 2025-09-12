@@ -1,7 +1,8 @@
 defmodule BalancedTree do
   @root nil
   def set(struct, key, value) do
-    %{struct | root: struct.set_loop(key, value, struct.root)}
+    root = struct.set_loop(key, value, struct.root)
+    %{struct | root: root}
   end
   def get(struct, _key) do
     node = struct.root
@@ -62,11 +63,9 @@ end)
       TreeNode.new(node.left, k, v, node.right, node.get_height())
     else
       if (c < 0) do
-        nl = struct.set_loop(k, v, node.left)
-        struct.balance(nl, node.key, node.value, node.right)
+        struct.balance((struct.set_loop(k, v, node.left)), node.key, node.value, node.right)
       else
-        nr = struct.set_loop(k, v, node.right)
-        struct.balance(node.left, node.key, node.value, nr)
+        struct.balance(node.left, node.key, node.value, (struct.set_loop(k, v, node.right)))
       end
     end
   end

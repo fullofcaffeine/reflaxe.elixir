@@ -3,11 +3,15 @@ defmodule Organization do
   import Ecto.Changeset
   schema "organizations" do
     field(:name, :string)
-    field(:email, :string)
-    field(:password_hash, :string)
-    field(:confirmed_at, :naive_datetime)
-    field(:last_login_at, :naive_datetime)
-    field(:active, :boolean, [default: true])
-    timestamps()
+    field(:domain, :string)
+    field(:users, :string)
+    field(:inserted_at, :string)
+    field(:updated_at, :string)
+  end
+  
+  def changeset(organization, attrs) do
+    organization
+    |> cast(attrs, [:name, :domain, :users, :inserted_at, :updated_at])
+    |> validate_required(["name", "domain", "users", "inserted_at", "updated_at"])
   end
 end

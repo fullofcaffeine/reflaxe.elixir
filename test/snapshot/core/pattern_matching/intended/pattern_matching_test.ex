@@ -94,9 +94,9 @@ defmodule PatternMatchingTest do
           {:blue} ->
             "blue color"
           {:rgb, r, g, b} ->
-            g1 = elem(g, 1)
-            g2 = elem(g, 2)
-            g = elem(g, 3)
+            g1 = g
+            g2 = g
+            g = g
             r = g1
             g = g2
             b = g

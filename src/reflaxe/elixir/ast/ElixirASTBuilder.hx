@@ -3518,40 +3518,96 @@ class ElixirASTBuilder {
                 EThrow(buildFromTypedExpr(e));
                 
             case TEnumParameter(e, ef, index):
-                // Check if we're in a switch case where the pattern already extracted this value
-                // This happens when the pattern like {:ok, g} already extracted the value into g
+                /**
+                 * TEnumParameter extraction for enum constructor parameters
+                 * 
+                 * WHY: When Haxe compiles enum patterns like `case Ok(value):`, it generates
+                 *      TEnumParameter expressions to extract the parameters. However, in Elixir
+                 *      pattern matching, the pattern `{:ok, value}` already extracts the value.
+                 * 
+                 * PROBLEM: When patterns have ignored parameters like `case Ok(_):`, Haxe still
+                 *          generates TEnumParameter which tries to extract from the already-extracted
+                 *          value. This causes runtime errors like `elem(nil, 1)` when the extracted
+                 *          value is nil.
+                 * 
+                 * SOLUTION: Check if we're extracting from a variable that was already extracted
+                 *           by the pattern. If so, just return the variable reference.
+                 * 
+                 * EDGE CASES:
+                 * - Ignored parameters: Pattern extracts to temp var but it's not used
+                 * - Nested enums: Multiple levels of extraction
+                 * - Abstract types: May not have ClauseContext mappings
+                 */
                 
-                // First, check if the expression is a TLocal that's been mapped in ClauseContext
+                // Debug trace to understand the extraction context
+                #if debug_enum_extraction
+                trace('[TEnumParameter] Attempting extraction:');
+                trace('  - Expression type: ${e.expr}');
+                trace('  - Enum field: ${ef.name}');
+                trace('  - Index: $index');
+                trace('  - Has ClauseContext: ${currentClauseContext != null}');
+                #end
+                
+                // Check if this is extracting from an already-extracted pattern variable
                 var skipExtraction = false;
+                var extractedVarName: String = null;
+                
                 switch(e.expr) {
                     case TLocal(v):
-                        // If we have a ClauseContext and this variable is mapped,
-                        // it means the pattern already extracted it
+                        var varName = toElixirVarName(v.name);
+                        
+                        #if debug_enum_extraction
+                        trace('  - TLocal variable: ${v.name} -> $varName');
+                        if (currentClauseContext != null) {
+                            trace('  - ClauseContext has mapping: ${currentClauseContext.localToName.exists(v.id)}');
+                            if (currentClauseContext.localToName.exists(v.id)) {
+                                trace('  - Mapped to: ${currentClauseContext.localToName.get(v.id)}');
+                            }
+                        }
+                        #end
+                        
+                        // Check if this variable was extracted by the pattern
+                        // Pattern extraction creates variables like 'g', 'g1', 'g2' for ignored params
+                        // or uses actual names for named params
                         if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
-                            // The pattern already extracted this value, just return the variable reference
-                            var mappedName = currentClauseContext.localToName.get(v.id);
+                            // This variable was mapped in the pattern, it's already extracted
+                            extractedVarName = currentClauseContext.localToName.get(v.id);
                             skipExtraction = true;
-                            EVar(mappedName);
-                        } else {
-                            skipExtraction = false;
+                            
+                            #if debug_enum_extraction  
+                            trace('  - SKIPPING extraction, already extracted to: $extractedVarName');
+                            #end
+                        } else if (varName == "g" || varName.startsWith("g") && varName.charAt(1) >= '0' && varName.charAt(1) <= '9') {
+                            // This looks like a temp var from pattern extraction (g, g1, g2, etc.)
+                            // The pattern already extracted it, don't extract again
+                            extractedVarName = varName;
+                            skipExtraction = true;
+                            
+                            #if debug_enum_extraction
+                            trace('  - SKIPPING extraction, detected as pattern temp var: $varName');
+                            #end
                         }
                     case _:
-                        skipExtraction = false;
+                        // Not a local variable, normal extraction needed
+                        #if debug_enum_extraction
+                        trace('  - Not a TLocal, proceeding with extraction');
+                        #end
                 }
                 
-                if (!skipExtraction) {
+                if (skipExtraction && extractedVarName != null) {
+                    // The pattern already extracted this value, just return the variable reference
+                    EVar(extractedVarName);
+                } else {
                     // Normal case: generate the elem() extraction
                     var exprAST = buildFromTypedExpr(e);
-                    var field = ef.name;
+                    
+                    #if debug_enum_extraction
+                    trace('  - Generating elem() extraction');
+                    #end
                     
                     // Will be transformed to proper pattern extraction
-                    ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]); // +1 for tag
-                } else {
-                    // Already handled above in the TLocal case
-                    EVar(currentClauseContext.localToName.get(switch(e.expr) {
-                        case TLocal(v): v.id;
-                        case _: throw "Unexpected: should be TLocal";
-                    }));
+                    // +1 because Elixir tuples are 0-based but first element is the tag
+                    ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]);
                 }
                 
             case TEnumIndex(e):

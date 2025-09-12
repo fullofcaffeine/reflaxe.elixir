@@ -6,10 +6,10 @@ defmodule TodoAppWeb.TodoLive do
     g = TodoPubSub.subscribe({:todo_updates})
     case (g) do
       {:ok, g} ->
-        _g = elem(g, 1)
+        _g = g
         nil
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         reason = g
         {:error, "Failed to subscribe to updates: " <> reason}
     end
@@ -79,7 +79,7 @@ end)}
     {:no_reply, (g = TodoPubSub.parse_message(msg)
 case (g) do
   {:some, g} ->
-    g = elem(g, 1)
+    g = g
     parsed_msg = g
     case (parsed_msg) do
       {:todo_created, todo} ->
@@ -134,22 +134,22 @@ end)}
     g = TodoApp.Repo.insert(changeset)
     case (g) do
       {:ok, g} ->
-        g = elem(g, 1)
+        g = g
         todo = g
         g = TodoPubSub.broadcast({:todo_updates}, {:todo_created, todo})
         case (g) do
           {:ok, g} ->
-            _g = elem(g, 1)
+            _g = g
             nil
           {:error, g} ->
-            g = elem(g, 1)
+            g = g
             reason = g
             Log.trace("Failed to broadcast todo creation: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 280, :class_name => "server.live.TodoLive", :method_name => "createTodoTyped"})
         end
         updated_socket = load_and_assign_todos(socket)
         SafeAssigns.set_show_form(updated_socket, false)
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         _changeset = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to create todo")
     end
@@ -164,15 +164,15 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
     g = TodoApp.Repo.insert(changeset)
     case (g) do
       {:ok, g} ->
-        g = elem(g, 1)
+        g = g
         todo = g
         g = TodoPubSub.broadcast({:todo_updates}, {:todo_created, todo})
         case (g) do
           {:ok, g} ->
-            _g = elem(g, 1)
+            _g = g
             nil
           {:error, g} ->
-            g = elem(g, 1)
+            g = g
             reason = g
             Log.trace("Failed to broadcast todo creation: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 317, :class_name => "server.live.TodoLive", :method_name => "createNewTodo"})
         end
@@ -181,7 +181,7 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
         updated_socket = Phoenix.Component.assign([live_socket, todos, false], %{:todos => {1}, :show_form => {2}})
         Phoenix.LiveView.put_flash(updated_socket, {:success}, "Todo created successfully!")
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         reason = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to create todo: " <> Kernel.to_string(reason))
     end
@@ -193,11 +193,11 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
     g = TodoApp.Repo.update(updated_changeset)
     updated_todo = case (g) do
   {:ok, g} ->
-    g = elem(g, 1)
+    g = g
     u = g
     u
   {:error, g} ->
-    g = elem(g, 1)
+    g = g
     reason = g
     Phoenix.LiveView.put_flash(socket, {:error}, "Failed to update todo: " <> Kernel.to_string(reason))
 end
@@ -210,21 +210,21 @@ end
     g = TodoApp.Repo.delete(todo)
     case (g) do
       {:ok, g} ->
-        g = elem(g, 1)
+        g = g
         _deleted_todo = g
         g = TodoPubSub.broadcast({:todo_updates}, {:todo_deleted, id})
         case (g) do
           {:ok, g} ->
-            _g = elem(g, 1)
+            _g = g
             nil
           {:error, g} ->
-            g = elem(g, 1)
+            g = g
             reason = g
             Log.trace("Failed to broadcast todo deletion: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 362, :class_name => "server.live.TodoLive", :method_name => "deleteTodo"})
         end
         remove_todo_from_list(id, socket)
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         reason = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to delete todo: " <> Kernel.to_string(reason))
     end
@@ -236,11 +236,11 @@ end
     g = TodoApp.Repo.update(updated_changeset)
     updated_todo = case (g) do
   {:ok, g} ->
-    g = elem(g, 1)
+    g = g
     u = g
     u
   {:error, g} ->
-    g = elem(g, 1)
+    g = g
     reason = g
     Phoenix.LiveView.put_flash(socket, {:error}, "Failed to update priority: " <> Kernel.to_string(reason))
 end
@@ -361,10 +361,10 @@ end)
     g = TodoPubSub.broadcast({:todo_updates}, {:bulk_update, {:complete_all}})
     case (g) do
       {:ok, g} ->
-        g = elem(g, 1)
+        g = g
         nil
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         reason = g
         Log.trace("Failed to broadcast bulk complete: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 524, :class_name => "server.live.TodoLive", :method_name => "completeAllTodos"})
     end
@@ -405,15 +405,15 @@ end)
     g = TodoApp.Repo.update(changeset)
     case (g) do
       {:ok, g} ->
-        g = elem(g, 1)
+        g = g
         updated_todo = g
         g = TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo})
         case (g) do
           {:ok, g} ->
-            _g = elem(g, 1)
+            _g = g
             nil
           {:error, g} ->
-            g = elem(g, 1)
+            g = g
             reason = g
             Log.trace("Failed to broadcast todo update: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 605, :class_name => "server.live.TodoLive", :method_name => "saveEditedTodoTyped"})
         end
@@ -421,7 +421,7 @@ end)
         updated_socket = SafeAssigns.set_editing_todo(presence_socket, nil)
         load_and_assign_todos(updated_socket)
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         _changeset = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to update todo")
     end
@@ -438,15 +438,15 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
     g = TodoApp.Repo.update(changeset)
     case (g) do
       {:ok, g} ->
-        g = elem(g, 1)
+        g = g
         updated_todo = g
         g = TodoPubSub.broadcast({:todo_updates}, {:todo_updated, updated_todo})
         case (g) do
           {:ok, g} ->
-            _g = elem(g, 1)
+            _g = g
             nil
           {:error, g} ->
-            g = elem(g, 1)
+            g = g
             reason = g
             Log.trace("Failed to broadcast todo save: " <> reason, %{:file_name => "src_haxe/server/live/TodoLive.hx", :line_number => 642, :class_name => "server.live.TodoLive", :method_name => "saveEditedTodo"})
         end
@@ -454,7 +454,7 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
         live_socket = updated_socket
         Phoenix.Component.assign(live_socket, :editing_todo, nil)
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         reason = g
         Phoenix.LiveView.put_flash(socket, {:error}, "Failed to save todo: " <> Kernel.to_string(reason))
     end

@@ -1,8 +1,8 @@
 defmodule Haxe.Io.Encoding do
   def utf8() do
-    {:UTF8}
+    {0}
   end
   def raw_native() do
-    {:RawNative}
+    {1}
   end
 end

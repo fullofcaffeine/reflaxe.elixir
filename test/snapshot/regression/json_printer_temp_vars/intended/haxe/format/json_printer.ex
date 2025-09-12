@@ -2,9 +2,7 @@ defmodule JsonPrinter do
   @replacer nil
   @space nil
   defp write_value(struct, v, key) do
-    if (struct.replacer != nil) do
-      v = struct.replacer(key, v)
-    end
+    v = if (struct.replacer != nil), do: struct.replacer(key, v), else: v
     if (v == nil), do: "null"
     if (Std.is(v, Bool)) do
       if v, do: "true", else: "false"
@@ -28,7 +26,7 @@ defmodule JsonPrinter do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
-    items ++ [struct.write_value(arr[i], Std.string(i))]
+    items = items ++ [struct.write_value(arr[i], Std.string(i))]
     {:cont, {acc_g, acc_g1, acc_state}}
   else
     {:halt, {acc_g, acc_g1, acc_state}}
@@ -51,7 +49,11 @@ end)
     value = Map.get(obj, String.to_atom(field))
     key = struct.quote_string(field)
     val = struct.write_value(value, field)
-    if (struct.space != nil), do: pairs ++ [key <> ": " <> val], else: pairs ++ [key <> ":" <> val]
+    if (struct.space != nil) do
+      pairs = pairs ++ [key <> ": " <> val]
+    else
+      pairs = pairs ++ [key <> ":" <> val]
+    end
     {:cont, {acc_fields, acc_g, acc_state}}
   else
     {:halt, {acc_fields, acc_g, acc_state}}
@@ -67,14 +69,14 @@ end)
     result = "\""
     g = 0
     g1 = length(s)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, result, :ok}, fn _, {acc_g, acc_g1, acc_result, acc_state} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
     c = s.char_code_at(i)
     if (c == nil), do: nil, else: nil
-    {:cont, {acc_g, acc_g1, acc_result, acc_state}}
+    {:cont, {acc_result, acc_g, acc_g1, acc_state}}
   else
-    {:halt, {acc_g, acc_g1, acc_result, acc_state}}
+    {:halt, {acc_result, acc_g, acc_g1, acc_state}}
   end
 end)
     result = result <> "\""
@@ -84,7 +86,6 @@ end)
     struct.write_value(v, k)
   end
   def print(o, replacer, space) do
-    printer = JsonPrinter.new(replacer, space)
-    printer.write_value(o, "")
+    (JsonPrinter.new(replacer, space)).write_value(o, "")
   end
 end

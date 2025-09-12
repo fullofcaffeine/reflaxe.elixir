@@ -1,27 +1,26 @@
 defmodule Main do
   defp topic_to_string(_topic) do
-    case (elem(_topic, 0)) do
-      0 ->
+    case (_topic) do
+      {:topic_a} ->
         "topic_a"
-      1 ->
+      {:topic_b} ->
         "topic_b"
-      2 ->
+      {:topic_c} ->
         "topic_c"
     end
   end
   defp get_value(input) do
-    result = case (input) do
+    (case (input) do
   1 ->
     "one"
   2 ->
     "two"
   _ ->
     "other"
-end
-    result
+end)
   end
   def main() do
-    Log.trace(topic_to_string({0}), %{:file_name => "Main.hx", :line_number => 42, :class_name => "Main", :method_name => "main"})
+    Log.trace(topic_to_string({:topic_a}), %{:file_name => "Main.hx", :line_number => 42, :class_name => "Main", :method_name => "main"})
     Log.trace(get_value(1), %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "main"})
   end
 end

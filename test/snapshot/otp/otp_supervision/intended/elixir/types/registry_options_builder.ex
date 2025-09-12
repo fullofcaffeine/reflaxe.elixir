@@ -1,9 +1,9 @@
 defmodule RegistryOptionsBuilder do
   def unique(name) do
-    %{:keys => {0}, :name => String.to_atom(name)}
+    %{:keys => {:unique}, :name => String.to_atom(name)}
   end
   def duplicate(name) do
-    %{:keys => {1}, :name => String.to_atom(name)}
+    %{:keys => {:duplicate}, :name => String.to_atom(name)}
   end
   def with_partitions(options, partitions) do
     partitions = partitions
@@ -17,7 +17,7 @@ defmodule RegistryOptionsBuilder do
     if (Map.get(options, :meta) == nil) do
       meta = []
     end
-    options.meta.push(%{:key => key, :value => value})
+    options.meta ++ [%{:key => key, :value => value}]
     options
   end
 end

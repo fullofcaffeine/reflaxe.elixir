@@ -19,10 +19,8 @@ defmodule Main do
     c = 0
     index = i + 1
     c = s.cca(index)
-    if (c > 55296) do
-      index = i + 1
-      c = (c - 55232) <<< 10 ||| s.cca(index) &&& 1023
-    end
+    index = i + 1
+    c = if (c > 55296), do: (c - 55232) <<< 10 ||| s.cca(index) &&& 1023, else: c
     Log.trace("final c: " <> Kernel.to_string(c), %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testMethodCallInBinaryExpression"})
   end
 end
