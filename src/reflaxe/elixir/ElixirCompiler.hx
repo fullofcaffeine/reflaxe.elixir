@@ -177,6 +177,15 @@ class ElixirCompiler extends GenericCompiler<
     public var consumedTempVariables: Null<Map<String, String>> = null;
     
     /**
+     * PRESENCE MODULE CONTEXT
+     * 
+     * WHY: Phoenix.Presence modules have injected functions that require self() as first argument
+     * WHAT: Track when we're compiling inside a @:presence module
+     * HOW: Set flag when compiling classes with @:presence metadata, use in AST builder for method calls
+     */
+    public var isInPresenceModule: Bool = false;
+    
+    /**
      * Module dependency tracking
      * 
      * WHY: When generating scripts with bootstrap code (static main()), we need to
@@ -495,6 +504,12 @@ class ElixirCompiler extends GenericCompiler<
         // Store current class context for use in expression compilation
         this.currentClassType = classType;
         
+        // Check if this is a @:presence module
+        this.isInPresenceModule = classType.meta.has(":presence");
+        #if debug_presence
+        trace('[DEBUG PRESENCE] Compiling class ${classType.name} with @:presence=${isInPresenceModule}');
+        #end
+        
         // Use AST pipeline for class compilation
         var moduleAST = buildClassAST(classType, varFields, funcFields);
         
@@ -707,6 +722,15 @@ class ElixirCompiler extends GenericCompiler<
      *      the moduleDependencies map as a side effect of trackDependency() calls
      */
     function discoverDependencies(classType: ClassType, funcFields: Array<ClassField>): Void {
+        // CRITICAL: Check and set @:presence flag BEFORE compiling function bodies
+        // This ensures Phoenix.Presence calls get self() injection during dependency discovery
+        var wasInPresenceModule = this.isInPresenceModule;
+        this.isInPresenceModule = classType.meta.has(":presence");
+        
+        #if debug_presence
+        trace('[DEBUG PRESENCE] discoverDependencies for ${classType.name} with @:presence=${isInPresenceModule}');
+        #end
+        
         // Set compiler reference for dependency tracking
         reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
         
@@ -736,6 +760,9 @@ class ElixirCompiler extends GenericCompiler<
             trace('[ElixirCompiler] After dependency discovery for ${currentCompiledModule}: ${[for (k in deps.keys()) k].join(", ")}');
         }
         #end
+        
+        // Restore the previous @:presence flag state
+        this.isInPresenceModule = wasInPresenceModule;
     }
     
     /**

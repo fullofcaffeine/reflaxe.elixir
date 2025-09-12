@@ -1,5 +1,4 @@
 defmodule TodoAppWeb.Gettext do
-  @default_locale nil
   def gettext(msgid, _bindings) do
     msgid
   end
