@@ -11,6 +11,7 @@ import phoenix.Phoenix.HandleInfoResult;
 import phoenix.Phoenix.LiveView; // Use the comprehensive Phoenix module version
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
+import phoenix.Presence; // Import Presence module for PresenceEntry typedef
 import server.infrastructure.Repo; // Import the TodoApp.Repo module
 import server.live.SafeAssigns;
 import server.presence.TodoPresence;
@@ -86,7 +87,7 @@ typedef TodoLiveAssigns = {
 	var completedTodos: Int;
 	var pendingTodos: Int;
 	// Presence tracking (idiomatic Phoenix pattern: single flat map)
-	var onlineUsers: Map<String, phoenix.Phoenix.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
+	var onlineUsers: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
 }
 
 /**

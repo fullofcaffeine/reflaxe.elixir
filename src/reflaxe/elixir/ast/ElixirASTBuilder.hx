@@ -529,6 +529,16 @@ class ElixirASTBuilder {
                 }
                 #end
                 
+                #if debug_loop_bodies
+                // Debug TVar declarations that might be lost in loop bodies
+                if (v.name == "meta" || v.name == "entry" || v.name == "userId") {
+                    trace('[XRay LoopBody] TVar declaration: ${v.name} = ${init != null ? "..." : "null"}');
+                    if (init != null) {
+                        trace('[XRay LoopBody] Init type: ${Type.enumConstructor(init.expr)}');
+                    }
+                }
+                #end
+                
                 #if debug_null_coalescing
                 trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
                 #end
@@ -3607,10 +3617,181 @@ class ElixirASTBuilder {
                 // var _g = []; var _g1 = 0; var _g2 = array; 
                 // while(_g1 < _g2.length) { var v = _g2[_g1]; _g1++; _g.push(transformation); }
                 
+                // For Reflect.fields, Haxe desugars into:
+                // var _g = 0; var _g1 = Map.keys(obj);
+                // while(_g < _g1.length) { var key = _g1[_g]; _g++; ... }
+                
                 #if debug_array_patterns
                 trace('[XRay ArrayPattern] TWhile detected');
                 trace('[XRay ArrayPattern] Condition: ${econd.expr}');
                 #end
+                
+                // First check if this is a Map.keys iteration (from Reflect.fields)
+                var isMapKeysLoop = false;
+                var keysCollection: String = null;
+                var indexVar: String = null;
+                
+                #if debug_for_loop
+                trace('[XRay ForLoop] Analyzing TWhile condition for Map.keys pattern');
+                trace('[XRay ForLoop] Condition expr: ${econd.expr}');
+                trace('[XRay ForLoop] Condition type: ${Type.enumConstructor(econd.expr)}');
+                #end
+                
+                // Check if we're in a context where we have Map.keys
+                // Look for pattern: _g < length(_g1) or _g < _g1.length
+                // Note: The condition may be wrapped in TParenthesis
+                var actualCondition = switch(econd.expr) {
+                    case TParenthesis(e): e;
+                    case _: econd;
+                };
+                
+                switch(actualCondition.expr) {
+                    case TBinop(OpLt, {expr: TLocal(idx)}, lengthExpr):
+                        #if debug_for_loop
+                        trace('[XRay ForLoop] Found OpLt with TLocal index: ${idx.name}');
+                        trace('[XRay ForLoop] Length expr type: ${Type.enumConstructor(lengthExpr.expr)}');
+                        #end
+                        
+                        // Check if this looks like iteration over Map.keys result
+                        if (idx.name == "g" || idx.name.startsWith("_g") || idx.name.indexOf("g") >= 0) {
+                            indexVar = idx.name;
+                            
+                            // Check if the length expression references a Map.keys result
+                            switch(lengthExpr.expr) {
+                                case TCall(callExpr, args):
+                                    #if debug_for_loop
+                                    trace('[XRay ForLoop] Found TCall in length expression');
+                                    trace('[XRay ForLoop] Call expr type: ${Type.enumConstructor(callExpr.expr)}');
+                                    #end
+                                    
+                                    // Check for length() function call
+                                    switch(callExpr.expr) {
+                                        case TField(_, FStatic(_, cf)):
+                                            #if debug_for_loop
+                                            trace('[XRay ForLoop] Static field: ${cf.get().name}');
+                                            #end
+                                            if (cf.get().name == "length" && args.length > 0) {
+                                                switch(args[0].expr) {
+                                                    case TLocal(coll):
+                                                        keysCollection = coll.name;
+                                                        isMapKeysLoop = true;
+                                                        #if debug_for_loop
+                                                        trace('[XRay ForLoop] ✓ DETECTED Map.keys pattern with collection: $keysCollection');
+                                                        #end
+                                                    case _:
+                                                }
+                                            }
+                                        case _:
+                                    }
+                                    
+                                case TField({expr: TLocal(coll)}, FInstance(_, _, cf)):
+                                    #if debug_for_loop
+                                    trace('[XRay ForLoop] Instance field on TLocal: ${coll.name}.${cf.get().name}');
+                                    #end
+                                    if (cf.get().name == "length") {
+                                        // Pattern: _g < _g1.length
+                                        keysCollection = coll.name;
+                                        // Check if this collection was assigned from Map.keys
+                                        // For now, detect based on variable naming pattern
+                                        if (coll.name == "g1" || coll.name.indexOf("g1") >= 0) {
+                                            isMapKeysLoop = true;
+                                            #if debug_for_loop
+                                            trace('[XRay ForLoop] ✓ DETECTED Map.keys pattern with collection.length: $keysCollection');
+                                            #end
+                                        }
+                                    }
+                                    
+                                case _:
+                                    #if debug_for_loop
+                                    trace('[XRay ForLoop] Unrecognized length expression pattern');
+                                    #end
+                            }
+                        }
+                    case TParenthesis(_):
+                        // Already handled above by unwrapping
+                        #if debug_for_loop
+                        trace('[XRay ForLoop] TParenthesis already unwrapped');
+                        #end
+                    case _:
+                        #if debug_for_loop
+                        trace('[XRay ForLoop] Condition is not OpLt pattern');
+                        #end
+                }
+                
+                // TODO: Re-enable this optimization but only for side-effect loops (not result-building loops)
+                // The optimization currently breaks loops that build results (like Map building)
+                // Need to detect when the loop body builds a result vs just side effects
+                if (false && isMapKeysLoop && keysCollection != null && indexVar != null) {
+                    #if debug_for_loop
+                    trace('[XRay ForLoop] Detected Map.keys iteration pattern');
+                    trace('[XRay ForLoop] Collection: $keysCollection, Index: $indexVar');
+                    #end
+                    
+                    // Generate idiomatic for comprehension
+                    // for key <- collection do ... end
+                    
+                    // Extract the loop variable from the body
+                    // Look for: var key = collection[index]
+                    var loopVar: String = null;
+                    var bodyWithoutExtraction: TypedExpr = e;
+                    
+                    switch(e.expr) {
+                        case TBlock(stmts) if (stmts.length > 0):
+                            #if debug_for_loop
+                            trace('[XRay ForLoop] Body has ${stmts.length} statements');
+                            for (i in 0...stmts.length) {
+                                trace('[XRay ForLoop] Statement $i: ${Type.enumConstructor(stmts[i].expr)}');
+                            }
+                            #end
+                            // Check if first statement is the extraction
+                            switch(stmts[0].expr) {
+                                case TVar(v, {expr: TArray({expr: TLocal(coll)}, {expr: TLocal(idx)})})
+                                    if (coll.name == keysCollection && idx.name == indexVar):
+                                    // Found the extraction: var key = _g1[_g]
+                                    loopVar = toElixirVarName(v.name);
+                                    
+                                    // Skip the extraction and the index increment
+                                    var restStmts = stmts.slice(1);
+                                    
+                                    // Check if the next statement is the index increment and skip it too
+                                    if (restStmts.length > 0) {
+                                        switch(restStmts[0].expr) {
+                                            case TUnop(OpIncrement, _, {expr: TLocal(idx)}) if (idx.name == indexVar):
+                                                // Skip the increment too
+                                                restStmts = restStmts.slice(1);
+                                            case _:
+                                        }
+                                    }
+                                    
+                                    // Create the body without extraction and increment
+                                    if (restStmts.length == 1) {
+                                        bodyWithoutExtraction = restStmts[0];
+                                    } else if (restStmts.length > 0) {
+                                        bodyWithoutExtraction = {expr: TBlock(restStmts), t: e.t, pos: e.pos};
+                                    }
+                                    
+                                case _:
+                                    // Couldn't find extraction in first statement
+                                    loopVar = "item";
+                            }
+                            
+                        case _:
+                            // Couldn't find extraction, use generic variable name
+                            loopVar = "item";
+                    }
+                    
+                    // Build the body AST
+                    var bodyAst = buildFromTypedExpr(bodyWithoutExtraction, variableUsageMap);
+                    
+                    // Generate: for loopVar <- keysCollection do ... end
+                    return EFor(
+                        [{pattern: PVar(loopVar), expr: makeAST(EVar(keysCollection))}],
+                        [],  // No filters
+                        bodyAst,
+                        null,  // No into
+                        false  // Not uniq
+                    );
+                }
                 
                 // Check if this is an array iteration pattern
                 var isArrayLoop = false;
@@ -6939,6 +7120,16 @@ class ElixirASTBuilder {
                 #end
                 makeAST(EParen(transformVariableReferences(expr, varMapping)));
                 
+            case EAccess(target, key):
+                // Handle array/map access - transform both target and key
+                #if debug_state_threading
+                trace('[Transform] Processing EAccess: target and key');
+                #end
+                makeAST(EAccess(
+                    transformVariableReferences(target, varMapping),
+                    transformVariableReferences(key, varMapping)
+                ));
+                
             case ECase(expr, clauses):
                 makeAST(ECase(
                     transformVariableReferences(expr, varMapping),
@@ -7456,7 +7647,7 @@ class ElixirASTBuilder {
                             var ct = c.get();
                             if (ct.name == "Presence" && ct.pack.length > 0 && ct.pack[0] == "phoenix") {
                                 trace('[DEBUG PRESENCE] TCall to phoenix.Presence detected');
-                                trace('[DEBUG PRESENCE] isInPresenceModule = ' + isInPresenceModule);
+                                trace('[DEBUG PRESENCE] isInPresenceModule = ' + compiler.isInPresenceModule);
                             }
                         default:
                     }
