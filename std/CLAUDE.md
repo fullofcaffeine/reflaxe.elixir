@@ -266,6 +266,33 @@ extern class ExternModule {
 }
 ```
 
+### ⚠️ CRITICAL: @:native Annotation Pattern for Extern Classes
+
+**FUNDAMENTAL RULE: When an extern class has `@:native("Module.Name")` at the class level, method-level `@:native` annotations should ONLY contain the method name, not the full module path.**
+
+**Why This Matters**: Haxe combines the class-level and method-level @:native annotations. If both contain the full module path, you get malformed output like `Phoenix.Presence.phoenix._presence.track`.
+
+```haxe
+// ✅ CORRECT: Class has module, methods have only method names
+@:native("Phoenix.Presence")
+extern class Presence {
+    @:native("track")  // Just the method name!
+    static function track(socket: Dynamic, key: String, meta: Dynamic): Dynamic;
+    
+    @:native("list")   // Just the method name!
+    static function list(topic: String): Dynamic;
+}
+
+// ❌ WRONG: Duplicating the module path in method annotations
+@:native("Phoenix.Presence")
+extern class Presence {
+    @:native("Phoenix.Presence.track")  // WRONG! Creates malformed output
+    static function track(socket: Dynamic, key: String, meta: Dynamic): Dynamic;
+}
+```
+
+**Lesson Learned (September 2025)**: Fixed Phoenix.Presence extern where methods incorrectly had full module paths in their @:native annotations, causing compilation errors in modules that used Phoenix.Presence.
+
 ### Runtime Implementation Pattern
 ```elixir
 # StringTools.ex - Elixir runtime implementation

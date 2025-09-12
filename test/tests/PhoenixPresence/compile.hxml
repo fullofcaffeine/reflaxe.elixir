@@ -1,0 +1,9 @@
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
+-dce full
+--no-output
+--macro reflaxe.ReflaxeModuleBuild.build()
+-D reflaxe_no_haxe_runtime
+-D eval-stack
+Main

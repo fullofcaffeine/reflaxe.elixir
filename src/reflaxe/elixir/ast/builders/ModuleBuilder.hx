@@ -1180,9 +1180,30 @@ class ModuleBuilder {
             // Since we can't modify metadata here, we'll handle it differently
         }
         
-        // Add module attributes for fields
+        // Add module attributes for fields (skip static inline constants)
         for (field in varFields) {
+            // Skip fields that appear to be static inline constants
+            // These are compile-time constants that get inlined and shouldn't have module attributes
+            // This includes:
+            // 1. Fields with constant expressions (expr() != null typically means static inline)
+            // 2. Fields with all-caps names (common for constants)
+            // 3. Fields that would create reserved keyword conflicts (true, false, nil)
+            if (field.expr() != null) {
+                // Fields with expressions are typically static inline constants
+                // Skip generating module attributes for them
+                continue;
+            }
+            
+            // Also skip fields that would create reserved keyword module attributes
             var fieldName = NameUtils.toSnakeCase(field.name);
+            if (fieldName == "true" || fieldName == "false" || fieldName == "nil" || 
+                fieldName == "do" || fieldName == "end" || fieldName == "and" || 
+                fieldName == "or" || fieldName == "not" || fieldName == "in" ||
+                fieldName == "when" || fieldName == "fn") {
+                // These are Elixir reserved keywords that can't be module attributes
+                continue;
+            }
+            
             // For now, just create nil - actual value would come from field.expr()
             statements.push(makeAST(EModuleAttribute(fieldName, makeAST(ENil))));
         }
