@@ -1,6 +1,7 @@
 package;
 
 import ecto.TypedQuery;
+import ecto.TypedQuery.SortDirection;
 import ecto.Migration;
 import ecto.Migration.*;
 
@@ -44,14 +45,14 @@ class Main {
 		var activeAdults = TypedQuery.from(User)
 			.where(u -> u.active == true)
 			.where(u -> u.age >= 18)
-			.orderBy(u -> u.createdAt, Desc);
+			.orderBy(u -> [{field: u.createdAt, direction: SortDirection.Desc}]);  // Using type-safe enum
 		trace("TypedQuery with type-safe where conditions");
 	}
 	
 	static function testEscapeHatches() {
 		// Test raw SQL escape hatches
 		var complexQuery = TypedQuery.from(User)
-			.whereRaw("active = ? AND role IN (?)", [true, ["admin", "moderator"]])
+			.whereRaw("active = ? AND age > ?", true, 18)
 			.orderByRaw("CASE WHEN role = 'admin' THEN 0 ELSE 1 END, created_at DESC");
 		
 		// Convert to EctoQuery for advanced operations

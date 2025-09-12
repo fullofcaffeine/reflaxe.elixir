@@ -117,8 +117,9 @@ abstract Date(DateTime) from DateTime to DateTime {
     /**
      * Create from milliseconds since Unix epoch (Haxe standard API)
      */
-    public static inline function fromTime(t: Float): Date {
-        return DateTime.fromUnixBang(Std.int(t), TimeUnit.Millisecond);
+    public static function fromTime(t: Float): Date {
+        // Use untyped __elixir__ to ensure atom is generated
+        return untyped __elixir__('DateTime.from_unix!(Std.int({0}), :millisecond)', t);
     }
 
     /**
@@ -149,9 +150,8 @@ abstract Date(DateTime) from DateTime to DateTime {
      * Milliseconds since Unix epoch (Haxe standard API)
      */
     public function getTime(): Float {
-        // Non-inline to avoid Haxe introducing temp bindings when chained in expressions
-        // Generates: DateTime.to_unix(DateTime.utc_now(), :millisecond)
-        return this.to_unix(TimeUnit.Millisecond);
+        // Use untyped __elixir__ to ensure atom is generated
+        return untyped __elixir__('DateTime.to_unix({0}, :millisecond)', this);
     }
 
     /**
