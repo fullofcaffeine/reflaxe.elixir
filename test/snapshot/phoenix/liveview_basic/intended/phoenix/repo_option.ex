@@ -1,17 +1,17 @@
 defmodule Phoenix.RepoOption do
   def timeout(arg0) do
-    {:Timeout, arg0}
+    {0, arg0}
   end
   def log(arg0) do
-    {:Log, arg0}
+    {1, arg0}
   end
   def telemetry(arg0) do
-    {:Telemetry, arg0}
+    {2, arg0}
   end
   def prefix(arg0) do
-    {:Prefix, arg0}
+    {3, arg0}
   end
   def read_only(arg0) do
-    {:ReadOnly, arg0}
+    {4, arg0}
   end
 end

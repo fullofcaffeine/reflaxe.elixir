@@ -1,8 +1,8 @@
 defmodule Elixir.Types.RegistryType do
   def unique() do
-    {:Unique}
+    {0}
   end
   def duplicate() do
-    {:Duplicate}
+    {1}
   end
 end

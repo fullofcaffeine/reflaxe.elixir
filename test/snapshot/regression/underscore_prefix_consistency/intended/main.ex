@@ -16,7 +16,7 @@ defmodule Main do
     g = get_some_value()
     result = case (g) do
   {:some, value} ->
-    g = elem(g, 1)
+    g = g
     g1 = g.metadata
     g = g.value
     _meta = g1

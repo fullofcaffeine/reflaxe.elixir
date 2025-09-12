@@ -1,20 +1,20 @@
 defmodule Haxe.Io.Encoding do
   def utf8() do
-    {:UTF8}
+    {0}
   end
   def utf16_le() do
-    {:UTF16LE}
+    {1}
   end
   def utf16_be() do
-    {:UTF16BE}
+    {2}
   end
   def utf32_le() do
-    {:UTF32LE}
+    {3}
   end
   def utf32_be() do
-    {:UTF32BE}
+    {4}
   end
   def raw_native() do
-    {:RawNative}
+    {5}
   end
 end

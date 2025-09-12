@@ -4,8 +4,7 @@ defmodule Int32_Impl_ do
     ~~~this1 + 1
   end
   defp pre_increment(this1) do
-    x = this1 = this1 + 1
-    this1 = x
+    this1 = (this1 = this1 + 1)
   end
   defp post_increment(this1) do
     ret = this1 = this1 + 1
@@ -13,8 +12,7 @@ defmodule Int32_Impl_ do
     ret
   end
   defp pre_decrement(this1) do
-    x = this1 = (this1 - 1)
-    this1 = x
+    this1 = (this1 = (this1 - 1))
   end
   defp post_decrement(this1) do
     ret = this1 = (this1 - 1)

@@ -17,17 +17,17 @@ defmodule Main do
       {:ok, g} ->
         g = elem(email_result, 1)
         email = g
-        domain = Email_Impl_.get_domain(g)
-        local_part = Email_Impl_.get_local_part(g)
+        domain = Email_Impl_.get_domain(email)
+        local_part = Email_Impl_.get_local_part(email)
         Log.trace("Valid email - Domain: " <> domain <> ", Local: " <> local_part, %{:file_name => "Main.hx", :line_number => 52, :class_name => "Main", :method_name => "testEmailValidation"})
-        is_example_domain = Email_Impl_.has_domain(g, "example.com")
+        is_example_domain = Email_Impl_.has_domain(email, "example.com")
         Log.trace("Is example.com domain: " <> Std.string(is_example_domain), %{:file_name => "Main.hx", :line_number => 56, :class_name => "Main", :method_name => "testEmailValidation"})
-        normalized = Email_Impl_.normalize(g)
+        normalized = Email_Impl_.normalize(email)
         Log.trace("Normalized: " <> Email_Impl_.to_string(normalized), %{:file_name => "Main.hx", :line_number => 60, :class_name => "Main", :method_name => "testEmailValidation"})
       {:error, g} ->
         g = elem(email_result, 1)
         reason = g
-        Log.trace("Unexpected email validation failure: " <> g, %{:file_name => "Main.hx", :line_number => 63, :class_name => "Main", :method_name => "testEmailValidation"})
+        Log.trace("Unexpected email validation failure: " <> reason, %{:file_name => "Main.hx", :line_number => 63, :class_name => "Main", :method_name => "testEmailValidation"})
     end
     invalid_emails = ["invalid-email", "@example.com", "user@", "user@@example.com", "", "user space@example.com"]
     g = 0
@@ -85,12 +85,12 @@ g), "")
     g = PositiveInt_Impl_.safe_sub(five, ten)
     case (g) do
       {:ok, g} ->
-        _g = elem(g, 1)
+        _g = g
         Log.trace("ERROR: Subtraction that should fail succeeded", %{:file_name => "Main.hx", :line_number => 213, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         reason = g
-        Log.trace("Correctly prevented invalid subtraction: " <> g, %{:file_name => "Main.hx", :line_number => 215, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+        Log.trace("Correctly prevented invalid subtraction: " <> reason, %{:file_name => "Main.hx", :line_number => 215, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
     end
     twenty = ResultTools.unwrap(PositiveInt_Impl_.parse(20))
     four = ResultTools.unwrap(PositiveInt_Impl_.parse(4))
@@ -98,24 +98,24 @@ g), "")
     g = PositiveInt_Impl_.safe_div(twenty, four)
     case (g) do
       {:ok, g} ->
-        g = elem(g, 1)
+        g = g
         result = g
-        Log.trace("20 / 4 = " <> PositiveInt_Impl_.to_string(g), %{:file_name => "Main.hx", :line_number => 225, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+        Log.trace("20 / 4 = " <> PositiveInt_Impl_.to_string(result), %{:file_name => "Main.hx", :line_number => 225, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         reason = g
-        Log.trace("Division failed: " <> g, %{:file_name => "Main.hx", :line_number => 227, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+        Log.trace("Division failed: " <> reason, %{:file_name => "Main.hx", :line_number => 227, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
     end
     g = PositiveInt_Impl_.safe_div(twenty, three)
     case (g) do
       {:ok, g} ->
-        g = elem(g, 1)
+        g = g
         result = g
-        Log.trace("20 / 3 = " <> PositiveInt_Impl_.to_string(g) <> " (unexpected success)", %{:file_name => "Main.hx", :line_number => 232, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+        Log.trace("20 / 3 = " <> PositiveInt_Impl_.to_string(result) <> " (unexpected success)", %{:file_name => "Main.hx", :line_number => 232, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         reason = g
-        Log.trace("20 / 3 correctly failed (not exact): " <> g, %{:file_name => "Main.hx", :line_number => 234, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
+        Log.trace("20 / 3 correctly failed (not exact): " <> reason, %{:file_name => "Main.hx", :line_number => 234, :class_name => "Main", :method_name => "testPositiveIntArithmetic"})
     end
   end
   defp test_non_empty_string_operations() do
@@ -137,13 +137,13 @@ g), "")
     g = NonEmptyString_Impl_.safe_replace(test_str, "World", "Universe")
     case (g) do
       {:ok, g} ->
-        g = elem(g, 1)
+        g = g
         replaced = g
-        Log.trace("Replaced \"World\" with \"Universe\": " <> NonEmptyString_Impl_.to_string(g), %{:file_name => "Main.hx", :line_number => 312, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+        Log.trace("Replaced \"World\" with \"Universe\": " <> NonEmptyString_Impl_.to_string(replaced), %{:file_name => "Main.hx", :line_number => 312, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
       {:error, g} ->
-        g = elem(g, 1)
+        g = g
         reason = g
-        Log.trace("Replacement failed: " <> g, %{:file_name => "Main.hx", :line_number => 314, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
+        Log.trace("Replacement failed: " <> reason, %{:file_name => "Main.hx", :line_number => 314, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
     end
     parts = NonEmptyString_Impl_.split_non_empty(test_str, " ")
     Log.trace("Split by space: " <> Kernel.to_string(length(parts)) <> " parts", %{:file_name => "Main.hx", :line_number => 319, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
@@ -175,13 +175,13 @@ end)
         g = elem(composition_result, 1)
         profile = g
         Log.trace("User profile created successfully:", %{:file_name => "Main.hx", :line_number => 364, :class_name => "Main", :method_name => "testFunctionalComposition"})
-        Log.trace("  UserId: " <> UserId_Impl_.to_string(g.user_id), %{:file_name => "Main.hx", :line_number => 365, :class_name => "Main", :method_name => "testFunctionalComposition"})
-        Log.trace("  Email: " <> Email_Impl_.to_string(g.email), %{:file_name => "Main.hx", :line_number => 366, :class_name => "Main", :method_name => "testFunctionalComposition"})
-        Log.trace("  Score: " <> PositiveInt_Impl_.to_string(g.score), %{:file_name => "Main.hx", :line_number => 367, :class_name => "Main", :method_name => "testFunctionalComposition"})
+        Log.trace("  UserId: " <> UserId_Impl_.to_string(profile.user_id), %{:file_name => "Main.hx", :line_number => 365, :class_name => "Main", :method_name => "testFunctionalComposition"})
+        Log.trace("  Email: " <> Email_Impl_.to_string(profile.email), %{:file_name => "Main.hx", :line_number => 366, :class_name => "Main", :method_name => "testFunctionalComposition"})
+        Log.trace("  Score: " <> PositiveInt_Impl_.to_string(profile.score), %{:file_name => "Main.hx", :line_number => 367, :class_name => "Main", :method_name => "testFunctionalComposition"})
       {:error, g} ->
         g = elem(composition_result, 1)
         reason = g
-        Log.trace("User profile creation failed: " <> g, %{:file_name => "Main.hx", :line_number => 369, :class_name => "Main", :method_name => "testFunctionalComposition"})
+        Log.trace("User profile creation failed: " <> reason, %{:file_name => "Main.hx", :line_number => 369, :class_name => "Main", :method_name => "testFunctionalComposition"})
     end
   end
   defp test_error_handling() do

@@ -1,14 +1,14 @@
 defmodule Haxe.Io.Error do
   def blocked() do
-    {:Blocked}
+    {0}
   end
   def overflow() do
-    {:Overflow}
+    {1}
   end
   def outside_bounds() do
-    {:OutsideBounds}
+    {2}
   end
   def custom(arg0) do
-    {:Custom, arg0}
+    {3, arg0}
   end
 end

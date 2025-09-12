@@ -3,7 +3,6 @@ defmodule Main do
   defp test_complex_assignment() do
     i = 0
     index = nil
-    c = nil
     index = i + 1
     c = index
     _result = some_function(index)

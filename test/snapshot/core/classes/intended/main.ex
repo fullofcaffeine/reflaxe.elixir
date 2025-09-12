@@ -2,7 +2,7 @@ defmodule Main do
   def main() do
     p1 = Point.new(3, 4)
     p2 = Point.new(0, 0)
-    Log.trace(p1.distance(p2), %{:file_name => "Main.hx", :line_number => 143, :class_name => "Main", :method_name => "main"})
+    Log.trace(:math.sqrt(p1), %{:file_name => "Main.hx", :line_number => 143, :class_name => "Main", :method_name => "main"})
     shape = Shape.new(10, 20, "Rectangle")
     Log.trace(shape.draw(), %{:file_name => "Main.hx", :line_number => 147, :class_name => "Main", :method_name => "main"})
     shape.move(5, 5)

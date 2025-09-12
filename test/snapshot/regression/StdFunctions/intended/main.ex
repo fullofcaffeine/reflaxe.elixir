@@ -14,7 +14,7 @@ defmodule Main do
     obj_str = Std.string(obj)
     arr = [1, 2, 3]
     arr_str = Std.string(arr)
-    option = {:Some, "value"}
+    option = {:some, "value"}
     option_str = Std.string(option)
     Log.trace("String conversions:", %{:file_name => "Main.hx", :line_number => 32, :class_name => "Main", :method_name => "testStringConversion"})
     Log.trace("  Int: " <> int_str, %{:file_name => "Main.hx", :line_number => 33, :class_name => "Main", :method_name => "testStringConversion"})
@@ -55,7 +55,6 @@ defmodule Main do
     _float = 3.14
     _bool = true
     arr = [1, 2, 3]
-    obj_field = nil
     obj_field = "value"
     str_is_string = Std.is(str, String)
     arr_is_array = Std.is(arr, Array)

@@ -1,11 +1,11 @@
 defmodule TestTopic do
   def topic_a() do
-    {:TopicA}
+    {0}
   end
   def topic_b() do
-    {:TopicB}
+    {1}
   end
   def topic_c() do
-    {:TopicC}
+    {2}
   end
 end

@@ -1,20 +1,20 @@
 defmodule OptionTools do
   def map(_option, transform) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        value = v
-        transform.(v)
+        value = g
+        transform.(value)
       {:none} ->
         :none
     end
   end
   def then(_option, transform) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        value = v
-        transform.(v)
+        value = g
+        transform.(value)
       {:none} ->
         :none
     end
@@ -24,47 +24,47 @@ defmodule OptionTools do
   end
   def flatten(_option) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        inner = v
-        v
+        inner = g
+        inner
       {:none} ->
         :none
     end
   end
   def filter(_option, predicate) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        value = v
-        if (predicate.(v)), do: v, else: :none
+        value = g
+        if (predicate.(value)), do: value, else: :none
       {:none} ->
         :none
     end
   end
   def unwrap(_option, default_value) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        value = v
-        v
+        value = g
+        value
       {:none} ->
         default_value
     end
   end
   def lazy_unwrap(_option, fn_param) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        value = v
-        v
+        value = g
+        value
       {:none} ->
         fn_param.()
     end
   end
   def or_fn(first, second) do
     case (first) do
-      {:some, v} ->
+      {:some, g} ->
         _g = elem(first, 1)
         first
       {:none} ->
@@ -73,7 +73,7 @@ defmodule OptionTools do
   end
   def lazy_or(first, fn_param) do
     case (first) do
-      {:some, v} ->
+      {:some, g} ->
         _g = elem(first, 1)
         first
       {:none} ->
@@ -82,7 +82,7 @@ defmodule OptionTools do
   end
   def is_some(_option) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         _g = elem(_option, 1)
         true
       {:none} ->
@@ -91,7 +91,7 @@ defmodule OptionTools do
   end
   def is_none(_option) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         _g = elem(_option, 1)
         false
       {:none} ->
@@ -130,21 +130,21 @@ end)
   end
   def to_result(_option, error) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        value = v
-        v
+        value = g
+        value
       {:none} ->
         error
     end
   end
   def from_result(_result) do
     case (_result) do
-      {:ok, value} ->
+      {:ok, g} ->
         g = elem(_result, 1)
-        value = value
+        value = g
         value
-      {:error, error} ->
+      {:error, g} ->
         _g = elem(_result, 1)
         :none
     end
@@ -154,30 +154,30 @@ end)
   end
   def to_nullable(_option) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        value = v
-        v
+        value = g
+        value
       {:none} ->
         nil
     end
   end
   def to_reply(_option) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        value = v
-        %{:reply => v, :status => "ok"}
+        value = g
+        %{:reply => value, :status => "ok"}
       {:none} ->
         %{:reply => nil, :status => "none"}
     end
   end
   def expect(_option, _message) do
     case (_option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(_option, 1)
-        value = v
-        v
+        value = g
+        value
       {:none} ->
         throw("Expected Some value but got None: " <> _message)
     end
@@ -190,10 +190,10 @@ end)
   end
   def apply(option, fn_param) do
     case (option) do
-      {:some, v} ->
+      {:some, g} ->
         g = elem(option, 1)
-        value = v
-        fn_param.(v)
+        value = g
+        fn_param.(value)
       {:none} ->
         nil
     end

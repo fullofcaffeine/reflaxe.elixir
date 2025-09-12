@@ -20,7 +20,14 @@ defmodule MemoryStorage do
     g = []
     this1 = struct.data
     k = Map.keys(this1)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} -> nil end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
+  if (acc_k.has_next()) do
+    g = g ++ [(acc_k.next())]
+    {:cont, {acc_k, acc_state}}
+  else
+    {:halt, {acc_k, acc_state}}
+  end
+end)
     g
   end
 end

@@ -1,12 +1,10 @@
 defmodule Pid_Impl_ do
   def _new(pid) do
-    this1 = nil
     this1 = pid
     this1
   end
   def from_string(str) do
     pid = __elixir__.call("Process.pid_from_string(" <> str <> ")")
-    this1 = nil
     this1 = pid
     this1
   end
