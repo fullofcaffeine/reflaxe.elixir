@@ -53,15 +53,13 @@ class TodoPresence {
             editingTodoId: null,  // Not editing initially
             editingStartedAt: null
         };
-        // IMPORTANT: Since this is inside a Phoenix.Presence module (via use Phoenix.Presence),
-        // we have local versions of track/4 and update/4 injected by the behavior.
-        // These local functions automatically use self() internally.
-        // We don't call Phoenix.Presence.track because we ARE a Presence module.
-        // We call the local injected track function directly.
-        // In LiveView context, we use a fixed topic string, not socket.topic (which doesn't exist)
-        var topic: String = "presence:todo_app";  // Fixed topic for LiveView presence
-        var pid = untyped __elixir__('self()');
-        untyped __elixir__('track({0}, {1}, {2}, {3})', pid, topic, Std.string(user.id), meta);
+        // Since TodoPresence is a @:presence module, the BehaviorTransformer
+        // will transform Phoenix.Presence.track() calls into local track() calls
+        // with self() automatically injected as the first parameter.
+        // We just need to provide the socket, key, and meta - the transformer handles the rest.
+        
+        // The BehaviorTransformer converts this to: track(self(), socket, key, meta)
+        phoenix.Presence.track(socket, Std.string(user.id), meta);
         return socket;
     }
     
@@ -94,11 +92,11 @@ class TodoPresence {
         };
         
         // Phoenix pattern: update existing presence rather than track/untrack
-        // Use the local injected update function from Phoenix.Presence behavior
-        // In LiveView context, we use a fixed topic string
-        var topic: String = "presence:todo_app";  // Fixed topic for LiveView presence
-        var pid = untyped __elixir__('self()');
-        untyped __elixir__('update({0}, {1}, {2}, {3})', pid, topic, Std.string(user.id), updatedMeta);
+        // The BehaviorTransformer will transform this Phoenix.Presence.update() call
+        // into a local update() call with self() automatically injected.
+        
+        // The BehaviorTransformer converts this to: update(self(), socket, key, meta)
+        phoenix.Presence.update(socket, Std.string(user.id), updatedMeta);
         return socket;
     }
     
@@ -106,9 +104,9 @@ class TodoPresence {
      * Helper to get current user presence metadata
      */
     static function getUserPresence<T>(socket: Socket<T>, userId: Int): Null<PresenceMeta> {
-        // Call the local list function with fixed topic (Presence behavior injected function)
-        var topic: String = "presence:todo_app";
-        var presences = untyped __elixir__('list({0})', topic);
+        // The BehaviorTransformer will transform this Phoenix.Presence.list() call
+        // into a local list() call (no self() needed for list).
+        var presences = phoenix.Presence.list(socket);
         // Note: presences is a Dynamic map, need to use Reflect
         var userKey = Std.string(userId);
         if (Reflect.hasField(presences, userKey)) {
@@ -122,10 +120,9 @@ class TodoPresence {
      * Get list of users currently online
      */
     public static function listOnlineUsers<T>(socket: Socket<T>): Dynamic {
-        // Get all presences for the fixed topic
-        // Returns a Dynamic map of user_id -> PresenceEntry
-        var topic: String = "presence:todo_app";
-        return untyped __elixir__('list({0})', topic);
+        // Get all presences using the socket
+        // The BehaviorTransformer handles converting to local list() call
+        return phoenix.Presence.list(socket);
     }
     
     /**
@@ -135,8 +132,8 @@ class TodoPresence {
      * querying separate topics - more maintainable and Phoenix-like.
      */
     public static function getUsersEditingTodo<T>(socket: Socket<T>, todoId: Int): Array<PresenceMeta> {
-        var topic: String = "presence:todo_app";
-        var allUsers = untyped __elixir__('list({0})', topic);
+        // Get all users through the Phoenix.Presence extern
+        var allUsers = phoenix.Presence.list(socket);
         var editingUsers = [];
         
         // Iterate over Dynamic presence map using Reflect
