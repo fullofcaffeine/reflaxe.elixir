@@ -20,6 +20,7 @@ typedef TodoParams = {
 /**
  * Todo schema for managing tasks
  */
+@:native("TodoApp.Todo")
 @:schema("todos")
 @:timestamps
 class Todo {
