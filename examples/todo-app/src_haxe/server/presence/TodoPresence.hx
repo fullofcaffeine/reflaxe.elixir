@@ -58,7 +58,8 @@ class TodoPresence {
         // These local functions automatically use self() internally.
         // We don't call Phoenix.Presence.track because we ARE a Presence module.
         // We call the local injected track function directly.
-        var topic: phoenix.Topic = untyped __elixir__('{0}.topic', socket);
+        // In LiveView context, we use a fixed topic string, not socket.topic (which doesn't exist)
+        var topic: String = "presence:todo_app";  // Fixed topic for LiveView presence
         var pid = untyped __elixir__('self()');
         untyped __elixir__('track({0}, {1}, {2}, {3})', pid, topic, Std.string(user.id), meta);
         return socket;
@@ -94,7 +95,8 @@ class TodoPresence {
         
         // Phoenix pattern: update existing presence rather than track/untrack
         // Use the local injected update function from Phoenix.Presence behavior
-        var topic: phoenix.Topic = untyped __elixir__('{0}.topic', socket);
+        // In LiveView context, we use a fixed topic string
+        var topic: String = "presence:todo_app";  // Fixed topic for LiveView presence
         var pid = untyped __elixir__('self()');
         untyped __elixir__('update({0}, {1}, {2}, {3})', pid, topic, Std.string(user.id), updatedMeta);
         return socket;
@@ -104,7 +106,9 @@ class TodoPresence {
      * Helper to get current user presence metadata
      */
     static function getUserPresence<T>(socket: Socket<T>, userId: Int): Null<PresenceMeta> {
-        var presences = Presence.list(socket);  // Use socket instead of topic
+        // Call the local list function with fixed topic (Presence behavior injected function)
+        var topic: String = "presence:todo_app";
+        var presences = untyped __elixir__('list({0})', topic);
         // Note: presences is a Dynamic map, need to use Reflect
         var userKey = Std.string(userId);
         if (Reflect.hasField(presences, userKey)) {
@@ -118,9 +122,10 @@ class TodoPresence {
      * Get list of users currently online
      */
     public static function listOnlineUsers<T>(socket: Socket<T>): Dynamic {
-        // Get all presences for the socket's topic
+        // Get all presences for the fixed topic
         // Returns a Dynamic map of user_id -> PresenceEntry
-        return Presence.list(socket);
+        var topic: String = "presence:todo_app";
+        return untyped __elixir__('list({0})', topic);
     }
     
     /**
@@ -130,7 +135,8 @@ class TodoPresence {
      * querying separate topics - more maintainable and Phoenix-like.
      */
     public static function getUsersEditingTodo<T>(socket: Socket<T>, todoId: Int): Array<PresenceMeta> {
-        var allUsers = Presence.list(socket);
+        var topic: String = "presence:todo_app";
+        var allUsers = untyped __elixir__('list({0})', topic);
         var editingUsers = [];
         
         // Iterate over Dynamic presence map using Reflect
