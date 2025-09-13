@@ -136,6 +136,10 @@ class ModuleBuilder {
         
         // Create metadata for the module
         var metadata = createModuleMetadata(classType);
+        
+        // Set current module's @:presence status for behavior-specific transformations
+        var previousHasPresence = reflaxe.elixir.ast.ElixirASTBuilder.currentModuleHasPresence;
+        reflaxe.elixir.ast.ElixirASTBuilder.currentModuleHasPresence = (metadata.isPresence == true);
         // Link back to the original Haxe fully-qualified class name for downstream transformers
         var fqcn = (classType.pack != null && classType.pack.length > 0) ? (classType.pack.join(".") + "." + classType.name) : classType.name;
         metadata.haxeFqcn = fqcn;
@@ -288,6 +292,7 @@ class ModuleBuilder {
         
         // Restore previous module context
         reflaxe.elixir.ast.ElixirASTBuilder.currentModule = previousModule;
+        reflaxe.elixir.ast.ElixirASTBuilder.currentModuleHasPresence = previousHasPresence;
         
         #if debug_module_builder
         trace('[ModuleBuilder] Created module AST for ${moduleName} with metadata: ${metadata}');
