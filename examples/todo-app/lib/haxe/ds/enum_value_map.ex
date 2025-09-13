@@ -25,15 +25,8 @@ end)
     0
   end
   defp compare_arg(struct, v1, v2) do
-    if (is_tuple(v1) and is_atom(elem(v1, 0)) && is_tuple(v2) and is_atom(elem(v2, 0))), do: struct.compare(v1, v2)
-    cond do
-      v1 < v2 ->
-        -1
-      v1 > v2 ->
-        1
-      true ->
-        0
-    end
+    if (Reflect.is_enum_value(v1) && Reflect.is_enum_value(v2)), do: struct.compare(v1, v2)
+    Reflect.compare(v1, v2)
   end
   def keys(struct) do
     struct.iterator()

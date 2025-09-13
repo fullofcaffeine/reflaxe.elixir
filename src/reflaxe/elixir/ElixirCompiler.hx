@@ -241,6 +241,11 @@ class ElixirCompiler extends GenericCompiler<
         // Enable source mapping if requested
         this.sourceMapOutputEnabled = Context.defined("source_map_enabled") || Context.defined("source-map") || Context.defined("debug");
         
+        // Initialize the BehaviorTransformer system
+        // This replaces hardcoded behavior logic with a pluggable architecture
+        reflaxe.elixir.behaviors.BehaviorTransformer.initialize();
+        reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
+        
         // Preprocessors are now configured in CompilerInit.hx to ensure they aren't overridden
         // The configuration was moved because options passed to ReflectCompiler.AddCompiler
         // override anything set in the constructor
@@ -265,6 +270,15 @@ class ElixirCompiler extends GenericCompiler<
         // Check if this is an extern class with special annotations
         if (classType.isExtern && hasSpecialAnnotations(classType)) {
             // Force generation for extern classes with framework annotations
+            return true;
+        }
+        
+        // Check if this is a non-extern class with @:presence annotation
+        // These need to be compiled to generate Phoenix.Presence modules
+        if (!classType.isExtern && classType.meta.has(":presence")) {
+            #if debug_behavior_transformer
+            trace('[shouldGenerateClass] Forcing compilation of @:presence class: ${classType.name}');
+            #end
             return true;
         }
         
@@ -504,11 +518,22 @@ class ElixirCompiler extends GenericCompiler<
         // Store current class context for use in expression compilation
         this.currentClassType = classType;
         
-        // Check if this is a @:presence module
-        this.isInPresenceModule = classType.meta.has(":presence");
-        #if debug_presence
-        trace('[DEBUG PRESENCE] Compiling class ${classType.name} with @:presence=${isInPresenceModule}');
+        // Activate behavior transformer based on class metadata
+        // This replaces the old isInPresenceModule flag with a more generic system
+        #if debug_behavior_transformer
+        trace('[ElixirCompiler] Compiling class: ${classType.name}');
         #end
+        
+        if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
+            var behaviorName = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.checkAndActivateBehavior(classType);
+            #if debug_behavior_transformer
+            if (behaviorName != null) {
+                trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for class ${classType.name}');
+            } else {
+                trace('[BehaviorTransformer] No behavior found for class ${classType.name}');
+            }
+            #end
+        }
         
         // Use AST pipeline for class compilation
         var moduleAST = buildClassAST(classType, varFields, funcFields);
@@ -722,14 +747,18 @@ class ElixirCompiler extends GenericCompiler<
      *      the moduleDependencies map as a side effect of trackDependency() calls
      */
     function discoverDependencies(classType: ClassType, funcFields: Array<ClassField>): Void {
-        // CRITICAL: Check and set @:presence flag BEFORE compiling function bodies
-        // This ensures Phoenix.Presence calls get self() injection during dependency discovery
-        var wasInPresenceModule = this.isInPresenceModule;
-        this.isInPresenceModule = classType.meta.has(":presence");
-        
-        #if debug_presence
-        trace('[DEBUG PRESENCE] discoverDependencies for ${classType.name} with @:presence=${isInPresenceModule}');
-        #end
+        // Activate behavior transformer for dependency discovery
+        // This replaces the old isInPresenceModule flag with a generic system
+        var previousBehavior: Null<String> = null;
+        if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
+            previousBehavior = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior;
+            var behaviorName = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.checkAndActivateBehavior(classType);
+            #if debug_behavior_transformer
+            if (behaviorName != null) {
+                trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for dependency discovery of ${classType.name}');
+            }
+            #end
+        }
         
         // Set compiler reference for dependency tracking
         reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
@@ -761,8 +790,10 @@ class ElixirCompiler extends GenericCompiler<
         }
         #end
         
-        // Restore the previous @:presence flag state
-        this.isInPresenceModule = wasInPresenceModule;
+        // Restore previous behavior state
+        if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
+            reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior = previousBehavior;
+        }
     }
     
     /**
@@ -770,9 +801,30 @@ class ElixirCompiler extends GenericCompiler<
      */
     function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
         
+        #if debug_behavior_transformer
+        trace('[ElixirCompiler.buildClassAST] Building class: ${classType.name}');
+        trace('[ElixirCompiler.buildClassAST] Metadata: ${[for (m in classType.meta.get()) m.name]}');
+        #end
+        
         // Skip built-in types that shouldn't generate modules
         if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name)) {
             return null;
+        }
+        
+        // Activate behavior transformer if this class has a behavior annotation
+        // This ensures that when the class's methods are compiled, the behavior transformer
+        // is active and can inject self() or other behavior-specific transformations
+        var previousBehavior: Null<String> = null;
+        if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
+            previousBehavior = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior;
+            var behaviorName = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.checkAndActivateBehavior(classType);
+            #if debug_behavior_transformer
+            if (behaviorName != null) {
+                trace('[BehaviorTransformer] Activated behavior "${behaviorName}" for building ${classType.name} module');
+            } else {
+                trace('[BehaviorTransformer] No behavior found for ${classType.name}');
+            }
+            #end
         }
         
         // ALWAYS use ModuleBuilder for ALL classes to eliminate duplication
@@ -823,6 +875,18 @@ class ElixirCompiler extends GenericCompiler<
         // PASS 3: Generate companion modules if needed (e.g., PostgrexTypes for Repo)
         if (moduleAST != null && moduleAST.metadata != null) {
             generateCompanionModules(classType, moduleAST.metadata);
+        }
+        
+        // Restore previous behavior transformer state
+        if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
+            reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior = previousBehavior;
+            #if debug_behavior_transformer
+            if (previousBehavior != null) {
+                trace('[BehaviorTransformer] Restored previous behavior: ${previousBehavior}');
+            } else {
+                trace('[BehaviorTransformer] Deactivated behavior after building ${classType.name}');
+            }
+            #end
         }
         
         return moduleAST;

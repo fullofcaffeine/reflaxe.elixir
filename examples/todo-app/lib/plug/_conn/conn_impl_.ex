@@ -6,7 +6,7 @@ defmodule Conn_Impl_ do
     this1
   end
   def get_method(this1) do
-    method = Map.get(this1, String.to_atom("method"))
+    method = Reflect.field(this1, "method")
     case (method) do
       "DELETE" ->
         {:delete}
@@ -27,21 +27,21 @@ defmodule Conn_Impl_ do
     end
   end
   def get_path(this1) do
-    Map.get(this1, String.to_atom("request_path"))
+    Reflect.field(this1, "request_path")
   end
   def get_query_string(this1) do
-    Map.get(this1, String.to_atom("query_string"))
+    Reflect.field(this1, "query_string")
   end
   def get_headers(this1) do
-    headers = Map.get(this1, String.to_atom("req_headers"))
+    headers = Reflect.field(this1, "req_headers")
     result = %{}
     g = 0
-    g1 = Map.keys(headers)
+    g1 = Reflect.fields(headers)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < length(acc_g1)) do
     field = acc_g1[acc_g]
     acc_g = acc_g + 1
-    value = Map.get(headers, String.to_atom(field))
+    value = Reflect.field(headers, field)
     Map.put(result, field, value)
     {:cont, {acc_g, acc_g1, acc_state}}
   else
@@ -56,40 +56,40 @@ end)
     Map.get(headers, key)
   end
   def get_body_params(this1) do
-    Map.get(this1, String.to_atom("body_params"))
+    Reflect.field(this1, "body_params")
   end
   def get_query_params(this1) do
-    Map.get(this1, String.to_atom("query_params"))
+    Reflect.field(this1, "query_params")
   end
   def get_path_params(this1) do
-    Map.get(this1, String.to_atom("path_params"))
+    Reflect.field(this1, "path_params")
   end
   def get_params(this1) do
-    Map.get(this1, String.to_atom("params"))
+    Reflect.field(this1, "params")
   end
   def get_assigns(this1) do
-    Map.get(this1, String.to_atom("assigns"))
+    Reflect.field(this1, "assigns")
   end
   def get_assign(this1, key) do
     assigns = get_assigns(this1)
-    Map.get(assigns, String.to_atom(key))
+    Reflect.field(assigns, key)
   end
   def is_halted(this1) do
-    Map.get(this1, String.to_atom("halted"))
+    Reflect.field(this1, "halted")
   end
   def get_status(this1) do
-    Map.get(this1, String.to_atom("status"))
+    Reflect.field(this1, "status")
   end
   def get_response_headers(this1) do
-    headers = Map.get(this1, String.to_atom("resp_headers"))
+    headers = Reflect.field(this1, "resp_headers")
     result = %{}
     g = 0
-    g1 = Map.keys(headers)
+    g1 = Reflect.fields(headers)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < length(acc_g1)) do
     field = acc_g1[acc_g]
     acc_g = acc_g + 1
-    value = Map.get(headers, String.to_atom(field))
+    value = Reflect.field(headers, field)
     Map.put(result, field, value)
     {:cont, {acc_g, acc_g1, acc_state}}
   else
@@ -99,6 +99,6 @@ end)
     result
   end
   def get_response_body(this1) do
-    Map.get(this1, String.to_atom("resp_body"))
+    Reflect.field(this1, "resp_body")
   end
 end
