@@ -5,333 +5,390 @@
 Running all tests (use -j N to control parallelism)...
 # Respect jobserver: do not force -j here; top-level -j will propagate
 Running array_map_idiomatic...
-Running ast/pipeline_test...
 Running bootstrap_external/basic...
-Running bootstrap_inline/basic...
-Running bootstrap/log_dependency...
+Running ast/pipeline_test...
 Running bootstrap/multiple_dependencies...
+Running bootstrap_inline/basic...
 Running bootstrap/no_dependencies...
+Running bootstrap/log_dependency...
 Running bootstrap/std_dependency...
 ✅ bootstrap/no_dependencies (1s)
-Running core/abstract_types...
-✅ array_map_idiomatic (1s)
+Running constructor_patterns...
 ✅ bootstrap/std_dependency (1s)
+✅ array_map_idiomatic (1s)
+Running core/abstract_types...
 Running core/advanced_patterns...
+❌ bootstrap/multiple_dependencies - Output mismatch (2s)
+❌ bootstrap_external/basic - Output mismatch (2s)
 Running core/array_comprehension_nested...
-✅ bootstrap_external/basic (1s)
+❌ ast/pipeline_test - Output mismatch (2s)
 Running core/array_map_idiomatic...
-✅ bootstrap/multiple_dependencies (1s)
-✅ ast/pipeline_test (1s)
-✅ bootstrap/log_dependency (1s)
 Running core/arrays...
+❌ bootstrap_inline/basic - Output mismatch (2s)
 Running core/basic_syntax...
+❌ bootstrap/log_dependency - Output mismatch (2s)
 Running core/classes...
-✅ bootstrap_inline/basic (1s)
-Running core/domain_abstractions...
 ✅ core/array_map_idiomatic (1s)
+Running core/domain_abstractions...
+❌ constructor_patterns - Output mismatch (2s)
 Running core/domain_abstractions_exunit...
-✅ core/abstract_types (1s)
+❌ core/abstract_types - Output mismatch (2s)
 Running core/dynamic...
-✅ core/advanced_patterns (1s)
+❌ core/advanced_patterns - Output mismatch (2s)
 Running core/elixir_idiomatic...
-✅ core/array_comprehension_nested (1s)
+❌ core/basic_syntax - Output mismatch (1s)
 Running core/elixir_injection_test...
-✅ core/basic_syntax (1s)
 ❌ core/classes - Output mismatch (1s)
 Running core/ElixirInjection...
-Running core/enhanced_pattern_matching...
 ❌ core/arrays - Output mismatch (1s)
+Running core/enhanced_pattern_matching...
+❌ core/array_comprehension_nested - Output mismatch (1s)
 Running core/enhanced_patterns...
 ✅ core/enhanced_patterns (1s)
 Running core/enum_with_index_optimization...
-❌ core/domain_abstractions - Output mismatch (2s)
-Running core/enums...
 ✅ core/ElixirInjection (1s)
-Running core/example_01_simple...
-❌ core/domain_abstractions_exunit - Output mismatch (1s)
-✅ core/dynamic (1s)
+Running core/enums...
+❌ core/dynamic - Output mismatch (2s)
+❌ core/domain_abstractions_exunit - Output mismatch (2s)
 Running core/example_02_mix...
+Running core/example_01_simple...
+❌ core/elixir_idiomatic - Output mismatch (2s)
 Running core/example_04_ecto...
-✅ core/elixir_injection_test (1s)
-❌ core/elixir_idiomatic - Output mismatch (1s)
+❌ core/elixir_injection_test - Output mismatch (2s)
 Running core/example_06_user_mgmt...
+❌ core/enhanced_pattern_matching - Output mismatch (2s)
 Running core/exunit_simple...
-✅ core/enhanced_pattern_matching (1s)
+❌ core/domain_abstractions - Output mismatch (2s)
 Running core/idiomatic_loops...
-✅ core/example_04_ecto (1s)
+✅ core/example_04_ecto (0s)
 Running core/ImportOptimizer_SimpleTest...
-✅ core/enum_with_index_optimization (1s)
+❌ core/enum_with_index_optimization - Output mismatch (2s)
 Running core/InjectionDebug...
-✅ core/exunit_simple (1s)
+❌ core/enums - Output mismatch (2s)
 Running core/inline_if_function_args...
-✅ core/enums (1s)
+❌ core/example_01_simple - Output mismatch (1s)
+❌ core/example_02_mix - Output mismatch (1s)
+✅ core/exunit_simple (1s)
 Running core/js_async_await...
-✅ core/example_01_simple (1s)
 Running core/LambdaVariableScope...
-✅ core/example_02_mix (1s)
-✅ core/example_06_user_mgmt (1s)
 Running core/loop_patterns...
+❌ core/example_06_user_mgmt - Output mismatch (1s)
 Running core/loop_variable_assignment...
-✅ core/js_async_await (0s)
+✅ core/InjectionDebug (1s)
 Running core/loop_variable_mapping...
-✅ core/InjectionDebug (0s)
-Running core/MapIdiomatic...
-✅ core/idiomatic_loops (1s)
+✅ core/js_async_await (1s)
+❌ core/idiomatic_loops - Output mismatch (2s)
 Running core/maps...
-✅ core/inline_if_function_args (0s)
+Running core/MapIdiomatic...
+❌ core/ImportOptimizer_SimpleTest - Output mismatch (1s)
 Running core/maps_functional...
 ✅ core/LambdaVariableScope (1s)
 Running core/metadata_test...
-✅ core/ImportOptimizer_SimpleTest (1s)
+✅ core/inline_if_function_args (1s)
 Running core/module_syntax...
-✅ core/loop_variable_assignment (1s)
+❌ core/loop_patterns - Output mismatch (1s)
 Running core/mutable_ops...
-✅ core/loop_patterns (1s)
+❌ core/loop_variable_assignment - Output mismatch (1s)
 Running core/native_annotation_test...
-✅ core/module_syntax (0s)
+✅ core/module_syntax (1s)
 Running core/optimization_pipeline...
-✅ core/MapIdiomatic (1s)
+❌ core/MapIdiomatic - Output mismatch (1s)
 Running core/option_type...
-❌ core/maps_functional - Output mismatch (1s)
+❌ core/metadata_test - Output mismatch (1s)
 Running core/parameter_naming...
-✅ core/metadata_test (1s)
-❌ core/maps - Output mismatch (2s)
+❌ core/maps_functional - Output mismatch (1s)
 Running core/pattern_matching...
+❌ core/maps - Output mismatch (1s)
 Running core/PatternMatching_Enhanced...
-✅ core/mutable_ops (1s)
-✅ core/loop_variable_mapping (2s)
+❌ core/mutable_ops - Output mismatch (1s)
 Running core/protocol...
+❌ core/loop_variable_mapping - Output mismatch (2s)
+❌ core/native_annotation_test - Output mismatch (2s)
 Running core/result_type...
-✅ core/native_annotation_test (1s)
 Running core/simple_for_loop...
 ✅ core/optimization_pipeline (1s)
 Running core/source_map_basic...
 ✅ core/parameter_naming (1s)
 Running core/source_map_validation...
-❌ core/option_type - Output mismatch (2s)
+❌ core/option_type - Output mismatch (1s)
 Running core/SourceMapGeneration...
-✅ core/pattern_matching (1s)
+❌ core/pattern_matching - Output mismatch (1s)
+❌ core/PatternMatching_Enhanced - Output mismatch (1s)
 Running core/SourceMapTracking...
-✅ core/PatternMatching_Enhanced (1s)
+❌ core/protocol - Output mismatch (1s)
 Running core/strings...
-✅ core/protocol (1s)
 Running core/struct_field_assignment...
-✅ core/simple_for_loop (1s)
-Running core/try_catch...
-✅ core/source_map_basic (1s)
-Running core/typedef_compilation...
+❌ core/simple_for_loop - Output mismatch (1s)
 ❌ core/result_type - Output mismatch (1s)
+Running core/try_catch...
+Running core/typedef_compilation...
+❌ core/source_map_basic - Output mismatch (1s)
 Running core/while_loops...
-✅ core/source_map_validation (1s)
+❌ core/source_map_validation - Output mismatch (1s)
 Running date/conversion_roundtrip...
-✅ core/struct_field_assignment (0s)
+✅ core/struct_field_assignment (1s)
 Running date/elixir_extensions...
-✅ core/SourceMapGeneration (1s)
+❌ core/SourceMapGeneration - Output mismatch (2s)
+❌ core/SourceMapTracking - Output mismatch (2s)
 Running date/instance_access...
-✅ core/SourceMapTracking (1s)
 Running date/now_gettime_in_map...
-❌ core/strings - Output mismatch (1s)
+❌ core/strings - Output mismatch (2s)
 Running date/presence_metadata...
-✅ core/try_catch (1s)
+❌ core/try_catch - Output mismatch (1s)
 Running date/standard_api_comprehensive...
-✅ core/while_loops (1s)
+❌ core/typedef_compilation - Output mismatch (1s)
 Running date/unix_units...
-✅ core/typedef_compilation (1s)
+❌ core/while_loops - Output mismatch (2s)
 Running ecto/advanced_ecto...
-✅ date/conversion_roundtrip (1s)
+❌ date/conversion_roundtrip - Output mismatch (2s)
 Running ecto/changeset...
-✅ date/elixir_extensions (1s)
+❌ date/elixir_extensions - Output mismatch (2s)
 Running ecto/db_types...
-✅ date/instance_access (1s)
-Running ecto/db_types_extensions...
 ✅ date/now_gettime_in_map (1s)
+Running ecto/db_types_extensions...
+❌ date/instance_access - Output mismatch (1s)
 Running ecto/db_types_sugar...
-✅ date/presence_metadata (1s)
+❌ date/presence_metadata - Output mismatch (2s)
 Running ecto/ecto_error_test...
 ✅ ecto/changeset (1s)
 Running ecto/ecto_integration...
-✅ ecto/advanced_ecto (1s)
-✅ date/standard_api_comprehensive (1s)
+❌ date/unix_units - Output mismatch (1s)
 Running ecto/ecto_schema...
+❌ date/standard_api_comprehensive - Output mismatch (2s)
 Running ecto/migration...
-✅ date/unix_units (1s)
+❌ ecto/advanced_ecto - Output mismatch (1s)
 Running ecto/migration_create_table...
 ✅ ecto/db_types (1s)
 Running ecto/migration_validation...
-✅ ecto/db_types_extensions (0s)
+✅ ecto/db_types_extensions (1s)
 Running ecto/query...
-✅ ecto/db_types_sugar (0s)
+✅ ecto/db_types_sugar (1s)
 Running ecto/repository...
-❌ ecto/ecto_error_test - Output mismatch (1s)
+✅ ecto/migration (1s)
+✅ ecto/ecto_schema (1s)
+Running ecto/typed_string_literals...
 Running ecto/typed_query...
-❌ ecto/ecto_schema - Output mismatch (1s)
+❌ ecto/ecto_error_test - Output mismatch (1s)
 Running ElixirInjection...
-❌ ecto/migration - Output mismatch (1s)
-Running HygieneTransformUsageDetection...
 ❌ ecto/ecto_integration - Output mismatch (1s)
-Running NullCoalescingOperator...
-❌ ecto/query - Output mismatch (1s)
-Running otp/behavior...
-❌ ecto/repository - Output mismatch (1s)
-Running otp/otp_genserver...
+Running HygieneTransformUsageDetection...
+✅ ecto/query (1s)
+Running loops/nested_variable_declaration...
 ❌ ecto/migration_create_table - Output mismatch (1s)
+Running NullCoalescingOperator...
+✅ ecto/repository (1s)
+Running otp/behavior...
+✅ ecto/migration_validation (2s)
+Running otp/otp_genserver...
+❌ ecto/typed_query - Compilation failed (1s)
 Running otp/otp_supervision...
-❌ ecto/typed_query - Compilation failed (0s)
+❌ ecto/typed_string_literals - Compilation failed (1s)
 Running otp/type_safe_child_specs...
-✅ ecto/migration_validation (1s)
+✅ HygieneTransformUsageDetection (1s)
+❌ ElixirInjection - Output mismatch (1s)
 Running phoenix/hxx_template...
-❌ ElixirInjection - Output mismatch (0s)
 Running phoenix/liveview_basic...
-✅ HygieneTransformUsageDetection (0s)
-Running phoenix/router...
-❌ NullCoalescingOperator - Output mismatch (0s)
-Running phoenix/RouterBuildMacro...
+❌ NullCoalescingOperator - Output mismatch (1s)
+Running phoenix/presence...
+✅ loops/nested_variable_declaration (2s)
+Running phoenix/presence_edge_cases...
 ❌ otp/behavior - Output mismatch (1s)
+Running phoenix/router...
 ❌ otp/otp_genserver - Output mismatch (1s)
-Running phoenix/RouterBuildMacro_InvalidAction...
-Running phoenix/RouterBuildMacro_InvalidController...
-❌ phoenix/RouterBuildMacro - Output mismatch (1s)
-Running phoenix/RouterBuildMacro_MultipleInvalid...
+Running phoenix/RouterBuildMacro...
 ❌ phoenix/liveview_basic - Output mismatch (1s)
-Running phoenix/RouterBuildMacro_ValidController...
-❌ otp/otp_supervision - Output mismatch (1s)
-Running phoenix/template...
-❌ phoenix/router - Output mismatch (1s)
+Running phoenix/RouterBuildMacro_InvalidAction...
 ❌ otp/type_safe_child_specs - Output mismatch (1s)
+Running phoenix/RouterBuildMacro_InvalidController...
+❌ otp/otp_supervision - Output mismatch (2s)
+Running phoenix/RouterBuildMacro_MultipleInvalid...
+❌ phoenix/hxx_template - Output mismatch (2s)
+Running phoenix/RouterBuildMacro_ValidController...
+❌ phoenix/presence_edge_cases - Compilation failed (1s)
+Running phoenix/template...
+✅ phoenix/presence (1s)
 Running regression/array_push_if_expression...
+✅ phoenix/RouterBuildMacro (1s)
 Running regression/class_instance_methods...
-❌ phoenix/hxx_template - Output mismatch (1s)
+✅ phoenix/router (1s)
 Running regression/collision_renamed_vars...
-❌ phoenix/template - Output mismatch (1s)
+❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (2s)
 Running regression/complex_binary_expression...
-❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (1s)
-❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (1s)
+❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (2s)
 Running regression/conditional_array_comprehension...
+✅ phoenix/template (1s)
 Running regression/elixir_injection_with_proper_architecture...
 ❌ phoenix/RouterBuildMacro_MultipleInvalid - Output mismatch (1s)
 Running regression/enum_pattern_names...
 ❌ phoenix/RouterBuildMacro_ValidController - Output mismatch (1s)
 Running regression/enum_snake_case_patterns...
-❌ regression/class_instance_methods - Output mismatch (1s)
 ❌ regression/array_push_if_expression - Output mismatch (1s)
 Running regression/enum_switch_parameter...
+❌ regression/class_instance_methods - Output mismatch (2s)
 Running regression/function_parameter_underscore...
-❌ regression/collision_renamed_vars - Output mismatch (1s)
+❌ regression/collision_renamed_vars - Output mismatch (2s)
 Running regression/ImplicitImports...
 ❌ regression/complex_binary_expression - Output mismatch (1s)
+❌ regression/conditional_array_comprehension - Output mismatch (1s)
 Running regression/IncrementDecrementPattern...
-❌ regression/elixir_injection_with_proper_architecture - Output mismatch (1s)
 Running regression/InlineExpansion...
-✅ regression/conditional_array_comprehension (1s)
-Running regression/json_printer_temp_vars...
 ✅ regression/enum_pattern_names (1s)
+❌ regression/elixir_injection_with_proper_architecture - Output mismatch (1s)
+Running regression/json_printer_temp_vars...
 Running regression/nested_switch_variable_consistency...
-❌ regression/function_parameter_underscore - Output mismatch (1s)
+❌ regression/enum_snake_case_patterns - Output mismatch (2s)
 Running regression/OrphanedEnumParameters...
-✅ regression/enum_snake_case_patterns (1s)
+❌ regression/function_parameter_underscore - Output mismatch (1s)
 Running regression/PhoenixWebAnnotation...
 ❌ regression/ImplicitImports - Output mismatch (1s)
 Running regression/property_setters...
-❌ regression/PhoenixWebAnnotation - Output mismatch (1s)
-❌ regression/enum_switch_parameter - Output mismatch (2s)
+❌ regression/IncrementDecrementPattern - Output mismatch (2s)
 Running regression/ReflectOperations...
+❌ regression/InlineExpansion - Output mismatch (2s)
 Running regression/StatementSeparation...
-❌ regression/IncrementDecrementPattern - Output mismatch (1s)
+❌ regression/enum_switch_parameter - Output mismatch (3s)
 Running regression/StdFunctions...
-❌ regression/InlineExpansion - Output mismatch (1s)
-Running regression/StructFieldUpdate...
 ❌ regression/json_printer_temp_vars - Output mismatch (1s)
-Running regression/temp_result_switch_fix...
+Running regression/StructFieldUpdate...
 ❌ regression/nested_switch_variable_consistency - Output mismatch (1s)
-Running regression/temp_variable_optimization...
+Running regression/temp_result_switch_fix...
+✅ regression/PhoenixWebAnnotation (1s)
 ❌ regression/OrphanedEnumParameters - Output mismatch (1s)
+Running regression/temp_variable_optimization...
 Running regression/troubleshooting_patterns...
-❌ regression/property_setters - Output mismatch (1s)
+❌ regression/ReflectOperations - Compilation failed (1s)
 Running regression/tuple_elem_access...
-❌ regression/ReflectOperations - Compilation failed (0s)
+❌ regression/property_setters - Output mismatch (2s)
 Running regression/underscore_for_loop...
-✅ regression/troubleshooting_patterns (0s)
+✅ regression/troubleshooting_patterns (1s)
 Running regression/underscore_prefix_consistency...
 ❌ regression/StatementSeparation - Output mismatch (1s)
 Running regression/unused_parameters...
-❌ regression/StructFieldUpdate - Output mismatch (1s)
-❌ regression/StdFunctions - Output mismatch (1s)
-Running regression/variable_name_digits...
-Running stdlib/array_cross_operations...
 ❌ regression/temp_result_switch_fix - Output mismatch (1s)
+Running regression/variable_name_digits...
+❌ regression/StructFieldUpdate - Output mismatch (1s)
+Running stdlib/array_cross_operations...
+❌ regression/StdFunctions - Output mismatch (1s)
 Running stdlib/array_idiomatic...
 ❌ regression/temp_variable_optimization - Output mismatch (1s)
 Running stdlib/ReflectFieldsLoop...
+❌ regression/underscore_for_loop - Output mismatch (1s)
 ❌ regression/tuple_elem_access - Output mismatch (1s)
 Running stdlib/stdlib_externs...
-❌ regression/unused_parameters - Output mismatch (0s)
-✅ regression/underscore_for_loop (1s)
-✅ regression/underscore_prefix_consistency (1s)
-✅ regression/variable_name_digits (1s)
-✅ stdlib/array_cross_operations (1s)
-✅ stdlib/array_idiomatic (1s)
-✅ stdlib/ReflectFieldsLoop (1s)
-✅ stdlib/stdlib_externs (1s)
+✅ regression/unused_parameters (1s)
+❌ regression/underscore_prefix_consistency - Output mismatch (1s)
+❌ regression/variable_name_digits - Output mismatch (2s)
+❌ stdlib/array_cross_operations - Output mismatch (2s)
+❌ stdlib/array_idiomatic - Output mismatch (2s)
+❌ stdlib/ReflectFieldsLoop - Output mismatch (1s)
+❌ stdlib/stdlib_externs - Output mismatch (1s)
 
 ========================================
-Test Results (AST Pipeline): 78/134 passed
-\033[0;31mFAILED: 56 test(s)\033[0m
+Test Results (AST Pipeline): 36/139 passed
+\033[0;31mFAILED: 103 test(s)\033[0m
+  ❌ bootstrap/multiple_dependencies - Output mismatch (2s)
+  ❌ bootstrap_external/basic - Output mismatch (2s)
+  ❌ ast/pipeline_test - Output mismatch (2s)
+  ❌ bootstrap_inline/basic - Output mismatch (2s)
+  ❌ bootstrap/log_dependency - Output mismatch (2s)
+  ❌ constructor_patterns - Output mismatch (2s)
+  ❌ core/abstract_types - Output mismatch (2s)
+  ❌ core/advanced_patterns - Output mismatch (2s)
+  ❌ core/basic_syntax - Output mismatch (1s)
   ❌ core/classes - Output mismatch (1s)
   ❌ core/arrays - Output mismatch (1s)
+  ❌ core/array_comprehension_nested - Output mismatch (1s)
+  ❌ core/dynamic - Output mismatch (2s)
+  ❌ core/domain_abstractions_exunit - Output mismatch (2s)
+  ❌ core/elixir_idiomatic - Output mismatch (2s)
+  ❌ core/elixir_injection_test - Output mismatch (2s)
+  ❌ core/enhanced_pattern_matching - Output mismatch (2s)
   ❌ core/domain_abstractions - Output mismatch (2s)
-  ❌ core/domain_abstractions_exunit - Output mismatch (1s)
-  ❌ core/elixir_idiomatic - Output mismatch (1s)
+  ❌ core/enum_with_index_optimization - Output mismatch (2s)
+  ❌ core/enums - Output mismatch (2s)
+  ❌ core/example_01_simple - Output mismatch (1s)
+  ❌ core/example_02_mix - Output mismatch (1s)
+  ❌ core/example_06_user_mgmt - Output mismatch (1s)
+  ❌ core/idiomatic_loops - Output mismatch (2s)
+  ❌ core/ImportOptimizer_SimpleTest - Output mismatch (1s)
+  ❌ core/loop_patterns - Output mismatch (1s)
+  ❌ core/loop_variable_assignment - Output mismatch (1s)
+  ❌ core/MapIdiomatic - Output mismatch (1s)
+  ❌ core/metadata_test - Output mismatch (1s)
   ❌ core/maps_functional - Output mismatch (1s)
-  ❌ core/maps - Output mismatch (2s)
-  ❌ core/option_type - Output mismatch (2s)
+  ❌ core/maps - Output mismatch (1s)
+  ❌ core/mutable_ops - Output mismatch (1s)
+  ❌ core/loop_variable_mapping - Output mismatch (2s)
+  ❌ core/native_annotation_test - Output mismatch (2s)
+  ❌ core/option_type - Output mismatch (1s)
+  ❌ core/pattern_matching - Output mismatch (1s)
+  ❌ core/PatternMatching_Enhanced - Output mismatch (1s)
+  ❌ core/protocol - Output mismatch (1s)
+  ❌ core/simple_for_loop - Output mismatch (1s)
   ❌ core/result_type - Output mismatch (1s)
-  ❌ core/strings - Output mismatch (1s)
+  ❌ core/source_map_basic - Output mismatch (1s)
+  ❌ core/source_map_validation - Output mismatch (1s)
+  ❌ core/SourceMapGeneration - Output mismatch (2s)
+  ❌ core/SourceMapTracking - Output mismatch (2s)
+  ❌ core/strings - Output mismatch (2s)
+  ❌ core/try_catch - Output mismatch (1s)
+  ❌ core/typedef_compilation - Output mismatch (1s)
+  ❌ core/while_loops - Output mismatch (2s)
+  ❌ date/conversion_roundtrip - Output mismatch (2s)
+  ❌ date/elixir_extensions - Output mismatch (2s)
+  ❌ date/instance_access - Output mismatch (1s)
+  ❌ date/presence_metadata - Output mismatch (2s)
+  ❌ date/unix_units - Output mismatch (1s)
+  ❌ date/standard_api_comprehensive - Output mismatch (2s)
+  ❌ ecto/advanced_ecto - Output mismatch (1s)
   ❌ ecto/ecto_error_test - Output mismatch (1s)
-  ❌ ecto/ecto_schema - Output mismatch (1s)
-  ❌ ecto/migration - Output mismatch (1s)
   ❌ ecto/ecto_integration - Output mismatch (1s)
-  ❌ ecto/query - Output mismatch (1s)
-  ❌ ecto/repository - Output mismatch (1s)
   ❌ ecto/migration_create_table - Output mismatch (1s)
-  ❌ ecto/typed_query - Compilation failed (0s)
-  ❌ ElixirInjection - Output mismatch (0s)
-  ❌ NullCoalescingOperator - Output mismatch (0s)
+  ❌ ecto/typed_query - Compilation failed (1s)
+  ❌ ecto/typed_string_literals - Compilation failed (1s)
+  ❌ ElixirInjection - Output mismatch (1s)
+  ❌ NullCoalescingOperator - Output mismatch (1s)
   ❌ otp/behavior - Output mismatch (1s)
   ❌ otp/otp_genserver - Output mismatch (1s)
-  ❌ phoenix/RouterBuildMacro - Output mismatch (1s)
   ❌ phoenix/liveview_basic - Output mismatch (1s)
-  ❌ otp/otp_supervision - Output mismatch (1s)
-  ❌ phoenix/router - Output mismatch (1s)
   ❌ otp/type_safe_child_specs - Output mismatch (1s)
-  ❌ phoenix/hxx_template - Output mismatch (1s)
-  ❌ phoenix/template - Output mismatch (1s)
-  ❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (1s)
-  ❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (1s)
+  ❌ otp/otp_supervision - Output mismatch (2s)
+  ❌ phoenix/hxx_template - Output mismatch (2s)
+  ❌ phoenix/presence_edge_cases - Compilation failed (1s)
+  ❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (2s)
+  ❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (2s)
   ❌ phoenix/RouterBuildMacro_MultipleInvalid - Output mismatch (1s)
   ❌ phoenix/RouterBuildMacro_ValidController - Output mismatch (1s)
-  ❌ regression/class_instance_methods - Output mismatch (1s)
   ❌ regression/array_push_if_expression - Output mismatch (1s)
-  ❌ regression/collision_renamed_vars - Output mismatch (1s)
+  ❌ regression/class_instance_methods - Output mismatch (2s)
+  ❌ regression/collision_renamed_vars - Output mismatch (2s)
   ❌ regression/complex_binary_expression - Output mismatch (1s)
+  ❌ regression/conditional_array_comprehension - Output mismatch (1s)
   ❌ regression/elixir_injection_with_proper_architecture - Output mismatch (1s)
+  ❌ regression/enum_snake_case_patterns - Output mismatch (2s)
   ❌ regression/function_parameter_underscore - Output mismatch (1s)
   ❌ regression/ImplicitImports - Output mismatch (1s)
-  ❌ regression/PhoenixWebAnnotation - Output mismatch (1s)
-  ❌ regression/enum_switch_parameter - Output mismatch (2s)
-  ❌ regression/IncrementDecrementPattern - Output mismatch (1s)
-  ❌ regression/InlineExpansion - Output mismatch (1s)
+  ❌ regression/IncrementDecrementPattern - Output mismatch (2s)
+  ❌ regression/InlineExpansion - Output mismatch (2s)
+  ❌ regression/enum_switch_parameter - Output mismatch (3s)
   ❌ regression/json_printer_temp_vars - Output mismatch (1s)
   ❌ regression/nested_switch_variable_consistency - Output mismatch (1s)
   ❌ regression/OrphanedEnumParameters - Output mismatch (1s)
-  ❌ regression/property_setters - Output mismatch (1s)
-  ❌ regression/ReflectOperations - Compilation failed (0s)
+  ❌ regression/ReflectOperations - Compilation failed (1s)
+  ❌ regression/property_setters - Output mismatch (2s)
   ❌ regression/StatementSeparation - Output mismatch (1s)
+  ❌ regression/temp_result_switch_fix - Output mismatch (1s)
   ❌ regression/StructFieldUpdate - Output mismatch (1s)
   ❌ regression/StdFunctions - Output mismatch (1s)
-  ❌ regression/temp_result_switch_fix - Output mismatch (1s)
   ❌ regression/temp_variable_optimization - Output mismatch (1s)
+  ❌ regression/underscore_for_loop - Output mismatch (1s)
   ❌ regression/tuple_elem_access - Output mismatch (1s)
-  ❌ regression/unused_parameters - Output mismatch (0s)
+  ❌ regression/underscore_prefix_consistency - Output mismatch (1s)
+  ❌ regression/variable_name_digits - Output mismatch (2s)
+  ❌ stdlib/array_cross_operations - Output mismatch (2s)
+  ❌ stdlib/array_idiomatic - Output mismatch (2s)
+  ❌ stdlib/ReflectFieldsLoop - Output mismatch (1s)
+  ❌ stdlib/stdlib_externs - Output mismatch (1s)
 
 > reflaxe-elixir@0.1.0 test:elixir-validate
 > make -C test validate-elixir
@@ -342,8 +399,8 @@ Validating generated Elixir code in /REDACTED_LOCAL_PATH
 
 
 === Validation Summary ===
-Total tests validated: 129
-[0;32mPassed: 129[0m
+Total tests validated: 133
+[0;32mPassed: 133[0m
 [0;31mFailed: 0[0m
 
 [0;32mAll Elixir syntax validation passed![0m
@@ -762,6 +819,9 @@ Total tests validated: 129
      │
      └─ lib/mix/tasks/haxe.gen.live.ex:815:37: Mix.Tasks.Haxe.Gen.Live.generate_function_components/1
 
+warning: test/snapshot/constructor_patterns/intended/data_structure_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/constructor_patterns/intended/out/data_structure_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/constructor_patterns/out/data_structure_test.ex does not match "*_test.exs" and won't be loaded
 warning: test/snapshot/core/enhanced_pattern_matching/intended/enhanced_pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
 warning: test/snapshot/core/enhanced_pattern_matching/out/enhanced_pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
 warning: test/snapshot/core/pattern_matching/intended/pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
@@ -778,66 +838,27 @@ warning: test/snapshot/phoenix/RouterBuildMacro_MultipleInvalid/intended/multipl
 warning: test/snapshot/phoenix/RouterBuildMacro_MultipleInvalid/out/multiple_invalid_router_test.ex does not match "*_test.exs" and won't be loaded
 warning: test/snapshot/phoenix/RouterBuildMacro_ValidController/intended/valid_router_test.ex does not match "*_test.exs" and won't be loaded
 warning: test/snapshot/phoenix/RouterBuildMacro_ValidController/out/valid_router_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/presence/intended/reflect_test.ex does not match "*_test.exs" and won't be loaded
+warning: test/snapshot/phoenix/presence/out/reflect_test.ex does not match "*_test.exs" and won't be loaded
 warning: test/snapshot/regression/property_setters/intended/property_setter_test.ex does not match "*_test.exs" and won't be loaded
 warning: test/snapshot/regression/property_setters/out/property_setter_test.ex does not match "*_test.exs" and won't be loaded
-Running ExUnit with seed: 916629, max_cases: 1
+Running ExUnit with seed: 275824, max_cases: 1
 
+✅ Error handling works gracefully
+.✅ Performance test completed - detection: 0ms, check: 0ms
 .
-17:37:03.639 [info] Haxe server started on port 7008
-..
-17:37:04.425 [info] Haxe server started on port 8779
-.
-17:37:05.176 [info] Haxe server started on port 8907
-..
-17:37:05.678 [info] Haxe server started on port 7517
-.
-17:37:06.180 [info] Haxe server started on port 7265
-.
-17:37:06.927 [info] Haxe server started on port 7644
+00:08:30.930 [info] Haxe server started on port 8582
 
-17:37:06.928 [info] HaxeServer terminating: :normal
-.
-17:37:07.033 [error] Failed to start Haxe server: Failed to start Haxe server: Erlang error: :enoent
-.
-17:37:07.732 [info] Haxe server started on port 7519
-.
-17:37:08.486 [info] Haxe server started on port 7647
-.
-17:37:08.988 [error] Failed to start Haxe server: Haxe server process exited immediately
-.
-17:37:08.988 [debug] Haxe server output: node:events:502
-      throw er; // Unhandled 'error' event
-      ^
+00:08:30.935 [info] HaxeServer terminating: :normal
+✅ HaxeServer started successfully
+✅ File watching components initialized successfully
+.Compiling Haxe files from /REDACTED_TMP_PATH to /REDACTED_TMP_PATH
+Using build file: /REDACTED_TMP_PATH
+Using direct Haxe compilation
+Running: /REDACTED_LOCAL_PATH /REDACTED_TMP_PATH
+⚠️  Compilation failed as expected (likely no Haxe available): Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.
 
-Error: listen EADDRINUSE: address already in use :::7001
-    at Server.setupListenHandle [as _listen2] (node:net:1908:16)
-    at listenInCluster (node:net:1965:12)
-    at Server.listen (node:net:2067:7)
-    at haxeshim_CompilerServer.waitOnPort (/REDACTED_LOCAL_PATH)
-    at new haxeshim_CompilerServer (/REDACTED_LOCAL_PATH)
-    at haxeshim_HaxeCli.dispatch (/REDACTED_LOCAL_PATH)
-    at haxeshim_HaxeCli.run (/REDACTED_LOCAL_PATH)
-    at /REDACTED_LOCAL_PATH
-    at D.invoke (/REDACTED_LOCAL_PATH)
-    at tink_core_CallbackList.invoke (/REDACTED_LOCAL_PATH)
-Emitted 'error' event on Server instance at:
-    at emitErrorNT (node:net:1944:8)
-    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
-  code: 'EADDRINUSE',
-  errno: -48,
-  syscall: 'listen',
-  address: '::',
-  port: 7001
-}
-
-Node.js v20.19.3
-
-
-17:37:08.988 [warning] Haxe server exited with status: 1
-.
-17:37:09.490 [info] Haxe server started on port 7772
-...
-17:37:10.255 [info] Haxe server started on port 8028
+✅ Core compilation workflow test completed successfully
 .Compiling Haxe files...
 Compiling Haxe files from src_haxe to lib
 Using build file: build.hxml
@@ -852,31 +873,42 @@ Hint: Run 'mix haxe.errors' for detailed error analysis
       Run 'mix haxe.errors --json' for LLM-friendly format
 ✅ Mix task returned: {:error, [%Mix.Task.Compiler.Diagnostic{file: nil, source: nil, severity: :error, message: "Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.\n", position: {0, 0}, compiler_name: "haxe", span: nil, details: %{line: nil, message: "Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.\n", type: :compilation_error, file: nil, column_start: nil, column_end: nil, raw_line: "Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.\n"}, stacktrace: []}]}
 ✅ Mix integration test completed
-.✅ Error handling works gracefully
-.✅ Performance test completed - detection: 0ms, check: 0ms
-.Compiling Haxe files from /REDACTED_TMP_PATH to /REDACTED_TMP_PATH
+...Compiling Haxe files from /REDACTED_TMP_PATH to /REDACTED_TMP_PATH
 Using build file: /REDACTED_TMP_PATH
+..............Compiling Haxe files from /REDACTED_TMP_PATH to /REDACTED_TMP_PATH
+Using build file: /REDACTED_TMP_PATH
+
+00:08:31.852 [info] Haxe server started on port 7308
 Using direct Haxe compilation
 Running: /REDACTED_LOCAL_PATH /REDACTED_TMP_PATH
-⚠️  Compilation failed as expected (likely no Haxe available): Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.
 
-✅ Core compilation workflow test completed successfully
+00:08:31.941 [info] HaxeServer terminating: :normal
+..
+00:08:32.447 [info] Haxe server started on port 7435
+..
+00:08:32.949 [info] Haxe server started on port 7456
+...
+00:08:33.451 [info] Haxe server started on port 7707
 .
-17:37:10.934 [info] Haxe server started on port 8031
+00:08:34.225 [info] Haxe server started on port 7835
+.
+00:08:34.989 [info] Haxe server started on port 7975
+...
+00:08:35.740 [info] Haxe server started on port 8219
+.
+00:08:36.527 [info] Haxe server started on port 8347
+.
+00:08:37.280 [info] Haxe server started on port 8475
 
-17:37:10.934 [info] HaxeServer terminating: :normal
-✅ HaxeServer started successfully
-✅ File watching components initialized successfully
-............Compiling Haxe files from /REDACTED_TMP_PATH to /REDACTED_TMP_PATH
-Using build file: /REDACTED_TMP_PATH
-......Compiling Haxe files from /REDACTED_TMP_PATH to /REDACTED_TMP_PATH
-Using build file: /REDACTED_TMP_PATH
-
-17:37:11.630 [info] Haxe server started on port 8156
-Using direct Haxe compilation
-Running: /REDACTED_LOCAL_PATH /REDACTED_TMP_PATH
-
-17:37:11.723 [info] HaxeServer terminating: :normal
-........................................
-Finished in 8.8 seconds (0.00s async, 8.8s sync)
+00:08:37.280 [info] HaxeServer terminating: :normal
+.
+00:08:37.882 [info] Haxe server started on port 8603
+.
+00:08:38.383 [error] Failed to start Haxe server: Haxe server process exited immediately
+.
+00:08:38.397 [error] Failed to start Haxe server: Failed to start Haxe server: Erlang error: :enoent
+.
+00:08:39.087 [info] Haxe server started on port 8923
+.........................................
+Finished in 8.9 seconds (0.00s async, 8.9s sync)
 80 tests, 0 failures
