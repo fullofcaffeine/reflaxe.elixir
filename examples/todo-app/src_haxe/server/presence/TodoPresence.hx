@@ -53,9 +53,9 @@ class TodoPresence {
             editingTodoId: null,  // Not editing initially
             editingStartedAt: null
         };
-        // Single presence entry per user - the Phoenix way
-        // Note: When using @:presence, the compiler will inject self() as first arg
-        return Presence.track(socket, Std.string(user.id), meta);
+        // When inside a Presence module, we need to use the 4-argument version
+        // that includes the topic. The compiler should inject self() automatically.
+        return Presence.trackPid(socket, "users", Std.string(user.id), meta);
     }
     
     /**
@@ -87,8 +87,8 @@ class TodoPresence {
         };
         
         // Phoenix pattern: update existing presence rather than track/untrack
-        // Note: When using @:presence, the compiler will inject self() as first arg
-        return Presence.update(socket, Std.string(user.id), updatedMeta);
+        // When inside a Presence module, we need to use the 4-argument version
+        return Presence.updatePid(socket, "users", Std.string(user.id), updatedMeta);
     }
     
     /**
