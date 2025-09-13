@@ -703,23 +703,29 @@ class Child extends Parent {
 Child.track(); // ✅ Works! Macro generated this method
 ```
 
-#### Going Beyond Java: Method Versioning
+#### Going Beyond Java: Compile-Time Method Versioning
 
 ```haxe
-// Macro that provides versioning and deprecation
+// Macro that generates multiple method versions at COMPILE-TIME
 class VersionedStaticsMacro {
     public static macro function build():Array<Field> {
         var fields = Context.getBuildFields();
         
-        // Track method versions
+        // COMPILE-TIME: Analyze version metadata
         for (field in fields) {
             var meta = field.meta.filter(m -> m.name == ":version");
             if (meta.length > 0) {
                 var version = meta[0].params[0];
                 
-                // Generate both old and new versions
-                generateVersionedMethod(field, version);
-                generateDeprecatedAlias(field, version);
+                // COMPILE-TIME: Generate multiple method signatures
+                var v2Method = createVersionedMethod(field, 2);
+                var v1Method = createDeprecatedVersion(field, 1);
+                var dispatcher = createSmartDispatcher(field);
+                
+                // Add all generated methods at COMPILE-TIME
+                fields.push(v2Method);
+                fields.push(v1Method);
+                fields.push(dispatcher);
             }
         }
         
@@ -733,203 +739,225 @@ class APIClass {
     @:version(2)
     public static function connect(host: String, port: Int) { }
     
-    // Macro generates:
+    // At COMPILE-TIME, macro generates these methods:
     // - connect_v2(host, port) - new version
-    // - connect_v1(url) - old signature (deprecated)
-    // - connect(...) - smart dispatcher based on args
+    // - connect_v1(url) - old signature (marked @:deprecated)
+    // - connect(...) - overloaded dispatcher
+    // All versioning is resolved at COMPILE-TIME, no runtime overhead
 }
 ```
 
 #### Ruby-Like with Inheritance Hooks
 
-##### Option 1: Compile-Time Registration (More Efficient)
+##### The Proper Way: Compile-Time Inheritance Hook (Recommended)
 
 ```haxe
-// Macro that tracks inheritance at COMPILE TIME
-class CompileTimeInheritanceMacro {
-    // Store inheritance info at compile time
-    static var inheritanceMap: Map<String, Array<String>> = new Map();
-    
+// Macro that implements true compile-time inheritance hooks
+class InheritanceHookMacro {
     public static macro function build():Array<Field> {
         var fields = Context.getBuildFields();
         var cls = Context.getLocalClass().get();
         
-        // COMPILE-TIME: Record the inheritance relationship
+        // COMPILE-TIME: Execute the parent's onInherited hook NOW during compilation
         if (cls.superClass != null) {
-            var parentName = cls.superClass.t.get().name;
-            var childName = cls.name;
+            var parentClass = cls.superClass.t.get();
             
-            // Track at compile-time (this runs during macro expansion)
-            if (!inheritanceMap.exists(parentName)) {
-                inheritanceMap[parentName] = [];
+            // Check if parent has a special metadata indicating it wants to know about children
+            if (parentClass.meta.has(":trackChildren")) {
+                // This executes at COMPILE TIME - we're actually calling a macro function
+                onChildInherited(parentClass.name, cls.name);
+                
+                // Also generate a static field listing this child
+                var childField = {
+                    name: "__isChildOf_" + parentClass.name,
+                    access: [AStatic, APublic, AFinal],
+                    kind: FVar(macro : Bool, macro true),
+                    pos: Context.currentPos()
+                };
+                fields.push(childField);
             }
-            inheritanceMap[parentName].push(childName);
-            
-            // Generate a field with the compile-time collected data
-            var childrenField = {
-                name: "__compiledChildren",
-                access: [AStatic, APublic],
-                kind: FVar(macro : Array<String>, macro $v{inheritanceMap[parentName]}),
-                pos: Context.currentPos()
-            };
-            fields.push(childrenField);
         }
         
         return fields;
     }
+    
+    // This function runs at COMPILE TIME when a child is discovered
+    static function onChildInherited(parentName: String, childName: String) {
+        // COMPILE-TIME operations:
+        #if macro
+        trace('COMPILE TIME: ${childName} inherits from ${parentName}');
+        
+        // Could write to a file, generate code, validate rules, etc.
+        // This is like Ruby's inherited hook but at compile-time!
+        
+        // Example: Enforce naming conventions at compile-time
+        if (!childName.endsWith(parentName.substr(4))) { // If parent is "Base*"
+            Context.warning('Child ${childName} should follow naming convention for ${parentName}', Context.currentPos());
+        }
+        #end
+    }
 }
 
-// Usage - compile-time tracking
-@:autoBuild(CompileTimeInheritanceMacro.build())
+// Usage - true compile-time tracking
+@:trackChildren
+@:autoBuild(InheritanceHookMacro.build())
 class TrackableParent {
-    // This will be populated at COMPILE TIME with all children
-    public static var __compiledChildren: Array<String> = [];
+    // The macro could generate this at compile-time with all known children
+    public static final children: Array<String> = ["Child1", "Child2"]; // Generated!
 }
 
-class Child extends TrackableParent {
-    // After compilation, TrackableParent.__compiledChildren = ["Child"]
-    // This is determined at compile-time, no runtime overhead
+class Child1 extends TrackableParent {
+    // At COMPILE TIME when this class is processed:
+    // 1. onChildInherited("TrackableParent", "Child1") is called
+    // 2. A field __isChildOf_TrackableParent = true is added
+    // 3. Parent's children array is updated (if using initialization macros)
 }
 ```
 
-##### Option 2: Runtime Registration (Dynamic Behavior)
+##### Alternative: Runtime Registration (When Actually Needed)
 
 ```haxe
-// Macro that generates runtime registration code
-class RuntimeInheritanceMacro {
+// Use runtime ONLY when you truly need dynamic behavior
+class RuntimeRegistrationMacro {
     public static macro function build():Array<Field> {
         var fields = Context.getBuildFields();
         var cls = Context.getLocalClass().get();
         
-        // COMPILE-TIME: Generate code that will run at RUNTIME
         if (cls.superClass != null) {
-            var parentClassName = cls.superClass.t.get().pack.concat([cls.superClass.t.get().name]);
-            var currentClassName = cls.pack.concat([cls.name]);
+            // Generate runtime registration ONLY if you need:
+            // - Lazy loading of classes
+            // - Plugin systems
+            // - Dynamic module loading
+            // - Runtime reflection
             
-            // Generate a static __init__ function that runs at RUNTIME
             var initField = {
                 name: "__init__",
                 access: [AStatic, APrivate],
                 kind: FFun({
                     args: [],
                     expr: macro {
-                        // This code runs at RUNTIME when the class is loaded
-                        // Useful for dynamic registration, runtime hooks, etc.
-                        $p{parentClassName}.onInherited($p{currentClassName});
+                        // This runs at RUNTIME - usually not needed!
+                        registerWithParent();
                     },
                     ret: null
                 }),
                 pos: Context.currentPos()
             };
-            
             fields.push(initField);
         }
         
         return fields;
     }
 }
-
-// Usage - runtime registration
-@:autoBuild(RuntimeInheritanceMacro.build())
-class TrackableParent {
-    static var children: Array<Class<Dynamic>> = [];
-    
-    // This is called at RUNTIME when each child class loads
-    public static function onInherited(child: Class<Dynamic>) {
-        trace('${Type.getClassName(child)} inherited from us!');
-        children.push(child);
-    }
-}
-
-class Child extends TrackableParent {
-    // Generated by macro at COMPILE TIME:
-    // static function __init__() {
-    //     TrackableParent.onInherited(Child);  // Executes at RUNTIME
-    // }
-}
 ```
 
-##### Compile-Time vs Runtime: When to Use Which?
+##### When to Use Each Approach
 
-**Compile-Time Registration (Option 1):**
-- ✅ **Zero runtime overhead** - Everything determined during compilation
-- ✅ **Static analysis possible** - Can validate inheritance at compile-time
-- ✅ **Efficient** - No runtime function calls or registration
-- ❌ **Static only** - Can't handle dynamically loaded classes
-- ❌ **Requires full recompilation** - Changes need recompiling all dependent code
+**Compile-Time Hooks (RECOMMENDED for onInherited):**
+- ✅ **Inheritance is static** - Known at compile-time in Haxe
+- ✅ **Zero runtime cost** - No initialization overhead
+- ✅ **Can enforce rules** - Validate inheritance patterns at compile-time
+- ✅ **Generate optimal code** - Create exactly what's needed
+- ✅ **True to Haxe's nature** - Leverage compile-time knowledge
 
-**Runtime Registration (Option 2):**
-- ✅ **Dynamic** - Can handle classes loaded at runtime
-- ✅ **Flexible** - Can respond to runtime conditions
-- ✅ **Hot-reloading friendly** - Works with dynamic module systems
-- ❌ **Runtime overhead** - Function calls when classes load
-- ❌ **Initialization order matters** - Must ensure parent loads before children
+**Runtime Registration (RARE - Only When Necessary):**
+- ⚠️ **Plugin systems** - When loading external modules at runtime
+- ⚠️ **Lazy initialization** - When you need delayed registration
+- ⚠️ **Runtime reflection** - When using runtime type information
+- ❌ **Not for inheritance** - Inheritance is compile-time in Haxe!
 
-**Key Insight**: Ruby's `inherited` hook runs at runtime when the class is parsed/loaded. In Haxe, we can choose between compile-time (more efficient) or runtime (more flexible) based on our needs.
+**Key Insight**: Unlike Ruby where classes are created at runtime, Haxe knows all inheritance at compile-time. The `onInherited` hook should execute during compilation, not at runtime. This is more efficient and allows for compile-time validation and code generation.
 
-#### Creating True Polymorphic Static Methods
+#### Creating Polymorphic-Like Static Methods
 
 ```haxe
-// Macro that enables polymorphic static methods (better than Java!)
+// Macro that simulates polymorphic static methods through code generation
 class PolymorphicStaticsMacro {
     public static macro function build():Array<Field> {
         var fields = Context.getBuildFields();
         var cls = Context.getLocalClass().get();
         
-        // Generate dispatch table for polymorphic calls
-        var dispatchTable = new Map<String, Expr>();
-        
+        // COMPILE-TIME: Analyze which methods need polymorphic behavior
         for (field in fields) {
-            if (field.access.contains(AStatic) && field.access.contains(AOverride)) {
-                // Create runtime dispatch for "overridden" statics
-                var methodName = field.name;
-                dispatchTable[methodName] = generatePolymorphicDispatcher(field);
+            if (field.meta.has(":polymorphicStatic")) {
+                // COMPILE-TIME: Generate specialized version for this class
+                var specializedField = createSpecializedVersion(field, cls);
+                fields.push(specializedField);
             }
         }
         
-        // Inject dispatcher
-        fields.push(createDispatcher(dispatchTable));
-        
         return fields;
+    }
+    
+    // COMPILE-TIME: Creates a specialized version of the method
+    static function createSpecializedVersion(field: Field, cls: ClassType): Field {
+        // Generate code that will run at RUNTIME with correct type
+        return {
+            name: field.name,
+            access: [AStatic, APublic],
+            kind: FFun({
+                args: [],
+                expr: macro {
+                    // This code runs at RUNTIME but is specialized at COMPILE-TIME
+                    return new $i{cls.name}();
+                },
+                ret: null
+            }),
+            pos: Context.currentPos()
+        };
     }
 }
 
-// Usage - True polymorphism for statics!
+// Usage - Compile-time specialized statics
 @:autoBuild(PolymorphicStaticsMacro.build())
 class PolymorphicBase {
+    @:polymorphicStatic
     public static function getInstance(): PolymorphicBase {
-        // Macro makes this return the actual subclass type!
-        return new ActualChildClass();
+        // Each child class gets its own specialized version at COMPILE-TIME
+        throw "Should be overridden by macro";
     }
 }
 ```
 
-#### Ultimate Power: Aspect-Oriented Static Methods
+#### Aspect-Oriented Static Methods Through Compile-Time Wrapping
 
 ```haxe
-// Macro providing aspect-oriented programming for statics
+// Macro that wraps methods with cross-cutting concerns at COMPILE-TIME
 class AspectStaticsMacro {
     public static macro function build():Array<Field> {
         var fields = Context.getBuildFields();
         
         for (field in fields) {
-            // Add logging to all static methods
+            // COMPILE-TIME: Analyze metadata and wrap methods
             if (hasMetadata(field, ":logged")) {
-                wrapWithLogging(field);
+                // COMPILE-TIME: Modify the AST to add logging
+                field = wrapWithLogging(field);
             }
             
-            // Add caching to expensive static methods
             if (hasMetadata(field, ":cached")) {
-                wrapWithCache(field);
+                // COMPILE-TIME: Generate caching wrapper code
+                field = wrapWithCache(field);
             }
             
-            // Add retry logic to network static methods
             if (hasMetadata(field, ":retry")) {
-                wrapWithRetry(field);
+                // COMPILE-TIME: Generate retry logic wrapper
+                field = wrapWithRetry(field);
             }
         }
         
         return fields;
+    }
+    
+    // COMPILE-TIME: Wraps the original method with logging
+    static function wrapWithLogging(field: Field): Field {
+        var originalExpr = getFieldExpression(field);
+        field.expr = macro {
+            trace('Calling ${field.name}');  // This trace runs at RUNTIME
+            var result = $originalExpr;      // Original method runs at RUNTIME
+            trace('Completed ${field.name}');
+            return result;
+        };
+        return field;
     }
 }
 
@@ -940,9 +968,27 @@ class ServiceClass {
     @:cached(ttl = 60)
     @:retry(attempts = 3)
     public static function fetchData(id: String): Data {
-        // Macro automatically adds logging, caching, and retry!
+        // At COMPILE-TIME, macro wraps this with logging, caching, and retry
+        // At RUNTIME, the wrapped version executes
         return API.get('/data/$id');
     }
+    
+    // After macro processing at COMPILE-TIME, this becomes:
+    // public static function fetchData(id: String): Data {
+    //     trace('Calling fetchData');           // Added by @:logged
+    //     var cached = checkCache(id);          // Added by @:cached
+    //     if (cached != null) return cached;
+    //     var attempts = 0;                     // Added by @:retry
+    //     while (attempts < 3) {
+    //         try {
+    //             var result = API.get('/data/$id');
+    //             saveToCache(id, result);
+    //             trace('Completed fetchData');
+    //             return result;
+    //         } catch (e) { attempts++; }
+    //     }
+    //     throw "Failed after 3 attempts";
+    // }
 }
 ```
 
