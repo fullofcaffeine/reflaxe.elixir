@@ -1,8 +1,7 @@
 defmodule TodoAppWeb.Presence do
   use Phoenix.Presence, otp_app: :todo_app
   def track_user(socket, user) do
-    meta = %{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => user.name, :user_email => user.email, :avatar => nil, :editing_todo_id => nil, :editing_started_at => nil}
-    track(socket, Std.string(user.id), meta)
+    track(socket, "users", Std.string(user.id), (%{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => user.name, :user_email => user.email, :avatar => nil, :editing_todo_id => nil, :editing_started_at => nil}))
   end
   def update_user_editing(socket, user, todo_id) do
     current_meta = get_user_presence(socket, user.id)
@@ -12,7 +11,7 @@ defmodule TodoAppWeb.Presence do
 else
   nil
 end}
-    update(socket, Std.string(user.id), updated_meta)
+    update(socket, "users", Std.string(user.id), updated_meta)
   end
   defp get_user_presence(socket, user_id) do
     presences = list(socket)
