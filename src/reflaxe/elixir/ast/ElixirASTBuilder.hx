@@ -170,6 +170,9 @@ class ElixirASTBuilder {
     // Current module being compiled (for detecting same-module static calls)
     public static var currentModule: String = null;
     
+    // Track if current module has @:presence annotation (for behavior-specific transformations)
+    public static var currentModuleHasPresence: Bool = false;
+    
     // Variable usage map for context-aware naming
     // Maps variable ID to whether it's used (true) or unused (false)
     public static var variableUsageMap: Null<Map<Int, Bool>> = null;
@@ -1484,9 +1487,11 @@ class ElixirASTBuilder {
                                         // Calling an extern class - not a same-module call
                                         // This is crucial for Phoenix.Presence behavior transformations
                                         isSameModuleCall = false;
-                                    } else if (behaviorTransformer != null && behaviorTransformer.activeBehavior != null) {
-                                        // BehaviorTransformer is active - let it handle the call
+                                    } else if (currentModuleHasPresence && behaviorTransformer != null) {
+                                        // Current module has @:presence - let BehaviorTransformer handle the call
                                         // This ensures @:presence modules get proper self() injection
+                                        // FIX (January 2025): Changed from checking activeBehavior != null to currentModuleHasPresence
+                                        // to prevent non-@:presence modules from getting transformations
                                         isSameModuleCall = false;
                                     } else {
                                         // Regular same-module call
@@ -1524,9 +1529,12 @@ class ElixirASTBuilder {
                                  * @see reflaxe.elixir.behaviors.BehaviorTransformer
                                  * @see reflaxe.elixir.behaviors.PresenceBehaviorTransformer
                                  */
-                                if (behaviorTransformer != null) {
+                                // Only apply behavior transformations if current module has the behavior
+                                // FIX (January 2025): Added currentModuleHasPresence check to prevent
+                                // non-@:presence modules from getting Presence transformations
+                                if (behaviorTransformer != null && currentModuleHasPresence) {
                                     #if debug_behavior_transformer
-                                    trace('[ElixirASTBuilder] Calling behaviorTransformer.transformMethodCall with className="${classType.name}", methodName="${methodName}"');
+                                    trace('[ElixirASTBuilder] Current module has @:presence, calling behaviorTransformer.transformMethodCall with className="${classType.name}", methodName="${methodName}"');
                                     #end
                                     var transformedCall = behaviorTransformer.transformMethodCall(
                                         classType.name,
