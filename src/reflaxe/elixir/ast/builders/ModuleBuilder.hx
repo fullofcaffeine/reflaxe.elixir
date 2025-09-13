@@ -1223,7 +1223,31 @@ class ModuleBuilder {
                 };
                 
                 // Build the entire function using ElixirASTBuilder which handles reserved keywords
+                #if debug_behavior_transformer
+                trace('[ModuleBuilder] About to build function ${func.name} for ${classType.name}');
+                if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null && 
+                    reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior != null) {
+                    trace('[ModuleBuilder] BehaviorTransformer is ACTIVE BEFORE build: ${reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior}');
+                }
+                #end
+                
                 var funcAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(funcExpr, functionUsageMap);
+                
+                #if debug_behavior_transformer
+                trace('[ModuleBuilder] Built function ${func.name} for ${classType.name}');
+                if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null && 
+                    reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior != null) {
+                    trace('[ModuleBuilder] BehaviorTransformer is active: ${reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior}');
+                }
+                // Check if the AST contains self() calls
+                var astString = reflaxe.elixir.ast.ElixirASTPrinter.print(funcAst);
+                if (astString.indexOf("self()") >= 0) {
+                    trace('[ModuleBuilder] Function ${func.name} contains self() injection!');
+                } else if (func.name.indexOf("track") >= 0 || func.name.indexOf("update") >= 0 || func.name.indexOf("untrack") >= 0) {
+                    trace('[ModuleBuilder] WARNING: Function ${func.name} does NOT contain self() injection');
+                    trace('[ModuleBuilder] AST: ${astString.substring(0, 200)}...');
+                }
+                #end
                 
                 // The AST builder returns a function, extract it and wrap in def/defp
                 switch(funcAst.def) {

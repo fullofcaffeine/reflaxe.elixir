@@ -1468,7 +1468,33 @@ class ElixirASTBuilder {
                                 
                                 // Check if we're calling a static method within the same module
                                 // Private functions in Elixir cannot be called with module prefix
+                                // IMPORTANT: We need to check if it's actually the same class, not just same name
+                                // Classes with @:native might have the same name as extern classes they use
+                                // 
+                                // BUG FIX (January 2025): When a class with @:native("MyAppWeb.Presence")
+                                // has internal name "Presence" and calls extern Presence.track(), we were
+                                // incorrectly treating it as same-module call, bypassing BehaviorTransformer.
+                                // Solution: Don't treat extern class calls as same-module calls, especially
+                                // when BehaviorTransformer is active (indicates special handling needed).
+                                var isSameModuleCall = false;
                                 if (currentModule != null && classType.name == currentModule) {
+                                    // Names match, but check if this is an extern class call
+                                    // Extern classes should go through normal processing for transformations
+                                    if (classType.isExtern) {
+                                        // Calling an extern class - not a same-module call
+                                        // This is crucial for Phoenix.Presence behavior transformations
+                                        isSameModuleCall = false;
+                                    } else if (behaviorTransformer != null && behaviorTransformer.activeBehavior != null) {
+                                        // BehaviorTransformer is active - let it handle the call
+                                        // This ensures @:presence modules get proper self() injection
+                                        isSameModuleCall = false;
+                                    } else {
+                                        // Regular same-module call
+                                        isSameModuleCall = true;
+                                    }
+                                }
+                                
+                                if (isSameModuleCall) {
                                     // Same module - call without module prefix
                                     var elixirMethodName = toSnakeCase(methodName);
                                     return ECall(null, elixirMethodName, args);
@@ -1499,6 +1525,9 @@ class ElixirASTBuilder {
                                  * @see reflaxe.elixir.behaviors.PresenceBehaviorTransformer
                                  */
                                 if (behaviorTransformer != null) {
+                                    #if debug_behavior_transformer
+                                    trace('[ElixirASTBuilder] Calling behaviorTransformer.transformMethodCall with className="${classType.name}", methodName="${methodName}"');
+                                    #end
                                     var transformedCall = behaviorTransformer.transformMethodCall(
                                         classType.name,
                                         methodName,
@@ -1509,6 +1538,8 @@ class ElixirASTBuilder {
                                     if (transformedCall != null) {
                                         #if debug_behavior_transformer
                                         trace('[BehaviorTransformer] Transformed ${classType.name}.${methodName} call');
+                                        var transformedStr = reflaxe.elixir.ast.ElixirASTPrinter.print(transformedCall);
+                                        trace('[BehaviorTransformer] Transformed AST: ${transformedStr.substring(0, 100)}');
                                         #end
                                         return transformedCall.def;  // Extract the ElixirASTDef from the ElixirAST
                                     }
