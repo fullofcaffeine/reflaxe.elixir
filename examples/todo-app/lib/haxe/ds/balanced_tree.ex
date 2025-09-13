@@ -139,14 +139,7 @@ end)
     end
   end
   defp compare(struct, k1, k2) do
-    cond do
-      k1 < k2 ->
-        -1
-      k1 > k2 ->
-        1
-      true ->
-        0
-    end
+    Reflect.compare(k1, k2)
   end
   def to_string(struct) do
     if (struct.root == nil), do: "[]", else: "[" <> struct.root.to_string() <> "]"
