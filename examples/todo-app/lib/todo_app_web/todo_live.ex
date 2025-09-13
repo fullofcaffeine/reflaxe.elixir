@@ -130,7 +130,7 @@ end)}
   end
   def create_todo_typed(params, socket) do
     userId = socket.assigns.current_user.id
-    changeset = Todo.changeset(Todo.new(), params)
+    changeset = TodoApp.Todo.changeset(%TodoApp.Todo{}, params)
     g = TodoApp.Repo.insert(changeset)
     case (g) do
       {:ok, g} ->
@@ -160,7 +160,7 @@ end)}
 else
   nil
 end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), else: []), :user_id => socket.assigns.current_user.id}
-    changeset = Todo.changeset(Todo.new(), todo_params)
+    changeset = TodoApp.Todo.changeset(%TodoApp.Todo{}, todo_params)
     g = TodoApp.Repo.insert(changeset)
     case (g) do
       {:ok, g} ->
@@ -189,7 +189,7 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
   def toggle_todo_status(id, socket) do
     todo = find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
-    updated_changeset = Todo.toggle_completed(todo)
+    updated_changeset = TodoApp.Todo.toggle_completed(todo)
     g = TodoApp.Repo.update(updated_changeset)
     updated_todo = case (g) do
   {:ok, g} ->
@@ -232,7 +232,7 @@ end
   def update_todo_priority(id, priority, socket) do
     todo = find_todo(id, socket.assigns.todos)
     if (todo == nil), do: socket
-    updated_changeset = Todo.update_priority(todo, priority)
+    updated_changeset = TodoApp.Todo.update_priority(todo, priority)
     g = TodoApp.Repo.update(updated_changeset)
     updated_todo = case (g) do
   {:ok, g} ->
@@ -401,7 +401,7 @@ end)
   def save_edited_todo_typed(params, socket) do
     if (Map.get(socket.assigns, :editing_todo) == nil), do: socket
     todo = socket.assigns.editing_todo
-    changeset = Todo.changeset(todo, params)
+    changeset = TodoApp.Todo.changeset(todo, params)
     g = TodoApp.Repo.update(changeset)
     case (g) do
       {:ok, g} ->
@@ -434,7 +434,7 @@ end)
 else
   nil
 end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), else: nil), :completed => params.completed}
-    changeset = Todo.changeset(todo, todo_params)
+    changeset = TodoApp.Todo.changeset(todo, todo_params)
     g = TodoApp.Repo.update(changeset)
     case (g) do
       {:ok, g} ->

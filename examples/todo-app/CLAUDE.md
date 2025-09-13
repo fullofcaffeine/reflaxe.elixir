@@ -504,6 +504,325 @@ npx haxe build.hxml -D extract-patterns
 ### Core Principle: Everything in Haxe by Default
 **Write EVERYTHING in Haxe unless technically impossible.** Type safety isn't just for business logic - it's for the entire application.
 
+## 📚 Writing a Fully-Functional Phoenix App in Haxe
+
+### The Complete Phoenix Stack in Haxe
+
+This todo-app demonstrates writing an **entire Phoenix LiveView application** in Haxe, with near 1:1 mapping to Phoenix patterns but with Haxe's type safety and ergonomics.
+
+### 1. Application Structure (OTP Supervision Tree)
+
+```haxe
+// src_haxe/server/TodoApp.hx
+@:application
+class TodoApp {
+    public static function start(_type, _args) {
+        var children = [
+            TypeSafeChildSpec.supervisor(TodoAppWeb.Telemetry),
+            TypeSafeChildSpec.repo(TodoApp.Repo),
+            TypeSafeChildSpec.pubSub("TodoApp.PubSub", []),
+            TypeSafeChildSpec.endpoint(TodoAppWeb.Endpoint)
+        ];
+        
+        var opts = {strategy: OneForOne, name: TodoApp.Supervisor};
+        return Supervisor.startLink(children, opts);
+    }
+}
+```
+
+### 2. Ecto Schemas with Type Safety
+
+```haxe
+// src_haxe/server/schemas/Todo.hx
+@:native("TodoApp.Todo")  // Control module name
+@:schema("todos")
+@:timestamps
+class Todo {
+    @:primary_key
+    var id: Int;
+    
+    var title: String;
+    var description: String;
+    var completed: Bool = false;
+    var userId: Int;
+    
+    // Type-safe changeset
+    public static function changeset(todo: Todo, attrs: TodoParams): Changeset<Todo> {
+        return cast(todo, attrs)
+            .validateRequired(["title", "userId"])
+            .validateLength("title", {min: 3, max: 200});
+    }
+}
+
+// Type-safe parameters
+typedef TodoParams = {
+    ?title: String,
+    ?description: String,
+    ?completed: Bool,
+    ?userId: Int
+}
+```
+
+### 3. Phoenix LiveView Components
+
+```haxe
+// src_haxe/server/live/TodoLive.hx
+@:native("TodoAppWeb.TodoLive")
+@:liveview
+class TodoLive {
+    // Type-safe assigns
+    typedef Assigns = {
+        todos: Array<Todo>,
+        currentUser: User,
+        editingTodo: Null<Todo>,
+        searchQuery: String
+    }
+    
+    public static function mount(params: Dynamic, session: Dynamic, socket: LiveSocket<Assigns>): Socket {
+        var socket = socket
+            .assign("currentUser", getCurrentUser(session))
+            .assign("todos", loadTodos())
+            .assign("editingTodo", null)
+            .assign("searchQuery", "");
+            
+        return {:ok, socket};
+    }
+    
+    public static function handleEvent(event: String, params: Dynamic, socket: Socket): Socket {
+        return switch(event) {
+            case "add_todo": addTodo(params, socket);
+            case "toggle_todo": toggleTodo(params.id, socket);
+            case "delete_todo": deleteTodo(params.id, socket);
+            case "search": updateSearch(params.query, socket);
+            default: {:noreply, socket};
+        }
+    }
+    
+    // HXX templates with Phoenix components
+    public static function render(assigns: Assigns): String {
+        return HXX.hxx('
+            <div class="todo-container">
+                <.header>
+                    Todo List for <%= @currentUser.name %>
+                </.header>
+                
+                <.simple_form for={@form} phx-submit="add_todo">
+                    <.input field={@form[:title]} label="Title" />
+                    <.input field={@form[:description]} type="textarea" label="Description" />
+                    <.button>Add Todo</.button>
+                </.simple_form>
+                
+                <.table rows={@todos}>
+                    <:col let={todo} label="Title">
+                        <%= todo.title %>
+                    </:col>
+                    <:col let={todo} label="Status">
+                        <.button phx-click="toggle_todo" phx-value-id={todo.id}>
+                            <%= if todo.completed, do: "✓", else: "○" %>
+                        </.button>
+                    </:col>
+                    <:action let={todo}>
+                        <.link phx-click="delete_todo" phx-value-id={todo.id}>
+                            Delete
+                        </.link>
+                    </:action>
+                </.table>
+            </div>
+        ');
+    }
+}
+```
+
+### 4. Phoenix Router with DSL
+
+```haxe
+// src_haxe/server/TodoAppRouter.hx
+@:router
+@:routes([
+    {name: "root", method: "LIVE", path: "/", controller: "TodoLive", action: "index"},
+    {name: "todos", method: "LIVE", path: "/todos", controller: "TodoLive"},
+    {name: "userDashboard", method: "LIVE", path: "/users/:id", controller: "UserLive", action: "show"}
+])
+class TodoAppRouter {
+    // Routes are auto-generated from @:routes annotation
+    // Generates proper Phoenix router DSL
+}
+```
+
+### 5. Contexts (Business Logic)
+
+```haxe
+// src_haxe/server/contexts/Todos.hx
+@:context
+class Todos {
+    public static function listTodos(userId: Int): Array<Todo> {
+        return from(t in Todo)
+            .where(t.userId == userId)
+            .orderBy(t.insertedAt, :desc)
+            .all();
+    }
+    
+    public static function createTodo(attrs: TodoParams): Result<Todo, Changeset> {
+        var todo = new Todo();  // Generates: %TodoApp.Todo{}
+        var changeset = Todo.changeset(todo, attrs);
+        
+        return switch(Repo.insert(changeset)) {
+            case Ok(todo): Ok(todo);
+            case Error(changeset): Error(changeset);
+        }
+    }
+    
+    public static function updateTodo(todo: Todo, attrs: TodoParams): Result<Todo, Changeset> {
+        var changeset = Todo.changeset(todo, attrs);
+        return Repo.update(changeset);
+    }
+}
+```
+
+### 6. Type-Safe PubSub
+
+```haxe
+// src_haxe/server/types/PubSubTypes.hx
+enum PubSubTopic {
+    TodoUpdates(userId: Int);
+    SystemAlerts;
+}
+
+enum TodoMessage {
+    TodoCreated(todo: Todo);
+    TodoUpdated(todo: Todo);
+    TodoDeleted(id: Int);
+}
+
+// Usage in LiveView
+PubSub.subscribe(TodoUpdates(socket.assigns.currentUser.id));
+
+// Broadcasting
+PubSub.broadcast(TodoUpdates(userId), TodoCreated(newTodo));
+```
+
+### 7. Constructor Translation Patterns
+
+**Understanding how `new` translates is critical:**
+
+```haxe
+// Schemas → Struct literals
+var todo = new Todo();              // Generates: %TodoApp.Todo{}
+
+// GenServers → start_link
+var worker = new TodoWorker(config); // Generates: {:ok, pid} = TodoWorker.start_link(config)
+
+// Regular classes → Module functions  
+var formatter = new TodoFormatter(); // Generates: TodoFormatter.new()
+
+// LiveViews → Never use new!
+// var live = new TodoLive();        // ERROR: LiveViews are mounted by Phoenix
+```
+
+### 8. Database Migrations in Haxe
+
+```haxe
+// src_haxe/migrations/CreateTodos.hx
+@:migration("create_todos")
+class CreateTodos {
+    public function up(): Void {
+        createTable("todos", function(t) {
+            t.addColumn("id", "bigserial", {primaryKey: true});
+            t.addColumn("title", "string", {null: false});
+            t.addColumn("description", "text");
+            t.addColumn("completed", "boolean", {default: false});
+            t.addColumn("user_id", "references", {table: "users", onDelete: "cascade"});
+            t.timestamps();
+        });
+        
+        createIndex("todos", ["user_id"]);
+        createIndex("todos", ["completed"]);
+    }
+    
+    public function down(): Void {
+        dropTable("todos");
+    }
+}
+```
+
+### 9. Phoenix Presence with Type Safety
+
+```haxe
+// Type-safe presence tracking
+typedef UserPresence = {
+    onlineAt: Float,
+    status: UserStatus,
+    editingTodoId: Null<Int>
+}
+
+enum UserStatus {
+    Active;
+    Away;
+    Busy;
+}
+
+// In LiveView
+Presence.track(socket, "users", socket.assigns.currentUser.id, {
+    onlineAt: System.systemTime(),
+    status: Active,
+    editingTodoId: null
+});
+```
+
+### 10. Testing in Haxe
+
+```haxe
+// src_haxe/test/TodoTest.hx
+@:test
+class TodoTest {
+    @:test
+    public function testTodoCreation() {
+        var todo = new Todo();  // %TodoApp.Todo{}
+        todo.title = "Test Todo";
+        
+        var changeset = Todo.changeset(todo, {title: "Test Todo"});
+        Assert.isTrue(changeset.valid);
+    }
+    
+    @:test
+    public function testLiveViewMount() {
+        var socket = new TestSocket();
+        var result = TodoLive.mount({}, {user_id: 1}, socket);
+        
+        Assert.equals(result.assigns.todos.length, 0);
+        Assert.notNull(result.assigns.currentUser);
+    }
+}
+```
+
+### Key Benefits Over Plain Elixir
+
+1. **Compile-Time Type Safety**: Catch errors before runtime
+2. **IDE Support**: Full autocomplete and refactoring
+3. **Shared Types**: Frontend/backend type sharing
+4. **Pattern Consistency**: Same patterns everywhere
+5. **Zero Runtime Overhead**: Generates idiomatic Elixir
+
+### Phoenix Feature Completeness
+
+✅ **Fully Supported:**
+- LiveView components with HXX templates
+- Ecto schemas and changesets
+- Phoenix router with DSL
+- PubSub with type-safe topics
+- Presence tracking
+- Channels (WebSockets)
+- Controllers and actions
+- Plugs and pipelines
+- Testing with ExUnit
+
+🚧 **In Progress:**
+- LiveComponents (partial support)
+- Telemetry integration
+- Phoenix.Component function components
+- Async assigns
+- Upload handling
+
 ### What IS Written in Haxe (Almost Everything)
 ✅ **In Haxe** - The entire application stack:
 - **Router** (`TodoAppRouter.hx`) - Generates `router.ex` with @:router annotation ✓

@@ -15,6 +15,7 @@
   "todo_app_web/endpoint.ex",
   "todo_app_web/core_components.ex",
   "todo_app_web.ex",
+  "todo_app/todo.ex",
   "todo_app/repo.ex",
   "todo_app/application.ex",
   "test_injection.ex",
@@ -31,7 +32,6 @@
   "server/types/bulk_operation_type.ex",
   "server/types/bulk_operation.ex",
   "server/types/alert_level.ex",
-  "server/schemas/todo.ex",
   "server/pubsub/todo_pub_sub_topic.ex",
   "server/pubsub/todo_pub_sub_message.ex",
   "server/pubsub/todo_pub_sub.ex",
@@ -154,7 +154,7 @@
   "_any/any_impl_.ex",
   "todo_app/postgrex_types.ex"
 ],
-  "id": 257,
+  "id": 260,
   "wasCached": false,
   "version": 1
 }

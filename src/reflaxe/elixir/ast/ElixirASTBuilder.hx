@@ -3570,9 +3570,29 @@ class ElixirASTBuilder {
                 var className = classType.name;
                 var args = [for (e in el) buildFromTypedExpr(e)];
                 
-                // Check if this is a Map type (StringMap, IntMap, etc.)
-                // Maps should generate regular Elixir maps %{}, not structs
-                if (className == "StringMap" || className == "Map" || className.endsWith("Map")) {
+                // Check if this is an Ecto schema - schemas use struct literals, not constructors
+                if (classType.meta.has(":schema")) {
+                    // Get the full module name from @:native or use className
+                    var moduleName = if (classType.meta.has(":native")) {
+                        var nativeMeta = classType.meta.extract(":native");
+                        if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                            switch(nativeMeta[0].params[0].expr) {
+                                case EConst(CString(s, _)):
+                                    s;
+                                default:
+                                    className;
+                            }
+                        } else {
+                            className;
+                        }
+                    } else {
+                        className;
+                    };
+                    // Generate struct literal: %ModuleName{}
+                    EStruct(moduleName, []);
+                } else if (className == "StringMap" || className == "Map" || className.endsWith("Map")) {
+                    // Check if this is a Map type (StringMap, IntMap, etc.)
+                    // Maps should generate regular Elixir maps %{}, not structs
                     // Generate empty map for Map constructors
                     EMap([]);
                 } else {
