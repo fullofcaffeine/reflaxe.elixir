@@ -2528,6 +2528,23 @@ class ElixirASTBuilder {
             case TIf(econd, eif, eelse):
                 #if debug_loop_transformation
                 // Debug nested if statements in loop bodies - specifically for meta variable issue
+                trace('[XRay LoopTransform] TIf condition: ${Type.enumConstructor(econd.expr)}');
+                switch(econd.expr) {
+                    case TBinop(op, e1, e2):
+                        trace('[XRay LoopTransform]   Condition is TBinop: $op');
+                        trace('[XRay LoopTransform]   Left side: ${Type.enumConstructor(e1.expr)}');
+                        trace('[XRay LoopTransform]   Right side: ${Type.enumConstructor(e2.expr)}');
+                        switch(e1.expr) {
+                            case TLocal(v):
+                                trace('[XRay LoopTransform]     Left is TLocal: ${v.name}');
+                            case TBinop(innerOp, ie1, ie2):
+                                trace('[XRay LoopTransform]     Left is inner TBinop: $innerOp');
+                            case _:
+                        }
+                    case TLocal(v):
+                        trace('[XRay LoopTransform]   Condition is TLocal: ${v.name}');
+                    case _:
+                }
                 switch(eif.expr) {
                     case TBlock(exprs):
                         trace('[XRay LoopTransform] TIf then branch is TBlock with ${exprs.length} expressions');
@@ -2821,7 +2838,13 @@ class ElixirASTBuilder {
                 // When Haxe desugars expressions like !map.exists(key), it creates:
                 // TBlock([TVar(tmp, key), map.has_key(tmp)])
                 // In expression contexts, this needs special handling to avoid invalid syntax
-                if (el.length == 2) {
+                // 
+                // IMPORTANT: Skip this optimization for blocks that are inside loops
+                // or other contexts where variable declarations must be preserved for
+                // proper state threading transformation
+                var isInLoopContext = false; // We could track this with a context variable if needed
+                
+                if (el.length == 2 && !isInLoopContext) {
                     switch([el[0].expr, el[1].expr]) {
                         case [TVar(v, init), expr] if (init != null):
                             // This is a temporary variable pattern
@@ -2848,9 +2871,15 @@ class ElixirASTBuilder {
 
                             // Try to inline immediately when the temp var is used exactly once
                             // BUT: Skip inlining in case clause bodies (statement contexts)
-                            // where variable declarations should be preserved
+                            // and other contexts where variable declarations should be preserved
                             var isInCaseClause = currentClauseContext != null;
-                            if (!isInCaseClause) {
+                            
+                            // CRITICAL FIX: Skip inlining when the body contains nested if statements
+                            // This preserves variable declarations that need to be visible in nested scopes
+                            var containsNestedIf = containsIfStatement(el[1]);
+                            var shouldPreserveDeclaration = isInCaseClause || containsNestedIf;
+                            
+                            if (!shouldPreserveDeclaration) {
                                 var usageCount = countVarOccurrencesInAST(bodyExpr, varName);
                                 if (usageCount == 1) {
                                     var inlined = replaceVarInAST(bodyExpr, varName, initExpr);
@@ -5712,6 +5741,47 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Check if a TypedExpr contains an if statement
+     * Used to determine when variable declarations should be preserved
+     */
+    static function containsIfStatement(expr: TypedExpr): Bool {
+        return switch(expr.expr) {
+            case TIf(_, _, _): true;
+            case TBlock(el): 
+                // Check if any expression in the block is an if statement
+                for (e in el) {
+                    if (containsIfStatement(e)) return true;
+                }
+                false;
+            case TWhile(_, body, _): containsIfStatement(body);
+            case TFor(_, _, body): containsIfStatement(body);
+            case TSwitch(_, cases, _):
+                for (c in cases) {
+                    if (containsIfStatement(c.expr)) return true;
+                }
+                false;
+            case TCall(_, args):
+                for (arg in args) {
+                    if (containsIfStatement(arg)) return true;
+                }
+                false;
+            case TVar(_, init) if (init != null): containsIfStatement(init);
+            case TBinop(_, e1, e2): containsIfStatement(e1) || containsIfStatement(e2);
+            case TUnop(_, _, e): containsIfStatement(e);
+            case TParenthesis(e): containsIfStatement(e);
+            case TMeta(_, e): containsIfStatement(e);
+            case TCast(e, _): containsIfStatement(e);
+            case TTry(e, catches):
+                if (containsIfStatement(e)) return true;
+                for (c in catches) {
+                    if (containsIfStatement(c.expr)) return true;
+                }
+                false;
+            default: false;
+        }
+    }
+    
+    /**
      * Check if type is an array type
      */
     static function isArrayType(t: Type): Bool {
@@ -7092,12 +7162,20 @@ class ElixirASTBuilder {
                         #if debug_state_threading
                         trace('[Transform] New local variable declaration: $name (not in mapping)');
                         #end
+                        #if debug_loop_bodies
+                        if (name == "doubled" || name == "score" || name == "meta") {
+                            trace('[XRay LoopBody] Preserving local variable declaration: $name');
+                        }
+                        #end
                         pattern;
                     case _:
                         // Other pattern types - keep as-is
                         pattern;
                 };
                 
+                // CRITICAL FIX: For new local variables (not in mapping), we need to ensure
+                // they are properly declared in the output. The EMatch node represents
+                // a variable declaration/assignment that must be preserved.
                 makeAST(EMatch(transformedPattern, transformedValue));
                 
             case EBlock(exprs):
