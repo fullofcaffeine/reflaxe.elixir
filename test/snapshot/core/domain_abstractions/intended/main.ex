@@ -150,7 +150,7 @@ g), "")
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {parts, g, :ok}, fn _, {acc_parts, acc_g, acc_state} ->
   if (acc_g < length(acc_parts)) do
-    part = parts[g]
+    part = acc_parts[acc_g]
     acc_g = acc_g + 1
     Log.trace("  Part: " <> NonEmptyString_Impl_.to_string(part), %{:file_name => "Main.hx", :line_number => 321, :class_name => "Main", :method_name => "testNonEmptyStringOperations"})
     {:cont, {acc_parts, acc_g, acc_state}}
@@ -201,7 +201,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {registration_data, g, :ok}, fn _, {acc_registration_data, acc_g, acc_state} ->
   if (acc_g < length(acc_registration_data)) do
-    user_data = registration_data[g]
+    user_data = acc_registration_data[acc_g]
     acc_g = acc_g + 1
     user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
     nil
@@ -215,7 +215,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {config_data, g, :ok}, fn _, {acc_config_data, acc_g, acc_state} ->
   if (acc_g < length(acc_config_data)) do
-    config = config_data[g]
+    config = acc_config_data[acc_g]
     acc_g = acc_g + 1
     config_result = validate_configuration(config.timeout, config.retries, config.name)
     nil

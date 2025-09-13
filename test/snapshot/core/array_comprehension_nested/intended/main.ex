@@ -262,14 +262,14 @@ end).()]
     g = []
     g1 = 0
     from_array = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {source, g1, g1, :ok}, fn _, {acc_source, acc_g1, acc_g1, acc_state} ->
-  x = source[g1]
+  x = acc_source[acc_g1]
   if (acc_g1 < length(acc_source)) do
     acc_g1 = acc_g1 + 1
     g = g ++ [(fn -> g = []
 acc_g1 = 0
 Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_source, acc_g1, :ok}, fn _, {acc_source, acc_g1, acc_state} ->
   if (acc_g1 < length(acc_source)) do
-    y = source[g1]
+    y = acc_source[acc_g1]
     acc_g1 = acc_g1 + 1
     g = g ++ [x * y]
     {:cont, {acc_source, acc_g1, acc_state}}

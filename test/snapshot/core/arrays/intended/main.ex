@@ -16,7 +16,7 @@ defmodule Main do
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, g, :ok}, fn _, {acc_fruits, acc_g, acc_state} ->
   if (acc_g < length(acc_fruits)) do
-    fruit = fruits[g]
+    fruit = acc_fruits[acc_g]
     acc_g = acc_g + 1
     Log.trace("Fruit: " <> fruit, %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "arrayIteration"})
     {:cont, {acc_fruits, acc_g, acc_state}}
@@ -38,7 +38,7 @@ end)
     i = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, i, :ok}, fn _, {acc_fruits, acc_i, acc_state} ->
   if (acc_i < length(acc_fruits)) do
-    Log.trace("While: " <> fruits[i], %{:file_name => "Main.hx", :line_number => 46, :class_name => "Main", :method_name => "arrayIteration"})
+    Log.trace("While: " <> acc_fruits[acc_i], %{:file_name => "Main.hx", :line_number => 46, :class_name => "Main", :method_name => "arrayIteration"})
     acc_i = acc_i + 1
     {:cont, {acc_fruits, acc_i, acc_state}}
   else
@@ -107,11 +107,8 @@ g end).()]
   def first_n(arr, n) do
     g = []
     g1 = 0
-    g2 = Std.int(if (n < b) do
-  n
-else
-  (length(arr))
-end)
+    b = length(arr)
+    g2 = Std.int((if n < b, do: n, else: b))
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, g2, :ok}, fn _, {acc_g1, acc_g2, acc_state} ->
   if (acc_g1 < acc_g2) do
     i = acc_g1 = acc_g1 + 1

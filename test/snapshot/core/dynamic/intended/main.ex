@@ -60,7 +60,7 @@ end
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {dyn_array, g, :ok}, fn _, {acc_dyn_array, acc_g, acc_state} ->
   if (acc_g < length(acc_dyn_array)) do
-    item = dyn_array[g]
+    item = acc_dyn_array[acc_g]
     acc_g = acc_g + 1
     Log.trace("Item: " <> Std.string(item), %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "dynamicCollections"})
     {:cont, {acc_dyn_array, acc_g, acc_state}}

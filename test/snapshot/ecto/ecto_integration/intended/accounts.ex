@@ -6,7 +6,7 @@ defmodule Accounts do
     Repo.get(User, id)
   end
   def create_user(attrs) do
-    user = User.new()
+    user = %User{}
     changeset = UserChangeset.changeset(user, attrs)
     Repo.insert(changeset)
   end

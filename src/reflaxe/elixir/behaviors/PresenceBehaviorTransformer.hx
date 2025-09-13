@@ -57,10 +57,13 @@ class PresenceBehaviorTransformer implements IBehaviorTransformer {
         trace('[PresenceBehaviorTransformer] - args.length: ${args.length}');
         #end
         
-        // Only transform Presence class calls
-        if (className != "Presence" && !className.endsWith(".Presence")) {
+        // Only transform Phoenix.Presence extern class calls
+        // FIX (January 2025): Don't match classes that just happen to end with ".Presence"
+        // We only want to transform calls to the Phoenix.Presence extern class,
+        // not custom modules like TodoPresence
+        if (className != "Presence" && className != "phoenix.Presence") {
             #if debug_behavior_transformer
-            trace('[PresenceBehaviorTransformer] Not a Presence class (className="${className}"), skipping');
+            trace('[PresenceBehaviorTransformer] Not a Phoenix.Presence class (className="${className}"), skipping');
             #end
             return null;
         }
@@ -144,9 +147,11 @@ class PresenceBehaviorTransformer implements IBehaviorTransformer {
         // This would ideally check the actual field metadata
         // For now, we handle known cases
         return switch(methodName) {
-            case "trackPid" | "trackUser": "track";
-            case "updatePid" | "updateUser": "update";
-            case "untrackPid" | "untrackUser": "untrack";
+            case "trackPid": "track";
+            case "updatePid": "update";
+            case "untrackPid": "untrack";
+            // NOTE: trackUser, updateUser, etc. are custom functions, NOT behavior methods
+            // They should NOT be resolved to behavior method names
             default: methodName;
         };
     }

@@ -140,7 +140,7 @@ defmodule ResultTools do
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {results, g, :ok}, fn _, {acc_results, acc_g, acc_state} ->
   if (acc_g < length(acc_results)) do
-    result = results[g]
+    result = acc_results[acc_g]
     acc_g = acc_g + 1
     nil
     {:cont, {acc_results, acc_g, acc_state}}
