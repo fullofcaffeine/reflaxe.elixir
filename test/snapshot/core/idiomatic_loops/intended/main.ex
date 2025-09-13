@@ -23,7 +23,7 @@ defmodule Main do
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, g, :ok}, fn _, {acc_fruits, acc_g, acc_state} ->
   if (acc_g < length(acc_fruits)) do
-    fruit = fruits[g]
+    fruit = acc_fruits[acc_g]
     acc_g = acc_g + 1
     Log.trace("Fruit: " <> fruit, %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "testBasicForLoops"})
     {:cont, {acc_fruits, acc_g, acc_state}}
@@ -147,7 +147,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {matrix, g, :ok}, fn _, {acc_matrix, acc_g, acc_state} ->
   if (acc_g < length(acc_matrix)) do
-    row = matrix[g]
+    row = acc_matrix[acc_g]
     acc_g = acc_g + 1
     doubled = Enum.map(row, fn n -> n * 2 end)
     Log.trace("Row doubled: " <> Std.string(doubled), %{:file_name => "Main.hx", :line_number => 181, :class_name => "Main", :method_name => "testNestedLoops"})
@@ -166,7 +166,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
   if (acc_g < length(acc_numbers)) do
-    n = numbers[g]
+    n = acc_numbers[acc_g]
     acc_g = acc_g + 1
     if (rem(n, 3) == 0) do
       throw(:continue)
@@ -183,9 +183,8 @@ end)
   g1 = length(arr)
   Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
-    if (arr[i] == target) do
-      (acc_g = acc_g + 1)
-    end
+    i = acc_g = acc_g + 1
+    if (arr[i] == target), do: i
     {:cont, {acc_g, acc_g1, acc_state}}
   else
     {:halt, {acc_g, acc_g1, acc_state}}
@@ -212,7 +211,7 @@ end
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {data, g, :ok}, fn _, {acc_data, acc_g, acc_state} ->
   if (acc_g < length(acc_data)) do
-    n = data[g]
+    n = acc_data[acc_g]
     acc_g = acc_g + 1
     sum = acc.sum + n
     acc.count + 1
@@ -229,7 +228,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {current_state, events, g, :ok}, fn _, {acc_current_state, acc_events, acc_g, acc_state} ->
   if (acc_g < length(acc_events)) do
-    event = events[g]
+    event = acc_events[acc_g]
     acc_g = acc_g + 1
     case (event) do
       "begin" ->
@@ -239,7 +238,7 @@ end)
       "work" ->
         nil
     end
-    Log.trace("State after " <> event <> ": " <> states[current_state], %{:file_name => "Main.hx", :line_number => 259, :class_name => "Main", :method_name => "testComplexPatterns"})
+    Log.trace("State after " <> event <> ": " <> states[acc_current_state], %{:file_name => "Main.hx", :line_number => 259, :class_name => "Main", :method_name => "testComplexPatterns"})
     {:cont, {acc_current_state, acc_events, acc_g, acc_state}}
   else
     {:halt, {acc_current_state, acc_events, acc_g, acc_state}}
@@ -251,7 +250,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {items, g, :ok}, fn _, {acc_items, acc_g, acc_state} ->
   if (acc_g < length(acc_items)) do
-    item = items[g]
+    item = acc_items[acc_g]
     acc_g = acc_g + 1
     if (item.index_of("error") >= 0) do
       errors = errors ++ ["Failed: " <> item]

@@ -1,11 +1,5 @@
 defmodule StringTools do
   import Bitwise
-  @min_surrogate_code_point nil
-  @max_surrogate_code_point nil
-  @min_high_surrogate_code_point nil
-  @max_high_surrogate_code_point nil
-  @min_low_surrogate_code_point nil
-  @max_low_surrogate_code_point nil
   def url_encode(s) do
     result = ""
     g = 0

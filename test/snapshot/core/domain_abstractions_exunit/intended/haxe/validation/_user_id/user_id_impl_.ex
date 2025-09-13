@@ -1,6 +1,4 @@
 defmodule UserId_Impl_ do
-  @min_length nil
-  @max_length nil
   def _new(user_id) do
     this1 = nil
     g = validate(user_id)

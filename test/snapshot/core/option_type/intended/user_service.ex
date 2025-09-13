@@ -1,11 +1,10 @@
 defmodule UserService do
-  @users nil
   def find_user(name) do
     g = 0
     g1 = UserService.users
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < length(acc_g1)) do
-    user = g1[g]
+    user = acc_g1[acc_g]
     acc_g = acc_g + 1
     if (user.name == name), do: {:some, user}
     {:cont, {acc_g, acc_g1, acc_state}}

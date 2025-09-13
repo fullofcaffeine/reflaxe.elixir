@@ -245,17 +245,21 @@ end
     if (input == "") do
       "empty string"
     else
+      s = input
       if (length(s) == 1) do
-        "single character: \"" <> (input) <> "\""
+        "single character: \"" <> s <> "\""
       else
+        s = input
         if (s.substr(0, 7) == "prefix_") do
-          "has prefix: \"" <> (input) <> "\""
+          "has prefix: \"" <> s <> "\""
         else
+          s = input
           if (s.substr((length(s) - 7)) == "_suffix") do
-            "has suffix: \"" <> (input) <> "\""
+            "has suffix: \"" <> s <> "\""
           else
+            s = input
             if (s.index_of("@") > -1) do
-              "contains @: \"" <> (input) <> "\""
+              "contains @: \"" <> s <> "\""
             else
               s = input
               if (length(s) > 100) do

@@ -53,13 +53,15 @@ class TodoPresence {
             editingTodoId: null,  // Not editing initially
             editingStartedAt: null
         };
-        // Important: We use track() (3 args) instead of trackPid() (4 args) here.
-        // Inside a Phoenix.Presence module (marked with @:presence), the compiler's
-        // BehaviorTransformer automatically injects self() as the first argument.
-        // This is because Phoenix.Presence modules have local versions of these functions
-        // that implicitly use self(). The transformation makes our code match Phoenix patterns.
-        // Generated Elixir: track(self(), socket, user_id, meta)
-        return Presence.track(socket, Std.string(user.id), meta);
+        // IMPORTANT: Since this is inside a Phoenix.Presence module (via use Phoenix.Presence),
+        // we have local versions of track/4 and update/4 injected by the behavior.
+        // These local functions automatically use self() internally.
+        // We don't call Phoenix.Presence.track because we ARE a Presence module.
+        // We call the local injected track function directly.
+        var topic: phoenix.Topic = untyped __elixir__('{0}.topic', socket);
+        var pid = untyped __elixir__('self()');
+        untyped __elixir__('track({0}, {1}, {2}, {3})', pid, topic, Std.string(user.id), meta);
+        return socket;
     }
     
     /**
@@ -91,10 +93,11 @@ class TodoPresence {
         };
         
         // Phoenix pattern: update existing presence rather than track/untrack
-        // Note: We use updatePid() (4 args) here which doesn't get transformed because
-        // it already has the correct number of arguments for the generated local function.
-        // The BehaviorTransformer only injects self() for the 3-arg versions (track/update/untrack).
-        return Presence.updatePid(socket, "users", Std.string(user.id), updatedMeta);
+        // Use the local injected update function from Phoenix.Presence behavior
+        var topic: phoenix.Topic = untyped __elixir__('{0}.topic', socket);
+        var pid = untyped __elixir__('self()');
+        untyped __elixir__('update({0}, {1}, {2}, {3})', pid, topic, Std.string(user.id), updatedMeta);
+        return socket;
     }
     
     /**
