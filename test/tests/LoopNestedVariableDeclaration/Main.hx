@@ -25,7 +25,7 @@ class Main {
             if (item > 2) {
                 var doubled = item * 2;  // This variable declaration should be preserved
                 if (doubled > 6) {
-                    results.push(doubled);
+                    results.push(doubled);  // Use the variable in the body
                 }
             }
         }
