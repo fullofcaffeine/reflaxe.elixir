@@ -2,6 +2,7 @@ package server.presence;
 
 import phoenix.Phoenix.Socket;
 import phoenix.Presence;
+import phoenix.PresenceBehavior;
 import phoenix.LiveSocket;
 import server.types.Types.User;
 
@@ -37,7 +38,7 @@ typedef PresenceMeta = {
  */
 @:native("TodoAppWeb.Presence")
 @:presence
-class TodoPresence {
+class TodoPresence implements PresenceBehavior {
     /**
      * Track a user's presence in the todo app (idiomatic Phoenix pattern)
      * 
@@ -53,13 +54,9 @@ class TodoPresence {
             editingTodoId: null,  // Not editing initially
             editingStartedAt: null
         };
-        // Since TodoPresence is a @:presence module, the BehaviorTransformer
-        // will transform Phoenix.Presence.track() calls into local track() calls
-        // with self() automatically injected as the first parameter.
-        // We just need to provide the socket, key, and meta - the transformer handles the rest.
-        
-        // The BehaviorTransformer converts this to: track(self(), socket, key, meta)
-        phoenix.Presence.track(socket, Std.string(user.id), meta);
+        // Using the macro-generated internal method that injects self()
+        // The PresenceMacro generates trackInternal which calls: track(self(), socket, key, meta)
+        trackInternal(socket, Std.string(user.id), meta);
         return socket;
     }
     
@@ -92,11 +89,9 @@ class TodoPresence {
         };
         
         // Phoenix pattern: update existing presence rather than track/untrack
-        // The BehaviorTransformer will transform this Phoenix.Presence.update() call
-        // into a local update() call with self() automatically injected.
-        
-        // The BehaviorTransformer converts this to: update(self(), socket, key, meta)
-        phoenix.Presence.update(socket, Std.string(user.id), updatedMeta);
+        // Using the macro-generated internal method that injects self()
+        // The PresenceMacro generates updateInternal which calls: update(self(), socket, key, meta)
+        updateInternal(socket, Std.string(user.id), updatedMeta);
         return socket;
     }
     
@@ -104,9 +99,9 @@ class TodoPresence {
      * Helper to get current user presence metadata
      */
     static function getUserPresence<T>(socket: Socket<T>, userId: Int): Null<PresenceMeta> {
-        // The BehaviorTransformer will transform this Phoenix.Presence.list() call
-        // into a local list() call (no self() needed for list).
-        var presences = phoenix.Presence.list(socket);
+        // Using the macro-generated list method
+        // The PresenceMacro generates list() which works in both internal and external contexts
+        var presences = list(socket);
         // Note: presences is a Dynamic map, need to use Reflect
         var userKey = Std.string(userId);
         if (Reflect.hasField(presences, userKey)) {
@@ -119,10 +114,9 @@ class TodoPresence {
     /**
      * Get list of users currently online
      */
-    public static function listOnlineUsers<T>(socket: Socket<T>): Dynamic {
-        // Get all presences using the socket
-        // The BehaviorTransformer handles converting to local list() call
-        return phoenix.Presence.list(socket);
+    public static function listOnlineUsers<T>(socket: Socket<T>): haxe.DynamicAccess<phoenix.Presence.PresenceEntry<PresenceMeta>> {
+        // Get all presences using the macro-generated list method
+        return list(socket);
     }
     
     /**
@@ -132,8 +126,8 @@ class TodoPresence {
      * querying separate topics - more maintainable and Phoenix-like.
      */
     public static function getUsersEditingTodo<T>(socket: Socket<T>, todoId: Int): Array<PresenceMeta> {
-        // Get all users through the Phoenix.Presence extern
-        var allUsers = phoenix.Presence.list(socket);
+        // Get all users through the macro-generated list method
+        var allUsers = list(socket);
         var editingUsers = [];
         
         // Iterate over Dynamic presence map using Reflect
