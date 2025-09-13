@@ -66,6 +66,47 @@ src/reflaxe/elixir/
 4. Document with WHY/WHAT/HOW pattern
 5. Update this CLAUDE.md file
 
+## ⚠️ CRITICAL: Understanding @:native Metadata in Reflaxe.Elixir
+
+**FUNDAMENTAL LESSON (January 2025): @:native in Reflaxe compilers works differently than standard Haxe.**
+
+### The @:native Pattern for Module Naming
+
+**Standard Haxe @:native** (for externs only):
+- Used on `extern` classes to map to external library names
+- Example: `@:native("$") extern class JQuery` maps to jQuery's `$`
+- ONLY works on actual extern classes
+
+**Reflaxe @:native Pattern** (for generated code):
+- Can be used on **regular (non-extern) classes** to control output names
+- Example: `@:native("TodoAppWeb.Presence") class TodoPresence`
+- Generates module named `TodoAppWeb.Presence` instead of `TodoPresence`
+- This is **valid and standard** in Reflaxe compilers (see reflaxe/test/MyClass.hx)
+
+### Why This Matters for Phoenix
+
+Phoenix has strict module naming conventions:
+- Presence modules must be `AppNameWeb.Presence`
+- LiveView modules must be `AppNameWeb.SomethingLive`
+- Router must be `AppNameWeb.Router`
+
+Using `@:native` lets us:
+- Write clean Haxe class names (`TodoPresence`)
+- Generate idiomatic Elixir modules (`TodoAppWeb.Presence`)
+- Follow Phoenix conventions without awkward Haxe names
+
+### Known Issue: BehaviorTransformer with @:native Classes
+
+**Problem**: Classes with both `@:presence` and `@:native` don't get proper self() injection.
+
+**Root Cause**: When ModuleBuilder compiles methods, the BehaviorTransformer transformations are applied at the AST level but not preserved in the final output.
+
+**Symptoms**:
+- Debug shows "[BehaviorTransformer] Transformed Presence.track call"
+- But generated code lacks self(): `track(socket, user_id, meta)` instead of `track(self(), socket, user_id, meta)`
+
+**Fix Needed**: Ensure ModuleBuilder preserves BehaviorTransformer transformations when building function bodies.
+
 ## ⚡ Critical Compilation Concepts
 
 ### Macro-Time vs Runtime ⚠️ FUNDAMENTAL

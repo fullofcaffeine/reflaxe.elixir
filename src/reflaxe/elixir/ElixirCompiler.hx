@@ -273,11 +273,12 @@ class ElixirCompiler extends GenericCompiler<
             return true;
         }
         
-        // Check if this is a non-extern class with @:presence annotation
+        // Check if this is a class with @:presence annotation
         // These need to be compiled to generate Phoenix.Presence modules
-        if (!classType.isExtern && classType.meta.has(":presence")) {
+        // This includes both regular classes and @:native classes (which are extern)
+        if (classType.meta.has(":presence")) {
             #if debug_behavior_transformer
-            trace('[shouldGenerateClass] Forcing compilation of @:presence class: ${classType.name}');
+            trace('[shouldGenerateClass] Forcing compilation of @:presence class: ${classType.name} (isExtern: ${classType.isExtern})');
             #end
             return true;
         }

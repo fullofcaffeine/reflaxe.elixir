@@ -144,9 +144,9 @@ class PresenceBehaviorTransformer implements IBehaviorTransformer {
         // This would ideally check the actual field metadata
         // For now, we handle known cases
         return switch(methodName) {
-            case "trackPid": "track";
-            case "updatePid": "update";
-            case "untrackPid": "untrack";
+            case "trackPid" | "trackUser": "track";
+            case "updatePid" | "updateUser": "update";
+            case "untrackPid" | "untrackUser": "untrack";
             default: methodName;
         };
     }
