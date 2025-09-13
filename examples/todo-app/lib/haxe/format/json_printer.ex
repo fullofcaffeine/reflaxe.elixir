@@ -39,14 +39,14 @@ end)
     end
   end
   defp write_object(struct, obj) do
-    fields = Reflect.fields(obj)
+    fields = Map.keys(obj)
     pairs = []
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fields, g, :ok}, fn _, {acc_fields, acc_g, acc_state} ->
   if (acc_g < length(acc_fields)) do
     field = acc_fields[acc_g]
     acc_g = acc_g + 1
-    value = Reflect.field(obj, field)
+    value = Map.get(obj, String.to_atom(field))
     key = struct.quote_string(field)
     val = struct.write_value(value, field)
     if (struct.space != nil) do

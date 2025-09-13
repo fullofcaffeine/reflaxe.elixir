@@ -103,7 +103,7 @@ defmodule OptionTools do
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {options, g, :ok}, fn _, {acc_options, acc_g, acc_state} ->
   if (acc_g < length(acc_options)) do
-    option = options[g]
+    option = acc_options[acc_g]
     acc_g = acc_g + 1
     nil
     {:cont, {acc_options, acc_g, acc_state}}
@@ -118,7 +118,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {options, g, :ok}, fn _, {acc_options, acc_g, acc_state} ->
   if (acc_g < length(acc_options)) do
-    option = options[g]
+    option = acc_options[acc_g]
     acc_g = acc_g + 1
     nil
     {:cont, {acc_options, acc_g, acc_state}}

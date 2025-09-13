@@ -78,7 +78,7 @@ end
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
   if (acc_g < length(acc_numbers)) do
-    num = numbers[g]
+    num = acc_numbers[acc_g]
     acc_g = acc_g + 1
     n = num
     n = num
@@ -104,7 +104,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arrays, g, :ok}, fn _, {acc_arrays, acc_g, acc_state} ->
   if (acc_g < length(acc_arrays)) do
-    arr = arrays[g]
+    arr = acc_arrays[acc_g]
     acc_g = acc_g + 1
     description = case (length(arr)) do
   0 ->

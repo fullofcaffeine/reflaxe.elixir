@@ -1,7 +1,5 @@
 defmodule Main do
   @instance_var nil
-  @constant nil
-  @static_var nil
   def calculate(struct, x, y) do
     x + y * struct.instance_var
   end

@@ -15,7 +15,7 @@ defmodule Container do
     g1 = struct.items
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < length(acc_g1)) do
-    item = g1[g]
+    item = acc_g1[acc_g]
     acc_g = acc_g + 1
     result.add(fn_param.(item))
     {:cont, {acc_g, acc_g1, acc_state}}

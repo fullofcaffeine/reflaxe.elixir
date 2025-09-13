@@ -23,11 +23,11 @@ defmodule Phoenix.SafePubSub do
     if (payload == nil) do
       payload = %{}
     end
-    Reflect.set_field(payload, "timestamp", Date_Impl_.get_time(DateTime.utc_now()))
+    payload = Map.put(payload, String.to_atom("timestamp"), Date_Impl_.get_time(DateTime.utc_now()))
     payload
   end
   def is_valid_message(msg) do
-    msg != nil && Reflect.has_field(msg, "type") && Reflect.field(msg, "type") != nil
+    msg != nil && Map.has_key?(msg, String.to_atom("type")) && Map.get(msg, String.to_atom("type")) != nil
   end
   def create_unknown_message_error(message_type) do
     "Unknown PubSub message type: \"" <> message_type <> "\". Check your message enum definitions."

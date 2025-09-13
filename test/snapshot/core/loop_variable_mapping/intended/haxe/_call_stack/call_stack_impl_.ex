@@ -16,7 +16,7 @@ defmodule CallStack_Impl_ do
     g1 = stack
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < length(acc_g1)) do
-    s = g1[g]
+    s = acc_g1[acc_g]
     acc_g = acc_g + 1
     b.add("\nCalled from ")
     item_to_string(b, s)
@@ -138,7 +138,8 @@ end)
   end
   defp exception_to_string(e) do
     if (e.get_previous() == nil) do
-      "Exception: " <> e.to_string() <> (if (tmp == nil), do: "null", else: to_string((e.get_stack())))
+      tmp = e.get_stack()
+      "Exception: " <> e.to_string() <> (if tmp == nil, do: "null", else: to_string(tmp))
     end
     result = ""
     e = e

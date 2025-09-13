@@ -20,7 +20,7 @@ defmodule Main do
     now = DateTime.utc_now()
     Log.trace("Date.now() returned a date: " <> DateTime.to_iso8601(now), %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "testConstructors"})
     timestamp = 1.7040672e+12
-    d2 = DateTime.from_unix!(Std.int(timestamp), "millisecond")
+    d2 = Date_Impl_.from_time(timestamp)
     Log.trace("fromTime(" <> Kernel.to_string(timestamp) <> "): " <> DateTime.to_iso8601(d2), %{:file_name => "Main.hx", :line_number => 28, :class_name => "Main", :method_name => "testConstructors"})
     iso_string = "2024-03-15T14:30:00Z"
     d3 = Date_Impl_.from_string(iso_string)
@@ -112,7 +112,7 @@ defmodule Main do
 )
     original = this1
     timestamp = Date_Impl_.get_time(original)
-    restored = DateTime.from_unix!(Std.int(timestamp), "millisecond")
+    restored = Date_Impl_.from_time(timestamp)
     Log.trace("Roundtrip test:", %{:file_name => "Main.hx", :line_number => 96, :class_name => "Main", :method_name => "testConversions"})
     Log.trace("  Original: " <> Kernel.to_string(original.year) <> "-" <> Kernel.to_string(((original.month - 1))) <> "-" <> Kernel.to_string(original.day), %{:file_name => "Main.hx", :line_number => 97, :class_name => "Main", :method_name => "testConversions"})
     Log.trace("  Restored: " <> Kernel.to_string(restored.year) <> "-" <> Kernel.to_string(((restored.month - 1))) <> "-" <> Kernel.to_string(restored.day), %{:file_name => "Main.hx", :line_number => 98, :class_name => "Main", :method_name => "testConversions"})

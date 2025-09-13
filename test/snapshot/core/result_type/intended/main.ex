@@ -1,6 +1,7 @@
 defmodule Main do
   def parse_number(input) do
-    if (parsed != nil), do: {:ok, (Std.parse_int(input))}, else: {:error, "Invalid number: " <> input}
+    parsed = Std.parse_int(input)
+    if (parsed != nil), do: {:ok, parsed}, else: {:error, "Invalid number: " <> input}
   end
   def divide_numbers(a, _b) do
     ResultTools.flat_map(parse_number(a), fn _num_a -> ResultTools.flat_map(parse_number(_b), fn num_b -> if (num_b == 0), do: {:error, "Division by zero"}, else: {:ok, _num_a / num_b} end) end)

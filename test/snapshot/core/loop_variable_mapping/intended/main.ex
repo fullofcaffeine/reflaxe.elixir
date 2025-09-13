@@ -5,7 +5,7 @@ defmodule Main do
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array, g, :ok}, fn _, {acc_array, acc_g, acc_state} ->
   if (acc_g < length(acc_array)) do
-    item = array[g]
+    item = acc_array[acc_g]
     acc_g = acc_g + 1
     if (item > 2) do
       result = result ++ [item * 2]
@@ -22,7 +22,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {array, g, :ok}, fn _, {acc_array, acc_g, acc_state} ->
   if (acc_g < length(acc_array)) do
-    x = array[g]
+    x = acc_array[acc_g]
     acc_g = acc_g + 1
     if (rem(x, 2) == 0) do
       filtered = filtered ++ [x]

@@ -5,7 +5,7 @@ defmodule Main do
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
   if (acc_g < length(acc_numbers)) do
-    n = numbers[g]
+    n = acc_numbers[acc_g]
     acc_g = acc_g + 1
     if (rem(n, 2) == 0) do
       evens = evens ++ [n]
@@ -19,7 +19,7 @@ end)
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, g, :ok}, fn _, {acc_numbers, acc_g, acc_state} ->
   if (acc_g < length(acc_numbers)) do
-    n = numbers[g]
+    n = acc_numbers[acc_g]
     acc_g = acc_g + 1
     doubled = doubled ++ [n * 2]
     {:cont, {acc_numbers, acc_g, acc_state}}

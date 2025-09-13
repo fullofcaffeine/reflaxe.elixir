@@ -63,16 +63,7 @@ end)
   def filter(it, f) do
     arr = []
     v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
-  if (acc_v.has_next()) do
-    if (f.(acc_v)) do
-      arr = arr ++ [(acc_v.next())]
-    end
-    {:cont, {acc_v, acc_state}}
-  else
-    {:halt, {acc_v, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} -> nil end)
     arr
   end
   def fold(it, f, first) do
@@ -112,16 +103,7 @@ end)
   end
   def find(it, f) do
     v = it.iterator()
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} ->
-  if (acc_v.has_next()) do
-    if (f.(acc_v)) do
-      (acc_v.next())
-    end
-    {:cont, {acc_v, acc_state}}
-  else
-    {:halt, {acc_v, acc_state}}
-  end
-end)
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {v, :ok}, fn _, {acc_v, acc_state} -> nil end)
     nil
   end
   def empty(it) do

@@ -2,7 +2,7 @@ defmodule EctoIntegrationSimple do
   def main() do
     Log.trace("=== Ecto Integration Test Suite ===", %{:file_name => "EctoIntegrationSimple.hx", :line_number => 218, :class_name => "EctoIntegrationSimple", :method_name => "main"})
     Log.trace("Testing @:schema annotation...", %{:file_name => "EctoIntegrationSimple.hx", :line_number => 221, :class_name => "EctoIntegrationSimple", :method_name => "main"})
-    user = User.new()
+    user = %User{}
     name = "Test User"
     email = "test@example.com"
     Log.trace("Testing @:changeset annotation...", %{:file_name => "EctoIntegrationSimple.hx", :line_number => 227, :class_name => "EctoIntegrationSimple", :method_name => "main"})
@@ -18,11 +18,11 @@ defmodule EctoIntegrationSimple do
     Log.trace("Testing @:liveview with Ecto integration...", %{:file_name => "EctoIntegrationSimple.hx", :line_number => 247, :class_name => "EctoIntegrationSimple", :method_name => "main"})
     _live_view = UserLive.new()
     Log.trace("Testing associations...", %{:file_name => "EctoIntegrationSimple.hx", :line_number => 251, :class_name => "EctoIntegrationSimple", :method_name => "main"})
-    org = Organization.new()
+    org = %Organization{}
     name = "Test Org"
-    post = Post.new()
+    post = %Post{}
     title = "Test Post"
-    comment = Comment.new()
+    comment = %Comment{}
     body = "Test Comment"
     Log.trace("=== All Ecto Integration Tests Completed ===", %{:file_name => "EctoIntegrationSimple.hx", :line_number => 261, :class_name => "EctoIntegrationSimple", :method_name => "main"})
   end

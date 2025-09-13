@@ -8,7 +8,6 @@
   "main.ex",
   "int_iterator.ex",
   "haxe/stack_item.ex",
-  "haxe/iterators/array_key_value_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/_call_stack/call_stack_impl_.ex",
   "_enum_value/enum_value_impl_.ex",
