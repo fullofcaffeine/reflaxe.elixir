@@ -187,6 +187,24 @@ class ElixirASTBuilder {
     public static var compiler: reflaxe.elixir.ElixirCompiler = null;
     
     /**
+     * BehaviorTransformer: Pluggable behavior transformation system
+     * 
+     * WHY: Phoenix.Presence and other Elixir behaviors inject local functions
+     * that have different calling conventions than their module counterparts.
+     * The main compiler shouldn't have hardcoded knowledge of specific behaviors.
+     * 
+     * WHAT: Manages behavior-specific method call transformations based on
+     * module metadata (@:presence, @:genserver, etc.) instead of hardcoded logic.
+     * 
+     * HOW: When compiling a module with behavior annotations, the transformer
+     * is activated and intercepts method calls for behavior-specific handling.
+     * 
+     * @see reflaxe.elixir.behaviors.BehaviorTransformer
+     * @see reflaxe.elixir.behaviors.PresenceBehaviorTransformer
+     */
+    public static var behaviorTransformer: reflaxe.elixir.behaviors.BehaviorTransformer = null;
+    
+    /**
      * Track module dependency when generating remote calls
      * 
      * WHY: Need to ensure modules are loaded in correct order for scripts
@@ -1433,7 +1451,20 @@ class ElixirASTBuilder {
                         switch(e.expr) {
                             case TField(_, FStatic(classRef, cf)):
                                 var classType = classRef.get();
-                                var methodName = cf.get().name;
+                                var field = cf.get();
+                                
+                                // Check if the field has @:native annotation
+                                var methodName = field.name;
+                                if (field.meta.has(":native")) {
+                                    var nativeMeta = field.meta.extract(":native");
+                                    if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                                        switch(nativeMeta[0].params[0].expr) {
+                                            case EConst(CString(s, _)):
+                                                methodName = s; // Use the native name instead
+                                            default:
+                                        }
+                                    }
+                                }
                                 
                                 // Check if we're calling a static method within the same module
                                 // Private functions in Elixir cannot be called with module prefix
@@ -1444,169 +1475,42 @@ class ElixirASTBuilder {
                                 }
                                 
                                 /**
-                                 * Phoenix.Presence Context-Aware Compilation
+                                 * BEHAVIOR TRANSFORMATION INTEGRATION
                                  * 
-                                 * WHY: Phoenix.Presence has dual nature - it's both an external module AND
-                                 * a behavior that injects local functions into modules that use it.
-                                 * When a module includes `use Phoenix.Presence`, it injects functions like
-                                 * track/5, update/5, untrack/4 that require self() as the first argument.
+                                 * WHY: Elixir behaviors (Phoenix.Presence, GenServer, etc.) inject
+                                 * local functions with different calling conventions than their
+                                 * module counterparts. This logic was previously hardcoded here.
                                  * 
-                                 * WHAT: This block detects when we're compiling Phoenix.Presence method calls
-                                 * INSIDE a module marked with @:presence annotation. In this context, we generate
-                                 * local function calls with self() injection instead of remote module calls.
+                                 * WHAT: We now delegate to the BehaviorTransformer system which
+                                 * uses a pluggable architecture to handle behavior-specific
+                                 * transformations based on module metadata.
                                  * 
-                                 * HOW: 
-                                 * 1. Check if the class being called is "Presence" (Phoenix.Presence extern)
-                                 * 2. Check if compiler.isInPresenceModule flag is true (set when compiling @:presence class)
-                                 * 3. Transform method calls to local calls with self() for track/update/untrack
-                                 * 4. Keep list/getByKey as local calls without self() (they don't need it)
+                                 * HOW: The BehaviorTransformer checks if we're in a behavior
+                                 * context (e.g., @:presence module) and applies the appropriate
+                                 * transformation (e.g., inject self() for Presence.track).
                                  * 
-                                 * CRITICAL: This MUST come before the @:native handling block below, otherwise
-                                 * the @:native logic will generate ERemoteCall and override our local call generation.
-                                 * We use else-if chaining to ensure mutual exclusivity of these code paths.
+                                 * BENEFITS:
+                                 * - No hardcoded framework knowledge in main compiler
+                                 * - Extensible to new behaviors without modifying this file
+                                 * - Single Responsibility: Each behavior has its own transformer
+                                 * - Easier testing and maintenance
                                  * 
-                                 * EDGE CASES:
-                                 * - Outside @:presence modules: Falls through to @:native handling for remote calls
-                                 * - Non-Presence @:native classes: Handled by the else-if block below
-                                 * - Overloaded methods: Different arg counts get different self() injection
-                                 * 
-                                 * @see docs/05-architecture/PHOENIX_PRESENCE_INTEGRATION.md
-                                 * @see docs/05-architecture/PHOENIX_PRESENCE_PRD.md
+                                 * @see reflaxe.elixir.behaviors.BehaviorTransformer
+                                 * @see reflaxe.elixir.behaviors.PresenceBehaviorTransformer
                                  */
-                                if (classType.name == "Presence" && 
-                                    compiler != null && 
-                                    compiler.isInPresenceModule) {
+                                if (behaviorTransformer != null) {
+                                    var transformedCall = behaviorTransformer.transformMethodCall(
+                                        classType.name,
+                                        methodName,
+                                        args,
+                                        true // isStatic - all these are static method calls
+                                    );
                                     
-                                    #if debug_presence
-                                    trace('[DEBUG PRESENCE] ✓ DETECTED Presence method inside @:presence module: ${methodName}');
-                                    #end
-                                    
-                                    // Mark that we've handled this Phoenix.Presence call
-                                    presenceHandled = true;
-                                    
-                                    // Strip "Phoenix.Presence." prefix if present (from @:native annotations)
-                                    var shortMethodName = if (methodName.startsWith("Phoenix.Presence.")) {
-                                        methodName.substr("Phoenix.Presence.".length);
-                                    } else {
-                                        methodName;
-                                    }
-                                    
-                                    var snakeCaseMethod = toSnakeCase(shortMethodName);
-                                    
-                                    // Check if this method is one of the special Phoenix.Presence track/update/untrack overloads
-                                    // These methods need special handling based on their argument count
-                                    switch(shortMethodName) {
-                                        case "track":
-                                            // The TodoPresence module is using the overload:
-                                            // track(socket, topic, key, meta) which needs to become
-                                            // track(self(), socket, topic, key, meta)
-                                            #if debug_presence
-                                            trace('[DEBUG PRESENCE] track() with ${args.length} args');
-                                            #end
-                                            if (args.length == 4) {
-                                                // This is the most common case in @:presence modules
-                                                // track(socket, topic, key, meta) -> track(self(), socket, topic, key, meta)
-                                                #if debug_presence
-                                                trace('[DEBUG PRESENCE] ✓ INJECTING self() for track with 4 args');
-                                                #end
-                                                var selfCall = makeAST(ECall(null, "self", []));
-                                                var argsWithSelf = [selfCall].concat(args);
-                                                #if debug_presence
-                                                trace('[DEBUG PRESENCE] Created argsWithSelf: ${argsWithSelf.length} args (was ${args.length})');
-                                                trace('[DEBUG PRESENCE] About to return ECall(null, "track", argsWithSelf)');
-                                                #end
-                                                return ECall(null, "track", argsWithSelf);
-                                            } else if (args.length == 3) {
-                                                // track(socket, key, meta) for channels (less common)
-                                                // This would need the topic added somehow
-                                                var selfCall = makeAST(ECall(null, "self", []));
-                                                var argsWithSelf = [selfCall].concat(args);
-                                                return ECall(null, "track", argsWithSelf);
-                                            }
-                                            // For other arg counts, still make it local but without self()
-                                            return ECall(null, "track", args);
-                                            
-                                        case "trackPid":
-                                            // trackPid(pid, topic, key, meta) -> track(self(), pid, topic, key, meta)
-                                            if (args.length == 4) {
-                                                var selfCall = makeAST(ECall(null, "self", []));
-                                                var argsWithSelf = [selfCall].concat(args);
-                                                return ECall(null, "track", argsWithSelf);
-                                            }
-                                            return ECall(null, "track_pid", args);
-                                            
-                                        case "update":
-                                            // The TodoPresence module is using:
-                                            // update(socket, topic, key, meta) which needs to become
-                                            // update(self(), socket, topic, key, meta)
-                                            #if debug_presence
-                                            trace('[DEBUG PRESENCE] update() with ${args.length} args');
-                                            #end
-                                            if (args.length == 4) {
-                                                // Most common: update(socket, topic, key, meta)
-                                                #if debug_presence
-                                                trace('[DEBUG PRESENCE] ✓ INJECTING self() for update with 4 args');
-                                                #end
-                                                var selfCall = makeAST(ECall(null, "self", []));
-                                                var argsWithSelf = [selfCall].concat(args);
-                                                #if debug_presence
-                                                trace('[DEBUG PRESENCE] Created argsWithSelf: ${argsWithSelf.length} args (was ${args.length})');
-                                                trace('[DEBUG PRESENCE] About to return ECall(null, "update", argsWithSelf)');
-                                                #end
-                                                return ECall(null, "update", argsWithSelf);
-                                            } else if (args.length == 3) {
-                                                // update(socket, key, meta) for channels
-                                                var selfCall = makeAST(ECall(null, "self", []));
-                                                var argsWithSelf = [selfCall].concat(args);
-                                                return ECall(null, "update", argsWithSelf);
-                                            }
-                                            // For other arg counts, still make it local but without self()
-                                            return ECall(null, "update", args);
-                                            
-                                        case "updatePid":
-                                            // updatePid(pid, topic, key, meta) -> update(self(), pid, topic, key, meta)
-                                            if (args.length == 4) {
-                                                var selfCall = makeAST(ECall(null, "self", []));
-                                                var argsWithSelf = [selfCall].concat(args);
-                                                return ECall(null, "update", argsWithSelf);
-                                            }
-                                            return ECall(null, "update_pid", args);
-                                            
-                                        case "untrack":
-                                            // untrack(socket, key) or untrack(socket, topic, key)
-                                            #if debug_presence
-                                            trace('[DEBUG PRESENCE] untrack() with ${args.length} args');
-                                            #end
-                                            if (args.length == 2 || args.length == 3) {
-                                                var selfCall = makeAST(ECall(null, "self", []));
-                                                var argsWithSelf = [selfCall].concat(args);
-                                                return ECall(null, "untrack", argsWithSelf);
-                                            }
-                                            return ECall(null, "untrack", args);
-                                            
-                                        case "untrackPid":
-                                            // untrackPid(pid, topic, key) -> untrack(self(), pid, topic, key)
-                                            if (args.length == 3) {
-                                                var selfCall = makeAST(ECall(null, "self", []));
-                                                var argsWithSelf = [selfCall].concat(args);
-                                                return ECall(null, "untrack", argsWithSelf);
-                                            }
-                                            return ECall(null, "untrack_pid", args);
-                                            
-                                        case "list", "getByKey", "get_by_key":
-                                            #if debug_presence
-                                            trace('[DEBUG PRESENCE] Not adding self() to ${shortMethodName} -> ${snakeCaseMethod}');
-                                            #end
-                                            // These methods don't need self(), just convert to snake_case
-                                            var elixirName = (shortMethodName == "getByKey" || shortMethodName == "get_by_key") ? "get_by_key" : "list";
-                                            return ECall(null, elixirName, args);
-                                            
-                                        default:
-                                            // Any other Presence method should still be a local call
-                                            #if debug_presence
-                                            trace('[DEBUG PRESENCE] Unknown Presence method ${shortMethodName}, making it local');
-                                            #end
-                                            return ECall(null, toSnakeCase(shortMethodName), args);
+                                    if (transformedCall != null) {
+                                        #if debug_behavior_transformer
+                                        trace('[BehaviorTransformer] Transformed ${classType.name}.${methodName} call');
+                                        #end
+                                        return transformedCall.def;  // Extract the ElixirASTDef from the ElixirAST
                                     }
                                 }
                                 
@@ -3477,15 +3381,16 @@ class ElixirASTBuilder {
             // Type Operations
             // ================================================================
             case TTypeExpr(m):
-                // Check if this is an extern class with @:native annotation
+                // Check if this is a class with @:native annotation
                 var moduleName = moduleTypeToString(m);
                 
-                // Check if this module has @:native metadata indicating it's an Elixir module
+                // Check if this module has @:native metadata - this applies to both extern and regular classes
+                // For schemas with @:native("TodoApp.Todo"), we need to use the full module name
                 var isNativeModule = switch(m) {
                     case TClassDecl(c):
                         var cl = c.get();
-                        // Check if it's an extern class with @:native
-                        if (cl.isExtern && cl.meta.has(":native")) {
+                        // Check if it has @:native annotation (for extern OR schema classes)
+                        if (cl.meta.has(":native")) {
                             // Get the native name from metadata
                             var nativeMeta = cl.meta.extract(":native");
                             if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {

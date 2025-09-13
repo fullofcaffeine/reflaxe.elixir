@@ -254,7 +254,7 @@ end
     Phoenix.Component.assign([live_socket, todos], %{:todos => {1}})
   end
   def load_todos(user_id) do
-    query = Ecto.Queryable.to_query(Todo)
+    query = Ecto.Queryable.to_query(TodoApp.Todo)
     this1 = nil
     this1 = query
     this1 = this1
@@ -330,7 +330,7 @@ end)
     Enum.map(tags_string.split(","), fn t -> StringTools.ltrim(StringTools.rtrim(t)) end)
   end
   def get_user_from_session(session) do
-    id_val = Map.get(session, String.to_atom("user_id"))
+    id_val = Reflect.field(session, "user_id")
     uid = if (id_val != nil), do: id_val, else: 1
     %{:id => uid, :name => "Demo User", :email => "demo@example.com", :password_hash => "hashed_password", :confirmed_at => nil, :last_login_at => nil, :active => true}
   end

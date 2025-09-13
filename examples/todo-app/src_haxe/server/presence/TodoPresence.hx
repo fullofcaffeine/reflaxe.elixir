@@ -53,9 +53,13 @@ class TodoPresence {
             editingTodoId: null,  // Not editing initially
             editingStartedAt: null
         };
-        // When inside a Presence module, we need to use the 4-argument version
-        // that includes the topic. The compiler should inject self() automatically.
-        return Presence.trackPid(socket, "users", Std.string(user.id), meta);
+        // Important: We use track() (3 args) instead of trackPid() (4 args) here.
+        // Inside a Phoenix.Presence module (marked with @:presence), the compiler's
+        // BehaviorTransformer automatically injects self() as the first argument.
+        // This is because Phoenix.Presence modules have local versions of these functions
+        // that implicitly use self(). The transformation makes our code match Phoenix patterns.
+        // Generated Elixir: track(self(), socket, user_id, meta)
+        return Presence.track(socket, Std.string(user.id), meta);
     }
     
     /**
@@ -87,7 +91,9 @@ class TodoPresence {
         };
         
         // Phoenix pattern: update existing presence rather than track/untrack
-        // When inside a Presence module, we need to use the 4-argument version
+        // Note: We use updatePid() (4 args) here which doesn't get transformed because
+        // it already has the correct number of arguments for the generated local function.
+        // The BehaviorTransformer only injects self() for the 3-arg versions (track/update/untrack).
         return Presence.updatePid(socket, "users", Std.string(user.id), updatedMeta);
     }
     
