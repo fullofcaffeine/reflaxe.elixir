@@ -120,7 +120,15 @@ class ElixirASTTransformer {
             enabled: true,
             pass: resolveClauseLocalsPass
         });
-        
+
+        // Remove redundant enum extraction pass (must run early to fix pattern matching)
+        passes.push({
+            name: "RemoveRedundantEnumExtraction",
+            description: "Remove redundant elem() calls after pattern extraction in case clauses",
+            enabled: true,
+            pass: removeRedundantEnumExtractionPass
+        });
+
         // Throw statement transformation (must run early to fix complex expressions)
         passes.push({
             name: "ThrowStatementTransform",
@@ -943,10 +951,143 @@ class ElixirASTTransformer {
             return node;
         });
     }
-    
+
+    /**
+     * Remove Redundant Enum Extraction Pass
+     *
+     * WHY: Elixir pattern matching already extracts values, but Haxe generates redundant elem() calls
+     * WHAT: Removes assignments like `g = elem(result, 1)` after pattern `{:ok, g}`
+     * HOW: Detects and removes redundant extraction statements in case bodies
+     *
+     * EXAMPLE:
+     * Before:
+     *   {:ok, g} ->
+     *     g = elem(result, 1)  # Redundant!
+     *     value = g
+     *     value
+     *
+     * After:
+     *   {:ok, g} ->
+     *     value = g
+     *     value
+     */
+    static function removeRedundantEnumExtractionPass(ast: ElixirAST): ElixirAST {
+        trace('[RemoveRedundantEnumExtraction] Starting pass - ALWAYS');
+        #if debug_redundant_extraction
+        trace('[RemoveRedundantEnumExtraction] Debug mode enabled');
+        #end
+
+        // Track the case target variable name for nested detection
+        var caseTargetVar: String = null;
+
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case ECase(target, clauses):
+                    // Extract the case target variable name
+                    switch(target.def) {
+                        case EVar(v): caseTargetVar = v;
+                        case EParen(inner):
+                            switch(inner.def) {
+                                case EVar(v): caseTargetVar = v;
+                                default:
+                            }
+                        default:
+                    }
+
+                    trace('[RemoveRedundantEnumExtraction] Processing case with target: $caseTargetVar');
+                    // Process each case clause
+                    var newClauses = [];
+                    for (clause in clauses) {
+                        // ECaseClause is a typedef with pattern, guard, and body fields
+                        var pattern = clause.pattern;
+                        var guard = clause.guard;
+                        var body = clause.body;
+
+                        // Check if body contains redundant extraction
+                        var newBody = switch(body.def) {
+                            case EBlock(exprs):
+                                // Filter out redundant elem() assignments
+                                var filtered = [];
+                                for (i in 0...exprs.length) {
+                                    var expr = exprs[i];
+                                    var isRedundant = false;
+
+                                    // Check if this is a redundant extraction
+                                    switch(expr.def) {
+                                        case EMatch(PVar(varName), rhs):
+                                            trace('[RemoveRedundantEnumExtraction] Found EMatch with varName: $varName');
+                                            trace('[RemoveRedundantEnumExtraction]   RHS type: ${rhs.def}');
+                                            // Check if RHS is elem(target, index)
+                                            switch(rhs.def) {
+                                                case ECall(targetExpr, funcName, args) if (funcName == "elem" && args.length == 1):
+                                                    trace('[RemoveRedundantEnumExtraction]   - Found elem() call');
+                                                    // Check if elem is extracting from the case target
+                                                    var isTargetMatch = switch(targetExpr.def) {
+                                                        case EVar(v):
+                                                            trace('[RemoveRedundantEnumExtraction]   - elem() target: $v, case target: $caseTargetVar');
+                                                            // Check if this matches the case target variable
+                                                            v == caseTargetVar;
+                                                        default:
+                                                            trace('[RemoveRedundantEnumExtraction]   - elem() target is not a simple variable');
+                                                            false;
+                                                    };
+
+                                                    if (isTargetMatch) {
+                                                        // Check if this variable was already extracted by the pattern
+                                                        // Pattern variables like 'g', 'g1', 'g2' are extracted
+                                                        if (varName == "g" ||
+                                                            (varName.length > 1 && varName.charAt(0) == "g" &&
+                                                             varName.charAt(1) >= '0' && varName.charAt(1) <= '9')) {
+                                                            isRedundant = true;
+                                                            trace('[RemoveRedundantEnumExtraction] FOUND redundant extraction: $varName = elem($caseTargetVar, ...)');
+                                                        } else {
+                                                            trace('[RemoveRedundantEnumExtraction] Not redundant - varName: $varName does not match g pattern');
+                                                        }
+                                                    } else {
+                                                        trace('[RemoveRedundantEnumExtraction] elem() not extracting from case target');
+                                                    }
+                                                default:
+                                            }
+                                        default:
+                                    }
+
+                                    if (!isRedundant) {
+                                        filtered.push(expr);
+                                    }
+                                }
+
+                                // Return filtered block or single expression if only one left
+                                if (filtered.length == 0) {
+                                    makeAST(ENil);
+                                } else if (filtered.length == 1) {
+                                    filtered[0];
+                                } else {
+                                    makeAST(EBlock(filtered));
+                                }
+
+                            default:
+                                body; // Not a block, keep as-is
+                        };
+
+                        // Create new clause with updated body
+                        newClauses.push({
+                            pattern: pattern,
+                            guard: guard,
+                            body: newBody
+                        });
+                    }
+
+                    return makeAST(ECase(target, newClauses));
+
+                default:
+                    return node;
+            }
+        });
+    }
+
     /**
      * Function Reference Transform Pass
-     * 
+     *
      * WHY: When passing functions as references in Elixir, they need the capture operator
      * WHAT: Transforms Module.function__FUNC_REF__N to &Module.function/N
      * HOW: Looks for EField nodes with __FUNC_REF__ marker and converts to capture syntax

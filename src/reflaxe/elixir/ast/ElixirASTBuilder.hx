@@ -660,12 +660,26 @@ class ElixirASTBuilder {
                 // We need to check if the final variable is used
                 var isEnumExtraction = false;
                 var extractedFromTemp = "";
+                var shouldSkipRedundantExtraction = false;
                 if (init != null) {
                     switch(init.expr) {
-                        case TEnumParameter(_, _, _):
+                        case TEnumParameter(e, _, _):
                             // This is the temp extraction: _g = result.elem(1)
                             isEnumExtraction = true;
-                        case TLocal(tempVar) if (tempVar.name.startsWith("_g") || tempVar.name == "g" || 
+                            // Check if this is extracting from a pattern variable in a switch case
+                            // If the variable name is 'g', 'g1', 'g2' etc, and we're extracting from
+                            // a TLocal with a different name, this is redundant extraction
+                            var tempVarName = toElixirVarName(v.name);
+                            trace('[DEBUG] TEnumParameter check: v.name=${v.name}, tempVarName=$tempVarName');
+                            if ((tempVarName == "g" || (tempVarName.length > 1 && tempVarName.charAt(0) == "g" &&
+                                tempVarName.charAt(1) >= '0' && tempVarName.charAt(1) <= '9'))) {
+                                // This variable assignment is redundant - the pattern already extracted it
+                                shouldSkipRedundantExtraction = true;
+                                #if debug_redundant_extraction
+                                trace('[TVar] Detected redundant extraction for $tempVarName (will be filtered at TBlock level)');
+                                #end
+                            }
+                        case TLocal(tempVar) if (tempVar.name.startsWith("_g") || tempVar.name == "g" ||
                                                  ~/^g\d+$/.match(tempVar.name)):
                             // This is assignment from temp: value = g (or _g, g1, g2, etc.)
                             extractedFromTemp = tempVar.name;
@@ -918,12 +932,12 @@ class ElixirASTBuilder {
                             initExpr;
                     };
                     
+                    // Note: Redundant enum extraction is now handled at TBlock level
+                    // We generate the assignment here, but TBlock will filter it out if redundant
                     var result = makeAST(EMatch(
                         PVar(finalVarName),
                         initValue
                     ));
-                    
-                    
                     result;
                 } else {
                     // Uninitialized variable - use nil
@@ -2840,8 +2854,50 @@ class ElixirASTBuilder {
                     }
                 }
                 
-                // Build all expressions
-                var expressions = [for (e in el) buildFromTypedExpr(e, variableUsageMap)];
+                // Build all expressions, filtering out redundant enum extractions
+                var expressions = [];
+                for (e in el) {
+                    // Check if this is a redundant enum extraction we should skip
+                    var shouldSkip = false;
+                    switch(e.expr) {
+                        case TVar(v, init) if (init != null):
+                            switch(init.expr) {
+                                case TEnumParameter(_, _, _):
+                                    // Check if this is a redundant extraction (temp var like _g, g, g1, g2)
+                                    // Check both the original name and the Elixir-converted name
+                                    var originalName = v.name;
+                                    var tempVarName = toElixirVarName(v.name);
+                                    #if debug_redundant_extraction
+                                    trace('[TBlock] TEnumParameter found - originalName: $originalName, tempVarName: $tempVarName');
+                                    #end
+                                    // Check if this matches the temp var pattern (_g, g, g1, g2, etc.)
+                                    if (originalName == "_g" || originalName == "g" ||
+                                        (originalName.startsWith("_g") && originalName.length > 2) ||
+                                        (originalName.startsWith("g") && originalName.length > 1 &&
+                                         originalName.charAt(1) >= '0' && originalName.charAt(1) <= '9')) {
+                                        // Skip this redundant extraction statement
+                                        shouldSkip = true;
+                                        #if debug_redundant_extraction
+                                        trace('[TBlock] *** WILL SKIP *** redundant enum extraction for $originalName (converted to $tempVarName)');
+                                        #end
+                                    } else {
+                                        #if debug_redundant_extraction
+                                        trace('[TBlock] NOT skipping - $originalName does not match temp var pattern');
+                                        #end
+                                    }
+                                case _:
+                            }
+                        case _:
+                    }
+
+                    if (!shouldSkip) {
+                        expressions.push(buildFromTypedExpr(e, variableUsageMap));
+                    } else {
+                        #if debug_redundant_extraction
+                        trace('[TBlock] *** ACTUALLY SKIPPED *** building expression at index $i');
+                        #end
+                    }
+                }
                 
                 // Check if we need to combine inline expansions
                 // Look for patterns like: c = index = expr; obj.method(index)
@@ -4239,49 +4295,55 @@ class ElixirASTBuilder {
                 // Check if this is extracting from an already-extracted pattern variable
                 var skipExtraction = false;
                 var extractedVarName: String = null;
-                
-                switch(e.expr) {
-                    case TLocal(v):
-                        var varName = toElixirVarName(v.name);
-                        
-                        #if debug_enum_extraction
-                        trace('  - TLocal variable: ${v.name} -> $varName');
-                        if (currentClauseContext != null) {
-                            trace('  - ClauseContext has mapping: ${currentClauseContext.localToName.exists(v.id)}');
-                            if (currentClauseContext.localToName.exists(v.id)) {
-                                trace('  - Mapped to: ${currentClauseContext.localToName.get(v.id)}');
-                            }
-                        }
-                        #end
-                        
-                        // Check if this variable was extracted by the pattern
-                        // Pattern extraction creates variables like 'g', 'g1', 'g2' for ignored params
-                        // or uses actual names for named params
-                        if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
-                            // This variable was mapped in the pattern, it's already extracted
-                            extractedVarName = currentClauseContext.localToName.get(v.id);
-                            skipExtraction = true;
-                            
-                            #if debug_enum_extraction  
-                            trace('  - SKIPPING extraction, already extracted to: $extractedVarName');
-                            #end
-                        } else if (varName == "g" || varName.startsWith("g") && varName.charAt(1) >= '0' && varName.charAt(1) <= '9') {
-                            // This looks like a temp var from pattern extraction (g, g1, g2, etc.)
-                            // The pattern already extracted it, don't extract again
-                            extractedVarName = varName;
-                            skipExtraction = true;
-                            
+
+                // Check if we're in a switch case context where patterns have already extracted values
+                // This avoids redundant extraction like: case {:ok, g} -> g = elem(result, 1)
+
+                // Check for local variables that might be extracted pattern variables
+                if (!skipExtraction) {
+                    switch(e.expr) {
+                        case TLocal(v):
+                            var varName = toElixirVarName(v.name);
+
                             #if debug_enum_extraction
-                            trace('  - SKIPPING extraction, detected as pattern temp var: $varName');
+                            trace('  - TLocal variable: ${v.name} -> $varName');
+                            if (currentClauseContext != null) {
+                                trace('  - ClauseContext has mapping: ${currentClauseContext.localToName.exists(v.id)}');
+                                if (currentClauseContext.localToName.exists(v.id)) {
+                                    trace('  - Mapped to: ${currentClauseContext.localToName.get(v.id)}');
+                                }
+                            }
                             #end
-                        }
-                    case _:
-                        // Not a local variable, normal extraction needed
-                        #if debug_enum_extraction
-                        trace('  - Not a TLocal, proceeding with extraction');
-                        #end
+
+                            // Check if this variable was extracted by the pattern
+                            // Pattern extraction creates variables like 'g', 'g1', 'g2' for ignored params
+                            // or uses actual names for named params
+                            if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
+                                // This variable was mapped in the pattern, it's already extracted
+                                extractedVarName = currentClauseContext.localToName.get(v.id);
+                                skipExtraction = true;
+
+                                #if debug_enum_extraction
+                                trace('  - SKIPPING extraction, already extracted to: $extractedVarName');
+                                #end
+                            } else if (varName == "g" || varName.startsWith("g") && varName.charAt(1) >= '0' && varName.charAt(1) <= '9') {
+                                // This looks like a temp var from pattern extraction (g, g1, g2, etc.)
+                                // The pattern already extracted it, don't extract again
+                                extractedVarName = varName;
+                                skipExtraction = true;
+
+                                #if debug_enum_extraction
+                                trace('  - SKIPPING extraction, detected as pattern temp var: $varName');
+                                #end
+                            }
+                        case _:
+                            // Not a local variable, normal extraction needed
+                            #if debug_enum_extraction
+                            trace('  - Not a TLocal, proceeding with extraction');
+                            #end
+                    }
                 }
-                
+
                 if (skipExtraction && extractedVarName != null) {
                     // The pattern already extracted this value, just return the variable reference
                     EVar(extractedVarName);

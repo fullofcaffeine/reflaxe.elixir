@@ -45,8 +45,6 @@ defmodule TodoPubSub do
     user_id = g
     %{:type => "user_offline", :user_id => user_id}
   {:system_alert, message, level} ->
-    g = elem(message, 1)
-    g1 = elem(message, 2)
     message = g
     level = g1
     %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
@@ -65,7 +63,6 @@ end
           bulk_action = parse_bulk_action(msg.action)
           case (bulk_action) do
             {:some, g} ->
-              g = elem(bulk_action, 1)
               action = g
               {:bulk_update, action}
             {:none} ->
@@ -79,7 +76,6 @@ end
           alert_level = parse_alert_level(msg.level)
           case (alert_level) do
             {:some, g} ->
-              g = elem(alert_level, 1)
               level = g
               {:system_alert, msg.message, level}
             {:none} ->
@@ -110,15 +106,12 @@ end
       {:delete_completed} ->
         "delete_completed"
       {:set_priority, priority} ->
-        g = elem(action, 1)
         _priority = g
         "set_priority"
       {:add_tag, tag} ->
-        g = elem(action, 1)
         _tag = g
         "add_tag"
       {:remove_tag, tag} ->
-        g = elem(action, 1)
         _tag = g
         "remove_tag"
     end
