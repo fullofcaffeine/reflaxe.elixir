@@ -468,6 +468,7 @@ class HygieneTransforms {
                     traverseWithContext(target, state, allBindings);
                 }
                 for (arg in args) {
+                    // Each argument needs to be properly traversed to mark variables as used
                     traverseWithContext(arg, state, allBindings);
                 }
                 

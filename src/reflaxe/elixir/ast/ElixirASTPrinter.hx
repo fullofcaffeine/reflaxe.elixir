@@ -35,9 +35,12 @@ using StringTools;
  * @see docs/03-compiler-development/INTERMEDIATE_AST_REFACTORING_PRD.md
  */
 class ElixirASTPrinter {
-    
+
     // Counter for generating unique loop function names
     static var loopIdCounter: Int = 0;
+
+    // Track current module's unused functions for dead code elimination
+    static var currentUnusedFunctions: Null<Array<String>> = null;
     
     /**
      * Public API for printing a single AST (used by ElixirASTBuilder for injection)
@@ -52,7 +55,7 @@ class ElixirASTPrinter {
     
     /**
      * Main entry point: Convert ElixirAST to formatted string
-     * 
+     *
      * WHY: Single public interface for all printing needs
      * WHAT: Recursively converts AST tree to formatted Elixir code
      * HOW: Delegates to specific handlers based on node type
@@ -62,17 +65,51 @@ class ElixirASTPrinter {
         if (ast == null) {
             return "";
         }
-        
+
         #if debug_ast_printer
         trace('[XRay AST Printer] Printing node: ${ast.def}');
         #end
-        
-        var result = printNode(ast.def, indent);
-        
+
+        // Handle EDefmodule specially to extract unused functions metadata
+        var result = switch(ast.def) {
+            case EDefmodule(name, doBlock):
+                // Extract unused functions from metadata if available
+                if (ast.metadata != null && ast.metadata.unusedPrivateFunctions != null) {
+                    currentUnusedFunctions = ast.metadata.unusedPrivateFunctions;
+                }
+
+                var moduleContent = '';
+
+                // Add @compile directive for unused functions if any exist
+                if (ast.metadata != null && ast.metadata.unusedPrivateFunctionsWithArity != null &&
+                    ast.metadata.unusedPrivateFunctionsWithArity.length > 0) {
+                    var unusedFuncList = [];
+                    for (func in ast.metadata.unusedPrivateFunctionsWithArity) {
+                        unusedFuncList.push('{:_${func.name}, ${func.arity}}');
+                    }
+                    if (unusedFuncList.length > 0) {
+                        moduleContent += indentStr(indent + 1) + '@compile [{:nowarn_unused_function, [' + unusedFuncList.join(', ') + ']}]\n\n';
+                    }
+                }
+
+                moduleContent += indentStr(indent + 1) + print(doBlock, indent + 1);
+
+                var moduleResult = 'defmodule ${name} do\n' +
+                    moduleContent + '\n' +
+                    indentStr(indent) + 'end';
+
+                // Clear unused functions after module is printed
+                currentUnusedFunctions = null;
+                moduleResult;
+
+            default:
+                printNode(ast.def, indent);
+        };
+
         #if debug_ast_printer
         trace('[XRay AST Printer] Generated: ${result.substring(0, 100)}...');
         #end
-        
+
         return result;
     }
     
@@ -105,6 +142,8 @@ class ElixirASTPrinter {
                 result;
                 
             case EDefmodule(name, doBlock):
+                // This case is handled in the main print function to access metadata
+                // Should not reach here, but provide fallback
                 'defmodule ${name} do\n' +
                 indentStr(indent + 1) + print(doBlock, indent + 1) + '\n' +
                 indentStr(indent) + 'end';
@@ -120,9 +159,18 @@ class ElixirASTPrinter {
                 indentStr(indent) + 'end';
                 
             case EDefp(name, args, guards, body):
+                // Check if this function is unused and prefix with underscore
+                var funcName = name;
+                if (currentUnusedFunctions != null && currentUnusedFunctions.indexOf(name) != -1) {
+                    // Don't double-prefix if already starts with underscore
+                    if (!name.startsWith("_")) {
+                        funcName = "_" + name;
+                    }
+                }
+
                 var argStr = printPatterns(args);
                 var guardStr = guards != null ? ' when ' + print(guards, 0) : '';
-                'defp ${name}(${argStr})${guardStr} do\n' +
+                'defp ${funcName}(${argStr})${guardStr} do\n' +
                 indentStr(indent + 1) + print(body, indent + 1) + '\n' +
                 indentStr(indent) + 'end';
                 

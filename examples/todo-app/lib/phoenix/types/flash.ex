@@ -1,4 +1,6 @@
 defmodule Flash do
+  @compile [{:nowarn_unused_function, [{:_extract_changeset_errors, 1}]}]
+
   def info(message, title) do
     %{:type => {:info}, :message => message, :title => title, :dismissible => true}
   end
@@ -23,7 +25,7 @@ defmodule Flash do
     message = if (Map.get(phoenix_flash, :message) != nil), do: phoenix_flash.message, else: ""
     %{:type => flash_type, :message => message, :title => phoenix_flash.title, :details => phoenix_flash.details, :dismissible => (if (Map.get(phoenix_flash, :dismissible) != nil), do: phoenix_flash.dismissible, else: true), :timeout => phoenix_flash.timeout, :action => phoenix_flash.action}
   end
-  defp extract_changeset_errors(_changeset) do
+  defp _extract_changeset_errors(_changeset) do
     []
   end
 end

@@ -1,5 +1,7 @@
 defmodule JsonPrinter do
-  defp write_value(struct, v, key) do
+  @compile [{:nowarn_unused_function, [{:_write_value, 3}, {:_write_object, 2}, {:_write_array, 2}, {:_quote_string, 2}]}]
+
+  defp _write_value(struct, v, key) do
     v = if (struct.replacer != nil), do: struct.replacer(key, v), else: v
     if (v == nil), do: "null"
     if (Std.is(v, Bool)) do
@@ -17,7 +19,7 @@ defmodule JsonPrinter do
     if (Std.is(v, Array)), do: struct.write_array(v)
     struct.write_object(v)
   end
-  defp write_array(struct, arr) do
+  defp _write_array(struct, arr) do
     items = []
     g = 0
     g1 = length(arr)
@@ -36,7 +38,7 @@ end)
       "[" <> Enum.join(items, ",") <> "]"
     end
   end
-  defp write_object(struct, obj) do
+  defp _write_object(struct, obj) do
     fields = Map.keys(obj)
     pairs = []
     g = 0
@@ -63,7 +65,7 @@ end)
       "{" <> Enum.join(pairs, ",") <> "}"
     end
   end
-  defp quote_string(_struct, s) do
+  defp _quote_string(_struct, s) do
     result = "\""
     g = 0
     g1 = length(s)
