@@ -3,7 +3,7 @@ defmodule TodoAppWeb.Presence do
   def track_user(socket, user) do
     meta = %{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => user.name, :user_email => user.email, :avatar => nil, :editing_todo_id => nil, :editing_started_at => nil}
     key = Std.string(user.id)
-    track(self(), socket, key, meta)
+    Phoenix.Presence.track(self(), socket, key, meta)
     socket
   end
   def update_user_editing(socket, user, todo_id) do
@@ -15,7 +15,7 @@ else
   nil
 end}
     key = Std.string(user.id)
-    update(self(), socket, key, updated_meta)
+    Phoenix.Presence.update(self(), socket, key, updated_meta)
     socket
   end
   defp get_user_presence(socket, user_id) do
