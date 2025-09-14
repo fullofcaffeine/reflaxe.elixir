@@ -20,11 +20,34 @@ class UsageDetector {
      */
     public static function isVariableUsed(varId: Int, expr: TypedExpr): Bool {
         if (expr == null) return false;
-        
+
+        #if debug_parameter_usage
+        if (varId == 44997 || varId == 44987) {
+            var exprType = Type.enumConstructor(expr.expr);
+            if (exprType == "TWhile") {
+                trace('[UsageDetector] *** FOUND TWhile for key varId=$varId ***');
+            }
+        }
+        #end
+
         return switch(expr.expr) {
             // Direct variable reference
-            case TLocal(v) if (v.id == varId):
-                true;
+            case TLocal(v):
+                #if debug_parameter_usage
+                if (varId == 45014 || varId == 45024 || varId == 45004) {
+                    trace('[UsageDetector] TLocal check: v.id=${v.id}, varId=$varId, match=${v.id == varId}');
+                }
+                #end
+                if (v.id == varId) {
+                    #if debug_parameter_usage
+                    if (varId == 44997 || varId == 45007 || varId == 44987) {
+                        trace('[UsageDetector] *** FOUND MATCH for key! ***');
+                    }
+                    #end
+                    true;
+                } else {
+                    false;
+                }
                 
             // Constructor arguments - CRITICAL: Check all arguments
             case TNew(_, _, args):
@@ -46,9 +69,27 @@ class UsageDetector {
                 
             // Method/function calls - Check all arguments
             case TCall(e, args):
+                #if debug_parameter_usage
+                if (varId == 44997 || varId == 45007 || varId == 44987) {
+                    trace('[UsageDetector] TCall checking for key varId=$varId');
+                    trace('[UsageDetector]   Checking function expression...');
+                }
+                #end
                 if (isVariableUsed(varId, e)) return true;
+                #if debug_parameter_usage
+                if (varId == 44997 || varId == 45007 || varId == 44987) {
+                    trace('[UsageDetector]   Checking ${args.length} arguments...');
+                }
+                #end
                 for (arg in args) {
-                    if (isVariableUsed(varId, arg)) return true;
+                    if (isVariableUsed(varId, arg)) {
+                        #if debug_parameter_usage
+                        if (varId == 44997 || varId == 45007 || varId == 44987) {
+                            trace('[UsageDetector]   FOUND in argument!');
+                        }
+                        #end
+                        return true;
+                    }
                 }
                 false;
                 
@@ -87,12 +128,38 @@ class UsageDetector {
             case TField(e, _):
                 isVariableUsed(varId, e);
                 
+            // Variable declarations with initialization
+            case TVar(v, init):
+                // Don't check if it's the variable itself being declared
+                if (v.id == varId) return false;
+                // Check if the variable is used in the initialization expression
+                init != null ? isVariableUsed(varId, init) : false;
+
             // Block expressions
             case TBlock(exprs):
-                for (e in exprs) {
-                    if (isVariableUsed(varId, e)) return true;
+                #if debug_parameter_usage
+                if ((varId == 45014 || varId == 45024 || varId == 45004) && exprs.length > 0) {
+                    trace('[UsageDetector] TBlock for varId=$varId with ${exprs.length} expressions');
+                    for (i in 0...exprs.length) {
+                        var exprType = Type.enumConstructor(exprs[i].expr);
+                        trace('[UsageDetector]   Expr[$i]: $exprType');
+                        var used = isVariableUsed(varId, exprs[i]);
+                        if (used) {
+                            trace('[UsageDetector]   *** FOUND in expr $i, returning true ***');
+                            return true;
+                        }
+                    }
+                    trace('[UsageDetector]   Not found in any block expression, returning false');
+                    false;
+                } else {
+                #end
+                    for (e in exprs) {
+                        if (isVariableUsed(varId, e)) return true;
+                    }
+                    false;
+                #if debug_parameter_usage
                 }
-                false;
+                #end
                 
             // Switch/case
             case TSwitch(e, cases, edef):
@@ -120,7 +187,22 @@ class UsageDetector {
                 
             // While loops
             case TWhile(econd, e, _):
+                #if debug_parameter_usage
+                if (varId == 45014 || varId == 45024 || varId == 45004) {
+                    trace('[UsageDetector] TWhile for key varId=$varId');
+                    var condUsed = isVariableUsed(varId, econd);
+                    trace('[UsageDetector]   Condition used: $condUsed');
+                    var bodyUsed = isVariableUsed(varId, e);
+                    trace('[UsageDetector]   Body used: $bodyUsed');
+                    var result = condUsed || bodyUsed;
+                    trace('[UsageDetector]   TWhile result: $result');
+                    result;
+                } else {
+                    isVariableUsed(varId, econd) || isVariableUsed(varId, e);
+                }
+                #else
                 isVariableUsed(varId, econd) || isVariableUsed(varId, e);
+                #end
                 
             // For loops
             case TFor(v, e1, e2):
@@ -198,8 +280,11 @@ class UsageDetector {
      */
     public static function isParameterUnused(param: TVar, functionBody: TypedExpr): Bool {
         #if debug_parameter_usage
-        if (param.name == "result") {
-            trace('[UsageDetector] *** CHECKING PARAMETER "result" (id=${param.id}) ***');
+        if (param.name == "key" && param.id == 45007) {
+            trace('[UsageDetector] === START CHECKING key id=45007 ===');
+        }
+        if (param.name == "result" || param.name == "key") {
+            trace('[UsageDetector] *** CHECKING PARAMETER "${param.name}" (id=${param.id}) ***');
             trace('[UsageDetector] Function body type: ${functionBody != null ? Type.enumConstructor(functionBody.expr) : "null"}');
             if (functionBody != null && functionBody.expr != null) {
                 switch (functionBody.expr) {
@@ -215,6 +300,16 @@ class UsageDetector {
         #end
         var isUsed = isVariableUsed(param.id, functionBody);
         #if debug_parameter_usage
+        if (param.name == "key") {
+            trace('[UsageDetector] *** KEY PARAMETER ${param.name} (${param.id}) isUsed=$isUsed ***');
+        }
+        if (param.name == "key" && (param.id == 45014 || param.id == 45024 || param.id == 45004)) {
+            trace('[UsageDetector] *** SPECIAL DEBUG for key (${param.id}) ***');
+            trace('[UsageDetector]   isUsed result: $isUsed');
+            trace('[UsageDetector]   About to examine function body for this specific key');
+            // Let's do a manual check to see what's happening
+            debugTraverseForVariable(param.id, functionBody, 0);
+        }
         trace('[UsageDetector] Parameter ${param.name} (id=${param.id}) is ${isUsed ? "USED" : "UNUSED"}');
         trace('[UsageDetector] Function body type: ${functionBody != null ? Type.enumConstructor(functionBody.expr) : "null"}');
         #end
@@ -230,6 +325,56 @@ class UsageDetector {
         return !isUsed;
     }
     
+    #if debug_parameter_usage
+    /**
+     * Debug function to trace variable usage traversal
+     */
+    private static function debugTraverseForVariable(varId: Int, expr: TypedExpr, depth: Int): Void {
+        if (expr == null) return;
+        var indent = [for (i in 0...depth) "  "].join("");
+
+        switch(expr.expr) {
+            case TLocal(v) if (v.id == varId):
+                trace('$indent[DEBUG] FOUND USAGE: TLocal(${v.name}) with id=$varId');
+            case TCall(e, args):
+                trace('$indent[DEBUG] TCall - checking function and ${args.length} args');
+                debugTraverseForVariable(varId, e, depth + 1);
+                for (arg in args) {
+                    debugTraverseForVariable(varId, arg, depth + 1);
+                }
+            case TWhile(econd, body, _):
+                trace('$indent[DEBUG] TWhile - checking condition and body');
+                debugTraverseForVariable(varId, econd, depth + 1);
+                debugTraverseForVariable(varId, body, depth + 1);
+            case TBlock(exprs):
+                trace('$indent[DEBUG] TBlock with ${exprs.length} expressions');
+                for (e in exprs) {
+                    debugTraverseForVariable(varId, e, depth + 1);
+                }
+            case TVar(v, init):
+                trace('$indent[DEBUG] TVar(${v.name}, id=${v.id})');
+                if (init != null) {
+                    trace('$indent[DEBUG]   Has initialization expression');
+                    debugTraverseForVariable(varId, init, depth + 1);
+                }
+            case TField(e, _):
+                trace('$indent[DEBUG] TField');
+                debugTraverseForVariable(varId, e, depth + 1);
+            case TBinop(op, e1, e2):
+                trace('$indent[DEBUG] TBinop');
+                debugTraverseForVariable(varId, e1, depth + 1);
+                debugTraverseForVariable(varId, e2, depth + 1);
+            case TIf(econd, eif, eelse):
+                trace('$indent[DEBUG] TIf');
+                debugTraverseForVariable(varId, econd, depth + 1);
+                debugTraverseForVariable(varId, eif, depth + 1);
+                if (eelse != null) debugTraverseForVariable(varId, eelse, depth + 1);
+            default:
+                trace('$indent[DEBUG] Other: ${Type.enumConstructor(expr.expr)}');
+        }
+    }
+    #end
+
     /**
      * Special check for parameters used in TNew expressions
      * Sometimes the regular traversal misses these
