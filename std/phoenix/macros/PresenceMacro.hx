@@ -258,6 +258,7 @@ class PresenceMacro {
 			newFields.push(generateSimpleTrack(classTopic));
 			newFields.push(generateSimpleUpdate(classTopic));
 			newFields.push(generateSimpleUntrack(classTopic));
+			newFields.push(generateSimpleList(classTopic));
 		}
 		
 		// Generate chainable socket methods
@@ -591,6 +592,28 @@ class PresenceMacro {
 			}),
 			access: [APublic, AStatic, AInline],
 			doc: "Untrack presence using class-level topic configuration.",
+			meta: [{name: ":doc", pos: Context.currentPos()}]
+		};
+	}
+	
+	/**
+	 * Generate simple list method that uses class-level topic.
+	 * Returns all presences for the configured topic.
+	 */
+	static function generateSimpleList(topic: String): Field {
+		return {
+			name: "listSimple",
+			pos: Context.currentPos(),
+			kind: FFun({
+				args: [],  // No arguments needed
+				ret: macro : Dynamic,  // Returns a map of presence entries
+				expr: macro {
+					// Use Phoenix.Presence.list with the class-level topic
+					return untyped __elixir__('Phoenix.Presence.list({0})', $v{topic});
+				}
+			}),
+			access: [APublic, AStatic, AInline],
+			doc: "List all presences for the class-level topic.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
 		};
 	}
