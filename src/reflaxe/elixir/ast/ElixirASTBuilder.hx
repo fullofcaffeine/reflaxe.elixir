@@ -772,12 +772,18 @@ class ElixirASTBuilder {
                     #if debug_variable_usage
                     trace('[TVar] Variable ${v.name} (id=${v.id}) is UNUSED, adding underscore prefix');
                     #end
-                    "_" + baseName;
+                    var underscoreName = "_" + baseName;
+                    // Register this name in the map so TLocal references use the same name
+                    tempVarRenameMap.set(Std.string(v.id), underscoreName);
+                    underscoreName;
                 } else {
+                    // For used variables, also register to ensure consistency
+                    // This prevents TLocal from applying different transformations
+                    tempVarRenameMap.set(Std.string(v.id), baseName);
                     baseName;
                 };
-                
-                
+
+
                 // Handle variable initialization
                 var matchNode = if (init != null) {
                     // Check if init is a TBlock with null coalescing pattern
