@@ -49,7 +49,7 @@ defmodule Mix.Tasks.Haxe.Gen.Live do
   
   @impl Mix.Task
   def run(args) do
-    {opts, parsed_args, _} = OptionParser.parse(args, 
+    {opts, parsed_args, _errors} = OptionParser.parse(args, 
       switches: [
         context: :string,
         schema: :string,
