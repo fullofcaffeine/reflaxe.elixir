@@ -266,6 +266,35 @@ extern class ExternModule {
 }
 ```
 
+### ⚠️ CRITICAL: Justified Use of Dynamic in Phoenix.Presence Macros
+
+**ARCHITECTURAL DECISION: The PresenceMacro uses Dynamic for socket parameters, and this is CORRECT.**
+
+**Why Dynamic is Justified Here:**
+1. **Multiple Incompatible Socket Types**: 
+   - `phoenix.Socket` (client-side WebSocket, non-generic)
+   - `phoenix.Phoenix.Socket<T>` (server-side LiveView, generic)
+   - These cannot be unified into a single type
+
+2. **Macro Must Generate Universal Code**:
+   - The macro generates methods at compile-time without knowing which Socket type will be used
+   - Must work with ANY socket implementation
+   - Matches Phoenix.Presence's actual duck-typed behavior in Elixir
+
+3. **Type Safety Where It Matters**:
+   - Metadata types remain fully typed (generic parameter M)
+   - Socket is just a container passed through to Phoenix.Presence
+   - Users still have type safety at call sites
+
+4. **No Better Alternative Exists**:
+   - Generic parameters would require knowing socket type at macro time (impossible)
+   - Haxe lacks union types
+   - Creating a common interface would break existing code
+
+**This is a rare case where Dynamic improves the design rather than compromising it.**
+
+See: `std/phoenix/macros/PresenceMacro.hx` for complete documentation
+
 ### ⚠️ CRITICAL: @:native Annotation Pattern for Extern Classes
 
 **FUNDAMENTAL RULE: When an extern class has `@:native("Module.Name")` at the class level, method-level `@:native` annotations should ONLY contain the method name, not the full module path.**

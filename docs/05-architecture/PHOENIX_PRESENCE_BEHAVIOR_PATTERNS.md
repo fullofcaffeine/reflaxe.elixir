@@ -55,30 +55,429 @@ The injected function signatures:
 - `update(pid, topic, key, meta)` - 4 arguments, needs self()
 - `list(topic)` - 1 argument, no self() needed
 
-## Current Implementation: BehaviorTransformer
+## Historical Approach: BehaviorTransformer (Deprecated)
 
-### How It Works
+### Overview
 
-1. **Detection**: The `@:presence` annotation marks a module as a Presence module
-2. **Transformation**: `PresenceBehaviorTransformer` intercepts calls to `Phoenix.Presence` methods
-3. **Injection**: Transforms them to local calls with `self()` injected
+Before the macro-based solution, Reflaxe.Elixir used a creative runtime transformation approach called the BehaviorTransformer. While this has been replaced with the cleaner macro-based solution, it's worth documenting as an interesting architectural exploration.
+
+### How BehaviorTransformer Worked
+
+The BehaviorTransformer was a compiler-level AST transformation system that intercepted method calls during compilation and rewrote them based on context.
+
+#### 1. Detection Phase
 
 ```haxe
-// You write:
+// In PresenceBehaviorTransformer.hx
+function transformMethodCall(
+    className: String,
+    methodName: String,
+    args: Array<ElixirAST>,
+    isStatic: Bool
+): Null<ElixirAST> {
+    // Only transform Phoenix.Presence calls
+    if (className != "Presence" && className != "phoenix.Presence") {
+        return null;
+    }
+    // ...
+}
+```
+
+#### 2. Transformation Logic
+
+The transformer would:
+1. Detect calls to `Phoenix.Presence` methods
+2. Check if the code was inside a `@:presence` annotated module
+3. Transform external calls to internal calls with `self()` injection
+
+```haxe
+// Original Haxe code in a @:presence module:
 Phoenix.Presence.track(socket, user_id, meta);
 
-// Transformer generates:
+// BehaviorTransformer would generate:
 track(self(), socket, user_id, meta);
 ```
 
-### Limitations
+#### 3. Method-Specific Rules
 
-- **Hidden Magic**: The transformation is invisible to developers
-- **Compiler Complexity**: Logic lives in the compiler, not the standard library
-- **Limited IntelliSense**: IDE can't show the actual behavior
-- **Debugging Difficulty**: Errors point to transformed code
+```haxe
+function needsSelf(methodName: String, argCount: Int): Bool {
+    return switch(methodName) {
+        case "track": true;      // Always needs self()
+        case "update": true;     // Always needs self()
+        case "untrack": true;    // Always needs self()
+        case "list", "getByKey": false;  // No self() needed
+        default: false;
+    };
+}
+```
 
-## Future Pattern: BasePresence with Dual API
+### Architecture Details
+
+#### Integration with ElixirCompiler
+
+The BehaviorTransformer was integrated into the main compilation pipeline:
+
+```haxe
+// In ElixirCompiler.hx
+var behaviorTransformers = [
+    new PresenceBehaviorTransformer(),
+    // Other transformers could be added here
+];
+
+// During AST transformation
+for (transformer in behaviorTransformers) {
+    var result = transformer.transformMethodCall(className, methodName, args, isStatic);
+    if (result != null) {
+        return result;  // Use transformed version
+    }
+}
+```
+
+#### Snake Case Conversion
+
+The transformer also handled Haxe's camelCase to Elixir's snake_case:
+
+```haxe
+function toSnakeCase(str: String): String {
+    var result = "";
+    for (i in 0...str.length) {
+        var char = str.charAt(i);
+        if (i > 0 && char == char.toUpperCase() && char != char.toLowerCase()) {
+            result += "_" + char.toLowerCase();
+        } else {
+            result += char.toLowerCase();
+        }
+    }
+    return result;
+}
+```
+
+### Interesting Aspects of the BehaviorTransformer
+
+#### 1. Context-Aware Compilation
+
+The transformer demonstrated how a compiler could be context-aware, generating different code based on where the source appeared:
+
+- Inside a `@:presence` module → Generate internal calls with `self()`
+- Outside (in LiveViews) → Keep external calls to the module
+
+#### 2. Transparent API Transformation
+
+Developers could write consistent code using `Phoenix.Presence` everywhere, and the compiler would "do the right thing" based on context.
+
+#### 3. AST-Level Operation
+
+By working at the AST level rather than string manipulation, the transformer could:
+- Preserve type information
+- Maintain source positions for error reporting
+- Integrate cleanly with the rest of the compilation pipeline
+
+### Limitations That Led to Deprecation
+
+#### 1. Hidden Magic
+
+The transformation was invisible to developers:
+- No IntelliSense hints about the transformation
+- Debugging showed transformed code, not what was written
+- Difficult to understand without reading compiler source
+
+#### 2. Compiler Complexity
+
+The logic lived in the compiler rather than the standard library:
+- Required compiler changes for Phoenix.Presence improvements
+- Couldn't be versioned independently
+- Made the compiler Phoenix-aware (framework coupling)
+
+#### 3. Limited Extensibility
+
+Adding new behaviors required:
+- Creating new transformer classes
+- Modifying the compiler to register them
+- No way for users to create their own behavior transformations
+
+#### 4. Testing Challenges
+
+Testing required:
+- Compiling code and checking generated output
+- No unit testing possible for the transformation logic
+- Difficult to test edge cases
+
+### Lessons Learned
+
+The BehaviorTransformer approach taught valuable lessons:
+
+1. **Explicit is Better Than Implicit**: The macro-based approach makes the dual API explicit and discoverable
+2. **Library Over Compiler**: Moving logic to the standard library (via macros) is more maintainable
+3. **Type System Integration**: Using Haxe's type system (interfaces + macros) provides better IDE support
+4. **User Extensibility**: The macro approach allows users to create their own similar patterns
+
+### Code Archaeology: The Original Implementation
+
+For historical reference, the complete PresenceBehaviorTransformer implementation can be found in the git history at:
+`src/reflaxe/elixir/behaviors/PresenceBehaviorTransformer.hx`
+
+Key commits:
+- Initial implementation: [commit hash]
+- Detection improvements: [commit hash]  
+- Deprecation in favor of macros: [commit hash]
+
+This transformer was an interesting exploration of compiler-assisted API adaptation, showing how a transpiler can bridge differences between source and target language patterns. While ultimately replaced, it demonstrated creative thinking about solving the impedance mismatch between Haxe's static nature and Phoenix's dynamic behavior injection.
+
+## Current Implementation: Macro-Based Dual API
+
+### Overview
+
+The current implementation uses Haxe's macro system to generate both internal and external APIs at compile-time. This approach is cleaner, more maintainable, and provides better IDE support than the previous BehaviorTransformer.
+
+### How It Works
+
+1. **Interface with @:autoBuild**: `PresenceBehavior` interface triggers macro generation
+2. **Compile-Time Generation**: `PresenceMacro.build()` generates methods during compilation
+3. **Dual API**: Both internal (with self()) and external methods are available
+4. **Type Safety**: Full type checking and IntelliSense support
+
+```haxe
+// Developer writes:
+@:native("MyAppWeb.Presence")
+class MyPresence implements PresenceBehavior {
+    // Methods are generated automatically
+}
+
+// Macro generates:
+// - trackInternal(socket, key, meta) → track(self(), socket, key, meta)
+// - track(socket, key, meta) → Phoenix.Presence.track(socket, key, meta)
+// - updateInternal(...), update(...), etc.
+```
+
+### Benefits Over BehaviorTransformer
+
+- **Explicit API**: Developers can see and use both internal and external methods
+- **IDE Support**: Full IntelliSense for all generated methods
+- **Library-Based**: Logic in standard library, not compiler
+- **Extensible**: Users can create similar patterns for other behaviors
+- **Debuggable**: Generated code is visible and debuggable
+
+## Detailed Comparison: BehaviorTransformer vs Macro-Based Approach
+
+### Architecture Comparison
+
+| Aspect | BehaviorTransformer (Old) | Macro-Based (Current) |
+|--------|---------------------------|----------------------|
+| **Location** | Compiler (`src/reflaxe/elixir/behaviors/`) | Standard Library (`std/phoenix/macros/`) |
+| **Trigger** | `@:presence` annotation | `implements PresenceBehavior` |
+| **Generation Time** | During AST transformation | During macro expansion |
+| **Visibility** | Hidden transformation | Explicit generated methods |
+| **Extensibility** | Requires compiler changes | User-definable patterns |
+
+### Code Generation Comparison
+
+#### BehaviorTransformer Approach
+
+```haxe
+// Developer writes:
+@:presence
+class TodoPresence {
+    function trackUser(socket, user) {
+        // Magic happens here - Phoenix.Presence becomes local track()
+        Phoenix.Presence.track(socket, user.id, meta);
+    }
+}
+
+// Generated Elixir (invisible transformation):
+defmodule TodoAppWeb.Presence do
+    use Phoenix.Presence, otp_app: :todo_app
+    
+    def track_user(socket, user) do
+        # Transformer injected self() here
+        track(self(), socket, user.id, meta)
+    end
+end
+```
+
+#### Macro-Based Approach
+
+```haxe
+// Developer writes:
+class TodoPresence implements PresenceBehavior {
+    function trackUser(socket, user) {
+        // Explicit choice: use internal method
+        trackInternal(socket, user.id, meta);
+    }
+}
+
+// Macro generates these methods (visible in IDE):
+class TodoPresence {
+    // Internal API (generated)
+    static function trackInternal(socket, key, meta) {
+        return untyped __elixir__('track({0}, {1}, {2}, {3})', 
+            untyped __elixir__('self()'), socket, key, meta);
+    }
+    
+    // External API (generated)
+    static function track(socket, key, meta) {
+        return Phoenix.Presence.track(socket, key, meta);
+    }
+}
+```
+
+### Developer Experience Comparison
+
+#### BehaviorTransformer DX
+
+```haxe
+// Confusing: Same code, different behavior based on context
+Phoenix.Presence.track(socket, key, meta);  // What does this do?
+// - In @:presence module: Transforms to track(self(), ...)
+// - In LiveView: Stays as Phoenix.Presence.track(...)
+// - No IDE hints about the transformation
+```
+
+#### Macro-Based DX
+
+```haxe
+// Clear: Explicit method choice
+trackInternal(socket, key, meta);  // Obviously internal (with self())
+track(socket, key, meta);          // Obviously external
+// - IDE shows both methods
+// - Autocomplete works
+// - Documentation available
+```
+
+### Debugging Experience Comparison
+
+#### BehaviorTransformer Debugging
+
+```elixir
+# Error in generated Elixir:
+** (ArgumentError) argument error
+    (todo_app) lib/todo_app_web/presence.ex:45: TodoAppWeb.Presence.track_user/2
+    
+# Developer confusion: "But I called Phoenix.Presence.track, not track!"
+# Must understand the hidden transformation to debug
+```
+
+#### Macro-Based Debugging
+
+```elixir
+# Error in generated Elixir:
+** (ArgumentError) argument error  
+    (todo_app) lib/todo_app_web/presence.ex:45: TodoAppWeb.Presence.track_internal/3
+    
+# Clear: Error is in track_internal, which developer explicitly called
+# Stack trace matches what was written
+```
+
+### Maintenance Comparison
+
+#### BehaviorTransformer Maintenance
+
+```haxe
+// To add a new behavior method:
+// 1. Edit PresenceBehaviorTransformer.hx in compiler
+// 2. Add to needsSelf() switch statement
+// 3. Update toSnakeCase() if needed
+// 4. Recompile entire compiler
+// 5. Test with example projects
+// 6. Release new compiler version
+```
+
+#### Macro-Based Maintenance
+
+```haxe
+// To add a new behavior method:
+// 1. Edit PresenceMacro.hx in standard library
+// 2. Add new generateXXX() method
+// 3. No compiler changes needed
+// 4. Users get update with stdlib update
+// 5. Can be versioned independently
+```
+
+### Testing Comparison
+
+#### BehaviorTransformer Testing
+
+```haxe
+// Testing requires full compilation:
+// 1. Create test Haxe file with @:presence
+// 2. Compile to Elixir
+// 3. Check generated output
+// 4. No unit testing possible
+// 5. Difficult to test edge cases
+```
+
+#### Macro-Based Testing  
+
+```haxe
+// Direct testing possible:
+@:build(phoenix.macros.PresenceMacro.build())
+class TestPresence {}
+
+// Can test:
+// - Method generation
+// - Type signatures
+// - Error cases
+// - Edge cases
+// Unit tests can verify macro behavior
+```
+
+### Performance Comparison
+
+| Metric | BehaviorTransformer | Macro-Based |
+|--------|-------------------|-------------|
+| **Compile Time** | Slower (AST traversal) | Faster (macro expansion) |
+| **Runtime** | Identical | Identical |
+| **Memory** | Higher (transformer instances) | Lower (static macros) |
+| **Caching** | Limited | Full macro caching |
+
+### Philosophical Differences
+
+#### BehaviorTransformer Philosophy
+- **Implicit Magic**: "The compiler knows what you mean"
+- **Context-Aware**: "Same code, different behavior based on location"
+- **Compiler-Centric**: "The compiler is smart and handles complexity"
+- **Hidden Complexity**: "Users don't need to know how it works"
+
+#### Macro-Based Philosophy
+- **Explicit Control**: "Developers choose which API to use"
+- **Predictable**: "Same code always does the same thing"
+- **Library-Centric**: "Standard library provides the tools"
+- **Transparent**: "Generated code is visible and understandable"
+
+### Migration Path
+
+For projects using the old BehaviorTransformer:
+
+```haxe
+// Old code:
+@:presence
+class MyPresence {
+    function helper(socket, key, meta) {
+        Phoenix.Presence.track(socket, key, meta);
+    }
+}
+
+// New code:
+class MyPresence implements PresenceBehavior {
+    function helper(socket, key, meta) {
+        trackInternal(socket, key, meta);  // Explicit internal call
+    }
+}
+```
+
+### Conclusion
+
+The macro-based approach represents a maturation of the Phoenix.Presence integration:
+- From **compiler magic** to **standard library patterns**
+- From **implicit behavior** to **explicit APIs**
+- From **hidden transformations** to **visible generated code**
+- From **monolithic compiler** to **modular standard library**
+
+While the BehaviorTransformer was a creative solution that demonstrated the power of AST transformation, the macro-based approach better aligns with Haxe's philosophy of explicit, type-safe code with excellent tooling support
+
+## Alternative Approaches Considered
+
+### Option 1: BasePresence with Dual API
 
 ### The Design
 
