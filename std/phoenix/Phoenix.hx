@@ -181,29 +181,33 @@ extern class LiveView {
     /**
      * Assign multiple values to the socket using a map of assigns
      * 
-     * IMPORTANT: The assigns parameter should be a partial object with only
-     * the fields you want to update. In Elixir, this becomes a map that gets
-     * merged with the existing assigns.
+     * IMPORTANT: Phoenix.LiveView doesn't have a direct assign/2 function.
+     * This function should use the socket's assign function internally.
      * 
-     * NOTE: This maps to Phoenix.LiveView.assign/2 with a map in Elixir.
-     * The @:native("assign") means this compiles to the same Elixir function
-     * as the single-value assign, just with different arity.
+     * In Phoenix LiveView, bulk assigns are done through the socket itself,
+     * not through the Phoenix.LiveView module. This is a helper that generates
+     * the proper socket.assign/2 call.
      * 
      * Example:
      * ```haxe
-     * socket = LiveView.assign_multiple(socket, {
+     * socket = LiveView.assignMultiple(socket, {
      *     user: currentUser,
      *     count: 42,
      *     showForm: true
      * });
      * ```
      * 
+     * Generates:
+     * ```elixir
+     * assign(socket, %{user: current_user, count: 42, show_form: true})
+     * ```
+     * 
      * @param TAssigns The type of socket assigns structure
      * @param assigns Partial assigns object (only fields being updated)
      */
-    @:native("assign")
-    @:native("assign")
-    static function assignMultiple<TAssigns>(socket: Socket<TAssigns>, assigns: Dynamic): Socket<TAssigns>;
+    extern inline static function assignMultiple<TAssigns>(socket: Socket<TAssigns>, assigns: Dynamic): Socket<TAssigns> {
+        return untyped __elixir__('assign({0}, {1})', socket, assigns);
+    }
     
     /**
      * Assign new values only if not already present
