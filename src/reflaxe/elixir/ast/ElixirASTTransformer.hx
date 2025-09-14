@@ -2537,9 +2537,56 @@ class ElixirASTTransformer {
                     
                 // Transform array mutation patterns
                 case ECall(target, "push", [item]):
-                    // array.push(item) becomes array ++ [item]
-                    makeAST(EBinary(Concat, target, makeAST(EList([item]))));
-                    
+                    // Check if this is a push on a field (either direct or via struct)
+                    switch(target.def) {
+                        case EField(structVar, fieldName):
+                            // This is struct.field.push(item) - qualified field access
+                            // Check if structVar is "struct" (the conventional instance parameter)
+                            switch(structVar.def) {
+                                case EVar("struct"):
+                                    // Transform to struct update: %{struct | field: struct.field ++ [item]}
+                                    #if debug_ast_transformer
+                                    trace('[XRay ImmutabilityTransform] Transforming struct.$fieldName.push(item) to struct update');
+                                    #end
+                                    makeAST(EStructUpdate(
+                                        structVar,
+                                        [{
+                                            key: fieldName,
+                                            value: makeAST(EBinary(
+                                                Concat,
+                                                target,  // struct.field
+                                                makeAST(EList([item]))
+                                            ))
+                                        }]
+                                    ));
+                                default:
+                                    node;
+                            }
+                        case EVar(fieldName):
+                            // This is field.push(item) - direct field access
+                            // This happens in instance methods where fields are accessed directly
+                            // We need to transform this to a struct update
+                            #if debug_ast_transformer
+                            trace('[XRay ImmutabilityTransform] Transforming $fieldName.push(item) to struct update');
+                            #end
+                            // Create the struct variable (assuming "struct" is the instance parameter)
+                            var structVar = makeAST(EVar("struct"));
+                            makeAST(EStructUpdate(
+                                structVar,
+                                [{
+                                    key: fieldName,
+                                    value: makeAST(EBinary(
+                                        Concat,
+                                        makeAST(EField(structVar, fieldName)),  // struct.field
+                                        makeAST(EList([item]))
+                                    ))
+                                }]
+                            ));
+                        default:
+                            // Regular array.push(item) becomes array ++ [item]
+                            makeAST(EBinary(Concat, target, makeAST(EList([item]))));
+                    }
+
                 case ECall(target, "pop", []):
                     // array.pop() becomes List.delete_at(array, -1)
                     makeAST(ERemoteCall(
@@ -4708,14 +4755,35 @@ class ElixirASTTransformer {
                     var fixedStatements = [];
                     for (stmt in statements) {
                         var fixed = switch(stmt.def) {
-                            // Check for bare concatenation: var ++ [value]
+                            // Check for bare concatenation: var ++ [value] or struct.field ++ [value]
                             case EBinary(Concat, left, right):
                                 switch(left.def) {
                                     case EVar(name):
                                         // Convert to assignment: var = var ++ [value]
                                         makeAST(EBinary(Match, left, stmt));
+                                    case EField(structVar, fieldName):
+                                        // This is struct.field ++ [value] - a bare concatenation that should update the struct
+                                        // Transform to: struct = %{struct | field: struct.field ++ [value]}
+                                        switch(structVar.def) {
+                                            case EVar("struct"):
+                                                // Create struct update
+                                                makeAST(EBinary(
+                                                    Match,
+                                                    structVar,
+                                                    makeAST(EStructUpdate(
+                                                        structVar,
+                                                        [{
+                                                            key: fieldName,
+                                                            value: stmt  // The concatenation itself
+                                                        }]
+                                                    ))
+                                                ));
+                                            default:
+                                                // Not a struct field, keep as-is
+                                                stmt;
+                                        }
                                     default:
-                                        // Keep as-is if not a simple variable
+                                        // Keep as-is if not a simple variable or field
                                         stmt;
                                 }
                             default:
