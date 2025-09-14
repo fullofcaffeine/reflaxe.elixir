@@ -169,8 +169,9 @@ class PresenceMacro {
 				],
 				ret: macro : T,  // Returns the same socket type
 				expr: macro {
-					// Inject self() as first parameter for internal usage
-					return untyped __elixir__('track({0}, {1}, {2}, {3})', 
+					// Call Phoenix.Presence.track which handles self() injection internally
+					// when called from within a Presence module (using `use Phoenix.Presence`)
+					return untyped __elixir__('Phoenix.Presence.track({0}, {1}, {2}, {3})', 
 						untyped __elixir__('self()'), socket, key, meta);
 				}
 			}),
@@ -201,7 +202,8 @@ class PresenceMacro {
 				],
 				ret: macro : T,
 				expr: macro {
-					return untyped __elixir__('update({0}, {1}, {2}, {3})', 
+					// Call Phoenix.Presence.update which handles self() injection internally
+					return untyped __elixir__('Phoenix.Presence.update({0}, {1}, {2}, {3})', 
 						untyped __elixir__('self()'), socket, key, meta);
 				}
 			}),
@@ -229,7 +231,8 @@ class PresenceMacro {
 				],
 				ret: macro : T,
 				expr: macro {
-					return untyped __elixir__('untrack({0}, {1}, {2})', 
+					// Call Phoenix.Presence.untrack which handles self() injection internally
+					return untyped __elixir__('Phoenix.Presence.untrack({0}, {1}, {2})', 
 						untyped __elixir__('self()'), socket, key);
 				}
 			}),
