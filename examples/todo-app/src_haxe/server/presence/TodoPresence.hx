@@ -123,8 +123,8 @@ class TodoPresence implements PresenceBehavior {
      * Helper to get current user presence metadata
      */
     static function getUserPresence<T>(socket: Socket<T>, userId: Int): Null<PresenceMeta> {
-        // Phoenix.Presence.list requires topic parameter
-        var presences = untyped __elixir__('Phoenix.Presence.list({0})', "users");
+        // Use the generated listSimple() method with class-level topic
+        var presences = listSimple();
         // Note: presences is a Dynamic map, need to use Reflect
         var userKey = Std.string(userId);
         if (Reflect.hasField(presences, userKey)) {
@@ -138,8 +138,8 @@ class TodoPresence implements PresenceBehavior {
      * Get list of users currently online
      */
     public static function listOnlineUsers<T>(socket: Socket<T>): haxe.DynamicAccess<phoenix.Presence.PresenceEntry<PresenceMeta>> {
-        // Use the topic directly since list() needs it
-        return untyped __elixir__('Phoenix.Presence.list({0})', "users");
+        // Use the generated listSimple() method
+        return listSimple();
     }
     
     /**
@@ -149,8 +149,8 @@ class TodoPresence implements PresenceBehavior {
      * querying separate topics - more maintainable and Phoenix-like.
      */
     public static function getUsersEditingTodo<T>(socket: Socket<T>, todoId: Int): Array<PresenceMeta> {
-        // Get all users through Phoenix.Presence.list with topic
-        var allUsers = untyped __elixir__('Phoenix.Presence.list({0})', "users");
+        // Get all users through the generated listSimple() method
+        var allUsers = listSimple();
         var editingUsers = [];
         
         // Iterate over Dynamic presence map using Reflect

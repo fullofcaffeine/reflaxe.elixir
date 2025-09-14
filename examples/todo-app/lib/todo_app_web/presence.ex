@@ -66,6 +66,9 @@ end)
   def untrack_simple(key) do
     Phoenix.Presence.untrack(self(), "users", key)
   end
+  def list_simple() do
+    Phoenix.Presence.list("users")
+  end
   def track_with_socket(socket, topic, key, meta) do
     Phoenix.Presence.track(self(), topic, key, meta)
     socket
