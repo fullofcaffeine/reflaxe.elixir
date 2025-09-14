@@ -1,6 +1,4 @@
 defmodule JsonPrinter do
-  @replacer nil
-  @space nil
   defp write_value(struct, v, key) do
     v = if (struct.replacer != nil), do: struct.replacer(key, v), else: v
     if (v == nil), do: "null"
@@ -65,7 +63,7 @@ end)
       "{" <> Enum.join(pairs, ",") <> "}"
     end
   end
-  defp quote_string(struct, s) do
+  defp quote_string(_struct, s) do
     result = "\""
     g = 0
     g1 = length(s)

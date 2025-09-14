@@ -20,31 +20,31 @@ defmodule TodoPubSub do
   end
   def message_to_elixir(message) do
     base_payload = case (message) do
-  {:todo_created, todo} ->
+  {:todo_created, _todo} ->
     g = elem(message, 1)
     todo = g
     %{:type => "todo_created", :todo => todo}
-  {:todo_updated, todo} ->
+  {:todo_updated, _todo} ->
     g = elem(message, 1)
     todo = g
     %{:type => "todo_updated", :todo => todo}
-  {:todo_deleted, id} ->
+  {:todo_deleted, _id} ->
     g = elem(message, 1)
     id = g
     %{:type => "todo_deleted", :todo_id => id}
-  {:bulk_update, action} ->
+  {:bulk_update, _action} ->
     g = elem(message, 1)
     action = g
     %{:type => "bulk_update", :action => bulk_action_to_string(action)}
-  {:user_online, user_id} ->
+  {:user_online, _user_id} ->
     g = elem(message, 1)
     user_id = g
     %{:type => "user_online", :user_id => user_id}
-  {:user_offline, user_id} ->
+  {:user_offline, _user_id} ->
     g = elem(message, 1)
     user_id = g
     %{:type => "user_offline", :user_id => user_id}
-  {:system_alert, message, level} ->
+  {:system_alert, _message, _level} ->
     message = g
     level = g1
     %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
@@ -105,13 +105,13 @@ end
         "complete_all"
       {:delete_completed} ->
         "delete_completed"
-      {:set_priority, priority} ->
+      {:set_priority, _priority} ->
         _priority = g
         "set_priority"
-      {:add_tag, tag} ->
+      {:add_tag, _tag} ->
         _tag = g
         "add_tag"
-      {:remove_tag, tag} ->
+      {:remove_tag, _tag} ->
         _tag = g
         "remove_tag"
     end

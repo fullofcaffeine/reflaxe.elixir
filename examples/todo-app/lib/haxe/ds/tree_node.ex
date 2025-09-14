@@ -1,9 +1,4 @@
 defmodule TreeNode do
-  @left nil
-  @right nil
-  @key nil
-  @value nil
-  @_height nil
   def get_height(struct) do
     struct._height
   end

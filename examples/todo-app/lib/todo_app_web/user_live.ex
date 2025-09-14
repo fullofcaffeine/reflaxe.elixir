@@ -10,19 +10,19 @@ defmodule TodoAppWeb.UserLive do
     case (event) do
       {:new_user} ->
         handle_new_user(live_socket)
-      {:edit_user, id} ->
+      {:edit_user, _id} ->
         id = g
         handle_edit_user(id, live_socket)
-      {:save_user, params} ->
+      {:save_user, _params} ->
         params = g
         handle_save_user(params, live_socket)
-      {:delete_user, id} ->
+      {:delete_user, _id} ->
         id = g
         handle_delete_user(id, live_socket)
-      {:search, params} ->
+      {:search, _params} ->
         params = g
         handle_search(params.search_term, live_socket)
-      {:filter_status, params} ->
+      {:filter_status, _params} ->
         params = g
         handle_filter_status(params.status, live_socket)
       {:clear_search} ->

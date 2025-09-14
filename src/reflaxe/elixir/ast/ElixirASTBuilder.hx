@@ -3003,6 +3003,19 @@ class ElixirASTBuilder {
                     // This is critical for determining whether to use wildcards or named patterns
                     // Pass case values to extract pattern variable names like "email" from case Ok(email):
                     var extractedParams = analyzeEnumParameterExtraction(c.expr, c.values);
+
+                    // Check which extracted parameters are actually used in the case body
+                    // and prefix unused ones with underscore
+                    for (i in 0...extractedParams.length) {
+                        if (extractedParams[i] != null) {
+                            var paramName = extractedParams[i];
+                            // Check if this variable is used in the case body
+                            var isUsed = isPatternVariableUsed(paramName, c.expr);
+                            if (!isUsed && !paramName.startsWith("_")) {
+                                extractedParams[i] = "_" + paramName;
+                            }
+                        }
+                    }
                     
                     // Create variable mappings for alpha-renaming
                     // This maps Haxe's temporary variable IDs to canonical pattern names
@@ -3015,10 +3028,10 @@ class ElixirASTBuilder {
                         // - Regular enums: Try to preserve pattern variable names (r, g, b)
                         if (isIdiomaticEnum) {
                             // Idiomatic enums use generic extraction
-                            [for (v in c.values) convertIdiomaticEnumPatternWithExtraction(v, enumType, extractedParams)];
+                            [for (v in c.values) convertIdiomaticEnumPatternWithExtraction(v, enumType, extractedParams, variableUsageMap)];
                         } else {
                             // Regular enums also generate tuple patterns but try to preserve names
-                            [for (v in c.values) convertRegularEnumPatternWithExtraction(v, enumType, extractedParams)];
+                            [for (v in c.values) convertRegularEnumPatternWithExtraction(v, enumType, extractedParams, variableUsageMap)];
                         }
                     } else {
                         // Non-enum patterns or unknown enum types
@@ -3045,8 +3058,10 @@ class ElixirASTBuilder {
                     
                     // Multiple patterns become multiple clauses
                     for (pattern in patterns) {
+                        // Apply underscore prefix to unused pattern variables
+                        var finalPattern = applyUnderscorePrefixToUnusedPatternVars(pattern, variableUsageMap, extractedParams);
                         clauses.push({
-                            pattern: pattern,
+                            pattern: finalPattern,
                             guard: null, // Guards will be added in transformation
                             body: body
                         });
@@ -5299,8 +5314,8 @@ class ElixirASTBuilder {
      * HOW: Uses the provided enum type to map indices to constructor names and extractedParams
      *      to determine which parameters need named patterns vs wildcards
      */
-    static function convertIdiomaticEnumPatternWithExtraction(value: TypedExpr, enumType: EnumType, extractedParams: Array<String>): EPattern {
-        return convertIdiomaticEnumPatternWithTypeImpl(value, enumType, extractedParams);
+    static function convertIdiomaticEnumPatternWithExtraction(value: TypedExpr, enumType: EnumType, extractedParams: Array<String>, variableUsageMap: Map<Int, Bool> = null): EPattern {
+        return convertIdiomaticEnumPatternWithTypeImpl(value, enumType, extractedParams, variableUsageMap);
     }
     
     /**
@@ -5323,7 +5338,7 @@ class ElixirASTBuilder {
      * HOW: Similar to idiomatic pattern conversion but uses pattern variable names from case values
      *      instead of the generic extraction logic
      */
-    static function convertRegularEnumPatternWithExtraction(value: TypedExpr, enumType: EnumType, extractedParams: Array<String>): EPattern {
+    static function convertRegularEnumPatternWithExtraction(value: TypedExpr, enumType: EnumType, extractedParams: Array<String>, variableUsageMap: Map<Int, Bool> = null): EPattern {
         return switch(value.expr) {
             // Haxe internally converts enum constructors to integers for switch
             case TConst(TInt(index)):
@@ -5483,7 +5498,7 @@ class ElixirASTBuilder {
     /**
      * Internal implementation for idiomatic enum pattern conversion
      */
-    static function convertIdiomaticEnumPatternWithTypeImpl(value: TypedExpr, enumType: EnumType, extractedParams: Null<Array<String>>): EPattern {
+    static function convertIdiomaticEnumPatternWithTypeImpl(value: TypedExpr, enumType: EnumType, extractedParams: Null<Array<String>>, variableUsageMap: Map<Int, Bool> = null): EPattern {
         return switch(value.expr) {
             // Haxe internally converts enum constructors to integers for switch
             case TConst(TInt(index)):
@@ -8225,6 +8240,144 @@ class ElixirASTBuilder {
         return true; // All checks passed
     }
     
+    /**
+     * Check if a pattern variable is actually used in the case body
+     *
+     * WHY: Unused pattern variables should become wildcards or have underscore prefix
+     * WHAT: Checks if a given variable name appears as used in the usage map
+     * HOW: Since we don't have direct TVar ID for pattern vars, we check by analyzing
+     *      the case body to see if any TLocal references this variable
+     */
+    static function isPatternVariableUsed(varName: String, caseBody: TypedExpr): Bool {
+        // Check if this variable is referenced in the case body
+        var isUsed = false;
+
+        function checkUsage(expr: TypedExpr): Void {
+            switch(expr.expr) {
+                case TLocal(v) if (toElixirVarName(v.name) == varName):
+                    isUsed = true;
+                case TVar(v, _) if (toElixirVarName(v.name) == varName):
+                    // Variable is declared but we need to check if it's used
+                    // Don't mark as used just for declaration
+                default:
+                    // Recursively check sub-expressions
+                    haxe.macro.TypedExprTools.iter(expr, checkUsage);
+            }
+        }
+
+        if (caseBody != null) {
+            checkUsage(caseBody);
+        }
+
+        return isUsed;
+    }
+
+    /**
+     * Apply underscore prefix to unused pattern variables
+     *
+     * WHY: In Elixir, unused variables should be prefixed with underscore to avoid warnings
+     * WHAT: Checks each pattern variable against the usage map and prefixes with _ if unused
+     * HOW: Recursively traverses patterns and renames PVar nodes when the variable is unused
+     */
+    static function applyUnderscorePrefixToUnusedPatternVars(pattern: EPattern, variableUsageMap: Map<Int, Bool>, extractedParams: Array<String>): EPattern {
+        return switch(pattern) {
+            case PTuple(patterns):
+                // Process tuple patterns (like {:ok, g} or {:error, g})
+                var updatedPatterns = [];
+                for (i in 0...patterns.length) {
+                    var p = patterns[i];
+                    switch(p) {
+                        case PVar(name):
+                            // Check if this variable is used in the case body
+                            var isUsed = false;
+
+                            // Try to find the variable in the usage map
+                            // We need to check if any variable with this name is used
+                            // This is a simplified check - ideally we'd have the TVar ID
+                            for (id => used in variableUsageMap) {
+                                // Since we don't have direct mapping from name to ID here,
+                                // we check if the extracted param at this position is used
+                                // by looking for any usage of variables with similar names
+                                if (used && extractedParams != null && i - 1 < extractedParams.length &&
+                                    extractedParams[i - 1] == name) {
+                                    isUsed = true;
+                                    break;
+                                }
+                            }
+
+                            // If not used, prefix with underscore
+                            if (!isUsed && !name.startsWith("_")) {
+                                updatedPatterns.push(PVar("_" + name));
+                            } else {
+                                updatedPatterns.push(p);
+                            }
+                        default:
+                            updatedPatterns.push(applyUnderscorePrefixToUnusedPatternVars(p, variableUsageMap, extractedParams));
+                    }
+                }
+                PTuple(updatedPatterns);
+
+            case PVar(name):
+                // Single variable pattern - check usage
+                // This is a simplified implementation - in practice we'd need better tracking
+                PVar(name); // Keep as-is for now
+
+            case PLiteral(_) | PWildcard:
+                // Literals and wildcards don't need modification
+                pattern;
+
+            case PList(elements):
+                // Process list patterns
+                PList([for (e in elements) applyUnderscorePrefixToUnusedPatternVars(e, variableUsageMap, extractedParams)]);
+
+            case PCons(head, tail):
+                // Process cons pattern [head | tail]
+                PCons(
+                    applyUnderscorePrefixToUnusedPatternVars(head, variableUsageMap, extractedParams),
+                    applyUnderscorePrefixToUnusedPatternVars(tail, variableUsageMap, extractedParams)
+                );
+
+            case PMap(pairs):
+                // Process map patterns
+                PMap([for (pair in pairs) {
+                    key: pair.key,
+                    value: applyUnderscorePrefixToUnusedPatternVars(pair.value, variableUsageMap, extractedParams)
+                }]);
+
+            case PStruct(module, fields):
+                // Process struct patterns
+                PStruct(module, [for (f in fields) {
+                    key: f.key,
+                    value: applyUnderscorePrefixToUnusedPatternVars(f.value, variableUsageMap, extractedParams)
+                }]);
+
+            case PPin(subPattern):
+                // Process pinned pattern ^var
+                PPin(applyUnderscorePrefixToUnusedPatternVars(subPattern, variableUsageMap, extractedParams));
+
+            case PAlias(varName, subPattern):
+                // Process alias pattern (var = pattern)
+                var isUsed = false;
+                for (param in extractedParams) {
+                    if (param == varName) {
+                        isUsed = true;
+                        break;
+                    }
+                }
+                var newVarName = (!isUsed && !varName.startsWith("_")) ? "_" + varName : varName;
+                PAlias(newVarName, applyUnderscorePrefixToUnusedPatternVars(subPattern, variableUsageMap, extractedParams));
+
+            case PBinary(segments):
+                // Process binary patterns
+                PBinary([for (s in segments) {
+                    pattern: applyUnderscorePrefixToUnusedPatternVars(s.pattern, variableUsageMap, extractedParams),
+                    size: s.size,
+                    type: s.type,
+                    modifiers: s.modifiers
+                }]);
+        }
+    }
+
     /**
      * Extract list elements from a list-building block
      * Returns the array of expressions that make up the list elements

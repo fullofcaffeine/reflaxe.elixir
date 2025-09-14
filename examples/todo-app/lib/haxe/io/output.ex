@@ -1,9 +1,8 @@
 defmodule Output do
-  @big_endian nil
-  defp set_big_endian(struct, b) do
+  defp set_big_endian(_struct, b) do
     b
   end
-  def write_byte(struct, _c) do
+  def write_byte(_struct, _c) do
     nil
   end
   def write_bytes(struct, b, pos, len) do
@@ -47,10 +46,10 @@ end)
   def write_string(struct, s) do
     struct.write((Bytes.of_string(s, nil)))
   end
-  def flush(struct) do
+  def flush(_struct) do
     nil
   end
-  def close(struct) do
+  def close(_struct) do
     nil
   end
 end

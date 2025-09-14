@@ -19,7 +19,7 @@ defmodule HttpStatusTools do
         405
       {:internal_server_error} ->
         500
-      {:custom, code} ->
+      {:custom, _code} ->
         code = g
         code
     end
