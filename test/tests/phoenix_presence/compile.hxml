@@ -1,0 +1,6 @@
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
+--macro reflaxe.ReflaxeInit.init()
+-main Main
+--no-output
