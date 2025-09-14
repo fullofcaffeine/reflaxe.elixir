@@ -1,4 +1,6 @@
 defmodule TodoPubSub do
+  @compile [{:nowarn_unused_function, [{:_parse_bulk_action, 1}, {:_parse_alert_level, 1}, {:_bulk_action_to_string, 1}, {:_alert_level_to_string, 1}]}]
+
   def subscribe(topic) do
     Phoenix.SafePubSub.subscribe_with_converter(topic, &TodoPubSub.topic_to_string/1)
   end
@@ -99,7 +101,7 @@ end
         :none
     end
   end
-  defp bulk_action_to_string(action) do
+  defp _bulk_action_to_string(action) do
     case (action) do
       {:complete_all} ->
         "complete_all"
@@ -116,7 +118,7 @@ end
         "remove_tag"
     end
   end
-  defp parse_bulk_action(action) do
+  defp _parse_bulk_action(action) do
     case (action) do
       "add_tag" ->
         {:add_tag, ""}
@@ -132,7 +134,7 @@ end
         :none
     end
   end
-  defp alert_level_to_string(level) do
+  defp _alert_level_to_string(level) do
     case (level) do
       {:info} ->
         "info"
@@ -144,7 +146,7 @@ end
         "critical"
     end
   end
-  defp parse_alert_level(level) do
+  defp _parse_alert_level(level) do
     case (level) do
       "critical" ->
         {:critical}

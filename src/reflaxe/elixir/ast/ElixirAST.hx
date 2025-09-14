@@ -710,7 +710,11 @@ typedef ElixirMetadata = {
     ?isFluentMethod: Bool,         // Method returns 'this' for chaining
     ?mutatesFields: Array<String>, // Fields mutated in this method (e.g., ["columns", "indexes"])
     ?fieldMutations: Array<{field: String, expr: ElixirAST}>, // Field mutation operations
-    ?returnsThis: Bool            // Method returns 'this' for fluent chaining
+    ?returnsThis: Bool,           // Method returns 'this' for fluent chaining
+
+    // Dead Code Elimination (Added January 2025)
+    ?unusedPrivateFunctions: Array<String>,  // List of unused private function names in the module
+    ?unusedPrivateFunctionsWithArity: Array<{name: String, arity: Int}>  // List with arities for @compile directive
 }
 
 // ============================================================================

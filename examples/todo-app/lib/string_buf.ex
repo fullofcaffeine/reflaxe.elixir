@@ -1,5 +1,7 @@
 defmodule StringBuf do
-  defp get_length(struct) do
+  @compile [{:nowarn_unused_function, [{:_get_length, 1}]}]
+
+  defp _get_length(struct) do
     joined = Enum.join(struct.parts, "")
     length(joined)
   end

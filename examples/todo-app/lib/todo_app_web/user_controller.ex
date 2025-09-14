@@ -1,6 +1,8 @@
 defmodule TodoAppWeb.UserController do
+  @compile [{:nowarn_unused_function, [{:_generate_unique_id, 0}]}]
+
   use TodoAppWeb, :controller
-  defp generate_unique_id() do
+  defp _generate_unique_id() do
     timestamp = Date_Impl_.get_time(DateTime.utc_now())
     v = :rand.uniform() * 10000
     random = floor(v)

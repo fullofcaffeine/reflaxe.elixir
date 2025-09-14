@@ -1,4 +1,6 @@
 defmodule TranslationBindings_Impl_ do
+  @compile [{:nowarn_unused_function, [{:__new, 1}]}]
+
   defp _new(map) do
     this1 = map
     this1

@@ -918,6 +918,14 @@ class ModuleBuilder {
                             makeAST(ENil);
                         }
                         
+                        // Register private functions with the usage collector
+                        if (!func.isPublic && reflaxe.elixir.ElixirCompiler.instance != null) {
+                            var compiler = reflaxe.elixir.ElixirCompiler.instance;
+                            if (compiler.functionUsageCollector != null) {
+                                compiler.functionUsageCollector.registerPrivateFunction(funcName, args.length);
+                            }
+                        }
+
                         // Create the function definition (use defp for private functions)
                         if (func.isPublic) {
                             statements.push(makeAST(EDef(funcName, args, null, body)));
@@ -1068,6 +1076,14 @@ class ModuleBuilder {
                             makeAST(ENil);
                         }
                         
+                        // Register private functions with the usage collector
+                        if (!func.isPublic && reflaxe.elixir.ElixirCompiler.instance != null) {
+                            var compiler = reflaxe.elixir.ElixirCompiler.instance;
+                            if (compiler.functionUsageCollector != null) {
+                                compiler.functionUsageCollector.registerPrivateFunction(funcName, args.length);
+                            }
+                        }
+
                         // Create the function definition (use defp for private functions)
                         if (func.isPublic) {
                             statements.push(makeAST(EDef(funcName, args, null, body)));
@@ -1120,6 +1136,14 @@ class ModuleBuilder {
                             makeAST(ENil);
                         }
                         
+                        // Register private functions with the usage collector
+                        if (!func.isPublic && reflaxe.elixir.ElixirCompiler.instance != null) {
+                            var compiler = reflaxe.elixir.ElixirCompiler.instance;
+                            if (compiler.functionUsageCollector != null) {
+                                compiler.functionUsageCollector.registerPrivateFunction(funcName, args.length);
+                            }
+                        }
+
                         // Create the function definition (use defp for private functions)
                         if (func.isPublic) {
                             statements.push(makeAST(EDef(funcName, args, null, body)));
@@ -1268,10 +1292,16 @@ class ModuleBuilder {
                             args = [EPattern.PVar(structParamName)].concat(args);
                         }
                         
-                        // Create the function definition (use defp for private functions)
+                        // Register private functions with the usage collector
                         // Special case: static main() must always be public for bootstrap code to work
                         var forcePublic = (funcName == "main" && isStatic);
-                        
+                        if (!func.isPublic && !forcePublic && reflaxe.elixir.ElixirCompiler.instance != null) {
+                            var compiler = reflaxe.elixir.ElixirCompiler.instance;
+                            if (compiler.functionUsageCollector != null) {
+                                compiler.functionUsageCollector.registerPrivateFunction(funcName, args.length);
+                            }
+                        }
+
                         if (func.isPublic || forcePublic) {
                             statements.push(makeAST(EDef(funcName, args, null, clause.body)));
                         } else {
@@ -1382,6 +1412,14 @@ class ModuleBuilder {
                             makeAST(ENil);
                         }
                         
+                        // Register private functions with the usage collector
+                        if (!func.isPublic && reflaxe.elixir.ElixirCompiler.instance != null) {
+                            var compiler = reflaxe.elixir.ElixirCompiler.instance;
+                            if (compiler.functionUsageCollector != null) {
+                                compiler.functionUsageCollector.registerPrivateFunction(funcName, args.length);
+                            }
+                        }
+
                         // Create the function definition (use defp for private functions)
                         var funcAST = if (func.isPublic) {
                             makeAST(EDef(funcName, args, null, body));

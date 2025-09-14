@@ -1,5 +1,7 @@
 defmodule Input do
-  defp set_big_endian(_struct, b) do
+  @compile [{:nowarn_unused_function, [{:_set_big_endian, 2}]}]
+
+  defp _set_big_endian(_struct, b) do
     b
   end
   def read_byte(_struct) do

@@ -1,13 +1,15 @@
 defmodule BalancedTree do
+  @compile [{:nowarn_unused_function, [{:_set_loop, 4}, {:_remove_min_binding, 2}, {:_remove_loop, 3}, {:_min_binding, 2}, {:_merge, 3}, {:_keys_loop, 3}, {:_iterator_loop, 3}, {:_compare, 3}, {:_balance, 5}]}]
+
   def set(struct, key, value) do
     root = struct.set_loop(key, value, struct.root)
     %{struct | root: root}
   end
-  def get(struct, _key) do
+  def get(struct, key) do
     node = struct.root
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
   if (acc_node != nil) do
-    c = struct.compare(_key, acc_node.key)
+    c = struct.compare(key, acc_node.key)
     if (c == 0), do: acc_node.value
     nil
     {:cont, {acc_node, acc_state}}
@@ -22,11 +24,11 @@ end)
     if (result != nil), do: result.found
     false
   end
-  def exists(struct, _key) do
+  def exists(struct, key) do
     node = struct.root
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
   if (acc_node != nil) do
-    c = struct.compare(_key, acc_node.key)
+    c = struct.compare(key, acc_node.key)
     if (c == 0), do: true, else: nil
     {:cont, {acc_node, acc_state}}
   else
@@ -53,7 +55,7 @@ end)
     root = struct.root
     copied
   end
-  defp set_loop(struct, k, v, node) do
+  defp _set_loop(struct, k, v, node) do
     if (node == nil) do
       TreeNode.new(nil, k, v, nil, -1)
     end
@@ -68,7 +70,7 @@ end)
       end
     end
   end
-  defp remove_loop(struct, k, node) do
+  defp _remove_loop(struct, k, node) do
     if (node == nil), do: %{:node => nil, :found => false}
     c = struct.compare(k, node.key)
     if (c == 0) do
@@ -85,38 +87,38 @@ end)
       end
     end
   end
-  defp iterator_loop(struct, node, acc) do
+  defp _iterator_loop(struct, node, acc) do
     if (node != nil) do
       struct.iterator_loop(node.left, acc)
       acc = acc ++ [node.value]
       struct.iterator_loop(node.right, acc)
     end
   end
-  defp keys_loop(struct, node, acc) do
+  defp _keys_loop(struct, node, acc) do
     if (node != nil) do
       struct.keys_loop(node.left, acc)
       acc = acc ++ [node.key]
       struct.keys_loop(node.right, acc)
     end
   end
-  defp merge(struct, t1, t2) do
+  defp _merge(struct, t1, t2) do
     if (t1 == nil), do: t2
     if (t2 == nil), do: t1
     t = struct.min_binding(t2)
     if (t == nil), do: t1
     struct.balance(t1, t.key, t.value, struct.remove_min_binding(t2))
   end
-  defp min_binding(struct, t) do
+  defp _min_binding(struct, t) do
     if (t == nil), do: nil
     if (t.left == nil), do: t
     struct.min_binding(t.left)
   end
-  defp remove_min_binding(struct, t) do
+  defp _remove_min_binding(struct, t) do
     if (t == nil), do: nil
     if (t.left == nil), do: t.right
     struct.balance(struct.remove_min_binding(t.left), t.key, t.value, t.right)
   end
-  defp balance(_struct, l, k, v, r) do
+  defp _balance(_struct, l, k, v, r) do
     hl = l.get_height()
     hr = r.get_height()
     if (hl > hr + 2) do
@@ -137,7 +139,7 @@ end)
       end
     end
   end
-  defp compare(_struct, k1, k2) do
+  defp _compare(_struct, k1, k2) do
     cond do
       k1 < k2 ->
         -1

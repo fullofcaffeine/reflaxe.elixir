@@ -1,4 +1,6 @@
 defmodule Date_Impl_ do
+  @compile [{:nowarn_unused_function, [{:_neq, 2}, {:_lte, 2}, {:_lt, 2}, {:_gte, 2}, {:_gt, 2}, {:_eq, 2}]}]
+
   def now() do
     DateTime.utc_now()
   end
@@ -117,24 +119,24 @@ defmodule Date_Impl_ do
     
             %DateTime{this1 | hour: 23, minute: 59, second: 59, microsecond: {999999, 6}}
   end
-  defp gt(a, b) do
+  defp _gt(a, b) do
     DateTime.compare(a, b) == ":gt"
   end
-  defp lt(a, b) do
+  defp _lt(a, b) do
     DateTime.compare(a, b) == ":lt"
   end
-  defp gte(a, b) do
+  defp _gte(a, b) do
     result = DateTime.compare(a, b)
     result == ":gt" || result == ":eq"
   end
-  defp lte(a, b) do
+  defp _lte(a, b) do
     result = DateTime.compare(a, b)
     result == ":lt" || result == ":eq"
   end
-  defp eq(a, b) do
+  defp _eq(a, b) do
     DateTime.compare(a, b) == ":eq"
   end
-  defp neq(a, b) do
+  defp _neq(a, b) do
     DateTime.compare(a, b) != ":eq"
   end
 end

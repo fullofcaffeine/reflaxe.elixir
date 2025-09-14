@@ -812,7 +812,7 @@ defmodule Mix.Tasks.Haxe.Gen.Live do
     """
   end
   
-  defp generate_function_components(config) do
+  defp generate_function_components(_config) do
     """
     function renderModal(assigns: Dynamic): String {
         return hxx('
