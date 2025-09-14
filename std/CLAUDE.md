@@ -266,34 +266,50 @@ extern class ExternModule {
 }
 ```
 
-### ⚠️ CRITICAL: Justified Use of Dynamic in Phoenix.Presence Macros
+### ⚠️ CRITICAL: Generic Type Parameters for Phoenix.Presence - NO DYNAMIC!
 
-**ARCHITECTURAL DECISION: The PresenceMacro uses Dynamic for socket parameters, and this is CORRECT.**
+**ARCHITECTURAL SOLUTION: The PresenceMacro uses generic type parameters <T, M> for complete type safety.**
 
-**Why Dynamic is Justified Here:**
-1. **Multiple Incompatible Socket Types**: 
-   - `phoenix.Socket` (client-side WebSocket, non-generic)
-   - `phoenix.Phoenix.Socket<T>` (server-side LiveView, generic)
-   - These cannot be unified into a single type
+**How Generic Types Solve the Multiple Socket Problem:**
+1. **Generic Parameter T Handles All Socket Types**: 
+   - `phoenix.Socket` (client-side WebSocket, non-generic) ✅
+   - `Phoenix.Socket<T>` (server-side LiveView, generic) ✅
+   - Custom socket types (user-defined) ✅
+   - ALL work with the same generic parameter
 
-2. **Macro Must Generate Universal Code**:
-   - The macro generates methods at compile-time without knowing which Socket type will be used
-   - Must work with ANY socket implementation
-   - Matches Phoenix.Presence's actual duck-typed behavior in Elixir
+2. **Macro Generates Type-Safe Universal Code**:
+   - Methods use `<T, M>` generic parameters at compile-time
+   - Type `T` accepts ANY socket type when methods are called
+   - Type `M` accepts ANY metadata structure
+   - Zero Dynamic usage - complete type safety
 
-3. **Type Safety Where It Matters**:
-   - Metadata types remain fully typed (generic parameter M)
-   - Socket is just a container passed through to Phoenix.Presence
-   - Users still have type safety at call sites
+3. **extern inline for Zero-Cost Abstraction**:
+   - Methods marked `extern inline` are resolved at compile-time
+   - No runtime overhead - code is inlined at call sites
+   - Type checking happens during compilation
+   - Clean, idiomatic Elixir output
 
-4. **No Better Alternative Exists**:
-   - Generic parameters would require knowing socket type at macro time (impossible)
-   - Haxe lacks union types
-   - Creating a common interface would break existing code
+4. **Complete Type Safety Throughout**:
+   - Socket type preserved: `trackInternal<T, M>(socket: T, ...): T`
+   - Metadata fully typed: `meta: M` instead of `meta: Dynamic`
+   - Return types match input types exactly
+   - Full IDE support with IntelliSense and refactoring
 
-**This is a rare case where Dynamic improves the design rather than compromising it.**
+**Example Generated Method:**
+```haxe
+extern inline public static function trackInternal<T, M>(
+    socket: T,      // ANY socket type works
+    key: String, 
+    meta: M         // ANY metadata type works  
+): T {              // Returns SAME socket type
+    return untyped __elixir__('track({0}, {1}, {2}, {3})', 
+        untyped __elixir__('self()'), socket, key, meta);
+}
+```
 
-See: `std/phoenix/macros/PresenceMacro.hx` for complete documentation
+**This is the CORRECT pattern - generic types provide universal compatibility WITH type safety.**
+
+See: `std/phoenix/macros/PresenceMacro.hx` for complete implementation
 
 ### ⚠️ CRITICAL: @:native Annotation Pattern for Extern Classes
 

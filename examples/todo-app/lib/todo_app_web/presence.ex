@@ -2,7 +2,8 @@ defmodule TodoAppWeb.Presence do
   use Phoenix.Presence, otp_app: :todo_app
   def track_user(socket, user) do
     meta = %{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => user.name, :user_email => user.email, :avatar => nil, :editing_todo_id => nil, :editing_started_at => nil}
-    track_internal(socket, Std.string(user.id), meta)
+    key = Std.string(user.id)
+    track(self(), socket, key, meta)
     socket
   end
   def update_user_editing(socket, user, todo_id) do
@@ -13,11 +14,12 @@ defmodule TodoAppWeb.Presence do
 else
   nil
 end}
-    update_internal(socket, Std.string(user.id), updated_meta)
+    key = Std.string(user.id)
+    update(self(), socket, key, updated_meta)
     socket
   end
   defp get_user_presence(socket, user_id) do
-    presences = list(socket)
+    presences = Phoenix.Presence.list(socket)
     user_key = Std.string(user_id)
     if (Reflect.has_field(presences, user_key)) do
       entry = Reflect.field(presences, user_key)
@@ -30,10 +32,10 @@ end}
     nil
   end
   def list_online_users(socket) do
-    list(socket)
+    Phoenix.Presence.list(socket)
   end
   def get_users_editing_todo(socket, todo_id) do
-    all_users = list(socket)
+    all_users = Phoenix.Presence.list(socket)
     editing_users = []
     g = 0
     g1 = Reflect.fields(all_users)
@@ -54,29 +56,5 @@ end}
   end
 end)
     editing_users
-  end
-  def track_internal(socket, key, meta) do
-    track(self(), socket, key, meta)
-  end
-  def update_internal(socket, key, meta) do
-    update(self(), socket, key, meta)
-  end
-  def untrack_internal(socket, key) do
-    untrack(self(), socket, key)
-  end
-  def track(socket, key, meta) do
-    Phoenix.Presence.track(socket, key, meta)
-  end
-  def update(socket, key, meta) do
-    Phoenix.Presence.update(socket, key, meta)
-  end
-  def untrack(socket, key) do
-    Phoenix.Presence.untrack(socket, key)
-  end
-  def list(socket) do
-    Phoenix.Presence.list(socket)
-  end
-  def get_by_key(socket, key) do
-    Phoenix.Presence.get_by_key(socket, key)
   end
 end
