@@ -244,8 +244,8 @@ defmodule HaxeServer do
     # Also set HAXE_SERVER_PORT for compatibility
     # Port.open requires charlists (Erlang strings) for env variables
     env = [
-      {'HAXESHIM_SERVER_PORT', to_charlist(haxeshim_port)},
-      {'HAXE_SERVER_PORT', to_charlist(state.port)}
+      {~c"HAXESHIM_SERVER_PORT", to_charlist(haxeshim_port)},
+      {~c"HAXE_SERVER_PORT", to_charlist(state.port)}
     ]
     
     try do
