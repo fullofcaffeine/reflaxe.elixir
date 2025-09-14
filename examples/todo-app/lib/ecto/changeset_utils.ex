@@ -4,7 +4,7 @@ defmodule ChangesetUtils do
       {:ok, g} ->
         value = g
         value
-      {:error, g} ->
+      {:error, _g} ->
         _g = elem(result, 1)
         default_value
     end
@@ -14,7 +14,7 @@ defmodule ChangesetUtils do
       {:ok, g} ->
         value = g
         {:some, value}
-      {:error, g} ->
+      {:error, _g} ->
         _g = elem(result, 1)
         {:none}
     end
