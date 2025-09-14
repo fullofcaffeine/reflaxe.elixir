@@ -17,7 +17,7 @@ defmodule TodoAppWeb.TodoLive do
     todos = load_todos(current_user.id)
     presence_socket = TodoAppWeb.Presence.track_user(socket, current_user)
     assigns = %{:todos => todos, :filter => "all", :sort_by => "created", :current_user => current_user, :editing_todo => nil, :show_form => false, :search_query => "", :selected_tags => [], :total_todos => length(todos), :completed_todos => count_completed(todos), :pending_todos => count_pending(todos), :online_users => %{}}
-    updated_socket = Phoenix.LiveView.assign(presence_socket, assigns)
+    updated_socket = assign(presence_socket, assigns)
     {:ok, updated_socket}
   end
   def handle_event(event, socket) do
@@ -371,7 +371,7 @@ end)
     updated_todos = load_todos(socket.assigns.current_user.id)
     current_assigns = socket.assigns
     complete_assigns = %{:todos => updated_todos, :filter => current_assigns.filter, :sort_by => current_assigns.sort_by, :current_user => current_assigns.current_user, :editing_todo => current_assigns.editing_todo, :show_form => current_assigns.show_form, :search_query => current_assigns.search_query, :selected_tags => current_assigns.selected_tags, :total_todos => length(updated_todos), :completed_todos => length(updated_todos), :pending_todos => 0, :online_users => current_assigns.online_users}
-    updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
+    updated_socket = assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, {:info}, "All todos marked as completed!")
   end
   def delete_completed_todos(socket) do
@@ -391,7 +391,7 @@ end)
     remaining = Enum.filter(socket.assigns.todos, fn t -> not t.completed end)
     current_assigns = socket.assigns
     complete_assigns = %{:todos => remaining, :filter => current_assigns.filter, :sort_by => current_assigns.sort_by, :current_user => current_assigns.current_user, :editing_todo => current_assigns.editing_todo, :show_form => current_assigns.show_form, :search_query => current_assigns.search_query, :selected_tags => current_assigns.selected_tags, :total_todos => length(remaining), :completed_todos => 0, :pending_todos => length(remaining), :online_users => current_assigns.online_users}
-    updated_socket = Phoenix.LiveView.assign(socket, complete_assigns)
+    updated_socket = assign(socket, complete_assigns)
     Phoenix.LiveView.put_flash(updated_socket, {:info}, "Completed todos deleted!")
   end
   def start_editing_old(id, socket) do
