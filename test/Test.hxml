@@ -1,0 +1,4 @@
+-cp ../std
+-cp ../src
+-lib reflaxe
+--run reflaxe.elixir.test.TestRunner

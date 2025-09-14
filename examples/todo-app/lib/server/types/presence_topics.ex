@@ -1,6 +1,6 @@
 defmodule PresenceTopics do
-  def to_string(_topic) do
-    case (_topic) do
+  def to_string(topic) do
+    case (topic) do
       {:users} ->
         "users"
       {:editing_todos} ->

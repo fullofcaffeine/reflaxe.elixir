@@ -54,6 +54,15 @@ class UsageDetector {
                 
             // Return statements
             case TReturn(e):
+                #if debug_parameter_usage
+                if (varId == 45299 || varId == 45307) {
+                    trace('[UsageDetector] *** TReturn check for varId=$varId ***');
+                    trace('[UsageDetector]   Return expr type: ${e != null ? Type.enumConstructor(e.expr) : "null"}');
+                    var result = e != null ? isVariableUsed(varId, e) : false;
+                    trace('[UsageDetector]   Result: $result');
+                    return result;
+                }
+                #end
                 e != null ? isVariableUsed(varId, e) : false;
                 
             // If expressions
@@ -87,6 +96,14 @@ class UsageDetector {
                 
             // Switch/case
             case TSwitch(e, cases, edef):
+                #if debug_parameter_usage
+                if (varId == 45274 || varId == 45282) {
+                    trace('[UsageDetector] *** Special TSwitch check for varId=$varId ***');
+                    trace('[UsageDetector]   Switch expr type: ${e != null ? Type.enumConstructor(e.expr) : "null"}');
+                    var used = isVariableUsed(varId, e);
+                    trace('[UsageDetector]   isVariableUsed(e) returned: $used');
+                }
+                #end
                 if (isVariableUsed(varId, e)) return true;
                 for (c in cases) {
                     if (isVariableUsed(varId, c.expr)) return true;
@@ -127,15 +144,45 @@ class UsageDetector {
                 
             // Cast
             case TCast(e, _):
-                isVariableUsed(varId, e);
-                
+                return isVariableUsed(varId, e);
+
             // Meta
             case TMeta(_, e):
-                isVariableUsed(varId, e);
-                
+                return isVariableUsed(varId, e);
+
+            // Enum index checking (for switch statements on enums)
+            case TEnumIndex(e):
+                #if debug_parameter_usage
+                trace('[UsageDetector] TEnumIndex checking for varId=$varId');
+                #end
+                return isVariableUsed(varId, e);
+
+            // Enum parameter extraction (for getting values from enum constructors)
+            case TEnumParameter(e, _, _):
+                #if debug_parameter_usage
+                trace('[UsageDetector] TEnumParameter checking for varId=$varId');
+                #end
+                return isVariableUsed(varId, e);
+
             // Parentheses
             case TParenthesis(e):
-                isVariableUsed(varId, e);
+                #if debug_parameter_usage
+                if (varId == 45274 || varId == 45282) {
+                    trace('[UsageDetector] TParenthesis for special varId=$varId');
+                    trace('[UsageDetector]   Inner type: ${e != null ? Type.enumConstructor(e.expr) : "null"}');
+                    if (e != null) {
+                        switch (e.expr) {
+                            case TLocal(v):
+                                trace('[UsageDetector]   Found TLocal: ${v.name} (id=${v.id})');
+                            default:
+                        }
+                    }
+                    var result = isVariableUsed(varId, e);
+                    trace('[UsageDetector]   Result: $result');
+                    return result;
+                }
+                #end
+                return isVariableUsed(varId, e);
                 
             // Default: no usage found
             case _:
@@ -150,6 +197,22 @@ class UsageDetector {
      * @return true if unused, false if used
      */
     public static function isParameterUnused(param: TVar, functionBody: TypedExpr): Bool {
+        #if debug_parameter_usage
+        if (param.name == "result") {
+            trace('[UsageDetector] *** CHECKING PARAMETER "result" (id=${param.id}) ***');
+            trace('[UsageDetector] Function body type: ${functionBody != null ? Type.enumConstructor(functionBody.expr) : "null"}');
+            if (functionBody != null && functionBody.expr != null) {
+                switch (functionBody.expr) {
+                    case TBlock(exprs):
+                        trace('[UsageDetector]   TBlock with ${exprs.length} expressions');
+                        for (i in 0...exprs.length) {
+                            trace('[UsageDetector]     Expr[$i]: ${Type.enumConstructor(exprs[i].expr)}');
+                        }
+                    default:
+                }
+            }
+        }
+        #end
         var isUsed = isVariableUsed(param.id, functionBody);
         #if debug_parameter_usage
         trace('[UsageDetector] Parameter ${param.name} (id=${param.id}) is ${isUsed ? "USED" : "UNUSED"}');

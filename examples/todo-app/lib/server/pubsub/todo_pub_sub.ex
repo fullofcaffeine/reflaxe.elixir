@@ -8,8 +8,8 @@ defmodule TodoPubSub do
   def parse_message(msg) do
     Phoenix.SafePubSub.parse_with_converter(msg, &TodoPubSub.parse_message_impl/1)
   end
-  def topic_to_string(_topic) do
-    case (_topic) do
+  def topic_to_string(topic) do
+    case (topic) do
       {:todo_updates} ->
         "todo:updates"
       {:user_activity} ->
@@ -18,35 +18,35 @@ defmodule TodoPubSub do
         "system:notifications"
     end
   end
-  def message_to_elixir(_message) do
-    base_payload = case (_message) do
+  def message_to_elixir(message) do
+    base_payload = case (message) do
   {:todo_created, todo} ->
-    g = elem(_message, 1)
+    g = elem(message, 1)
     todo = g
     %{:type => "todo_created", :todo => todo}
   {:todo_updated, todo} ->
-    g = elem(_message, 1)
+    g = elem(message, 1)
     todo = g
     %{:type => "todo_updated", :todo => todo}
   {:todo_deleted, id} ->
-    g = elem(_message, 1)
+    g = elem(message, 1)
     id = g
     %{:type => "todo_deleted", :todo_id => id}
   {:bulk_update, action} ->
-    g = elem(_message, 1)
+    g = elem(message, 1)
     action = g
     %{:type => "bulk_update", :action => bulk_action_to_string(action)}
   {:user_online, user_id} ->
-    g = elem(_message, 1)
+    g = elem(message, 1)
     user_id = g
     %{:type => "user_online", :user_id => user_id}
   {:user_offline, user_id} ->
-    g = elem(_message, 1)
+    g = elem(message, 1)
     user_id = g
     %{:type => "user_offline", :user_id => user_id}
   {:system_alert, message, level} ->
-    g = elem(_message, 1)
-    g1 = elem(_message, 2)
+    g = elem(message, 1)
+    g1 = elem(message, 2)
     message = g
     level = g1
     %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
@@ -103,22 +103,22 @@ end
         :none
     end
   end
-  defp bulk_action_to_string(_action) do
-    case (_action) do
+  defp bulk_action_to_string(action) do
+    case (action) do
       {:complete_all} ->
         "complete_all"
       {:delete_completed} ->
         "delete_completed"
       {:set_priority, priority} ->
-        g = elem(_action, 1)
+        g = elem(action, 1)
         _priority = g
         "set_priority"
       {:add_tag, tag} ->
-        g = elem(_action, 1)
+        g = elem(action, 1)
         _tag = g
         "add_tag"
       {:remove_tag, tag} ->
-        g = elem(_action, 1)
+        g = elem(action, 1)
         _tag = g
         "remove_tag"
     end
@@ -139,8 +139,8 @@ end
         :none
     end
   end
-  defp alert_level_to_string(_level) do
-    case (_level) do
+  defp alert_level_to_string(level) do
+    case (level) do
       {:info} ->
         "info"
       {:warning} ->
