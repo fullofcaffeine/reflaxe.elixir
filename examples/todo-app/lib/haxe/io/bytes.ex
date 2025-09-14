@@ -1,6 +1,4 @@
 defmodule Bytes do
-  @length nil
-  @b nil
   def get_string(struct, pos, len, encoding) do
     if (encoding == nil) do
       encoding = {:utf8}

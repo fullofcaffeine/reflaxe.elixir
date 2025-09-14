@@ -1,9 +1,4 @@
 defmodule TableBuilder do
-  @table_name nil
-  @columns nil
-  @indexes nil
-  @constraints nil
-  @options nil
   def add_column(struct, name, type, options) do
     %{struct | columns: struct.columns ++ [%{:name => name, :type => type, :options => options}]}
   end

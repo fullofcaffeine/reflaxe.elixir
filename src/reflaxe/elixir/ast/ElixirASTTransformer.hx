@@ -980,7 +980,7 @@ class ElixirASTTransformer {
      *     value
      */
     static function removeRedundantEnumExtractionPass(ast: ElixirAST): ElixirAST {
-        trace('[RemoveRedundantEnumExtraction] Starting pass - ALWAYS');
+        // trace('[RemoveRedundantEnumExtraction] Starting pass - ALWAYS');
         #if debug_redundant_extraction
         trace('[RemoveRedundantEnumExtraction] Debug mode enabled');
         #end
@@ -1002,7 +1002,7 @@ class ElixirASTTransformer {
                         default:
                     }
 
-                    trace('[RemoveRedundantEnumExtraction] Processing case with target: $caseTargetVar');
+                    // trace('[RemoveRedundantEnumExtraction] Processing case with target: $caseTargetVar');
                     // Process each case clause
                     var newClauses = [];
                     for (clause in clauses) {
@@ -2900,8 +2900,8 @@ class ElixirASTTransformer {
             default:
         }
 
-        // Recursively optimize nested blocks
-        return transformNode(body, optimizeFluentBody);
+        // Pattern doesn't match, return as-is
+        return body;
     }
 
     // ========================================================================
