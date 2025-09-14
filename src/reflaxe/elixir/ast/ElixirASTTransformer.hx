@@ -450,7 +450,15 @@ class ElixirASTTransformer {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.StructUpdateTransform.structUpdateTransformPass
         });
-        
+
+        // Fluent API struct update optimization
+        passes.push({
+            name: "FluentApiOptimization",
+            description: "Optimize fluent API patterns to avoid unused struct assignments",
+            enabled: true,
+            pass: fluentApiOptimizationPass
+        });
+
         // Array length field to function transformation (must run early to fix field access)
         passes.push({
             name: "ArrayLengthFieldToFunction",
@@ -2815,10 +2823,87 @@ class ElixirASTTransformer {
             
             return makeAST(EBlock(statements));
         }
-        
+
         return body;
     }
-    
+
+    /**
+     * Fluent API Optimization Pass
+     *
+     * WHY: Fluent API methods that return 'this' generate unnecessary intermediate assignments
+     * in Elixir like `struct = %{struct | field: value}` followed by `struct`. This creates
+     * "variable 'struct' is unused" warnings.
+     *
+     * WHAT: Detects and optimizes the pattern where a struct update is immediately returned.
+     *
+     * HOW: Transforms functions that have the pattern:
+     * - Assignment: struct = %{struct | fields...}
+     * - Return: struct
+     * Into a single return of the struct update expression.
+     */
+    static function fluentApiOptimizationPass(ast: ElixirAST): ElixirAST {
+        #if debug_fluent_api
+        trace("[FluentApiOptimization] Starting optimization pass");
+        #end
+
+        return transformNode(ast, function(node) {
+            switch(node.def) {
+                case EDef(name, args, guards, body):
+                    var optimizedBody = optimizeFluentBody(body);
+                    if (optimizedBody != body) {
+                        #if debug_fluent_api
+                        trace('[FluentApiOptimization] Optimized function: $name');
+                        #end
+                        return makeAST(EDef(name, args, guards, optimizedBody));
+                    }
+                case EDefp(name, args, guards, body):
+                    var optimizedBody = optimizeFluentBody(body);
+                    if (optimizedBody != body) {
+                        #if debug_fluent_api
+                        trace('[FluentApiOptimization] Optimized private function: $name');
+                        #end
+                        return makeAST(EDefp(name, args, guards, optimizedBody));
+                    }
+                default:
+            }
+            return node;
+        });
+    }
+
+    /**
+     * Optimize the body of a fluent API method
+     */
+    static function optimizeFluentBody(body: ElixirAST): ElixirAST {
+        if (body == null) return null;
+
+        switch(body.def) {
+            case EBlock(exprs) if (exprs.length == 2):
+                // Check for pattern: [struct = %{struct | ...}, struct]
+                var firstExpr = exprs[0];
+                var secondExpr = exprs[1];
+
+                // Check if first is assignment to 'struct'
+                switch(firstExpr.def) {
+                    case EMatch(PVar("struct"), updateExpr):
+                        // Check if second is just returning 'struct'
+                        switch(secondExpr.def) {
+                            case EVar("struct"):
+                                // Found the pattern! Return the update expression directly
+                                #if debug_fluent_api
+                                trace('[FluentApiOptimization] Found fluent pattern - optimizing');
+                                #end
+                                return updateExpr;
+                            default:
+                        }
+                    default:
+                }
+            default:
+        }
+
+        // Recursively optimize nested blocks
+        return transformNode(body, optimizeFluentBody);
+    }
+
     // ========================================================================
     // Helper Functions
     // ========================================================================
