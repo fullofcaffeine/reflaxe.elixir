@@ -1933,6 +1933,43 @@ Phoenix.LiveView.put_flash(socket, :info, "Success!")  // Generated snake_case
 
 ## Development Principles
 
+### ⚠️ CRITICAL: Apply DRY Principles to Avoid Whack-a-Mole Fixes
+**FUNDAMENTAL RULE: When fixing pattern detection or similar logic, create reusable helper functions instead of repeating the same fix in multiple places.**
+
+**Why DRY Matters in Compiler Development:**
+- **Consistency**: One helper function ensures all places behave identically
+- **Maintainability**: Fix once, works everywhere - no whack-a-mole debugging
+- **Correctness**: No risk of missing a spot or having inconsistent implementations
+- **Evolution**: When requirements change (like ENil → EAtom("nil")), update one place
+
+**Examples of Good DRY Patterns:**
+```haxe
+// ✅ GOOD: Helper function for common pattern
+inline function isNilValue(ast: ElixirAST): Bool {
+    return switch(ast.def) {
+        case EAtom(a): a == "nil";
+        case ENil: true; // Legacy support
+        default: false;
+    };
+}
+
+// Use everywhere consistently
+if (isNilValue(value)) { /* handle nil */ }
+
+// ❌ BAD: Repeating the same pattern check
+switch(value.def) {
+    case EAtom(a) if (a == "nil"): // Repeated 7 times!
+    // ...
+}
+```
+
+**When to Create Helper Functions:**
+- Pattern detection used in 2+ places
+- Complex conditions that could change
+- AST node type checking
+- String transformations or validations
+- Any logic that represents a concept (like "is this nil?")
+
 ### ⚠️ CRITICAL: Consult Codex Before New Features
 **FUNDAMENTAL RULE: Before implementing any new feature, consult with Codex and reflect on its architectural guidance.**
 
