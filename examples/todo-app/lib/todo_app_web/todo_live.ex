@@ -62,8 +62,6 @@ defmodule TodoAppWeb.TodoLive do
     tag = g
     toggle_tag_filter(tag, socket)
   {:set_priority, id, priority} ->
-    g = elem(event, 1)
-    g1 = elem(event, 2)
     id = g
     priority = g1
     update_todo_priority(id, priority, socket)
@@ -107,8 +105,6 @@ case (g) do
         _user_id = g
         socket
       {:system_alert, message, level} ->
-        g = elem(parsed_msg, 1)
-        g1 = elem(parsed_msg, 2)
         message = g
         level = g1
         flash_type = case (level) do
@@ -470,15 +466,12 @@ end, :tags => (if (Map.get(params, :tags) != nil), do: parse_tags(params.tags), 
         live_socket = socket
         Phoenix.Component.assign([live_socket, updated_todos, updated_todos.length, count_completed(updated_todos), count_pending(updated_todos)], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
       {:set_priority, priority} ->
-        g = elem(action, 1)
         _priority = g
         socket
       {:add_tag, tag} ->
-        g = elem(action, 1)
         _tag = g
         socket
       {:remove_tag, tag} ->
-        g = elem(action, 1)
         _tag = g
         socket
     end

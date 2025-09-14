@@ -20,7 +20,6 @@ defmodule HttpStatusTools do
       {:internal_server_error} ->
         500
       {:custom, code} ->
-        g = elem(status, 1)
         code = g
         code
     end
