@@ -1,4 +1,6 @@
 defmodule SafeAssigns do
+  @compile [{:nowarn_unused_function, [{:_count_pending, 1}, {:_count_completed, 1}]}]
+
   def set_editing_todo(socket, todo) do
     live_socket = socket
     Phoenix.Component.assign(live_socket, :editing_todo, todo)
@@ -33,7 +35,7 @@ defmodule SafeAssigns do
     live_socket = socket
     Phoenix.Component.assign(live_socket, :todos, todos)
   end
-  defp count_completed(todos) do
+  defp _count_completed(todos) do
     count = 0
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->
@@ -50,7 +52,7 @@ defmodule SafeAssigns do
 end)
     count
   end
-  defp count_pending(todos) do
+  defp _count_pending(todos) do
     count = 0
     g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {todos, count, g, :ok}, fn _, {acc_todos, acc_count, acc_g, acc_state} ->

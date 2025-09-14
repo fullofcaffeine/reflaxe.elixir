@@ -68,6 +68,9 @@ class ElixirCompiler extends GenericCompiler<
     reflaxe.elixir.ast.ElixirAST,  // CompiledTypedefType
     reflaxe.elixir.ast.ElixirAST   // CompiledAbstractType
 > {
+
+    // Static instance reference for helpers to access the compiler
+    public static var instance: ElixirCompiler;
     
     // File extension for generated Elixir files
     public var fileExtension: String = ".ex";
@@ -98,6 +101,10 @@ class ElixirCompiler extends GenericCompiler<
     // When true, indicates we're compiling a return expression and case results
     // need to be assigned to temp_result for proper value capture in Elixir
     public var returnContext: Bool = false;
+
+    // Function usage tracking for dead code elimination
+    // Tracks which private functions are actually called to eliminate warnings
+    public var functionUsageCollector: Null<reflaxe.elixir.helpers.FunctionUsageCollector> = null;
     
     // Map for tracking variable renames to ensure consistency between declaration and usage
     
@@ -236,11 +243,12 @@ class ElixirCompiler extends GenericCompiler<
      */
     public function new() {
         super();
+        instance = this;  // Set static instance reference
         this.typer = new reflaxe.elixir.ElixirTyper();
-        
+
         // Enable source mapping if requested
         this.sourceMapOutputEnabled = Context.defined("source_map_enabled") || Context.defined("source-map") || Context.defined("debug");
-        
+
         // Initialize the BehaviorTransformer system
         // This replaces hardcoded behavior logic with a pluggable architecture
         reflaxe.elixir.behaviors.BehaviorTransformer.initialize();
@@ -470,12 +478,16 @@ class ElixirCompiler extends GenericCompiler<
      */
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
         if (classType == null) return null;
-        
+
         // Skip standard library classes that shouldn't generate Elixir modules
         if (isStandardLibraryClass(classType.name)) {
             return null;
         }
-        
+
+        // Initialize function usage collector for this module
+        functionUsageCollector = new reflaxe.elixir.helpers.FunctionUsageCollector();
+        functionUsageCollector.currentModule = classType.name;
+
         // Check for @:native annotation to determine output path
         var moduleName = classType.name;
         var modulePack = classType.pack;
@@ -538,7 +550,24 @@ class ElixirCompiler extends GenericCompiler<
         
         // Use AST pipeline for class compilation
         var moduleAST = buildClassAST(classType, varFields, funcFields);
-        
+
+        // Add function usage information to module metadata
+        if (functionUsageCollector != null && moduleAST != null) {
+            if (moduleAST.metadata == null) {
+                moduleAST.metadata = {};
+            }
+            // Store the list of unused functions in metadata
+            moduleAST.metadata.unusedPrivateFunctions = functionUsageCollector.getUnusedPrivateFunctions();
+            moduleAST.metadata.unusedPrivateFunctionsWithArity = functionUsageCollector.getUnusedPrivateFunctionsWithArity();
+
+            #if debug_function_usage
+            functionUsageCollector.printStats();
+            #end
+        }
+
+        // Clear collector for next module
+        functionUsageCollector = null;
+
         // Return AST directly - transformation and printing handled by ElixirOutputIterator
         return moduleAST;
     }
@@ -630,6 +659,11 @@ class ElixirCompiler extends GenericCompiler<
         // Analyze variable usage before building AST
         // This enables context-aware naming to prevent Elixir compilation warnings
         var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
+
+        // Collect function calls if we have a collector active
+        if (functionUsageCollector != null) {
+            functionUsageCollector.collectCalls(expr);
+        }
         
         // Build AST for the expression with usage information
         // Set compiler reference for dependency tracking

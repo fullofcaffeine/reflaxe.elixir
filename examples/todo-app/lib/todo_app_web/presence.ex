@@ -1,4 +1,6 @@
 defmodule TodoAppWeb.Presence do
+  @compile [{:nowarn_unused_function, [{:_get_user_presence, 2}]}]
+
   use Phoenix.Presence, otp_app: :todo_app
   def track_user(socket, user) do
     meta = %{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => user.name, :user_email => user.email, :avatar => nil, :editing_todo_id => nil, :editing_started_at => nil}
@@ -18,7 +20,7 @@ end}
     Phoenix.Presence.update(self(), "users", key, updated_meta)
     socket
   end
-  defp get_user_presence(_socket, user_id) do
+  defp _get_user_presence(_socket, user_id) do
     presences = Phoenix.Presence.list("users")
     user_key = Std.string(user_id)
     if (Reflect.has_field(presences, user_key)) do

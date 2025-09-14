@@ -1,5 +1,7 @@
 defmodule Output do
-  defp set_big_endian(_struct, b) do
+  @compile [{:nowarn_unused_function, [{:_set_big_endian, 2}]}]
+
+  defp _set_big_endian(_struct, b) do
     b
   end
   def write_byte(_struct, _c) do
@@ -25,14 +27,14 @@ end)
   def write(struct, b) do
     struct.write_bytes(b, 0, b.length)
   end
-  def write_input(struct, _i, bufsize) do
+  def write_input(struct, i, bufsize) do
     if (bufsize == nil) do
       bufsize = 4096
     end
     buf = Bytes.alloc(bufsize)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   if true do
-    len = _i.read_bytes(buf, 0, bufsize)
+    len = i.read_bytes(buf, 0, bufsize)
     if (len == 0) do
       throw(:break)
     end
