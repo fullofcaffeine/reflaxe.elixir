@@ -106,8 +106,48 @@ typedef EventParams = {
 }
 
 // ============================================================================
-// Real-time Communication Types - TYPE-SAFE PUBSUB
+// Real-time Communication Types - TYPE-SAFE PUBSUB & PRESENCE
 // ============================================================================
+
+/**
+ * Type-safe Presence topics - compile-time validation of presence channels
+ * Use with @:presenceTopic annotation for type safety
+ */
+enum PresenceTopic {
+    Users;           // "users" - Track online users
+    EditingTodos;    // "editing:todos" - Track who's editing what
+    ActiveRooms;     // "active:rooms" - Track active chat rooms
+}
+
+/**
+ * Helper class for type-safe presence topic conversion
+ * Provides compile-time validation while generating proper topic strings
+ */
+class PresenceTopics {
+    /**
+     * Convert a type-safe PresenceTopic to its string representation
+     * for use with @:presenceTopic annotation
+     */
+    public static function toString(topic: PresenceTopic): String {
+        return switch(topic) {
+            case Users: "users";
+            case EditingTodos: "editing:todos";
+            case ActiveRooms: "active:rooms";
+        }
+    }
+    
+    /**
+     * Parse a string back to PresenceTopic (for runtime validation if needed)
+     */
+    public static function fromString(topic: String): Null<PresenceTopic> {
+        return switch(topic) {
+            case "users": Users;
+            case "editing:todos": EditingTodos;
+            case "active:rooms": ActiveRooms;
+            default: null;
+        }
+    }
+}
 
 /**
  * Type-safe PubSub topics - prevents typos and invalid topic strings

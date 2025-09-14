@@ -5,6 +5,8 @@ import phoenix.Presence;
 import phoenix.PresenceBehavior;
 import phoenix.LiveSocket;
 import server.types.Types.User;
+import server.types.Types.PresenceTopic;
+import server.types.Types.PresenceTopics;
 
 /**
  * Unified presence metadata following idiomatic Phoenix patterns
@@ -35,12 +37,37 @@ typedef PresenceMeta = {
  * 
  * The generated Elixir code is indistinguishable from hand-written Phoenix,
  * but with compile-time type safety that Phoenix developers wish they had.
+ * 
+ * TYPE SAFETY PATTERNS:
+ * 
+ * Option 1: Use string constant (simple but less type-safe)
+ * @:presenceTopic("users")
+ * 
+ * Option 2: Use static constant (better for shared topics)
+ * static inline final TOPIC = "users";
+ * @:presenceTopic(TOPIC)  // Note: This requires macro enhancement
+ * 
+ * Option 3: Use enum + helper (most type-safe, compile-time validation)
+ * // Define topic in Types.hx enum, use string in annotation
+ * @:presenceTopic("users")  // Must match PresenceTopic.Users mapping
+ * 
+ * The enum approach provides compile-time validation through the
+ * PresenceTopics.toString() helper, ensuring consistency across the app.
  */
 @:native("TodoAppWeb.Presence")
 @:presence
+@:presenceTopic("users")  // Must match PresenceTopics.toString(Users)
 class TodoPresence implements PresenceBehavior {
     /**
+     * Type-safe topic reference for compile-time validation
+     * Use this to ensure consistency with the @:presenceTopic annotation
+     */
+    public static inline final TOPIC_ENUM = PresenceTopic.Users;
+    public static inline final TOPIC = "users"; // Must match PresenceTopics.toString(TOPIC_ENUM)
+    /**
      * Track a user's presence in the todo app (idiomatic Phoenix pattern)
+     * 
+     * Uses the new simplified API with class-level topic configuration.
      * 
      * @param socket The LiveView socket
      * @param user The user to track
@@ -54,9 +81,8 @@ class TodoPresence implements PresenceBehavior {
             editingTodoId: null,  // Not editing initially
             editingStartedAt: null
         };
-        // Using the macro-generated internal method that injects self()
-        // The PresenceMacro generates trackInternal which calls: track(self(), socket, key, meta)
-        trackInternal(socket, Std.string(user.id), meta);
+        // Use the simplified API - no need to pass topic!
+        trackSimple(Std.string(user.id), meta);
         return socket;
     }
     
@@ -88,10 +114,8 @@ class TodoPresence implements PresenceBehavior {
             editingStartedAt: todoId != null ? Date.now().getTime() : null
         };
         
-        // Phoenix pattern: update existing presence rather than track/untrack
-        // Using the macro-generated internal method that injects self()
-        // The PresenceMacro generates updateInternal which calls: update(self(), socket, key, meta)
-        updateInternal(socket, Std.string(user.id), updatedMeta);
+        // Use the simplified API - topic is configured at class level
+        updateSimple(Std.string(user.id), updatedMeta);
         return socket;
     }
     
@@ -99,9 +123,8 @@ class TodoPresence implements PresenceBehavior {
      * Helper to get current user presence metadata
      */
     static function getUserPresence<T>(socket: Socket<T>, userId: Int): Null<PresenceMeta> {
-        // Using the macro-generated list method
-        // The PresenceMacro generates list() which works in both internal and external contexts
-        var presences = list(socket);
+        // Phoenix.Presence.list requires topic parameter
+        var presences = untyped __elixir__('Phoenix.Presence.list({0})', "users");
         // Note: presences is a Dynamic map, need to use Reflect
         var userKey = Std.string(userId);
         if (Reflect.hasField(presences, userKey)) {
@@ -115,8 +138,8 @@ class TodoPresence implements PresenceBehavior {
      * Get list of users currently online
      */
     public static function listOnlineUsers<T>(socket: Socket<T>): haxe.DynamicAccess<phoenix.Presence.PresenceEntry<PresenceMeta>> {
-        // Get all presences using the macro-generated list method
-        return list(socket);
+        // Use the topic directly since list() needs it
+        return untyped __elixir__('Phoenix.Presence.list({0})', "users");
     }
     
     /**
@@ -126,8 +149,8 @@ class TodoPresence implements PresenceBehavior {
      * querying separate topics - more maintainable and Phoenix-like.
      */
     public static function getUsersEditingTodo<T>(socket: Socket<T>, todoId: Int): Array<PresenceMeta> {
-        // Get all users through the macro-generated list method
-        var allUsers = list(socket);
+        // Get all users through Phoenix.Presence.list with topic
+        var allUsers = untyped __elixir__('Phoenix.Presence.list({0})', "users");
         var editingUsers = [];
         
         // Iterate over Dynamic presence map using Reflect

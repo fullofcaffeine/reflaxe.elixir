@@ -13,8 +13,58 @@ using haxe.macro.Tools;
  * ## Overview
  * 
  * This macro is triggered by @:autoBuild on the PresenceBehavior interface.
- * It generates both internal methods (with self()) and external static methods
- * for Phoenix.Presence operations.
+ * It generates a comprehensive set of presence methods with varying levels of abstraction,
+ * giving developers the choice between simplicity and control.
+ * 
+ * ## API Layers (NEW - January 2025)
+ * 
+ * ### Layer 1: Simple API (Highest Abstraction)
+ * When using `@:presenceTopic("topic_name")` annotation:
+ * - `trackSimple(key, meta)` - Topic configured at class level
+ * - `updateSimple(key, meta)` - No need to pass topic every time
+ * - `untrackSimple(key)` - Clean, simple API
+ * 
+ * ### Layer 2: Chainable Socket API (LiveView Friendly)
+ * For LiveView's socket chaining pattern:
+ * - `trackWithSocket(socket, topic, key, meta): Socket` - Returns socket for chaining
+ * - `updateWithSocket(socket, topic, key, meta): Socket` - Maintains fluent interface
+ * - `untrackWithSocket(socket, topic, key): Socket` - Compatible with LiveView patterns
+ * 
+ * ### Layer 3: Internal API (Full Control)
+ * Direct Phoenix.Presence calls with self() injection:
+ * - `trackInternal(topic, key, meta)` - Full control over topic
+ * - `updateInternal(topic, key, meta)` - Direct presence manipulation
+ * - `untrackInternal(topic, key)` - Low-level access
+ * 
+ * ### Layer 4: External Static API (Framework Use)
+ * For calling from outside the presence module:
+ * - `track(socket, key, meta)` - Standard Phoenix.Presence interface
+ * - `update(socket, key, meta)` - External updates
+ * - `untrack(socket, key)` - External cleanup
+ * 
+ * ## Usage Examples
+ * 
+ * ### With @:presenceTopic (Recommended)
+ * ```haxe
+ * @:presence
+ * @:presenceTopic("users")
+ * class MyPresence implements PresenceBehavior {
+ *     public static function trackUser<T>(socket: Socket<T>, user: User): Socket<T> {
+ *         trackSimple(Std.string(user.id), createUserMeta(user));
+ *         return socket;
+ *     }
+ * }
+ * ```
+ * 
+ * ### Without @:presenceTopic (Manual Topic)
+ * ```haxe
+ * @:presence
+ * class MyPresence implements PresenceBehavior {
+ *     public static function trackUser<T>(socket: Socket<T>, user: User): Socket<T> {
+ *         return trackWithSocket(socket, "users", Std.string(user.id), createUserMeta(user));
+ *     }
+ * }
+ * ```
  * 
  * ## CRITICAL DESIGN DECISION: Generic Type Parameters for Universal Type Safety
  * 
@@ -38,6 +88,55 @@ using haxe.macro.Tools;
  * 3. **Full Type Safety Preserved**:
  *    - Socket type `T` flows through the entire call chain
  *    - Metadata type `M` provides type-safe metadata
+ * 
+ * ## ARCHITECTURAL FIX (September 2025): LiveView Context Requires Topic Strings
+ * 
+ * ### UPDATE (January 2025): Enhanced API Design
+ * 
+ * Based on user feedback, the API has been enhanced with multiple abstraction layers:
+ * 
+ * 1. **Class-Level Topic Configuration**: `@:presenceTopic("topic")` eliminates repetition
+ * 2. **Chainable Socket Methods**: Return sockets for LiveView's fluent interface pattern
+ * 3. **Simple API Methods**: Hide Phoenix internals for cleaner code
+ * 4. **Backward Compatibility**: All existing methods continue to work
+ * 
+ * This layered approach gives developers maximum flexibility while maintaining type safety.
+ * 
+ * ### The Problem That Was Fixed
+ * 
+ * Phoenix.Presence has DIFFERENT APIs for different contexts:
+ * - **Channel context**: `track(socket, key, meta)` - 3 parameters
+ * - **LiveView context**: `track(pid, topic, key, meta)` - 4 parameters
+ * 
+ * The macro was incorrectly passing `socket` as the second parameter to Phoenix.Presence.track/4,
+ * but in LiveView context, the second parameter MUST be a topic STRING (e.g., "users").
+ * 
+ * This caused runtime errors:
+ * ```
+ * Phoenix.Tracker.track/5 no function clause matching:
+ * Phoenix.Tracker.track(TodoAppWeb.Presence, #Phoenix.LiveView.Socket<...>, "users", "1", %{...})
+ * ```
+ * 
+ * ### The Solution
+ * 
+ * Internal methods now correctly accept `topic: String` parameters:
+ * - `trackInternal<M>(topic: String, key: String, meta: M): Void`
+ * - `updateInternal<M>(topic: String, key: String, meta: M): Void`
+ * - `untrackInternal(topic: String, key: String): Void`
+ * 
+ * These methods call Phoenix.Presence functions with the correct signature:
+ * `Phoenix.Presence.track(self(), topic, key, meta)` where topic is a STRING.
+ * 
+ * ### Usage Pattern
+ * 
+ * ```haxe
+ * // In your presence module:
+ * public static function trackUser<T>(socket: Socket<T>, user: User): Socket<T> {
+ *     var topic = "users";  // Topic is a STRING for LiveView!
+ *     trackInternal(topic, Std.string(user.id), createUserMeta(user));
+ *     return socket;
+ * }
+ * ```
  *    - Return type matches input socket type exactly
  *    - IntelliSense and refactoring work perfectly
  * 
@@ -131,10 +230,40 @@ class PresenceMacro {
 		var fields = Context.getBuildFields();
 		var newFields: Array<Field> = [];
 		
+		// Extract topic from @:presenceTopic metadata if present
+		var localClass = Context.getLocalClass();
+		var classTopic: Null<String> = null;
+		if (localClass != null) {
+			var classType = localClass.get();
+			if (classType.meta.has(":presenceTopic")) {
+				var topicMeta = classType.meta.extract(":presenceTopic");
+				if (topicMeta.length > 0 && topicMeta[0].params != null && topicMeta[0].params.length > 0) {
+					switch (topicMeta[0].params[0].expr) {
+						case EConst(CString(s, _)):
+							classTopic = s;
+						case _:
+							Context.warning("@:presenceTopic requires a string literal", topicMeta[0].pos);
+					}
+				}
+			}
+		}
+		
 		// Generate internal methods (with self())
 		newFields.push(generateInternalTrack());
 		newFields.push(generateInternalUpdate());
 		newFields.push(generateInternalUntrack());
+		
+		// Generate convenience methods if topic is configured
+		if (classTopic != null) {
+			newFields.push(generateSimpleTrack(classTopic));
+			newFields.push(generateSimpleUpdate(classTopic));
+			newFields.push(generateSimpleUntrack(classTopic));
+		}
+		
+		// Generate chainable socket methods
+		newFields.push(generateTrackWithSocket());
+		newFields.push(generateUpdateWithSocket());
+		newFields.push(generateUntrackWithSocket());
 		
 		// Generate external static methods (without self())
 		newFields.push(generateExternalTrack());
@@ -159,24 +288,23 @@ class PresenceMacro {
 			pos: Context.currentPos(),
 			kind: FFun({
 				params: [
-					{name: "T"},  // Socket type parameter
 					{name: "M"}   // Metadata type parameter
 				],
 				args: [
-					{name: "socket", type: macro : T},  // Generic socket type
+					{name: "topic", type: macro : String},  // Topic string for LiveView
 					{name: "key", type: macro : String},
 					{name: "meta", type: macro : M}  // Generic metadata type
 				],
-				ret: macro : T,  // Returns the same socket type
+				ret: macro : Void,  // Presence tracking doesn't return anything
 				expr: macro {
-					// Call Phoenix.Presence.track which handles self() injection internally
-					// when called from within a Presence module (using `use Phoenix.Presence`)
-					return untyped __elixir__('Phoenix.Presence.track({0}, {1}, {2}, {3})', 
-						untyped __elixir__('self()'), socket, key, meta);
+					// Call Phoenix.Presence.track with correct LiveView signature
+					// (pid, topic, key, meta) where topic is a string
+					untyped __elixir__('Phoenix.Presence.track({0}, {1}, {2}, {3})', 
+						untyped __elixir__('self()'), topic, key, meta);
 				}
 			}),
 			access: [APublic, AStatic, AExtern, AInline],  // extern inline for zero-cost abstraction
-			doc: "Track presence internally (within the presence module). Automatically injects self(). Works with any socket type.",
+			doc: "Track presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
 		};
 	}
@@ -192,23 +320,22 @@ class PresenceMacro {
 			pos: Context.currentPos(),
 			kind: FFun({
 				params: [
-					{name: "T"},  // Socket type parameter
 					{name: "M"}   // Metadata type parameter
 				],
 				args: [
-					{name: "socket", type: macro : T},
+					{name: "topic", type: macro : String},  // Topic string for LiveView
 					{name: "key", type: macro : String},
 					{name: "meta", type: macro : M}
 				],
-				ret: macro : T,
+				ret: macro : Void,
 				expr: macro {
-					// Call Phoenix.Presence.update which handles self() injection internally
-					return untyped __elixir__('Phoenix.Presence.update({0}, {1}, {2}, {3})', 
-						untyped __elixir__('self()'), socket, key, meta);
+					// Call Phoenix.Presence.update with correct LiveView signature
+					untyped __elixir__('Phoenix.Presence.update({0}, {1}, {2}, {3})', 
+						untyped __elixir__('self()'), topic, key, meta);
 				}
 			}),
 			access: [APublic, AStatic, AExtern, AInline],
-			doc: "Update presence internally (within the presence module). Automatically injects self().",
+			doc: "Update presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
 		};
 	}
@@ -222,22 +349,19 @@ class PresenceMacro {
 			name: "untrackInternal",
 			pos: Context.currentPos(),
 			kind: FFun({
-				params: [
-					{name: "T"}  // Socket type parameter
-				],
 				args: [
-					{name: "socket", type: macro : T},
+					{name: "topic", type: macro : String},  // Topic string for LiveView
 					{name: "key", type: macro : String}
 				],
-				ret: macro : T,
+				ret: macro : Void,
 				expr: macro {
-					// Call Phoenix.Presence.untrack which handles self() injection internally
-					return untyped __elixir__('Phoenix.Presence.untrack({0}, {1}, {2})', 
-						untyped __elixir__('self()'), socket, key);
+					// Call Phoenix.Presence.untrack with correct LiveView signature
+					untyped __elixir__('Phoenix.Presence.untrack({0}, {1}, {2})', 
+						untyped __elixir__('self()'), topic, key);
 				}
 			}),
 			access: [APublic, AStatic, AExtern, AInline],
-			doc: "Untrack presence internally (within the presence module). Automatically injects self().",
+			doc: "Untrack presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
 		};
 	}
@@ -388,6 +512,177 @@ class PresenceMacro {
 			}),
 			access: [APublic, AStatic, AExtern, AInline],
 			doc: "Get presence by key. Automatically detects context and uses appropriate method.",
+			meta: [{name: ":doc", pos: Context.currentPos()}]
+		};
+	}
+	
+	
+	/**
+	 * Generate simple track method that uses class-level topic.
+	 * Only generated when @:presenceTopic is specified.
+	 */
+	static function generateSimpleTrack(topic: String): Field {
+		return {
+			name: "trackSimple",
+			pos: Context.currentPos(),
+			kind: FFun({
+				params: [
+					{name: "M"}   // Metadata type parameter
+				],
+				args: [
+					{name: "key", type: macro : String},
+					{name: "meta", type: macro : M}
+				],
+				ret: macro : Void,
+				expr: macro {
+					// Use the class-level topic
+					trackInternal($v{topic}, key, meta);
+				}
+			}),
+			access: [APublic, AStatic, AInline],
+			doc: "Track presence using class-level topic configuration.",
+			meta: [{name: ":doc", pos: Context.currentPos()}]
+		};
+	}
+	
+	/**
+	 * Generate simple update method that uses class-level topic.
+	 */
+	static function generateSimpleUpdate(topic: String): Field {
+		return {
+			name: "updateSimple",
+			pos: Context.currentPos(),
+			kind: FFun({
+				params: [
+					{name: "M"}   // Metadata type parameter
+				],
+				args: [
+					{name: "key", type: macro : String},
+					{name: "meta", type: macro : M}
+				],
+				ret: macro : Void,
+				expr: macro {
+					// Use the class-level topic
+					updateInternal($v{topic}, key, meta);
+				}
+			}),
+			access: [APublic, AStatic, AInline],
+			doc: "Update presence using class-level topic configuration.",
+			meta: [{name: ":doc", pos: Context.currentPos()}]
+		};
+	}
+	
+	/**
+	 * Generate simple untrack method that uses class-level topic.
+	 */
+	static function generateSimpleUntrack(topic: String): Field {
+		return {
+			name: "untrackSimple",
+			pos: Context.currentPos(),
+			kind: FFun({
+				args: [
+					{name: "key", type: macro : String}
+				],
+				ret: macro : Void,
+				expr: macro {
+					// Use the class-level topic
+					untrackInternal($v{topic}, key);
+				}
+			}),
+			access: [APublic, AStatic, AInline],
+			doc: "Untrack presence using class-level topic configuration.",
+			meta: [{name: ":doc", pos: Context.currentPos()}]
+		};
+	}
+	
+	/**
+	 * Generate chainable track method that returns the socket.
+	 * Useful for LiveView's socket chaining pattern.
+	 */
+	static function generateTrackWithSocket(): Field {
+		return {
+			name: "trackWithSocket",
+			pos: Context.currentPos(),
+			kind: FFun({
+				params: [
+					{name: "T"},  // Socket type parameter
+					{name: "M"}   // Metadata type parameter
+				],
+				args: [
+					{name: "socket", type: macro : T},
+					{name: "topic", type: macro : String},
+					{name: "key", type: macro : String},
+					{name: "meta", type: macro : M}
+				],
+				ret: macro : T,
+				expr: macro {
+					// Track and return socket for chaining
+					trackInternal(topic, key, meta);
+					return socket;
+				}
+			}),
+			access: [APublic, AStatic, AInline],
+			doc: "Track presence and return socket for LiveView chaining pattern.",
+			meta: [{name: ":doc", pos: Context.currentPos()}]
+		};
+	}
+	
+	/**
+	 * Generate chainable update method that returns the socket.
+	 */
+	static function generateUpdateWithSocket(): Field {
+		return {
+			name: "updateWithSocket",
+			pos: Context.currentPos(),
+			kind: FFun({
+				params: [
+					{name: "T"},  // Socket type parameter
+					{name: "M"}   // Metadata type parameter
+				],
+				args: [
+					{name: "socket", type: macro : T},
+					{name: "topic", type: macro : String},
+					{name: "key", type: macro : String},
+					{name: "meta", type: macro : M}
+				],
+				ret: macro : T,
+				expr: macro {
+					// Update and return socket for chaining
+					updateInternal(topic, key, meta);
+					return socket;
+				}
+			}),
+			access: [APublic, AStatic, AInline],
+			doc: "Update presence and return socket for LiveView chaining pattern.",
+			meta: [{name: ":doc", pos: Context.currentPos()}]
+		};
+	}
+	
+	/**
+	 * Generate chainable untrack method that returns the socket.
+	 */
+	static function generateUntrackWithSocket(): Field {
+		return {
+			name: "untrackWithSocket",
+			pos: Context.currentPos(),
+			kind: FFun({
+				params: [
+					{name: "T"}  // Socket type parameter
+				],
+				args: [
+					{name: "socket", type: macro : T},
+					{name: "topic", type: macro : String},
+					{name: "key", type: macro : String}
+				],
+				ret: macro : T,
+				expr: macro {
+					// Untrack and return socket for chaining
+					untrackInternal(topic, key);
+					return socket;
+				}
+			}),
+			access: [APublic, AStatic, AInline],
+			doc: "Untrack presence and return socket for LiveView chaining pattern.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
 		};
 	}

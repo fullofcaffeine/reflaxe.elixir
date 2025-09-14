@@ -3,7 +3,7 @@ defmodule TodoAppWeb.Presence do
   def track_user(socket, user) do
     meta = %{:online_at => Date_Impl_.get_time(DateTime.utc_now()), :user_name => user.name, :user_email => user.email, :avatar => nil, :editing_todo_id => nil, :editing_started_at => nil}
     key = Std.string(user.id)
-    Phoenix.Presence.track(self(), socket, key, meta)
+    Phoenix.Presence.track(self(), "users", key, meta)
     socket
   end
   def update_user_editing(socket, user, todo_id) do
@@ -15,11 +15,11 @@ else
   nil
 end}
     key = Std.string(user.id)
-    Phoenix.Presence.update(self(), socket, key, updated_meta)
+    Phoenix.Presence.update(self(), "users", key, updated_meta)
     socket
   end
-  defp get_user_presence(socket, user_id) do
-    presences = Phoenix.Presence.list(socket)
+  defp get_user_presence(_socket, user_id) do
+    presences = Phoenix.Presence.list("users")
     user_key = Std.string(user_id)
     if (Reflect.has_field(presences, user_key)) do
       entry = Reflect.field(presences, user_key)
@@ -31,11 +31,11 @@ end}
     end
     nil
   end
-  def list_online_users(socket) do
-    Phoenix.Presence.list(socket)
+  def list_online_users(_socket) do
+    Phoenix.Presence.list("users")
   end
-  def get_users_editing_todo(socket, todo_id) do
-    all_users = Phoenix.Presence.list(socket)
+  def get_users_editing_todo(_socket, todo_id) do
+    all_users = Phoenix.Presence.list("users")
     editing_users = []
     g = 0
     g1 = Reflect.fields(all_users)
@@ -56,5 +56,26 @@ end}
   end
 end)
     editing_users
+  end
+  def track_simple(key, meta) do
+    Phoenix.Presence.track(self(), "users", key, meta)
+  end
+  def update_simple(key, meta) do
+    Phoenix.Presence.update(self(), "users", key, meta)
+  end
+  def untrack_simple(key) do
+    Phoenix.Presence.untrack(self(), "users", key)
+  end
+  def track_with_socket(socket, topic, key, meta) do
+    Phoenix.Presence.track(self(), topic, key, meta)
+    socket
+  end
+  def update_with_socket(socket, topic, key, meta) do
+    Phoenix.Presence.update(self(), topic, key, meta)
+    socket
+  end
+  def untrack_with_socket(socket, topic, key) do
+    Phoenix.Presence.untrack(self(), topic, key)
+    socket
   end
 end

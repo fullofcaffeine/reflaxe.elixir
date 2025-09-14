@@ -29,6 +29,8 @@
   "server/types/sort_direction.ex",
   "server/types/pub_sub_topic.ex",
   "server/types/pub_sub_message_type.ex",
+  "server/types/presence_topics.ex",
+  "server/types/presence_topic.ex",
   "server/types/bulk_operation_type.ex",
   "server/types/bulk_operation.ex",
   "server/types/alert_level.ex",
@@ -158,7 +160,7 @@
   "_any/any_impl_.ex",
   "todo_app/postgrex_types.ex"
 ],
-  "id": 347,
+  "id": 353,
   "wasCached": false,
   "version": 1
 }
