@@ -2,6 +2,17 @@
 
 > **Parent Context**: See [/CLAUDE.md](/CLAUDE.md) for project-wide conventions and [/docs/03-compiler-development/CLAUDE.md](/docs/03-compiler-development/CLAUDE.md) for compiler development context
 
+## ⚠️ CRITICAL DIRECTIVE FOR AI AGENTS
+
+**MANDATORY: When creating ANY test, you MUST:**
+1. **ALWAYS use `test/snapshot/` directory** - NEVER create `test/tests/`
+2. **ALWAYS categorize properly** - Use existing categories (core, phoenix, ecto, etc.)
+3. **ALWAYS check for existing similar tests** before creating duplicates
+4. **ALWAYS update test counts** in this file when adding/moving tests
+5. **ALWAYS follow the exact directory structure** documented below
+
+**Last Updated**: January 2025 - Moved ~50 tests from incorrect `test/tests/` to proper locations
+
 ## 🧪 Test Suite Overview
 
 This directory contains the Reflaxe.Elixir compiler test suite, validating that Haxe code correctly transpiles to idiomatic Elixir.
@@ -33,23 +44,26 @@ This directory contains the Reflaxe.Elixir compiler test suite, validating that 
 ```
 test/
 ├── snapshot/              # Primary compiler validation tests
-│   ├── core/             # Core language features (45 tests)
+│   ├── core/             # Core language features (~60 tests)
 │   │   ├── arrays/       # Array operations
 │   │   ├── classes/      # Class compilation
 │   │   ├── enums/        # Enum handling
 │   │   ├── loops/        # For/while loops
 │   │   └── ...
-│   ├── phoenix/          # Phoenix framework (5 tests)
+│   ├── phoenix/          # Phoenix framework (~15 tests)
 │   │   ├── liveview/     # LiveView components
 │   │   ├── router/       # Router DSL
+│   │   ├── presence/     # Phoenix Presence
 │   │   └── hxx_template/ # HXX→HEEx templates
-│   ├── ecto/             # Database ORM (8 tests)
+│   ├── ecto/             # Database ORM (~10 tests)
 │   │   ├── schemas/      # Schema definitions
 │   │   ├── changesets/   # Validation
 │   │   └── migrations/   # Database migrations
-│   ├── otp/              # OTP patterns (3 tests)
-│   ├── stdlib/           # Standard library (2 tests)
-│   └── regression/       # Bug fix validations (10 tests)
+│   ├── otp/              # OTP patterns (4 tests)
+│   ├── stdlib/           # Standard library (~15 tests)
+│   ├── exunit/           # Test framework (~6 tests)
+│   ├── loops/            # Loop-specific tests (3 tests)
+│   └── regression/       # Bug fix validations (~30 tests)
 │
 ├── *.exs                 # Elixir integration tests
 ├── Makefile              # Test runner (parallel execution)
@@ -57,6 +71,12 @@ test/
 ├── test_helper.exs       # Elixir test support
 └── README.md             # User documentation
 ```
+
+**⚠️ CRITICAL: Test Location Rules**
+- **ALL snapshot tests MUST go in `test/snapshot/`** - Not in `test/tests/`
+- **Use proper categories** - core, phoenix, ecto, otp, stdlib, exunit, loops, regression
+- **Never create `test/tests/` directory** - This is the wrong location
+- **Follow the naming convention** - Use descriptive names like `variable_shadowing_patterns`
 
 ## 🎯 Test Types Explained
 
@@ -187,28 +207,148 @@ This validates the entire compilation pipeline with a real Phoenix application.
 
 ### Adding New Tests
 
-#### For Bug Fixes (Regression Tests)
+#### ⚠️ CORRECT Test Creation Process
+
+**STEP 1: Choose the Right Location**
+```
+test/snapshot/
+├── core/          # Language features (arrays, classes, loops, etc.)
+├── phoenix/       # Phoenix-specific (LiveView, Router, Presence)
+├── ecto/          # Database features (schemas, migrations)
+├── otp/           # OTP patterns (GenServer, Supervisor)
+├── stdlib/        # Standard library (Reflect, Lambda, StringBuf)
+├── exunit/        # Test framework features
+├── loops/         # Loop-specific edge cases
+└── regression/    # Bug fixes (always create test when fixing bugs)
+```
+
+**STEP 2: Create Test Directory**
 ```bash
-mkdir snapshot/regression/your_bug_name
-cd snapshot/regression/your_bug_name
+# For a bug fix
+mkdir test/snapshot/regression/variable_shadowing_patterns
 
-# Create compile.hxml
-cat > compile.hxml << EOF
+# For a new feature
+mkdir test/snapshot/core/new_feature_name
+
+# NEVER create test/tests/ directory!
+```
+
+**STEP 3: Create compile.hxml**
+```hxml
 -cp .
--cp ../../../../src
--cp ../../../../std
+-main Main
 -lib reflaxe
--D reflaxe_runtime
--D elixir_output=out
---macro reflaxe.elixir.CompilerInit.Start()
-Main
-EOF
+-lib reflaxe.elixir
+--no-output
+```
 
-# Create Main.hx with minimal reproduction
-# Run test
-make test-regression/your_bug_name
-# If output is correct, save as intended
+**STEP 4: Create Main.hx**
+```haxe
+package;
+
+class Main {
+    public static function main() {
+        // Minimal code to reproduce the issue
+        // Keep it focused on ONE specific problem
+    }
+}
+```
+
+**STEP 5: Generate Output and Validate**
+```bash
+# From project root
+cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+
+# Compile the test (generates out/ directory)
+haxe test/snapshot/regression/your_test_name/compile.hxml
+
+# Check the generated Elixir
+cat test/snapshot/regression/your_test_name/out/Main.ex
+
+# If output is CORRECT, save as intended
+cd test/snapshot/regression/your_test_name
 cp -r out intended
+
+# If output is WRONG, fix the compiler first!
+```
+
+**STEP 6: Verify Test Passes**
+```bash
+# Run specific test
+./scripts/test-runner.sh --pattern "your_test_name"
+
+# Or use make
+make -C test test-regression/your_test_name
+```
+
+#### Common Mistakes to Avoid
+
+❌ **WRONG: Creating tests in wrong location**
+```bash
+mkdir test/tests/MyTest  # WRONG!
+```
+
+✅ **CORRECT: Using snapshot directory**
+```bash
+mkdir test/snapshot/regression/MyTest  # RIGHT!
+```
+
+❌ **WRONG: Not categorizing tests**
+```bash
+mkdir test/snapshot/random_test  # WRONG!
+```
+
+✅ **CORRECT: Using proper categories**
+```bash
+mkdir test/snapshot/core/array_operations  # RIGHT!
+mkdir test/snapshot/regression/enum_pattern_fix  # RIGHT!
+```
+
+❌ **WRONG: Committing out/ directory**
+```bash
+git add test/snapshot/regression/MyTest/out  # WRONG!
+```
+
+✅ **CORRECT: Only committing intended/**
+```bash
+git add test/snapshot/regression/MyTest/intended  # RIGHT!
+```
+
+#### For Bug Fixes (Regression Tests)
+Always create a regression test when fixing a bug:
+
+```bash
+# 1. Create test that reproduces the bug
+mkdir test/snapshot/regression/issue_description
+cd test/snapshot/regression/issue_description
+
+# 2. Create minimal Main.hx that shows the problem
+echo 'class Main {
+    public static function main() {
+        // Code that triggers the bug
+    }
+}' > Main.hx
+
+# 3. Create compile.hxml
+echo '-cp .
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output' > compile.hxml
+
+# 4. Fix the compiler
+
+# 5. Generate correct output
+cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+haxe test/snapshot/regression/issue_description/compile.hxml
+
+# 6. Save as intended if correct
+cd test/snapshot/regression/issue_description
+cp -r out intended
+
+# 7. Verify test passes
+cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+./scripts/test-runner.sh --pattern "issue_description"
 ```
 
 #### For New Features
