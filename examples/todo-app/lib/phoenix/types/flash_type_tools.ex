@@ -1,6 +1,6 @@
 defmodule FlashTypeTools do
-  def to_string(_type) do
-    case (_type) do
+  def to_string(type) do
+    case (type) do
       {:info} ->
         "info"
       {:success} ->
@@ -26,8 +26,8 @@ defmodule FlashTypeTools do
         {:info}
     end
   end
-  def get_css_class(_type) do
-    case (_type) do
+  def get_css_class(type) do
+    case (type) do
       {:info} ->
         "bg-blue-50 border-blue-200 text-blue-800"
       {:success} ->
@@ -38,8 +38,8 @@ defmodule FlashTypeTools do
         "bg-red-50 border-red-200 text-red-800"
     end
   end
-  def get_icon_name(_type) do
-    case (_type) do
+  def get_icon_name(type) do
+    case (type) do
       {:info} ->
         "information-circle"
       {:success} ->

@@ -1,6 +1,6 @@
 defmodule HttpStatusTools do
-  def to_int(_status) do
-    case (_status) do
+  def to_int(status) do
+    case (status) do
       {:ok} ->
         200
       {:created} ->
@@ -20,7 +20,7 @@ defmodule HttpStatusTools do
       {:internal_server_error} ->
         500
       {:custom, code} ->
-        g = elem(_status, 1)
+        g = elem(status, 1)
         code = g
         code
     end
