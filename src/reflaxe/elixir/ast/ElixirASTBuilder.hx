@@ -6,17 +6,14 @@ import haxe.macro.Type;
 import haxe.macro.Expr;
 import haxe.macro.Context;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.makeAST;
+import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
 import reflaxe.elixir.ast.ElixirASTPatterns;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.context.ClauseContext;
 // Import builder modules
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
-import reflaxe.elixir.ast.builders.CallExprBuilder;
-import reflaxe.elixir.ast.builders.PatternMatchBuilder;
-import reflaxe.elixir.ast.builders.LoopBuilder;
-import reflaxe.elixir.ast.builders.ArrayBuilder;
-import reflaxe.elixir.ast.builders.ControlFlowBuilder;
-import reflaxe.elixir.ast.builders.ClassBuilder;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -335,7 +332,9 @@ class ElixirASTBuilder {
                         }
                     default:
                         // Delegate to CoreExprBuilder for other constants
-                        CoreExprBuilder.buildConst(c, currentContext);
+                        // Returns ElixirAST, but we need ElixirASTDef
+                        var ast = CoreExprBuilder.buildConst(c);
+                        ast.def;
                 }
                 
             // ================================================================
@@ -343,7 +342,8 @@ class ElixirASTBuilder {
             // ================================================================
             case TLocal(v):
                 // Delegate to CoreExprBuilder for variable resolution
-                CoreExprBuilder.buildLocal(v, currentContext);
+                var ast = CoreExprBuilder.buildLocal(v);
+                ast.def;
                 
             case TVar(v, init):
                 #if debug_variable_usage
