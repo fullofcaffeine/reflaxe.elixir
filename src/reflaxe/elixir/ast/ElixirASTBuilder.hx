@@ -9,10 +9,14 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTPatterns;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.context.ClauseContext;
-// TODO: Fix and re-enable builders
-// import reflaxe.elixir.ast.builders.CoreExprBuilder;
-// import reflaxe.elixir.ast.builders.CallExprBuilder;
-// import reflaxe.elixir.ast.builders.PatternMatchBuilder;
+// Import builder modules
+import reflaxe.elixir.ast.builders.CoreExprBuilder;
+import reflaxe.elixir.ast.builders.CallExprBuilder;
+import reflaxe.elixir.ast.builders.PatternMatchBuilder;
+import reflaxe.elixir.ast.builders.LoopBuilder;
+import reflaxe.elixir.ast.builders.ArrayBuilder;
+import reflaxe.elixir.ast.builders.ControlFlowBuilder;
+import reflaxe.elixir.ast.builders.ClassBuilder;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -287,200 +291,59 @@ class ElixirASTBuilder {
             // ================================================================
             // Literals and Constants
             // ================================================================
-            case TConst(TString(s)):
-                /**
-                 * STRING OR ATOM GENERATION BASED ON TYPE
-                 * 
-                 * WHY: We need to distinguish between regular strings and atoms.
-                 * The Atom abstract type (elixir.types.Atom) indicates when a
-                 * string literal should be compiled to an Elixir atom.
-                 * 
-                 * WHAT: Check the expression's type to determine if it's an Atom
-                 * abstract. If so, generate an atom; otherwise, a string.
-                 * 
-                 * HOW:
-                 * 1. Check if expr.t is an abstract type
-                 * 2. If the abstract's underlying type path is "elixir.types.Atom"
-                 * 3. Generate EAtom instead of EString
-                 * 
-                 * EXAMPLE:
-                 * - var s: String = "hello" → EString("hello")
-                 * - var a: Atom = "ok" → EAtom("ok")
-                 * - TimeUnit.Millisecond → EAtom("millisecond")
-                 */
-                // Check if this string has the Atom type
-                var isAtom = false;
-                #if debug_atom_generation
-                trace('[Atom Debug TConst] String "${s}" with type: ${expr.t}');
-                #end
-                switch(expr.t) {
-                    case TAbstract(ref, _):
-                        var abstractType = ref.get();
+            case TConst(c):
+                // Special handling for strings to check if they should be atoms
+                switch(c) {
+                    case TString(s):
+                        // Check if this string has the Atom type
+                        var isAtom = false;
                         #if debug_atom_generation
-                        trace('[Atom Debug TConst] Abstract type: ${abstractType.pack.join(".")}.${abstractType.name}');
+                        trace('[Atom Debug TConst] String "${s}" with type: ${expr.t}');
                         #end
-                        // Check if this is the Atom abstract type
-                        if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Atom") {
-                            isAtom = true;
-                            #if debug_atom_generation
-                            trace('[Atom Debug TConst] DETECTED: String is Atom type!');
-                            #end
+                        switch(expr.t) {
+                            case TAbstract(ref, _):
+                                var abstractType = ref.get();
+                                #if debug_atom_generation
+                                trace('[Atom Debug TConst] Abstract type: ${abstractType.pack.join(".")}.${abstractType.name}');
+                                #end
+                                // Check if this is the Atom abstract type
+                                if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Atom") {
+                                    isAtom = true;
+                                    #if debug_atom_generation
+                                    trace('[Atom Debug TConst] DETECTED: String is Atom type!');
+                                    #end
+                                }
+                            case _:
+                                #if debug_atom_generation
+                                trace('[Atom Debug TConst] Not an abstract type: ${expr.t}');
+                                #end
+                                // Not an abstract type
                         }
-                    case _:
-                        #if debug_atom_generation
-                        trace('[Atom Debug TConst] Not an abstract type: ${expr.t}');
-                        #end
-                        // Not an abstract type
+
+                        if (isAtom) {
+                            #if debug_atom_generation
+                            trace('[Atom Debug TConst] Generating atom :${s}');
+                            #end
+                            // Generate atom for Atom-typed strings
+                            EAtom(s);
+                        } else {
+                            #if debug_atom_generation
+                            trace('[Atom Debug TConst] Generating string "${s}"');
+                            #end
+                            // Regular string
+                            EString(s);
+                        }
+                    default:
+                        // Delegate to CoreExprBuilder for other constants
+                        CoreExprBuilder.buildConst(c, currentContext);
                 }
-                
-                if (isAtom) {
-                    #if debug_atom_generation
-                    trace('[Atom Debug TConst] Generating atom :${s}');
-                    #end
-                    // Generate atom for Atom-typed strings
-                    EAtom(s);
-                } else {
-                    #if debug_atom_generation
-                    trace('[Atom Debug TConst] Generating string "${s}"');
-                    #end
-                    // Regular string
-                    EString(s);
-                }
-                
-            case TConst(TInt(i)):
-                EInteger(i);
-
-            case TConst(TFloat(f)):
-                EFloat(f);
-
-            case TConst(TBool(b)):
-                EBoolean(b);
-
-            case TConst(TNull):
-                ENil;
-
-            case TConst(TThis):
-                // In Elixir, 'this' refers to the first parameter of instance methods
-                // Use the actual receiver parameter name we tracked in TFunction
-                var receiverName = if (currentReceiverParamName != null) {
-                    currentReceiverParamName;
-                } else {
-                    // Fallback to "struct" if we don't have a tracked receiver
-                    // This can happen in certain contexts
-                    "struct";
-                };
-                EVar(receiverName);
-
-            case TConst(TSuper):
-                // Elixir doesn't have super - this needs special handling
-                // Generally should not appear in valid code
-                // For now, just return nil since super isn't supported in Elixir
-                ENil;
                 
             // ================================================================
             // Variables and Binding
             // ================================================================
             case TLocal(v):
-                // Variable name resolution with priority hierarchy:
-                // 1. Pattern Variable Registry (highest priority - preserves user-specified names)
-                // 2. ClauseContext mappings (alpha-renaming for consistency)
-                // 3. Default variable name (fallback)
-                var varName = v.name;
-                
-                // Priority 1: Check Pattern Variable Registry
-                if (currentContext.patternVariableRegistry.exists(v.id)) {
-                    varName = currentContext.patternVariableRegistry.get(v.id);
-                    #if debug_ast_pipeline
-                    trace('[AST Builder] TLocal: Using pattern-extracted name from registry: ${v.name} (id=${v.id}) -> ${varName}');
-                    #end
-                }
-                // Priority 2: Check ClauseContext for mapped names (alpha-renaming)
-                else if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
-                    varName = currentClauseContext.localToName.get(v.id);
-                    // trace('[AST Builder] TLocal: Using mapped name from ClauseContext: ${v.name} (id=${v.id}) -> ${varName}');
-                } else if (currentClauseContext != null && v.name == "error") {
-                    // Debug: show what mappings we DO have
-                    // trace('[AST Builder] TLocal: No mapping for ${v.name} (id=${v.id}). Available mappings: ${[for (k in currentClauseContext.localToName.keys()) k + "->" + currentClauseContext.localToName.get(k)].join(", ")}');
-                }
-                
-                var idKey = Std.string(v.id);
-                var wasMapped = false;
-                
-                // Always debug variables that might be renamed
-                #if debug_ast_pipeline
-                if (varName.indexOf("priority") >= 0 || varName.indexOf("_") >= 0 || ~/\d$/.match(varName) || varName.indexOf("this") >= 0 || varName.indexOf("struct") >= 0 || varName == "p") {
-                    trace('[AST Builder] TLocal variable: name="${varName}", id=${v.id}, pos=${expr.pos}');
-                }
-                #end
-                
-                // Check if this variable has been registered as a function parameter
-                // or has an explicit mapping (from TFunction processing)
-                if (currentContext.tempVarRenameMap.exists(idKey)) {
-                    // Use the explicitly mapped name - it's already in Elixir format (snake_case)
-                    varName = currentContext.tempVarRenameMap.get(idKey);
-                    wasMapped = true;
-                    
-                    #if debug_ast_pipeline
-                    trace('[AST Builder] Using mapped name for id=${v.id}: ${v.name} -> ${varName}');
-                    #end
-                }
-                // Apply consistent underscore removal for compiler-generated variables
-                // This ensures both declarations and references use the same name
-                // EXCEPT for _g variables which should be preserved as-is
-                else if (varName.charAt(0) == "_" && varName.charAt(1) != "g" && varName.length > 1) {
-                    // For underscore-prefixed variables OTHER than _g, _g1, etc.
-                    // We need to apply the same transformation as toElixirVarName
-                    // to ensure consistency
-                    varName = varName.substr(1); // Remove the underscore
-                }
-                // REMOVED: Collision-rename detection was incorrectly stripping suffixes from
-                // user-defined variables like pos1, pos2. Since we cannot reliably distinguish
-                // between user-defined variables with numbers (pos1, test2) and compiler-generated
-                // collision renames, we're removing this logic entirely. 
-                // Variables should keep their original names unless explicitly mapped.
-                
-                // Only apply toElixirVarName if the variable wasn't already mapped
-                // Mapped variables are already in Elixir format (e.g., "this_1")
-                // TODO: Architectural improvement - store the Elixir-formatted name in tempVarRenameMap 
-                // during TFunction processing instead of converting here. This would eliminate the need
-                // for the wasMapped flag and make the conversion happen at definition time rather than
-                // reference time, following the single responsibility principle.
-                
-                // Convert variable names to snake_case for Elixir
-                // Unless they were explicitly mapped (function parameters are pre-mapped)
-                var finalName = if (wasMapped) {
-                    // Use the mapped name (already in snake_case for parameters)
-                    varName;
-                } else {
-                    // Check if this variable is unused (for consistent naming with declaration)
-                    var isUsed = if (currentContext.variableUsageMap != null) {
-                        currentContext.variableUsageMap.exists(v.id) && currentContext.variableUsageMap.get(v.id);
-                    } else {
-                        true; // Conservative default: assume used if no usage map
-                    };
-                    
-                    #if debug_variable_usage
-                    if (varName == "g" || varName == "g2" || varName.startsWith("_g")) {
-                        trace('[TLocal] Variable ${varName} (id=${v.id}): isUsed=$isUsed, in map=${currentContext.variableUsageMap != null ? Std.string(currentContext.variableUsageMap.exists(v.id)) : "no map"}');
-                    }
-                    #end
-                    
-                    // CRITICAL FIX: Don't add underscore to 'g' variables in TLocal
-                    // The variable was declared as 'g', not '_g', so we should reference it as 'g'
-                    // Only preserve existing underscores, don't add new ones
-                    var preserveUnderscore = false; // Never preserve underscore in TLocal - use exact declared name
-                    
-                    // Convert to snake_case for Elixir conventions
-                    // TLocal should NOT add underscore prefixes - that's done at declaration (TVar)
-                    // Just use the same conversion logic as the declaration
-                    toElixirVarName(varName, preserveUnderscore);
-                };
-                
-                // Create EVar with sourceVarId metadata for later resolution
-                var varNode = makeAST(EVar(finalName));
-                if (varNode.metadata == null) varNode.metadata = {};
-                varNode.metadata.sourceVarId = v.id;
-                varNode.def;
+                // Delegate to CoreExprBuilder for variable resolution
+                CoreExprBuilder.buildLocal(v, currentContext);
                 
             case TVar(v, init):
                 #if debug_variable_usage
