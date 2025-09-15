@@ -4,7 +4,7 @@ package reflaxe.elixir;
 
 import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
-import reflaxe.elixir.ast.ElixirASTBuilder.ClauseContext;
+import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.behaviors.BehaviorTransformer;
 
 /**
@@ -47,6 +47,7 @@ class CompilationContext {
      * Maps TVar.id to whether it needs underscore prefix
      */
     public var underscorePrefixedVars: Map<Int, Bool>;
+
 
     /**
      * Variable usage tracking map for determining if variables are used
