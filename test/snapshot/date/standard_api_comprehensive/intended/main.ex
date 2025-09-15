@@ -15,16 +15,16 @@ defmodule Main do
             DateTime.from_naive!(naive, "Etc/UTC")
 )
     d1 = this1
-    Log.trace("Constructor: year=" <> Kernel.to_string(d1.year) <> ", month=" <> Kernel.to_string(((d1.month - 1))) <> ", day=" <> Kernel.to_string(d1.day), %{:file_name => "Main.hx", :line_number => 18, :class_name => "Main", :method_name => "testConstructors"})
-    Log.trace("Time: " <> Kernel.to_string(d1.hour) <> ":" <> Kernel.to_string(d1.minute) <> ":" <> Kernel.to_string(d1.second), %{:file_name => "Main.hx", :line_number => 19, :class_name => "Main", :method_name => "testConstructors"})
+    Log.trace("Constructor: year=#{d1.year}, month=#{d1.month - 1}, day=#{d1.day}", %{:file_name => "Main.hx", :line_number => 18, :class_name => "Main", :method_name => "testConstructors"})
+    Log.trace("Time: #{d1.hour}:#{d1.minute}:#{d1.second}", %{:file_name => "Main.hx", :line_number => 19, :class_name => "Main", :method_name => "testConstructors"})
     now = DateTime.utc_now()
-    Log.trace("Date.now() returned a date: " <> DateTime.to_iso8601(now), %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "testConstructors"})
+    Log.trace("Date.now() returned a date: #{DateTime.to_iso8601(now)}", %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "testConstructors"})
     timestamp = 1.7040672e+12
     d2 = Date_Impl_.from_time(timestamp)
-    Log.trace("fromTime(" <> Kernel.to_string(timestamp) <> "): " <> DateTime.to_iso8601(d2), %{:file_name => "Main.hx", :line_number => 28, :class_name => "Main", :method_name => "testConstructors"})
+    Log.trace("fromTime(#{timestamp}): #{DateTime.to_iso8601(d2)}", %{:file_name => "Main.hx", :line_number => 28, :class_name => "Main", :method_name => "testConstructors"})
     iso_string = "2024-03-15T14:30:00Z"
     d3 = Date_Impl_.from_string(iso_string)
-    Log.trace("fromString(\"" <> iso_string <> "\"): year=" <> Kernel.to_string(d3.year) <> ", month=" <> Kernel.to_string(((d3.month - 1))), %{:file_name => "Main.hx", :line_number => 33, :class_name => "Main", :method_name => "testConstructors"})
+    Log.trace("fromString(\"#{iso_string}\"): year=#{d3.year}, month=#{d3.month - 1}", %{:file_name => "Main.hx", :line_number => 33, :class_name => "Main", :method_name => "testConstructors"})
   end
   defp test_getters() do
     Log.trace("=== Getter Tests ===", %{:file_name => "Main.hx", :line_number => 37, :class_name => "Main", :method_name => "testGetters"})
@@ -36,11 +36,11 @@ defmodule Main do
             DateTime.from_naive!(naive, "Etc/UTC")
 )
     d = this1
-    Log.trace("getFullYear(): " <> Kernel.to_string(d.year), %{:file_name => "Main.hx", :line_number => 42, :class_name => "Main", :method_name => "testGetters"})
-    Log.trace("getMonth(): " <> Kernel.to_string(((d.month - 1))), %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "testGetters"})
-    Log.trace("getDate(): " <> Kernel.to_string(d.day), %{:file_name => "Main.hx", :line_number => 44, :class_name => "Main", :method_name => "testGetters"})
-    Log.trace("getHours(): " <> Kernel.to_string(d.hour), %{:file_name => "Main.hx", :line_number => 45, :class_name => "Main", :method_name => "testGetters"})
-    Log.trace("getMinutes(): " <> Kernel.to_string(d.minute), %{:file_name => "Main.hx", :line_number => 46, :class_name => "Main", :method_name => "testGetters"})
+    Log.trace("getFullYear(): #{d.year}", %{:file_name => "Main.hx", :line_number => 42, :class_name => "Main", :method_name => "testGetters"})
+    Log.trace("getMonth(): #{d.month - 1}", %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "testGetters"})
+    Log.trace("getDate(): #{d.day}", %{:file_name => "Main.hx", :line_number => 44, :class_name => "Main", :method_name => "testGetters"})
+    Log.trace("getHours(): #{d.hour}", %{:file_name => "Main.hx", :line_number => 45, :class_name => "Main", :method_name => "testGetters"})
+    Log.trace("getMinutes(): #{d.minute}", %{:file_name => "Main.hx", :line_number => 46, :class_name => "Main", :method_name => "testGetters"})
     Log.trace("getSeconds(): " <> Kernel.to_string(d.second), %{:file_name => "Main.hx", :line_number => 47, :class_name => "Main", :method_name => "testGetters"})
     date = DateTime.to_date(d)
     dow = Date.day_of_week(date)

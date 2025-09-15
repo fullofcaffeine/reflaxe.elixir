@@ -263,7 +263,7 @@ g
     end
     value = 42
     assert value == 42 do
-      "Value should be " <> value
+      "Value should be #{value}"
     end
     assert 2 == 2 do
       nil
