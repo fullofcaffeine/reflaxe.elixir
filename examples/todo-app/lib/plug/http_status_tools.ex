@@ -20,8 +20,7 @@ defmodule HttpStatusTools do
       {:internal_server_error} ->
         500
       {:custom, _code} ->
-        code = g
-        code
+        (g)
     end
   end
   def from_int(code) do
@@ -49,15 +48,15 @@ defmodule HttpStatusTools do
     end
   end
   def is_success(status) do
-    code = to_int(status)
+    code = HttpStatusTools.to_int(status)
     code >= 200 && code < 300
   end
   def is_client_error(status) do
-    code = to_int(status)
+    code = HttpStatusTools.to_int(status)
     code >= 400 && code < 500
   end
   def is_server_error(status) do
-    code = to_int(status)
+    code = HttpStatusTools.to_int(status)
     code >= 500 && code < 600
   end
 end

@@ -117,7 +117,7 @@ defmodule Sys do
         
   end
   def program_path() do
-    executable_path()
+    Sys.executable_path()
   end
   def set_time_locale(loc) do
     

@@ -12,7 +12,7 @@ defmodule Reflect do
     Map.has_key?(o, String.to_existing_atom(field))
   end
   def delete_field(o, field) do
-    has_field(o, field)
+    Map.has_key?(o, String.to_atom(field))
   end
   def is_object(v) do
     is_map(v)
@@ -40,10 +40,10 @@ defmodule Reflect do
     f1 == f2
   end
   def get_property(o, field) do
-    field(o, field)
+    Map.get(o, String.to_atom(field))
   end
   def set_property(o, field, value) do
-    set_field(o, field, value)
+    Map.put(o, String.to_atom(field), value)
   end
   def make_var_args(f) do
     fn args -> f.(args) end

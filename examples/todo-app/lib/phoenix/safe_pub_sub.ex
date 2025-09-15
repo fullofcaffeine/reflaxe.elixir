@@ -1,6 +1,6 @@
 defmodule Phoenix.SafePubSub do
   def subscribe_with_converter(topic, topic_converter) do
-    pubsub_module = get_pub_sub_module()
+    pubsub_module = Phoenix.SafePubSub.get_pub_sub_module()
     topic_string = topic_converter.(topic)
     subscribe_result = Phoenix.PubSub.subscribe(pubsub_module, topic_string)
     is_ok = subscribe_result == :ok
@@ -11,7 +11,7 @@ defmodule Phoenix.SafePubSub do
                 end)}
   end
   def broadcast_with_converters(topic, message, topic_converter, message_converter) do
-    pubsub_module = get_pub_sub_module()
+    pubsub_module = Phoenix.SafePubSub.get_pub_sub_module()
     topic_string = topic_converter.(topic)
     message_payload = message_converter.(message)
     Phoenix.PubSub.broadcast(pubsub_module, topic_string, message_payload)

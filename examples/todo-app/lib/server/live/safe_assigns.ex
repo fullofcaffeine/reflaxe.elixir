@@ -26,8 +26,8 @@ defmodule SafeAssigns do
     Phoenix.Component.assign(live_socket, :show_form, show_form)
   end
   def update_todos_and_stats(socket, todos) do
-    completed = count_completed(todos)
-    pending = count_pending(todos)
+    completed = SafeAssigns.count_completed(todos)
+    pending = SafeAssigns.count_pending(todos)
     live_socket = socket
     Phoenix.Component.assign([live_socket, todos, todos.length, completed, pending], %{:todos => {1}, :total_todos => {2}, :completed_todos => {3}, :pending_todos => {4}})
   end

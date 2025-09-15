@@ -51,7 +51,7 @@ end)
     result
   end
   def get_header(this1, name) do
-    headers = get_headers(this1)
+    headers = Conn_Impl_.get_headers(this1)
     key = name.to_lower_case()
     Map.get(headers, key)
   end
@@ -71,7 +71,7 @@ end)
     Map.get(this1, String.to_atom("assigns"))
   end
   def get_assign(this1, key) do
-    assigns = get_assigns(this1)
+    assigns = Conn_Impl_.get_assigns(this1)
     Map.get(assigns, String.to_atom(key))
   end
   def is_halted(this1) do
