@@ -1,156 +1,238 @@
 defmodule BalancedTree do
-  @root nil
-  def set(struct, key, value) do
-    %{struct | root: struct.set_loop(key, value, struct.root)}
+  defstruct root: nil
+
+  def new() do
+    %BalancedTree{root: nil}
   end
-  def get(struct, _key) do
-    node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
-  if (acc_node != nil) do
-    c = struct.compare(_key, acc_node.key)
-    if (c == 0), do: acc_node.value
-    nil
-    {:cont, {acc_node, acc_state}}
-  else
-    {:halt, {acc_node, acc_state}}
+
+  def set(tree, key, value) do
+    root = set_loop(tree, key, value, tree.root)
+    %{tree | root: root}
   end
-end)
-    nil
+
+  def get(tree, key) do
+    find_node(tree.root, key, &compare/2)
   end
-  def remove(struct, key) do
-    result = struct.remove_loop(key, struct.root)
-    if (result != nil), do: result.found
-    false
+
+  def remove(tree, key) do
+    result = remove_loop(tree, key, tree.root)
+    if result != nil, do: result.found, else: false
   end
-  def exists(struct, _key) do
-    node = struct.root
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, fn _, {acc_node, acc_state} ->
-  if (acc_node != nil) do
-    c = struct.compare(_key, acc_node.key)
-    if (c == 0), do: true, else: nil
-    {:cont, {acc_node, acc_state}}
-  else
-    {:halt, {acc_node, acc_state}}
+
+  def exists(tree, key) do
+    exists_node(tree.root, key, &compare/2)
   end
-end)
-    false
-  end
-  def iterator(struct) do
-    ret = []
-    struct.iterator_loop(struct.root, ret)
+
+  def iterator(tree) do
+    ret = iterator_loop(tree.root, [])
     ArrayIterator.new(ret)
   end
-  def key_value_iterator(struct) do
-    MapKeyValueIterator.new(struct)
+
+  def key_value_iterator(tree) do
+    MapKeyValueIterator.new(tree)
   end
-  def keys(struct) do
-    ret = []
-    struct.keys_loop(struct.root, ret)
+
+  def keys(tree) do
+    ret = keys_loop(tree.root, [])
     ArrayIterator.new(ret)
   end
-  def copy(struct) do
-    copied = BalancedTree.new()
-    root = struct.root
-    copied
+
+  def copy(tree) do
+    # For immutable structures, copy can return the same tree
+    # If deep copy is needed, traverse and rebuild
+    %BalancedTree{root: copy_node(tree.root)}
   end
-  defp set_loop(struct, k, v, node) do
-    if (node == nil) do
-      TreeNode.new(nil, k, v, nil, -1)
-    end
-    c = struct.compare(k, node.key)
-    if (c == 0) do
-      TreeNode.new(node.left, k, v, node.right, node.get_height())
-    else
-      if (c < 0) do
-        struct.balance((struct.set_loop(k, v, node.left)), node.key, node.value, node.right)
-      else
-        struct.balance(node.left, node.key, node.value, (struct.set_loop(k, v, node.right)))
-      end
+
+  # Private helper functions using idiomatic recursion
+
+  defp find_node(nil, _key, _compare_fn), do: nil
+  defp find_node(node, key, compare_fn) do
+    case compare_fn.(key, node.key) do
+      0 -> node.value
+      x when x < 0 -> find_node(node.left, key, compare_fn)
+      _ -> find_node(node.right, key, compare_fn)
     end
   end
-  defp remove_loop(struct, k, node) do
-    if (node == nil), do: %{:node => nil, :found => false}
-    c = struct.compare(k, node.key)
-    if (c == 0) do
-      %{:node => struct.merge(node.left, node.right), :found => true}
-    else
-      if (c < 0) do
-        result = struct.remove_loop(k, node.left)
-        if (result != nil && result.found), do: %{:node => struct.balance(result.node, node.key, node.value, node.right), :found => true}
-        %{:node => node, :found => false}
-      else
-        result = struct.remove_loop(k, node.right)
-        if (result != nil && result.found), do: %{:node => struct.balance(node.left, node.key, node.value, result.node), :found => true}
-        %{:node => node, :found => false}
-      end
+
+  defp exists_node(nil, _key, _compare_fn), do: false
+  defp exists_node(node, key, compare_fn) do
+    case compare_fn.(key, node.key) do
+      0 -> true
+      x when x < 0 -> exists_node(node.left, key, compare_fn)
+      _ -> exists_node(node.right, key, compare_fn)
     end
   end
-  defp iterator_loop(struct, node, acc) do
-    if (node != nil) do
-      struct.iterator_loop(node.left, acc)
-      acc = acc ++ [node.value]
-      struct.iterator_loop(node.right, acc)
+
+  defp set_loop(_tree, k, v, nil) do
+    TreeNode.new(nil, k, v, nil, 0)
+  end
+
+  defp set_loop(tree, k, v, node) do
+    case compare(k, node.key) do
+      0 ->
+        TreeNode.new(node.left, k, v, node.right, node.height)
+      x when x < 0 ->
+        balance(set_loop(tree, k, v, node.left), node.key, node.value, node.right)
+      _ ->
+        balance(node.left, node.key, node.value, set_loop(tree, k, v, node.right))
     end
   end
-  defp keys_loop(struct, node, acc) do
-    if (node != nil) do
-      struct.keys_loop(node.left, acc)
-      acc = acc ++ [node.key]
-      struct.keys_loop(node.right, acc)
-    end
+
+  defp remove_loop(_tree, _k, nil) do
+    %{node: nil, found: false}
   end
-  defp merge(struct, t1, t2) do
-    if (t1 == nil), do: t2
-    if (t2 == nil), do: t1
-    t = struct.min_binding(t2)
-    if (t == nil), do: t1
-    struct.balance(t1, t.key, t.value, struct.remove_min_binding(t2))
-  end
-  defp min_binding(struct, t) do
-    if (t == nil), do: nil
-    if (t.left == nil), do: t
-    struct.min_binding(t.left)
-  end
-  defp remove_min_binding(struct, t) do
-    if (t == nil), do: nil
-    if (t.left == nil), do: t.right
-    struct.balance(struct.remove_min_binding(t.left), t.key, t.value, t.right)
-  end
-  defp balance(struct, l, k, v, r) do
-    hl = l.get_height()
-    hr = r.get_height()
-    if (hl > hr + 2) do
-      if (l.left.get_height() >= l.right.get_height()) do
-        TreeNode.new(l.left, l.key, l.value, TreeNode.new(l.right, k, v, r, -1), -1)
-      else
-        TreeNode.new(TreeNode.new(l.left, l.key, l.value, l.right.left, -1), l.right.key, l.right.value, TreeNode.new(l.right.right, k, v, r, -1), -1)
-      end
-    else
-      if (hr > hl + 2) do
-        if (r.right.get_height() > r.left.get_height()) do
-          TreeNode.new(TreeNode.new(l, k, v, r.left, -1), r.key, r.value, r.right, -1)
+
+  defp remove_loop(tree, k, node) do
+    case compare(k, node.key) do
+      0 ->
+        %{node: merge(tree, node.left, node.right), found: true}
+      x when x < 0 ->
+        result = remove_loop(tree, k, node.left)
+        if result != nil and result.found do
+          %{node: balance(result.node, node.key, node.value, node.right), found: true}
         else
-          TreeNode.new(TreeNode.new(l, k, v, r.left.left, -1), r.left.key, r.left.value, TreeNode.new(r.left.right, r.key, r.value, r.right, -1), -1)
+          %{node: node, found: false}
         end
-      else
-        TreeNode.new(l, k, v, r, (if (hl > hr), do: hl, else: hr) + 1)
-      end
+      _ ->
+        result = remove_loop(tree, k, node.right)
+        if result != nil and result.found do
+          %{node: balance(node.left, node.key, node.value, result.node), found: true}
+        else
+          %{node: node, found: false}
+        end
     end
   end
-  defp compare(struct, k1, k2) do
+
+  defp iterator_loop(nil, acc), do: acc
+  defp iterator_loop(node, acc) do
+    acc = iterator_loop(node.left, acc)
+    acc = acc ++ [node.value]
+    iterator_loop(node.right, acc)
+  end
+
+  defp keys_loop(nil, acc), do: acc
+  defp keys_loop(node, acc) do
+    acc = keys_loop(node.left, acc)
+    acc = acc ++ [node.key]
+    keys_loop(node.right, acc)
+  end
+
+  defp copy_node(nil), do: nil
+  defp copy_node(node) do
+    TreeNode.new(
+      copy_node(node.left),
+      node.key,
+      node.value,
+      copy_node(node.right),
+      node.height
+    )
+  end
+
+  defp merge(_tree, nil, t2), do: t2
+  defp merge(_tree, t1, nil), do: t1
+  defp merge(tree, t1, t2) do
+    case min_binding(t2) do
+      nil -> t1
+      t -> balance(t1, t.key, t.value, remove_min_binding(t2))
+    end
+  end
+
+  defp min_binding(nil), do: nil
+  defp min_binding(%{left: nil} = node), do: node
+  defp min_binding(%{left: left}), do: min_binding(left)
+
+  defp remove_min_binding(nil), do: nil
+  defp remove_min_binding(%{left: nil, right: right}), do: right
+  defp remove_min_binding(node) do
+    balance(remove_min_binding(node.left), node.key, node.value, node.right)
+  end
+
+  defp balance(l, k, v, r) do
+    hl = get_height(l)
+    hr = get_height(r)
+
     cond do
-      k1 < k2 ->
-        -1
-      k1 > k2 ->
-        1
+      hl > hr + 2 ->
+        if get_height(l.left) >= get_height(l.right) do
+          TreeNode.new(l.left, l.key, l.value, TreeNode.new(l.right, k, v, r, 0), 0)
+        else
+          TreeNode.new(
+            TreeNode.new(l.left, l.key, l.value, l.right.left, 0),
+            l.right.key,
+            l.right.value,
+            TreeNode.new(l.right.right, k, v, r, 0),
+            0
+          )
+        end
+
+      hr > hl + 2 ->
+        if get_height(r.right) > get_height(r.left) do
+          TreeNode.new(TreeNode.new(l, k, v, r.left, 0), r.key, r.value, r.right, 0)
+        else
+          TreeNode.new(
+            TreeNode.new(l, k, v, r.left.left, 0),
+            r.left.key,
+            r.left.value,
+            TreeNode.new(r.left.right, r.key, r.value, r.right, 0),
+            0
+          )
+        end
+
       true ->
-        0
+        TreeNode.new(l, k, v, r, max(hl, hr) + 1)
     end
   end
-  def to_string(struct) do
-    if (struct.root == nil), do: "[]", else: "[" <> struct.root.to_string() <> "]"
+
+  defp get_height(nil), do: 0
+  defp get_height(node), do: node.height
+
+  defp compare(k1, k2) do
+    cond do
+      k1 < k2 -> -1
+      k1 > k2 -> 1
+      true -> 0
+    end
   end
-  def clear(struct) do
-    nil
+
+  def to_string(nil), do: "[]"
+  def to_string(%{root: nil}), do: "[]"
+  def to_string(%{root: root}), do: "[#{node_to_string(root)}]"
+
+  defp node_to_string(nil), do: ""
+  defp node_to_string(node) do
+    # In-order traversal for string representation
+    left_str = if node.left, do: node_to_string(node.left) <> ", ", else: ""
+    right_str = if node.right, do: ", " <> node_to_string(node.right), else: ""
+    "#{left_str}#{node.key}=>#{node.value}#{right_str}"
   end
+
+  def clear(_tree) do
+    %BalancedTree{root: nil}
+  end
+end
+
+defmodule TreeNode do
+  defstruct [:left, :key, :value, :right, :height]
+
+  def new(left, key, value, right, height) do
+    actual_height = if height == 0 do
+      max(get_height(left), get_height(right)) + 1
+    else
+      height
+    end
+
+    %TreeNode{
+      left: left,
+      key: key,
+      value: value,
+      right: right,
+      height: actual_height
+    }
+  end
+
+  defp get_height(nil), do: 0
+  defp get_height(node), do: node.height
+
+  defp max(a, b) when a > b, do: a
+  defp max(_a, b), do: b
 end

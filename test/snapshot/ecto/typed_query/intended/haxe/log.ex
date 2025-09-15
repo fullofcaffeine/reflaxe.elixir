@@ -1,17 +1,33 @@
 defmodule Log do
-  def format_output(v, infos) do
+  def format_output(v, infos \\ nil) do
     str = Std.string(v)
-    if (infos == nil), do: str
-    pstr = infos.file_name <> ":" <> Kernel.to_string(infos.line_number)
-    if (Map.get(infos, :custom_params) != nil) do
-      g = 0
-      g1 = infos.custom_params
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, str, g, :ok}, fn _, {acc_g1, acc_str, acc_g, acc_state} -> nil end)
+
+    if infos == nil do
+      str
+    else
+      pstr = "#{infos.file_name}:#{infos.line_number}"
+
+      # Handle custom parameters if present
+      pstr = if Map.get(infos, :custom_params) != nil do
+        infos.custom_params
+        |> Enum.reduce(pstr, fn param, acc ->
+          "#{acc}:#{param}"
+        end)
+      else
+        pstr
+      end
+
+      "#{pstr}: #{str}"
     end
-    pstr <> ": " <> str
   end
-  def trace(v, infos) do
+
+  def trace(v, infos \\ nil) do
     str = format_output(v, infos)
     IO.puts(str)
+  end
+
+  def clear() do
+    # ANSI escape code to clear console
+    IO.write("\e[2J\e[H")
   end
 end
