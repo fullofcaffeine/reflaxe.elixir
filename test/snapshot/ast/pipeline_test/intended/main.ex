@@ -12,6 +12,6 @@ defmodule Main do
     else
       Log.trace("Boolean is false", %{:file_name => "Main.hx", :line_number => 18, :class_name => "Main", :method_name => "main"})
     end
-    Log.trace("Sum: " <> Kernel.to_string(sum), %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "main"})
+    Log.trace("Sum: #{sum}", %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "main"})
   end
 end

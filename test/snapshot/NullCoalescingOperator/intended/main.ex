@@ -67,7 +67,7 @@ defmodule Main do
     _result = if tmp != nil, do: tmp, else: third
     tmp = first
     tmp = second
-    _complex = (if tmp != nil, do: tmp, else: "a") <> (if tmp != nil, do: tmp, else: "b")
+    _complex = "#{if tmp != nil, do: tmp, else: "a"}#{if tmp != nil, do: tmp, else: "b"}"
   end
   defp test_method_calls() do
     obj = nil
