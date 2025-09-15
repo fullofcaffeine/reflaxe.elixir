@@ -9,7 +9,7 @@ defmodule Main do
     index = i + 1
     c = (c - 55232) <<< 10 ||| index
     masked = some_function(index) &&& 1023
-    Log.trace("c: " <> Kernel.to_string(c) <> ", masked: " <> Kernel.to_string(masked), %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "testComplexAssignment"})
+    Log.trace("c: #{c}, masked: #{masked}", %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "testComplexAssignment"})
   end
   defp some_function(x) do
     x * 2

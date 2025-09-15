@@ -20,6 +20,6 @@ defmodule Main do
   end
   defp test_params(pos1, pos2) do
     sum = pos1 + pos2
-    Log.trace("pos1: " <> Kernel.to_string(pos1) <> ", pos2: " <> Kernel.to_string(pos2) <> ", sum: " <> Kernel.to_string(sum), %{:file_name => "Main.hx", :line_number => 33, :class_name => "Main", :method_name => "testParams"})
+    Log.trace("pos1: #{pos1}, pos2: #{pos2}, sum: #{sum}", %{:file_name => "Main.hx", :line_number => 33, :class_name => "Main", :method_name => "testParams"})
   end
 end
