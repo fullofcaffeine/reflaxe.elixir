@@ -2,192 +2,173 @@ package reflaxe.elixir.ast.builders;
 
 #if (macro || reflaxe_runtime)
 
-import haxe.macro.Expr;
 import haxe.macro.Type;
+import haxe.macro.Expr;
 import reflaxe.elixir.ast.ElixirAST;
-import reflaxe.elixir.CompilationContext;
+import reflaxe.elixir.ast.ElixirAST.makeAST;
+import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 
 /**
- * CoreExprBuilder: Builds ElixirAST nodes for basic expressions
+ * CoreExprBuilder: Basic Expression Construction for ElixirAST
  *
- * WHY: Extracts core expression building logic from the monolithic ElixirASTBuilder
- * to create a focused, testable module that handles basic expression types.
+ * WHY: Isolate basic expression building (literals, variables, simple operations)
+ * from the monolithic ElixirASTBuilder to improve maintainability and testability.
+ * Basic expressions are the foundation of all other AST constructs.
  *
- * WHAT: Converts basic TypedExpr nodes to ElixirAST:
- * - Constants (integers, strings, booleans, null)
- * - Variables (local references, parameters)
- * - Basic operators (arithmetic, comparison, logical)
- * - Field access and simple type references
+ * WHAT: Handles TypedExpr cases for:
+ * - Constants (strings, integers, floats, booleans, null)
+ * - Local variables and this references
+ * - Binary operations with proper operator mapping
+ * - Simple unary operations
  *
- * HOW: Provides static methods that take TypedExpr and CompilationContext,
- * returning ElixirAST nodes. Uses context for variable naming resolution
- * and state tracking without static contamination.
+ * HOW: Provides static functions that convert TypedExpr nodes to ElixirAST nodes
+ * with proper metadata preservation. Uses callback pattern to avoid circular
+ * dependencies with the main builder.
  *
  * ARCHITECTURE BENEFITS:
  * - Single Responsibility: Only handles basic expressions
- * - Testability: Can test core expression building in isolation
- * - Maintainability: Clear boundaries and focused logic
- * - Performance: Lightweight with minimal dependencies
+ * - Zero coupling: No dependencies on other builders
+ * - Pure functions: All methods are stateless transformations
+ * - Testability: Can unit test literal and variable generation
  *
- * @see ElixirASTBuilder for integration point
- * @see CompilationContext for state management
+ * EDGE CASES:
+ * - Null values compile to 'nil' atom
+ * - Boolean true/false become atoms
+ * - String escaping handled by printer phase
  */
 class CoreExprBuilder {
 
     /**
-     * Build constant expressions
+     * Build constant literal expressions
      *
-     * WHY: Constants are the most basic building blocks of any expression
-     * WHAT: Converts TConst nodes to appropriate ElixirAST equivalents
-     * HOW: Maps each constant type to its Elixir representation
+     * WHY: Constants are the simplest AST nodes and most common
+     * WHAT: Converts TConst to appropriate Elixir literal
+     * HOW: Pattern matches on constant type and creates corresponding AST
      */
-    public static function buildConst(c: TConstant, context: CompilationContext): ElixirASTDef {
-        return switch(c) {
-            case TInt(i): EInteger(i);
-            case TFloat(f): EFloat(Std.string(f));
-            case TString(s): EString(s);
-            case TBool(b): EAtom(b ? "true" : "false");
-            case TNull: ENil;
-            case TThis: {
-                // In methods, 'this' becomes the receiver parameter
-                if (context.currentReceiverParamName != null) {
-                    EVar(context.currentReceiverParamName);
-                } else {
-                    EVar("self");
-                }
-            }
-            case TSuper: EVar("super"); // Will be transformed later if needed
-        }
+    public static function buildConst(c: TConstant, metadata: ElixirMetadata = null): ElixirAST {
+        var def = switch(c) {
+            case TInt(i):
+                EInteger(i);
+            case TFloat(f):
+                EFloat(Std.parseFloat(f));
+            case TString(s):
+                EString(s);
+            case TBool(b):
+                EBoolean(b);
+            case TNull:
+                ENil;
+            case TThis:
+                EVar("self");
+            case TSuper:
+                EVar("super"); // Will be transformed later
+        };
+
+        return metadata != null ? makeASTWithMeta(def, metadata) : makeAST(def);
     }
 
     /**
      * Build local variable references
      *
-     * WHY: Variables need context-aware naming resolution
-     * WHAT: Converts TLocal nodes to ElixirAST variable references
-     * HOW: Checks multiple naming sources in priority order
+     * WHY: Variables are fundamental to all expressions
+     * WHAT: Creates EVar node with proper naming
+     * HOW: Uses variable name directly, transformation handled later
      */
-    public static function buildLocal(v: TVar, context: CompilationContext): ElixirASTDef {
-        var varName = v.name;
+    public static function buildLocal(v: TVar, metadata: ElixirMetadata = null): ElixirAST {
+        if (metadata == null) metadata = {};
 
-        // Priority 1: Check pattern variable registry
-        if (context.patternVariableRegistry.exists(v.id)) {
-            varName = context.patternVariableRegistry.get(v.id);
-        }
-        // Priority 2: Check clause context for alpha-renaming
-        else if (context.currentClauseContext != null) {
-            var mapping = context.currentClauseContext.localToName;
-            if (mapping != null && mapping.exists(v.id)) {
-                varName = mapping.get(v.id);
-            }
-        }
-        // Priority 3: Check temp variable renaming
-        else if (context.tempVarRenameMap.exists(Std.string(v.id))) {
-            varName = context.tempVarRenameMap.get(Std.string(v.id));
-        }
+        // Store the original variable ID for later resolution
+        metadata.sourceVarId = v.id;
 
-        // Apply underscore prefix for unused variables
-        if (shouldPrefixWithUnderscore(v, context)) {
-            varName = "_" + varName;
-        }
-
-        // Convert to snake_case
-        varName = toElixirVarName(varName);
-
-        return EVar(varName);
+        return makeASTWithMeta(EVar(v.name), metadata);
     }
 
     /**
-     * Build binary operations
+     * Build binary operator nodes
      *
-     * WHY: Binary operations are fundamental to expressions
-     * WHAT: Converts TBinop nodes to ElixirAST binary operations
-     * HOW: Maps Haxe operators to Elixir equivalents
+     * WHY: Binary operations need consistent operator mapping
+     * WHAT: Converts Haxe Binop to Elixir EBinaryOp
+     * HOW: Direct mapping of operator types
      */
-    public static function buildBinop(op: Binop): EBinaryOperator {
+    public static function buildBinop(op: Binop): EBinaryOp {
         return switch(op) {
+            // Arithmetic
             case OpAdd: Add;
             case OpMult: Multiply;
             case OpDiv: Divide;
             case OpSub: Subtract;
-            case OpAssign: Match;
+            case OpMod: Remainder;
+
+            // Assignment (handled separately in builder)
+            case OpAssign: throw "Assignment should be handled as EMatch";
+            case OpAssignOp(_): throw "Compound assignment needs special handling";
+
+            // Comparison
             case OpEq: Equal;
             case OpNotEq: NotEqual;
             case OpGt: Greater;
             case OpGte: GreaterEqual;
             case OpLt: Less;
             case OpLte: LessEqual;
-            case OpAnd: error("Use OpBoolAnd");
-            case OpOr: error("Use OpBoolOr");
-            case OpXor: BitwiseXor;
+
+            // Logical
             case OpBoolAnd: And;
             case OpBoolOr: Or;
-            case OpShl: BitwiseLeftShift;
-            case OpShr: BitwiseRightShift;
-            case OpUShr: BitwiseRightShift; // No unsigned in Elixir
-            case OpMod: Modulo;
-            case OpInterval: Range;
-            case OpArrow: error("Arrow operator not supported");
+
+            // Bitwise
+            case OpAnd: BitwiseAnd;
+            case OpOr: BitwiseOr;
+            case OpXor: BitwiseXor;
+            case OpShl: ShiftLeft;
+            case OpShr: ShiftRight;
+            case OpUShr: ShiftRight; // Elixir doesn't have unsigned shift
+
+            // Special
+            case OpInterval: throw "Interval operator needs special handling";
+            case OpArrow: throw "Arrow operator needs special handling";
             case OpIn: In;
-            case OpNullCoal: error("Use null coalescing pattern");
-            case OpAssignOp(op): error("Use compound assignment pattern");
-        }
+            case OpNullCoal: throw "Null coalescing needs special handling";
+        };
     }
 
     /**
-     * Build unary operations
+     * Build unary operator expressions
      *
-     * WHY: Unary operations modify single expressions
-     * WHAT: Converts TUnop nodes to ElixirAST unary operations
-     * HOW: Maps prefix/postfix operators appropriately
+     * WHY: Unary operations need proper prefix/postfix handling
+     * WHAT: Creates appropriate unary operation AST
+     * HOW: Maps to Elixir unary operators
      */
-    public static function buildUnop(op: Unop, postFix: Bool): EUnaryOperator {
-        return switch(op) {
-            case OpIncrement: error("Use increment pattern");
-            case OpDecrement: error("Use decrement pattern");
-            case OpNot: Not;
-            case OpNeg: Negate;
-            case OpNegBits: BitwiseNot;
-            case OpSpread: error("Use spread pattern");
-        }
-    }
+    public static function buildUnop(op: Unop, postfix: Bool, e: ElixirAST, metadata: ElixirMetadata = null): ElixirAST {
+        if (metadata == null) metadata = {};
 
-    // Helper functions
+        var def = switch(op) {
+            case OpIncrement:
+                // x++ becomes x = x + 1
+                // Note: requiresRebinding would need to be handled by transformer
+                EBinary(Add, e, makeAST(EInteger(1)));
 
-    static function shouldPrefixWithUnderscore(v: TVar, context: CompilationContext): Bool {
-        // Check if marked as unused
-        if (context.underscorePrefixedVars.exists(v.id)) {
-            return context.underscorePrefixedVars.get(v.id);
-        }
+            case OpDecrement:
+                // x-- becomes x = x - 1
+                // Note: requiresRebinding would need to be handled by transformer
+                EBinary(Subtract, e, makeAST(EInteger(1)));
 
-        // Check usage map
-        if (context.variableUsageMap != null) {
-            var isUsed = context.variableUsageMap.exists(v.id) &&
-                         context.variableUsageMap.get(v.id);
-            return !isUsed;
-        }
+            case OpNot:
+                // !x becomes not x
+                EUnary(Not, e);
 
-        return false;
-    }
+            case OpNeg:
+                // -x becomes -x
+                EUnary(Negate, e);
 
-    static function toElixirVarName(name: String): String {
-        // Convert camelCase to snake_case
-        // This is a simplified version - full implementation would be more robust
-        var result = "";
-        for (i in 0...name.length) {
-            var char = name.charAt(i);
-            if (i > 0 && char == char.toUpperCase() && char != "_") {
-                result += "_" + char.toLowerCase();
-            } else {
-                result += char.toLowerCase();
-            }
-        }
-        return result;
-    }
+            case OpNegBits:
+                // ~x becomes ~~~x (Bitwise NOT in Elixir)
+                EUnary(BitwiseNot, e);
 
-    static function error(msg: String): Dynamic {
-        throw 'CoreExprBuilder: $msg';
-        return null;
+            case OpSpread:
+                // ...x handled in context (array spread, etc.)
+                throw "Spread operator requires context";
+        };
+
+        return makeASTWithMeta(def, metadata);
     }
 }
 
