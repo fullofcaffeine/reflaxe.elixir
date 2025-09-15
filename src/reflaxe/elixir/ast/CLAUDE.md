@@ -12,6 +12,60 @@ The AST pipeline is the core of the Reflaxe.Elixir compiler, transforming Haxe's
 2. **Transformer Phase** (`ElixirASTTransformer.hx`) - Applies idiomatic transformations
 3. **Printer Phase** (`ElixirASTPrinter.hx`) - Generates final Elixir strings
 
+## 🚀 NEW: Modularization Infrastructure (January 2025)
+
+**STATUS**: Phase 1 Complete - Infrastructure Ready for Integration
+**DOCUMENTATION**: See [`/docs/03-compiler-development/AST_MODULARIZATION_INFRASTRUCTURE.md`](/docs/03-compiler-development/AST_MODULARIZATION_INFRASTRUCTURE.md)
+
+### Overview
+A new modular infrastructure has been created to break down the monolithic 10,000+ line ElixirASTBuilder into focused, testable modules:
+
+### Core Components
+- **`context/ElixirASTContext.hx`** - Shared compilation state with priority-based variable resolution
+- **`context/BuildContext.hx`** - Interface for AST builders to access shared state
+- **`context/TransformContext.hx`** - Interface for transformation passes
+- **`builders/PatternMatchBuilder.hx`** - Template for specialized builders
+- **`test/TestProgressTracker.hx`** - Incremental test execution system
+
+### Key Benefits
+- **Separation of Concerns**: Each builder focuses on one aspect
+- **Testability**: Builders can be unit tested in isolation
+- **Performance**: Incremental testing and caching
+- **Maintainability**: 200-500 line modules instead of 10,000+ lines
+
+### Integration Status
+- ✅ **Phase 1**: Infrastructure created and documented
+- ⏳ **Phase 2**: Integration with main compiler (pending)
+- 📋 **Phase 3**: Full modularization of ElixirASTBuilder
+
+### Using the Infrastructure
+
+```haxe
+// Example: Creating a specialized builder
+class LoopBuilder {
+    var context: BuildContext;
+
+    public function new(context: BuildContext) {
+        this.context = context;
+    }
+
+    public function buildLoop(expr: TypedExpr): ElixirAST {
+        // Use context for variable resolution
+        var varName = context.resolveVariable(tvarId, defaultName);
+
+        // Store metadata for transformer
+        var nodeId = context.generateNodeId();
+        context.setNodeMetadata(nodeId, {
+            loopType: "comprehension",
+            needsOptimization: true
+        });
+
+        // Build and return AST
+        return {...};
+    }
+}
+```
+
 ## 🔍 Known Challenges & Limitations
 
 ### Enum Pattern Variable Name Extraction

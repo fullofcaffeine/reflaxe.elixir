@@ -51,19 +51,64 @@ using reflaxe.helpers.TypeHelper;
  * @see ElixirASTBuilder for integration
  * @see ClauseContext for variable management
  */
-class PatternMatchBuilder {
+class PatternMatchBuilder implements IBuilder {
     /**
      * Build context for accessing shared state
      */
     var context: BuildContext;
 
     /**
-     * Constructor
+     * Callback for building nested expressions
+     * Avoids circular dependency with main builder
+     */
+    var buildExpression: (TypedExpr) -> ElixirAST;
+
+    /**
+     * Callback for building pattern expressions
+     * Used for recursive pattern building
+     */
+    var buildPattern: (TypedExpr, ClauseContext) -> ElixirAST;
+
+    /**
+     * Constructor with callback injection (Codex recommendation)
      *
      * @param context Build context from main compiler
+     * @param buildExpression Optional expression builder callback (uses context default if null)
+     * @param buildPattern Optional pattern builder callback (uses internal default if null)
      */
-    public function new(context: BuildContext) {
+    public function new(
+        context: BuildContext,
+        ?buildExpression: (TypedExpr) -> ElixirAST,
+        ?buildPattern: (TypedExpr, ClauseContext) -> ElixirAST
+    ) {
         this.context = context;
+
+        // Use provided callbacks or get from context
+        this.buildExpression = buildExpression != null
+            ? buildExpression
+            : context.getExpressionBuilder();
+
+        this.buildPattern = buildPattern != null
+            ? buildPattern
+            : (expr, clause) -> buildPatternInternal(expr, clause);
+    }
+
+    // ===== IBuilder Interface Implementation =====
+
+    /**
+     * Get the builder type identifier
+     * @return "pattern" for pattern matching builder
+     */
+    public function getType(): String {
+        return "pattern";
+    }
+
+    /**
+     * Check if builder is ready for use
+     * @return True if callbacks are set
+     */
+    public function isReady(): Bool {
+        return buildExpression != null && buildPattern != null;
     }
 
     /**
@@ -163,13 +208,14 @@ class PatternMatchBuilder {
     }
 
     /**
-     * Build a pattern from a case value
+     * Internal pattern builder implementation
+     * Used when no external callback is provided
      *
      * @param value Pattern expression
      * @param clauseContext Context for variable mapping
      * @return ElixirAST pattern
      */
-    function buildPattern(value: TypedExpr, clauseContext: ClauseContext): Null<ElixirAST> {
+    function buildPatternInternal(value: TypedExpr, clauseContext: ClauseContext): Null<ElixirAST> {
         return switch (value.expr) {
             case TConst(c):
                 buildConstantPattern(c);
