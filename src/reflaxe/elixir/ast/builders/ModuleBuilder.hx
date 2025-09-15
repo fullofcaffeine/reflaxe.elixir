@@ -123,7 +123,7 @@ class ModuleBuilder {
      * WHAT: Creates EDefmodule node with metadata for annotations
      * HOW: Extracts class metadata, builds module body, sets transformation flags
      */
-    public static function buildClassModule(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+    public static function buildClassModule(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>, context: reflaxe.elixir.CompilationContext): ElixirAST {
         #if debug_module_builder
         #end
         
@@ -157,37 +157,37 @@ class ModuleBuilder {
         // Build module body based on annotations
         var moduleBody = if (metadata.isPhoenixWeb) {
             // For @:phoenixWeb, create minimal structure - transformer will add macros
-            buildMinimalBody(classType, varFields, funcFields);
+            buildMinimalBody(classType, varFields, funcFields, context);
         } else if (metadata.isEndpoint) {
             // For @:endpoint, create minimal structure - transformer will add the rest
-            buildMinimalBody(classType, varFields, funcFields);
+            buildMinimalBody(classType, varFields, funcFields, context);
         } else if (metadata.isController) {
             // For @:controller, build controller action functions
-            buildControllerBody(classType, varFields, funcFields);
+            buildControllerBody(classType, varFields, funcFields, context);
         } else if (metadata.isLiveView) {
             // For @:liveview, build basic function structure
-            buildLiveViewBody(classType, varFields, funcFields);
+            buildLiveViewBody(classType, varFields, funcFields, context);
         } else if (metadata.isSchema) {
             // For @:schema, build schema structure
-            buildSchemaBody(classType, varFields, funcFields);
+            buildSchemaBody(classType, varFields, funcFields, context);
         } else if (metadata.isRepo) {
             // For @:repo, build minimal structure - transformer will add Ecto.Repo
-            buildMinimalBody(classType, varFields, funcFields);
+            buildMinimalBody(classType, varFields, funcFields, context);
         } else if (metadata.isApplication) {
             // For @:application, build OTP application structure
-            buildApplicationBody(classType, varFields, funcFields);
+            buildApplicationBody(classType, varFields, funcFields, context);
         } else if (metadata.isPresence) {
             // For @:presence, build regular module body - transformer will add Phoenix.Presence
-            buildRegularModuleBody(classType, varFields, funcFields);
+            buildRegularModuleBody(classType, varFields, funcFields, context);
         } else if (metadata.isExunit) {
             // For @:exunit, build test module body - transformer will add ExUnit.Case
-            buildExUnitBody(classType, varFields, funcFields);
+            buildExUnitBody(classType, varFields, funcFields, context);
         } else if (metadata.isDbTypes) {
             // For @:dbTypes, build Postgrex.Types.define call
-            buildDbTypesBody(classType, metadata);
+            buildDbTypesBody(classType, metadata, context);
         } else {
             // Regular module
-            buildRegularModuleBody(classType, varFields, funcFields);
+            buildRegularModuleBody(classType, varFields, funcFields, context);
         }
         
         // Create the module AST with metadata
@@ -797,7 +797,7 @@ class ModuleBuilder {
      * WHAT: Creates empty or minimal structure
      * HOW: Returns simple block that transformer will replace
      */
-    static function buildMinimalBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+    static function buildMinimalBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>, context: reflaxe.elixir.CompilationContext): ElixirAST {
         // For endpoint and similar, just create an empty block
         // The transformer will add all the necessary structure
         return makeAST(EBlock([]));
@@ -819,7 +819,7 @@ class ModuleBuilder {
      * @param metadata Module metadata containing dbAdapter, jsonModule, extensions
      * @return AST for the module body containing the type definition
      */
-    static function buildDbTypesBody(classType: ClassType, metadata: ElixirMetadata): ElixirAST {
+    static function buildDbTypesBody(classType: ClassType, metadata: ElixirMetadata, context: reflaxe.elixir.CompilationContext): ElixirAST {
         var statements = [];
         
         // Get the module name from classType
@@ -877,7 +877,7 @@ class ModuleBuilder {
      * WHAT: Builds controller action functions that receive conn and params
      * HOW: Compiles each public function as a controller action
      */
-    static function buildControllerBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+    static function buildControllerBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>, context: reflaxe.elixir.CompilationContext): ElixirAST {
         var statements = [];
         
         #if debug_module_builder
@@ -912,8 +912,13 @@ class ModuleBuilder {
                             null;
                         };
                         
+                        // Update context with function-specific usage map
+                        if (functionUsageMap != null) {
+                            context.variableUsageMap = functionUsageMap;
+                        }
+
                         var body = if (tfunc.expr != null) {
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, context);
                         } else {
                             makeAST(ENil);
                         }
@@ -945,7 +950,7 @@ class ModuleBuilder {
     /**
      * Build body for LiveView modules
      */
-    static function buildLiveViewBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+    static function buildLiveViewBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>, context: reflaxe.elixir.CompilationContext): ElixirAST {
         var statements = [];
         
         #if debug_module_builder
@@ -996,8 +1001,13 @@ class ModuleBuilder {
                             null;
                         };
                         
+                        // Update context with function-specific usage map
+                        if (functionUsageMap != null) {
+                            context.variableUsageMap = functionUsageMap;
+                        }
+
                         var body = if (tfunc.expr != null) {
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, context);
                         } else {
                             makeAST(ENil);
                         }
@@ -1037,7 +1047,7 @@ class ModuleBuilder {
     /**
      * Build body for Ecto Schema modules
      */
-    static function buildSchemaBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+    static function buildSchemaBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>, context: reflaxe.elixir.CompilationContext): ElixirAST {
         var statements = [];
         
         #if debug_module_builder
@@ -1070,8 +1080,13 @@ class ModuleBuilder {
                             null;
                         };
                         
+                        // Update context with function-specific usage map
+                        if (functionUsageMap != null) {
+                            context.variableUsageMap = functionUsageMap;
+                        }
+
                         var body = if (tfunc.expr != null) {
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, context);
                         } else {
                             makeAST(ENil);
                         }
@@ -1103,7 +1118,7 @@ class ModuleBuilder {
     /**
      * Build body for OTP Application modules
      */
-    static function buildApplicationBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+    static function buildApplicationBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>, context: reflaxe.elixir.CompilationContext): ElixirAST {
         var statements = [];
         
         // Build actual functions with their bodies
@@ -1130,8 +1145,13 @@ class ModuleBuilder {
                             null;
                         };
                         
+                        // Update context with function-specific usage map
+                        if (functionUsageMap != null) {
+                            context.variableUsageMap = functionUsageMap;
+                        }
+
                         var body = if (tfunc.expr != null) {
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, context);
                         } else {
                             makeAST(ENil);
                         }
@@ -1172,7 +1192,7 @@ class ModuleBuilder {
      * be auto-executed when the script is run with `elixir module.ex`. The detection
      * happens here but the actual bootstrap code is added in buildClassModule().
      */
-    static function buildRegularModuleBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+    static function buildRegularModuleBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>, context: reflaxe.elixir.CompilationContext): ElixirAST {
         var statements = [];
         
         // Check if this module has a static main() function for bootstrap generation
@@ -1240,7 +1260,11 @@ class ModuleBuilder {
                 }
                 #end
                 
-                var funcAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(funcExpr, functionUsageMap);
+                // Update context with function-specific usage map
+                if (functionUsageMap != null) {
+                    context.variableUsageMap = functionUsageMap;
+                }
+                var funcAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(funcExpr, context);
                 
                 #if debug_behavior_transformer
                 trace('[ModuleBuilder] Built function ${func.name} for ${classType.name}');
@@ -1323,7 +1347,7 @@ class ModuleBuilder {
      * WHAT: Processes methods and marks @:test methods with metadata
      * HOW: Adds metadata to test functions for transformer to handle
      */
-    static function buildExUnitBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>): ElixirAST {
+    static function buildExUnitBody(classType: ClassType, varFields: Array<ClassField>, funcFields: Array<ClassField>, context: reflaxe.elixir.CompilationContext): ElixirAST {
         var statements = [];
         
         // Add functions with test metadata
@@ -1406,8 +1430,13 @@ class ModuleBuilder {
                             null;
                         };
                         
+                        // Update context with function-specific usage map
+                        if (functionUsageMap != null) {
+                            context.variableUsageMap = functionUsageMap;
+                        }
+
                         var body = if (tfunc.expr != null) {
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, functionUsageMap);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, context);
                         } else {
                             makeAST(ENil);
                         }
