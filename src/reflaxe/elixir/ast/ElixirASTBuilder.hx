@@ -9,7 +9,10 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTPatterns;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.context.ClauseContext;
-import reflaxe.elixir.ast.builders.CoreExprBuilder;
+// TODO: Fix and re-enable builders
+// import reflaxe.elixir.ast.builders.CoreExprBuilder;
+// import reflaxe.elixir.ast.builders.CallExprBuilder;
+// import reflaxe.elixir.ast.builders.PatternMatchBuilder;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -284,12 +287,6 @@ class ElixirASTBuilder {
             // ================================================================
             // Literals and Constants
             // ================================================================
-            case TConst(TInt(i)):
-                EInteger(i);
-                
-            case TConst(TFloat(f)):
-                EFloat(Std.parseFloat(f));
-                
             case TConst(TString(s)):
                 /**
                  * STRING OR ATOM GENERATION BASED ON TYPE
@@ -350,12 +347,18 @@ class ElixirASTBuilder {
                     EString(s);
                 }
                 
+            case TConst(TInt(i)):
+                EInteger(i);
+
+            case TConst(TFloat(f)):
+                EFloat(f);
+
             case TConst(TBool(b)):
                 EBoolean(b);
-                
+
             case TConst(TNull):
                 ENil;
-                
+
             case TConst(TThis):
                 // In Elixir, 'this' refers to the first parameter of instance methods
                 // Use the actual receiver parameter name we tracked in TFunction
@@ -367,7 +370,7 @@ class ElixirASTBuilder {
                     "struct";
                 };
                 EVar(receiverName);
-                
+
             case TConst(TSuper):
                 // Elixir doesn't have super - this needs special handling
                 // Generally should not appear in valid code
@@ -1177,6 +1180,8 @@ class ElixirASTBuilder {
             // Function Calls
             // ================================================================
             case TCall(e, el):
+                // TODO: Delegate to CallExprBuilder once compilation issues fixed
+                // CallExprBuilder.buildCall(e, el, currentContext, expr -> buildFromTypedExpr(expr)).def;
                 #if debug_function_reference
                 trace('[FunctionRef] Processing TCall with ${el.length} args');
                 for (i in 0...el.length) {
@@ -2887,6 +2892,8 @@ class ElixirASTBuilder {
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
+                // TODO: Delegate to PatternMatchBuilder once compilation issues fixed
+                // PatternMatchBuilder.buildSwitch(e, cases, edef, currentContext, expr -> buildFromTypedExpr(expr)).def;
                 // Check if this is a switch on an idiomatic enum
                 // Haxe optimizes enum switches to TEnumIndex, so we need to look deeper
                 
