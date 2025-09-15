@@ -1,17 +1,20 @@
 defmodule Main do
   use ExUnit.Case
-  defp init_test_suite() do
+  setup_all context do
     Log.trace("Initializing test suite", %{:fileName => "Main.hx", :lineNumber => 28, :className => "Main", :methodName => "initTestSuite"})
   end
-  defp init_test() do
+  setup context do
     testData = [1, 2, 3, 4, 5]
     testString = "Hello World"
     Log.trace("Setting up test data", %{:fileName => "Main.hx", :lineNumber => 38, :className => "Main", :methodName => "initTest"})
   end
-  defp cleanup_test() do
-    testData = nil
-    testString = nil
-    Log.trace("Cleaning up test data", %{:fileName => "Main.hx", :lineNumber => 48, :className => "Main", :methodName => "cleanupTest"})
+  setup context do
+    on_exit(fn ->
+  testData = nil
+  testString = nil
+  Log.trace("Cleaning up test data", %{:fileName => "Main.hx", :lineNumber => 48, :className => "Main", :methodName => "cleanupTest"})
+end)
+    :ok
   end
   test "equality assertions" do
     assert 4 == 4 do
@@ -38,7 +41,7 @@ defmodule Main do
     assert 3 == 3 do
       "Array lengths should be equal"
     end
-    assert arr1_ == arr2_ do
+    assert arr1_0 == arr2_0 do
       "First elements should be equal"
     end
   end
@@ -123,43 +126,28 @@ defmodule Main do
     assert filtered[0] == 3 do
       "First filtered element should be 3"
     end
-    sum = 0
-    g = 0
-    g1 = struct.testData
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, g1, g, :ok}, fn _, {acc_sum, acc_g1, acc_g, acc_state} ->
-  if (acc_g < acc_g1.length) do
-    n = g1[g]
-    acc_g = acc_g + 1
-    acc_sum = acc_sum + n
-    {:cont, {acc_sum, acc_g1, acc_g, acc_state}}
-  else
-    {:halt, {acc_sum, acc_g1, acc_g, acc_state}}
-  end
-end)
+    sum = Enum.sum(struct.testData)
     assert sum == 15 do
       "Sum of elements should be 15"
     end
   end
   test "result assertions" do
-    success_operation = fn -> {:Ok, 42} end
-    failure_operation = fn -> {:Error, "Something went wrong"} end
-    success_result = {:ModuleRef}
+    success_operation = fn -> {:ok, 42} end
+    failure_operation = fn -> {:error, "Something went wrong"} end
+    success_result = success_operation.()
     assert match?({:ok, _}, success_result) do
       "Success operation should return Ok"
     end
-    failure_result = {:ModuleRef}
+    failure_result = failure_operation.()
     assert match?({:error, _}, failure_result) do
       "Failure operation should return Error"
     end
-    case (success_result.elem(0)) do
-      0 ->
-        g = success_result.elem(1)
-        value = g
+    case success_result do
+      {:ok, value} ->
         assert value == 42 do
           "Success value should be 42"
         end
-      1 ->
-        g = success_result.elem(1)
+      {:error, _error} ->
         flunk("Should not be an error")
     end
   end
@@ -201,17 +189,7 @@ end)
     refute Map.has_key?(map, "four") do
       "Map should not contain 'four'"
     end
-    g = []
-    k = Map.keys(map)
-    keys = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
-  if (acc_k.hasNext()) do
-    g.push(acc_k)
-    {:cont, {acc_k, acc_state}}
-  else
-    {:halt, {acc_k, acc_state}}
-  end
-end)
-g
+    keys = Map.keys(map)
     assert keys.length == 3 do
       "Map should have 3 keys"
     end
@@ -235,7 +213,7 @@ g
     assert 1 == 1 do
       "Single element array should have length 1"
     end
-    assert single_ == 42 do
+    assert single_0 == 42 do
       "Single element should be 42"
     end
     assert true do
@@ -263,7 +241,7 @@ g
     end
     value = 42
     assert value == 42 do
-      "Value should be #{value}"
+      "Value should be " <> value
     end
     assert 2 == 2 do
       nil
