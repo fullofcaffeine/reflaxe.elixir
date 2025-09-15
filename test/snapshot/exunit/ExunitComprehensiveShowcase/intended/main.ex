@@ -122,7 +122,7 @@ end)
   describe "Basic Assertions" do
     test "assert equal" do
       assert 4 == 4
-      assert "hel" <> "lo" == "hello"
+      assert "hel" <> "lo" == "hello"  # This is testing string concatenation operator
       assert [1, 2, 3] == [1, 2, 3]
     end
     test "assert not equal" do
