@@ -80,6 +80,51 @@ test/
 
 ## 🎯 Test Types Explained
 
+### Snapshot Test Development Approach ⚠️ CRITICAL
+
+**FUNDAMENTAL DIRECTIVE: For snapshot tests, ALWAYS start with proper INTENDED Elixir output first.**
+
+**The Right Workflow:**
+1. **Write the idiomatic Elixir** you expect the compiler to generate
+2. **Place it in the `intended/` directory** as the target output
+3. **Work on the compiler** to make it generate this exact output
+4. **Test passes** when generated `out/` matches your `intended/` Elixir
+
+**Why This Matters:**
+- **Clarity of intent** - You know exactly what idiomatic code should look like
+- **Test-driven development** - The test drives the compiler implementation
+- **Quality assurance** - Forces you to think about idiomatic Elixir patterns
+- **Prevents perpetuating bugs** - Old "intended" outputs may contain bugs
+
+**Example Workflow:**
+```bash
+# 1. Create test structure
+mkdir test/snapshot/regression/enum_parameter_usage
+cd test/snapshot/regression/enum_parameter_usage
+
+# 2. Write the Haxe test case
+echo 'class Main {
+    static function main() {
+        switch(getStatus()) {
+            case Custom(code): return code;
+        }
+    }
+}' > Main.hx
+
+# 3. FIRST write the INTENDED idiomatic Elixir output
+mkdir intended
+echo 'defmodule Main do
+  def main() do
+    case get_status() do
+      {:custom, code} -> code  # Idiomatic: uses the parameter name
+    end
+  end
+end' > intended/Main.ex
+
+# 4. NOW work on the compiler to generate this output
+# Fix ElixirASTBuilder.hx, test, iterate until it matches
+```
+
 ### Snapshot Tests (`snapshot/`)
 
 **Purpose**: Dual-level validation of the compiler
