@@ -51,20 +51,20 @@ defmodule Main do
       label = ""
     end
     if (label != "") do
-      IO.i_o.puts(label <> ": ")
+      IO.i_o.puts("#{label}: ")
     end
     IO.i_o.inspect("Debug value")
     color = IO.i_o._a_n_s_i.red
-    IO.i_o.write(color <> "Error text" <> IO.i_o._a_n_s_i.reset)
+    IO.i_o.write("#{color}Error text#{IO.i_o._a_n_s_i.reset}")
     color = IO.i_o._a_n_s_i.green
-    IO.i_o.write(color <> "Success text" <> IO.i_o._a_n_s_i.reset)
+    IO.i_o.write("#{color}Success text#{IO.i_o._a_n_s_i.reset}")
     color = IO.i_o._a_n_s_i.blue
-    IO.i_o.write(color <> "Info text" <> IO.i_o._a_n_s_i.reset)
+    IO.i_o.write("#{color}Info text#{IO.i_o._a_n_s_i.reset}")
     label = "Array"
     label = ""
     result = IO.i_o.iodata_to_binary(IO.i_o.inspect([1, 2, 3]))
     _formatted = if label == nil, do: label
-if label != "", do: label <> ": " <> result, else: result
+if label != "", do: "#{label}: #{result}", else: result
   end
   defp test_file_externs() do
     _read_result = File.file.read("test.txt")
@@ -79,10 +79,16 @@ if label != "", do: label <> ": " <> result, else: result
     _ls_result = File.file.ls(".")
     _copy_result = File.file.copy("source.txt", "dest.txt")
     _rename_result = File.file.rename("old.txt", "new.txt")
-    _text_content = if (elem(result, -1) == "ok"), do: elem((File.file.read("text_file.txt")), 0), else: nil
-    _write_success = elem((File.file.write("output.txt", "content")), -1) == "ok"
-    _lines = if (content != nil), do: (if (elem(result, -1) == "ok"), do: elem((File.file.read("multi_line.txt")), 0), else: nil).split("\n"), else: nil
-    _dir_created = elem((File.file.mkdir_p("new_dir")), -1) == "ok"
+    _text_content = case File.file.read("text_file.txt") do
+      {:ok, content} -> content
+      _ -> nil
+    end
+    _write_success = match?({:ok, _}, File.file.write("output.txt", "content"))
+    _lines = case File.file.read("multi_line.txt") do
+      {:ok, content} -> String.split(content, "\n")
+      _ -> nil
+    end
+    _dir_created = match?({:ok, _}, File.file.mkdir_p("new_dir"))
   end
   defp test_path_externs() do
     _joined = Path.path.join(["home", "user", "documents"])
@@ -122,7 +128,7 @@ if label != "", do: label <> ": " <> result, else: result
     size = Enum.enum.count(test_array)
     head = Enum.enum.at(test_array, 0)
     tail = Enum.enum.drop(test_array, 1)
-    collected = Enum.enum.map(test_array, fn x -> Std.string(x) end)
+    collected = Enum.enum.map(test_array, fn x -> "#{x}" end)
   end
   defp test_string_externs() do
     test_string = "  Hello, World!  "
