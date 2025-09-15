@@ -2793,8 +2793,23 @@ class ElixirASTBuilder {
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
-                // TODO: Delegate to PatternMatchBuilder once compilation issues fixed
-                // PatternMatchBuilder.buildSwitch(e, cases, edef, currentContext, expr -> buildFromTypedExpr(expr)).def;
+                // Phase 2 Integration: Try routing through BuilderFacade if enabled
+                if (context != null && context.builderFacade != null && context.isFeatureEnabled("use_new_pattern_builder")) {
+                    #if debug_ast_builder
+                    trace('[ElixirASTBuilder] Routing switch to BuilderFacade');
+                    #end
+
+                    try {
+                        return context.builderFacade.routeSwitch(e, cases, edef);
+                    } catch (err: Dynamic) {
+                        #if debug_ast_builder
+                        trace('[ElixirASTBuilder] BuilderFacade routing failed: $err, falling back to legacy');
+                        #end
+                        // Fall through to legacy implementation
+                    }
+                }
+
+                // Legacy implementation continues below
                 // Check if this is a switch on an idiomatic enum
                 // Haxe optimizes enum switches to TEnumIndex, so we need to look deeper
                 
