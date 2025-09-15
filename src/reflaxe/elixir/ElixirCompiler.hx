@@ -27,6 +27,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.naming.ElixirAtom;
+import reflaxe.elixir.CompilationContext;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -656,25 +657,38 @@ class ElixirCompiler extends GenericCompiler<
      * HOW: Delegates to ElixirASTBuilder for AST generation
      */
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<reflaxe.elixir.ast.ElixirAST> {
+        // Create a fresh compilation context for this expression
+        // This ensures complete isolation between compilation units during parallel execution
+        var context = new CompilationContext();
+
+        // Set compiler reference for the context
+        context.compiler = this;
+
+        // Initialize behavior transformer if needed
+        if (context.behaviorTransformer == null) {
+            context.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
+        }
+
         // Analyze variable usage before building AST
         // This enables context-aware naming to prevent Elixir compilation warnings
         var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
+        context.variableUsageMap = usageMap;
 
         // Collect function calls if we have a collector active
         if (functionUsageCollector != null) {
             functionUsageCollector.collectCalls(expr);
         }
-        
-        // Build AST for the expression with usage information
-        // Set compiler reference for dependency tracking
-        reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
-        var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, usageMap);
-        
+
+        // Build AST for the expression with compilation context
+        // Pass context as second parameter to ensure isolated state
+        var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
+
         // Apply transformations to all expressions, not just function bodies
+        // Pass context to transformer as well
         if (ast != null) {
-            ast = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast);
+            ast = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast, context);
         }
-        
+
         return ast;
     }
     
@@ -807,10 +821,21 @@ class ElixirCompiler extends GenericCompiler<
                 switch(funcExpr.expr) {
                     case TFunction(tfunc):
                         if (tfunc.expr != null) {
+                            // Create context for dependency tracking
+                            var context = new CompilationContext();
+                            context.compiler = this;
+
+                            // Initialize behavior transformer if needed
+                            if (context.behaviorTransformer == null) {
+                                context.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
+                            }
+
                             // Analyze variable usage for the function
                             var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
+                            context.variableUsageMap = usageMap;
+
                             // Build AST which triggers dependency tracking
-                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, usageMap);
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(tfunc.expr, context);
                         }
                     default:
                         // Not a function, skip
@@ -893,9 +918,13 @@ class ElixirCompiler extends GenericCompiler<
         // PASS 2: Build the module with discovered dependencies
         // Set compiler reference for dependency tracking and bootstrap generation
         reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
-        
-        var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, 
-            varFields, funcFields);
+
+        // Create a compilation context for this class
+        var context = new CompilationContext();
+        context.compiler = this;
+
+        var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType,
+            varFields, funcFields, context);
         
         #if debug_module_builder
         if (classType.name == "Main") {
@@ -1038,12 +1067,16 @@ class ElixirCompiler extends GenericCompiler<
         // For PostgrexTypes, we don't need a module wrapper - Postgrex.Types.define creates it
         // Just generate the top-level macro call
         var moduleAST = defineCall;
-        
-        // Apply transformations
-        moduleAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(moduleAST);
-        
-        // Convert to string
-        var moduleString = reflaxe.elixir.ast.ElixirASTPrinter.printAST(moduleAST);
+
+        // Create a compilation context for transformation
+        var context = new CompilationContext();
+        context.compiler = this;
+
+        // Apply transformations with context
+        moduleAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(moduleAST, context);
+
+        // Convert to string with context
+        var moduleString = reflaxe.elixir.ast.ElixirASTPrinter.printAST(moduleAST, context);
         
         // Set the output path for this companion module
         // Use snake_case for the file name
@@ -1065,9 +1098,21 @@ class ElixirCompiler extends GenericCompiler<
      * Helper to build AST from TypedExpr (delegates to builder)
      */
     function buildFromTypedExpr(expr: TypedExpr, ?usageMap: Map<Int, Bool>): reflaxe.elixir.ast.ElixirAST {
-        // Set compiler reference for dependency tracking
-        reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
-        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, usageMap);
+        // Create a fresh compilation context for this expression
+        var context = new CompilationContext();
+        context.compiler = this;
+
+        // Initialize behavior transformer if needed
+        if (context.behaviorTransformer == null) {
+            context.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
+        }
+
+        // Set usage map if provided
+        if (usageMap != null) {
+            context.variableUsageMap = usageMap;
+        }
+
+        return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
     }
     
     /**

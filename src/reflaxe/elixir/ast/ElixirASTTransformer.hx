@@ -61,7 +61,7 @@ class ElixirASTTransformer {
      * WHAT: Applies enabled passes in order to transform AST
      * HOW: Iterates through pass list, applying each to the AST
      */
-    public static function transform(ast: ElixirAST): ElixirAST {
+    public static function transform(ast: ElixirAST, ?context: reflaxe.elixir.CompilationContext): ElixirAST {
         #if debug_ast_transformer
         trace('[XRay AST Transformer] Starting transformation pipeline');
         trace('[XRay AST Transformer] AST type: ${Type.enumConstructor(ast.def)}');
@@ -5355,7 +5355,7 @@ class SupervisorOptionsTransformPass {
     /**
      * Transform supervisor options from maps to keyword lists
      */
-    public static function transform(ast: ElixirAST): ElixirAST {
+    public static function transform(ast: ElixirAST, ?context: reflaxe.elixir.CompilationContext): ElixirAST {
         #if debug_ast_transformer
         trace("[XRay SupervisorOptions] Starting supervisor options transformation");
         switch(ast.def) {

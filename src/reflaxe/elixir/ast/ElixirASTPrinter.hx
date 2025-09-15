@@ -44,12 +44,13 @@ class ElixirASTPrinter {
     
     /**
      * Public API for printing a single AST (used by ElixirASTBuilder for injection)
-     * 
+     *
      * WHY: ElixirASTBuilder needs to convert AST nodes to strings for __elixir__ parameter substitution
      * WHAT: Converts a single ElixirAST node to string without indentation
      * HOW: Calls main print function with zero indentation
      */
-    public static function printAST(ast: ElixirAST): String {
+    public static function printAST(ast: ElixirAST, ?context: reflaxe.elixir.CompilationContext): String {
+        // Context will be used in future for context-aware printing
         return print(ast, 0);
     }
     

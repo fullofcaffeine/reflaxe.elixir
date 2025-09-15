@@ -1687,6 +1687,23 @@ class StringBuf {
 
 **EVERY compiler change MUST be validated through the complete testing pipeline.**
 
+### Test-Driven Development Approach for Compiler Fixes
+
+**FUNDAMENTAL DIRECTIVE: When fixing compiler issues, start with the INTENDED idiomatic Elixir output first.**
+
+**The Right Workflow:**
+1. **Identify the issue** in generated code (e.g., `{:custom, _code} -> (g)` is wrong)
+2. **Write the idiomatic Elixir** you expect (`{:custom, code} -> code`)
+3. **Create a test** with both Haxe input and intended Elixir output
+4. **Work on the compiler** to generate the correct output
+5. **Validate** - Test passes when generated matches intended
+
+**Why This Matters:**
+- **Prevents regressions** - Clear expectations mean breaking changes get caught
+- **Speeds up development** - No guessing about correct output
+- **Ensures idiomatic code** - Forces thinking about Elixir best practices
+- **Tests must run from project root** - Always `cd` to project root before running tests
+
 ### After ANY Compiler Change
 
 #### Quick Iteration Testing (NEW - Recommended)
