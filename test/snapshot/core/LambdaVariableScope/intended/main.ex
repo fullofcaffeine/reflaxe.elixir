@@ -18,7 +18,7 @@ defmodule Main do
     multiplier = 3
     _mapped = Enum.map(numbers, fn n -> n * multiplier end)
     prefix = "Item: "
-    prefixed = Enum.map(numbers, fn num -> prefix <> Std.string(num) end)
+    prefixed = Enum.map(numbers, fn num -> "#{prefix}#{num}" end)
   end
   defp test_nested_array_operations() do
     data = [[1, 2], [3, 4], [5, 6]]
@@ -30,6 +30,6 @@ defmodule Main do
     prefix = "prefix_"
     suffix = "_suffix"
     exclude_item = "b"
-    _result = Enum.map(Enum.filter(items, fn item -> item != exclude_item end), fn item -> prefix <> item <> suffix end)
+    _result = Enum.map(Enum.filter(items, fn item -> item != exclude_item end), fn item -> "#{prefix}#{item}#{suffix}" end)
   end
 end

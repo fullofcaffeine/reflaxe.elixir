@@ -1,14 +1,10 @@
 defmodule Main do
   def main() do
     test = {:option1, "test"}
-    case (test) do
-      {:option1, value} ->
-        g = elem(test, 1)
-        _value = g
+    case test do
+      {:option1, _value} ->
         nil
-      {:option2, data} ->
-        g = elem(test, 1)
-        _data = g
+      {:option2, _data} ->
         Log.trace("Option2", %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "main"})
       {:option3} ->
         Log.trace("Option3", %{:file_name => "Main.hx", :line_number => 25, :class_name => "Main", :method_name => "main"})
