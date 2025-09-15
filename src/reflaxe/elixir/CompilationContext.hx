@@ -6,6 +6,11 @@ import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.behaviors.BehaviorTransformer;
+import reflaxe.elixir.ast.context.ElixirASTContext;
+import reflaxe.elixir.ast.context.BuildContext;
+import reflaxe.elixir.ast.builders.BuilderFacade;
+import reflaxe.elixir.ast.builders.IBuilder;
+import haxe.macro.Expr.Position;
 
 /**
  * CompilationContext: Instance-based compilation state container
@@ -31,7 +36,7 @@ import reflaxe.elixir.behaviors.BehaviorTransformer;
  * @see ElixirASTBuilder for usage patterns
  * @see ARCHITECTURE_ANALYSIS_2025_09.md for design rationale
  */
-class CompilationContext {
+class CompilationContext implements BuildContext {
     // ========================================================================
     // Variable Tracking Maps (Primary cause of shadowing bugs)
     // ========================================================================
@@ -148,6 +153,28 @@ class CompilationContext {
     public var behaviorTransformer: Null<BehaviorTransformer>;
 
     // ========================================================================
+    // AST Modularization Infrastructure (Phase 2 Integration)
+    // ========================================================================
+
+    /**
+     * Shared AST context for modular builders
+     * Provides centralized state management for all AST builders
+     */
+    public var astContext: ElixirASTContext;
+
+    /**
+     * Builder facade for gradual migration to modular architecture
+     * Routes compilation to specialized builders based on feature flags
+     */
+    public var builderFacade: Null<BuilderFacade>;
+
+    /**
+     * Current position for error reporting
+     * Updated as we traverse the AST
+     */
+    private var currentPosition: Position;
+
+    // ========================================================================
     // Constructor and Initialization
     // ========================================================================
 
@@ -180,6 +207,11 @@ class CompilationContext {
         // Compiler references will be set by ElixirCompiler
         compiler = null;
         behaviorTransformer = null;
+
+        // Initialize AST modularization infrastructure
+        astContext = new ElixirASTContext();
+        builderFacade = null; // Will be initialized when needed
+        currentPosition = null;
     }
 
     // ========================================================================
@@ -293,6 +325,237 @@ class CompilationContext {
     }
 
     // ========================================================================
+    // BuildContext Interface Implementation (Phase 2 Integration)
+    // ========================================================================
+
+    /**
+     * Get the shared AST context
+     */
+    public function getASTContext(): ElixirASTContext {
+        return astContext;
+    }
+
+    /**
+     * Resolve a variable name using priority hierarchy
+     */
+    public function resolveVariable(tvarId: Int, defaultName: String): String {
+        // Priority 1: Pattern variable registry
+        if (patternVariableRegistry.exists(tvarId)) {
+            return patternVariableRegistry.get(tvarId);
+        }
+
+        // Priority 2: Current clause context
+        if (currentClauseContext != null && currentClauseContext.localToName.exists(tvarId)) {
+            return currentClauseContext.localToName.get(tvarId);
+        }
+
+        // Priority 3: Underscore prefix check
+        if (shouldPrefixWithUnderscore(tvarId)) {
+            return "_" + defaultName;
+        }
+
+        // Priority 4: Default name
+        return defaultName;
+    }
+
+    /**
+     * Register a pattern variable from enum matching
+     */
+    public function registerPatternVariable(tvarId: Int, patternName: String): Void {
+        patternVariableRegistry.set(tvarId, patternName);
+    }
+
+    /**
+     * Get current position for error reporting
+     */
+    public function getCurrentPosition(): Position {
+        return currentPosition;
+    }
+
+    /**
+     * Set current position for error tracking
+     */
+    public function setCurrentPosition(pos: Position): Void {
+        currentPosition = pos;
+    }
+
+    /**
+     * Get the current module type being compiled
+     */
+    public function getCurrentModule(): Null<ModuleType> {
+        // This would need to be added to track the actual ModuleType
+        // For now return null as we track module name only
+        return null;
+    }
+
+    /**
+     * Get the current class type being compiled
+     */
+    public function getCurrentClass(): Null<ClassType> {
+        // This would need to be added to track the actual ClassType
+        // For now return null
+        return null;
+    }
+
+    /**
+     * Store metadata for an AST node
+     */
+    public function setNodeMetadata(nodeId: String, metadata: Dynamic): Void {
+        // Delegate to astContext
+        astContext.setNodeMetadata(nodeId, metadata);
+    }
+
+    /**
+     * Generate a unique node ID for metadata tracking
+     */
+    public function generateNodeId(): String {
+        return astContext.generateNodeId();
+    }
+
+    /**
+     * Check if a type is an idiomatic enum
+     */
+    public function isIdiomaticEnum(enumType: EnumType): Bool {
+        return enumType.meta.has(":elixirIdiomatic");
+    }
+
+    /**
+     * Get or create a clause context for a switch case
+     */
+    public function getClauseContext(caseIndex: Int): ClauseContext {
+        // For now, create a new one each time
+        // Could be enhanced to cache by index
+        return new ClauseContext();
+    }
+
+    /**
+     * Get module name with proper transformation
+     */
+    public function getModuleName(originalName: String): String {
+        // Apply snake_case transformation
+        return toSnakeCase(originalName);
+    }
+
+    /**
+     * Get function name with proper transformation
+     */
+    public function getFunctionName(originalName: String): String {
+        // Apply snake_case transformation
+        return toSnakeCase(originalName);
+    }
+
+    /**
+     * Check if currently building within a pattern
+     */
+    public function isInPattern(): Bool {
+        return astContext.isInPattern;
+    }
+
+    /**
+     * Set pattern context state
+     */
+    public function setInPattern(inPattern: Bool): Void {
+        astContext.isInPattern = inPattern;
+    }
+
+    /**
+     * Get the current function being compiled
+     */
+    public function getCurrentFunction(): Null<ClassField> {
+        // This would need to be tracked
+        return null;
+    }
+
+    /**
+     * Report a compilation warning
+     */
+    public function warning(message: String, ?pos: Position): Void {
+        #if macro
+        haxe.macro.Context.warning(message, pos != null ? pos : haxe.macro.Context.currentPos());
+        #end
+    }
+
+    /**
+     * Report a compilation error
+     */
+    public function error(message: String, ?pos: Position): Void {
+        #if macro
+        haxe.macro.Context.error(message, pos != null ? pos : haxe.macro.Context.currentPos());
+        #end
+    }
+
+    /**
+     * Get expression builder callback for delegation
+     */
+    public function getExpressionBuilder(): (TypedExpr) -> ElixirAST {
+        // Return a function that calls ElixirASTBuilder
+        return function(expr: TypedExpr): ElixirAST {
+            return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, this);
+        };
+    }
+
+    /**
+     * Get type builder callback for delegation
+     */
+    public function getTypeBuilder(): (Type) -> ElixirAST {
+        // Would need implementation
+        return function(type: Type): ElixirAST {
+            return ElixirAST.makeAST(EAtom("todo_type"));
+        };
+    }
+
+    /**
+     * Get pattern builder callback for delegation
+     */
+    public function getPatternBuilder(clauseContext: ClauseContext): (TypedExpr) -> ElixirAST {
+        // Would delegate to pattern building logic
+        return function(expr: TypedExpr): ElixirAST {
+            var oldContext = currentClauseContext;
+            currentClauseContext = clauseContext;
+            var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, this);
+            currentClauseContext = oldContext;
+            return result;
+        };
+    }
+
+    /**
+     * Register a specialized builder for feature-flagged routing
+     */
+    public function registerBuilder(builderType: String, builder: IBuilder): Void {
+        astContext.registerBuilder(builderType, builder);
+    }
+
+    /**
+     * Check if a feature flag is enabled
+     */
+    public function isFeatureEnabled(flag: String): Bool {
+        return astContext.isFeatureEnabled(flag);
+    }
+
+    /**
+     * Enable or disable a feature flag
+     */
+    public function setFeatureFlag(flag: String, enabled: Bool): Void {
+        astContext.setFeatureFlag(flag, enabled);
+    }
+
+    /**
+     * Helper function to convert to snake_case
+     */
+    private static function toSnakeCase(name: String): String {
+        var result = "";
+        for (i in 0...name.length) {
+            var char = name.charAt(i);
+            if (char == char.toUpperCase() && i > 0) {
+                result += "_" + char.toLowerCase();
+            } else {
+                result += char.toLowerCase();
+            }
+        }
+        return result;
+    }
+
+    // ========================================================================
     // Debug Support
     // ========================================================================
 
@@ -307,6 +570,8 @@ class CompilationContext {
         trace('  currentModule: $currentModule');
         trace('  isInClassMethodContext: $isInClassMethodContext');
         trace('  clauseContextStack depth: ${clauseContextStack.length}');
+        trace('  AST context initialized: ${astContext != null}');
+        trace('  Feature flags: ${astContext.featureFlags}');
     }
     #end
 }

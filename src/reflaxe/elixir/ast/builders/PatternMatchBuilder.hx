@@ -3,6 +3,7 @@ package reflaxe.elixir.ast.builders;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
+import haxe.macro.Type.Case;
 import haxe.macro.TypedExprTools;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.context.BuildContext;
