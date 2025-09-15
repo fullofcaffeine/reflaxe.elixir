@@ -923,19 +923,21 @@ class ElixirCompiler extends GenericCompiler<
         var context = new CompilationContext();
         context.compiler = this;
 
-        var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType,
-            varFields, funcFields, context);
-        
+        // ModuleBuilder not yet implemented - commented out for now
+        // var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType,
+        //     varFields, funcFields, context);
+        var moduleAST = null; // Temporary until ModuleBuilder is implemented
+
         #if debug_module_builder
         if (classType.name == "Main") {
             trace('[ElixirCompiler] Received module AST for Main from ModuleBuilder');
-            trace('[ElixirCompiler] Main module metadata: ${moduleAST.metadata}');
-            if (moduleAST.metadata != null) {
-                trace('[ElixirCompiler] Main module metadata.isExunit: ${moduleAST.metadata.isExunit}');
-            }
+            // trace('[ElixirCompiler] Main module metadata: ${moduleAST.metadata}');
+            // if (moduleAST != null && moduleAST.metadata != null) {
+            //     trace('[ElixirCompiler] Main module metadata.isExunit: ${moduleAST.metadata.isExunit}');
+            // }
         }
         #end
-        
+
         // PASS 3: Generate companion modules if needed (e.g., PostgrexTypes for Repo)
         if (moduleAST != null && moduleAST.metadata != null) {
             generateCompanionModules(classType, moduleAST.metadata);
