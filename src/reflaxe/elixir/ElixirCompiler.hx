@@ -644,27 +644,63 @@ class ElixirCompiler extends GenericCompiler<
     }
     
     /**
+     * Creates a properly initialized CompilationContext
+     *
+     * WHY: Centralizes context creation to ensure all contexts have proper initialization
+     * including the new AST modularization infrastructure (Phase 2)
+     *
+     * WHAT: Creates context with BuilderFacade and all necessary references
+     *
+     * HOW: Initializes context, sets up BuilderFacade if enabled, registers builders
+     */
+    private function createCompilationContext(): CompilationContext {
+        var context = new CompilationContext();
+        context.compiler = this;
+
+        // Initialize behavior transformer
+        if (context.behaviorTransformer == null) {
+            context.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
+        }
+
+        // Phase 2: Initialize BuilderFacade for gradual migration
+        // Only create if we're using any new builders
+        if (context.isFeatureEnabled("use_new_pattern_builder") ||
+            context.isFeatureEnabled("use_new_loop_builder") ||
+            context.isFeatureEnabled("use_new_function_builder") ||
+            context.isFeatureEnabled("use_new_comprehension_builder")) {
+
+            context.builderFacade = new reflaxe.elixir.ast.builders.BuilderFacade(this, context);
+
+            // Register specialized builders as they become available
+            // For now, register PatternMatchBuilder if it exists
+            var patternBuilder = new reflaxe.elixir.ast.builders.PatternMatchBuilder(
+                context,
+                context.getExpressionBuilder()
+            );
+            context.builderFacade.registerBuilder("pattern", patternBuilder);
+
+            #if debug_ast_builder
+            trace('[ElixirCompiler] BuilderFacade initialized with registered builders');
+            #end
+        }
+
+        return context;
+    }
+
+    /**
      * Implement the required abstract method for expression compilation
-     * 
+     *
      * WHY: Reflaxe's GenericCompiler calls this to compile individual expressions.
      * This is the correct integration point for our AST pipeline.
-     * 
+     *
      * WHAT: Builds AST for individual expressions
-     * 
+     *
      * HOW: Delegates to ElixirASTBuilder for AST generation
      */
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<reflaxe.elixir.ast.ElixirAST> {
         // Create a fresh compilation context for this expression
         // This ensures complete isolation between compilation units during parallel execution
-        var context = new CompilationContext();
-
-        // Set compiler reference for the context
-        context.compiler = this;
-
-        // Initialize behavior transformer if needed
-        if (context.behaviorTransformer == null) {
-            context.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
-        }
+        var context = createCompilationContext();
 
         // Analyze variable usage before building AST
         // This enables context-aware naming to prevent Elixir compilation warnings
@@ -819,8 +855,7 @@ class ElixirCompiler extends GenericCompiler<
                     case TFunction(tfunc):
                         if (tfunc.expr != null) {
                             // Create context for dependency tracking
-                            var context = new CompilationContext();
-                            context.compiler = this;
+                            var context = createCompilationContext();
 
                             // Initialize behavior transformer if needed
                             if (context.behaviorTransformer == null) {
@@ -917,8 +952,7 @@ class ElixirCompiler extends GenericCompiler<
         reflaxe.elixir.ast.ElixirASTBuilder.compiler = this;
 
         // Create a compilation context for this class
-        var context = new CompilationContext();
-        context.compiler = this;
+        var context = createCompilationContext();
 
         // ModuleBuilder not yet implemented - commented out for now
         // var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType,
@@ -1068,8 +1102,7 @@ class ElixirCompiler extends GenericCompiler<
         var moduleAST = defineCall;
 
         // Create a compilation context for transformation
-        var context = new CompilationContext();
-        context.compiler = this;
+        var context = createCompilationContext();
 
         // Apply transformations with context
         moduleAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(moduleAST, context);
@@ -1098,13 +1131,7 @@ class ElixirCompiler extends GenericCompiler<
      */
     function buildFromTypedExpr(expr: TypedExpr, ?usageMap: Map<Int, Bool>): reflaxe.elixir.ast.ElixirAST {
         // Create a fresh compilation context for this expression
-        var context = new CompilationContext();
-        context.compiler = this;
-
-        // Initialize behavior transformer if needed
-        if (context.behaviorTransformer == null) {
-            context.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
-        }
+        var context = createCompilationContext();
 
         // Set usage map if provided
         if (usageMap != null) {
