@@ -5,8 +5,8 @@ defmodule Main do
         value
 
       {:error, error} ->
-        message = "Error occurred: " <> error
-        details = "Details: " <> message
+        message = "Error occurred: #{error}"
+        details = "Details: #{message}"
         Log.trace(message, %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "processResult"})
         Log.trace(details, %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "processResult"})
         details
@@ -25,7 +25,7 @@ defmodule Main do
         end
 
       {:error, error} ->
-        error_msg = "Failed: " <> error
+        error_msg = "Failed: #{error}"
         error_msg
     end
   end
@@ -44,13 +44,13 @@ defmodule Main do
   defp test_try_catch() do
     try do
       risky = perform_risky_operation()
-      processed = "Processed: " <> risky
+      processed = "Processed: #{risky}"
       processed
     rescue
       e ->
         error_message = "Caught error: #{e}"
         timestamp = DateTime.utc_now() |> DateTime.to_iso8601()
-        error_message <> " " <> timestamp
+        "#{error_message} #{timestamp}"
     end
   end
 

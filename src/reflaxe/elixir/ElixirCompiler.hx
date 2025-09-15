@@ -103,9 +103,6 @@ class ElixirCompiler extends GenericCompiler<
     // need to be assigned to temp_result for proper value capture in Elixir
     public var returnContext: Bool = false;
 
-    // Function usage tracking for dead code elimination
-    // Tracks which private functions are actually called to eliminate warnings
-    public var functionUsageCollector: Null<reflaxe.elixir.helpers.FunctionUsageCollector> = null;
     
     // Map for tracking variable renames to ensure consistency between declaration and usage
     

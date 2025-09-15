@@ -1,55 +1,63 @@
 defmodule Main do
   def main() do
-    # Simple counting loop - use Enum.reduce
-    i = Enum.reduce(1..5, 0, fn _, acc -> acc + 1 end)
+    # Simple counting loop - recursive function
+    defp count_to_five(i) when i < 5 do
+      count_to_five(i + 1)
+    end
+    defp count_to_five(i), do: i
+    i = count_to_five(0)
 
     # Another counting loop
-    j = Enum.reduce(1..3, 0, fn _, acc -> acc + 1 end)
+    defp count_to_three(j) when j < 3 do
+      count_to_three(j + 1)
+    end
+    defp count_to_three(j), do: j
+    j = count_to_three(0)
 
     # Counter that counts down
-    counter = Enum.reduce(1..10, 10, fn _, acc -> acc - 1 end)
+    defp count_down(counter) when counter > 0 do
+      count_down(counter - 1)
+    end
+    defp count_down(counter), do: counter
+    counter = count_down(10)
 
     # Collect even numbers with continue-like behavior
     evens = for k <- 1..10, rem(k, 2) == 0, do: k
 
-    # Count with early termination - use Enum.reduce_while
-    count = Enum.reduce_while(1..100, 0, fn _, acc ->
-      new_count = acc + 1
-      if new_count == 10 do
-        {:halt, new_count}
-      else
-        {:cont, new_count}
-      end
-    end)
+    # Count with early termination
+    defp count_until_ten(count) when count < 10 do
+      count_until_ten(count + 1)
+    end
+    defp count_until_ten(count), do: count
+    count = count_until_ten(0)
 
-    # Nested loops (simplified since original has undefined 'inner')
-    outer = 0  # Would need more context for proper nested implementation
+    # Nested loops would require more context
+    outer = 0
 
     # Complex condition loop
-    {a, b} = Enum.reduce_while(1..10, {0, 10}, fn _, {a, b} ->
-      if a < 5 && b > 5 do
-        {:cont, {a + 1, b - 1}}
-      else
-        {:halt, {a, b}}
-      end
-    end)
+    defp complex_loop(a, b) when a < 5 and b > 5 do
+      complex_loop(a + 1, b - 1)
+    end
+    defp complex_loop(a, b), do: {a, b}
+    {a, b} = complex_loop(0, 10)
 
     # Do-while with break
-    x = Enum.reduce_while(1..10, 0, fn _, acc ->
-      new_x = acc + 1
+    defp do_while_loop(x) do
+      new_x = x + 1
       if new_x == 5 do
-        {:halt, new_x}
+        new_x
       else
-        {:cont, new_x}
+        do_while_loop(new_x)
       end
-    end)
+    end
+    x = do_while_loop(0)
 
-    Log.trace("Final i: " <> Kernel.to_string(i), %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "main"})
-    Log.trace("Final j: " <> Kernel.to_string(j), %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "main"})
-    Log.trace("Final counter: " <> Kernel.to_string(counter), %{:file_name => "Main.hx", :line_number => 70, :class_name => "Main", :method_name => "main"})
-    Log.trace("Evens: " <> Std.string(evens), %{:file_name => "Main.hx", :line_number => 71, :class_name => "Main", :method_name => "main"})
-    Log.trace("Count from infinite: " <> Kernel.to_string(count), %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "main"})
-    Log.trace("Complex condition result: a=" <> Kernel.to_string(a) <> ", b=" <> Kernel.to_string(b), %{:file_name => "Main.hx", :line_number => 73, :class_name => "Main", :method_name => "main"})
-    Log.trace("Do-while with break: x=" <> Kernel.to_string(x), %{:file_name => "Main.hx", :line_number => 74, :class_name => "Main", :method_name => "main"})
+    Log.trace("Final i: #{i}", %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "main"})
+    Log.trace("Final j: #{j}", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "main"})
+    Log.trace("Final counter: #{counter}", %{:file_name => "Main.hx", :line_number => 70, :class_name => "Main", :method_name => "main"})
+    Log.trace("Evens: #{inspect(evens)}", %{:file_name => "Main.hx", :line_number => 71, :class_name => "Main", :method_name => "main"})
+    Log.trace("Count from infinite: #{count}", %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "main"})
+    Log.trace("Complex condition result: a=#{a}, b=#{b}", %{:file_name => "Main.hx", :line_number => 73, :class_name => "Main", :method_name => "main"})
+    Log.trace("Do-while with break: x=#{x}", %{:file_name => "Main.hx", :line_number => 74, :class_name => "Main", :method_name => "main"})
   end
 end

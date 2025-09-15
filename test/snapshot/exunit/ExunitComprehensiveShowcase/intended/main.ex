@@ -26,18 +26,10 @@ end)
     {0, a / b}
   end
   defp find_in_array(arr, item) do
-    g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, arr, :ok}, fn _, {acc_g, acc_arr, acc_state} ->
-  if (acc_g < acc_arr.length) do
-    element = arr[g]
-    acc_g = acc_g + 1
-    if (element == item), do: {0, element}
-    {:cont, {acc_g, acc_arr, acc_state}}
-  else
-    {:halt, {acc_g, acc_arr, acc_state}}
-  end
-end)
-    1
+    case Enum.find(arr, fn element -> element == item end) do
+      nil -> {:none}
+      found -> {:some, found}
+    end
   end
   defp perform_async_calculation() do
     sum = 0
@@ -58,17 +50,7 @@ end)
   end
   describe "Performance Tests" do
     test "slow operation" do
-      result = 0
-      g = 0
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, :ok}, fn _, {acc_result, acc_g, acc_state} ->
-  if (acc_g < 1000) do
-    i = acc_g = acc_g + 1
-    acc_result = acc_result + i
-    {:cont, {acc_result, acc_g, acc_state}}
-  else
-    {:halt, {acc_result, acc_g, acc_state}}
-  end
-end)
+      result = Enum.reduce(1..1000, 0, fn i, acc -> acc + i end)
       assert result > 0
     end
     test "fast operation" do
