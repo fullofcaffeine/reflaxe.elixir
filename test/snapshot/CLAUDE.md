@@ -556,6 +556,91 @@ node.metadata = {
 7. **Pattern matching** - Case statements should directly destructure tuples, not use elem()
 8. **Unused variables** - Should have underscore prefixes (_var) for clarity
 
+## 📖 Standard Library Transformation Patterns
+
+### Critical Stdlib Files Needing Transformation
+
+These stdlib files appear in EVERY test and need idiomatic patterns:
+
+#### 1. StringTools (string_tools.ex)
+**Current Issues**:
+- `Enum.reduce_while(Stream.iterate(...))` for character iteration
+- String concatenation `<>` for building results
+- Generated variable names (g, g1)
+
+**Idiomatic Transformations**:
+```elixir
+# Current: Complex reduce_while for URL encoding
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g1, result, g, :ok}, ...)
+
+# Idiomatic: String.to_charlist and Enum operations
+def url_encode(s) do
+  s
+  |> String.to_charlist()
+  |> Enum.map(fn c ->
+    if c in ?A..?Z or c in ?a..?z or c in ?0..?9 or c in [?-, ?_, ?., ?~] do
+      <<c>>
+    else
+      "%#{Integer.to_string(c, 16)}"
+    end
+  end)
+  |> IO.iodata_to_binary()
+end
+```
+
+#### 2. BalancedTree (haxe/ds/balanced_tree.ex)
+**Current Issues**:
+- reduce_while for tree traversal
+- Incomplete loop bodies
+
+**Idiomatic Transformations**:
+```elixir
+# Current: reduce_while for tree search
+Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {node, :ok}, ...)
+
+# Idiomatic: Recursive pattern matching
+defp find_node(nil, _key, _compare), do: nil
+defp find_node(node, key, compare) do
+  case compare.(key, node.key) do
+    0 -> node.value
+    x when x < 0 -> find_node(node.left, key, compare)
+    _ -> find_node(node.right, key, compare)
+  end
+end
+```
+
+#### 3. Log (haxe/log.ex)
+**Current Issues**:
+- String concatenation with `<>`
+- Complex string building
+
+**Idiomatic Transformations**:
+```elixir
+# Current: Concatenation
+pstr = infos.file_name <> ":" <> Kernel.to_string(infos.line_number)
+
+# Idiomatic: String interpolation
+pstr = "#{infos.file_name}:#{infos.line_number}"
+```
+
+### General Transformation Rules for Stdlib
+
+1. **Iteration Patterns**:
+   - `Enum.reduce_while(Stream.iterate(...))` → Recursive functions or appropriate Enum functions
+   - Index-based loops → `Enum.with_index` or comprehensions
+
+2. **String Building**:
+   - Concatenation loops → IO lists and `IO.iodata_to_binary`
+   - Character processing → `String.to_charlist` and list operations
+
+3. **Tree/Graph Traversal**:
+   - reduce_while loops → Recursive pattern matching
+   - Accumulator passing → Function parameters
+
+4. **Variable Naming**:
+   - g, g1, g2 → index, length, accumulator (meaningful names)
+   - Unused variables → underscore prefix
+
 ## 🎯 Next Steps - Phase 0B: AST Modularization
 
 With Phase 0A complete and idiomatic patterns established, we're ready for Phase 0B:
@@ -564,6 +649,7 @@ With Phase 0A complete and idiomatic patterns established, we're ready for Phase
 2. **Create Transformation Passes** - Implement the patterns identified in Phase 0A
 3. **Modularize AST Transformer** - Create focused transformation passes
 4. **Test Against Idiomatic Outputs** - Verify compiler generates the patterns we established
+5. **Stdlib Generation Improvements** - Ensure stdlib files are generated idiomatically
 
 ## 📚 References
 
