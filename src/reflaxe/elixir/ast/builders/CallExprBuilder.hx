@@ -44,7 +44,10 @@ class CallExprBuilder {
      * WHAT: Converts TCall nodes to ElixirAST call structures
      * HOW: Determines call type and delegates to appropriate builder
      */
-    public static function buildCall(e: TypedExpr, el: Array<TypedExpr>, context: CompilationContext): ElixirAST {
+    public static function buildCall(e: TypedExpr, el: Array<TypedExpr>, context: CompilationContext, buildExpr: TypedExpr -> ElixirAST): ElixirAST {
+        // Store the expression builder for use in helper functions
+        exprBuilder = buildExpr;
+
         // Determine what kind of call this is
         var callType = analyzeCallType(e);
 
@@ -228,16 +231,16 @@ class CallExprBuilder {
     }
 
     // Helper functions
+    static var exprBuilder: TypedExpr -> ElixirAST;
 
     static function buildArgument(arg: TypedExpr, context: CompilationContext): ElixirAST {
-        // Delegate to main builder - this would be ElixirASTBuilder.buildFromTypedExpr
-        // For now, return a placeholder
-        return makeAST(EVar("arg"));
+        // Use the stored expression builder callback
+        return exprBuilder(arg);
     }
 
     static function buildExpression(expr: TypedExpr, context: CompilationContext): ElixirAST {
-        // Delegate to main builder
-        return makeAST(EVar("expr"));
+        // Use the stored expression builder callback
+        return exprBuilder(expr);
     }
 
     static function makeCall(target: ElixirAST, args: Array<ElixirAST>): ElixirAST {

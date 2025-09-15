@@ -55,8 +55,11 @@ class PatternMatchBuilder {
         e: TypedExpr,
         cases: Array<Case>,
         edef: Null<TypedExpr>,
-        context: CompilationContext
+        context: CompilationContext,
+        buildExpr: TypedExpr -> ElixirAST
     ): ElixirAST {
+        // Store the expression builder for use in helper functions
+        exprBuilder = buildExpr;
         // Build the expression being matched
         var targetAST = buildExpression(e, context);
 
@@ -334,10 +337,11 @@ class PatternMatchBuilder {
     }
 
     // Helper functions
+    static var exprBuilder: TypedExpr -> ElixirAST;
 
     static function buildExpression(expr: TypedExpr, context: CompilationContext): ElixirAST {
-        // Delegate to main builder - would be ElixirASTBuilder.buildFromTypedExpr
-        return makeAST(EVar("expr"));
+        // Use the stored expression builder callback
+        return exprBuilder(expr);
     }
 
     static function makeAST(def: ElixirASTDef): ElixirAST {
