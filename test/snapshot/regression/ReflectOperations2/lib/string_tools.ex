@@ -23,10 +23,10 @@ end)
     result
   end
   def html_escape(s, quotes) do
-    s = s |> replace("&", "&amp;") |> replace("<", "&lt;") |> replace(">", "&gt;")
+    s = s |> StringTools.replace("&", "&amp;") |> StringTools.replace("<", "&lt;") |> StringTools.replace(">", "&gt;")
   end
   def html_unescape(s) do
-    s = s |> replace("&gt;", ">") |> replace("&lt;", "<") |> replace("&quot;", "\"") |> replace("&#039;", "'") |> replace("&amp;", "&")
+    s = s |> StringTools.replace("&gt;", ">") |> StringTools.replace("&lt;", "<") |> StringTools.replace("&quot;", "\"") |> StringTools.replace("&#039;", "'") |> StringTools.replace("&amp;", "&")
   end
   def starts_with(s, start) do
     length(s) >= length(start) && String.slice(s, 0, length(start)) == start
@@ -44,7 +44,7 @@ end)
     l = length(s)
     r = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r, :ok}, fn _, {acc_s, acc_l, acc_r, acc_state} ->
-  if (acc_r < acc_l && is_space(acc_s, acc_r)) do
+  if (acc_r < acc_l && StringTools.is_space(acc_s, acc_r)) do
     acc_r = acc_r + 1
     {:cont, {acc_s, acc_l, acc_r, acc_state}}
   else
@@ -61,7 +61,7 @@ end)
     l = length(s)
     r = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r, :ok}, fn _, {acc_s, acc_l, acc_r, acc_state} ->
-  if (acc_r < acc_l && is_space(acc_s, ((acc_l - acc_r) - 1))) do
+  if (acc_r < acc_l && StringTools.is_space(acc_s, ((acc_l - acc_r) - 1))) do
     acc_r = acc_r + 1
     {:cont, {acc_s, acc_l, acc_r, acc_state}}
   else
@@ -75,7 +75,7 @@ end)
     end
   end
   def trim(s) do
-    ltrim(rtrim(s))
+    StringTools.ltrim(StringTools.rtrim(s))
   end
   def lpad(s, c, l) do
     if (length(c) <= 0), do: s

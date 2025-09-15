@@ -46,7 +46,7 @@ defmodule Std do
 )
   end
   def is_of_type(value, type) do
-    is(value, type)
+    Std.is(value, type)
   end
   def random() do
     :rand.uniform()

@@ -2,8 +2,7 @@ defmodule ChangesetUtils do
   def unwrap_or(result, default_value) do
     case (result) do
       {:ok, g} ->
-        value = g
-        value
+        (g)
       {:error, _g} ->
         _g = elem(result, 1)
         default_value
@@ -12,8 +11,7 @@ defmodule ChangesetUtils do
   def to_option(result) do
     case (result) do
       {:ok, g} ->
-        value = g
-        {:some, value}
+        {:some, (g)}
       {:error, _g} ->
         _g = elem(result, 1)
         {:none}

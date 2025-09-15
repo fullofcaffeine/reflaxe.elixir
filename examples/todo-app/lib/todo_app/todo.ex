@@ -78,10 +78,12 @@ end
     end
   end
   def toggle_completed(todo) do
-    changeset(todo, (%{:completed => not todo.completed}))
+    params = %{:completed => not todo.completed}
+    TodoApp.Todo.changeset(todo, params)
   end
   def update_priority(todo, priority) do
-    changeset(todo, (%{:priority => priority}))
+    params = %{:priority => priority}
+    TodoApp.Todo.changeset(todo, params)
   end
   def add_tag(todo, tag) do
     tags = if (todo.tags != nil) do
@@ -91,6 +93,6 @@ else
 end
     tags = tags ++ [tag]
     params = %{:tags => tags}
-    changeset(todo, params)
+    TodoApp.Todo.changeset(todo, params)
   end
 end
