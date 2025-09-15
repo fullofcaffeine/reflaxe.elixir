@@ -115,6 +115,19 @@ case color do
 end
 ```
 
+**Compiler Pipeline Implementation:**
+1. **ElixirASTBuilder Phase**:
+   - Detect TSwitch with enum patterns
+   - Build ElixirAST.ECase with proper tuple patterns
+   - Mark with metadata: `isEnumMatch: true`
+
+2. **ElixirASTTransformer Phase**:
+   - EnumPatternPass: Transform elem() extraction to direct destructuring
+   - VariableNamePass: Replace generated names (g, g1) with actual parameter names
+
+3. **ElixirASTPrinter Phase**:
+   - Print clean pattern matching syntax
+
 **Compiler Strategy:**
 - Enum constructors → Tagged tuples with atoms
 - Direct pattern matching instead of elem() calls
@@ -304,7 +317,90 @@ result = for item <- items, validate(item), do: transform(item)
 
 **Compiler Strategy:** Imperative array building → Pipeline or comprehension
 
-### 9. Error Handling Patterns
+### 9. Idiomatic Option and Result Types
+
+#### Pattern: @:elixirIdiomatic Option Type
+**Haxe Input:**
+```haxe
+@:elixirIdiomatic
+enum Option<T> {
+    Some(value: T);
+    None;
+}
+```
+
+**Current (Non-idiomatic):**
+```elixir
+case option do
+  {:some, g} ->
+    g = elem(option, 1)
+    value = g
+    # use value
+  {:none} ->
+    # handle none
+end
+```
+
+**Idiomatic Target:**
+```elixir
+# For idiomatic option, Some becomes bare value, None becomes :none atom
+some = "test"       # Not {:some, "test"}
+none = :none       # Not {:none}
+
+# Pattern matching for idiomatic tagged option
+case option do
+  {:some, value} ->  # Direct destructuring
+    # use value
+  {:none} ->
+    # handle none
+end
+```
+
+**Compiler Pipeline Implementation:**
+1. **ElixirASTBuilder Phase**:
+   - Check for @:elixirIdiomatic metadata on enum type
+   - For idiomatic types, generate simplified patterns
+   - Mark AST nodes with `idiomaticType: "option"` metadata
+
+2. **ElixirASTTransformer Phase**:
+   - IdiomaticPatternPass: Transform based on metadata
+   - For Some(v) with @:elixirIdiomatic → bare value or {:some, v} in patterns
+   - For None with @:elixirIdiomatic → :none atom
+
+3. **Pattern Detection**:
+   - If enum has @:elixirIdiomatic AND has Some/None constructors → Option type
+   - If enum has @:elixirIdiomatic AND has Ok/Error constructors → Result type
+
+#### Pattern: @:elixirIdiomatic Result Type
+**Haxe Input:**
+```haxe
+@:elixirIdiomatic
+enum Result<T, E> {
+    Ok(value: T);
+    Error(error: E);
+}
+```
+
+**Idiomatic Target:**
+```elixir
+# Standard Elixir convention
+ok = {:ok, "success"}
+error = {:error, "failed"}
+
+case result do
+  {:ok, data} ->
+    # handle success
+  {:error, reason} ->
+    # handle error
+end
+```
+
+**Compiler Strategy:**
+- @:elixirIdiomatic Result → Always use {:ok, _}/{:error, _} tuples
+- This matches Elixir's standard library conventions
+- Direct pattern matching without elem() extraction
+
+### 10. Error Handling Patterns
 
 #### Pattern: Early Returns with Validation
 **Haxe Input:**
@@ -335,6 +431,70 @@ end
 ## 🔮 Future Compiler Improvements
 
 Based on these patterns, the compiler needs:
+
+### AST Pipeline Architecture (3-Phase System)
+
+```
+TypedExpr → ElixirASTBuilder → ElixirAST → ElixirASTTransformer → ElixirAST' → ElixirASTPrinter → String
+           (Build Phase)                    (Transform Phase)                    (Print Phase)
+```
+
+#### Phase 1: ElixirASTBuilder (Building)
+**Responsibility**: Convert Haxe TypedExpr to ElixirAST nodes
+- Build raw AST structure from Haxe
+- Attach metadata for later transformation
+- NO transformation logic here, only building
+
+**Key Metadata to Attach**:
+```haxe
+node.metadata = {
+  isEnumMatch: true,           // For enum pattern matching
+  isArrayComprehension: true,   // For loop → comprehension
+  idiomaticType: "option",      // For @:elixirIdiomatic types
+  variableUsage: "unused",      // For underscore prefixing
+  loopPattern: "simple_range"   // For loop optimization
+}
+```
+
+#### Phase 2: ElixirASTTransformer (Transformation)
+**Responsibility**: Apply idiomatic transformations based on metadata
+
+**Transformation Passes** (executed in order):
+1. **EnumPatternPass**:
+   - Transform elem() extraction → direct destructuring
+   - Convert enum indices → atom tags
+   - Replace generated variables (g, g1) with parameter names
+
+2. **LoopComprehensionPass**:
+   - Convert reduce_while → for comprehensions
+   - Transform Enum.reduce → Enum.each for side effects
+   - Detect and optimize nested loops
+
+3. **StringInterpolationPass**:
+   - Convert `<>` concatenation → `#{}` interpolation
+   - Handle Std.string() calls in interpolation
+
+4. **ConditionalPass**:
+   - Transform nested if-else → cond
+   - Optimize single-branch conditionals
+
+5. **IdiomaticTypePass**:
+   - Handle @:elixirIdiomatic Option/Result types
+   - Transform Some/None → idiomatic patterns
+   - Apply Elixir conventions for Ok/Error
+
+6. **VariableNamingPass**:
+   - Apply underscore prefixes for unused variables
+   - Remove generated variable names
+   - Ensure consistent naming across scopes
+
+#### Phase 3: ElixirASTPrinter (Printing)
+**Responsibility**: Convert transformed AST to string
+- Pretty-print with proper indentation
+- NO transformation logic, only formatting
+- Handle special syntax (pipes, with statements)
+
+### Implementation Priority
 
 1. **AST Pattern Detection Module**
    - Identify reduce_while patterns that should be comprehensions
