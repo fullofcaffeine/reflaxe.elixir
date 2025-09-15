@@ -24,32 +24,27 @@ defmodule TodoPubSub do
     base_payload = case (message) do
   {:todo_created, _todo} ->
     g = elem(message, 1)
-    todo = g
-    %{:type => "todo_created", :todo => todo}
+    %{:type => "todo_created", :todo => (g)}
   {:todo_updated, _todo} ->
     g = elem(message, 1)
-    todo = g
-    %{:type => "todo_updated", :todo => todo}
+    %{:type => "todo_updated", :todo => (g)}
   {:todo_deleted, _id} ->
     g = elem(message, 1)
-    id = g
-    %{:type => "todo_deleted", :todo_id => id}
+    %{:type => "todo_deleted", :todo_id => (g)}
   {:bulk_update, _action} ->
     g = elem(message, 1)
     action = g
-    %{:type => "bulk_update", :action => bulk_action_to_string(action)}
+    %{:type => "bulk_update", :action => TodoPubSub.bulk_action_to_string(action)}
   {:user_online, _user_id} ->
     g = elem(message, 1)
-    user_id = g
-    %{:type => "user_online", :user_id => user_id}
+    %{:type => "user_online", :user_id => (g)}
   {:user_offline, _user_id} ->
     g = elem(message, 1)
-    user_id = g
-    %{:type => "user_offline", :user_id => user_id}
+    %{:type => "user_offline", :user_id => (g)}
   {:system_alert, _message, _level} ->
     message = g
     level = g1
-    %{:type => "system_alert", :message => message, :level => alert_level_to_string(level)}
+    %{:type => "system_alert", :message => message, :level => TodoPubSub.alert_level_to_string(level)}
 end
     Phoenix.SafePubSub.add_timestamp(base_payload)
   end
@@ -62,11 +57,10 @@ end
     case (g) do
       "bulk_update" ->
         if (msg.action != nil) do
-          bulk_action = parse_bulk_action(msg.action)
+          bulk_action = TodoPubSub.parse_bulk_action(msg.action)
           case (bulk_action) do
             {:some, g} ->
-              action = g
-              {:bulk_update, action}
+              {:some, {:bulk_update, (g)}}
             {:none} ->
               :none
           end
@@ -75,11 +69,10 @@ end
         end
       "system_alert" ->
         if (msg.message != nil && msg.level != nil) do
-          alert_level = parse_alert_level(msg.level)
+          alert_level = TodoPubSub.parse_alert_level(msg.level)
           case (alert_level) do
             {:some, g} ->
-              level = g
-              {:system_alert, msg.message, level}
+              {:some, {:system_alert, msg.message, (g)}}
             {:none} ->
               :none
           end
