@@ -8,197 +8,26 @@ defmodule Main do
   """
   @spec test_binary_patterns() :: String.t()
   def test_binary_patterns() do
-    data = [72, 101, 108, 108, 111]
-    temp_result = nil
-    case (length(data)) do
-      0 ->
-        arr = data
-        if (Enum.at(arr, 0) == 72 && length(arr) > 1) do
-          temp_array = nil
-          _g = []
-          _g = 1
-          _g = length(arr)
-          (
-            try do
-              loop_fn = fn ->
-                if (_g < _g) do
-                  try do
-                    i = _g = _g + 1
-          _g ++ [Std.string(Enum.at(arr, i))]
-                    loop_fn.()
-                  catch
-                    :break -> nil
-                    :continue -> loop_fn.()
-                  end
-                end
-              end
-              loop_fn.()
-            catch
-              :break -> nil
-            end
-          )
-          temp_array = _g
-          temp_result = "Starts with 'H', rest: " <> Enum.join((temp_array), ",")
-        else
-          temp_result = "Empty binary"
-        end
-      1 ->
-        _g = Enum.at(data, 0)
-        if (_g == 72) do
-          temp_result = "Starts with 'H' (single byte)"
-        else
-          arr = data
-          if (Enum.at(arr, 0) == 72 && length(arr) > 1) do
-            temp_array1 = nil
-            _g = []
-            _g = 1
-            _g = length(arr)
-            (
-              try do
-                loop_fn = fn ->
-                  if (_g < _g) do
-                    try do
-                      i = _g = _g + 1
-            _g ++ [Std.string(Enum.at(arr, i))]
-                      loop_fn.()
-                    catch
-                      :break -> nil
-                      :continue -> loop_fn.()
-                    end
-                  end
-                end
-                loop_fn.()
-              catch
-                :break -> nil
-              end
-            )
-            temp_array1 = _g
-            temp_result = "Starts with 'H', rest: " <> Enum.join((temp_array1), ",")
-          else
-            bytes = data
-            if (length(bytes) > 10), do: temp_result = "Large binary: " <> Integer.to_string(length(bytes)) <> " bytes", else: temp_result = "Other binary pattern"
-          end
-        end
-      2 ->
-        _g = Enum.at(data, 0)
-        Enum.at(data, 1)
-        arr = data
-        if (Enum.at(arr, 0) == 72 && length(arr) > 1) do
-          temp_array2 = nil
-          _g = []
-          _g = 1
-          _g = length(arr)
-          (
-            try do
-              loop_fn = fn ->
-                if (_g < _g) do
-                  try do
-                    i = _g = _g + 1
-          _g ++ [Std.string(Enum.at(arr, i))]
-                    loop_fn.()
-                  catch
-                    :break -> nil
-                    :continue -> loop_fn.()
-                  end
-                end
-              end
-              loop_fn.()
-            catch
-              :break -> nil
-            end
-          )
-          temp_array2 = _g
-          temp_result = "Starts with 'H', rest: " <> Enum.join((temp_array2), ",")
-        else
-          first = _g
-          _g
-          if (first > 64 && first < 90) do
-            temp_result = "2-byte uppercase start"
-          else
-            bytes = data
-            if (length(bytes) > 10), do: temp_result = "Large binary: " <> Integer.to_string(length(bytes)) <> " bytes", else: temp_result = "Other binary pattern"
-          end
-        end
-      5 ->
-        _g = Enum.at(data, 0)
-        Enum.at(data, 1)
-        Enum.at(data, 2)
-        Enum.at(data, 3)
-        Enum.at(data, 4)
-        arr = data
-        if (Enum.at(arr, 0) == 72 && length(arr) > 1) do
-          temp_array3 = nil
-          _g = []
-          _g = 1
-          _g = length(arr)
-          (
-            try do
-              loop_fn = fn ->
-                if (_g < _g) do
-                  try do
-                    i = _g = _g + 1
-          _g ++ [Std.string(Enum.at(arr, i))]
-                    loop_fn.()
-                  catch
-                    :break -> nil
-                    :continue -> loop_fn.()
-                  end
-                end
-              end
-              loop_fn.()
-            catch
-              :break -> nil
-            end
-          )
-          temp_array3 = _g
-          temp_result = "Starts with 'H', rest: " <> Enum.join((temp_array3), ",")
-        else
-          a = _g
-          _g
-          _g
-          _g
-          _g
-          if (a == 72) do
-            temp_result = "5-byte message starting with H"
-          else
-            bytes = data
-            if (length(bytes) > 10), do: temp_result = "Large binary: " <> Integer.to_string(length(bytes)) <> " bytes", else: temp_result = "Other binary pattern"
-          end
-        end
+    data = [72, 101, 108, 108, 111]  # "Hello" in bytes
+
+    case data do
+      [] ->
+        "Empty binary"
+      [72] ->
+        "Starts with 'H' (single byte)"
+      [72 | rest] when length(rest) > 0 ->
+        rest_str = Enum.map(rest, &to_string/1) |> Enum.join(",")
+        "Starts with 'H', rest: #{rest_str}"
+      [72, _, _, _, _] ->
+        "5-byte message starting with H"
+      [first, second] when first > 64 and first < 90 ->
+        "2-byte uppercase start"
+      bytes when length(bytes) > 10 ->
+        "Large binary: #{length(bytes)} bytes"
       _ ->
-        arr = data
-        if (Enum.at(arr, 0) == 72 && length(arr) > 1) do
-          temp_array4 = nil
-          _g = []
-          _g = 1
-          _g = length(arr)
-          (
-            try do
-              loop_fn = fn ->
-                if (_g < _g) do
-                  try do
-                    i = _g = _g + 1
-          _g ++ [Std.string(Enum.at(arr, i))]
-                    loop_fn.()
-                  catch
-                    :break -> nil
-                    :continue -> loop_fn.()
-                  end
-                end
-              end
-              loop_fn.()
-            catch
-              :break -> nil
-            end
-          )
-          temp_array4 = _g
-          temp_result = "Starts with 'H', rest: " <> Enum.join((temp_array4), ",")
-        else
-          bytes = data
-          if (length(bytes) > 10), do: temp_result = "Large binary: " <> Integer.to_string(length(bytes)) <> " bytes", else: temp_result = "Other binary pattern"
-        end
+        "Other binary pattern"
     end
-    temp_result
+  end
   end
 
   @doc """
@@ -208,169 +37,22 @@ defmodule Main do
   @spec test_complex_binary_segments() :: String.t()
   def test_complex_binary_segments() do
     packet = [1, 0, 8, 72, 101, 108, 108, 111]
-    temp_result = nil
-    case (length(packet)) do
-      3 ->
-        _g = Enum.at(packet, 0)
-        _g = Enum.at(packet, 1)
-        _g = Enum.at(packet, 2)
-        if (_g == 1) do
-          if (_g == 0) do
-            size = _g
-            temp_result = "Protocol v1, size=" <> Integer.to_string(size) <> " (header only)"
-          else
-            arr = packet
-            if (length(arr) >= 4 && Enum.at(arr, 0) == 1 && Enum.at(arr, 1) == 0) do
-              temp_array = nil
-              _g = []
-              _g = 3
-              _g = length(arr)
-              (
-                try do
-                  loop_fn = fn ->
-                    if (_g < _g) do
-                      try do
-                        i = _g = _g + 1
-              _g ++ [Std.string(Enum.at(arr, i))]
-                        loop_fn.()
-                      catch
-                        :break -> nil
-                        :continue -> loop_fn.()
-                      end
-                    end
-                  end
-                  loop_fn.()
-                catch
-                  :break -> nil
-                end
-              )
-              temp_array = _g
-              temp_result = "Protocol v1, size=" <> Integer.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join((temp_array), ",")
-            else
-              version = _g
-              _g
-              _g
-              if (version > 1) do
-                temp_result = "Future protocol v" <> Integer.to_string(version)
-              else
-                header = packet
-                if (length(header) < 3), do: temp_result = "Incomplete header", else: temp_result = "Unknown packet format"
-              end
-            end
-          end
-        else
-          arr = packet
-          if (length(arr) >= 4 && Enum.at(arr, 0) == 1 && Enum.at(arr, 1) == 0) do
-            temp_array1 = nil
-            _g = []
-            _g = 3
-            _g = length(arr)
-            (
-              try do
-                loop_fn = fn ->
-                  if (_g < _g) do
-                    try do
-                      i = _g = _g + 1
-            _g ++ [Std.string(Enum.at(arr, i))]
-                      loop_fn.()
-                    catch
-                      :break -> nil
-                      :continue -> loop_fn.()
-                    end
-                  end
-                end
-                loop_fn.()
-              catch
-                :break -> nil
-              end
-            )
-            temp_array1 = _g
-            temp_result = "Protocol v1, size=" <> Integer.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join((temp_array1), ",")
-          else
-            version = _g
-            _g
-            _g
-            if (version > 1) do
-              temp_result = "Future protocol v" <> Integer.to_string(version)
-            else
-              header = packet
-              if (length(header) < 3), do: temp_result = "Incomplete header", else: temp_result = "Unknown packet format"
-            end
-          end
-        end
-      4 ->
-        _g = Enum.at(packet, 0)
-        _g = Enum.at(packet, 1)
-        _g = Enum.at(packet, 2)
-        Enum.at(packet, 3)
-        arr = packet
-        if (length(arr) >= 4 && Enum.at(arr, 0) == 1 && Enum.at(arr, 1) == 0) do
-          temp_array2 = nil
-          _g = []
-          _g = 3
-          _g = length(arr)
-          (
-            try do
-              loop_fn = fn ->
-                if (_g < _g) do
-                  try do
-                    i = _g = _g + 1
-          _g ++ [Std.string(Enum.at(arr, i))]
-                    loop_fn.()
-                  catch
-                    :break -> nil
-                    :continue -> loop_fn.()
-                  end
-                end
-              end
-              loop_fn.()
-            catch
-              :break -> nil
-            end
-          )
-          temp_array2 = _g
-          temp_result = "Protocol v1, size=" <> Integer.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join((temp_array2), ",")
-        else
-          version = _g
-          flags = _g
-          size = _g
-          _g
-          temp_result = "Packet: v" <> Integer.to_string(version) <> ", flags=" <> Integer.to_string(flags) <> ", size=" <> Integer.to_string(size)
-        end
+
+    case packet do
+      [1, 0, size] ->
+        "Protocol v1, size=#{size} (header only)"
+      [1, 0, size | rest] when length(rest) > 0 ->
+        data_str = Enum.map(rest, &to_string/1) |> Enum.join(",")
+        "Protocol v1, size=#{size}, data=#{data_str}"
+      [version, _flags, _size] when version > 1 ->
+        "Future protocol v#{version}"
+      [version, flags, size, _payload] ->
+        "Packet: v#{version}, flags=#{flags}, size=#{size}"
+      header when length(header) < 3 ->
+        "Incomplete header"
       _ ->
-        arr = packet
-        if (length(arr) >= 4 && Enum.at(arr, 0) == 1 && Enum.at(arr, 1) == 0) do
-          temp_array3 = nil
-          _g = []
-          _g = 3
-          _g = length(arr)
-          (
-            try do
-              loop_fn = fn ->
-                if (_g < _g) do
-                  try do
-                    i = _g = _g + 1
-          _g ++ [Std.string(Enum.at(arr, i))]
-                    loop_fn.()
-                  catch
-                    :break -> nil
-                    :continue -> loop_fn.()
-                  end
-                end
-              end
-              loop_fn.()
-            catch
-              :break -> nil
-            end
-          )
-          temp_array3 = _g
-          temp_result = "Protocol v1, size=" <> Integer.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join((temp_array3), ",")
-        else
-          header = packet
-          if (length(header) < 3), do: temp_result = "Incomplete header", else: temp_result = "Unknown packet format"
-        end
+        "Unknown packet format"
     end
-    temp_result
   end
 
   @doc """
@@ -383,26 +65,22 @@ defmodule Main do
     expected_name = "test"
     test_value = 42
     test_name = "test"
-    temp_string = nil
-    value = test_value
-    if (value == expected_value), do: temp_string = "Matches expected value", else: temp_string = "Different value"
-    temp_string1 = nil
-    v = test_value
-    n = test_name
-    if (v == expected_value && n == expected_name) do
-      temp_string1 = "Both match"
-    else
-      v = test_value
-      test_name
-      if (v == expected_value) do
-        temp_string1 = "Value matches, name different"
-      else
-        test_value
-        n = test_name
-        if (n == expected_name), do: temp_string1 = "Name matches, value different", else: temp_string1 = "Neither matches"
-      end
+
+    # Test basic pin patterns
+    result1 = case test_value do
+      value when value == expected_value -> "Matches expected value"
+      _ -> "Different value"
     end
-    temp_string <> " | " <> temp_string1
+
+    # Test pin with complex expressions
+    result2 = case {test_value, test_name} do
+      {v, n} when v == expected_value and n == expected_name -> "Both match"
+      {v, _n} when v == expected_value -> "Value matches, name different"
+      {_v, n} when n == expected_name -> "Name matches, value different"
+      _ -> "Neither matches"
+    end
+
+    "#{result1} | #{result2}"
   end
 
   @doc """
@@ -414,40 +92,21 @@ defmodule Main do
     temperature = 23.5
     humidity = 65
     pressure = 1013.25
-    temp_result = nil
-    t = temperature
-    h = humidity
-    pressure
-    if (t > 20 && t < 25 && h >= 60 && h <= 70) do
-      temp_result = "Perfect conditions"
-    else
-      t = temperature
-      h = humidity
-      pressure
-      if (t > 30 || h > 80) do
-        temp_result = "Too hot or humid"
-      else
-        t = temperature
-        h = humidity
-        pressure
-        if (t < 10 || h < 30) do
-          temp_result = "Too cold or dry"
-        else
-          temperature
-          humidity
-          p = pressure
-          if (p < 1000 || p > 1020) do
-            temp_result = "Abnormal pressure"
-          else
-            t = temperature
-            h = humidity
-            p = pressure
-            if (t >= 15 && t <= 25 && h >= 40 && h <= 75 && p >= 1000 && p <= 1020), do: temp_result = "Acceptable conditions", else: temp_result = "Unknown conditions"
-          end
-        end
-      end
+
+    case {temperature, humidity, pressure} do
+      {t, h, _p} when t > 20 and t < 25 and h >= 60 and h <= 70 ->
+        "Perfect conditions"
+      {t, h, _p} when t > 30 or h > 80 ->
+        "Too hot or humid"
+      {t, h, _p} when t < 10 or h < 30 ->
+        "Too cold or dry"
+      {_t, _h, p} when p < 1000 or p > 1020 ->
+        "Abnormal pressure"
+      {t, h, p} when t >= 15 and t <= 25 and h >= 40 and h <= 75 and p >= 1000 and p <= 1020 ->
+        "Acceptable conditions"
+      _ ->
+        "Unknown conditions"
     end
-    temp_result
   end
 
   @doc """
@@ -457,40 +116,27 @@ defmodule Main do
   @spec test_type_guards() :: String.t()
   def test_type_guards() do
     value = "Hello World"
-    temp_result = nil
-    v = value
-    if (Std.isOfType(v, String) && length(v) > 10) do
-      temp_result = "Long string: " <> Std.string(v)
-    else
-      v = value
-      if (Std.isOfType(v, String) && length(v) <= 10) do
-        temp_result = "Short string: " <> Std.string(v)
-      else
-        v = value
-        if (Std.isOfType(v, Int) && v > 0) do
-          temp_result = "Positive integer: " <> Std.string(v)
-        else
-          v = value
-          if (Std.isOfType(v, Int) && v <= 0) do
-            temp_result = "Non-positive integer: " <> Std.string(v)
-          else
-            v = value
-            if (Std.isOfType(v, Float)) do
-              temp_result = "Float value: " <> Std.string(v)
-            else
-              v = value
-              if (Std.isOfType(v, Bool)) do
-                temp_result = "Boolean value: " <> Std.string(v)
-              else
-                v = value
-                if (Std.isOfType(v, Array)), do: temp_result = "Array with " <> Std.string(length(v)) <> " elements", else: if (value == nil), do: temp_result = "Null value", else: temp_result = "Unknown type"
-              end
-            end
-          end
-        end
-      end
+
+    cond do
+      is_binary(value) and byte_size(value) > 10 ->
+        "Long string: #{value}"
+      is_binary(value) and byte_size(value) <= 10 ->
+        "Short string: #{value}"
+      is_integer(value) and value > 0 ->
+        "Positive integer: #{value}"
+      is_integer(value) and value <= 0 ->
+        "Non-positive integer: #{value}"
+      is_float(value) ->
+        "Float value: #{value}"
+      is_boolean(value) ->
+        "Boolean value: #{value}"
+      is_list(value) ->
+        "Array with #{length(value)} elements"
+      value == nil ->
+        "Null value"
+      true ->
+        "Unknown type"
     end
-    temp_result
   end
 
   @doc """
@@ -500,35 +146,16 @@ defmodule Main do
   @spec test_range_guards() :: String.t()
   def test_range_guards() do
     score = 85
-    temp_result = nil
-    s = score
-    if (s >= 90 && s <= 100) do
-      temp_result = "Grade A (90-100)"
-    else
-      s = score
-      if (s >= 80 && s < 90) do
-        temp_result = "Grade B (80-89)"
-      else
-        s = score
-        if (s >= 70 && s < 80) do
-          temp_result = "Grade C (70-79)"
-        else
-          s = score
-          if (s >= 60 && s < 70) do
-            temp_result = "Grade D (60-69)"
-          else
-            s = score
-            if (s >= 0 && s < 60) do
-              temp_result = "Grade F (0-59)"
-            else
-              s = score
-              if (s < 0 || s > 100), do: temp_result = "Invalid score", else: temp_result = "Unknown score"
-            end
-          end
-        end
-      end
+
+    cond do
+      score >= 90 and score <= 100 -> "Grade A (90-100)"
+      score >= 80 and score < 90 -> "Grade B (80-89)"
+      score >= 70 and score < 80 -> "Grade C (70-79)"
+      score >= 60 and score < 70 -> "Grade D (60-69)"
+      score >= 0 and score < 60 -> "Grade F (0-59)"
+      score < 0 or score > 100 -> "Invalid score"
+      true -> "Unknown score"
     end
-    temp_result
   end
 
   @doc """
@@ -537,52 +164,35 @@ defmodule Main do
   """
   @spec test_exhaustive_patterns() :: String.t()
   def test_exhaustive_patterns() do
+    # Test boolean exhaustiveness
     flag = true
-    temp_string = nil
-    if (flag), do: temp_string = "True case", else: temp_string = "False case"
+    bool_result = case flag do
+      true -> "True case"
+      false -> "False case"
+    end
+
+    # Test enum-like exhaustiveness with constants
     status = 1
-    temp_string1 = nil
-    case (status) do
-      0 ->
-        temp_string1 = "Inactive"
-      1 ->
-        temp_string1 = "Active"
-      2 ->
-        temp_string1 = "Pending"
-      3 ->
-        temp_string1 = "Error"
-      _ ->
-        temp_string1 = "Unknown status"
+    enum_result = case status do
+      0 -> "Inactive"
+      1 -> "Active"
+      2 -> "Pending"
+      3 -> "Error"
+      _ -> "Unknown status"
     end
-    arr_0 = 1
-    arr_1 = 2
-    arr_2 = 3
-    temp_string2 = nil
-    case (3) do
-      0 ->
-        temp_string2 = "Empty"
-      1 ->
-        _g = arr_0
-        x = _g
-        temp_string2 = "Single: " <> Integer.to_string(x)
-      2 ->
-        _g = arr_0
-        _g = arr_1
-        x = _g
-        y = _g
-        temp_string2 = "Pair: " <> Integer.to_string(x) <> "," <> Integer.to_string(y)
-      3 ->
-        _g = arr_0
-        _g = arr_1
-        _g = arr_2
-        x = _g
-        y = _g
-        z = _g
-        temp_string2 = "Triple: " <> Integer.to_string(x) <> "," <> Integer.to_string(y) <> "," <> Integer.to_string(z)
-      _ ->
-        if (3 > 3), do: temp_string2 = "Many: " <> Integer.to_string(3) <> " items", else: temp_string2 = "Other array pattern"
+
+    # Test array length exhaustiveness
+    items = [1, 2, 3]
+    array_result = case items do
+      [] -> "Empty"
+      [x] -> "Single: #{x}"
+      [x, y] -> "Pair: #{x},#{y}"
+      [x, y, z] -> "Triple: #{x},#{y},#{z}"
+      arr when length(arr) > 3 -> "Many: #{length(arr)} items"
+      _ -> "Other array pattern"
     end
-    temp_string <> " | " <> temp_string1 <> " | " <> temp_string2
+
+    "#{bool_result} | #{enum_result} | #{array_result}"
   end
 
   @doc """
@@ -591,49 +201,34 @@ defmodule Main do
   """
   @spec test_nested_patterns_with_guards() :: String.t()
   def test_nested_patterns_with_guards() do
-    "Alice"
-    data_user_age = 28
-    data_user_active = true
-    "read"
-    "write"
-    1640995200
-    temp_result = nil
-    _g = data_user_age
-    _g = 2
-    _g = data_user_active
-    age = _g
-    perms = _g
-    active = _g
-    if (age >= 18 && age < 25 && perms > 0 && active) do
-      temp_result = "Young adult with permissions"
-    else
-      age = _g
-      perms = _g
-      active = _g
-      if (age >= 25 && age < 65 && perms >= 2 && active) do
-        temp_result = "Adult with full permissions"
-      else
-        age = _g
-        _g
-        active = _g
-        if (age >= 65 && active) do
-          temp_result = "Senior user"
-        else
-          _g
-          _g
-          active = _g
-          if (!active) do
-            temp_result = "Inactive user"
-          else
-            _g
-            perms = _g
-            _g
-            if (perms == 0), do: temp_result = "User without permissions", else: temp_result = "Other user type"
-          end
-        end
-      end
+    data = %{
+      user: %{
+        name: "Alice",
+        age: 28,
+        active: true
+      },
+      permissions: ["read", "write"],
+      last_login: 1640995200
+    }
+
+    age = data.user.age
+    perms = length(data.permissions)
+    active = data.user.active
+
+    cond do
+      age >= 18 and age < 25 and perms > 0 and active ->
+        "Young adult with permissions"
+      age >= 25 and age < 65 and perms >= 2 and active ->
+        "Adult with full permissions"
+      age >= 65 and active ->
+        "Senior user"
+      not active ->
+        "Inactive user"
+      perms == 0 ->
+        "User without permissions"
+      true ->
+        "Other user type"
     end
-    temp_result
   end
 
   @doc """
@@ -642,60 +237,45 @@ defmodule Main do
   """
   @spec test_complex_guard_performance() :: String.t()
   def test_complex_guard_performance() do
-    metrics_cpu = 45.2
-    metrics_memory = 68.7
-    metrics_disk = 23.1
-    metrics_network = 12.8
-    temp_result = nil
-    _g = metrics_cpu
-    _g = metrics_memory
-    _g = metrics_disk
-    _g = metrics_network
-    cpu = _g
-    mem = _g
-    disk = _g
-    net = _g
-    if (cpu > 80 || mem > 90 || disk > 90 || net > 80) do
-      temp_result = "Critical resource usage"
-    else
-      cpu = _g
-      mem = _g
-      disk = _g
-      net = _g
-      if (cpu > 60 || mem > 75 || disk > 75 || net > 60) do
-        temp_result = "High resource usage"
-      else
-        cpu = _g
-        mem = _g
-        disk = _g
-        net = _g
-        if (cpu > 40 && mem > 50 && disk > 50 && net > 30) do
-          temp_result = "Moderate resource usage"
-        else
-          cpu = _g
-          mem = _g
-          disk = _g
-          net = _g
-          if (cpu <= 40 && mem <= 50 && disk <= 50 && net <= 30), do: temp_result = "Low resource usage", else: temp_result = "Unknown resource state"
-        end
-      end
+    metrics = %{
+      cpu: 45.2,
+      memory: 68.7,
+      disk: 23.1,
+      network: 12.8
+    }
+
+    cpu = metrics.cpu
+    mem = metrics.memory
+    disk = metrics.disk
+    net = metrics.network
+
+    cond do
+      cpu > 80 or mem > 90 or disk > 90 or net > 80 ->
+        "Critical resource usage"
+      cpu > 60 or mem > 75 or disk > 75 or net > 60 ->
+        "High resource usage"
+      cpu > 40 and mem > 50 and disk > 50 and net > 30 ->
+        "Moderate resource usage"
+      cpu <= 40 and mem <= 50 and disk <= 50 and net <= 30 ->
+        "Low resource usage"
+      true ->
+        "Unknown resource state"
     end
-    temp_result
   end
 
   @doc "Function main"
   @spec main() :: nil
   def main() do
-    Log.trace("Enhanced Pattern Matching Test Suite", %{"fileName" => "Main.hx", "lineNumber" => 260, "className" => "Main", "methodName" => "main"})
-    Log.trace("Binary Patterns: " <> Main.testBinaryPatterns(), %{"fileName" => "Main.hx", "lineNumber" => 263, "className" => "Main", "methodName" => "main"})
-    Log.trace("Complex Binary: " <> Main.testComplexBinarySegments(), %{"fileName" => "Main.hx", "lineNumber" => 264, "className" => "Main", "methodName" => "main"})
-    Log.trace("Pin Operators: " <> Main.testPinOperatorPatterns(), %{"fileName" => "Main.hx", "lineNumber" => 265, "className" => "Main", "methodName" => "main"})
-    Log.trace("Advanced Guards: " <> Main.testAdvancedGuards(), %{"fileName" => "Main.hx", "lineNumber" => 266, "className" => "Main", "methodName" => "main"})
-    Log.trace("Type Guards: " <> Main.testTypeGuards(), %{"fileName" => "Main.hx", "lineNumber" => 267, "className" => "Main", "methodName" => "main"})
-    Log.trace("Range Guards: " <> Main.testRangeGuards(), %{"fileName" => "Main.hx", "lineNumber" => 268, "className" => "Main", "methodName" => "main"})
-    Log.trace("Exhaustive Patterns: " <> Main.testExhaustivePatterns(), %{"fileName" => "Main.hx", "lineNumber" => 269, "className" => "Main", "methodName" => "main"})
-    Log.trace("Nested Guards: " <> Main.testNestedPatternsWithGuards(), %{"fileName" => "Main.hx", "lineNumber" => 270, "className" => "Main", "methodName" => "main"})
-    Log.trace("Performance Guards: " <> Main.testComplexGuardPerformance(), %{"fileName" => "Main.hx", "lineNumber" => 271, "className" => "Main", "methodName" => "main"})
+    Log.trace("Enhanced Pattern Matching Test Suite", %{:file_name => "Main.hx", :line_number => 260, :class_name => "Main", :method_name => "main"})
+    Log.trace("Binary Patterns: #{test_binary_patterns()}", %{:file_name => "Main.hx", :line_number => 263, :class_name => "Main", :method_name => "main"})
+    Log.trace("Complex Binary: #{test_complex_binary_segments()}", %{:file_name => "Main.hx", :line_number => 264, :class_name => "Main", :method_name => "main"})
+    Log.trace("Pin Operators: #{test_pin_operator_patterns()}", %{:file_name => "Main.hx", :line_number => 265, :class_name => "Main", :method_name => "main"})
+    Log.trace("Advanced Guards: #{test_advanced_guards()}", %{:file_name => "Main.hx", :line_number => 266, :class_name => "Main", :method_name => "main"})
+    Log.trace("Type Guards: #{test_type_guards()}", %{:file_name => "Main.hx", :line_number => 267, :class_name => "Main", :method_name => "main"})
+    Log.trace("Range Guards: #{test_range_guards()}", %{:file_name => "Main.hx", :line_number => 268, :class_name => "Main", :method_name => "main"})
+    Log.trace("Exhaustive Patterns: #{test_exhaustive_patterns()}", %{:file_name => "Main.hx", :line_number => 269, :class_name => "Main", :method_name => "main"})
+    Log.trace("Nested Guards: #{test_nested_patterns_with_guards()}", %{:file_name => "Main.hx", :line_number => 270, :class_name => "Main", :method_name => "main"})
+    Log.trace("Performance Guards: #{test_complex_guard_performance()}", %{:file_name => "Main.hx", :line_number => 271, :class_name => "Main", :method_name => "main"})
   end
 
 end
