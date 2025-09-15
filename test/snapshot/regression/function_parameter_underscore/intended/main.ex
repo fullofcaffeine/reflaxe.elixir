@@ -9,17 +9,17 @@ defmodule Main do
     Log.trace(processed, %{:file_name => "Main.hx", :line_number => 25, :class_name => "Main", :method_name => "main"})
   end
   defp test_function(app_name, port, enabled) do
-    config = app_name <> ".Config"
-    url = "http://localhost:" <> Kernel.to_string(port)
+    config = "#{app_name}.Config"
+    url = "http://localhost:#{port}"
     status = if enabled, do: "active", else: "inactive"
-    config <> " at " <> url <> " is " <> status
+    "#{config} at #{url} is #{status}"
   end
   defp test_optional(app_name, port) do
     actual_port = if (port != nil), do: port, else: 4000
-    app_name <> " on port " <> Kernel.to_string(actual_port)
+    "#{app_name} on port #{actual_port}"
   end
   defp build_name(prefix, suffix) do
-    prefix <> "." <> suffix
+    "#{prefix}.#{suffix}"
   end
   defp process_config(config) do
     Std.string(config.name)

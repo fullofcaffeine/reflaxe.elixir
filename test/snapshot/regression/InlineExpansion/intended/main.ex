@@ -9,9 +9,9 @@ defmodule Main do
       Log.trace("left is taller or equal", %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "test"})
     end
     total_height = (if (l == nil), do: 0, else: l._height) + (if (r == nil), do: 0, else: r._height)
-    Log.trace("Total height: " <> Kernel.to_string(total_height), %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "test"})
+    Log.trace("Total height: #{total_height}", %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "test"})
     has_height = (if (l == nil), do: 0, else: l._height) > 0
-    Log.trace("Has height: " <> Std.string(has_height), %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "test"})
+    Log.trace("Has height: #{has_height}", %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "test"})
   end
   def main() do
     test()

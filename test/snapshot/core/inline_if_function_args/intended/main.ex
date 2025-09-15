@@ -52,24 +52,24 @@ end)
     process_string((if (length(str) > 3), do: "long", else: "short"))
   end
   defp process_string(s) do
-    "Processed: " <> s
+    "Processed: #{s}"
   end
   defp process_two(a, b) do
-    "" <> a <> ", " <> b
+    "#{a}, #{b}"
   end
   defp process_three(a, b, c) do
-    "" <> a <> ", " <> b <> ", " <> c
+    "#{a}, #{b}, #{c}"
   end
   defp process_mixed(a, b, c, d) do
-    "" <> a <> ", " <> b <> ", " <> Kernel.to_string(c) <> ", " <> Kernel.to_string(d)
+    "#{a}, #{b}, #{c}, #{d}"
   end
   defp get_value(key) do
-    "value_" <> key
+    "value_#{key}"
   end
   defp wrap_string(s) do
-    "[" <> s <> "]"
+    "[#{s}]"
   end
   defp compute_value(n) do
-    "computed_" <> Kernel.to_string(n)
+    "computed_#{n}"
   end
 end

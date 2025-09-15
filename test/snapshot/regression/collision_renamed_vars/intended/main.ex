@@ -10,6 +10,6 @@ defmodule Main do
   end
   def main() do
     result = compare_params([1, 2], [3, 4, 5])
-    Log.trace("Result: " <> Kernel.to_string(result), %{:file_name => "Main.hx", :line_number => 18, :class_name => "Main", :method_name => "main"})
+    Log.trace("Result: #{result}", %{:file_name => "Main.hx", :line_number => 18, :class_name => "Main", :method_name => "main"})
   end
 end

@@ -2,14 +2,14 @@ defmodule Main do
   def simple_nested() do
     # Simple 2-level nested comprehension
     grid = for i <- 0..2, do: (for j <- 0..2, do: i * 3 + j)
-    Log.trace("Simple nested grid: " <> Std.string(grid), %{:file_name => "Main.hx", :line_number => 19, :class_name => "Main", :method_name => "simpleNested"})
+    Log.trace("Simple nested grid: #{inspect(grid)}", %{:file_name => "Main.hx", :line_number => 19, :class_name => "Main", :method_name => "simpleNested"})
     grid
   end
 
   def constant_range_unrolled() do
     # This will be completely unrolled by Haxe due to constant ranges
     unrolled = for i <- 0..1, do: (for j <- 0..1, do: j)
-    Log.trace("Constant range unrolled: " <> Std.string(unrolled), %{:file_name => "Main.hx", :line_number => 27, :class_name => "Main", :method_name => "constantRangeUnrolled"})
+    Log.trace("Constant range unrolled: #{inspect(unrolled)}", %{:file_name => "Main.hx", :line_number => 27, :class_name => "Main", :method_name => "constantRangeUnrolled"})
     unrolled
   end
 
@@ -18,7 +18,7 @@ defmodule Main do
     filtered = for i <- 0..3 do
       for j <- 0..3, rem(i + j, 2) == 0, do: i * 4 + j
     end
-    Log.trace("Filtered nested: " <> Std.string(filtered), %{:file_name => "Main.hx", :line_number => 36, :class_name => "Main", :method_name => "nestedWithCondition"})
+    Log.trace("Filtered nested: #{inspect(filtered)}", %{:file_name => "Main.hx", :line_number => 36, :class_name => "Main", :method_name => "nestedWithCondition"})
     filtered
   end
 
@@ -29,7 +29,7 @@ defmodule Main do
         for k <- 0..1, do: i * 4 + j * 2 + k
       end
     end
-    Log.trace("3D cube: " <> Std.string(cube), %{:file_name => "Main.hx", :line_number => 45, :class_name => "Main", :method_name => "deeplyNested"})
+    Log.trace("3D cube: #{inspect(cube)}", %{:file_name => "Main.hx", :line_number => 45, :class_name => "Main", :method_name => "deeplyNested"})
     cube
   end
 
@@ -42,7 +42,7 @@ defmodule Main do
         end
       end
     end
-    Log.trace("4D hypercube: " <> Std.string(hypercube), %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "fourLevelNesting"})
+    Log.trace("4D hypercube: #{inspect(hypercube)}", %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "fourLevelNesting"})
     hypercube
   end
 
@@ -55,7 +55,7 @@ defmodule Main do
         for j <- 0..1, do: i * j
       end
     end
-    Log.trace("Mixed nesting: " <> Std.string(mixed), %{:file_name => "Main.hx", :line_number => 65, :class_name => "Main", :method_name => "mixedNesting"})
+    Log.trace("Mixed nesting: #{inspect(mixed)}", %{:file_name => "Main.hx", :line_number => 65, :class_name => "Main", :method_name => "mixedNesting"})
     mixed
   end
 
