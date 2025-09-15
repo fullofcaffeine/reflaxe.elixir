@@ -18,41 +18,25 @@ defmodule Main do
   {:io_manager_ready} ->
     "io:manager:ready"
 end
-    Log.trace("Topic string: " <> topic_string, %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testTopicConversion"})
+    Log.trace("Topic string: #{topic_string}", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testTopicConversion"})
   end
   defp test_message_patterns() do
     message = {:todo_created, %{:id => 1, :title => "Test"}}
     result = case (message) do
   {:todo_created, todo} ->
-    g = elem(message, 1)
-    todo = g
-    "Created todo: " <> Std.string(todo)
+    "Created todo: #{inspect(todo)}"
   {:todo_updated, todo} ->
-    g = elem(message, 1)
-    todo = g
-    "Updated todo: " <> Std.string(todo)
+    "Updated todo: #{inspect(todo)}"
   {:todo_deleted, id} ->
-    g = elem(message, 1)
-    id = g
-    "Deleted todo: " <> Kernel.to_string(id)
+    "Deleted todo: #{id}"
   {:bulk_update, action} ->
-    g = elem(message, 1)
-    action = g
-    "Bulk action: " <> action
-  {:user_online, userId} ->
-    g = elem(message, 1)
-    user_id = g
-    "User " <> Kernel.to_string(user_id) <> " is online"
-  {:user_offline, userId} ->
-    g = elem(message, 1)
-    user_id = g
-    "User " <> Kernel.to_string(user_id) <> " is offline"
-  {:system_alert, message, level} ->
-    g = elem(message, 1)
-    g1 = elem(message, 2)
-    msg = g
-    level = g1
-    "Alert [" <> level <> "]: " <> msg
+    "Bulk action: #{action}"
+  {:user_online, user_id} ->
+    "User #{user_id} is online"
+  {:user_offline, user_id} ->
+    "User #{user_id} is offline"
+  {:system_alert, msg, level} ->
+    "Alert [#{level}]: #{msg}"
 end
     Log.trace(result, %{:file_name => "Main.hx", :line_number => 93, :class_name => "Main", :method_name => "testMessagePatterns"})
   end

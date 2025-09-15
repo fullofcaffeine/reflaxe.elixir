@@ -11,7 +11,7 @@ defmodule Main do
     if has_error do
       errors = errors ++ ["Error occurred"]
     end
-    Log.trace("Simple if push result: " <> Std.string(errors), %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "testSimpleIfPush"})
+    Log.trace("Simple if push result: #{inspect(errors)}", %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "testSimpleIfPush"})
   end
   defp test_if_else_push() do
     messages = []
@@ -21,13 +21,13 @@ defmodule Main do
     else
       messages = messages ++ ["Failed!"]
     end
-    Log.trace("If-else push result: " <> Std.string(messages), %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "testIfElsePush"})
+    Log.trace("If-else push result: #{inspect(messages)}", %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "testIfElsePush"})
   end
   defp test_conditional_accumulation() do
     errors = []
     errors = errors ++ ["Error 1"]
     errors = errors ++ ["Error 3"]
-    Log.trace("Conditional accumulation: " <> Std.string(errors), %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "testConditionalAccumulation"})
+    Log.trace("Conditional accumulation: #{inspect(errors)}", %{:file_name => "Main.hx", :line_number => 54, :class_name => "Main", :method_name => "testConditionalAccumulation"})
   end
   defp test_nested_if_push() do
     results = []
@@ -39,6 +39,6 @@ defmodule Main do
         results = results ++ ["Level 2"]
       end
     end
-    Log.trace("Nested if push: " <> Std.string(results), %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testNestedIfPush"})
+    Log.trace("Nested if push: #{inspect(results)}", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "testNestedIfPush"})
   end
 end

@@ -10,7 +10,7 @@ defmodule Main do
     index = 0
     index = i + 1
     c = (c - 55232) <<< 10 ||| index
-    Log.trace("c: " <> Kernel.to_string(c) <> ", index: " <> Kernel.to_string(index), %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "testComplexAssignmentWithBinary"})
+    Log.trace("c: #{c}, index: #{index}", %{:file_name => "Main.hx", :line_number => 22, :class_name => "Main", :method_name => "testComplexAssignmentWithBinary"})
   end
   defp test_method_call_in_binary_expression() do
     s = TestString.new("test")
@@ -21,6 +21,6 @@ defmodule Main do
     c = s.cca(index)
     index = i + 1
     c = if (c > 55296), do: (c - 55232) <<< 10 ||| s.cca(index) &&& 1023, else: c
-    Log.trace("final c: " <> Kernel.to_string(c), %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testMethodCallInBinaryExpression"})
+    Log.trace("final c: #{c}", %{:file_name => "Main.hx", :line_number => 41, :class_name => "Main", :method_name => "testMethodCallInBinaryExpression"})
   end
 end

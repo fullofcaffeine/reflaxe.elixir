@@ -8,7 +8,7 @@ defmodule Main do
     # Map to double using comprehension
     doubled = for n <- numbers, do: n * 2
 
-    Log.trace("Evens: " <> Std.string(evens), %{:file_name => "Main.hx", :line_number => 19, :class_name => "Main", :method_name => "main"})
-    Log.trace("Doubled: " <> Std.string(doubled), %{:file_name => "Main.hx", :line_number => 20, :class_name => "Main", :method_name => "main"})
+    Log.trace("Evens: #{inspect(evens)}", %{:file_name => "Main.hx", :line_number => 19, :class_name => "Main", :method_name => "main"})
+    Log.trace("Doubled: #{inspect(doubled)}", %{:file_name => "Main.hx", :line_number => 20, :class_name => "Main", :method_name => "main"})
   end
 end
