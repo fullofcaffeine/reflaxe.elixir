@@ -44,7 +44,11 @@ defmodule Main do
     Log.trace("Char at 0: #{String.at(text, 0)}", %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "stringMethods"})
     Log.trace("Char code at 0: #{:binary.first(text)}", %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "stringMethods"})
 
-    Log.trace("Index of \"World\": #{elem(:binary.match(text, "World") || {-1, 0}, 0)}", %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "stringMethods"})
+    index = case :binary.match(text, "World") do
+      {pos, _} -> pos
+      nil -> -1
+    end
+    Log.trace("Index of \"World\": #{index}", %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "stringMethods"})
     Log.trace("Last index of \"o\": #{String.length(text) - String.length(String.reverse(text) |> String.split("o", parts: 2) |> List.first())}", %{:file_name => "Main.hx", :line_number => 73, :class_name => "Main", :method_name => "stringMethods"})
 
     parts = String.split(text, ", ")
