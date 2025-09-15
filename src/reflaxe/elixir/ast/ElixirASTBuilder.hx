@@ -14,6 +14,7 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.context.ClauseContext;
 // Import builder modules
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
+import reflaxe.elixir.ast.builders.BinaryOpBuilder;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -762,6 +763,14 @@ class ElixirASTBuilder {
             // Binary Operations
             // ================================================================
             case TBinop(op, e1, e2):
+                // Delegate to BinaryOpBuilder for all binary operation handling
+                var ast = BinaryOpBuilder.buildBinop(
+                    op, e1, e2,
+                    function(e) return buildFromTypedExpr(e, currentContext),
+                    function(e) return extractPattern(e),
+                    function(s) return toSnakeCase(s)
+                );
+                ast.def;
                 // Special handling for field != nil or field == nil comparisons
                 // These are checking for optional fields and need safe access
                 var isNilComparison = switch(op) {
@@ -1688,9 +1697,38 @@ class ElixirASTBuilder {
                             
                             // Check for Assert class calls (ExUnit assertions)
                             if (isAssertClass(obj)) {
-                                // This is an Assert.method() call - compile to ExUnit assertion
-                                var assertAst = reflaxe.elixir.ast.builders.ExUnitCompiler.compileAssertion(fieldName, args);
-                                return assertAst.def;
+                                // Map Assert methods to ExUnit assertions
+                                var assertFunc = switch(fieldName) {
+                                    case "equals": "assert";  // Assert.equals(a, b) -> assert(a == b)
+                                    case "notEquals": "refute";  // Assert.notEquals(a, b) -> refute(a == b)
+                                    case "isTrue": "assert";  // Assert.isTrue(x) -> assert(x)
+                                    case "isFalse": "refute";  // Assert.isFalse(x) -> refute(x)
+                                    case "isNull": "assert";  // Assert.isNull(x) -> assert(x == nil)
+                                    case "isNotNull": "refute";  // Assert.isNotNull(x) -> refute(x == nil)
+                                    case "fail": "flunk";  // Assert.fail(msg) -> flunk(msg)
+                                    default: "assert";  // Default to assert for unknown methods
+                                };
+
+                                // Transform arguments based on assertion type
+                                var assertArgs = switch(fieldName) {
+                                    case "equals" if (args.length >= 2):
+                                        // Transform Assert.equals(a, b) to assert(a == b)
+                                        [makeAST(EBinary(Equal, args[0], args[1]))];
+                                    case "notEquals" if (args.length >= 2):
+                                        // Transform Assert.notEquals(a, b) to refute(a == b)
+                                        [makeAST(EBinary(Equal, args[0], args[1]))];
+                                    case "isNull" if (args.length >= 1):
+                                        // Transform Assert.isNull(x) to assert(x == nil)
+                                        [makeAST(EBinary(Equal, args[0], makeAST(ENil)))];
+                                    case "isNotNull" if (args.length >= 1):
+                                        // Transform Assert.isNotNull(x) to refute(x == nil)
+                                        [makeAST(EBinary(Equal, args[0], makeAST(ENil)))];
+                                    default:
+                                        // Pass through arguments as-is for other assertions
+                                        args;
+                                };
+
+                                return ECall(null, assertFunc, assertArgs);
                             }
                             // Check for HXX.hxx() template calls
                             else if (fieldName == "hxx" && isHXXModule(obj)) {
