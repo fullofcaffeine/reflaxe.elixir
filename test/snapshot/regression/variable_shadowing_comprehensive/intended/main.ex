@@ -12,14 +12,14 @@ defmodule Main do
   defp _test_basic_shadowing() do
     value = "test"
     this1 = value
-    Log.trace("Basic shadowing: " <> Std.string(this1), %{:file_name => "Main.hx", :line_number => 29, :class_name => "Main", :method_name => "testBasicShadowing"})
+    Log.trace("Basic shadowing: #{this1}", %{:file_name => "Main.hx", :line_number => 29, :class_name => "Main", :method_name => "testBasicShadowing"})
   end
   defp _test_shadowing_with_intervening_statements() do
     query = "SELECT * FROM users"
-    new_query = query <> " WHERE active = true"
+    new_query = "#{query} WHERE active = true"
     this1 = new_query
     query = this1
-    Log.trace("Query with intervening: " <> query, %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "testShadowingWithInterveningStatements"})
+    Log.trace("Query with intervening: #{query}", %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "testShadowingWithInterveningStatements"})
   end
   defp _test_shadowing_in_if_blocks() do
     filter = %{:name => "John", :email => "john@example.com", :is_active => true}
@@ -28,24 +28,24 @@ defmodule Main do
       this1 = query
       query = this1
       if (Map.get(filter, :name) != nil) do
-        value = "%" <> filter.name <> "%"
-        new_query = "" <> query <> " WHERE name LIKE '" <> value <> "'"
+        value = "%#{filter.name}%"
+        new_query = "#{query} WHERE name LIKE '#{value}'"
         this2 = new_query
         query = this2
       end
       if (Map.get(filter, :email) != nil) do
-        value = "%" <> filter.email <> "%"
-        new_query = "" <> query <> " AND email LIKE '" <> value <> "'"
+        value = "%#{filter.email}%"
+        new_query = "#{query} AND email LIKE '#{value}'"
         this3 = new_query
         query = this3
       end
       if (filter.is_active == true) do
         value = filter.is_active
-        new_query = "" <> query <> " AND active = " <> Std.string(value)
+        new_query = "#{query} AND active = #{value}"
         this4 = new_query
         query = this4
       end
-      Log.trace("Complex query: " <> query, %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "testShadowingInIfBlocks"})
+      Log.trace("Complex query: #{query}", %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "testShadowingInIfBlocks"})
     end
   end
   defp _test_query_builder_pattern() do
@@ -56,18 +56,18 @@ defmodule Main do
     transformed2 = apply_filter(base_query, "age", "25")
     temp2 = transformed2
     base_query = temp2
-    Log.trace("Query builder result: " <> base_query, %{:file_name => "Main.hx", :line_number => 96, :class_name => "Main", :method_name => "testQueryBuilderPattern"})
+    Log.trace("Query builder result: #{base_query}", %{:file_name => "Main.hx", :line_number => 96, :class_name => "Main", :method_name => "testQueryBuilderPattern"})
   end
   defp _build_base_query() do
     "SELECT * FROM users"
   end
   defp _apply_filter(query, field, value) do
-    "" <> query <> " WHERE " <> field <> " = '" <> value <> "'"
+    "#{query} WHERE #{field} = '#{value}'"
   end
   defp _test_abstract_constructor_pattern() do
     this1 = create_abstract_value("test_value")
     result = this1
-    Log.trace("Abstract constructor: " <> result, %{:file_name => "Main.hx", :line_number => 113, :class_name => "Main", :method_name => "testAbstractConstructorPattern"})
+    Log.trace("Abstract constructor: #{result}", %{:file_name => "Main.hx", :line_number => 113, :class_name => "Main", :method_name => "testAbstractConstructorPattern"})
   end
   defp _create_abstract_value(value) do
     %{:type => "abstract", :value => value}
