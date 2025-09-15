@@ -2,9 +2,10 @@ package reflaxe.elixir.ast.context;
 
 #if (macro || reflaxe_runtime)
 
-import haxe.macro.Type;
 import haxe.macro.Expr.Position;
+import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.builders.IBuilder;
 
 /**
  * BuildContext: Shared interface for AST builders to access compilation state
@@ -205,6 +206,66 @@ interface BuildContext {
      * @param pos Position in source
      */
     function error(message: String, ?pos: Position): Void;
+
+    // ================================================================================
+    // CALLBACK INJECTION SUPPORT (Codex Recommendation - Sep 2025)
+    // ================================================================================
+
+    /**
+     * Get expression builder callback for delegation
+     * Allows builders to compile nested expressions without circular dependencies
+     *
+     * WHY: Codex architectural review identified circular dependency issues when
+     * builders directly call back into the main compiler. This callback injection
+     * pattern allows clean delegation without tight coupling.
+     *
+     * @return Function to compile TypedExpr to ElixirAST
+     */
+    function getExpressionBuilder(): (TypedExpr) -> ElixirAST;
+
+    /**
+     * Get type builder callback for delegation
+     * Allows builders to compile type references without coupling
+     *
+     * @return Function to compile Type to ElixirAST
+     */
+    function getTypeBuilder(): (Type) -> ElixirAST;
+
+    /**
+     * Get pattern builder callback for delegation
+     * Allows builders to compile patterns without direct dependencies
+     *
+     * @param clauseContext Context for the pattern's clause
+     * @return Function to compile TypedExpr patterns to ElixirAST
+     */
+    function getPatternBuilder(clauseContext: ClauseContext): (TypedExpr) -> ElixirAST;
+
+    /**
+     * Register a specialized builder for feature-flagged routing
+     * Part of the BuilderFacade pattern for gradual migration
+     *
+     * @param builderType Type of builder (e.g., "loop", "pattern", "function")
+     * @param builder The specialized builder instance implementing IBuilder
+     */
+    function registerBuilder(builderType: String, builder: IBuilder): Void;
+
+    /**
+     * Check if a feature flag is enabled
+     * Allows conditional use of new builders during migration
+     *
+     * @param flag Feature flag name (e.g., "use_new_loop_builder")
+     * @return True if flag is enabled
+     */
+    function isFeatureEnabled(flag: String): Bool;
+
+    /**
+     * Enable or disable a feature flag
+     * Used for gradual rollout of new builders
+     *
+     * @param flag Feature flag name
+     * @param enabled Whether to enable or disable
+     */
+    function setFeatureFlag(flag: String, enabled: Bool): Void;
 }
 
 #end

@@ -2197,6 +2197,38 @@ When fixing a bug:
 - **Example of right approach**: Register mappings at TVar creation time, not retroactively
 - **ZERO TOLERANCE FOR QUICK FIXES**: The user has explicitly stated they don't want quick fixes in this compiler. Always implement the proper architectural solution, even if it takes more time.
 
+### ⚠️ CRITICAL: Consult Codex for Architecture & Complex Issues
+**FUNDAMENTAL RULE: When facing architectural decisions or complex problems, consult with Codex AI for expert guidance.**
+
+**When to consult Codex**:
+- **Architecture decisions** - Before implementing new patterns or major refactorings
+- **Complex debugging** - When stuck on intricate issues for >30 minutes
+- **Performance optimization** - Get guidance on efficient approaches
+- **Best practices** - Validate approach against industry standards
+- **Cross-cutting concerns** - Issues affecting multiple subsystems
+
+**How to consult effectively**:
+1. **Describe the problem clearly** - Include context and constraints
+2. **Ask specific questions** - "What's the best pattern for X given Y constraints?"
+3. **Request architectural review** - "Is this approach architecturally sound?"
+4. **Get comparative analysis** - "How do other compilers handle this?"
+5. **Document the response** - Save timestamped reviews for future reference
+
+**Example consultation**:
+```
+"I need to implement feature flag routing for AST builders.
+Current architecture: monolithic 10k line builder.
+Goal: gradual migration to specialized builders.
+Constraints: zero downtime, rollback capability.
+What architectural patterns should I consider?"
+```
+
+**Benefits**:
+- **Avoid architectural debt** - Get it right the first time
+- **Learn from patterns** - Understand why, not just how
+- **Prevent dead ends** - Identify issues before implementation
+- **Accelerate development** - Skip trial-and-error cycles
+
 ### ⚠️ CRITICAL: Debug-First Development - No Assumptions
 **FUNDAMENTAL RULE: Always rely on debug data first. If you don't see the data/AST, don't assume things.**
 - Add comprehensive debug traces to understand actual behavior
