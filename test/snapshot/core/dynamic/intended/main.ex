@@ -9,110 +9,92 @@ defmodule Main do
     dyn = %{:name => "John", :age => 30}
     Log.trace(dyn, %{:file_name => "Main.hx", :line_number => 20, :class_name => "Main", :method_name => "dynamicVars"})
     dyn = fn x -> x * 2 end
-    Log.trace(dyn(5), %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "dynamicVars"})
+    Log.trace(dyn.(5), %{:file_name => "Main.hx", :line_number => 23, :class_name => "Main", :method_name => "dynamicVars"})
   end
+
   def dynamic_field_access() do
     obj = %{:name => "Alice", :age => 25, :greet => fn -> "Hello!" end}
-    Log.trace(obj.name, %{:file_name => "Main.hx", :line_number => 34, :class_name => "Main", :method_name => "dynamicFieldAccess"})
-    Log.trace(obj.age, %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "dynamicFieldAccess"})
-    Log.trace(obj.greet(), %{:file_name => "Main.hx", :line_number => 36, :class_name => "Main", :method_name => "dynamicFieldAccess"})
-    city = "New York"
-    Log.trace(obj.city, %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "dynamicFieldAccess"})
-    Log.trace(obj.non_existent, %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "dynamicFieldAccess"})
+    Log.trace(Map.get(obj, :name), %{:file_name => "Main.hx", :line_number => 34, :class_name => "Main", :method_name => "dynamicFieldAccess"})
+    Log.trace(Map.get(obj, :age), %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "dynamicFieldAccess"})
+    greet_fn = Map.get(obj, :greet)
+    Log.trace(greet_fn.(), %{:file_name => "Main.hx", :line_number => 36, :class_name => "Main", :method_name => "dynamicFieldAccess"})
+    _city = "New York"
+    Log.trace(Map.get(obj, :city), %{:file_name => "Main.hx", :line_number => 40, :class_name => "Main", :method_name => "dynamicFieldAccess"})
+    Log.trace(Map.get(obj, :non_existent), %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "dynamicFieldAccess"})
   end
+
   def dynamic_functions() do
     fn_param = fn a, b -> a + b end
-    Log.trace(fn_param(10, 20), %{:file_name => "Main.hx", :line_number => 49, :class_name => "Main", :method_name => "dynamicFunctions"})
-    fn_param = fn s -> s.to_upper_case() end
-    Log.trace(fn_param("hello"), %{:file_name => "Main.hx", :line_number => 52, :class_name => "Main", :method_name => "dynamicFunctions"})
+    Log.trace(fn_param.(10, 20), %{:file_name => "Main.hx", :line_number => 49, :class_name => "Main", :method_name => "dynamicFunctions"})
+    fn_param = fn s -> String.upcase(s) end
+    Log.trace(fn_param.("hello"), %{:file_name => "Main.hx", :line_number => 52, :class_name => "Main", :method_name => "dynamicFunctions"})
     var_args = fn args ->
-  sum = 0
-  g = 0
-  Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {args, sum, g, :ok}, fn _, {acc_args, acc_sum, acc_g, acc_state} -> nil end)
-  sum
-end
-    Log.trace(var_args([1, 2, 3, 4, 5]), %{:file_name => "Main.hx", :line_number => 62, :class_name => "Main", :method_name => "dynamicFunctions"})
+      Enum.sum(args)
+    end
+    Log.trace(var_args.([1, 2, 3, 4, 5]), %{:file_name => "Main.hx", :line_number => 62, :class_name => "Main", :method_name => "dynamicFunctions"})
   end
+
   def type_checking() do
     value = 42
-    if (Std.is(value, Int)) do
-      Log.trace("It's an Int: " <> Std.string(value), %{:file_name => "Main.hx", :line_number => 71, :class_name => "Main", :method_name => "typeChecking"})
+    if is_integer(value) do
+      Log.trace("It's an Int: #{value}", %{:file_name => "Main.hx", :line_number => 71, :class_name => "Main", :method_name => "typeChecking"})
     end
     value = "Hello"
-    if (Std.is(value, String)) do
-      Log.trace("It's a String: " <> Std.string(value), %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "typeChecking"})
+    if is_binary(value) do
+      Log.trace("It's a String: #{value}", %{:file_name => "Main.hx", :line_number => 76, :class_name => "Main", :method_name => "typeChecking"})
     end
     value = [1, 2, 3]
-    if (Std.is(value, Array)) do
-      Log.trace("It's an Array with length: " <> Std.string(length(value)), %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "typeChecking"})
+    if is_list(value) do
+      Log.trace("It's an Array with length: #{length(value)}", %{:file_name => "Main.hx", :line_number => 81, :class_name => "Main", :method_name => "typeChecking"})
     end
     num = "123"
-    int_value = Std.parse_int(num)
-    Log.trace("Parsed int: " <> Kernel.to_string(int_value), %{:file_name => "Main.hx", :line_number => 87, :class_name => "Main", :method_name => "typeChecking"})
-    float_value = Std.parse_float("3.14")
-    Log.trace("Parsed float: " <> Kernel.to_string(float_value), %{:file_name => "Main.hx", :line_number => 90, :class_name => "Main", :method_name => "typeChecking"})
+    int_value = String.to_integer(num)
+    Log.trace("Parsed int: #{int_value}", %{:file_name => "Main.hx", :line_number => 87, :class_name => "Main", :method_name => "typeChecking"})
+    float_value = String.to_float("3.14")
+    Log.trace("Parsed float: #{float_value}", %{:file_name => "Main.hx", :line_number => 90, :class_name => "Main", :method_name => "typeChecking"})
   end
+
   def dynamic_generics(value) do
     value
   end
+
   def dynamic_collections() do
     dyn_array = [1, "two", 3, true, %{:x => 10}]
-    g = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {dyn_array, g, :ok}, fn _, {acc_dyn_array, acc_g, acc_state} ->
-  if (acc_g < length(acc_dyn_array)) do
-    item = acc_dyn_array[acc_g]
-    acc_g = acc_g + 1
-    Log.trace("Item: " <> Std.string(item), %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "dynamicCollections"})
-    {:cont, {acc_dyn_array, acc_g, acc_state}}
-  else
-    {:halt, {acc_dyn_array, acc_g, acc_state}}
-  end
-end)
+    Enum.each(dyn_array, fn item ->
+      Log.trace("Item: #{inspect(item)}", %{:file_name => "Main.hx", :line_number => 103, :class_name => "Main", :method_name => "dynamicCollections"})
+    end)
     dyn_obj = %{}
-    field1 = "value1"
-    field2 = 42
-    field3 = [1, 2, 3]
+    _field1 = "value1"
+    _field2 = 42
+    _field3 = [1, 2, 3]
     Log.trace(dyn_obj, %{:file_name => "Main.hx", :line_number => 113, :class_name => "Main", :method_name => "dynamicCollections"})
   end
+
   def process_dynamic(value) do
-    if (value == nil) do
-      "null"
-    else
-      if (Std.is(value, Bool)) do
-        "Bool: " <> Std.string(value)
-      else
-        if (Std.is(value, Int)) do
-          "Int: " <> Std.string(value)
-        else
-          if (Std.is(value, Float)) do
-            "Float: " <> Std.string(value)
-          else
-            if (Std.is(value, String)) do
-              "String: " <> Std.string(value)
-            else
-              if (Std.is(value, Array)) do
-                "Array of length: " <> Std.string(length(value))
-              else
-                "Unknown type"
-              end
-            end
-          end
-        end
-      end
+    cond do
+      value == nil -> "null"
+      is_boolean(value) -> "Bool: #{value}"
+      is_integer(value) -> "Int: #{value}"
+      is_float(value) -> "Float: #{value}"
+      is_binary(value) -> "String: #{value}"
+      is_list(value) -> "Array of length: #{length(value)}"
+      true -> "Unknown type"
     end
   end
+
   def dynamic_method_calls() do
-    obj = %{}
-    value = 10
-    increment = fn -> obj.value + 1 end
-    getValue = fn -> obj.value end
-    Log.trace("Initial value: " <> Std.string(obj.get_value()), %{:file_name => "Main.hx", :line_number => 146, :class_name => "Main", :method_name => "dynamicMethodCalls"})
-    obj.increment()
-    Log.trace("After increment: " <> Std.string(obj.get_value()), %{:file_name => "Main.hx", :line_number => 148, :class_name => "Main", :method_name => "dynamicMethodCalls"})
+    obj = %{:value => 10, :increment => fn obj -> Map.update(obj, :value, 0, &(&1 + 1)) end, :get_value => fn obj -> Map.get(obj, :value) end}
+    get_value = Map.get(obj, :get_value)
+    Log.trace("Initial value: #{get_value.(obj)}", %{:file_name => "Main.hx", :line_number => 146, :class_name => "Main", :method_name => "dynamicMethodCalls"})
+    increment = Map.get(obj, :increment)
+    obj = increment.(obj)
+    Log.trace("After increment: #{get_value.(obj)}", %{:file_name => "Main.hx", :line_number => 148, :class_name => "Main", :method_name => "dynamicMethodCalls"})
     method_name = "increment"
-    apply(Map.get(obj, String.to_atom(method_name)), [])
-    Log.trace("After reflect call: " <> Std.string(obj.get_value()), %{:file_name => "Main.hx", :line_number => 153, :class_name => "Main", :method_name => "dynamicMethodCalls"})
+    method = Map.get(obj, String.to_atom(method_name))
+    obj = apply(method, [obj])
+    Log.trace("After reflect call: #{get_value.(obj)}", %{:file_name => "Main.hx", :line_number => 153, :class_name => "Main", :method_name => "dynamicMethodCalls"})
   end
+
   def main() do
     Log.trace("=== Dynamic Variables ===", %{:file_name => "Main.hx", :line_number => 157, :class_name => "Main", :method_name => "main"})
     dynamic_vars()
