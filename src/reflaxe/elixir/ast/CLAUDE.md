@@ -943,6 +943,80 @@ Even though `_g = g` seems redundant, we keep it because:
 3. **Defensive coding**: The fix handles both pattern-matched and non-pattern cases correctly
 4. **Test coverage**: Always create regression tests for runtime errors, not just compilation errors
 
+## 📚 Critical Compilation Issues (January 2025)
+
+### ModuleBuilder Integration Fix
+
+**STATUS**: Fixed January 2025
+**ISSUE**: buildClassAST was failing to compile functions properly
+
+#### The Problem
+After refactoring to use ModuleBuilder, function compilation was broken:
+- ModuleBuilder.buildClassModule expects `Array<ElixirAST>`
+- We were trying to call `ElixirAST.makeAST()` as a static method
+- `makeAST` is actually an inline function, not a static method
+
+#### The Solution
+```haxe
+// ❌ WRONG: Trying to call non-existent static method
+fields.push(ElixirAST.makeAST(funcDef));
+
+// ✅ CORRECT: Create AST structure directly
+fields.push({
+    def: funcDef,
+    metadata: {},
+    pos: funcData.field.pos
+});
+```
+
+#### Key Learning
+The ElixirAST module defines helper inline functions at the module level, not as static methods on a class. When creating AST nodes:
+- Use the direct structure `{def: ..., metadata: ..., pos: ...}`
+- Or import the module with `using` to access inline helpers
+- The makeAST helper is just a convenience for creating the structure
+
+### LoopBuilder Infinite Recursion Issue
+
+**STATUS**: Disabled, needs re-enabling with safety guards
+**ISSUE**: LoopBuilder causes compilation hangs when analyzers call buildExpr recursively
+
+#### The Problem
+When LoopBuilder is enabled:
+1. Analyzer examines a loop expression
+2. Calls buildExpr on the loop body
+3. LoopBuilder processes the same loop again
+4. Infinite recursion → stack overflow → compilation hang
+
+#### Proposed Solution: ReentrancyGuard with Tri-State Caching
+```haxe
+enum ProcessingState {
+    NotStarted;
+    InProgress;
+    Completed(result: ElixirAST);
+}
+
+class ReentrancyGuard {
+    var cache: Map<Int, ProcessingState> = new Map();
+
+    public function process(exprId: Int, builder: () -> ElixirAST): ElixirAST {
+        switch(cache.get(exprId)) {
+            case null | NotStarted:
+                cache.set(exprId, InProgress);
+                var result = builder();
+                cache.set(exprId, Completed(result));
+                return result;
+            case InProgress:
+                // Return placeholder to break recursion
+                return makeAST(ESkip);
+            case Completed(result):
+                return result;
+        }
+    }
+}
+```
+
+This prevents infinite recursion while still allowing proper analysis and transformation.
+
 ## 🚀 Future Improvements
 
 ### Planned Enhancements
@@ -951,6 +1025,8 @@ Even though `_g = g` seems redundant, we keep it because:
 2. **Source map integration** - Use positions to read source
 3. **Metadata preservation** - Work with Haxe team on preserving names
 4. **Pattern library** - Common patterns pre-configured
+5. **ReentrancyGuard implementation** - Enable LoopBuilder with safety
+6. **Compatibility mode** - Feature flags for gradual migration
 
 ### Contributing
 
@@ -959,6 +1035,7 @@ When working on AST improvements:
 2. Add debug traces with `#if debug_ast_builder`
 3. Update this file with findings
 4. Test with real-world code (todo-app)
+5. Document critical fixes in this file
 
 ---
 
