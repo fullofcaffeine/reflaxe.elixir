@@ -229,12 +229,18 @@ class LoopBuilder {
     static function emitEnumEach(ir: LoopIR,
                                 buildExpr: TypedExpr -> ElixirAST,
                                 toSnakeCase: String -> String): ElixirAST {
-        var source = switch(ir.source) {
-            case Range(start, end, _):
-                // Create range expression
-                makeAST(ERange(start, end, false));
-            case Collection(expr):
-                expr;
+        // Build source from original expression
+        var source = switch(ir.originalExpr.expr) {
+            case TFor(_, e1, _):
+                // Check if it's a range iteration (0...n or start...end)
+                switch(e1.expr) {
+                    case TBinop(OpInterval, startExpr, endExpr):
+                        // Build range expression
+                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));
+                    case _:
+                        // Regular collection
+                        buildExpr(e1);
+                }
             case _:
                 makeAST(ENil);
         };
@@ -245,7 +251,12 @@ class LoopBuilder {
             "_item";
         };
 
-        var body = buildExpr(ir.originalExpr);  // Build body from original
+        // Extract the body from the original loop expression
+        var body = switch(ir.originalExpr.expr) {
+            case TFor(_, _, bodyExpr): buildExpr(bodyExpr);
+            case TWhile(_, bodyExpr, _): buildExpr(bodyExpr);
+            case _: makeAST(ENil);
+        };
 
         return makeAST(ERemoteCall(
             makeAST(EVar("Enum")),
@@ -266,11 +277,18 @@ class LoopBuilder {
     static function emitEnumMap(ir: LoopIR,
                                buildExpr: TypedExpr -> ElixirAST,
                                toSnakeCase: String -> String): ElixirAST {
-        var source = switch(ir.source) {
-            case Range(start, end, _):
-                makeAST(ERange(start, end, false));
-            case Collection(expr):
-                expr;
+        // Build source from original expression
+        var source = switch(ir.originalExpr.expr) {
+            case TFor(_, e1, _):
+                // Check if it's a range iteration
+                switch(e1.expr) {
+                    case TBinop(OpInterval, startExpr, endExpr):
+                        // Build range expression
+                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));
+                    case _:
+                        // Regular collection
+                        buildExpr(e1);
+                }
             case _:
                 makeAST(ENil);
         };
@@ -281,10 +299,17 @@ class LoopBuilder {
             "_item";
         };
 
-        var body = if (ir.yield != null) {
-            ir.yield.expr;
-        } else {
-            buildExpr(ir.originalExpr);
+        // Extract the body from the loop expression
+        var body = switch(ir.originalExpr.expr) {
+            case TFor(_, _, bodyExpr): buildExpr(bodyExpr);
+            case TWhile(_, bodyExpr, _): buildExpr(bodyExpr);
+            case _:
+                // Use yield if available, otherwise nil
+                if (ir.yield != null) {
+                    ir.yield.expr;
+                } else {
+                    makeAST(ENil);
+                }
         };
 
         return makeAST(ERemoteCall(
@@ -306,11 +331,18 @@ class LoopBuilder {
     static function emitComprehension(ir: LoopIR,
                                     buildExpr: TypedExpr -> ElixirAST,
                                     toSnakeCase: String -> String): ElixirAST {
-        var source = switch(ir.source) {
-            case Range(start, end, _):
-                makeAST(ERange(start, end, false));
-            case Collection(expr):
-                expr;
+        // Build source from original expression
+        var source = switch(ir.originalExpr.expr) {
+            case TFor(_, e1, _):
+                // Check if it's a range iteration
+                switch(e1.expr) {
+                    case TBinop(OpInterval, startExpr, endExpr):
+                        // Build range expression
+                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));
+                    case _:
+                        // Regular collection
+                        buildExpr(e1);
+                }
             case _:
                 makeAST(ENil);
         };
@@ -331,10 +363,17 @@ class LoopBuilder {
             filters.push(filter.condition);
         }
 
-        var body = if (ir.yield != null) {
-            ir.yield.expr;
-        } else {
-            buildExpr(ir.originalExpr);
+        // Extract the body from the loop expression
+        var body = switch(ir.originalExpr.expr) {
+            case TFor(_, _, bodyExpr): buildExpr(bodyExpr);
+            case TWhile(_, bodyExpr, _): buildExpr(bodyExpr);
+            case _:
+                // Use yield if available, otherwise nil
+                if (ir.yield != null) {
+                    ir.yield.expr;
+                } else {
+                    makeAST(ENil);
+                }
         };
 
         return makeAST(EFor(generators, filters, body, null, false));
