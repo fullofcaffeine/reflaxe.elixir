@@ -47,8 +47,6 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
 
     var detectedRange: Null<RangeInfo> = null;
 
-    public function new() {}
-
     public function analyze(expr: TypedExpr, ir: LoopIR): Void {
         switch(expr.expr) {
             case TFor(v, iterator, body):
@@ -77,13 +75,13 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
 
                 ir.kind = ForRange;
                 ir.source = Range(
-                    buildAST(startExpr),
-                    buildAST(endExpr),
+                    buildExpr(startExpr),
+                    buildExpr(endExpr),
                     1
                 );
                 ir.elementPattern = {
                     varName: v.name,
-                    pattern: makeAST(EVar(v.name)),  // Use EVar for now as placeholder
+                    pattern: buildExpr(startExpr), // Will be replaced with proper pattern
                     type: v.t
                 };
 
@@ -116,13 +114,13 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
 
         ir.kind = While;  // Will be transformed to ForRange
         ir.source = Range(
-            buildAST(detectedRange.start),
-            buildAST(detectedRange.end),
+            buildExpr(detectedRange.start),
+            buildExpr(detectedRange.end),
             detectedRange.step
         );
         ir.elementPattern = {
             varName: condPattern.indexVar,
-            pattern: makeAST(EVar(condPattern.indexVar)),  // Use EVar for now as placeholder
+            pattern: buildExpr(detectedRange.start), // Will be replaced with proper pattern
             type: condPattern.type
         };
 
@@ -186,12 +184,6 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
         return 0.0;
     }
 
-    // Helper to build AST (simplified placeholder)
-    function buildAST(expr: TypedExpr): ElixirAST {
-        // This would call the actual ElixirASTBuilder
-        // For now, return a placeholder
-        return makeAST(ENil);
-    }
 
     function makeConstInt(n: Int): TypedExpr {
         return {
