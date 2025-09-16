@@ -3551,6 +3551,9 @@ class ElixirASTBuilder {
                     // Use ReentrancyGuard to prevent infinite recursion
                     var guard = currentContext.reentrancyGuard;
 
+                    // Create the for expression to pass to the guard
+                    var forExpr = expr; // The current expression being processed
+
                     // Create a wrapped builder function that uses the guard
                     var safeBuilder = function(): ElixirAST {
                         var transform = LoopBuilder.analyzeFor(v, e1, e2);
@@ -3567,7 +3570,7 @@ class ElixirASTBuilder {
                     };
 
                     // Process with reentrancy protection
-                    var ast = guard.process(expr, safeBuilder);
+                    var ast = guard.process(forExpr, safeBuilder);
                     ast.def;
                 } else {
                     // Fall back to simple for comprehension when LoopBuilder is disabled

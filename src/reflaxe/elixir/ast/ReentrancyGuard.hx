@@ -8,6 +8,15 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 
 /**
+ * Processing state for each expression
+ */
+enum ProcessingState {
+    NotStarted;
+    InProgress;
+    Completed(result: ElixirAST);
+}
+
+/**
  * ReentrancyGuard: Prevents Infinite Recursion in AST Building
  *
  * WHY: When analyzers (like LoopBuilder) examine expressions, they may call
@@ -37,15 +46,6 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
  * - Position-based keys may collide in generated code
  */
 class ReentrancyGuard {
-
-    /**
-     * Processing state for each expression
-     */
-    enum ProcessingState {
-        NotStarted;
-        InProgress;
-        Completed(result: ElixirAST);
-    }
 
     /**
      * Cache of expression processing states
@@ -109,8 +109,9 @@ class ReentrancyGuard {
                 trace('[ReentrancyGuard] ⚠️ RECURSION DETECTED for $key - returning placeholder');
                 #end
 
-                // Return a skip/noop node that won't affect output
-                return makeAST(ESkip);
+                // Return a nil placeholder to break the cycle
+                // This won't affect the output as it's just a temporary placeholder
+                return makeAST(ENil);
 
             case Completed(result):
                 // Already processed, return cached result
