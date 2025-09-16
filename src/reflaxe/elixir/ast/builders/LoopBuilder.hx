@@ -69,7 +69,7 @@ class LoopBuilder {
         };
 
         // Build and analyze IR
-        var ir = analyzeLoop(forExpr);
+        var ir = analyzeLoop(forExpr, buildExpr);
 
         // Check confidence and decide emission strategy
         if (ir.confidence >= CONFIDENCE_THRESHOLD) {
@@ -99,7 +99,7 @@ class LoopBuilder {
         };
 
         // Build and analyze IR
-        var ir = analyzeLoop(whileExpr);
+        var ir = analyzeLoop(whileExpr, buildExpr);
 
         // Check confidence and decide emission strategy
         if (ir.confidence >= CONFIDENCE_THRESHOLD) {
@@ -118,7 +118,7 @@ class LoopBuilder {
      * WHAT: Runs analyzers and aggregates results into IR
      * HOW: Each analyzer contributes to IR and confidence
      */
-    static function analyzeLoop(expr: TypedExpr): LoopIR {
+    static function analyzeLoop(expr: TypedExpr, buildExpr: TypedExpr -> ElixirAST): LoopIR {
         // Initialize IR
         var ir: LoopIR = {
             kind: switch(expr.expr) {
@@ -145,7 +145,7 @@ class LoopBuilder {
 
         // Run analyzers
         var analyzers = [
-            new RangeIterationAnalyzer()
+            new RangeIterationAnalyzer(buildExpr)
             // Future: ArrayBuildAnalyzer, EarlyExitAnalyzer, etc.
         ];
 
