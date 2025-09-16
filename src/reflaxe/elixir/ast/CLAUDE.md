@@ -975,19 +975,19 @@ The ElixirAST module defines helper inline functions at the module level, not as
 - Or import the module with `using` to access inline helpers
 - The makeAST helper is just a convenience for creating the structure
 
-### LoopBuilder Infinite Recursion Issue
+### LoopBuilder Infinite Recursion Issue (FIXED)
 
-**STATUS**: Disabled, needs re-enabling with safety guards
-**ISSUE**: LoopBuilder causes compilation hangs when analyzers call buildExpr recursively
+**STATUS**: Fixed with ReentrancyGuard implementation (January 2025)
+**ISSUE**: LoopBuilder was causing compilation hangs when analyzers called buildExpr recursively
 
 #### The Problem
-When LoopBuilder is enabled:
+When LoopBuilder was enabled:
 1. Analyzer examines a loop expression
 2. Calls buildExpr on the loop body
 3. LoopBuilder processes the same loop again
 4. Infinite recursion → stack overflow → compilation hang
 
-#### Proposed Solution: ReentrancyGuard with Tri-State Caching
+#### Implemented Solution: ReentrancyGuard with Tri-State Caching
 ```haxe
 enum ProcessingState {
     NotStarted;
@@ -1015,7 +1015,21 @@ class ReentrancyGuard {
 }
 ```
 
-This prevents infinite recursion while still allowing proper analysis and transformation.
+The ReentrancyGuard has been implemented in `src/reflaxe/elixir/ast/ReentrancyGuard.hx` and integrated into:
+- `CompilationContext`: Initializes and stores the guard instance
+- `ElixirASTBuilder`: Uses the guard when LoopBuilder is enabled (behind feature flag)
+- `LoopBuilder`: All recursive buildExpr calls now go through the guard
+
+#### Usage with Feature Flag
+```bash
+# Enable LoopBuilder with safety guards
+npx haxe build.hxml -D elixir.feature.loop_builder_enabled=true
+
+# Or enable all experimental features
+npx haxe build.hxml -D elixir.feature.experimental=true
+```
+
+This prevents infinite recursion while allowing LoopBuilder to perform sophisticated loop transformations for more idiomatic Elixir code generation.
 
 ## 🚀 Future Improvements
 

@@ -659,6 +659,9 @@ class ElixirCompiler extends GenericCompiler<
             context.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
         }
 
+        // Initialize feature flags from compiler defines
+        initializeFeatureFlags(context);
+
         // Phase 2: Initialize BuilderFacade for gradual migration
         // Only create if we're using any new builders
         if (context.isFeatureEnabled("use_new_pattern_builder") ||
@@ -682,6 +685,91 @@ class ElixirCompiler extends GenericCompiler<
         }
 
         return context;
+    }
+
+    /**
+     * Initialize feature flags from compiler defines (-D flags)
+     *
+     * WHY: Allow users to enable/disable features via command line without
+     * code changes. Critical for gradual migration and testing.
+     *
+     * WHAT: Reads specific -D defines and sets corresponding feature flags
+     * in the compilation context.
+     *
+     * HOW: Check for known feature defines and set them in the context
+     *
+     * Examples:
+     * - -D elixir.feature.new_module_builder=true
+     * - -D elixir.feature.loop_builder_enabled=true
+     * - -D elixir.feature.idiomatic_comprehensions=true
+     */
+    private function initializeFeatureFlags(context: CompilationContext): Void {
+        // Check for individual feature flags
+        if (haxe.macro.Context.defined("elixir.feature.new_module_builder")) {
+            var value = haxe.macro.Context.definedValue("elixir.feature.new_module_builder");
+            context.setFeatureFlag("new_module_builder", value != "false");
+        }
+
+        if (haxe.macro.Context.defined("elixir.feature.loop_builder_enabled")) {
+            var value = haxe.macro.Context.definedValue("elixir.feature.loop_builder_enabled");
+            context.setFeatureFlag("loop_builder_enabled", value != "false");
+        }
+
+        if (haxe.macro.Context.defined("elixir.feature.idiomatic_comprehensions")) {
+            var value = haxe.macro.Context.definedValue("elixir.feature.idiomatic_comprehensions");
+            context.setFeatureFlag("idiomatic_comprehensions", value != "false");
+        }
+
+        if (haxe.macro.Context.defined("elixir.feature.pattern_extraction")) {
+            var value = haxe.macro.Context.definedValue("elixir.feature.pattern_extraction");
+            context.setFeatureFlag("pattern_extraction", value != "false");
+        }
+
+        // Check for the new builder flags that are already being used
+        if (haxe.macro.Context.defined("elixir.feature.use_new_pattern_builder")) {
+            var value = haxe.macro.Context.definedValue("elixir.feature.use_new_pattern_builder");
+            context.setFeatureFlag("use_new_pattern_builder", value != "false");
+        }
+
+        if (haxe.macro.Context.defined("elixir.feature.use_new_loop_builder")) {
+            var value = haxe.macro.Context.definedValue("elixir.feature.use_new_loop_builder");
+            context.setFeatureFlag("use_new_loop_builder", value != "false");
+        }
+
+        // Global flag to enable all experimental features
+        if (haxe.macro.Context.defined("elixir.feature.experimental")) {
+            var value = haxe.macro.Context.definedValue("elixir.feature.experimental");
+            if (value != "false") {
+                context.setFeatureFlag("new_module_builder", true);
+                context.setFeatureFlag("loop_builder_enabled", true);
+                context.setFeatureFlag("idiomatic_comprehensions", true);
+                context.setFeatureFlag("pattern_extraction", true);
+                context.setFeatureFlag("use_new_pattern_builder", true);
+                context.setFeatureFlag("use_new_loop_builder", true);
+            }
+        }
+
+        // Legacy compatibility mode - defaults to old behavior
+        if (haxe.macro.Context.defined("elixir.feature.legacy")) {
+            var value = haxe.macro.Context.definedValue("elixir.feature.legacy");
+            if (value != "false") {
+                // Explicitly disable all new features
+                context.setFeatureFlag("new_module_builder", false);
+                context.setFeatureFlag("loop_builder_enabled", false);
+                context.setFeatureFlag("idiomatic_comprehensions", false);
+                context.setFeatureFlag("pattern_extraction", false);
+                context.setFeatureFlag("use_new_pattern_builder", false);
+                context.setFeatureFlag("use_new_loop_builder", false);
+            }
+        }
+
+        // Debug flag to print enabled features
+        #if debug_feature_flags
+        trace("Feature flags initialized:");
+        for (key in context.astContext.featureFlags.keys()) {
+            trace('  $key: ${context.astContext.featureFlags.get(key)}');
+        }
+        #end
     }
 
     /**
