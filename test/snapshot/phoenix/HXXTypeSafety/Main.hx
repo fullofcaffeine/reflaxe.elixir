@@ -1,4 +1,4 @@
-import reflaxe.elixir.macro.HXX;
+import reflaxe.elixir.macros.HXX;
 import phoenix.types.HXXTypes;
 import phoenix.types.HXXComponentRegistry;
 
