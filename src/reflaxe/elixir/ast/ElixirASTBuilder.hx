@@ -3545,16 +3545,16 @@ class ElixirASTBuilder {
                 }
                 
             case TFor(v, e1, e2):
-                // TODO: Fix LoopBuilder infinite recursion issue
-                // The LoopBuilder emitters call buildExpr which can create cycles
-                // Need to refactor to avoid recursive buildExpr calls in emitters
+                // TODO: Enable LoopBuilder once recursive compilation issue is fixed
+                // LoopBuilder provides transformation instructions pattern to avoid recursion
                 /*
-                LoopBuilder.buildFor(
-                    v, e1, e2,
+                var transform = LoopBuilder.analyzeFor(v, e1, e2);
+                var ast = LoopBuilder.buildFromTransform(
+                    transform,
                     function(e) return buildFromTypedExpr(e, currentContext),
-                    function(e) return extractPattern(e),
                     function(name) return toElixirVarName(name)
-                ).def;
+                );
+                ast.def;
                 */
 
                 // Fall back to simple for comprehension for now
