@@ -9,6 +9,30 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.loop_ir.LoopIR;
 import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
+// Temporarily disabled for debugging
+// import reflaxe.elixir.ast.builders.ArrayBuildingAnalyzer;
+// import reflaxe.elixir.ast.builders.ArrayBuildingAnalyzer.ArrayBuildingPattern;
+
+/**
+ * Loop transformation instructions
+ *
+ * WHY: Describes how to transform loops without building AST
+ * WHAT: Instructions for ElixirASTBuilder to generate idiomatic patterns
+ * HOW: Analyzed patterns return these, builder interprets them
+ */
+enum LoopTransform {
+    // Transform to Enum.each with range (0..n)
+    EnumEachRange(varName: String, start: TypedExpr, end: TypedExpr, body: TypedExpr);
+
+    // Transform to Enum.each with collection
+    EnumEachCollection(varName: String, collection: TypedExpr, body: TypedExpr);
+
+    // Transform to comprehension with optional filter
+    Comprehension(targetVar: String, v: TVar, iterator: TypedExpr, filter: Null<TypedExpr>, body: TypedExpr);
+
+    // Keep as standard for comprehension
+    StandardFor(v: TVar, iterator: TypedExpr, body: TypedExpr);
+}
 
 /**
  * LoopBuilder: Orchestrator for Loop Analysis and Emission
@@ -50,33 +74,170 @@ class LoopBuilder {
     static inline var CONFIDENCE_THRESHOLD = 0.7;
 
     /**
-     * Build a for loop expression
+     * Analyze a for loop and return transformation instructions
      *
-     * WHY: Entry point for TFor transformation
-     * WHAT: Analyzes loop and generates appropriate Elixir
-     * HOW: Runs analyzers, builds IR, selects strategy, emits code
+     * WHY: Entry point for TFor analysis without building AST
+     * WHAT: Analyzes loop pattern and returns transformation instructions
+     * HOW: Checks patterns and returns appropriate LoopTransform enum
+     *
+     * ARCHITECTURE: This method does NOT call buildExpr to avoid recursion.
+     * It only analyzes the TypedExpr structure and returns instructions.
      */
-    public static function buildFor(v: TVar, e1: TypedExpr, e2: TypedExpr,
-                                   buildExpr: TypedExpr -> ElixirAST,
-                                   extractPattern: TypedExpr -> EPattern,
-                                   toSnakeCase: String -> String): ElixirAST {
+    public static function analyzeFor(v: TVar, e1: TypedExpr, e2: TypedExpr): LoopTransform {
+        // Temporarily disable array building analysis to debug compilation hang
+        // TODO: Re-enable after fixing compilation issues
+        /*
+        // First check for array building patterns
+        var arrayPattern = ArrayBuildingAnalyzer.analyzeForLoop(v, e1, e2);
+        var transform = ArrayBuildingAnalyzer.generateTransform(arrayPattern, v, e1);
 
-        // Create the full TFor expression for analysis
-        var forExpr: TypedExpr = {
-            expr: TFor(v, e1, e2),
-            pos: e1.pos,
-            t: e2.t
-        };
+        // If we found a comprehension pattern, use it
+        switch(transform) {
+            case Comprehension(_, _, _, _, _):
+                return transform;
+            case _:
+                // Continue with other pattern detection
+        }
+        */
 
-        // Build and analyze IR
-        var ir = analyzeLoop(forExpr, buildExpr);
+        // Check for range pattern: 0...n or start...end
+        switch(e1.expr) {
+            case TBinop(OpInterval, startExpr, endExpr):
+                // Range iteration - check if body only has side effects
+                if (hasSideEffectsOnly(e2)) {
+                    return EnumEachRange(v.name, startExpr, endExpr, e2);
+                } else {
+                    // Body produces values - use standard for
+                    return StandardFor(v, e1, e2);
+                }
 
-        // Check confidence and decide emission strategy
-        if (ir.confidence >= CONFIDENCE_THRESHOLD) {
-            return emitFromIR(ir, buildExpr, extractPattern, toSnakeCase);
-        } else {
-            // Fall back to legacy simple handling
-            return buildLegacyFor(v, e1, e2, buildExpr, extractPattern, toSnakeCase);
+            case TLocal(_) | TField(_, _):
+                // Array or collection iteration
+                if (hasSideEffectsOnly(e2)) {
+                    return EnumEachCollection(v.name, e1, e2);
+                } else {
+                    return StandardFor(v, e1, e2);
+                }
+
+            default:
+                // Unknown pattern - use standard for loop
+                return StandardFor(v, e1, e2);
+        }
+    }
+
+    /**
+     * Build AST from transformation instructions
+     *
+     * WHY: Convert analysis results to actual AST
+     * WHAT: Builds idiomatic Elixir AST based on transformation type
+     * HOW: Pattern matches on LoopTransform and builds appropriate AST
+     *
+     * ARCHITECTURE: This is called by ElixirASTBuilder with its buildExpr
+     * function, maintaining control over recursive compilation.
+     */
+    public static function buildFromTransform(
+        transform: LoopTransform,
+        buildExpr: TypedExpr -> ElixirAST,
+        toSnakeCase: String -> String
+    ): ElixirAST {
+        switch(transform) {
+            case EnumEachRange(varName, startExpr, endExpr, body):
+                // Build Enum.each with range
+                var range = makeAST(ERange(
+                    buildExpr(startExpr),
+                    buildExpr(endExpr),
+                    false  // exclusive range
+                ));
+
+                var snakeVar = toSnakeCase(varName);
+                var bodyAst = buildExpr(body);
+
+                return makeAST(ERemoteCall(
+                    makeAST(EVar("Enum")),
+                    "each",
+                    [
+                        range,
+                        makeAST(EFn([{
+                            args: [PVar(snakeVar)],
+                            body: bodyAst
+                        }]))
+                    ]
+                ));
+
+            case EnumEachCollection(varName, collection, body):
+                // Build Enum.each with collection
+                var collectionAst = buildExpr(collection);
+                var snakeVar = toSnakeCase(varName);
+                var bodyAst = buildExpr(body);
+
+                return makeAST(ERemoteCall(
+                    makeAST(EVar("Enum")),
+                    "each",
+                    [
+                        collectionAst,
+                        makeAST(EFn([{
+                            args: [PVar(snakeVar)],
+                            body: bodyAst
+                        }]))
+                    ]
+                ));
+
+            case Comprehension(targetVar, v, iterator, filter, body):
+                // For now, just use standard for pattern to avoid compilation issues
+                // TODO: Implement proper comprehension generation
+                var varName = toSnakeCase(v.name);
+                var pattern = PVar(varName);
+                var iteratorExpr = buildExpr(iterator);
+                var bodyExpr = buildExpr(body);
+                return makeAST(EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false));
+
+            case StandardFor(v, iterator, body):
+                // Standard for comprehension
+                var varName = toSnakeCase(v.name);
+                var pattern = PVar(varName);
+                var iteratorExpr = buildExpr(iterator);
+                var bodyExpr = buildExpr(body);
+                return makeAST(EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false));
+        }
+    }
+
+    /**
+     * Check if an expression only has side effects (no value production)
+     *
+     * WHY: Determine if we can use Enum.each instead of comprehension
+     * WHAT: Checks if expression is purely for side effects
+     * HOW: Pattern matches on common side-effect-only expressions
+     */
+    static function hasSideEffectsOnly(expr: TypedExpr): Bool {
+        switch(expr.expr) {
+            case TCall({expr: TField(_, FStatic(_, cf))}, _):
+                // Check if it's a trace or log call
+                var name = cf.get().name;
+                return name == "trace" || name == "log" || name == "println";
+
+            case TBlock(exprs):
+                // Check if all expressions in block are side-effect only
+                for (e in exprs) {
+                    if (!hasSideEffectsOnly(e)) return false;
+                }
+                return true;
+
+            case TBinop(OpAssign | OpAssignOp(_), _, _):
+                // Assignments are side effects
+                return true;
+
+            case TUnop(OpIncrement | OpDecrement, _, _):
+                // Increment/decrement are side effects
+                return true;
+
+            case TIf(_, then_, else_):
+                // If both branches are side-effect only
+                return hasSideEffectsOnly(then_) &&
+                       (else_ == null || hasSideEffectsOnly(else_));
+
+            default:
+                // Conservative - assume it produces a value
+                return false;
         }
     }
 
