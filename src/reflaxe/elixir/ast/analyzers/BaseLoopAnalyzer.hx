@@ -29,6 +29,13 @@ import reflaxe.elixir.ast.loop_ir.LoopIR;
  */
 abstract class BaseLoopAnalyzer {
 
+    // Function to build ElixirAST from TypedExpr
+    var buildExpr: TypedExpr -> ElixirAST;
+
+    public function new(buildExpr: TypedExpr -> ElixirAST) {
+        this.buildExpr = buildExpr;
+    }
+
     /**
      * Analyze a TypedExpr and contribute to LoopIR
      * Subclasses must implement this
