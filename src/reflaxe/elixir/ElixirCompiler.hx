@@ -890,12 +890,12 @@ class ElixirCompiler extends GenericCompiler<
      * Build AST for a class (generates Elixir module)
      */
     function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
-        
+
         #if debug_behavior_transformer
         trace('[ElixirCompiler.buildClassAST] Building class: ${classType.name}');
         trace('[ElixirCompiler.buildClassAST] Metadata: ${[for (m in classType.meta.get()) m.name]}');
         #end
-        
+
         // Skip built-in types that shouldn't generate modules
         if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name)) {
             return null;
@@ -919,31 +919,17 @@ class ElixirCompiler extends GenericCompiler<
         
         // ALWAYS use ModuleBuilder for ALL classes to eliminate duplication
         // All classes go through ModuleBuilder now for consistency
-        
-        // Use ModuleBuilder for ALL modules (not just annotated ones)
-        var instanceFields = classType.fields.get();
-        var staticFields = classType.statics.get();
-        
+
         #if debug_module_builder
-        trace('[ElixirCompiler] Class ${classType.name} has ${instanceFields.length} instance fields and ${staticFields.length} static fields');
-        for (f in staticFields) {
-            trace('[ElixirCompiler] - Static field: ${f.name}, kind: ${f.kind}');
-        }
-        #end
-        
-        // Combine instance and static fields
-        var allFields = instanceFields.concat(staticFields);
-        
-        var varFields = allFields.filter(f -> f.kind.match(FVar(_, _)));
-        var funcFields = allFields.filter(f -> f.kind.match(FMethod(_)));
-        
-        #if debug_module_builder
-        trace('[ElixirCompiler] Filtered: ${varFields.length} var fields, ${funcFields.length} func fields');
+        trace('[ElixirCompiler] Using provided funcFields parameter: ${funcFields.length} functions');
+        trace('[ElixirCompiler] Using provided varFields parameter: ${varFields.length} variables');
         #end
         
         // PASS 1: Discover dependencies by pre-compiling function bodies
         // This populates the moduleDependencies map before we build the module
-        discoverDependencies(classType, funcFields);
+        // Extract ClassField array from ClassFuncData array for discoverDependencies
+        var funcClassFields = funcFields.map(fd -> fd.field);
+        discoverDependencies(classType, funcClassFields);
         
         // PASS 2: Build the module with discovered dependencies
         // Set compiler reference for dependency tracking and bootstrap generation
@@ -952,10 +938,46 @@ class ElixirCompiler extends GenericCompiler<
         // Create a compilation context for this class
         var context = createCompilationContext();
 
-        // ModuleBuilder not yet implemented - commented out for now
-        // var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType,
-        //     varFields, funcFields, context);
-        var moduleAST = null; // Temporary until ModuleBuilder is implemented
+        // Build fields from the funcFields parameter (which is already ClassFuncData array)
+        var fields: Array<reflaxe.elixir.ast.ElixirAST> = [];
+
+        // Compile each function field
+        for (funcData in funcFields) {
+            // Skip constructor for now
+            if (funcData.field.name == "new") continue;
+
+            // Get the function expression
+            var expr = funcData.expr;
+            if (expr == null) continue;
+
+            // Build the function body
+            var funcBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
+
+            // Get function parameters from tfunc
+            var params: Array<EPattern> = [];
+            if (funcData.tfunc != null) {
+                for (arg in funcData.tfunc.args) {
+                    var paramName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                    params.push(PVar(paramName));
+                }
+            }
+
+            // Create function definition
+            var elixirName = reflaxe.elixir.ast.NameUtils.toSnakeCase(funcData.field.name);
+            var funcDef = funcData.field.isPublic ?
+                EDef(elixirName, params, null, funcBody) :
+                EDefp(elixirName, params, null, funcBody);
+
+            // Create AST node directly (makeAST is an inline function, not a static method)
+            fields.push({
+                def: funcDef,
+                metadata: {},
+                pos: funcData.field.pos
+            });
+        }
+
+        // Build the module using ModuleBuilder
+        var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, fields);
 
         #if debug_module_builder
         if (classType.name == "Main") {
@@ -986,7 +1008,7 @@ class ElixirCompiler extends GenericCompiler<
         
         return moduleAST;
     }
-    
+
     /**
      * Generate companion modules based on metadata (e.g., PostgrexTypes for Repo)
      * 
