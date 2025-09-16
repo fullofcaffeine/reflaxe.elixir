@@ -74,14 +74,20 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
                 };
 
                 ir.kind = ForRange;
-                ir.source = Range(
-                    buildExpr(startExpr),
-                    buildExpr(endExpr),
-                    1
-                );
+                // Store the range info for later use
+                detectedRange = {
+                    start: startExpr,
+                    end: endExpr,
+                    step: 1,
+                    indexVar: v.name,
+                    isInclusive: false
+                };
+                // Don't build AST during analysis - just mark the pattern
+                // The emitter will get the original TFor expr and extract what it needs
+                ir.source = Collection(makeAST(ENil));  // Will be replaced by emitter
                 ir.elementPattern = {
                     varName: v.name,
-                    pattern: buildExpr(startExpr), // Will be replaced with proper pattern
+                    pattern: makeAST(ENil), // Placeholder
                     type: v.t
                 };
 
@@ -113,14 +119,15 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
         };
 
         ir.kind = While;  // Will be transformed to ForRange
+        // Don't build AST during analysis - causes infinite recursion!
         ir.source = Range(
-            buildExpr(detectedRange.start),
-            buildExpr(detectedRange.end),
+            makeAST(ENil),  // Placeholder - emitter will build from detectedRange
+            makeAST(ENil),  // Placeholder - emitter will build from detectedRange
             detectedRange.step
         );
         ir.elementPattern = {
             varName: condPattern.indexVar,
-            pattern: buildExpr(detectedRange.start), // Will be replaced with proper pattern
+            pattern: makeAST(ENil), // Placeholder
             type: condPattern.type
         };
 

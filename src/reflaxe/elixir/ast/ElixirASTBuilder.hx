@@ -3545,15 +3545,24 @@ class ElixirASTBuilder {
                 }
                 
             case TFor(v, e1, e2):
-                // Delegate to LoopBuilder for better loop optimization
-                // This generates more idiomatic Elixir (Enum.each, comprehensions, etc.)
-                // instead of always using complex reduce_while patterns
+                // TODO: Fix LoopBuilder infinite recursion issue
+                // The LoopBuilder emitters call buildExpr which can create cycles
+                // Need to refactor to avoid recursive buildExpr calls in emitters
+                /*
                 LoopBuilder.buildFor(
                     v, e1, e2,
                     function(e) return buildFromTypedExpr(e, currentContext),
                     function(e) return extractPattern(e),
                     function(name) return toElixirVarName(name)
                 ).def;
+                */
+
+                // Fall back to simple for comprehension for now
+                var varName = toElixirVarName(v.name);
+                var pattern = PVar(varName);
+                var iteratorExpr = buildFromTypedExpr(e1, currentContext);
+                var bodyExpr = buildFromTypedExpr(e2, currentContext);
+                EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false);
                 
             case TWhile(econd, e, normalWhile):
                 // CRITICAL: Detect array iteration patterns and generate idiomatic Enum calls

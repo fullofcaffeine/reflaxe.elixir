@@ -1,0 +1,4 @@
+-cp .
+-lib reflaxe
+-lib reflaxe.elixir
+Main
