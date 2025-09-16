@@ -1,7 +1,7 @@
--cp test/tests/DateCompilation
--cp std
+-cp .
+-cp ../../../../std
 -lib reflaxe
--cp src
+-cp ../../../../src
 --macro reflaxe.elixir.CompilerInit.Start()
 -D reflaxe-elixir
 -D analyzer-optimize

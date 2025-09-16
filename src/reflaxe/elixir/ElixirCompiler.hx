@@ -483,7 +483,7 @@ class ElixirCompiler extends GenericCompiler<
         }
 
         // Initialize function usage collector for this module
-        functionUsageCollector = new reflaxe.elixir.helpers.FunctionUsageCollector();
+        var functionUsageCollector = new reflaxe.elixir.helpers.FunctionUsageCollector();
         functionUsageCollector.currentModule = classType.name;
 
         // Check for @:native annotation to determine output path
@@ -562,9 +562,6 @@ class ElixirCompiler extends GenericCompiler<
             functionUsageCollector.printStats();
             #end
         }
-
-        // Clear collector for next module
-        functionUsageCollector = null;
 
         // Return AST directly - transformation and printing handled by ElixirOutputIterator
         return moduleAST;
@@ -672,12 +669,12 @@ class ElixirCompiler extends GenericCompiler<
             context.builderFacade = new reflaxe.elixir.ast.builders.BuilderFacade(this, context);
 
             // Register specialized builders as they become available
-            // For now, register PatternMatchBuilder if it exists
-            var patternBuilder = new reflaxe.elixir.ast.builders.PatternMatchBuilder(
-                context,
-                context.getExpressionBuilder()
-            );
-            context.builderFacade.registerBuilder("pattern", patternBuilder);
+            // TODO: Restore when PatternMatchBuilder import is fixed
+            // var patternBuilder = new reflaxe.elixir.ast.builders.PatternMatchBuilder(
+            //     context,
+            //     context.getExpressionBuilder()
+            // );
+            // context.builderFacade.registerBuilder("pattern", patternBuilder);
 
             #if debug_ast_builder
             trace('[ElixirCompiler] BuilderFacade initialized with registered builders');
@@ -708,9 +705,10 @@ class ElixirCompiler extends GenericCompiler<
         context.variableUsageMap = usageMap;
 
         // Collect function calls if we have a collector active
-        if (functionUsageCollector != null) {
-            functionUsageCollector.collectCalls(expr);
-        }
+        // TODO: Restore when FunctionUsageCollector is implemented
+        // if (functionUsageCollector != null) {
+        //     functionUsageCollector.collectCalls(expr);
+        // }
 
         // Build AST for the expression with compilation context
         // Pass context as second parameter to ensure isolated state

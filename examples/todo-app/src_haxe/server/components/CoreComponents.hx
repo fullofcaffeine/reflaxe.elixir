@@ -1,6 +1,6 @@
 package server.components;
 
-import reflaxe.elixir.macro.HXX;
+import reflaxe.elixir.macros.HXX;
 
 /**
  * Type-safe assigns for Phoenix components

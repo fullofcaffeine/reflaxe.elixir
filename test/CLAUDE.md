@@ -188,6 +188,43 @@ Some tests in the suite compile to JavaScript instead of Elixir. These are part 
 - `source_map_test.exs` - Source mapping
 - Others have some failures due to infrastructure changes
 
+## 🔧 Test Infrastructure: Make + TestRunner Synergy
+
+### The Relationship Between Make and TestRunner (January 2025)
+
+**CRITICAL UNDERSTANDING**: We have two complementary test systems that work in synergy:
+
+1. **Make-based System (Primary)**:
+   - **Location**: `test/Makefile`
+   - **Purpose**: Actual test orchestration, compilation, and comparison
+   - **Features**: Parallel execution, output comparison, result aggregation
+   - **Usage**: `npm test`, `make -C test`, or specific targets
+   - **Authority**: This is the CANONICAL test runner
+
+2. **TestRunner (Compatibility Shim)**:
+   - **Location**: `src/reflaxe/elixir/test/TestRunner.hx`
+   - **Purpose**: Minimal stub to satisfy compilation requirements
+   - **Why it exists**: Some test configurations reference it via `--run` in Test.hxml
+   - **What it does**: Just prints instructions to use Make
+   - **NOT a real runner**: Intentionally minimal - delegates to Make
+
+**How They Work Together**:
+- **Make** directly invokes `haxe compile.hxml` for each test
+- **TestRunner** exists only to prevent "Type not found" compilation errors
+- **Test.hxml** references TestRunner for compatibility with documentation
+- **Actual testing** always goes through Make for consistency
+
+**Why This Design**:
+- Make provides robust parallel execution and has proven reliability
+- TestRunner satisfies Haxe compilation requirements without duplicating Make's logic
+- Separation of concerns: Make handles orchestration, TestRunner provides compatibility
+- Future flexibility: TestRunner could evolve to wrap Make if needed
+
+**For Developers**:
+- Always use `npm test` or `make -C test` for actual testing
+- TestRunner is just plumbing - ignore it unless fixing compilation issues
+- If tests fail to compile with "Type not found: TestRunner", the stub needs updating
+
 ## 🔧 Running Tests
 
 ### Quick Commands

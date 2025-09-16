@@ -3,10 +3,18 @@ package reflaxe.elixir.ast.builders;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
-import haxe.macro.Type.Case;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.context.BuildContext;
 import reflaxe.elixir.ast.builders.IBuilder;
+
+/**
+ * Typedef for switch case structure from TypedExprDef
+ */
+typedef Case = {
+    var values: Array<TypedExpr>;
+    var expr: TypedExpr;
+    @:optional var guard: Null<TypedExpr>;
+}
 
 /**
  * BuilderFacade: Router for gradual migration from monolithic to modular builders
@@ -102,7 +110,11 @@ class BuilderFacade {
                 #end
 
                 try {
-                    return patternBuilder.buildCaseExpression(expr, cases, defaultExpr, null);
+                    // TODO: Re-enable when PatternMatchBuilder is fixed
+                    // Cast to PatternMatchBuilder to access specific methods
+                    // var pmBuilder = cast(patternBuilder, PatternMatchBuilder);
+                    // return pmBuilder.buildCaseExpression(expr, cases, defaultExpr, null);
+                    throw "PatternMatchBuilder disabled";
                 } catch (e: Dynamic) {
                     #if debug_ast_builder
                     trace('[BuilderFacade] PatternMatchBuilder failed, falling back: ${e}');
@@ -129,6 +141,8 @@ class BuilderFacade {
      * @return Compiled ElixirAST
      */
     public function routeLoop(condition: TypedExpr, body: TypedExpr): ElixirAST {
+        // TODO: Implement LoopBuilder in Phase 3
+        /*
         if (context.isFeatureEnabled("use_new_loop_builder")) {
             recordRouting("loop.new");
 
@@ -139,6 +153,7 @@ class BuilderFacade {
                 #end
 
                 try {
+                    // Would need cast to LoopBuilder when implemented
                     return loopBuilder.buildLoop(condition, body);
                 } catch (e: Dynamic) {
                     #if debug_ast_builder
@@ -148,6 +163,7 @@ class BuilderFacade {
                 }
             }
         }
+        */
 
         recordRouting("loop.legacy");
         #if debug_ast_builder
@@ -166,6 +182,8 @@ class BuilderFacade {
      * @return Compiled ElixirAST
      */
     public function routeFunction(field: ClassField, expr: TypedExpr): ElixirAST {
+        // TODO: Implement FunctionBuilder in Phase 3
+        /*
         if (context.isFeatureEnabled("use_new_function_builder")) {
             recordRouting("function.new");
 
@@ -176,6 +194,7 @@ class BuilderFacade {
                 #end
 
                 try {
+                    // Would need cast to FunctionBuilder when implemented
                     return functionBuilder.buildFunction(field, expr);
                 } catch (e: Dynamic) {
                     #if debug_ast_builder
@@ -185,6 +204,7 @@ class BuilderFacade {
                 }
             }
         }
+        */
 
         recordRouting("function.legacy");
         #if debug_ast_builder
@@ -204,6 +224,8 @@ class BuilderFacade {
      * @return Compiled ElixirAST
      */
     public function routeComprehension(generator: TypedExpr, mapper: TypedExpr, filter: Null<TypedExpr>): ElixirAST {
+        // TODO: Implement ComprehensionBuilder in Phase 3
+        /*
         if (context.isFeatureEnabled("use_new_comprehension_builder")) {
             recordRouting("comprehension.new");
 
@@ -214,6 +236,7 @@ class BuilderFacade {
                 #end
 
                 try {
+                    // Would need cast to ComprehensionBuilder when implemented
                     return comprehensionBuilder.buildComprehension(generator, mapper, filter);
                 } catch (e: Dynamic) {
                     #if debug_ast_builder
@@ -223,6 +246,7 @@ class BuilderFacade {
                 }
             }
         }
+        */
 
         recordRouting("comprehension.legacy");
         #if debug_ast_builder
