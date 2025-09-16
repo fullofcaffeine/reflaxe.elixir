@@ -15,6 +15,7 @@ import reflaxe.elixir.ast.context.ClauseContext;
 // Import builder modules
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
 import reflaxe.elixir.ast.builders.BinaryOpBuilder;
+import reflaxe.elixir.ast.builders.LoopBuilder;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -3544,52 +3545,15 @@ class ElixirASTBuilder {
                 }
                 
             case TFor(v, e1, e2):
-                #if debug_for_loop
-                trace('[XRay ForLoop] Processing TFor');
-                trace('[XRay ForLoop] Variable: ${v.name} (id=${v.id})');
-                trace('[XRay ForLoop] Iteration expr type: ${Type.enumConstructor(e1.expr)}');
-                trace('[XRay ForLoop] Body expr type: ${Type.enumConstructor(e2.expr)}');
-                // Analyze body structure
-                switch(e2.expr) {
-                    case TBlock(exprs):
-                        trace('[XRay ForLoop] Body is TBlock with ${exprs.length} expressions');
-                        for (i in 0...exprs.length) {
-                            trace('[XRay ForLoop]   [${i}] ${Type.enumConstructor(exprs[i].expr)}');
-                        }
-                    case _:
-                        trace('[XRay ForLoop] Body is single expression');
-                }
-                #end
-                
-                // Convert the loop variable name to Elixir conventions
-                var elixirVarName = toElixirVarName(v.name);
-                
-                // Track the variable renaming so TLocal references use the correct name
-                // This is critical for underscore variables like "_" which become "item"
-                var idKey = Std.string(v.id);
-                var oldMapping = currentContext.tempVarRenameMap.get(idKey);
-                if (v.name != elixirVarName) {
-                    currentContext.tempVarRenameMap.set(idKey, elixirVarName);
-                    #if debug_for_loop
-                    trace('[XRay ForLoop] Registering variable rename: ${v.name} (id=$idKey) -> $elixirVarName');
-                    #end
-                }
-                
-                // Build the pattern with the converted name
-                var pattern = PVar(elixirVarName);
-                var expr = buildFromTypedExpr(e1, currentContext);
-                
-                // Build the body with the variable mapping active
-                var body = buildFromTypedExpr(e2, currentContext);
-                
-                // Restore old mapping if it existed
-                if (oldMapping != null) {
-                    currentContext.tempVarRenameMap.set(idKey, oldMapping);
-                } else {
-                    currentContext.tempVarRenameMap.remove(idKey);
-                }
-                
-                EFor([{pattern: pattern, expr: expr}], [], body, null, false);
+                // Delegate to LoopBuilder for better loop optimization
+                // This generates more idiomatic Elixir (Enum.each, comprehensions, etc.)
+                // instead of always using complex reduce_while patterns
+                LoopBuilder.buildFor(
+                    v, e1, e2,
+                    function(e) return buildFromTypedExpr(e, currentContext),
+                    function(e) return extractPattern(e),
+                    function(name) return toElixirVarName(name)
+                ).def;
                 
             case TWhile(econd, e, normalWhile):
                 // CRITICAL: Detect array iteration patterns and generate idiomatic Enum calls
