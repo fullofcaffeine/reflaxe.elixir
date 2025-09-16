@@ -3651,33 +3651,6 @@ class ElixirASTTransformer {
 
                     return makeASTWithMeta(EParen(transformedInner), node.metadata, node.pos);
 
-                case EIf(condition, thenBranch, elseBranch):
-                    // Handle if statements - process both branches recursively
-                    #if debug_ast_transformer
-                    trace('[XRay RemoveRedundantNilInit] Processing EIf statement');
-                    #end
-
-                    var transformedCondition = removeRedundantNilInitPass(condition);
-                    var transformedThen = removeRedundantNilInitPass(thenBranch);
-                    var transformedElse = elseBranch != null ? removeRedundantNilInitPass(elseBranch) : null;
-
-                    return makeASTWithMeta(EIf(transformedCondition, transformedThen, transformedElse), node.metadata, node.pos);
-
-                case ECase(expr, clauses):
-                    // Handle case statements - process all clauses
-                    #if debug_ast_transformer
-                    trace('[XRay RemoveRedundantNilInit] Processing ECase statement');
-                    #end
-
-                    var transformedExpr = removeRedundantNilInitPass(expr);
-                    var transformedClauses = [for (clause in clauses) {
-                        pattern: clause.pattern,
-                        guard: clause.guard,
-                        body: removeRedundantNilInitPass(clause.body)
-                    }];
-
-                    return makeASTWithMeta(ECase(transformedExpr, transformedClauses), node.metadata, node.pos);
-
                 default:
                     return node;
             }

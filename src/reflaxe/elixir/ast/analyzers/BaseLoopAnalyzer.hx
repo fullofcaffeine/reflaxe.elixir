@@ -43,25 +43,62 @@ abstract class BaseLoopAnalyzer {
     /**
      * Check if expression matches a specific pattern
      */
-    protected function matchesPattern(expr: TypedExpr, pattern: ExprPattern): Bool {
-        return switch([expr.expr, pattern]) {
-            case [TConst(TInt(n)), IntLiteral(expected)]: n == expected;
-            case [TLocal(v), LocalVar(name)]: v.name == name || name == "*";
-            case [TBinop(op1, _, _), BinaryOp(op2)]: op1 == op2;
-            case [TCall(_, _), FunctionCall]: true;
-            case [TField(_, _), FieldAccess]: true;
-            case [TBlock(_), BlockExpr]: true;
-            case [TIf(_, _, _), Conditional]: true;
-            case [TWhile(_, _, _), WhileLoop]: true;
-            case [TFor(_, _, _), ForLoop]: true;
-            case _: false;
-        };
+    function matchesPattern(expr: TypedExpr, pattern: ExprPattern): Bool {
+        return switch(expr.expr) {
+            case TConst(TInt(n)):
+                switch(pattern) {
+                    case IntLiteral(expected): n == expected;
+                    case _: false;
+                }
+            case TLocal(v):
+                switch(pattern) {
+                    case LocalVar(name): v.name == name || name == "*";
+                    case _: false;
+                }
+            case TBinop(op1, _, _):
+                switch(pattern) {
+                    case BinaryOp(op2): op1 == op2;
+                    case _: false;
+                }
+            case TCall(_, _):
+                switch(pattern) {
+                    case FunctionCall: true;
+                    case _: false;
+                }
+            case TField(_, _):
+                switch(pattern) {
+                    case FieldAccess: true;
+                    case _: false;
+                }
+            case TBlock(_):
+                switch(pattern) {
+                    case BlockExpr: true;
+                    case _: false;
+                }
+            case TIf(_, _, _):
+                switch(pattern) {
+                    case Conditional: true;
+                    case _: false;
+                }
+            case TWhile(_, _, _):
+                switch(pattern) {
+                    case WhileLoop: true;
+                    case _: false;
+                }
+            case TFor(_, _, _):
+                switch(pattern) {
+                    case ForLoop: true;
+                    case _: false;
+                }
+            case _:
+                false;
+        }
     }
 
     /**
      * Find all expressions matching a pattern in AST
      */
-    protected function findAll(expr: TypedExpr, pattern: ExprPattern): Array<TypedExpr> {
+    function findAll(expr: TypedExpr, pattern: ExprPattern): Array<TypedExpr> {
         var results = [];
 
         function traverse(e: TypedExpr) {
@@ -123,7 +160,7 @@ abstract class BaseLoopAnalyzer {
     /**
      * Extract variable names from pattern
      */
-    protected function extractVariableNames(expr: TypedExpr): Array<String> {
+    function extractVariableNames(expr: TypedExpr): Array<String> {
         var names = [];
 
         switch(expr.expr) {
@@ -151,7 +188,7 @@ abstract class BaseLoopAnalyzer {
     /**
      * Check if expression has side effects
      */
-    protected function hasSideEffects(expr: TypedExpr): Bool {
+    function hasSideEffects(expr: TypedExpr): Bool {
         // Check for IO operations, mutations, etc.
         var hasEffects = false;
 
@@ -188,7 +225,7 @@ abstract class BaseLoopAnalyzer {
     /**
      * Debug trace helper
      */
-    protected function trace(message: String): Void {
+    function trace(message: String): Void {
         #if debug_loop_analyzers
         trace('[Analyzer ${Type.getClassName(Type.getClass(this))}] $message');
         #end
