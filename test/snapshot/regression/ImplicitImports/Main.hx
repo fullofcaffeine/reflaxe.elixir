@@ -8,7 +8,7 @@
  * 3. LiveView components trigger `import AppWeb.CoreComponents`
  */
 
-import reflaxe.elixir.macro.HXX;
+import reflaxe.elixir.macros.HXX;
 
 // Test 1: Bitwise operations should trigger Bitwise import
 class BitwiseOperations {

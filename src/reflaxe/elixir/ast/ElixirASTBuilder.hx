@@ -208,9 +208,11 @@ class ElixirASTBuilder {
         if (context.variableUsageMap != null) {
             // variableUsageMap is accessed via currentContext
         } else {
+            // TODO: Restore when VariableUsageAnalyzer is available
             // Analyze usage for this expression if not already done
-            var variableUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
-            context.variableUsageMap = variableUsageMap;
+            // var variableUsageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
+            // context.variableUsageMap = variableUsageMap;
+            context.variableUsageMap = new Map();  // Temporary empty map
         }
 
         // Set compiler reference from context
@@ -2794,13 +2796,22 @@ class ElixirASTBuilder {
             // ================================================================
             case TSwitch(e, cases, edef):
                 // Phase 2 Integration: Try routing through BuilderFacade if enabled
-                if (context != null && context.builderFacade != null && context.isFeatureEnabled("use_new_pattern_builder")) {
+                if (currentContext != null && currentContext.builderFacade != null && currentContext.isFeatureEnabled("use_new_pattern_builder")) {
                     #if debug_ast_builder
                     trace('[ElixirASTBuilder] Routing switch to BuilderFacade');
                     #end
 
                     try {
-                        return context.builderFacade.routeSwitch(e, cases, edef);
+                        // Convert cases to match the BuilderFacade.Case typedef
+                        var facadeCases = cases.map(function(c) {
+                            return {
+                                values: c.values,
+                                expr: c.expr,
+                                guard: null  // TypedExprDef cases don't have guards
+                            };
+                        });
+                        var switchAST = currentContext.builderFacade.routeSwitch(e, facadeCases, edef);
+                        return switchAST.def;
                     } catch (err: Dynamic) {
                         #if debug_ast_builder
                         trace('[ElixirASTBuilder] BuilderFacade routing failed: $err, falling back to legacy');
@@ -3021,12 +3032,13 @@ class ElixirASTBuilder {
                     var originalName = arg.v.name;
                     var idKey = Std.string(arg.v.id);
                     
+                    // TODO: Restore when UsageDetector is available
                     // Use our enhanced usage detection instead of trusting Reflaxe metadata
-                    var isActuallyUnused = if (f.expr != null) {
-                        reflaxe.elixir.helpers.UsageDetector.isParameterUnused(arg.v, f.expr);
-                    } else {
-                        false; // If no body, consider parameter as potentially used
-                    };
+                    var isActuallyUnused = false; // if (f.expr != null) {
+                        // reflaxe.elixir.helpers.UsageDetector.isParameterUnused(arg.v, f.expr);
+                    // } else {
+                        // false; // If no body, consider parameter as potentially used
+                    // };
                     
                     // Convert to snake_case for Elixir conventions
                     var baseName = ElixirASTHelpers.toElixirVarName(originalName);
@@ -3086,12 +3098,13 @@ class ElixirASTBuilder {
                 }
                 
                 // Analyze variable usage in the function body
+                // TODO: Restore when VariableUsageAnalyzer is available
                 // This is critical for proper underscore prefixing of unused variables
-                var functionUsageMap = if (f.expr != null) {
-                    reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(f.expr);
-                } else {
-                    null;
-                };
+                var functionUsageMap: Map<Int, Bool> = null; // if (f.expr != null) {
+                    // reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(f.expr);
+                // } else {
+                    // null;
+                // };
                 
                 // Update context with function-specific usage map
                 if (functionUsageMap != null) {
@@ -3897,7 +3910,7 @@ class ElixirASTBuilder {
                     var accVarList: Array<{name: String, tvar: TVar}> = [];
                     
                     // Convert Map to sorted Array for deterministic ordering
-                    for (v in mutatedVars) {
+                    for (id => v in mutatedVars) {
                         accVarList.push({name: toElixirVarName(v.name), tvar: v});
                     }
                     // Sort by variable ID to ensure consistent ordering across compilation
@@ -4714,12 +4727,14 @@ class ElixirASTBuilder {
                                     // Found an enum parameter extraction
                                     // Check if this variable is used in the rest of the block
                                     var isUsed = false;
-                                    for (i in (exprs.indexOf(expr) + 1)...exprs.length) {
-                                        if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(v.id, exprs[i])) {
-                                            isUsed = true;
-                                            break;
-                                        }
-                                    }
+                                    // TODO: Restore when UsageDetector is available
+                                    // for (i in (exprs.indexOf(expr) + 1)...exprs.length) {
+                                    //     if (reflaxe.elixir.helpers.UsageDetector.isVariableUsed(v.id, exprs[i])) {
+                                    //         isUsed = true;
+                                    //         break;
+                                    //     }
+                                    // }
+                                    isUsed = true; // Conservative: assume all vars are used for now
                                     if (!isUsed) {
                                         unusedVars.set(v.name, true);
                                     }

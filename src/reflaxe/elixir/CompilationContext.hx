@@ -4,6 +4,7 @@ package reflaxe.elixir;
 
 import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.behaviors.BehaviorTransformer;
 import reflaxe.elixir.ast.context.ElixirASTContext;
@@ -500,7 +501,7 @@ class CompilationContext implements BuildContext {
     public function getTypeBuilder(): (Type) -> ElixirAST {
         // Would need implementation
         return function(type: Type): ElixirAST {
-            return ElixirAST.makeAST(EAtom("todo_type"));
+            return makeAST(EAtom("todo_type"));
         };
     }
 

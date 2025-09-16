@@ -92,6 +92,12 @@ class ElixirASTContext {
      */
     public var idiomaticEnums: Map<String, Bool> = new Map();
 
+    /**
+     * Pattern context flag
+     * True when building pattern matching expressions (case patterns)
+     */
+    public var isInPattern: Bool = false;
+
     // ===== Test Progress Tracking =====
 
     /**
