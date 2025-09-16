@@ -107,7 +107,7 @@ class LoopBuilder {
         } else {
             // Fall back to legacy - would delegate to original TWhile handling
             // For now, use simple reduce_while
-            return buildLegacyWhile(econd, e, normalWhile, buildExpr);
+            return buildLegacyWhile(buildExpr(econd), buildExpr(e), normalWhile, buildExpr);
         }
     }
 
@@ -323,7 +323,7 @@ class LoopBuilder {
 
         var generators = [{
             pattern: PVar(varName),
-            source: source
+            expr: source
         }];
 
         var filters = [];
@@ -337,7 +337,7 @@ class LoopBuilder {
             buildExpr(ir.originalExpr);
         };
 
-        return makeAST(EFor(generators, filters, body));
+        return makeAST(EFor(generators, filters, body, null, false));
     }
 
     /**
@@ -416,7 +416,7 @@ class LoopBuilder {
         ));
 
         var reducerFn = makeAST(EFn([{
-            args: [PUnused, PVar("acc")],
+            args: [PWildcard, PVar("acc")],
             body: reducerBody
         }]));
 

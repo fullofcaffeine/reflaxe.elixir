@@ -4,8 +4,11 @@ package reflaxe.elixir.ast.analyzers;
 
 import haxe.macro.Type;
 import haxe.macro.Expr;
+import haxe.macro.Context;
 import reflaxe.elixir.ast.loop_ir.LoopIR;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
+import reflaxe.elixir.ast.ElixirAST.makeAST;
 
 /**
  * RangeIterationAnalyzer: Detects Simple Range Loops
@@ -31,21 +34,22 @@ import reflaxe.elixir.ast.ElixirAST;
  * - Enables Range generation
  * - Simplifies subsequent emission
  */
+// Type definition must be at module level, not inside class
+typedef RangeInfo = {
+    start: TypedExpr,
+    end: TypedExpr,
+    step: Int,
+    indexVar: String,
+    isInclusive: Bool
+}
+
 class RangeIterationAnalyzer extends BaseLoopAnalyzer {
 
     var detectedRange: Null<RangeInfo> = null;
 
-    typedef RangeInfo = {
-        start: TypedExpr,
-        end: TypedExpr,
-        step: Int,
-        indexVar: String,
-        isInclusive: Bool
-    }
-
     public function new() {}
 
-    public override function analyze(expr: TypedExpr, ir: LoopIR): Void {
+    public function analyze(expr: TypedExpr, ir: LoopIR): Void {
         switch(expr.expr) {
             case TFor(v, iterator, body):
                 analyzeForLoop(v, iterator, body, ir);
@@ -79,7 +83,7 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
                 );
                 ir.elementPattern = {
                     varName: v.name,
-                    pattern: makeAST(PVar(v.name)),
+                    pattern: makeAST(EVar(v.name)),  // Use EVar for now as placeholder
                     type: v.t
                 };
 
@@ -118,7 +122,7 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
         );
         ir.elementPattern = {
             varName: condPattern.indexVar,
-            pattern: makeAST(PVar(condPattern.indexVar)),
+            pattern: makeAST(EVar(condPattern.indexVar)),  // Use EVar for now as placeholder
             type: condPattern.type
         };
 
@@ -174,7 +178,7 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
         return null;
     }
 
-    public override function calculateConfidence(): Float {
+    public function calculateConfidence(): Float {
         if (detectedRange != null) {
             // High confidence for simple range patterns
             return 0.9;
@@ -187,10 +191,6 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
         // This would call the actual ElixirASTBuilder
         // For now, return a placeholder
         return makeAST(ENil);
-    }
-
-    function makeAST(def: ElixirASTDef): ElixirAST {
-        return {def: def, metadata: null};
     }
 
     function makeConstInt(n: Int): TypedExpr {
