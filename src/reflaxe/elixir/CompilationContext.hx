@@ -11,6 +11,7 @@ import reflaxe.elixir.ast.context.ElixirASTContext;
 import reflaxe.elixir.ast.context.BuildContext;
 import reflaxe.elixir.ast.builders.BuilderFacade;
 import reflaxe.elixir.ast.builders.IBuilder;
+import reflaxe.elixir.ast.ReentrancyGuard;
 import haxe.macro.Expr.Position;
 
 /**
@@ -175,6 +176,12 @@ class CompilationContext implements BuildContext {
      */
     private var currentPosition: Position;
 
+    /**
+     * Reentrancy guard to prevent infinite recursion
+     * Used when LoopBuilder and other analyzers need to call buildExpr
+     */
+    public var reentrancyGuard: ReentrancyGuard;
+
     // ========================================================================
     // Constructor and Initialization
     // ========================================================================
@@ -213,6 +220,9 @@ class CompilationContext implements BuildContext {
         astContext = new ElixirASTContext();
         builderFacade = null; // Will be initialized when needed
         currentPosition = null;
+
+        // Initialize reentrancy guard
+        reentrancyGuard = new ReentrancyGuard();
     }
 
     // ========================================================================

@@ -333,6 +333,75 @@ function generatePatternMatch(enumType: EnumType): String {
 }
 ```
 
+## 🎛️ Feature Flag System (Compatibility Mode)
+
+**STATUS**: Implemented January 2025
+**PURPOSE**: Allow gradual migration from old working code to new experimental features
+
+### Architecture
+The feature flag system has three layers:
+1. **ElixirASTContext** - Stores the actual feature flag map
+2. **BuildContext Interface** - Provides the API (`isFeatureEnabled`, `setFeatureFlag`)
+3. **CompilationContext** - Delegates to astContext, initialized from compiler defines
+
+### Available Feature Flags
+
+| Flag Name | Purpose | Default |
+|-----------|---------|---------|
+| `new_module_builder` | Use new ModuleBuilder system | false |
+| `loop_builder_enabled` | Enable LoopBuilder with safety guards | false |
+| `idiomatic_comprehensions` | Generate comprehensions instead of reduce_while | false |
+| `pattern_extraction` | Use new pattern variable extraction | false |
+| `use_new_pattern_builder` | Use modular pattern match builder | false |
+| `use_new_loop_builder` | Use modular loop builder | false |
+
+### Usage via Command Line
+
+```bash
+# Enable specific features
+npx haxe build.hxml -D elixir.feature.new_module_builder=true
+
+# Enable all experimental features
+npx haxe build.hxml -D elixir.feature.experimental=true
+
+# Force legacy mode (disable all new features)
+npx haxe build.hxml -D elixir.feature.legacy=true
+
+# Debug feature flag state
+npx haxe build.hxml -D debug_feature_flags
+```
+
+### Using in Compiler Code
+
+```haxe
+// Check if a feature is enabled
+if (context.isFeatureEnabled("loop_builder_enabled")) {
+    // Use new loop builder
+    return LoopBuilder.build(expr, context);
+} else {
+    // Use legacy loop compilation
+    return buildWhileLoopLegacy(expr);
+}
+
+// Set a feature programmatically
+context.setFeatureFlag("idiomatic_comprehensions", true);
+```
+
+### Implementation Details
+- Feature flags are initialized in `ElixirCompiler.initializeFeatureFlags()`
+- Flags default to `false` (old behavior) for safety
+- The `experimental` flag enables all new features at once
+- The `legacy` flag explicitly disables all new features
+- Flags are stored in `ElixirASTContext.featureFlags` map
+- All builders and transformers can check flags via `BuildContext`
+
+### Why This Architecture?
+1. **Gradual Migration**: Fix tests incrementally without breaking everything
+2. **A/B Testing**: Compare old vs new behavior side-by-side
+3. **Safe Rollback**: Can instantly revert to old behavior if issues arise
+4. **User Control**: Users can opt into experimental features when ready
+5. **Development Velocity**: Can merge partial improvements behind flags
+
 ## 📚 Related Documentation
 - [`/documentation/COMPILER_BEST_PRACTICES.md`](/documentation/COMPILER_BEST_PRACTICES.md) - Complete development practices
 - [`/documentation/COMPILER_PATTERNS.md`](/documentation/COMPILER_PATTERNS.md) - Implementation patterns

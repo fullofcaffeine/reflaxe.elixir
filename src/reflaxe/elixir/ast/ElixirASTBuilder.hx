@@ -12,6 +12,7 @@ import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
 import reflaxe.elixir.ast.ElixirASTPatterns;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.context.ClauseContext;
+import reflaxe.elixir.ast.ReentrancyGuard;
 // Import builder modules
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
 import reflaxe.elixir.ast.builders.BinaryOpBuilder;
@@ -3545,24 +3546,37 @@ class ElixirASTBuilder {
                 }
                 
             case TFor(v, e1, e2):
-                // TODO: Enable LoopBuilder once recursive compilation issue is fixed
-                // LoopBuilder provides transformation instructions pattern to avoid recursion
-                /*
-                var transform = LoopBuilder.analyzeFor(v, e1, e2);
-                var ast = LoopBuilder.buildFromTransform(
-                    transform,
-                    function(e) return buildFromTypedExpr(e, currentContext),
-                    function(name) return toElixirVarName(name)
-                );
-                ast.def;
-                */
+                // Check if LoopBuilder is enabled and use it with reentrancy protection
+                if (currentContext != null && currentContext.isFeatureEnabled("loop_builder_enabled")) {
+                    // Use ReentrancyGuard to prevent infinite recursion
+                    var guard = currentContext.reentrancyGuard;
 
-                // Fall back to simple for comprehension for now
-                var varName = toElixirVarName(v.name);
-                var pattern = PVar(varName);
-                var iteratorExpr = buildFromTypedExpr(e1, currentContext);
-                var bodyExpr = buildFromTypedExpr(e2, currentContext);
-                EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false);
+                    // Create a wrapped builder function that uses the guard
+                    var safeBuilder = function(): ElixirAST {
+                        var transform = LoopBuilder.analyzeFor(v, e1, e2);
+                        return LoopBuilder.buildFromTransform(
+                            transform,
+                            function(e) {
+                                // Recursively build sub-expressions with guard protection
+                                return guard.process(e, function() {
+                                    return buildFromTypedExpr(e, currentContext);
+                                });
+                            },
+                            function(name) return toElixirVarName(name)
+                        );
+                    };
+
+                    // Process with reentrancy protection
+                    var ast = guard.process(expr, safeBuilder);
+                    ast.def;
+                } else {
+                    // Fall back to simple for comprehension when LoopBuilder is disabled
+                    var varName = toElixirVarName(v.name);
+                    var pattern = PVar(varName);
+                    var iteratorExpr = buildFromTypedExpr(e1, currentContext);
+                    var bodyExpr = buildFromTypedExpr(e2, currentContext);
+                    EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false);
+                }
                 
             case TWhile(econd, e, normalWhile):
                 // CRITICAL: Detect array iteration patterns and generate idiomatic Enum calls
