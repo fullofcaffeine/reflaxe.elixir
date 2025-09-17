@@ -1,1 +1,0 @@
-Postgrex.Types.define(TodoApp.PostgrexTypes, [], [{:json, Jason}])
