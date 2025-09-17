@@ -1,0 +1,14 @@
+# Test individual classes to isolate the hang
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+-cp src_haxe
+-D elixir_output=lib
+-D reflaxe_runtime
+-D no-utf16
+-D app_name=TodoApp
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+
+# Test just the router first
+TodoAppRouter

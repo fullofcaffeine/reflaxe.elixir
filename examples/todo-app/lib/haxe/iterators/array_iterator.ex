@@ -1,8 +1,8 @@
 defmodule ArrayIterator do
-  def has_next(struct) do
-    struct.current < length(struct.array)
+  def has_next() do
+    struct.current < length(self.array)
   end
-  def next(struct) do
-    struct.array[struct.current + 1]
+  def next() do
+    self.array[self.current + 1]
   end
 end

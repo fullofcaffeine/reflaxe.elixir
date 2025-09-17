@@ -1,7 +1,6 @@
 defmodule Atom_Impl_ do
   def _new(s) do
-    this1 = s
-    this1
+    s
   end
   def to_string(this1) do
     this1
@@ -13,7 +12,7 @@ defmodule Atom_Impl_ do
     this1 != other
   end
   def from_string(s) do
-    this1 = s
-    this1
+    temp_result = s
+    tempResult
   end
 end
