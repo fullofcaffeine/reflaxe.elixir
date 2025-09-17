@@ -2727,10 +2727,11 @@ class ElixirASTBuilder {
                     }
                 }
                 
-                // Build all expressions, filtering out redundant enum extractions
+                // Build all expressions, filtering out redundant enum extractions and assignments
                 var expressions = [];
-                for (e in el) {
-                    // Check if this is a redundant enum extraction we should skip
+                for (i in 0...el.length) {
+                    var e = el[i];
+                    // Check if this is a redundant enum extraction or assignment we should skip
                     var shouldSkip = false;
                     switch(e.expr) {
                         case TVar(v, init) if (init != null):
@@ -2757,6 +2758,36 @@ class ElixirASTBuilder {
                                         #if debug_redundant_extraction
                                         trace('[TBlock] NOT skipping - $originalName does not match temp var pattern');
                                         #end
+                                    }
+                                case TLocal(tempVar) if (tempVar.name.startsWith("_g") || tempVar.name == "g" ||
+                                                         ~/^g\d+$/.match(tempVar.name)):
+                                    // This is assignment from temp: value = g (or _g, g1, g2, etc.)
+                                    // These redundant assignments are created by Haxe when extracting enum parameters
+                                    // In idiomatic Elixir, the pattern match already extracts the value directly
+
+                                    #if debug_redundant_extraction
+                                    trace('[TBlock] Found assignment from temp: ${v.name} = ${tempVar.name}');
+                                    #end
+
+                                    // Always skip these redundant assignments from temp variables
+                                    // The pattern extraction has already given us the value we need
+                                    var tempVarElixirName = toElixirVarName(tempVar.name);
+
+                                    // Check if this is a temp variable pattern (g, g1, g2, etc.)
+                                    if (tempVarElixirName == "g" ||
+                                        (tempVarElixirName.length > 1 && tempVarElixirName.charAt(0) == "g" &&
+                                         tempVarElixirName.charAt(1) >= '0' && tempVarElixirName.charAt(1) <= '9')) {
+                                        // Skip this redundant assignment
+                                        shouldSkip = true;
+                                        #if debug_redundant_extraction
+                                        trace('[TBlock] *** WILL SKIP *** redundant assignment ${v.name} = ${tempVar.name}');
+                                        #end
+
+                                        // Register the mapping so future references use the correct name
+                                        var targetVarElixirName = toElixirVarName(v.name);
+                                        if (currentContext != null) {
+                                            currentContext.registerPatternVariable(v.id, targetVarElixirName);
+                                        }
                                     }
                                 case _:
                             }
