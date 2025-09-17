@@ -91,8 +91,23 @@ class CompilationContext implements BuildContext {
     /**
      * Registry for pattern variables extracted from enum patterns
      * Maps TVar.id to the pattern variable name
+     *
+     * Enhanced to support clause-indexed patterns as recommended by Codex:
+     * - Preserves pattern variable names through compilation
+     * - Has highest priority in variable resolution
+     * - Prevents temp variable names (g, g1, g2) from leaking into generated code
      */
     public var patternVariableRegistry: Map<Int, String>;
+
+    /**
+     * Clause-indexed pattern variable registry for more granular control
+     * Maps clauseIndex -> paramIndex -> variable name
+     * This allows tracking pattern variables specific to each case clause
+     *
+     * WHY: Different case clauses may use different variable names for the same
+     * enum parameter position, and we need to preserve each clause's naming
+     */
+    public var clausePatternRegistry: Map<Int, Map<Int, String>>;
 
     /**
      * Current clause context for pattern matching compilation
@@ -197,6 +212,7 @@ class CompilationContext implements BuildContext {
         variableUsageMap = new Map();
         functionParameterIds = new Map();
         patternVariableRegistry = new Map();
+        clausePatternRegistry = new Map();
 
         // Initialize clause context stack
         clauseContextStack = [];
@@ -348,32 +364,107 @@ class CompilationContext implements BuildContext {
 
     /**
      * Resolve a variable name using priority hierarchy
+     *
+     * Priority order (highest to lowest):
+     * 1. Pattern variable registry (user-specified pattern names)
+     * 2. Current clause context (case-specific mappings)
+     * 3. Underscore prefix check (unused variables)
+     * 4. Default variable name (fallback)
+     *
+     * This hierarchy ensures pattern variables preserve their names
+     * and don't get replaced with temp variables (g, g1, g2).
      */
     public function resolveVariable(tvarId: Int, defaultName: String): String {
-        // Priority 1: Pattern variable registry
+        // Priority 1: Pattern variable registry (highest priority)
         if (patternVariableRegistry.exists(tvarId)) {
-            return patternVariableRegistry.get(tvarId);
+            var resolved = patternVariableRegistry.get(tvarId);
+            #if debug_pattern_matching
+            trace('[ResolveVariable] TVar#${tvarId}: Using pattern registry -> "${resolved}"');
+            #end
+            return resolved;
         }
 
         // Priority 2: Current clause context
         if (currentClauseContext != null && currentClauseContext.localToName.exists(tvarId)) {
-            return currentClauseContext.localToName.get(tvarId);
+            var resolved = currentClauseContext.localToName.get(tvarId);
+            #if debug_pattern_matching
+            trace('[ResolveVariable] TVar#${tvarId}: Using clause context -> "${resolved}"');
+            #end
+            return resolved;
         }
 
         // Priority 3: Underscore prefix check
         if (shouldPrefixWithUnderscore(tvarId)) {
-            return "_" + defaultName;
+            var resolved = "_" + defaultName;
+            #if debug_pattern_matching
+            trace('[ResolveVariable] TVar#${tvarId}: Adding underscore prefix -> "${resolved}"');
+            #end
+            return resolved;
         }
 
         // Priority 4: Default name
+        #if debug_pattern_matching
+        trace('[ResolveVariable] TVar#${tvarId}: Using default -> "${defaultName}"');
+        #end
         return defaultName;
     }
 
     /**
      * Register a pattern variable from enum matching
+     *
+     * WHY: Preserves user-specified pattern variable names through compilation
+     * to generate idiomatic Elixir patterns instead of temp variables
      */
     public function registerPatternVariable(tvarId: Int, patternName: String): Void {
         patternVariableRegistry.set(tvarId, patternName);
+
+        #if debug_pattern_matching
+        trace('[PatternRegistry] Registered TVar#${tvarId} -> "${patternName}"');
+        #end
+    }
+
+    /**
+     * Register a pattern variable for a specific clause and parameter index
+     *
+     * WHY: Different case clauses may have different variable names for the
+     * same enum parameter position. This granular tracking ensures each
+     * clause's naming is preserved independently.
+     *
+     * @param clauseIndex The index of the case clause
+     * @param paramIndex The parameter position in the enum constructor
+     * @param name The pattern variable name to use
+     * @param tvarId Optional TVar ID to also register globally
+     */
+    public function registerClausePatternVariable(clauseIndex: Int, paramIndex: Int, name: String, ?tvarId: Int): Void {
+        if (!clausePatternRegistry.exists(clauseIndex)) {
+            clausePatternRegistry.set(clauseIndex, new Map<Int, String>());
+        }
+
+        clausePatternRegistry.get(clauseIndex).set(paramIndex, name);
+
+        // Also register globally if TVar ID provided
+        if (tvarId != null) {
+            registerPatternVariable(tvarId, name);
+        }
+
+        #if debug_pattern_matching
+        trace('[PatternRegistry] Clause#${clauseIndex} Param#${paramIndex} -> "${name}"' +
+              (tvarId != null ? ' (TVar#${tvarId})' : ''));
+        #end
+    }
+
+    /**
+     * Resolve a pattern variable name for a specific clause and parameter
+     *
+     * @param clauseIndex The case clause index
+     * @param paramIndex The parameter position
+     * @return The registered name or null if not found
+     */
+    public function resolveClausePatternVariable(clauseIndex: Int, paramIndex: Int): Null<String> {
+        if (clausePatternRegistry.exists(clauseIndex)) {
+            return clausePatternRegistry.get(clauseIndex).get(paramIndex);
+        }
+        return null;
     }
 
     /**

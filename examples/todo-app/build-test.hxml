@@ -1,0 +1,19 @@
+-cp ../../src
+-cp ../../std
+-lib reflaxe
+-cp src_haxe
+-cp src_haxe/server
+-cp src_haxe/shared
+-D elixir_output=lib
+-D reflaxe_runtime
+-D no-utf16
+-D app_name=TodoApp
+--macro exclude('client')
+-D reflaxe.elixir=0.1.0
+--macro reflaxe.elixir.CompilerInit.Start()
+# Compile a few modules to isolate the issue
+TestInjection
+TodoApp
+server.schemas.Todo
+TodoAppRouter
+server.live.TodoLive

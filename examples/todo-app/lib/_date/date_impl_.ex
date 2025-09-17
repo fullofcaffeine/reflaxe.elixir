@@ -1,6 +1,4 @@
 defmodule Date_Impl_ do
-  @compile [{:nowarn_unused_function, [{:_neq, 2}, {:_lte, 2}, {:_lt, 2}, {:_gte, 2}, {:_gt, 2}, {:_eq, 2}]}]
-
   def now() do
     DateTime.utc_now()
   end
@@ -18,7 +16,7 @@ defmodule Date_Impl_ do
     elixir_month = month + 1
     this1 = (
 
-            {:ok, naive} = NaiveDateTime.new(year, elixir_month, day, hour, min, sec)
+            {:ok, naive} = NaiveDateTime.new(year, elixirMonth, day, hour, min, sec)
             DateTime.from_naive!(naive, "Etc/UTC")
 )
     this1
@@ -38,7 +36,13 @@ defmodule Date_Impl_ do
   def get_day(this1) do
     date = DateTime.to_date(this1)
     dow = Date.day_of_week(date)
-    if (dow == 7), do: 0, else: dow
+    temp_result = nil
+    if (dow == 7) do
+      temp_result = 0
+    else
+      temp_result = dow
+    end
+    tempResult
   end
   def get_hours(this1) do
     this1.hour
@@ -62,9 +66,15 @@ defmodule Date_Impl_ do
     this1.day
   end
   def get_utc_day(this1) do
+    temp_result = nil
     date = DateTime.to_date(this1)
     dow = Date.day_of_week(date)
-    if (dow == 7), do: 0, else: dow
+    if (dow == 7) do
+      temp_result = 0
+    else
+      temp_result = dow
+    end
+    tempResult
   end
   def get_utc_hours(this1) do
     this1.hour
@@ -75,7 +85,7 @@ defmodule Date_Impl_ do
   def get_utc_seconds(this1) do
     this1.second
   end
-  def get_timezone_offset(_this1) do
+  def get_timezone_offset(this1) do
     0
   end
   def add(this1, amount, unit) do
@@ -119,24 +129,24 @@ defmodule Date_Impl_ do
     
             %DateTime{this1 | hour: 23, minute: 59, second: 59, microsecond: {999999, 6}}
   end
-  defp _gt(a, b) do
+  defp gt(a, b) do
     DateTime.compare(a, b) == ":gt"
   end
-  defp _lt(a, b) do
+  defp lt(a, b) do
     DateTime.compare(a, b) == ":lt"
   end
-  defp _gte(a, b) do
+  defp gte(a, b) do
     result = DateTime.compare(a, b)
     result == ":gt" || result == ":eq"
   end
-  defp _lte(a, b) do
+  defp lte(a, b) do
     result = DateTime.compare(a, b)
     result == ":lt" || result == ":eq"
   end
-  defp _eq(a, b) do
+  defp eq(a, b) do
     DateTime.compare(a, b) == ":eq"
   end
-  defp _neq(a, b) do
+  defp neq(a, b) do
     DateTime.compare(a, b) != ":eq"
   end
 end

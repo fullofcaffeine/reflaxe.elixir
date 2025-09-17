@@ -18,7 +18,13 @@ defmodule TypeSafeChildSpec do
     if (opts != nil) do
       spec = opts
       id = module
-      start = %{:module => module, :func => "start_link", :args => (if (args != nil), do: args, else: [])}
+      temp_array = nil
+      if (args != nil) do
+        temp_array = args
+      else
+        temp_array = []
+      end
+      start = %{:module => module, :func => "start_link", :args => tempArray}
       if (Map.get(spec, :type) == nil) do
         type = {:supervisor}
       end
