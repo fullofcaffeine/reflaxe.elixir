@@ -1,0 +1,4 @@
+-cp .
+-main Main
+-dce full
+--no-output
