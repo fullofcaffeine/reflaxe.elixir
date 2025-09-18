@@ -15,6 +15,6 @@ defmodule TreeNode do
     else
       temp_string1 = ", " <> self.right.to_string()
     end
-    (tempString) <> ("" <> Std.string(self.key) <> " => " <> Std.string(self.value)) <> (tempString1)
+    (temp_string) <> ("" <> Std.string(self.key) <> " => " <> Std.string(self.value)) <> (temp_string1)
   end
 end

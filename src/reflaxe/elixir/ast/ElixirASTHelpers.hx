@@ -133,58 +133,17 @@ class ElixirASTHelpers {
     
     /**
      * Convert variable name to Elixir snake_case and escape reserved keywords
-     * 
+     *
      * WHY: Elixir has reserved keywords that cannot be used as variable names
      * WHAT: Converts camelCase to snake_case and escapes reserved keywords
-     * HOW: Applies snake_case transformation, then checks against reserved keywords
+     * HOW: Delegates to centralized ElixirNaming module for DRY principle
+     *
+     * @deprecated Use ElixirNaming.toVarName directly for new code
      */
     public static function toElixirVarName(name: String): String {
-        // Don't modify compiler-generated temporary variables like _g, _g1, etc.
-        // These are created by Haxe's desugaring and should be preserved as-is
-        if (name.charAt(0) == "_" && name.charAt(1) == "g") {
-            return name; // Keep _g variables as-is
-        }
-        
-        // Remove leading underscore if present (for other variables)
-        if (name.charAt(0) == "_" && name.length > 1) {
-            name = name.substr(1);
-        }
-        
-        // Convert to snake_case
-        var result = "";
-        for (i in 0...name.length) {
-            var char = name.charAt(i);
-            var charCode = char.charCodeAt(0);
-            
-            // Check if it's an uppercase letter (A-Z = 65-90)
-            var isUppercaseLetter = (charCode >= 65 && charCode <= 90);
-            
-            if (i > 0 && isUppercaseLetter) {
-                result += "_" + char.toLowerCase();
-            } else {
-                result += char.toLowerCase();
-            }
-        }
-        
-        // Check if the result is a reserved keyword and escape if needed
-        // Inline the reserved keyword check to avoid dependency issues
-        var reservedKeywords = [
-            "true", "false", "nil",           // Boolean/null atoms
-            "and", "or", "not", "in", "when", // Operators
-            "fn",                              // Anonymous function definition
-            "do", "end",                       // Block delimiters
-            "catch", "rescue", "after", "else", // Exception handling
-            "__MODULE__", "__FILE__", "__DIR__", "__ENV__", "__CALLER__" // Special forms
-        ];
-        
-        if (reservedKeywords.indexOf(result) >= 0) {
-            #if debug_reserved_keywords
-            trace('[ElixirASTHelpers] Reserved keyword detected: $result -> ${result}_param');
-            #end
-            result = result + "_param"; // Add suffix to escape reserved keyword
-        }
-        
-        return result;
+        // Delegate to centralized ElixirNaming module to follow DRY principle
+        // This eliminates duplicate snake_case conversion logic
+        return reflaxe.elixir.ast.naming.ElixirNaming.toVarName(name);
     }
 }
 

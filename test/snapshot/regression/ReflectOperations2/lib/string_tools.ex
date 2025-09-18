@@ -6,8 +6,8 @@ defmodule StringTools do
     g = 0
     g1 = length(s)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
-  if (g < g1) do
-    i = g = g + 1
+  if (acc_g < acc_g1) do
+    i = acc_g = acc_g + 1
     c = s.char_code_at(i)
     nil
     {:cont, {acc_result, acc_g, acc_g1, acc_state}}
@@ -33,9 +33,9 @@ end)
     length(s) >= length(start) && String.slice(s, 0, length(start)) == start
   end
   def ends_with(s, end) do
-    elen = length(end)
+    elen = length(end_)
     slen = length(s)
-    slen >= elen && String.slice(s, (slen - elen), elen) == end
+    slen >= elen && String.slice(s, (slen - elen), elen) == end_
   end
   def is_space(s, pos) do
     c = s.char_code_at(pos)
@@ -148,8 +148,8 @@ end)
     g = start
     g1 = length(str)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
-  if (g < g1) do
-    i = g = g + 1
+  if (acc_g < acc_g1) do
+    i = acc_g = acc_g + 1
     c = str.char_code_at(i)
     nil
     {:cont, {acc_result, acc_g, acc_g1, acc_state}}
@@ -163,7 +163,7 @@ end)
     else
       temp_result = result
     end
-    tempResult
+    temp_result
   end
   def parse_float(str) do
     Std.parse_float(str)

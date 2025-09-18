@@ -34,7 +34,7 @@ defmodule Bytes do
     else
       temp_var1 = <<>>
     end
-    b = <<tempVar::binary, v::8, tempVar1::binary>>
+    b = <<temp_var::binary, v::8, temp_var1::binary>>
   end
   def blit(pos, src, srcpos, len) do
     if (pos < 0 || srcpos < 0 || len < 0 || pos + len > length(self) || srcpos + len > length(src)) do
@@ -53,14 +53,14 @@ defmodule Bytes do
     else
       temp_var1 = <<>>
     end
-    b = <<tempVar::binary, srcSlice::binary, tempVar1::binary>>
+    b = <<temp_var::binary, src_slice::binary, temp_var1::binary>>
   end
   def sub(pos, len) do
     if (pos < 0 || len < 0 || pos + len > length(self)) do
       throw("Out of bounds")
     end
     sub_binary = :binary.part(self.b, pos, len)
-    Bytes.new(len, subBinary)
+    Bytes.new(len, sub_binary)
   end
   def fill(pos, len, value) do
     if (pos < 0 || len < 0 || pos + len > length(self)) do
@@ -79,7 +79,7 @@ defmodule Bytes do
     else
       temp_var1 = <<>>
     end
-    b = <<tempVar::binary, fillBytes::binary, tempVar1::binary>>
+    b = <<temp_var::binary, fill_bytes::binary, temp_var1::binary>>
   end
   def compare(other) do
     case self.b do
@@ -113,7 +113,7 @@ defmodule Bytes do
     else
       temp_var1 = <<>>
     end
-    b = <<tempVar::binary, v::float-little-size(64), tempVar1::binary>>
+    b = <<temp_var::binary, v::float-little-size(64), temp_var1::binary>>
   end
   def get_float(pos) do
     if (pos < 0 || pos + 4 > length(self)) do
@@ -137,7 +137,7 @@ defmodule Bytes do
     else
       temp_var1 = <<>>
     end
-    b = <<tempVar::binary, v::float-little-size(32), tempVar1::binary>>
+    b = <<temp_var::binary, v::float-little-size(32), temp_var1::binary>>
   end
   def get_u_int16(pos) do
     if (pos < 0 || pos + 2 > length(self)) do
@@ -161,7 +161,7 @@ defmodule Bytes do
     else
       temp_var1 = <<>>
     end
-    b = <<tempVar::binary, v::little-unsigned-size(16), tempVar1::binary>>
+    b = <<temp_var::binary, v::little-unsigned-size(16), temp_var1::binary>>
   end
   def get_int32(pos) do
     if (pos < 0 || pos + 4 > length(self)) do
@@ -185,7 +185,7 @@ defmodule Bytes do
     else
       temp_var1 = <<>>
     end
-    b = <<tempVar::binary, v::little-signed-size(32), tempVar1::binary>>
+    b = <<temp_var::binary, v::little-signed-size(32), temp_var1::binary>>
   end
   def get_int64(pos) do
     if (pos < 0 || pos + 8 > length(self)) do
@@ -209,7 +209,7 @@ defmodule Bytes do
     else
       temp_var1 = <<>>
     end
-    b = <<tempVar::binary, v::little-signed-size(64), tempVar1::binary>>
+    b = <<temp_var::binary, v::little-signed-size(64), temp_var1::binary>>
   end
   def read_string(pos, len) do
     :unicode.characters_to_list(self, :utf8)

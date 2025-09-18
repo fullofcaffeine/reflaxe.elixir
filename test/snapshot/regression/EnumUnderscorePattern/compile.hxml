@@ -1,0 +1,7 @@
+-cp test/snapshot/regression/EnumUnderscorePattern
+-main Main
+-dce full
+-lib reflaxe
+-lib reflaxe.elixir
+-D elixir_output=test/snapshot/regression/EnumUnderscorePattern/out
+--no-output
