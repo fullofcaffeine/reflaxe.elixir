@@ -661,6 +661,7 @@ typedef ElixirMetadata = {
     ?idiomaticEnumType: String,   // Name of the idiomatic enum type
     ?hasEnumBindingPlan: Bool,    // M0.5: Case has proper enum parameter mappings
     ?enumBindingPlanId: String,   // Unique ID linking to EnumBindingPlan in context
+    ?parentHasBindingPlan: Bool,  // Propagated flag from parent ECase
 
     // Variable Origin Tracking (January 2025)
     ?varOrigin: VarOrigin,         // Where this variable came from
