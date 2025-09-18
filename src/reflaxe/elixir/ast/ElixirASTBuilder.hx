@@ -5881,22 +5881,32 @@ class ElixirASTBuilder {
                          * - The case body will handle remapping via assignments
                          */
                         for (i in 0...paramCount) {
-                            // For regular enums, prefer canonical names from the enum definition
-                            // Only use extractedParams if we don't have canonical names
-                            if (i < canonicalNames.length && canonicalNames[i] != null) {
-                                // Use canonical name from enum definition (user-specified names)
-                                paramPatterns.push(PVar(canonicalNames[i]));
-                            } else if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
-                                // Use extracted params only if they're NOT temp vars (g, g1, g2)
-                                // Temp vars indicate we couldn't extract the actual name, use canonical instead
+                            // M0.3 FIX: Trust extractedParams as they come from EnumBindingPlan
+                            // The binding plan is the single source of truth and has already made
+                            // the decision about what names to use based on priority hierarchy
+                            if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null) {
+                                // Use the name from binding plan (via extractedParams)
+                                // This is the authoritative name decision
                                 paramPatterns.push(PVar(extractedParams[i]));
-                            } else if (i < canonicalNames.length) {
-                                // Fallback to canonical names when we have temp vars
-                                // This ensures we generate {:custom, code} not {:custom, g}
+
+                                #if debug_ast_pipeline
+                                trace('[M0.3] Using binding plan name for param ${i}: ${extractedParams[i]}');
+                                #end
+                            } else if (i < canonicalNames.length && canonicalNames[i] != null) {
+                                // Fallback to canonical name if no binding plan entry
+                                // (shouldn't happen after M0.1, but keep as safety net)
                                 paramPatterns.push(PVar(canonicalNames[i]));
+
+                                #if debug_ast_pipeline
+                                trace('[M0.3 WARNING] No binding plan for param ${i}, using canonical: ${canonicalNames[i]}');
+                                #end
                             } else {
                                 // Last resort: use wildcard
                                 paramPatterns.push(PWildcard);
+
+                                #if debug_ast_pipeline
+                                trace('[M0.3 WARNING] No name available for param ${i}, using wildcard');
+                                #end
                             }
                         }
                         PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
@@ -6078,12 +6088,13 @@ class ElixirASTBuilder {
                         // Check if this parameter is actually used in the case body
                         var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
                         
-                        if (isUsed && extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
-                            // Use extracted params only if they're NOT temp vars
+                        // M0.3 FIX: Trust extractedParams from EnumBindingPlan
+                        if (isUsed && extractedParams[i] != null) {
+                            // Use the binding plan's decision (via extractedParams)
                             paramPatterns.push(PVar(extractedParams[i]));
                         } else if (isUsed && i < canonicalNames.length) {
-                            // Use canonical names when we have temp vars
-                            // This ensures proper variable binding in patterns
+                            // Fallback to canonical names if no extracted param
+                            // (shouldn't happen after binding plan update)
                             paramPatterns.push(PVar(canonicalNames[i]));
                         } else {
                             paramPatterns.push(PWildcard);
