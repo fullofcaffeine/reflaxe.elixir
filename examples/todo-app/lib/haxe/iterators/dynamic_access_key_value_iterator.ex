@@ -1,2 +1,0 @@
-defmodule DynamicAccessKeyValueIterator do
-end

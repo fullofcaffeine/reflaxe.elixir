@@ -931,13 +931,16 @@ class ElixirASTBuilder {
                                 #end
                             case TLocal(tempVar):
                                 var tempVarName = tempVar.name;
-                                // Also skip assignments from temp vars (g, g1, g2) to pattern variables
-                                // These are redundant post-pattern assignments that Codex recommends removing
+                                // FIX: When patterns use canonical names, assignments from temp vars that don't exist
+                                // should be skipped entirely. The pattern already binds the correct variable.
+                                // Example: pattern {:ok, _value} already binds _value, so "value = g" is wrong (g doesn't exist)
                                 if (tempVarName == "g" || (tempVarName.length > 1 && tempVarName.charAt(0) == "g" &&
                                     tempVarName.charAt(1) >= '0' && tempVarName.charAt(1) <= '9')) {
+                                    // Check if this temp var actually exists in the pattern
+                                    // If not, skip the assignment entirely
                                     shouldSkipAssignment = true;
                                     #if debug_enum_extraction
-                                    trace('[TVar] Skipping redundant temp var assignment in case clause: $finalVarName = $tempVarName');
+                                    trace('[TVar] Skipping assignment from non-existent temp var in case clause: $finalVarName = $tempVarName');
                                     #end
                                 }
                             case _:
@@ -3119,6 +3122,28 @@ class ElixirASTBuilder {
                 // M0.5: Track if any case has an enum binding plan
                 var hasAnyEnumBindingPlan = false;
 
+                // Generate unique ID for this switch's enum binding plans
+                // Using position ensures uniqueness and helps with debugging
+                var bindingPlanId = if (enumType != null) {
+                    var posStr = if (e.pos != null) {
+                        // Convert position to string format for ID
+                        var posInfo = haxe.macro.PositionTools.toLocation(e.pos);
+                        'enum_binding_${posInfo.file}_${posInfo.range.start.character}';
+                    } else {
+                        // Fallback if no position available
+                        'enum_binding_${Date.now().getTime()}_${Std.random(10000)}';
+                    }
+                    posStr;
+                } else {
+                    null;
+                }
+
+                #if debug_enum_extraction
+                if (bindingPlanId != null) {
+                    trace('[ElixirASTBuilder] Generated binding plan ID for switch: $bindingPlanId');
+                }
+                #end
+
                 for (c in cases) {
                     // Analyze the case body FIRST to detect enum parameter extraction
                     // This is critical for determining whether to use wildcards or named patterns
@@ -3136,6 +3161,17 @@ class ElixirASTBuilder {
                     // M0.5: Track if we have binding plans
                     if (enumBindingPlan != null && enumBindingPlan.keys().hasNext()) {
                         hasAnyEnumBindingPlan = true;
+
+                        // Store the binding plan in the context with the unique ID
+                        // This makes it accessible to the transformer phase
+                        if (bindingPlanId != null && currentContext != null && currentContext.astContext != null) {
+                            currentContext.astContext.storeEnumBindingPlan(bindingPlanId, enumBindingPlan);
+
+                            #if debug_enum_extraction
+                            trace('[ElixirASTBuilder] Stored enum binding plan with ID: $bindingPlanId');
+                            trace('[ElixirASTBuilder]   Plan has ${Lambda.count(enumBindingPlan)} entries');
+                            #end
+                        }
                     }
 
                     // Update extractedParams based on the binding plan
@@ -4472,7 +4508,7 @@ class ElixirASTBuilder {
                 trace('  - Index: $index');
                 trace('  - Has ClauseContext: ${currentClauseContext != null}');
                 if (currentClauseContext != null) {
-                    trace('  - Has EnumBindingPlan: ${!currentClauseContext.enumBindingPlan.empty()}');
+                    trace('  - Has EnumBindingPlan: ${currentClauseContext.enumBindingPlan != null && currentClauseContext.enumBindingPlan.keys().hasNext()}');
                     if (currentClauseContext.enumBindingPlan.exists(index)) {
                         var info = currentClauseContext.enumBindingPlan.get(index);
                         trace('  - Binding plan for index $index: ${info.finalName} (used: ${info.isUsed})');
