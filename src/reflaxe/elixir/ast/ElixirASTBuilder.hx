@@ -614,6 +614,20 @@ class ElixirASTBuilder {
                             trace('  - Index: $index');
                             #end
 
+                            // Check if EnumBindingPlan already provides this variable
+                            // If so, the pattern already extracts it correctly and we should skip this assignment
+                            if (currentClauseContext != null && currentClauseContext.enumBindingPlan != null) {
+                                var plan = currentClauseContext.enumBindingPlan;
+                                if (plan.exists(index)) {
+                                    // The binding plan already handles this extraction in the pattern
+                                    shouldSkipRedundantExtraction = true;
+                                    #if debug_enum_extraction
+                                    trace('[TVar] Skipping redundant TEnumParameter extraction - binding plan provides variable at index $index');
+                                    #end
+                                    return null; // Skip this assignment entirely
+                                }
+                            }
+
                             // Only treat as temp if it matches the g/g1/g2 pattern
                             if ((tempVarName == "g" || (tempVarName.length > 1 && tempVarName.charAt(0) == "g" &&
                                 tempVarName.charAt(1) >= '0' && tempVarName.charAt(1) <= '9'))) {
@@ -630,6 +644,15 @@ class ElixirASTBuilder {
                                 // This is assignment from temp: value = g
                                 extractedFromTemp = tempVar.name;
                                 varOrigin = PatternBinder;  // This is the actual pattern variable
+
+                                // If we have an EnumBindingPlan, these assignments are redundant
+                                // because the pattern already uses the correct names
+                                if (currentClauseContext != null && currentClauseContext.enumBindingPlan != null) {
+                                    #if debug_enum_extraction
+                                    trace('[TVar] Skipping redundant temp assignment ${v.name} = ${tempVar.name} - binding plan handles it');
+                                    #end
+                                    return null; // Skip this assignment entirely
+                                }
 
                                 // Create mapping from temp var ID to pattern var ID
                                 if (tempToBinderMap == null) {
@@ -2981,7 +3004,11 @@ class ElixirASTBuilder {
                     }
 
                     if (!shouldSkip) {
-                        expressions.push(buildFromTypedExpr(e, currentContext));
+                        var builtExpr = buildFromTypedExpr(e, currentContext);
+                        // Filter out null expressions (returned when skipping redundant assignments)
+                        if (builtExpr != null) {
+                            expressions.push(builtExpr);
+                        }
                     } else {
                         #if debug_redundant_extraction
                         trace('[TBlock] *** ACTUALLY SKIPPED *** building expression');
@@ -3294,6 +3321,9 @@ class ElixirASTBuilder {
                 if (hasAnyEnumBindingPlan) {
                     if (caseNode.metadata == null) caseNode.metadata = {};
                     caseNode.metadata.hasEnumBindingPlan = true;
+                    #if debug_enum_extraction
+                    trace('[ElixirASTBuilder] Set hasEnumBindingPlan flag to true on case node');
+                    #end
                     // Attach the binding plan ID to link to the stored plan in context
                     if (bindingPlanId != null) {
                         caseNode.metadata.enumBindingPlanId = bindingPlanId;
