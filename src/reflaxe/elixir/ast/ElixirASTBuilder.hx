@@ -3188,21 +3188,44 @@ class ElixirASTBuilder {
                     // M0.2: Pass enumBindingPlan so it can use the authoritative names
                     var varMapping = createVariableMappingsForCase(c.expr, extractedParams, enumType, c.values, enumBindingPlan);
                     
+                    // Use EnumBindingPlan names for patterns when available
+                    var patternParamNames = if (enumBindingPlan != null) {
+                        // Extract the finalName from each entry in the binding plan
+                        var names = [];
+                        var maxIndex = 0;
+                        for (index => info in enumBindingPlan) {
+                            if (index > maxIndex) maxIndex = index;
+                        }
+                        for (i in 0...(maxIndex + 1)) {
+                            if (enumBindingPlan.exists(i)) {
+                                names.push(enumBindingPlan.get(i).finalName);
+                            } else {
+                                names.push('_g${i}'); // Fallback name
+                            }
+                        }
+                        #if debug_enum_extraction
+                        trace('[ElixirASTBuilder] Using binding plan names for pattern: $names');
+                        #end
+                        names;
+                    } else {
+                        extractedParams;
+                    };
+
                     var patterns = if (hasEnumType && enumType != null) {
                         // All enums generate tuple patterns for idiomatic Elixir output
                         // The difference is in the parameter extraction logic:
                         // - Idiomatic enums: Use generic extraction (g, g1, g2) due to limitations
                         // - Regular enums: Try to preserve pattern variable names (r, g, b)
                         if (isIdiomaticEnum) {
-                            // Idiomatic enums use generic extraction
-                            [for (v in c.values) convertIdiomaticEnumPatternWithExtraction(v, enumType, extractedParams, currentContext.variableUsageMap)];
+                            // Idiomatic enums use binding plan names when available
+                            [for (v in c.values) convertIdiomaticEnumPatternWithExtraction(v, enumType, patternParamNames, currentContext.variableUsageMap)];
                         } else {
-                            // Regular enums also generate tuple patterns but try to preserve names
-                            [for (v in c.values) convertRegularEnumPatternWithExtraction(v, enumType, extractedParams, currentContext.variableUsageMap)];
+                            // Regular enums also use binding plan names when available
+                            [for (v in c.values) convertRegularEnumPatternWithExtraction(v, enumType, patternParamNames, currentContext.variableUsageMap)];
                         }
                     } else {
                         // Non-enum patterns or unknown enum types
-                        [for (v in c.values) convertPatternWithExtraction(v, extractedParams)];
+                        [for (v in c.values) convertPatternWithExtraction(v, patternParamNames)];
                     }
                     
                     // Set up ClauseContext for alpha-renaming before building the case body
@@ -3271,6 +3294,13 @@ class ElixirASTBuilder {
                 if (hasAnyEnumBindingPlan) {
                     if (caseNode.metadata == null) caseNode.metadata = {};
                     caseNode.metadata.hasEnumBindingPlan = true;
+                    // Attach the binding plan ID to link to the stored plan in context
+                    if (bindingPlanId != null) {
+                        caseNode.metadata.enumBindingPlanId = bindingPlanId;
+                        #if debug_enum_extraction
+                        trace('[ElixirASTBuilder] Attached binding plan ID to case node: $bindingPlanId');
+                        #end
+                    }
                 }
 
                 // If in return context and needs temp var, wrap in assignment
