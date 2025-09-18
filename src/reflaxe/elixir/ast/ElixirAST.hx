@@ -659,6 +659,7 @@ typedef ElixirMetadata = {
     ?varIdToName: Map<Int, String>, // Clause-local variable renaming mappings
     ?requiresIdiomaticTransform: Bool,  // Enum needs idiomatic compilation
     ?idiomaticEnumType: String,   // Name of the idiomatic enum type
+    ?hasEnumBindingPlan: Bool,    // M0.5: Case has proper enum parameter mappings
 
     // Variable Origin Tracking (January 2025)
     ?varOrigin: VarOrigin,         // Where this variable came from
