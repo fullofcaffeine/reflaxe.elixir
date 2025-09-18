@@ -12,7 +12,6 @@ defmodule Atom_Impl_ do
     this1 != other
   end
   def from_string(s) do
-    temp_result = s
-    tempResult
+    (s)
   end
 end

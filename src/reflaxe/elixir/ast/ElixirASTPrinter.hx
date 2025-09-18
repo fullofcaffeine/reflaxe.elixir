@@ -160,14 +160,16 @@ class ElixirASTPrinter {
                 indentStr(indent) + 'end';
                 
             case EDefp(name, args, guards, body):
-                // Check if this function is unused and prefix with underscore
+                // M0 STABILIZATION: Disable underscore prefixing temporarily
                 var funcName = name;
+                /* Disabled to prevent variable mismatches
                 if (currentUnusedFunctions != null && currentUnusedFunctions.indexOf(name) != -1) {
                     // Don't double-prefix if already starts with underscore
                     if (!name.startsWith("_")) {
                         funcName = "_" + name;
                     }
                 }
+                */
 
                 var argStr = printPatterns(args);
                 var guardStr = guards != null ? ' when ' + print(guards, 0) : '';

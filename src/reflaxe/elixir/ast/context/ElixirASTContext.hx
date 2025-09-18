@@ -693,9 +693,9 @@ class ElixirASTContext {
 
         #if debug_ast_builder
         trace('[ElixirASTContext] Entered transformation phase');
-        trace('  - Variable mappings: ${globalVariableMap.keys().length}');
-        trace('  - Pattern variables: ${patternVariableRegistry.keys().length}');
-        trace('  - Node metadata: ${nodeMetadata.keys().length}');
+        trace('  - Variable mappings: ${Lambda.count(globalVariableMap)}');
+        trace('  - Pattern variables: ${Lambda.count(patternVariableRegistry)}');
+        trace('  - Node metadata: ${Lambda.count(nodeMetadata)}');
         #end
     }
 
@@ -724,7 +724,7 @@ class ElixirASTContext {
 
         #if debug_ast_builder
         trace('[ElixirASTContext] Compilation completed');
-        if (testResults.keys().length > 0) {
+        if (Lambda.count(testResults) > 0) {
             var successful = 0;
             var failed = 0;
             for (result in testResults) {

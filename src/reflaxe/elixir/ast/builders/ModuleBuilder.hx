@@ -83,15 +83,27 @@ class ModuleBuilder {
      * @return Module AST
      */
     public static function buildClassModule(classType: ClassType, fields: Array<ElixirAST>): ElixirAST {
+        #if debug_compilation_hang
+        Sys.println('[HANG DEBUG] 🏗️ ModuleBuilder.buildClassModule START - Class: ${classType.name}, Fields: ${fields.length}');
+        var moduleStartTime = haxe.Timer.stamp() * 1000;
+        #end
+
         // Stub implementation - return minimal module structure
         var moduleName = extractModuleName(classType);
         var attributes: Array<EAttribute> = []; // No attributes for stub
 
-        return {
+        var result = {
             def: EModule(moduleName, attributes, fields),
             metadata: {},
             pos: classType.pos
         };
+
+        #if debug_compilation_hang
+        var elapsed = (haxe.Timer.stamp() * 1000) - moduleStartTime;
+        Sys.println('[HANG DEBUG] ✅ ModuleBuilder.buildClassModule END - Took ${elapsed}ms');
+        #end
+
+        return result;
     }
 }
 

@@ -10,7 +10,7 @@ defmodule StringBuf do
     else
       temp_string = Std.string(x)
     end
-    struct = %{struct | parts: struct.parts ++ [tempString]}
+    struct = %{struct | parts: struct.parts ++ [temp_string]}
   end
   def add_char(c) do
     struct.parts ++ [String.from_char_code(c)]
@@ -23,7 +23,7 @@ defmodule StringBuf do
     else
       temp_string = s.substr(pos, len)
     end
-    %{struct | parts: struct.parts ++ [tempString]}
+    %{struct | parts: struct.parts ++ [temp_string]}
   end
   def to_string() do
     IO.iodata_to_binary(self.parts)

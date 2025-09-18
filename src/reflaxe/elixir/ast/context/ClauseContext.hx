@@ -36,6 +36,10 @@ class ClauseContext {
     // Maps Haxe TVar.id to the canonical pattern variable name
     public var localToName: Map<Int, String> = new Map();
 
+    // NEW: EnumBindingPlan for consistent enum parameter naming
+    // Maps enum parameter index to {finalName: String, isUsed: Bool}
+    public var enumBindingPlan: Map<Int, {finalName: String, isUsed: Bool}> = new Map();
+
     // Synthetic bindings for variables that only exist in Elixir
     public var syntheticBindings: Array<{name: String, init: ElixirAST}> = [];
 
@@ -45,9 +49,10 @@ class ClauseContext {
     // Track which names have been used
     private var usedNames: Map<String, Bool> = new Map();
 
-    public function new(?locals: Map<String, Bool>, ?varMapping: Map<Int, String>) {
+    public function new(?locals: Map<String, Bool>, ?varMapping: Map<Int, String>, ?enumPlan: Map<Int, {finalName: String, isUsed: Bool}>) {
         if (locals != null) this.localsInScope = locals;
         if (varMapping != null) this.localToName = varMapping;
+        if (enumPlan != null) this.enumBindingPlan = enumPlan;
     }
 
     /**

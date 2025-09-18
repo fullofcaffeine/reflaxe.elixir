@@ -16,7 +16,7 @@ defmodule Date_Impl_ do
     elixir_month = month + 1
     this1 = (
 
-            {:ok, naive} = NaiveDateTime.new(year, elixirMonth, day, hour, min, sec)
+            {:ok, naive} = NaiveDateTime.new(year, elixir_month, day, hour, min, sec)
             DateTime.from_naive!(naive, "Etc/UTC")
 )
     this1
@@ -42,7 +42,7 @@ defmodule Date_Impl_ do
     else
       temp_result = dow
     end
-    tempResult
+    temp_result
   end
   def get_hours(this1) do
     this1.hour
@@ -74,7 +74,7 @@ defmodule Date_Impl_ do
     else
       temp_result = dow
     end
-    tempResult
+    temp_result
   end
   def get_utc_hours(this1) do
     this1.hour

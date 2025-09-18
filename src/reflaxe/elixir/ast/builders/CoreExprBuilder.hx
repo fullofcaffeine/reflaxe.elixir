@@ -71,7 +71,7 @@ class CoreExprBuilder {
      *
      * WHY: Variables are fundamental to all expressions
      * WHAT: Creates EVar node with proper naming
-     * HOW: Uses variable name directly, transformation handled later
+     * HOW: Converts variable name to snake_case using ElixirNaming
      */
     public static function buildLocal(v: TVar, metadata: ElixirMetadata = null): ElixirAST {
         if (metadata == null) metadata = {};
@@ -79,7 +79,10 @@ class CoreExprBuilder {
         // Store the original variable ID for later resolution
         metadata.sourceVarId = v.id;
 
-        return makeASTWithMeta(EVar(v.name), metadata);
+        // Convert variable name to Elixir snake_case convention
+        var elixirVarName = reflaxe.elixir.ast.naming.ElixirNaming.toVarName(v.name);
+
+        return makeASTWithMeta(EVar(elixirVarName), metadata);
     }
 
     /**

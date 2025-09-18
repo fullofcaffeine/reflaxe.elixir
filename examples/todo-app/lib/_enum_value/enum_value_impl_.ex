@@ -1,0 +1,2 @@
+defmodule EnumValue_Impl_ do
+end

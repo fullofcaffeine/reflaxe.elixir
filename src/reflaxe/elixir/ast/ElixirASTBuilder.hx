@@ -11,6 +11,7 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
 import reflaxe.elixir.ast.ElixirASTPatterns;
 import reflaxe.elixir.ast.naming.ElixirAtom;
+import reflaxe.elixir.ast.naming.ElixirNaming;
 import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.ast.ReentrancyGuard;
 // Import builder modules
@@ -66,6 +67,91 @@ class ElixirASTBuilder {
     public static var currentModule: String = null;
     public static var currentModuleHasPresence: Bool = false;
     public static var currentClauseContext: Null<ClauseContext> = null;
+
+    // ================================================================
+    // Compilation Instrumentation for Hanging Diagnosis
+    // ================================================================
+    #if debug_compilation_hang
+    private static var recursionDepth: Int = 0;
+    private static var maxRecursionDepth: Int = 0;
+    private static var nodeProcessingCount: Map<String, Int> = new Map();
+    private static var currentNodeStack: Array<String> = [];
+    private static var lastProgressTime: Float = 0;
+    private static var progressInterval: Float = 1000; // Log every 1 second
+    private static var compilationStartTime: Float = 0;
+    private static var totalNodesProcessed: Int = 0;
+    private static var cycleDetectionMap: Map<String, Int> = new Map();
+    private static var MAX_SAME_NODE_VISITS: Int = 100; // Detect cycles
+
+    private static function logCompilationProgress(message: String) {
+        var now = haxe.Timer.stamp() * 1000;
+        var elapsed = now - compilationStartTime;
+        Sys.println('[HANG DEBUG ${elapsed}ms] Depth:${recursionDepth}/${maxRecursionDepth} Nodes:${totalNodesProcessed} - ${message}');
+        lastProgressTime = now;
+    }
+
+    private static function enterNode(nodeType: String, exprDetails: String = "") {
+        recursionDepth++;
+        totalNodesProcessed++;
+        if (recursionDepth > maxRecursionDepth) {
+            maxRecursionDepth = recursionDepth;
+        }
+
+        var nodeKey = '${nodeType}@depth${recursionDepth}';
+        currentNodeStack.push(nodeKey);
+
+        // Track visit count for cycle detection
+        var visitCount = nodeProcessingCount.get(nodeType);
+        if (visitCount == null) visitCount = 0;
+        visitCount++;
+        nodeProcessingCount.set(nodeType, visitCount);
+
+        // Detect potential infinite loops
+        if (visitCount > MAX_SAME_NODE_VISITS) {
+            Sys.println('[HANG DEBUG] ⚠️ POTENTIAL INFINITE LOOP: ${nodeType} visited ${visitCount} times!');
+            Sys.println('[HANG DEBUG] Current stack: ${currentNodeStack.join(" -> ")}');
+            if (exprDetails != "") {
+                Sys.println('[HANG DEBUG] Expression details: ${exprDetails}');
+            }
+        }
+
+        // Progress logging
+        var now = haxe.Timer.stamp() * 1000;
+        if (now - lastProgressTime > progressInterval) {
+            logCompilationProgress('Processing ${nodeType} ${exprDetails}');
+        }
+
+        // Log entry for significant nodes
+        if (recursionDepth <= 3 || nodeType.indexOf("Module") >= 0 || nodeType.indexOf("Class") >= 0) {
+            Sys.println('[HANG DEBUG] → Entering ${nodeType} at depth ${recursionDepth} ${exprDetails}');
+        }
+    }
+
+    private static function exitNode(nodeType: String) {
+        if (currentNodeStack.length > 0) {
+            currentNodeStack.pop();
+        }
+        recursionDepth--;
+
+        // Log exit for significant nodes
+        if (recursionDepth <= 2 || nodeType.indexOf("Module") >= 0 || nodeType.indexOf("Class") >= 0) {
+            Sys.println('[HANG DEBUG] ← Exiting ${nodeType} at depth ${recursionDepth}');
+        }
+    }
+
+    private static function detectCycle(nodeId: String): Bool {
+        var count = cycleDetectionMap.get(nodeId);
+        if (count == null) count = 0;
+        count++;
+        cycleDetectionMap.set(nodeId, count);
+
+        if (count > 10) { // Same exact node processed too many times
+            Sys.println('[HANG DEBUG] 🔄 CYCLE DETECTED: Node ${nodeId} processed ${count} times!');
+            return true;
+        }
+        return false;
+    }
+    #end
     
     /**
      * Reference to the compiler for dependency tracking
@@ -175,6 +261,13 @@ class ElixirASTBuilder {
 
     // Public entry point for the compiler
     public static function buildFromTypedExpr(expr: TypedExpr, context: reflaxe.elixir.CompilationContext): ElixirAST {
+        #if debug_compilation_hang
+        if (compilationStartTime == 0) {
+            compilationStartTime = haxe.Timer.stamp() * 1000;
+            Sys.println('[HANG DEBUG] === COMPILATION STARTED ===');
+        }
+        #end
+
         return buildFromTypedExprWithContext(expr, context);
     }
 
@@ -201,6 +294,15 @@ class ElixirASTBuilder {
     }
 
     private static function buildFromTypedExprWithContext(expr: TypedExpr, context: reflaxe.elixir.CompilationContext): ElixirAST {
+        #if debug_compilation_hang
+        var exprType = Type.enumConstructor(expr.expr);
+        var exprId = '${exprType}_${expr.pos}';
+
+        // Only detect and report cycles - don't interfere with compilation
+        detectCycle(exprId);
+        enterNode(exprType, exprId);
+        #end
+
         // Store context for recursive calls
         var previousContext = currentContext;
         currentContext = context;
@@ -282,6 +384,10 @@ class ElixirASTBuilder {
         // Restore previous context
         currentContext = previousContext;
 
+        #if debug_compilation_hang
+        exitNode(exprType);
+        #end
+
         return result;
     }
     
@@ -289,6 +395,13 @@ class ElixirASTBuilder {
      * Convert TypedExprDef to ElixirASTDef
      */
     static function convertExpression(expr: TypedExpr): ElixirASTDef {
+        #if debug_compilation_hang
+        var nodeType = Type.enumConstructor(expr.expr);
+        if (nodeType == "TSwitch" || nodeType == "TEnumIndex" || nodeType == "TWhile" || nodeType == "TFor") {
+            Sys.println('[HANG DEBUG] 🎯 Processing critical node: ${nodeType} at pos ${expr.pos}');
+        }
+        #end
+
         return switch(expr.expr) {
             // ================================================================
             // Literals and Constants
@@ -346,9 +459,20 @@ class ElixirASTBuilder {
             // Variables and Binding
             // ================================================================
             case TLocal(v):
-                // Delegate to CoreExprBuilder for variable resolution
-                var ast = CoreExprBuilder.buildLocal(v);
-                ast.def;
+                // M0.2 FIX: Check currentClauseContext for mapped names from EnumBindingPlan
+                if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
+                    var mappedName = currentClauseContext.localToName.get(v.id);
+
+                    #if debug_ast_pipeline
+                    trace('[M0.2] TLocal: Using mapped name from ClauseContext: ${v.name} (id=${v.id}) -> ${mappedName}');
+                    #end
+
+                    EVar(mappedName);
+                } else {
+                    // Delegate to CoreExprBuilder for variable resolution
+                    var ast = CoreExprBuilder.buildLocal(v);
+                    ast.def;
+                }
                 
             case TVar(v, init):
                 #if debug_variable_usage
@@ -460,24 +584,37 @@ class ElixirASTBuilder {
                     }
                 }
                 
-                // Special handling for enum extraction patterns
+                // Special handling for enum extraction patterns with variable origin tracking
                 // When Haxe compiles case Ok(value), it generates:
-                // 1. TVar(_g, TEnumParameter(...)) - extracts to temp
-                // 2. TVar(value, TLocal(_g)) - assigns temp to actual variable
-                // We need to check if the final variable is used
+                // 1. TVar(_g, TEnumParameter(...)) - extracts to temp (ExtractionTemp origin)
+                // 2. TVar(value, TLocal(_g)) - assigns temp to actual variable (PatternBinder origin)
+                // We track the origin to distinguish legitimate "g" variables from temp vars
                 var isEnumExtraction = false;
                 var extractedFromTemp = "";
                 var shouldSkipRedundantExtraction = false;
+                var varOrigin: VarOrigin = UserDefined;  // Default to user-defined
+                var tempToBinderMap: Map<Int, Int> = null;
+
                 if (init != null) {
                     switch(init.expr) {
-                        case TEnumParameter(e, _, _):
+                        case TEnumParameter(e, _, index):
                             // This is the temp extraction: _g = result.elem(1)
                             isEnumExtraction = true;
+                            varOrigin = ExtractionTemp;  // Mark as extraction temp
+
                             // Check if this is extracting from a pattern variable in a switch case
-                            // If the variable name is 'g', 'g1', 'g2' etc, and we're extracting from
-                            // a TLocal with a different name, this is redundant extraction
+                            // Temp vars follow the pattern: g, g1, g2, etc.
                             var tempVarName = toElixirVarName(v.name);
-                            trace('[DEBUG] TEnumParameter check: v.name=${v.name}, tempVarName=$tempVarName');
+
+                            #if debug_variable_origin
+                            trace('[Variable Origin] TEnumParameter extraction:');
+                            trace('  - Variable: ${v.name} (id=${v.id})');
+                            trace('  - Temp name: $tempVarName');
+                            trace('  - Origin: ExtractionTemp');
+                            trace('  - Index: $index');
+                            #end
+
+                            // Only treat as temp if it matches the g/g1/g2 pattern
                             if ((tempVarName == "g" || (tempVarName.length > 1 && tempVarName.charAt(0) == "g" &&
                                 tempVarName.charAt(1) >= '0' && tempVarName.charAt(1) <= '9'))) {
                                 // This variable assignment is redundant - the pattern already extracted it
@@ -486,11 +623,42 @@ class ElixirASTBuilder {
                                 trace('[TVar] Detected redundant extraction for $tempVarName (will be filtered at TBlock level)');
                                 #end
                             }
-                        case TLocal(tempVar) if (tempVar.name.startsWith("_g") || tempVar.name == "g" ||
-                                                 ~/^g\d+$/.match(tempVar.name)):
-                            // This is assignment from temp: value = g (or _g, g1, g2, etc.)
-                            extractedFromTemp = tempVar.name;
+
+                        case TLocal(tempVar):
+                            // Check if this is assignment from a temp var
+                            if (tempVar.name.startsWith("_g") || tempVar.name == "g" || ~/^g\d+$/.match(tempVar.name)) {
+                                // This is assignment from temp: value = g
+                                extractedFromTemp = tempVar.name;
+                                varOrigin = PatternBinder;  // This is the actual pattern variable
+
+                                // Create mapping from temp var ID to pattern var ID
+                                if (tempToBinderMap == null) {
+                                    tempToBinderMap = new Map<Int, Int>();
+                                }
+                                tempToBinderMap.set(tempVar.id, v.id);
+
+                                #if debug_variable_origin
+                                trace('[Variable Origin] Pattern assignment from temp:');
+                                trace('  - Pattern var: ${v.name} (id=${v.id})');
+                                trace('  - Temp var: ${tempVar.name} (id=${tempVar.id})');
+                                trace('  - Origin: PatternBinder');
+                                trace('  - Mapping: ${tempVar.id} -> ${v.id}');
+                                #end
+                            } else {
+                                // Regular local assignment, check if the source is a pattern variable
+                                // from an enum constructor (like RGB(r, g, b))
+                                varOrigin = UserDefined;
+
+                                #if debug_variable_origin
+                                trace('[Variable Origin] Regular local assignment:');
+                                trace('  - Variable: ${v.name} (id=${v.id})');
+                                trace('  - From: ${tempVar.name}');
+                                trace('  - Origin: UserDefined');
+                                #end
+                            }
+
                         case _:
+                            varOrigin = UserDefined;  // Default for other cases
                     }
                 }
                 
@@ -579,9 +747,10 @@ class ElixirASTBuilder {
                     #if debug_variable_usage
                     trace('[TVar] Variable ${v.name} (id=${v.id}) is UNUSED, adding underscore prefix');
                     #end
-                    var underscoreName = "_" + baseName;
-                    // Register this name in the map so TLocal references use the same name
-                    currentContext.tempVarRenameMap.set(Std.string(v.id), underscoreName);
+                    // M0 STABILIZATION: Disable underscore prefixing
+                    // var underscoreName = "_" + baseName;
+                    // currentContext.tempVarRenameMap.set(Std.string(v.id), underscoreName);
+                    var underscoreName = baseName; // Keep original name
                     underscoreName;
                 } else {
                     // For used variables, also register to ensure consistency
@@ -745,12 +914,68 @@ class ElixirASTBuilder {
                             initExpr;
                     };
                     
+                    // Check if we should skip this assignment
+                    // Following Codex's architecture guidance: skip redundant assignments from enum extraction
+                    var shouldSkipAssignment = false;
+
+                    // Skip assignments from TEnumParameter extraction in case clauses
+                    // These are redundant because pattern matching already binds the variables
+                    if (init != null && currentClauseContext != null) {
+                        // We're inside a case clause
+                        switch(init.expr) {
+                            case TEnumParameter(_, _, _):
+                                // Skip enum parameter extraction assignments - pattern matching handles this
+                                shouldSkipAssignment = true;
+                                #if debug_enum_extraction
+                                trace('[TVar] Skipping redundant enum extraction assignment in case clause: $finalVarName');
+                                #end
+                            case TLocal(tempVar):
+                                var tempVarName = tempVar.name;
+                                // Also skip assignments from temp vars (g, g1, g2) to pattern variables
+                                // These are redundant post-pattern assignments that Codex recommends removing
+                                if (tempVarName == "g" || (tempVarName.length > 1 && tempVarName.charAt(0) == "g" &&
+                                    tempVarName.charAt(1) >= '0' && tempVarName.charAt(1) <= '9')) {
+                                    shouldSkipAssignment = true;
+                                    #if debug_enum_extraction
+                                    trace('[TVar] Skipping redundant temp var assignment in case clause: $finalVarName = $tempVarName');
+                                    #end
+                                }
+                            case _:
+                        }
+                    }
+
                     // Note: Redundant enum extraction is now handled at TBlock level
                     // We generate the assignment here, but TBlock will filter it out if redundant
-                    var result = makeAST(EMatch(
-                        PVar(finalVarName),
-                        initValue
-                    ));
+                    var result = if (shouldSkipAssignment) {
+                        // Skip the assignment, return nil as a placeholder
+                        // The TBlock handler will filter this out
+                        makeAST(ENil);
+                    } else {
+                        var matchNode = makeAST(EMatch(
+                            PVar(finalVarName),
+                            initValue
+                        ));
+
+                        // Add variable origin metadata for use in transformer and printer phases
+                        if (matchNode.metadata == null) matchNode.metadata = {};
+                        matchNode.metadata.varOrigin = varOrigin;
+                        matchNode.metadata.varId = v.id;
+                        if (tempToBinderMap != null) {
+                            matchNode.metadata.tempToBinderMap = tempToBinderMap;
+                        }
+
+                        #if debug_variable_origin
+                        trace('[Variable Origin] Added metadata to match node:');
+                        trace('  - Variable: $finalVarName');
+                        trace('  - Origin: $varOrigin');
+                        trace('  - ID: ${v.id}');
+                        if (tempToBinderMap != null) {
+                            trace('  - Mappings: $tempToBinderMap');
+                        }
+                        #end
+
+                        matchNode;
+                    };
                     result;
                 } else {
                     // Uninitialized variable - use nil
@@ -2670,7 +2895,8 @@ class ElixirASTBuilder {
                                 #if debug_variable_usage
                                 trace('[TBlock] Variable ${v.name} (id=${v.id}) is UNUSED, adding underscore prefix');
                                 #end
-                                "_" + baseName;
+                                // M0 STABILIZATION: Disable underscore prefixing
+                                baseName; // "_" + baseName;
                             } else {
                                 baseName;
                             };
@@ -2708,38 +2934,47 @@ class ElixirASTBuilder {
                 
                 // Build all expressions, filtering out redundant enum extractions
                 var expressions = [];
+
+                // CRITICAL: Don't filter TEnumParameter when inside case clauses
+                // ClauseContext needs these extractions to build proper variable mappings
+                var isInCaseClause = currentClauseContext != null;
+
                 for (e in el) {
                     // Check if this is a redundant enum extraction we should skip
                     var shouldSkip = false;
-                    switch(e.expr) {
-                        case TVar(v, init) if (init != null):
-                            switch(init.expr) {
-                                case TEnumParameter(_, _, _):
-                                    // Check if this is a redundant extraction (temp var like _g, g, g1, g2)
-                                    // Check both the original name and the Elixir-converted name
-                                    var originalName = v.name;
-                                    var tempVarName = toElixirVarName(v.name);
-                                    #if debug_redundant_extraction
-                                    trace('[TBlock] TEnumParameter found - originalName: $originalName, tempVarName: $tempVarName');
-                                    #end
-                                    // Check if this matches the temp var pattern (_g, g, g1, g2, etc.)
-                                    if (originalName == "_g" || originalName == "g" ||
-                                        (originalName.startsWith("_g") && originalName.length > 2) ||
-                                        (originalName.startsWith("g") && originalName.length > 1 &&
-                                         originalName.charAt(1) >= '0' && originalName.charAt(1) <= '9')) {
-                                        // Skip this redundant extraction statement
-                                        shouldSkip = true;
+
+                    // Only filter redundant extractions when NOT in case clauses
+                    if (!isInCaseClause) {
+                        switch(e.expr) {
+                            case TVar(v, init) if (init != null):
+                                switch(init.expr) {
+                                    case TEnumParameter(_, _, _):
+                                        // Check if this is a redundant extraction (temp var like _g, g, g1, g2)
+                                        // Check both the original name and the Elixir-converted name
+                                        var originalName = v.name;
+                                        var tempVarName = toElixirVarName(v.name);
                                         #if debug_redundant_extraction
-                                        trace('[TBlock] *** WILL SKIP *** redundant enum extraction for $originalName (converted to $tempVarName)');
+                                        trace('[TBlock] TEnumParameter found - originalName: $originalName, tempVarName: $tempVarName');
                                         #end
-                                    } else {
-                                        #if debug_redundant_extraction
-                                        trace('[TBlock] NOT skipping - $originalName does not match temp var pattern');
-                                        #end
-                                    }
-                                case _:
-                            }
-                        case _:
+                                        // Check if this matches the temp var pattern (_g, g, g1, g2, etc.)
+                                        if (originalName == "_g" || originalName == "g" ||
+                                            (originalName.startsWith("_g") && originalName.length > 2) ||
+                                            (originalName.startsWith("g") && originalName.length > 1 &&
+                                             originalName.charAt(1) >= '0' && originalName.charAt(1) <= '9')) {
+                                            // Skip this redundant extraction statement
+                                            shouldSkip = true;
+                                            #if debug_redundant_extraction
+                                            trace('[TBlock] *** WILL SKIP *** redundant enum extraction for $originalName (converted to $tempVarName)');
+                                            #end
+                                        } else {
+                                            #if debug_redundant_extraction
+                                            trace('[TBlock] NOT skipping - $originalName does not match temp var pattern');
+                                            #end
+                                        }
+                                    case _:
+                                }
+                            case _:
+                        }
                     }
 
                     if (!shouldSkip) {
@@ -2797,6 +3032,11 @@ class ElixirASTBuilder {
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
+                #if debug_compilation_hang
+                Sys.println('[HANG DEBUG] 🎯 TSwitch START - ${cases.length} cases, hasDefault: ${edef != null}');
+                var switchStartTime = haxe.Timer.stamp() * 1000;
+                #end
+
                 // Phase 2 Integration: Try routing through BuilderFacade if enabled
                 if (currentContext != null && currentContext.builderFacade != null && currentContext.isFeatureEnabled("use_new_pattern_builder")) {
                     #if debug_ast_builder
@@ -2882,22 +3122,27 @@ class ElixirASTBuilder {
                     // Pass case values to extract pattern variable names like "email" from case Ok(email):
                     var extractedParams = analyzeEnumParameterExtraction(c.expr, c.values);
 
-                    // Check which extracted parameters are actually used in the case body
-                    // and prefix unused ones with underscore
-                    for (i in 0...extractedParams.length) {
-                        if (extractedParams[i] != null) {
-                            var paramName = extractedParams[i];
-                            // Check if this variable is used in the case body
-                            var isUsed = isPatternVariableUsed(paramName, c.expr);
-                            if (!isUsed && !paramName.startsWith("_")) {
-                                extractedParams[i] = "_" + paramName;
-                            }
+                    #if debug_pattern_usage
+                    trace('[Pattern Extraction] analyzeEnumParameterExtraction returned: ${extractedParams}');
+                    trace('[Pattern Extraction] Case index: $caseIndex');
+                    #end
+
+                    // Create EnumBindingPlan for consistent variable naming
+                    var enumBindingPlan = createEnumBindingPlan(c.expr, extractedParams, enumType);
+
+                    // Update extractedParams based on the binding plan
+                    // The plan is the single source of truth for variable names
+                    for (index in enumBindingPlan.keys()) {
+                        var info = enumBindingPlan.get(index);
+                        if (index < extractedParams.length) {
+                            extractedParams[index] = info.finalName;
                         }
                     }
-                    
+
                     // Create variable mappings for alpha-renaming
                     // This maps Haxe's temporary variable IDs to canonical pattern names
-                    var varMapping = createVariableMappingsForCase(c.expr, extractedParams, enumType, c.values);
+                    // M0.2: Pass enumBindingPlan so it can use the authoritative names
+                    var varMapping = createVariableMappingsForCase(c.expr, extractedParams, enumType, c.values, enumBindingPlan);
                     
                     var patterns = if (hasEnumType && enumType != null) {
                         // All enums generate tuple patterns for idiomatic Elixir output
@@ -2918,7 +3163,7 @@ class ElixirASTBuilder {
                     
                     // Set up ClauseContext for alpha-renaming before building the case body
                     var savedClauseContext = currentClauseContext;
-                    currentClauseContext = new ClauseContext(null, varMapping);
+                    currentClauseContext = new ClauseContext(null, varMapping, enumBindingPlan);
                     
                     // Build the case body with the ClauseContext active
                     var body = buildFromTypedExpr(c.expr, currentContext);
@@ -2946,7 +3191,7 @@ class ElixirASTBuilder {
                         // If mapping was updated, rebuild the body with the new mapping
                         var finalBody = if (updatedMapping != varMapping) {
                             var savedCtx = currentClauseContext;
-                            currentClauseContext = new ClauseContext(null, updatedMapping);
+                            currentClauseContext = new ClauseContext(null, updatedMapping, enumBindingPlan);
                             var newBody = buildFromTypedExpr(c.expr, currentContext);
                             currentClauseContext = savedCtx;
                             newBody;
@@ -3054,11 +3299,15 @@ class ElixirASTBuilder {
                     
                     // Prefix with underscore if unused (using TypedExpr-based detection which is more accurate)
                     // This is done here rather than in a transformer because we have full semantic information
+                    // M0 STABILIZATION: Disable underscore prefixing
+                    var finalName = baseName; // Always use base name for now
+                    /* Original logic disabled:
                     var finalName = if (isActuallyUnused && !baseName.startsWith("_")) {
                         "_" + baseName;
                     } else {
                         baseName;
                     };
+                    */
                     
                     // Register the mapping for TLocal references in the body
                     if (!currentContext.tempVarRenameMap.exists(idKey)) {
@@ -3546,6 +3795,11 @@ class ElixirASTBuilder {
                 }
                 
             case TFor(v, e1, e2):
+                #if debug_compilation_hang
+                Sys.println('[HANG DEBUG] 🔁 TFor START - var: ${v.name}');
+                var forStartTime = haxe.Timer.stamp() * 1000;
+                #end
+
                 // Check if LoopBuilder is enabled and use it with reentrancy protection
                 if (currentContext != null && currentContext.isFeatureEnabled("loop_builder_enabled")) {
                     // Use ReentrancyGuard to prevent infinite recursion
@@ -3582,6 +3836,11 @@ class ElixirASTBuilder {
                 }
                 
             case TWhile(econd, e, normalWhile):
+                #if debug_compilation_hang
+                Sys.println('[HANG DEBUG] 🔁 TWhile START - normalWhile: ${normalWhile}');
+                var whileStartTime = haxe.Timer.stamp() * 1000;
+                #end
+
                 // CRITICAL: Detect array iteration patterns and generate idiomatic Enum calls
                 // This prevents Y-combinator pattern generation for array operations
                 
@@ -4011,7 +4270,8 @@ class ElixirASTBuilder {
                             finalAccPattern.push(PVar(accVarName));
                         } else {
                             // Prefix with underscore to indicate unused
-                            finalAccPattern.push(PVar("_" + accVarName));
+                            // M0 STABILIZATION: Disable underscore prefixing
+                            finalAccPattern.push(PVar(accVarName)); // Was: "_" + accVarName
                         }
                     }
                     // Handle acc_state
@@ -4167,25 +4427,25 @@ class ElixirASTBuilder {
             case TEnumParameter(e, ef, index):
                 /**
                  * TEnumParameter extraction for enum constructor parameters
-                 * 
+                 *
                  * WHY: When Haxe compiles enum patterns like `case Ok(value):`, it generates
                  *      TEnumParameter expressions to extract the parameters. However, in Elixir
                  *      pattern matching, the pattern `{:ok, value}` already extracts the value.
-                 * 
+                 *
                  * PROBLEM: When patterns have ignored parameters like `case Ok(_):`, Haxe still
                  *          generates TEnumParameter which tries to extract from the already-extracted
                  *          value. This causes runtime errors like `elem(nil, 1)` when the extracted
                  *          value is nil.
-                 * 
-                 * SOLUTION: Check if we're extracting from a variable that was already extracted
-                 *           by the pattern. If so, just return the variable reference.
-                 * 
+                 *
+                 * SOLUTION: Use the EnumBindingPlan from ClauseContext which provides a single
+                 *           source of truth for variable names at each parameter index.
+                 *
                  * EDGE CASES:
                  * - Ignored parameters: Pattern extracts to temp var but it's not used
                  * - Nested enums: Multiple levels of extraction
                  * - Abstract types: May not have ClauseContext mappings
                  */
-                
+
                 // Debug trace to understand the extraction context
                 #if debug_enum_extraction
                 trace('[TEnumParameter] Attempting extraction:');
@@ -4193,74 +4453,113 @@ class ElixirASTBuilder {
                 trace('  - Enum field: ${ef.name}');
                 trace('  - Index: $index');
                 trace('  - Has ClauseContext: ${currentClauseContext != null}');
-                #end
-                
-                // Check if this is extracting from an already-extracted pattern variable
-                var skipExtraction = false;
-                var extractedVarName: String = null;
-
-                // Check if we're in a switch case context where patterns have already extracted values
-                // This avoids redundant extraction like: case {:ok, g} -> g = elem(result, 1)
-
-                // Check for local variables that might be extracted pattern variables
-                if (!skipExtraction) {
-                    switch(e.expr) {
-                        case TLocal(v):
-                            var varName = toElixirVarName(v.name);
-
-                            #if debug_enum_extraction
-                            trace('  - TLocal variable: ${v.name} -> $varName');
-                            if (currentClauseContext != null) {
-                                trace('  - ClauseContext has mapping: ${currentClauseContext.localToName.exists(v.id)}');
-                                if (currentClauseContext.localToName.exists(v.id)) {
-                                    trace('  - Mapped to: ${currentClauseContext.localToName.get(v.id)}');
-                                }
-                            }
-                            #end
-
-                            // Check if this variable was extracted by the pattern
-                            // Pattern extraction creates variables like 'g', 'g1', 'g2' for ignored params
-                            // or uses actual names for named params
-                            if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
-                                // This variable was mapped in the pattern, it's already extracted
-                                extractedVarName = currentClauseContext.localToName.get(v.id);
-                                skipExtraction = true;
-
-                                #if debug_enum_extraction
-                                trace('  - SKIPPING extraction, already extracted to: $extractedVarName');
-                                #end
-                            } else if (varName == "g" || varName.startsWith("g") && varName.charAt(1) >= '0' && varName.charAt(1) <= '9') {
-                                // This looks like a temp var from pattern extraction (g, g1, g2, etc.)
-                                // The pattern already extracted it, don't extract again
-                                extractedVarName = varName;
-                                skipExtraction = true;
-
-                                #if debug_enum_extraction
-                                trace('  - SKIPPING extraction, detected as pattern temp var: $varName');
-                                #end
-                            }
-                        case _:
-                            // Not a local variable, normal extraction needed
-                            #if debug_enum_extraction
-                            trace('  - Not a TLocal, proceeding with extraction');
-                            #end
+                if (currentClauseContext != null) {
+                    trace('  - Has EnumBindingPlan: ${!currentClauseContext.enumBindingPlan.empty()}');
+                    if (currentClauseContext.enumBindingPlan.exists(index)) {
+                        var info = currentClauseContext.enumBindingPlan.get(index);
+                        trace('  - Binding plan for index $index: ${info.finalName} (used: ${info.isUsed})');
                     }
                 }
+                #end
 
-                if (skipExtraction && extractedVarName != null) {
-                    // The pattern already extracted this value, just return the variable reference
-                    EVar(extractedVarName);
-                } else {
-                    // Normal case: generate the elem() extraction
-                    var exprAST = buildFromTypedExpr(e, currentContext);
-                    
+                // Check if we have a binding plan for this index
+                if (currentClauseContext != null && currentClauseContext.enumBindingPlan.exists(index)) {
+                    // Use the variable name from the binding plan
+                    var info = currentClauseContext.enumBindingPlan.get(index);
+
                     #if debug_enum_extraction
-                    trace('  - Generating elem() extraction');
+                    trace('  - Using binding plan variable: ${info.finalName}');
                     #end
-                    
-                    // Will be transformed to proper pattern extraction
-                    // +1 because Elixir tuples are 0-based but first element is the tag
-                    ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]);
+
+                    // The pattern already extracted this to the planned variable name
+                    EVar(info.finalName);
+                } else {
+                    // Fallback to the old logic for backward compatibility
+
+                    // Check if this is extracting from an already-extracted pattern variable
+                    var skipExtraction = false;
+                    var extractedVarName: String = null;
+
+                    // Check if we're in a switch case context where patterns have already extracted values
+                    // This avoids redundant extraction like: case {:ok, g} -> g = elem(result, 1)
+
+                    // Check for local variables that might be extracted pattern variables
+                    if (!skipExtraction) {
+                        switch(e.expr) {
+                            case TLocal(v):
+                                var varName = toElixirVarName(v.name);
+
+                                #if debug_enum_extraction
+                                trace('  - TLocal variable: ${v.name} -> $varName');
+                                if (currentClauseContext != null) {
+                                    trace('  - ClauseContext has mapping: ${currentClauseContext.localToName.exists(v.id)}');
+                                    if (currentClauseContext.localToName.exists(v.id)) {
+                                        trace('  - Mapped to: ${currentClauseContext.localToName.get(v.id)}');
+                                    }
+                                }
+                                #end
+
+                                // Check if this variable was extracted by the pattern
+                                // Pattern extraction creates variables like 'g', 'g1', 'g2' for ignored params
+                                // or uses actual names for named params
+                                if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
+                                    // This variable was mapped in the pattern, it's already extracted
+                                    extractedVarName = currentClauseContext.localToName.get(v.id);
+                                    skipExtraction = true;
+
+                                    #if debug_enum_extraction
+                                    trace('  - SKIPPING extraction, already extracted to: $extractedVarName');
+                                    #end
+                                } else {
+                                    // Check metadata to see if this is truly a temp extraction variable
+                                    var isExtractionTemp = false;
+
+                                    // First check if we have VarOrigin metadata
+                                    if (currentContext.tempVarRenameMap.exists(Std.string(v.id))) {
+                                        // This is a renamed temp variable
+                                        isExtractionTemp = true;
+                                    } else if (varName == "g" || (varName.startsWith("g") && varName.length > 1 &&
+                                              varName.charAt(1) >= '0' && varName.charAt(1) <= '9')) {
+                                        // Name pattern suggests temp var, but need more context
+                                        // Check if this variable was created from TEnumParameter
+                                        // For now, be conservative and only treat as temp if we're sure
+                                        // TODO: Use VarOrigin metadata when available
+                                        isExtractionTemp = false; // Conservative: avoid false positives
+                                    }
+
+                                    if (isExtractionTemp) {
+                                        // This is definitely a temp extraction variable
+                                        extractedVarName = varName;
+                                        skipExtraction = true;
+
+                                        #if debug_enum_extraction
+                                        trace('  - SKIPPING extraction, detected as pattern temp var: $varName');
+                                        #end
+                                    }
+                                }
+                            case _:
+                                // Not a local variable, normal extraction needed
+                                #if debug_enum_extraction
+                                trace('  - Not a TLocal, proceeding with extraction');
+                                #end
+                        }
+                    }
+
+                    if (skipExtraction && extractedVarName != null) {
+                        // The pattern already extracted this value, just return the variable reference
+                        EVar(extractedVarName);
+                    } else {
+                        // Normal case: generate the elem() extraction
+                        var exprAST = buildFromTypedExpr(e, currentContext);
+
+                        #if debug_enum_extraction
+                        trace('  - Generating elem() extraction');
+                        #end
+
+                        // Will be transformed to proper pattern extraction
+                        // +1 because Elixir tuples are 0-based but first element is the tag
+                        ECall(exprAST, "elem", [makeAST(EInteger(index + 1))]);
+                    }
                 }
                 
             case TEnumIndex(e):
@@ -4973,6 +5272,9 @@ class ElixirASTBuilder {
                             case TLocal(v):
                                 // Pattern variable like "email" in Ok(email)
                                 var varName = toElixirVarName(v.name);
+                                #if debug_ast_builder
+                                trace('[extractPatternVariableNamesFromValues] Found TLocal variable: "${v.name}" -> "$varName"');
+                                #end
                                 // Ensure array is large enough
                                 while (patternVars.length <= i) {
                                     patternVars.push(null);
@@ -4980,6 +5282,9 @@ class ElixirASTBuilder {
                                 patternVars[i] = varName;
                             default:
                                 // Could be a constant or wildcard
+                                #if debug_ast_builder
+                                trace('[extractPatternVariableNamesFromValues] Arg $i is not TLocal: ${arg.expr}');
+                                #end
                         }
                     }
                 default:
@@ -5074,18 +5379,32 @@ class ElixirASTBuilder {
                                     if (tempName.startsWith("_")) {
                                         tempName = tempName.substr(1);
                                     }
-                                    
+
+                                    #if debug_pattern_usage
+                                    trace('[analyzeEnumParameterExtraction Second Pass] TVar(${v.name}) = TLocal(${localVar.name})');
+                                    trace('[analyzeEnumParameterExtraction Second Pass] tempName: $tempName, checking if exists in tempVarMapping');
+                                    #end
+
                                     // Check if this is assigning from a known temp var
                                     if (tempVarMapping.exists(tempName)) {
                                         var patternName = toElixirVarName(v.name);
                                         var info = tempVarMapping.get(tempName);
-                                        
+
                                         // Update the extracted param with the pattern variable name
                                         extractedParams[info.index] = patternName;
-                                        
+
+                                        #if debug_pattern_usage
+                                        trace('[analyzeEnumParameterExtraction Second Pass] FOUND! Mapped temp var "$tempName" to pattern var "$patternName" at index ${info.index}');
+                                        trace('[analyzeEnumParameterExtraction Second Pass] extractedParams after mapping: ${extractedParams}');
+                                        #else
                                         #if debug_ast_pipeline
                                         trace('[DEBUG ENUM] Mapped temp var "$tempName" to pattern var "$patternName" at index ${info.index}');
                                         trace('[DEBUG ENUM] extractedParams after mapping: ${extractedParams}');
+                                        #end
+                                        #end
+                                    } else {
+                                        #if debug_pattern_usage
+                                        trace('[analyzeEnumParameterExtraction Second Pass] tempName "$tempName" NOT in tempVarMapping');
                                         #end
                                     }
                                 default:
@@ -5191,10 +5510,253 @@ class ElixirASTBuilder {
         #if debug_ast_builder
         trace('[DEBUG ENUM] Final extracted params: $extractedParams');
         #end
-        
+
+        #if debug_pattern_usage
+        trace('[analyzeEnumParameterExtraction] FINAL RETURN VALUE: ${extractedParams}');
+        #end
+
         return extractedParams;
     }
-    
+
+    /**
+     * Create EnumBindingPlan as THE SINGLE SOURCE OF TRUTH for enum parameter names
+     *
+     * WHY: Multiple systems need consistent variable names - this establishes the authority
+     * WHAT: Creates definitive mapping from enum parameter index to final variable name
+     * HOW: Uses priority hierarchy: (1) extracted pattern names, (2) canonical names, (3) temp vars
+     *
+     * M0.1 CRITICAL FIX: This is now the authoritative source that all other systems must use
+     *
+     * @param caseExpr The case body expression to analyze
+     * @param extractedParams The parameter names extracted by analyzeEnumParameterExtraction
+     * @param enumType The enum type being switched on (if available)
+     * @return Map from parameter index to binding info with finalName for EVERY parameter
+     */
+    static function createEnumBindingPlan(caseExpr: TypedExpr, extractedParams: Array<String>, enumType: Null<EnumType>): Map<Int, {finalName: String, isUsed: Bool}> {
+        var plan: Map<Int, {finalName: String, isUsed: Bool}> = new Map();
+
+        // M0.1: First, determine the maximum parameter count we need to handle
+        // This ensures we create entries for ALL parameters, not just the ones we find
+        var maxParamCount = 0;
+
+        // Get parameter count from enum type if available
+        if (enumType != null && caseExpr != null) {
+            // Find which constructor this case is for by scanning for TEnumParameter
+            function findConstructorIndex(expr: TypedExpr): Int {
+                var foundIndex = -1;
+                function scan(e: TypedExpr): Void {
+                    switch(e.expr) {
+                        case TEnumParameter(_, ef, _):
+                            // Found it - ef has the constructor
+                            for (name in enumType.constructs.keys()) {
+                                var construct = enumType.constructs.get(name);
+                                if (construct.name == ef.name) {
+                                    foundIndex = construct.index;
+                                    // Get parameter count from constructor type
+                                    switch(construct.type) {
+                                        case TFun(args, _):
+                                            if (args.length > maxParamCount) {
+                                                maxParamCount = args.length;
+                                            }
+                                        default:
+                                    }
+                                    return;
+                                }
+                            }
+                        case TBlock(exprs):
+                            for (e in exprs) scan(e);
+                        default:
+                            haxe.macro.TypedExprTools.iter(e, scan);
+                    }
+                }
+                scan(expr);
+                return foundIndex;
+            }
+
+            var constructorIndex = findConstructorIndex(caseExpr);
+
+            // M0.1: Get canonical names from the enum constructor definition
+            var canonicalNames: Array<String> = [];
+            if (constructorIndex >= 0) {
+                // Find the constructor by index
+                for (name in enumType.constructs.keys()) {
+                    var construct = enumType.constructs.get(name);
+                    if (construct.index == constructorIndex) {
+                        switch(construct.type) {
+                            case TFun(args, _):
+                                canonicalNames = [for (arg in args) arg.name];
+                                maxParamCount = args.length;
+                            default:
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // M0.1: Pre-populate the plan with ALL parameters using priority hierarchy
+            for (i in 0...maxParamCount) {
+                var finalName: String;
+
+                // Priority 1: Use extracted pattern names if available and not temp vars
+                if (extractedParams != null && i < extractedParams.length &&
+                    extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
+                    finalName = extractedParams[i];
+                }
+                // Priority 2: Use canonical names from enum definition
+                else if (i < canonicalNames.length && canonicalNames[i] != null) {
+                    finalName = canonicalNames[i];
+                }
+                // Priority 3: Fall back to temp var names
+                else {
+                    finalName = i == 0 ? "g" : 'g$i';
+                }
+
+                // Pre-populate with assumption that parameter is used
+                // We'll update this below with actual usage analysis
+                plan.set(i, {finalName: finalName, isUsed: true});
+            }
+        }
+
+        // First, build a map from parameter indices to variable IDs
+        // This helps us track which variables are assigned from TEnumParameter
+        var paramIndexToVarId: Map<Int, Int> = new Map();
+
+        // Scan for TVar declarations that are assigned from TEnumParameter
+        function findParameterAssignments(expr: TypedExpr): Void {
+            switch(expr.expr) {
+                case TVar(v, init) if (init != null):
+                    switch(init.expr) {
+                        case TEnumParameter(_, _, index):
+                            // This variable is assigned from enum parameter at index
+                            paramIndexToVarId.set(index, v.id);
+                        default:
+                    }
+                case TBlock(exprs):
+                    for (e in exprs) findParameterAssignments(e);
+                default:
+                    haxe.macro.TypedExprTools.iter(expr, findParameterAssignments);
+            }
+        }
+
+        // Find all parameter assignments
+        if (caseExpr != null) {
+            findParameterAssignments(caseExpr);
+        }
+
+        // Scan case body for TEnumParameter nodes to update usage information
+        function scanForEnumParameters(expr: TypedExpr): Void {
+            switch(expr.expr) {
+                case TEnumParameter(e, ef, index):
+                    // Found a TEnumParameter extraction at this index
+                    // M0.1: Update existing entry instead of creating new one
+                    if (plan.exists(index)) {
+                        // Update usage information for this parameter
+                        var entry = plan.get(index);
+
+                        // Check if this parameter is actually used
+                        // First try ID-based checking if we have the variable ID
+                        var isUsed = false;
+                        if (paramIndexToVarId.exists(index)) {
+                            // Use ID-based checking to avoid false positives
+                            var varId = paramIndexToVarId.get(index);
+                            isUsed = isPatternVariableUsedById(varId, caseExpr);
+                        } else {
+                            // Fall back to name-based checking using the finalName from plan
+                            isUsed = isPatternVariableUsed(entry.finalName, caseExpr);
+
+                            #if debug_enum_extraction
+                            trace('  - Checking if ${entry.finalName} is used: ${isUsed}');
+                            #end
+                        }
+
+                        // Update the usage flag
+                        entry.isUsed = isUsed;
+
+                        // M0 STABILIZATION: Disable automatic underscore prefixing
+                        // This was causing incorrect g vs _g mismatches where patterns would have _g
+                        // but bodies would reference g, causing undefined variable errors.
+                        // Accept warnings temporarily; prioritize correctness.
+                        // TODO: Re-enable via proper hygiene pass in M2
+                        #if !elixir_suppress_unused
+                        // Commented out to prevent variable mismatches
+                        // if (!isUsed && !entry.finalName.startsWith("_")) {
+                        //     entry.finalName = "_" + entry.finalName;
+                        // }
+                        #end
+
+                        // Update the plan with modified entry
+                        plan.set(index, entry);
+                    } else {
+                        // M0.1: This is a parameter we didn't pre-populate - add it now
+                        // This can happen if maxParamCount was wrong or if there's dynamic extraction
+                        var finalName = if (extractedParams != null && index < extractedParams.length && extractedParams[index] != null) {
+                            extractedParams[index];
+                        } else {
+                            // Generate a temp var name
+                            index == 0 ? "g" : 'g$index';
+                        };
+
+                        // Check usage
+                        var isUsed = false;
+                        if (paramIndexToVarId.exists(index)) {
+                            var varId = paramIndexToVarId.get(index);
+                            isUsed = isPatternVariableUsedById(varId, caseExpr);
+                        } else {
+                            isUsed = isPatternVariableUsed(finalName, caseExpr);
+                        }
+
+                        plan.set(index, {finalName: finalName, isUsed: isUsed});
+                    }
+
+                    // Continue scanning the expression being extracted from
+                    scanForEnumParameters(e);
+
+                case TBlock(exprs):
+                    for (e in exprs) scanForEnumParameters(e);
+                case TIf(cond, thenExpr, elseExpr):
+                    scanForEnumParameters(cond);
+                    scanForEnumParameters(thenExpr);
+                    if (elseExpr != null) scanForEnumParameters(elseExpr);
+                case TSwitch(e, cases, def):
+                    scanForEnumParameters(e);
+                    for (c in cases) scanForEnumParameters(c.expr);
+                    if (def != null) scanForEnumParameters(def);
+                case TVar(v, init):
+                    if (init != null) scanForEnumParameters(init);
+                case TCall(e, args):
+                    scanForEnumParameters(e);
+                    for (arg in args) scanForEnumParameters(arg);
+                case TField(e, _):
+                    scanForEnumParameters(e);
+                case TLocal(_):
+                    // Leaf node
+                case TConst(_):
+                    // Leaf node
+                case _:
+                    // Other cases - could add more if needed
+            }
+        }
+
+        // Now scan for actual TEnumParameter usage to update the plan
+        if (caseExpr != null) {
+            scanForEnumParameters(caseExpr);
+        }
+
+        #if debug_enum_binding_plan
+        trace('[EnumBindingPlan] Created AUTHORITATIVE plan for case:');
+        for (index in plan.keys()) {
+            var info = plan.get(index);
+            trace('  Index $index -> ${info.finalName} (used: ${info.isUsed}) [SINGLE SOURCE OF TRUTH]');
+        }
+        if (extractedParams != null && extractedParams.length > 0) {
+            trace('[EnumBindingPlan] Input extractedParams: ${extractedParams}');
+        }
+        trace('[EnumBindingPlan] Priority hierarchy applied: extracted > canonical > temp');
+        #end
+
+        return plan;
+    }
+
     /**
      * Convert patterns for idiomatic enum switch statements with explicit EnumType and extraction info
      * 
@@ -5324,9 +5886,14 @@ class ElixirASTBuilder {
                             if (i < canonicalNames.length && canonicalNames[i] != null) {
                                 // Use canonical name from enum definition (user-specified names)
                                 paramPatterns.push(PVar(canonicalNames[i]));
-                            } else if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null) {
-                                // Fall back to extracted param (temp vars like g, g1, g2)
+                            } else if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
+                                // Use extracted params only if they're NOT temp vars (g, g1, g2)
+                                // Temp vars indicate we couldn't extract the actual name, use canonical instead
                                 paramPatterns.push(PVar(extractedParams[i]));
+                            } else if (i < canonicalNames.length) {
+                                // Fallback to canonical names when we have temp vars
+                                // This ensures we generate {:custom, code} not {:custom, g}
+                                paramPatterns.push(PVar(canonicalNames[i]));
                             } else {
                                 // Last resort: use wildcard
                                 paramPatterns.push(PWildcard);
@@ -5450,15 +6017,21 @@ class ElixirASTBuilder {
                         
                         // Use canonical names for pattern variables
                         var paramPatterns = [];
+
                         for (i in 0...paramCount) {
                             // Check if this parameter is actually used in the case body
                             var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
-                            
-                            if (isUsed) {
-                                // Use the actual pattern variable name from the user's code
-                                // This ensures we generate {:ok, email} when user writes case Ok(email):
-                                // not {:ok, value} based on the enum definition
+
+                            // M0.2 FIX: Use extractedParams (what TEnumParameter expects) not canonical names
+                            // This ensures the pattern binds the exact variable names that the body references
+                            // Even if they're temp vars like "v", we must use them for consistency
+                            if (isUsed && extractedParams[i] != null) {
+                                // Use the extracted param name that TEnumParameter will reference
+                                // This might be "v" or another temp var, but it matches the body
                                 paramPatterns.push(PVar(extractedParams[i]));
+                            } else if (isUsed && i < canonicalNames.length) {
+                                // Fallback to canonical names if no extracted param
+                                paramPatterns.push(PVar(canonicalNames[i]));
                             } else {
                                 // Use wildcard for unused parameter
                                 paramPatterns.push(PWildcard);
@@ -5505,11 +6078,13 @@ class ElixirASTBuilder {
                         // Check if this parameter is actually used in the case body
                         var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
                         
-                        if (isUsed) {
-                            // Use the actual pattern variable name from the user's code
-                            // This ensures we generate {:ok, email} when user writes case Ok(email):
-                            // not {:ok, value} based on the enum definition
+                        if (isUsed && extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
+                            // Use extracted params only if they're NOT temp vars
                             paramPatterns.push(PVar(extractedParams[i]));
+                        } else if (isUsed && i < canonicalNames.length) {
+                            // Use canonical names when we have temp vars
+                            // This ensures proper variable binding in patterns
+                            paramPatterns.push(PVar(canonicalNames[i]));
                         } else {
                             paramPatterns.push(PWildcard);
                         }
@@ -6160,102 +6735,18 @@ class ElixirASTBuilder {
     }
     
     static function toElixirVarName(name: String, ?preserveUnderscore: Bool = false): String {
-        // Special Elixir constants should be preserved
-        var specialConstants = ["__MODULE__", "__FILE__", "__ENV__", "__DIR__", "__CALLER__"];
-        if (specialConstants.indexOf(name) >= 0) {
-            return name;
+        // Use the centralized ElixirNaming module for DRY principle
+        // This delegates all snake_case conversion to NameUtils and handles
+        // Elixir-specific rules in one place
+
+        // Special handling for preserveUnderscore flag (for unused variables)
+        if (preserveUnderscore && (name.length == 0 || name.charAt(0) != "_")) {
+            // Add underscore prefix to indicate unused variable
+            // M0 STABILIZATION: Disable underscore prefixing
+            return ElixirNaming.toVarName(name); // Was: "_" + ElixirNaming.toVarName(name)
         }
-        
-        // Handle single underscore (common in for loops for ignored values)
-        // Convert to a meaningful name since Elixir doesn't allow single underscore as variable
-        if (name == "_") {
-            return "item"; // Convert single underscore to "item"
-        }
-        
-        // Transform compiler-generated temporary variables like _g, _g1, etc.
-        // These are created by Haxe's desugaring and should be cleaned up
-        // to remove the underscore prefix ONLY if they're actually used variables
-        // If preserveUnderscore is true, keep the underscore (for unused variables)
-        if (name.charAt(0) == "_" && name.charAt(1) == "g" && !preserveUnderscore) {
-            // Remove the underscore but keep the rest for uniqueness
-            // _g -> g, _g1 -> g1, _g_1 -> g_1
-            return name.substr(1);
-        }
-        
-        // Handle other underscore-prefixed variables (like _item)
-        // Keep them as-is since they indicate unused variables in Elixir
-        if (name.charAt(0) == "_" && name.length > 1) {
-            // Convert the part after underscore to snake_case
-            var baseName = name.substr(1);
-            var converted = "";
-            for (i in 0...baseName.length) {
-                var char = baseName.charAt(i);
-                var isUpperLetter = char == char.toUpperCase() && char != char.toLowerCase() && char != "_";
-                if (i > 0 && isUpperLetter) {
-                    converted += "_" + char.toLowerCase();
-                } else {
-                    converted += char.toLowerCase();
-                }
-            }
-            return "_" + converted;
-        }
-        
-        // Simple snake_case conversion for regular variables
-        var result = "";
-        for (i in 0...name.length) {
-            var char = name.charAt(i);
-            // Check if it's an uppercase letter (not a number or underscore)
-            // Numbers should NOT trigger underscore insertion
-            var isUpperLetter = char == char.toUpperCase() && char != char.toLowerCase() && char != "_";
-            if (i > 0 && isUpperLetter) {
-                result += "_" + char.toLowerCase();
-            } else {
-                result += char.toLowerCase();
-            }
-        }
-        
-        // Check if the result is a reserved keyword and escape it
-        if (isElixirReservedKeyword(result)) {
-            // Append underscore to escape reserved keywords
-            result = result + "_param";
-            #if debug_ast_pipeline
-            trace('[toElixirVarName] Escaped reserved keyword: ${name} -> ${result}');
-            #end
-        }
-        
-        return result;
-    }
-    
-    /**
-     * Check if a name is an Elixir reserved keyword
-     * 
-     * WHY: Elixir has reserved keywords that cannot be used as variable/parameter names
-     * WHAT: Returns true if the name is a reserved keyword in Elixir
-     * HOW: Checks against a complete list of Elixir reserved words
-     */
-    public static function isElixirReservedKeyword(name: String): Bool {
-        // Complete list of Elixir reserved keywords
-        var reservedKeywords = [
-            "true", "false", "nil",           // Boolean/null atoms
-            "and", "or", "not", "in", "when", // Operators
-            "fn",                              // Anonymous function definition
-            "do", "end",                       // Block delimiters
-            "catch", "rescue", "after", "else", // Exception handling
-            "__MODULE__", "__FILE__", "__DIR__", "__ENV__", "__CALLER__", // Special forms
-            "alias", "case", "cond",           // Control structures
-            "def", "defp", "defmodule",        // Module/function definition
-            "defmacro", "defmacrop",           // Macro definition
-            "defprotocol", "defimpl",          // Protocol definition
-            "defstruct", "defexception",       // Struct/exception definition
-            "defoverridable", "defdelegate",   // Override/delegation
-            "for", "if", "import",              // Control/import
-            "quote", "unquote", "unquote_splicing", // Metaprogramming
-            "receive", "require",               // Process/module loading
-            "super", "throw", "try", "unless",  // Control flow
-            "use", "with"                       // Module/context management
-        ];
-        
-        return reservedKeywords.indexOf(name) >= 0;
+
+        return ElixirNaming.toVarName(name);
     }
     
     /**
@@ -6274,18 +6765,21 @@ class ElixirASTBuilder {
     
     /**
      * Create variable mappings for alpha-renaming in case clauses
-     * 
+     *
      * WHY: Haxe's optimizer creates temporary variables (g, g1, etc.) for enum parameters
      *      but our patterns use canonical names (value, error, etc.). We need to map
      *      the temp var IDs to the canonical names for proper code generation.
-     * 
+     *
      * WHAT: Creates a Map<Int, String> that maps TVar.id to the canonical pattern name
-     * 
+     *
      * HOW: Analyzes the case body to find TVar declarations that extract enum parameters
      *      and builds a mapping from the temp var IDs to the canonical names from the pattern
+     *
+     * M0.2: Now uses EnumBindingPlan as the authoritative source for variable names
      */
-    static function createVariableMappingsForCase(caseExpr: TypedExpr, extractedParams: Array<String>, 
-                                                   enumType: Null<EnumType>, values: Array<TypedExpr>): Map<Int, String> {
+    static function createVariableMappingsForCase(caseExpr: TypedExpr, extractedParams: Array<String>,
+                                                   enumType: Null<EnumType>, values: Array<TypedExpr>,
+                                                   enumBindingPlan: Map<Int, {finalName: String, isUsed: Bool}> = null): Map<Int, String> {
         var mapping = new Map<Int, String>();
         
         #if debug_ast_pipeline
@@ -6364,26 +6858,39 @@ class ElixirASTBuilder {
                                 case TVar(v, init) if (init != null):
                                     switch(init.expr) {
                                         case TEnumParameter(_, _, paramIndex):
-                                            // This is a temp var extracting an enum parameter
-                                            // DON'T map this to extractedParams - use the variable's own name!
-                                            // The variable v represents the pattern variable (like "r" in RGB(r,g,b))
-                                            // We should use its name, not the temp var name
-                                            
-                                            var varName = toElixirVarName(v.name);
-                                            
-                                            // Only strip underscore if it's a compiler-generated temp var
-                                            if (varName.startsWith("_g")) {
-                                                varName = varName.substr(1); // _g -> g
+                                            // M0.2 FIX: Use EnumBindingPlan as the single source of truth
+                                            // The binding plan already decided the final name for this parameter
+
+                                            var finalName: String;
+
+                                            if (enumBindingPlan != null && enumBindingPlan.exists(paramIndex)) {
+                                                // Use the authoritative name from EnumBindingPlan
+                                                finalName = enumBindingPlan.get(paramIndex).finalName;
+
+                                                #if debug_ast_pipeline
+                                                trace('[M0.2] Using EnumBindingPlan name for param ${paramIndex}: ${finalName}');
+                                                #end
+                                            } else {
+                                                // Fallback if no binding plan (shouldn't happen after M0.1)
+                                                var varName = toElixirVarName(v.name);
+                                                if (varName.startsWith("_g")) {
+                                                    varName = varName.substr(1); // _g -> g
+                                                }
+                                                finalName = varName;
+
+                                                #if debug_ast_pipeline
+                                                trace('[M0.2 WARNING] No EnumBindingPlan for param ${paramIndex}, using fallback: ${finalName}');
+                                                #end
                                             }
-                                            
-                                            // Map this variable ID to its own name
-                                            mapping.set(v.id, varName);
-                                            
+
+                                            // Map this variable ID to the binding plan's final name
+                                            mapping.set(v.id, finalName);
+
                                             // Mark this variable as coming from enum extraction
                                             enumExtractionVars.set(v.id, true);
-                                            
+
                                             #if debug_ast_pipeline
-                                            trace('[Alpha-renaming] Mapping TEnumParameter temp var ${v.name} (id=${v.id}) to: ${varName}');
+                                            trace('[M0.2] Mapping TEnumParameter temp var ${v.name} (id=${v.id}) to binding plan name: ${finalName}');
                                             #end
                                             
                                         case TLocal(tempVar):
@@ -8131,24 +8638,175 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Check if an enum parameter at a specific index is used in the case body
+     *
+     * WHY: When we have temp vars like 'g', we need to check if the enum parameter
+     *      value itself is used, not just the temp var name
+     * WHAT: Looks for any usage of values extracted from the enum at the given index
+     * HOW: Searches for TEnumParameter expressions with matching index or variables
+     *      that are assigned from such expressions
+     */
+    static function isEnumParameterUsedAtIndex(index: Int, caseBody: TypedExpr): Bool {
+        var isUsed = false;
+
+        function checkUsage(expr: TypedExpr): Void {
+            if (isUsed) return;
+
+            switch(expr.expr) {
+                // Check if this enum parameter is being extracted
+                case TEnumParameter(_, _, paramIndex) if (paramIndex == index):
+                    isUsed = true;
+
+                // Check variable assignments from enum parameters
+                case TVar(v, init) if (init != null):
+                    switch(init.expr) {
+                        case TEnumParameter(_, _, paramIndex) if (paramIndex == index):
+                            // This variable is assigned from our enum parameter
+                            // Now check if this variable is used
+                            var assignedVar = toElixirVarName(v.name);
+                            isUsed = isPatternVariableUsed(assignedVar, caseBody);
+                        default:
+                    }
+
+                default:
+                    // Recursively check all sub-expressions
+                    haxe.macro.TypedExprTools.iter(expr, checkUsage);
+            }
+        }
+
+        checkUsage(caseBody);
+        return isUsed;
+    }
+
+    /**
      * Check if a pattern variable is actually used in the case body
      *
      * WHY: Unused pattern variables should become wildcards or have underscore prefix
      * WHAT: Checks if a given variable name appears as used in the usage map
-     * HOW: Since we don't have direct TVar ID for pattern vars, we check by analyzing
-     *      the case body to see if any TLocal references this variable
+     * HOW: Enhanced with alias awareness - tracks temp variables (g, g1) that represent
+     *      pattern variables, since Haxe's optimizer may replace direct references with temps
+     *
+     * ALIAS TRACKING:
+     * - First pass: Build alias sets by finding TEnumParameter extractions and assignments
+     * - Second pass: Check if any alias of the pattern variable is used
+     *
+     * EXAMPLE:
+     * case Custom(code): return code;
+     * May compile to:
+     * - g = elem(status, 1)  // TEnumParameter extraction to temp
+     * - code = g             // Assignment from temp to pattern var
+     * - return code          // Usage (might be optimized to 'return g')
      */
     static function isPatternVariableUsed(varName: String, caseBody: TypedExpr): Bool {
-        // Check if this variable is referenced in the case body
+        // Build alias sets to track temp variable relationships
+        var aliasMap: Map<String, Array<String>> = new Map();
+        var tempsByIndex: Map<Int, String> = new Map();
         var isUsed = false;
 
-        function checkUsage(expr: TypedExpr): Void {
+        // First pass: collect aliases and temp variable relationships
+        function collectAliases(expr: TypedExpr): Void {
             switch(expr.expr) {
-                case TLocal(v) if (toElixirVarName(v.name) == varName):
-                    isUsed = true;
-                case TVar(v, _) if (toElixirVarName(v.name) == varName):
-                    // Variable is declared but we need to check if it's used
-                    // Don't mark as used just for declaration
+                case TVar(v, init) if (init != null):
+                    var vName = toElixirVarName(v.name);
+
+                    switch(init.expr) {
+                        case TEnumParameter(_, _, index):
+                            // This is: tempVar = elem(enum, index)
+                            // Record that this temp variable extracts from this index
+                            tempsByIndex.set(index, vName);
+
+                            // Initialize alias set for this temp
+                            if (!aliasMap.exists(vName)) {
+                                aliasMap.set(vName, [vName]);
+                            }
+
+                        case TLocal(sourceVar):
+                            // This is: destVar = sourceVar (simple assignment)
+                            var sourceName = toElixirVarName(sourceVar.name);
+
+                            // If source has an alias set, add dest to it
+                            if (aliasMap.exists(sourceName)) {
+                                var aliases = aliasMap.get(sourceName);
+                                if (aliases.indexOf(vName) == -1) {
+                                    aliases.push(vName);
+                                }
+                                // Also give dest its own entry pointing to same array
+                                aliasMap.set(vName, aliases);
+                            } else {
+                                // Create new alias set for both
+                                var aliases = [sourceName, vName];
+                                aliasMap.set(sourceName, aliases);
+                                aliasMap.set(vName, aliases);
+                            }
+
+                        default:
+                            // Other init types don't create aliases
+                    }
+
+                default:
+                    // Recursively collect from sub-expressions
+                    haxe.macro.TypedExprTools.iter(expr, collectAliases);
+            }
+        }
+
+        // Collect all aliases in the case body
+        if (caseBody != null) {
+            collectAliases(caseBody);
+        }
+
+        // Build complete alias set for our pattern variable
+        var aliasesToCheck = [varName];
+
+        // Add any directly mapped aliases
+        if (aliasMap.exists(varName)) {
+            aliasesToCheck = aliasMap.get(varName).copy();
+        }
+
+        // Also check temp variables that might represent this pattern variable
+        // Pattern variables like "code", "msg" often become "g", "g1", etc.
+        // If varName matches pattern like g, g1, g2, include it
+        if (varName == "g" || (varName.length > 1 && varName.charAt(0) == "g" &&
+            varName.charAt(1) >= '0' && varName.charAt(1) <= '9')) {
+            // This IS a temp variable, check if pattern var maps to it
+            for (alias in aliasMap.keys()) {
+                var aliases = aliasMap.get(alias);
+                if (aliases.indexOf(varName) != -1 && aliasesToCheck.indexOf(alias) == -1) {
+                    aliasesToCheck.push(alias);
+                }
+            }
+        } else {
+            // This is a pattern variable, check if any temps map to it
+            for (tempName in tempsByIndex) {
+                if (aliasMap.exists(tempName)) {
+                    var aliases = aliasMap.get(tempName);
+                    if (aliases.indexOf(varName) != -1) {
+                        // This temp is an alias of our pattern var
+                        for (a in aliases) {
+                            if (aliasesToCheck.indexOf(a) == -1) {
+                                aliasesToCheck.push(a);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Second pass: check if any alias is actually used (not just declared)
+        function checkUsage(expr: TypedExpr): Void {
+            if (isUsed) return; // Early exit if already found
+
+            switch(expr.expr) {
+                case TLocal(v):
+                    var vName = toElixirVarName(v.name);
+                    // Check if this local reference is any of our aliases
+                    if (aliasesToCheck.indexOf(vName) != -1) {
+                        isUsed = true;
+                    }
+
+                case TVar(v, _):
+                    // Variable declaration is NOT usage
+                    // But still recurse into the init expression if present
+
                 default:
                     // Recursively check sub-expressions
                     haxe.macro.TypedExprTools.iter(expr, checkUsage);
@@ -8160,6 +8818,50 @@ class ElixirASTBuilder {
         }
 
         return isUsed;
+    }
+
+    /**
+     * Check if a pattern variable is used in the case body using variable IDs
+     *
+     * WHY: ID-based tracking avoids false positives when users have variables named "g"
+     * WHAT: Builds a usage set of variable IDs and checks if the given ID is used
+     * HOW: Traverses the case body collecting TLocal variable IDs, then checks membership
+     *
+     * @param varId The unique variable ID to check
+     * @param caseBody The case body expression to search
+     * @param varOriginMap Optional map of variable IDs to their VarOrigin
+     * @return True if the variable is used in the case body
+     */
+    static function isPatternVariableUsedById(varId: Int, caseBody: TypedExpr, ?varOriginMap: Map<Int, VarOrigin>): Bool {
+        // Build set of used variable IDs in case body
+        var usedVarIds = new Map<Int, Bool>();
+
+        function collectUsedVarIds(expr: TypedExpr): Void {
+            switch(expr.expr) {
+                case TLocal(v):
+                    // This is a usage of a variable
+                    usedVarIds.set(v.id, true);
+
+                case TVar(v, _):
+                    // Variable declaration is NOT usage
+                    // The variable ID v.id is being declared, not used
+                    // But recurse into init expression if present
+
+                default:
+                    // Recursively check sub-expressions
+            }
+
+            // Always recurse into sub-expressions
+            haxe.macro.TypedExprTools.iter(expr, collectUsedVarIds);
+        }
+
+        // Collect all used variable IDs
+        if (caseBody != null) {
+            collectUsedVarIds(caseBody);
+        }
+
+        // Check if our variable ID is in the used set
+        return usedVarIds.exists(varId);
     }
 
     /**
@@ -8234,25 +8936,26 @@ class ElixirASTBuilder {
                                 // The extracted param name at this position
                                 var expectedParamName = extractedParams[i - 1];
 
-                                // For simple cases where the extracted param is the final result
-                                // (like "case Custom(code): code"), the parameter IS used
-                                // We check if any variable in the usage map is marked as used
-                                // This is a heuristic: if there are used variables and this is the
-                                // only parameter, it's likely the one being used
-                                if (expectedParamName == name && extractedParams.length == 1) {
-                                    // Check if there are any used variables at all
-                                    for (id => used in variableUsageMap) {
-                                        if (used) {
-                                            isUsed = true;
-                                            break;
-                                        }
+                                // Check if the parameter name matches the expected parameter
+                                // Following Codex's guidance: bind directly in patterns, don't add underscore prefixes to used variables
+                                if (expectedParamName == name) {
+                                    // The pattern variable matches - assume it's used unless it's a temp var
+                                    // Temp vars (g, g1, g2) should be replaced with wildcards
+                                    if (name == "g" || (name.length > 1 && name.charAt(0) == "g" && name.charAt(1) >= '0' && name.charAt(1) <= '9')) {
+                                        // This is a temp var, should use wildcard
+                                        isUsed = false;
+                                    } else {
+                                        // Real variable name - assume it's used for now
+                                        // A proper implementation would check the case body for actual usage
+                                        isUsed = true;
                                     }
                                 }
                             }
 
                             // If not used, prefix with underscore
                             if (!isUsed && !name.startsWith("_")) {
-                                updatedPatterns.push(PVar("_" + name));
+                                // M0 STABILIZATION: Disable underscore prefixing
+                                updatedPatterns.push(PVar(name)); // Was: "_" + name
                             } else {
                                 updatedPatterns.push(p);
                             }
@@ -8309,7 +9012,8 @@ class ElixirASTBuilder {
                         break;
                     }
                 }
-                var newVarName = (!isUsed && !varName.startsWith("_")) ? "_" + varName : varName;
+                // M0 STABILIZATION: Disable underscore prefixing
+                var newVarName = varName; // Was: (!isUsed && !varName.startsWith("_")) ? "_" + varName : varName;
                 PAlias(newVarName, applyUnderscorePrefixToUnusedPatternVars(subPattern, variableUsageMap, extractedParams));
 
             case PBinary(segments):

@@ -43,7 +43,7 @@ defmodule Sys do
     env = %{}
     elixir_env = System.get_env()
     
-            Enum.each(elixirEnv, fn {k, v} -> 
+            Enum.each(elixir_env, fn {k, v} -> 
                 env.set(k, v)
                 nil
             end)

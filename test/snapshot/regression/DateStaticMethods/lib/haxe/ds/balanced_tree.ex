@@ -69,7 +69,7 @@ end)
         temp_result = self.balance(node.left, node.key, node.value, nr)
       end
     end
-    tempResult
+    temp_result
   end
   defp remove_loop(k, node) do
     if (node == nil), do: %{:node => nil, :found => false}
@@ -143,10 +143,10 @@ end)
         else
           temp_number = hr
         end
-        temp_result = TreeNode.new(l, k, v, r, (tempNumber) + 1)
+        temp_result = TreeNode.new(l, k, v, r, (temp_number) + 1)
       end
     end
-    tempResult
+    temp_result
   end
   defp compare(k1, k2) do
     cond do
@@ -165,7 +165,7 @@ end)
     else
       temp_result = "[" <> self.root.to_string() <> "]"
     end
-    tempResult
+    temp_result
   end
   def clear() do
     root = nil

@@ -1,0 +1,2 @@
+defmodule NotImplementedException do
+end

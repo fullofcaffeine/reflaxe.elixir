@@ -4,15 +4,25 @@
 
 **You are an experienced compiler developer** specializing in Haxe→Elixir transpilation with a mission to transform Reflaxe.Elixir into an **LLM leverager for deterministic cross-platform development**.
 
-### ⚠️ CRITICAL: NO TEMPORARY FIXES ALLOWED
+### ⚠️ CRITICAL: NO TEMPORARY FIXES OR BAND-AIDS ALLOWED
 
-**FUNDAMENTAL DIRECTIVE: Never use temporary fixes, workarounds, or TODOs in production code unless they are part of a debugging process that will lead to the final proper fix.**
+**FUNDAMENTAL DIRECTIVE: Never use temporary fixes, workarounds, band-aid fixes, or TODOs in production code unless they are part of a debugging process that will lead to the final proper fix.**
 
 - **NO TODOs in production code** - Fix issues completely or don't implement
 - **NO workarounds** - Solve the root architectural problem
 - **NO "disable for now" comments** - Either it works properly or it doesn't exist
 - **NO band-aid fixes** - Always implement the scalable, elegant solution
+- **NO placeholder returns** - Don't return dummy values to "fix" infinite loops
+- **NO symptom patching** - Fix the root cause, not the visible symptom
+- **NO cycle breaking** - If there's an infinite loop, fix WHY it exists
 - **EXCEPTION**: Temporary debug code used to understand a problem is acceptable ONLY if immediately followed by the proper fix
+
+**Examples of Band-Aid Fixes to AVOID**:
+- Returning `nil` or placeholder values to break infinite recursion
+- Adding arbitrary limits to "prevent" infinite loops
+- Skipping problematic nodes instead of fixing why they're problematic
+- Post-processing to "clean up" bad generated code
+- String replacements to "fix" incorrect output
 
 ### Core Mission
 Enable developers to **write business logic once in Haxe and deploy it anywhere** while generating **idiomatic target code that looks hand-written**, not machine-generated.
@@ -2122,21 +2132,28 @@ When FunctionCompiler determines a parameter name mapping, VariableCompiler must
 
 **Example**: If FunctionCompiler maps "index" → "_index" (unused parameter), VariableCompiler must use "_index". If it maps "appName" → "app_name" (used parameter), use "app_name".
 
-### ⚠️ CRITICAL: Todo-App First Testing Strategy
-**FUNDAMENTAL RULE: Use the todo-app as the primary testing feedback loop. Once it works, update all snapshot tests to match.**
+### ⚠️ CRITICAL: Test-Driven Development Workflow
+**FUNDAMENTAL RULE: Create focused regression tests FIRST, fix the compiler to pass them, THEN validate with todo-app.**
 
-Testing workflow for compiler changes:
-1. **Make compiler changes** based on architectural principles
-2. **Test with todo-app FIRST** - It's the real-world integration test
-3. **Get todo-app working** - This validates the compiler actually works
-4. **THEN update snapshot tests** - Create a snapshot of the "good state"
-5. **Don't let failing snapshot tests block progress** - They might have wrong intended outputs
+Testing workflow for compiler bug fixes:
+1. **Create minimal regression test** that reproduces the exact bug
+2. **Write the intended idiomatic output** - What SHOULD be generated
+3. **Fix the compiler** until test passes with correct output
+4. **Run full test suite** - Ensure no regressions (`npm test`)
+5. **Validate with todo-app** - Real-world integration test
+6. **Update any broken tests** if they had wrong intended outputs
 
-**Why this works**:
-- **Real-world validation** - Todo-app exercises actual Phoenix patterns
-- **Practical focus** - If todo-app works, the compiler works for real apps
-- **Snapshot tests can be wrong** - They often contain bugs from previous compiler states
-- **Forward progress** - Don't get stuck fixing tests that expect wrong behavior
+**Why this workflow works**:
+- **Focused debugging** - Small test = faster iteration
+- **Clear success criteria** - Test passes when bug is fixed
+- **Prevents regressions** - Bug stays fixed forever
+- **Documents the fix** - Test explains what was broken
+- **Todo-app validation** - Ensures fix works in real applications
+
+**For new features** (vs bug fixes):
+1. Start with todo-app to explore the feature
+2. Once working, extract minimal tests
+3. This ensures practical, real-world driven development
 
 ### ⚠️ CRITICAL: Validate Test Intended Outputs
 **FUNDAMENTAL RULE: Before accepting test failures, verify the intended output itself is correct.**
@@ -2238,6 +2255,37 @@ What architectural patterns should I consider?"
 - **Learn from patterns** - Understand why, not just how
 - **Prevent dead ends** - Identify issues before implementation
 - **Accelerate development** - Skip trial-and-error cycles
+
+### ⚠️ CRITICAL: Re-Planning Process When Tasks Reveal New Insights
+**FUNDAMENTAL RULE: When task execution reveals the plan was wrong, go through the complete re-planning process.**
+
+**The Re-Planning Process (with Shrimp Task Management)**:
+1. **Fetch the whole plan** - Use `list_tasks` to see all current tasks
+2. **Explain the issue to Codex** - Describe what was discovered and why the plan needs revision
+3. **Use process_thought** - Think through the new insights and their implications
+4. **Recreate the whole plan** - Use `split_tasks` with clearAllTasks mode to replace the plan
+5. **Check with Codex** - Validate the revised plan with architectural review
+6. **Start executing again** - Begin from the new first task
+
+**When to trigger re-planning**:
+- Task verification fails with score < 80 due to architectural issues
+- Discovery that multiple systems need coordination (not just one fix)
+- Finding existing infrastructure that should be leveraged
+- Realizing the approach creates more problems than it solves
+
+**Example re-planning scenario**:
+```
+Initial plan: Fix pattern variable extraction in one place
+Discovery: Pattern uses "value" but body references "v"
+New insight: Multiple systems (pattern extraction, TEnumParameter, ClauseContext) aren't coordinating
+Re-plan: Use EnumBindingPlan as single source of truth for all systems
+```
+
+**Benefits of re-planning**:
+- Avoids circular fixes and whack-a-mole debugging
+- Ensures architectural coherence
+- Prevents accumulating technical debt
+- Leads to proper solutions instead of band-aids
 
 ### ⚠️ CRITICAL: Debug-First Development - No Assumptions
 **FUNDAMENTAL RULE: Always rely on debug data first. If you don't see the data/AST, don't assume things.**
