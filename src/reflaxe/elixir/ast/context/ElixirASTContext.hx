@@ -7,6 +7,12 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.builders.IBuilder;
 
 /**
+ * Type alias for enum binding plan
+ * Maps parameter indices to their final names and usage status
+ */
+typedef EnumBindingPlan = Map<Int, {finalName: String, isUsed: Bool}>;
+
+/**
  * ElixirASTContext: Shared compilation state and coordination for AST pipeline
  *
  * WHY: Centralizes cross-cutting concerns that span multiple AST phases (Builder,
@@ -97,6 +103,13 @@ class ElixirASTContext {
      * True when building pattern matching expressions (case patterns)
      */
     public var isInPattern: Bool = false;
+
+    /**
+     * Enum binding plans storage
+     * Maps unique IDs to EnumBindingPlan instances for cross-phase access
+     * This allows the binding plans to survive from builder to transformer phase
+     */
+    public var enumBindingPlans: Map<String, EnumBindingPlan> = new Map();
 
     // ===== Test Progress Tracking =====
 
@@ -519,6 +532,42 @@ class ElixirASTContext {
         return idiomaticEnums.get(enumName);
     }
 
+    /**
+     * Store an enum binding plan for later retrieval
+     * Used to pass binding plans from builder to transformer phase
+     *
+     * @param id Unique identifier for this binding plan
+     * @param plan The EnumBindingPlan to store
+     */
+    public function storeEnumBindingPlan(id: String, plan: EnumBindingPlan): Void {
+        enumBindingPlans.set(id, plan);
+
+        #if debug_enum_extraction
+        trace('[ElixirASTContext] Stored enum binding plan with ID: $id');
+        #end
+    }
+
+    /**
+     * Retrieve an enum binding plan by its ID
+     * Returns null if no plan exists with the given ID
+     *
+     * @param id The unique identifier of the binding plan
+     * @return The stored EnumBindingPlan or null
+     */
+    public function getEnumBindingPlan(id: String): Null<EnumBindingPlan> {
+        var plan = enumBindingPlans.get(id);
+
+        #if debug_enum_extraction
+        if (plan != null) {
+            trace('[ElixirASTContext] Retrieved enum binding plan with ID: $id');
+        } else {
+            trace('[ElixirASTContext] No enum binding plan found for ID: $id');
+        }
+        #end
+
+        return plan;
+    }
+
     // ===== Test Progress Integration =====
 
     /**
@@ -663,6 +712,7 @@ class ElixirASTContext {
         clauseContextStack = [];
         nodeMetadata.clear();
         testResults.clear();
+        enumBindingPlans.clear();
 
         // Keep cached transformations and feature flags
         // moduleNameMap and functionNameMap are kept for performance
@@ -765,6 +815,7 @@ class ElixirASTContext {
         testResults.clear();
         moduleNameMap.clear();
         functionNameMap.clear();
+        enumBindingPlans.clear();
 
         // Reset to defaults
         nodeIdCounter = 0;

@@ -1,2 +1,0 @@
-defmodule CallStack_Impl_ do
-end

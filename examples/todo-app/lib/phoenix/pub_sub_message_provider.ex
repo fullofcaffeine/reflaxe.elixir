@@ -1,2 +1,0 @@
-defmodule PubSubMessageProvider do
-end

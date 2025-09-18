@@ -1,2 +1,0 @@
-defmodule HXX do
-end

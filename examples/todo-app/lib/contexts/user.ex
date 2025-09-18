@@ -1,2 +1,0 @@
-defmodule User do
-end
