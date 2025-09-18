@@ -1047,12 +1047,25 @@ class ElixirASTTransformer {
                                                     var baseVar = if (v.charAt(0) == "_") v.substr(1) else v;
                                                     if (baseVar == "g" || (baseVar.length > 1 && baseVar.charAt(0) == "g" &&
                                                         baseVar.charAt(1) >= '0' && baseVar.charAt(1) <= '9')) {
-                                                        // M0: When removing v = g, need to ensure body uses pattern var
-                                                        // Since pattern already has the right name, no rename needed
-                                                        // BUT we need to handle "v" references in the body
-                                                        // For now, just remove the assignment
-                                                        isRedundant = true;
-                                                        trace('[RemoveRedundantEnumExtraction] Found assignment from undefined temp var: $varName = $v - REMOVING');
+                                                        // M0.5: Check if there's a proper variable mapping
+                                                        // Only remove if we have metadata confirming the mapping
+                                                        var hasProperMapping = false;
+
+                                                        // Check for hasEnumBindingPlan metadata on the case node
+                                                        if (node.metadata != null && node.metadata.hasEnumBindingPlan == true) {
+                                                            // If we have an enum binding plan, the mappings are reliable
+                                                            hasProperMapping = true;
+                                                            trace('[RemoveRedundantEnumExtraction] Found hasEnumBindingPlan metadata, safe to remove assignment');
+                                                        }
+
+                                                        // Only remove if we're confident about the mapping
+                                                        if (hasProperMapping) {
+                                                            isRedundant = true;
+                                                            trace('[RemoveRedundantEnumExtraction] Removing redundant assignment: $varName = $v (EnumBindingPlan confirmed)');
+                                                        } else {
+                                                            // Keep the assignment as a safety net
+                                                            trace('[RemoveRedundantEnumExtraction] Keeping assignment: $varName = $v (no EnumBindingPlan, keeping as safety)');
+                                                        }
                                                     }
 
                                                 case ECall(targetExpr, funcName, args) if (funcName == "elem" && args.length == 1):

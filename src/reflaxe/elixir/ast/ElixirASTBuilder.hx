@@ -2981,7 +2981,7 @@ class ElixirASTBuilder {
                         expressions.push(buildFromTypedExpr(e, currentContext));
                     } else {
                         #if debug_redundant_extraction
-                        trace('[TBlock] *** ACTUALLY SKIPPED *** building expression at index $i');
+                        trace('[TBlock] *** ACTUALLY SKIPPED *** building expression');
                         #end
                     }
                 }
@@ -3107,15 +3107,18 @@ class ElixirASTBuilder {
                 
                 var expr = buildFromTypedExpr(e, currentContext).def;
                 var clauses = [];
-                
+
                 // Check if this is a topic_to_string-style temp variable switch
                 // These need special handling for return context
                 var needsTempVar = false;
                 var tempVarName = "temp_result";
-                
+
                 // Detect if switch is in return context
                 var isReturnContext = false; // TODO: Will be set via metadata
-                
+
+                // M0.5: Track if any case has an enum binding plan
+                var hasAnyEnumBindingPlan = false;
+
                 for (c in cases) {
                     // Analyze the case body FIRST to detect enum parameter extraction
                     // This is critical for determining whether to use wildcards or named patterns
@@ -3129,6 +3132,11 @@ class ElixirASTBuilder {
 
                     // Create EnumBindingPlan for consistent variable naming
                     var enumBindingPlan = createEnumBindingPlan(c.expr, extractedParams, enumType);
+
+                    // M0.5: Track if we have binding plans
+                    if (enumBindingPlan != null && enumBindingPlan.keys().hasNext()) {
+                        hasAnyEnumBindingPlan = true;
+                    }
 
                     // Update extractedParams based on the binding plan
                     // The plan is the single source of truth for variable names
@@ -3218,15 +3226,25 @@ class ElixirASTBuilder {
                 
                 // Create the case expression
                 var caseASTDef = ECase(makeAST(expr), clauses);
-                
+
+                // Create the AST node with metadata for M0.5
+                var caseNode = makeAST(caseASTDef);
+
+                // M0.5: Attach metadata to help transformer
+                // This indicates that enum parameter extraction has proper mappings
+                if (hasAnyEnumBindingPlan) {
+                    if (caseNode.metadata == null) caseNode.metadata = {};
+                    caseNode.metadata.hasEnumBindingPlan = true;
+                }
+
                 // If in return context and needs temp var, wrap in assignment
                 if (isReturnContext && needsTempVar) {
                     EBlock([
-                        makeAST(EMatch(PVar(tempVarName), makeAST(caseASTDef))),
+                        makeAST(EMatch(PVar(tempVarName), caseNode)),
                         makeAST(EVar(tempVarName))
                     ]);
                 } else {
-                    caseASTDef;
+                    caseNode.def;
                 }
                 
             // ================================================================
