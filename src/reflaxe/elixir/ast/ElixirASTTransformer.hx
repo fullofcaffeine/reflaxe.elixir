@@ -997,10 +997,20 @@ class ElixirASTTransformer {
 
         // Track the case target variable name for nested detection
         var caseTargetVar: String = null;
+        // Track whether the current case has an enum binding plan
+        var currentCaseHasBindingPlan: Bool = false;
 
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case ECase(target, clauses):
+                    // Check if this case has an enum binding plan
+                    currentCaseHasBindingPlan = node.metadata != null && node.metadata.hasEnumBindingPlan == true;
+                    #if debug_enum_extraction
+                    if (currentCaseHasBindingPlan) {
+                        trace('[RemoveRedundantEnumExtraction] Found ECase with hasEnumBindingPlan flag');
+                    }
+                    #end
+
                     // Extract the case target variable name
                     switch(target.def) {
                         case EVar(v): caseTargetVar = v;
@@ -1020,6 +1030,12 @@ class ElixirASTTransformer {
                         var pattern = clause.pattern;
                         var guard = clause.guard;
                         var body = clause.body;
+
+                        // Propagate the binding plan flag to the clause body
+                        if (currentCaseHasBindingPlan && body != null) {
+                            if (body.metadata == null) body.metadata = {};
+                            body.metadata.parentHasBindingPlan = true;
+                        }
 
                         // Check if body contains redundant extraction
                         var newBody = switch(body.def) {
@@ -1051,11 +1067,13 @@ class ElixirASTTransformer {
                                                         // Only remove if we have metadata confirming the mapping
                                                         var hasProperMapping = false;
 
-                                                        // Check for hasEnumBindingPlan metadata on the case node
-                                                        if (node.metadata != null && node.metadata.hasEnumBindingPlan == true) {
+                                                        // Check if the parent ECase has an enum binding plan
+                                                        // Check both the current flag and the propagated metadata
+                                                        if (currentCaseHasBindingPlan ||
+                                                            (node.metadata != null && node.metadata.parentHasBindingPlan == true)) {
                                                             // If we have an enum binding plan, the mappings are reliable
                                                             hasProperMapping = true;
-                                                            trace('[RemoveRedundantEnumExtraction] Found hasEnumBindingPlan metadata, safe to remove assignment');
+                                                            trace('[RemoveRedundantEnumExtraction] Parent ECase has EnumBindingPlan, safe to remove assignment');
                                                         }
 
                                                         // Only remove if we're confident about the mapping
