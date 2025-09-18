@@ -13,8 +13,8 @@ defmodule EnumValueMap do
     g = 0
     g1 = length(a1)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
-  if (g < g1) do
-    i = g = g + 1
+  if (acc_g < acc_g1) do
+    i = acc_g = acc_g + 1
     d = self.compare_arg(a1[i], a2[i])
     if (d != 0), do: d
     {:cont, {acc_g, acc_g1, acc_state}}

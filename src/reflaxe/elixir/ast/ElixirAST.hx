@@ -9,26 +9,54 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
 
 /**
  * ElixirAST: Strongly-Typed Intermediate AST for Reflaxe.Elixir
- * 
+ *
  * WHY: Replace string manipulation with type-safe AST operations to enable:
  * - Semantic understanding of code structure
  * - Independent transformation passes
  * - Better debugging and inspection
  * - Context preservation through metadata
- * 
+ *
  * WHAT: Complete representation of Elixir language constructs with:
  * - All syntax nodes (modules, functions, expressions, patterns)
  * - Rich metadata for each node
  * - Zero Dynamic types - everything strongly typed
  * - Support for all Elixir idioms and Phoenix patterns
- * 
+ *
  * HOW: Three-phase compilation pipeline uses this AST:
  * 1. ElixirASTBuilder converts TypedExpr → ElixirAST
  * 2. ElixirASTTransformer applies idiom/framework transformations
  * 3. ElixirPrinter generates string output
- * 
+ *
  * @see docs/03-compiler-development/INTERMEDIATE_AST_REFACTORING_PRD.md
  */
+
+// ============================================================================
+// Variable Origin Tracking (January 2025)
+// ============================================================================
+
+/**
+ * Variable origin enum for distinguishing between different variable sources
+ *
+ * WHY: To solve false positive detection where legitimate variables like "g" in RGB(r,g,b)
+ *      are incorrectly treated as temp variables
+ *
+ * WHAT: Tracks where a variable came from in the compilation pipeline
+ *
+ * HOW: Set during ElixirASTBuilder phase, consulted during transformation and printing
+ */
+enum VarOrigin {
+    /** Variable introduced by a user pattern (e.g., r, g, b in RGB pattern) */
+    PatternBinder;
+
+    /** Temporary variable generated for TEnumParameter extraction (g, g1, g2) */
+    ExtractionTemp;
+
+    /** Other compiler-synthesized locals */
+    Synthesized;
+
+    /** User-defined variable from source code */
+    UserDefined;
+}
 
 // ============================================================================
 // Core AST Definition
@@ -631,7 +659,13 @@ typedef ElixirMetadata = {
     ?varIdToName: Map<Int, String>, // Clause-local variable renaming mappings
     ?requiresIdiomaticTransform: Bool,  // Enum needs idiomatic compilation
     ?idiomaticEnumType: String,   // Name of the idiomatic enum type
-    
+
+    // Variable Origin Tracking (January 2025)
+    ?varOrigin: VarOrigin,         // Where this variable came from
+    ?varId: Int,                   // Unique Haxe TVar ID for identity tracking
+    ?tempToBinderMap: Map<Int, Int>, // Maps extraction temp var IDs to pattern binder IDs
+    ?isUnused: Bool,               // Whether this variable is actually used in the code
+
     // Phoenix/Framework Specific
     ?phoenixContext: PhoenixContext,  // LiveView, Router, etc.
     ?ectoContext: EctoContext,        // Schema, Query, etc.

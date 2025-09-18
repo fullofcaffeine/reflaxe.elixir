@@ -1,0 +1,2 @@
+defmodule User do
+end

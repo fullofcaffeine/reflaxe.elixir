@@ -37,9 +37,18 @@ class RouterBuildMacro {
      * Main build macro entry point - generates route functions from @:routes annotation
      */
     public static function generateRoutes(): Array<Field> {
+        #if debug_compilation_hang
+        Sys.println('[HANG DEBUG] 🎯 RouterBuildMacro.generateRoutes START');
+        var routerStartTime = haxe.Timer.stamp() * 1000;
+        #end
+
         var fields = Context.getBuildFields();
         var classType = Context.getLocalClass().get();
-        
+
+        #if debug_compilation_hang
+        Sys.println('[HANG DEBUG] Router class: ${classType.name}');
+        #end
+
         // Extract route definitions from @:routes annotation
         var routeDefinitions = extractRoutesAnnotation(classType);
         if (routeDefinitions == null || routeDefinitions.length == 0) {
@@ -55,12 +64,22 @@ class RouterBuildMacro {
         
         // Generate functions for each route definition
         for (routeDef in routeDefinitions) {
+            #if debug_compilation_hang
+            Sys.println('[HANG DEBUG] Generating route: ${routeDef.name} - ${routeDef.method} ${routeDef.path}');
+            #end
+
             var generatedFunction = createRouteFunction(routeDef, classType.pos);
             fields.push(generatedFunction);
             trace('RouterBuildMacro: Generated function ${routeDef.name} for route ${routeDef.method} ${routeDef.path}');
         }
         
         trace('RouterBuildMacro: Successfully generated ${routeDefinitions.length} route functions');
+
+        #if debug_compilation_hang
+        var elapsed = (haxe.Timer.stamp() * 1000) - routerStartTime;
+        Sys.println('[HANG DEBUG] ✅ RouterBuildMacro.generateRoutes END - Took ${elapsed}ms, Generated ${routeDefinitions.length} routes');
+        #end
+
         return fields;
     }
     
