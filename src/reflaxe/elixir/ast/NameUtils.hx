@@ -70,12 +70,27 @@ class NameUtils {
      */
     public static function toSafeElixirFunctionName(name: String): String {
         var snakeName = toSnakeCase(name);
-        
+
         // If it's a reserved keyword, prefix with underscore or suffix with _fn
         if (isElixirReserved(snakeName)) {
             return snakeName + "_fn";
         }
-        
+
+        return snakeName;
+    }
+
+    /**
+     * Convert name to safe Elixir parameter name, handling reserved keywords
+     * Parameters get underscore prefix to avoid conflicts
+     */
+    public static function toSafeElixirParameterName(name: String): String {
+        var snakeName = toSnakeCase(name);
+
+        // If it's a reserved keyword, prefix with underscore to make it safe
+        if (isElixirReserved(snakeName)) {
+            return "_" + snakeName;
+        }
+
         return snakeName;
     }
 }
