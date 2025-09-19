@@ -32,10 +32,10 @@ end)
   def starts_with(s, start) do
     length(s) >= length(start) and String.slice(s, 0, length(start)) == start
   end
-  def ends_with(s, end) do
-    elen = length(end_)
+  def ends_with(s, _end) do
+    elen = length(_end)
     slen = length(s)
-    slen >= elen and String.slice(s, (slen - elen), elen) == end_
+    slen >= elen and String.slice(s, (slen - elen), elen) == _end
   end
   def is_space(s, pos) do
     c = s.char_code_at(pos)
