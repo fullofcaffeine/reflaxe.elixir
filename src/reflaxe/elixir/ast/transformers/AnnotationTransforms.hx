@@ -1171,6 +1171,38 @@ class AnnotationTransforms {
         
         // Check the top-level node first for ExUnit modules
         switch(ast.def) {
+            case EModule(name, attributes, bodyExprs):
+                #if debug_annotation_transforms
+                trace('[XRay ExUnit Transform] Found EModule: $name');
+                if (ast.metadata != null) {
+                    trace('[XRay ExUnit Transform] Module metadata exists, isExunit=${ast.metadata.isExunit}');
+                } else {
+                    trace('[XRay ExUnit Transform] Module has NO metadata!');
+                }
+                #end
+
+                // Check if metadata indicates ExUnit module
+                var isExunit = ast.metadata?.isExunit == true;
+
+                if (isExunit) {
+                    #if debug_annotation_transforms
+                    trace('[XRay ExUnit Transform] ✓ Processing @:exunit module: $name');
+                    #end
+
+                    // Create a block from the body expressions
+                    var bodyBlock = makeAST(EBlock(bodyExprs));
+                    var exunitBody = buildExUnitBody(name, bodyBlock);
+
+                    // Convert EModule to EDefmodule for ExUnit output
+                    return makeASTWithMeta(
+                        EDefmodule(name, exunitBody),
+                        ast.metadata,
+                        ast.pos
+                    );
+                }
+                // Not an ExUnit module, return as-is
+                return ast;
+
             case EDefmodule(name, body):
                 #if debug_annotation_transforms
                 trace('[XRay ExUnit Transform] Found EDefmodule: $name');
@@ -1180,7 +1212,7 @@ class AnnotationTransforms {
                     trace('[XRay ExUnit Transform] Module has NO metadata!');
                 }
                 #end
-                
+
                 // Check if metadata indicates ExUnit module
                 var isExunit = ast.metadata?.isExunit == true;
                 

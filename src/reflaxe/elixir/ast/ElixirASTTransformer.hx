@@ -1063,27 +1063,15 @@ class ElixirASTTransformer {
                                                     var baseVar = if (v.charAt(0) == "_") v.substr(1) else v;
                                                     if (baseVar == "g" || (baseVar.length > 1 && baseVar.charAt(0) == "g" &&
                                                         baseVar.charAt(1) >= '0' && baseVar.charAt(1) <= '9')) {
-                                                        // M0.5: Check if there's a proper variable mapping
-                                                        // Only remove if we have metadata confirming the mapping
-                                                        var hasProperMapping = false;
-
-                                                        // Check if the parent ECase has an enum binding plan
-                                                        // Check both the current flag and the propagated metadata
-                                                        if (currentCaseHasBindingPlan ||
-                                                            (node.metadata != null && node.metadata.parentHasBindingPlan == true)) {
-                                                            // If we have an enum binding plan, the mappings are reliable
-                                                            hasProperMapping = true;
-                                                            trace('[RemoveRedundantEnumExtraction] Parent ECase has EnumBindingPlan, safe to remove assignment');
-                                                        }
-
-                                                        // Only remove if we're confident about the mapping
-                                                        if (hasProperMapping) {
-                                                            isRedundant = true;
-                                                            trace('[RemoveRedundantEnumExtraction] Removing redundant assignment: $varName = $v (EnumBindingPlan confirmed)');
-                                                        } else {
-                                                            // Keep the assignment as a safety net
-                                                            trace('[RemoveRedundantEnumExtraction] Keeping assignment: $varName = $v (no EnumBindingPlan, keeping as safety)');
-                                                        }
+                                                        // CRITICAL FIX: For idiomatic enums, the pattern uses canonical names directly
+                                                        // (like {:ok, value}) instead of temp vars (like {:ok, g}).
+                                                        // This means assignments like "value = g" are trying to assign from a
+                                                        // non-existent variable 'g'. These MUST be removed unconditionally.
+                                                        //
+                                                        // The issue: Haxe generates TVar(value, TLocal(g)) expecting 'g' to exist,
+                                                        // but idiomatic enum patterns bind directly to 'value', not 'g'.
+                                                        isRedundant = true;
+                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment from non-existent temp var: $varName = $v (idiomatic enum fix)');
                                                     }
 
                                                 case ECall(targetExpr, funcName, args) if (funcName == "elem" && args.length == 1):
