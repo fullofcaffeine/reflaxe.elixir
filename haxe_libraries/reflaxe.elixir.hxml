@@ -10,14 +10,14 @@
 # Note: Paths are relative to the project root (where haxe commands are run)
 
 # Include the compiler source code
-# Dual-path resolution: works from project root AND examples subdirectories
--cp src/
--cp ../../src/
+# Paths relative to the project root using SCOPE_DIR
+-cp ${SCOPE_DIR}/src/
+
+# Include staged .cross.hx files (must come before std/ for proper override)
+-cp ${SCOPE_DIR}/std/_std/
 
 # Include the Elixir standard library definitions
-# Dual-path resolution: works from project root AND examples subdirectories  
--cp std/
--cp ../../std/
+-cp ${SCOPE_DIR}/std/
 
 # Depend on the base Reflaxe framework
 -lib reflaxe

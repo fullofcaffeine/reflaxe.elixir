@@ -1,3 +1,4 @@
+using ArrayTools;
 import haxe.ds.Option;
 import haxe.ds.OptionTools;
 import haxe.functional.Result;

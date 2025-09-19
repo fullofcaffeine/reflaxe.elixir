@@ -467,6 +467,10 @@ The Makefile needs updating to properly handle the nested `snapshot/` structure 
 
 ## 🔍 Debugging Test Failures
 
+### Validation Testing Principle
+
+**IMPORTANT**: When validating compiler fixes, use existing snapshot tests rather than creating new temporary tests. This keeps the test suite clean and ensures you're testing against established expectations. If a fix works, the existing failing tests should pass without modification.
+
 ### Understanding Test Failure Types
 
 **Compilation Failed**: The Haxe code couldn't be transpiled to Elixir
