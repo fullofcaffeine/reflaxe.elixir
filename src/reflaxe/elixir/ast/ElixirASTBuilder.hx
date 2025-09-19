@@ -82,6 +82,7 @@ class ElixirASTBuilder {
     private static var totalNodesProcessed: Int = 0;
     private static var cycleDetectionMap: Map<String, Int> = new Map();
     private static var MAX_SAME_NODE_VISITS: Int = 100; // Detect cycles
+    private static var MAX_TOTAL_NODES: Int = 100000; // Hang detection threshold
 
     private static function logCompilationProgress(message: String) {
         var now = haxe.Timer.stamp() * 1000;
@@ -95,6 +96,25 @@ class ElixirASTBuilder {
         totalNodesProcessed++;
         if (recursionDepth > maxRecursionDepth) {
             maxRecursionDepth = recursionDepth;
+        }
+
+        // Check for compilation hang
+        if (totalNodesProcessed > MAX_TOTAL_NODES) {
+            Sys.println('[HANG DETECTED] Compilation exceeded ${MAX_TOTAL_NODES} nodes');
+            Sys.println('[HANG DETECTED] Last node type: ${nodeType}');
+            Sys.println('[HANG DETECTED] Expression details: ${exprDetails}');
+            Sys.println('[HANG DETECTED] Stack depth: ${recursionDepth}');
+            Sys.println('[HANG DETECTED] Current stack:');
+            for (i in 0...Math.floor(Math.min(10, currentNodeStack.length))) {
+                var idx = currentNodeStack.length - 1 - i;
+                Sys.println('  [${idx}] ${currentNodeStack[idx]}');
+            }
+            throw 'Compilation hang detected after processing ${totalNodesProcessed} nodes. Possible infinite loop in AST processing.';
+        }
+
+        // Log progress every 10k nodes
+        if (totalNodesProcessed % 10000 == 0) {
+            logCompilationProgress('Processing node ${totalNodesProcessed}: ${nodeType}');
         }
 
         var nodeKey = '${nodeType}@depth${recursionDepth}';
@@ -3150,17 +3170,34 @@ class ElixirASTBuilder {
                 var hasAnyEnumBindingPlan = false;
 
                 // Generate unique ID for this switch's enum binding plans
-                // Using position ensures uniqueness and helps with debugging
+                // Include multiple factors to avoid collisions when macros duplicate positions
                 var bindingPlanId = if (enumType != null) {
-                    var posStr = if (e.pos != null) {
-                        // Convert position to string format for ID
+                    var idComponents = [];
+
+                    // Add timestamp and random for uniqueness
+                    var timestamp = Date.now().getTime();
+                    var random = Std.random(10000);
+                    idComponents.push('${timestamp}_${random}');
+
+                    // Add position info if available
+                    if (e.pos != null) {
                         var posInfo = haxe.macro.PositionTools.toLocation(e.pos);
-                        'enum_binding_${posInfo.file}_${posInfo.range.start.character}';
-                    } else {
-                        // Fallback if no position available
-                        'enum_binding_${Date.now().getTime()}_${Std.random(10000)}';
+                        var fileStr = Std.string(posInfo.file); // Convert FsPath to string
+                        var fileParts = fileStr.split('/');
+                        var fileName = fileParts[fileParts.length - 1]; // Just filename, not full path
+                        idComponents.push('${fileName}_L${posInfo.range.start.line}');
                     }
-                    posStr;
+
+                    // Add target expression type for additional context
+                    var targetType = Type.enumConstructor(e.expr);
+                    idComponents.push(targetType);
+
+                    // Add enum type name if available
+                    if (enumType != null && enumType.name != null) {
+                        idComponents.push(enumType.name);
+                    }
+
+                    'enum_${idComponents.join("_")}';
                 } else {
                     null;
                 }
