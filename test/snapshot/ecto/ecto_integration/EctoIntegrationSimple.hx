@@ -1,3 +1,4 @@
+using ArrayTools;
 /**
  * Comprehensive Ecto Integration Test
  * Tests all core Ecto features in a single suite
