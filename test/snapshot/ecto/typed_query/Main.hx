@@ -1,5 +1,6 @@
 package;
 
+using ArrayTools;
 import ecto.TypedQuery;
 import ecto.TypedQuery.SortDirection;
 import ecto.Migration;

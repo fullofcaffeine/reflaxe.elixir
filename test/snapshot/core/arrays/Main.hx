@@ -1,5 +1,7 @@
 package;
 
+using ArrayTools;
+
 /**
  * Arrays test case
  * Tests array operations and list comprehensions

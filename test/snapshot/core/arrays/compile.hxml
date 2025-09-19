@@ -3,4 +3,4 @@
 -lib reflaxe
 -lib reflaxe.elixir
 --no-output
-Main
+-main Main

@@ -1,3 +1,4 @@
+using ArrayTools;
 typedef Error = {
     field: String,
     message: String

@@ -1,5 +1,6 @@
 package;
 
+using ArrayTools;
 /**
  * Map/Dictionary test case
  * Tests various map types and operations
