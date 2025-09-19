@@ -1077,7 +1077,8 @@ class ElixirCompiler extends GenericCompiler<
                     }
 
                     // Register the mapping for use in function body
-                    var finalName = reflaxe.elixir.ast.NameUtils.toSnakeCase(strippedName);
+                    // Use toSafeElixirParameterName to handle reserved keywords
+                    var finalName = reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(strippedName);
                     if (!context.tempVarRenameMap.exists(idKey)) {
                         context.tempVarRenameMap.set(idKey, finalName);
                     }
@@ -1113,13 +1114,15 @@ class ElixirCompiler extends GenericCompiler<
                         }
                     }
 
-                    var paramName = reflaxe.elixir.ast.NameUtils.toSnakeCase(strippedName);
+                    // Use toSafeElixirParameterName to handle reserved keywords
+                    var paramName = reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(strippedName);
                     params.push(PVar(paramName));
                 }
             }
 
             // Create function definition
-            var elixirName = reflaxe.elixir.ast.NameUtils.toSnakeCase(funcData.field.name);
+            // Use toSafeElixirFunctionName to handle reserved keywords
+            var elixirName = reflaxe.elixir.ast.NameUtils.toSafeElixirFunctionName(funcData.field.name);
             var funcDef = funcData.field.isPublic ?
                 EDef(elixirName, params, null, funcBody) :
                 EDefp(elixirName, params, null, funcBody);
