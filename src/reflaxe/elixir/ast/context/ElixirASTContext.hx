@@ -540,6 +540,35 @@ class ElixirASTContext {
      * @param plan The EnumBindingPlan to store
      */
     public function storeEnumBindingPlan(id: String, plan: EnumBindingPlan): Void {
+        #if debug_enum_binding_collision
+        // Check for collision - same ID being reused
+        if (enumBindingPlans.exists(id)) {
+            var existingPlan = enumBindingPlans.get(id);
+            trace('[COLLISION WARNING] Enum binding plan ID already exists: $id');
+            trace('[COLLISION WARNING] Existing plan has ${Lambda.count(existingPlan)} entries');
+            trace('[COLLISION WARNING] New plan has ${Lambda.count(plan)} entries');
+
+            // Check if plans are different
+            var isDifferent = false;
+            for (key in plan.keys()) {
+                if (!existingPlan.exists(key) ||
+                    existingPlan.get(key).finalName != plan.get(key).finalName) {
+                    isDifferent = true;
+                    break;
+                }
+            }
+            if (isDifferent) {
+                trace('[COLLISION ERROR] Plans are DIFFERENT - this will cause issues!');
+            }
+        }
+
+        // Log plan creation details
+        trace('[ElixirASTContext] Storing enum binding plan:');
+        trace('  ID: $id');
+        trace('  Plan size: ${Lambda.count(plan)}');
+        trace('  Container size after: ${Lambda.count(enumBindingPlans) + 1}');
+        #end
+
         enumBindingPlans.set(id, plan);
 
         #if debug_enum_extraction
@@ -554,7 +583,26 @@ class ElixirASTContext {
      * @param id The unique identifier of the binding plan
      * @return The stored EnumBindingPlan or null
      */
+    // Track lookup frequency to detect loops
+    private var lookupFrequency: Map<String, Int> = new Map();
+
     public function getEnumBindingPlan(id: String): Null<EnumBindingPlan> {
+        #if debug_enum_binding_collision
+        // Track lookup frequency
+        var frequency = lookupFrequency.get(id);
+        if (frequency == null) frequency = 0;
+        frequency++;
+        lookupFrequency.set(id, frequency);
+
+        // Warn about excessive lookups (possible loop)
+        if (frequency > 100) {
+            trace('[LOOKUP WARNING] Plan ID "$id" has been looked up $frequency times - possible loop!');
+        }
+        if (frequency % 50 == 0 && frequency > 0) {
+            trace('[LOOKUP INFO] Plan ID "$id" lookup count: $frequency');
+        }
+        #end
+
         var plan = enumBindingPlans.get(id);
 
         #if debug_enum_extraction
