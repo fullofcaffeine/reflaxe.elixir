@@ -1,5 +1,6 @@
 package;
 
+using ArrayTools;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
 

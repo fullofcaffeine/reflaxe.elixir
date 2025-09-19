@@ -1,5 +1,6 @@
 package;
 
+using ArrayTools;
 import js.lib.Promise;
 
 /**

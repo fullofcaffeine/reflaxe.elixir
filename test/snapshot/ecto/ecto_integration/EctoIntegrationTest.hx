@@ -1,3 +1,4 @@
+using ArrayTools;
 /**
  * Comprehensive Ecto Integration Tests
  * Tests all Ecto features: schemas, changesets, migrations, queries, and repository operations

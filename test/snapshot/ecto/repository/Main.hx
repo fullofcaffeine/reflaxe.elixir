@@ -1,5 +1,6 @@
 package;
 
+using ArrayTools;
 /**
  * Repository Pattern Integration test
  * Tests Repo.all/insert/update/delete compilation with type safety

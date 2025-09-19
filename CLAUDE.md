@@ -106,6 +106,53 @@ npx haxe build.hxml -D debug_ast_pipeline -D debug_ast_transformer
 npx haxe build.hxml -D debug_otp_child_spec -D debug_pattern_matching
 ```
 
+## ⚠️ CRITICAL: Target-Conditional Classpath Architecture (January 2025 Discovery)
+
+**FUNDAMENTAL ARCHITECTURAL ISSUE**: The current `.cross.hx` staging mechanism is flawed - it makes Elixir-specific code available in ALL compilation contexts (macro, interp, etc.) when it should ONLY be available when compiling to Elixir target.
+
+### The Problem
+When .cross.hx files containing `__elixir__()` calls are staged to the classpath:
+- They become available during macro evaluation (fails with "Unknown identifier: __elixir__")
+- They're available when compiling to other targets (JavaScript, etc.)
+- They override standard Haxe implementations in ALL contexts
+
+### The Correct Architecture (How Mature Reflaxe Compilers Work)
+**Target-conditional classpath injection** - Standard library overrides should ONLY be added to the classpath when actually compiling to the target platform:
+
+```haxe
+// In CompilerInit.hx or bootstrap macro
+public static function Start() {
+    // ONLY add Elixir-specific paths when target is Elixir
+    if (Context.definedValue("target.name") == "elixir") {
+        // Add staged .cross.hx files to classpath
+        Compiler.addClassPath("std/_std/");
+    }
+    // Macro context and other targets use regular Haxe stdlib
+}
+```
+
+### Why This Matters
+1. **Macro context uses regular Haxe stdlib** - No __elixir__() failures
+2. **Other targets unaffected** - JavaScript compilation doesn't see Elixir-specific code
+3. **Clean separation** - Target-specific code only available when needed
+4. **Matches hxcpp pattern** - This is how mature Reflaxe compilers handle it
+
+### Current Workaround (Temporary)
+The staging mechanism works but requires all contexts to handle Elixir-specific code:
+- `std/_std/` contains staged .cross.hx files
+- `haxe_libraries/reflaxe.elixir.hxml` includes them unconditionally
+- This causes "Unknown identifier: __elixir__" in macro context
+
+### Proper Implementation (TODO)
+1. Move classpath injection to bootstrap macro
+2. Check compilation target before adding paths
+3. Macro context uses original Haxe stdlib
+4. Only Elixir target compilation sees .cross.hx overrides
+
+**Reference Implementations**:
+- hxcpp: Conditionally adds C++ stdlib based on target
+- reflaxe.cs: Adds C# paths only during C# compilation
+
 ## 🎯 Phoenix Idiomatic Patterns with Type-Safe Augmentation
 
 **FUNDAMENTAL PRINCIPLE: Generate idiomatic Phoenix/Elixir code, augmented with Haxe's type safety.**

@@ -1,3 +1,4 @@
+using ArrayTools;
 /**
  * Test idiomatic array map compilation
  * 
