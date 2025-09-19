@@ -498,8 +498,19 @@ class ElixirASTBuilder {
             // Variables and Binding
             // ================================================================
             case TLocal(v):
+                var idKey = Std.string(v.id);
+
+                // First check tempVarRenameMap (as per Codex recommendation)
+                // This contains parameter name mappings set during TFunction processing
+                if (currentContext != null && currentContext.tempVarRenameMap.exists(idKey)) {
+                    var mappedName = currentContext.tempVarRenameMap.get(idKey);
+                    #if debug_variable_renaming
+                    trace('[RENAME DEBUG] TLocal: Using tempVarRenameMap for "${v.name}" (id: ${v.id}) -> "${mappedName}"');
+                    #end
+                    EVar(mappedName);
+                }
                 // M0.2 FIX: Check currentClauseContext for mapped names from EnumBindingPlan
-                if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
+                else if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
                     var mappedName = currentClauseContext.localToName.get(v.id);
 
                     #if debug_ast_pipeline
@@ -508,7 +519,7 @@ class ElixirASTBuilder {
 
                     EVar(mappedName);
                 } else {
-                    // Delegate to CoreExprBuilder for variable resolution
+                    // No mapping found, use CoreExprBuilder
                     var ast = CoreExprBuilder.buildLocal(v);
                     ast.def;
                 }
@@ -517,6 +528,15 @@ class ElixirASTBuilder {
                 #if debug_variable_usage
                 if (v.name == "value" || v.name == "msg" || v.name == "err") {
                     trace('[AST Builder] Processing TVar: ${v.name} (id: ${v.id})');
+                }
+                #end
+
+                // Don't register renamed variables here - we'll register them where we decide to emit clean names
+                // This avoids false positives from legitimate variable names like "this1"
+                #if debug_variable_renaming
+                var renamedPattern = ~/^(.+?)(\d+)$/;
+                if (renamedPattern.match(v.name)) {
+                    trace('[RENAME DEBUG] TVar: Found variable with numeric suffix "${v.name}" (id: ${v.id}) - will be handled at emission point');
                 }
                 #end
                 
@@ -3268,6 +3288,10 @@ class ElixirASTBuilder {
                 for (arg in f.args) {
                     var originalName = arg.v.name;
                     var idKey = Std.string(arg.v.id);
+
+                    #if debug_variable_renaming
+                    trace('[RENAME DEBUG] TFunction: Processing parameter "$originalName" (ID: ${arg.v.id})');
+                    #end
                     
                     // TODO: Restore when UsageDetector is available
                     // Use our enhanced usage detection instead of trusting Reflaxe metadata
@@ -3277,8 +3301,28 @@ class ElixirASTBuilder {
                         // false; // If no body, consider parameter as potentially used
                     // };
                     
+                    // Check if this parameter has a numeric suffix that indicates shadowing
+                    var strippedName = originalName;
+                    var hasNumericSuffix = false;
+                    var renamedPattern = ~/^(.+?)(\d+)$/;
+                    if (renamedPattern.match(originalName)) {
+                        var baseWithoutSuffix = renamedPattern.matched(1);
+                        var suffix = renamedPattern.matched(2);
+
+                        // Only strip suffix if it looks like a shadowing rename (suffix 2 or 3, common field names)
+                        var commonFieldNames = ["options", "columns", "name", "value", "type", "data", "fields", "items"];
+                        if ((suffix == "2" || suffix == "3") && commonFieldNames.indexOf(baseWithoutSuffix) >= 0) {
+                            strippedName = baseWithoutSuffix;
+                            hasNumericSuffix = true;
+
+                            #if debug_variable_renaming
+                            trace('[RENAME DEBUG] TFunction: Detected renamed parameter "$originalName" -> "$strippedName" (suffix: "$suffix", ID: ${arg.v.id})');
+                            #end
+                        }
+                    }
+
                     // Convert to snake_case for Elixir conventions
-                    var baseName = ElixirASTHelpers.toElixirVarName(originalName);
+                    var baseName = ElixirASTHelpers.toElixirVarName(strippedName);
                     
                     // Debug: Check if reserved keyword
                     #if debug_reserved_keywords
@@ -3302,6 +3346,10 @@ class ElixirASTBuilder {
                     // Register the mapping for TLocal references in the body
                     if (!currentContext.tempVarRenameMap.exists(idKey)) {
                         currentContext.tempVarRenameMap.set(idKey, finalName);
+
+                        #if debug_variable_renaming
+                        trace('[RENAME DEBUG] TFunction: Registered in tempVarRenameMap - ID: $idKey -> "$finalName" (original: "$originalName", stripped: "$strippedName")');
+                        #end
                     }
                     
                     // Track parameter mappings for collision detection
@@ -3309,6 +3357,17 @@ class ElixirASTBuilder {
                         paramRenaming.set(originalName, finalName);
                         #if debug_ast_pipeline
                         trace('[AST Builder] Function parameter will be renamed: $originalName -> $finalName');
+                        #end
+                    }
+
+                    // Register the renamed variable mapping if we stripped a suffix
+                    // This follows Codex's recommendation to register at the point of emission decision
+                    if (hasNumericSuffix && currentContext != null && currentContext.astContext != null) {
+                        // Register that this variable ID should use the clean name (without suffix)
+                        currentContext.astContext.registerRenamedVariable(arg.v.id, strippedName, originalName);
+
+                        #if debug_variable_renaming
+                        trace('[RENAME DEBUG] TFunction: Registered renamed mapping for id ${arg.v.id}: "$originalName" -> "$strippedName"');
                         #end
                     }
                     
@@ -3437,6 +3496,31 @@ class ElixirASTBuilder {
              * @return Either EKeywordList for supervisor options or EMap for regular objects
              */
             case TObjectDecl(fields):
+                #if debug_variable_renaming
+                trace('[RENAME DEBUG] TObjectDecl: Processing ${fields.length} fields');
+                for (field in fields) {
+                    trace('[RENAME DEBUG]   Field "${field.name}" expr type: ${Type.enumConstructor(field.expr.expr)}');
+                    switch(field.expr.expr) {
+                        case TLocal(v):
+                            trace('[RENAME DEBUG]     References TLocal: "${v.name}" (id: ${v.id})');
+                            if (~/^.+\d+$/.match(v.name)) {
+                                trace('[RENAME DEBUG]     WARNING: Field references renamed variable!');
+                            }
+                        case TField(obj, fa):
+                            trace('[RENAME DEBUG]     TField access');
+                            switch(obj.expr) {
+                                case TLocal(v):
+                                    trace('[RENAME DEBUG]       On object: "${v.name}" (id: ${v.id})');
+                                    if (~/^.+\d+$/.match(v.name)) {
+                                        trace('[RENAME DEBUG]       WARNING: Field access on renamed variable!');
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                }
+                #end
+
                 // First, check if this is a tuple pattern (anonymous structure with _1, _2, etc. fields)
                 var isTuplePattern = true;
                 var maxTupleIndex = 0;
@@ -3617,10 +3701,31 @@ class ElixirASTBuilder {
                             ifExpr;
                             
                         case _:
-                            // Standard field value compilation
-                            buildFromTypedExpr(field.expr, currentContext);
+                            // Check if the field expression references a renamed variable
+                            // When options2 is referenced, we need to use "options" instead
+                            var fieldValue = switch(field.expr.expr) {
+                                case TLocal(v):
+                                    var idKey = Std.string(v.id);
+
+                                    // Check tempVarRenameMap first (Codex's recommendation)
+                                    if (currentContext != null && currentContext.tempVarRenameMap.exists(idKey)) {
+                                        var mappedName = currentContext.tempVarRenameMap.get(idKey);
+                                        #if debug_variable_renaming
+                                        trace('[RENAME DEBUG] TObjectDecl: Field "${field.name}" using tempVarRenameMap: "${v.name}" -> "${mappedName}"');
+                                        #end
+                                        makeAST(EVar(mappedName));
+                                    } else {
+                                        // No mapping, compile normally
+                                        buildFromTypedExpr(field.expr, currentContext);
+                                    }
+                                default:
+                                    // Not a local variable reference
+                                    buildFromTypedExpr(field.expr, currentContext);
+                            };
+
+                            fieldValue;
                     };
-                    
+
                     pairs.push({key: key, value: fieldValue});
                     }
                     EMap(pairs);
