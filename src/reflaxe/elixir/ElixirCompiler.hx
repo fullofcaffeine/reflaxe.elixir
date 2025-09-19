@@ -1075,16 +1075,81 @@ class ElixirCompiler extends GenericCompiler<
                 EDef(elixirName, params, null, funcBody) :
                 EDefp(elixirName, params, null, funcBody);
 
+            // Check for test-related metadata on the function field
+            var funcMetadata: reflaxe.elixir.ast.ElixirAST.ElixirMetadata = {};
+
+            // Set ExUnit-related metadata flags directly
+            funcMetadata.isTest = funcData.field.meta.has(":test");
+            funcMetadata.isSetup = funcData.field.meta.has(":setup");
+            funcMetadata.isSetupAll = funcData.field.meta.has(":setupAll");
+            funcMetadata.isTeardown = funcData.field.meta.has(":teardown");
+            funcMetadata.isTeardownAll = funcData.field.meta.has(":teardownAll");
+            funcMetadata.isAsync = funcData.field.meta.has(":async");
+
+            #if debug_exunit
+            if (funcMetadata.isTest) {
+                trace('[ElixirCompiler] Set isTest=true for function ${funcData.field.name}');
+            }
+            #end
+
+            // Check for test tags
+            var tagMeta = funcData.field.meta.extract(":tag");
+            if (tagMeta != null && tagMeta.length > 0) {
+                var tags = [];
+                for (entry in tagMeta) {
+                    if (entry.params != null) {
+                        for (param in entry.params) {
+                            switch(param.expr) {
+                                case EConst(CString(tag)): tags.push(tag);
+                                default:
+                            }
+                        }
+                    }
+                }
+                if (tags.length > 0) {
+                    funcMetadata.testTags = tags;
+                }
+            }
+
+            // Check for describe block
+            var describeMeta = funcData.field.meta.extract(":describe");
+            if (describeMeta != null && describeMeta.length > 0) {
+                for (entry in describeMeta) {
+                    if (entry.params != null && entry.params.length > 0) {
+                        switch(entry.params[0].expr) {
+                            case EConst(CString(block)):
+                                funcMetadata.describeBlock = block;
+                            default:
+                        }
+                    }
+                }
+            }
+
             // Create AST node directly (makeAST is an inline function, not a static method)
             fields.push({
                 def: funcDef,
-                metadata: {},
+                metadata: funcMetadata,
                 pos: funcData.field.pos
             });
         }
 
         // Build the module using ModuleBuilder
         var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, fields);
+
+        // Set metadata for special module types to enable AST transformations
+        if (moduleAST != null) {
+            if (moduleAST.metadata == null) {
+                moduleAST.metadata = {};
+            }
+
+            // Enable ExUnit transformation pass for @:exunit modules
+            if (classType.meta.has(":exunit")) {
+                moduleAST.metadata.isExunit = true;
+                #if debug_exunit
+                trace('[ElixirCompiler] Set isExunit=true metadata for ${classType.name}');
+                #end
+            }
+        }
 
         #if debug_module_builder
         if (classType.name == "Main") {
