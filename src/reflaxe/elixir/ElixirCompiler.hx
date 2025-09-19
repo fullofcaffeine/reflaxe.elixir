@@ -1038,11 +1038,30 @@ class ElixirCompiler extends GenericCompiler<
             var expr = funcData.expr;
             if (expr == null) continue;
 
-            // Build the function body
+            // Set method context for instance methods
+            // Instance methods need a struct parameter in Elixir
+            var isStaticMethod = funcData.isStatic;
+            context.isInClassMethodContext = !isStaticMethod;
+
+            // For instance methods, set the receiver parameter name to "struct"
+            if (!isStaticMethod) {
+                context.currentReceiverParamName = "struct";
+            } else {
+                context.currentReceiverParamName = null;
+            }
+
+            // Build the function body with proper context
             var funcBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
 
             // Get function parameters from tfunc
             var params: Array<EPattern> = [];
+
+            // For instance methods, add struct as first parameter
+            if (!isStaticMethod) {
+                params.push(PVar("struct"));
+            }
+
+            // Add the regular function parameters
             if (funcData.tfunc != null) {
                 for (arg in funcData.tfunc.args) {
                     var paramName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);

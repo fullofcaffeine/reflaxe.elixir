@@ -1,221 +1,221 @@
 defmodule Bytes do
-  def get_string(pos, len, encoding) do
+  def get_string(struct, pos, len, encoding) do
     if (encoding == nil) do
       encoding = {:utf8}
     end
-    if (pos < 0 or len < 0 or pos + len > length(self)) do
+    if (pos < 0 or len < 0 or pos + len > length(struct)) do
       throw("Out of bounds")
     end
-    slice = :binary.part(self.b, pos, len)
+    slice = :binary.part(struct.b, pos, len)
     :unicode.characters_to_list(slice, :utf8)
   end
-  def to_string() do
-    :unicode.characters_to_list(self, :utf8)
+  def to_string(struct) do
+    :unicode.characters_to_list(struct, :utf8)
   end
-  def get(pos) do
-    if (pos < 0 or pos >= length(self)) do
+  def get(struct, pos) do
+    if (pos < 0 or pos >= length(struct)) do
       throw("Out of bounds")
     end
-    :binary.at(self.b, pos)
+    :binary.at(struct.b, pos)
   end
-  def set(pos, v) do
-    if (pos < 0 or pos >= length(self)) do
+  def set(struct, pos, v) do
+    if (pos < 0 or pos >= length(struct)) do
       throw("Out of bounds")
     end
     temp_var = nil
     if (pos > 0) do
-      temp_var = :binary.part(self.b, 0, pos)
+      temp_var = :binary.part(struct.b, 0, pos)
     else
       temp_var = <<>>
     end
     temp_var1 = nil
-    if (pos < (length(self) - 1)) do
-      temp_var1 = :binary.part(self.b, pos + 1, ((self.length - pos) - 1))
+    if (pos < (length(struct) - 1)) do
+      temp_var1 = :binary.part(struct.b, pos + 1, ((struct.length - pos) - 1))
     else
       temp_var1 = <<>>
     end
     b = <<temp_var::binary, v::8, temp_var1::binary>>
   end
-  def blit(pos, src, srcpos, len) do
-    if (pos < 0 or srcpos < 0 or len < 0 or pos + len > length(self) or srcpos + len > length(src)) do
+  def blit(struct, pos, src, srcpos, len) do
+    if (pos < 0 or srcpos < 0 or len < 0 or pos + len > length(struct) or srcpos + len > length(src)) do
       throw("Out of bounds")
     end
     src_slice = :binary.part(src.b, srcpos, len)
     temp_var = nil
     if (pos > 0) do
-      temp_var = :binary.part(self.b, 0, pos)
+      temp_var = :binary.part(struct.b, 0, pos)
     else
       temp_var = <<>>
     end
     temp_var1 = nil
-    if (pos + len < length(self)) do
-      temp_var1 = :binary.part(self.b, pos + len, ((self.length - pos) - len))
+    if (pos + len < length(struct)) do
+      temp_var1 = :binary.part(struct.b, pos + len, ((struct.length - pos) - len))
     else
       temp_var1 = <<>>
     end
     b = <<temp_var::binary, src_slice::binary, temp_var1::binary>>
   end
-  def sub(pos, len) do
-    if (pos < 0 or len < 0 or pos + len > length(self)) do
+  def sub(struct, pos, len) do
+    if (pos < 0 or len < 0 or pos + len > length(struct)) do
       throw("Out of bounds")
     end
-    sub_binary = :binary.part(self.b, pos, len)
+    sub_binary = :binary.part(struct.b, pos, len)
     Bytes.new(len, sub_binary)
   end
-  def fill(pos, len, value) do
-    if (pos < 0 or len < 0 or pos + len > length(self)) do
+  def fill(struct, pos, len, value) do
+    if (pos < 0 or len < 0 or pos + len > length(struct)) do
       throw("Out of bounds")
     end
     fill_bytes = :binary.copy(<<value::8>>, len)
     temp_var = nil
     if (pos > 0) do
-      temp_var = :binary.part(self.b, 0, pos)
+      temp_var = :binary.part(struct.b, 0, pos)
     else
       temp_var = <<>>
     end
     temp_var1 = nil
-    if (pos + len < length(self)) do
-      temp_var1 = :binary.part(self.b, pos + len, ((self.length - pos) - len))
+    if (pos + len < length(struct)) do
+      temp_var1 = :binary.part(struct.b, pos + len, ((struct.length - pos) - len))
     else
       temp_var1 = <<>>
     end
     b = <<temp_var::binary, fill_bytes::binary, temp_var1::binary>>
   end
-  def compare(other) do
-    case self.b do
+  def compare(struct, other) do
+    case struct.b do
             x when x < other.b -> -1
             x when x > other.b -> 1
             _ -> 0
         end
   end
-  def get_data() do
+  def get_data(struct) do
     struct.b
   end
-  def get_double(pos) do
-    if (pos < 0 or pos + 8 > length(self)) do
+  def get_double(struct, pos) do
+    if (pos < 0 or pos + 8 > length(struct)) do
       throw("Out of bounds")
     end
-    <<value::float-little-size(64)>> = :binary.part(self.b, pos, 8); value
+    <<value::float-little-size(64)>> = :binary.part(struct.b, pos, 8); value
   end
-  def set_double(pos, v) do
-    if (pos < 0 or pos + 8 > length(self)) do
+  def set_double(struct, pos, v) do
+    if (pos < 0 or pos + 8 > length(struct)) do
       throw("Out of bounds")
     end
     temp_var = nil
     if (pos > 0) do
-      temp_var = :binary.part(self.b, 0, pos)
+      temp_var = :binary.part(struct.b, 0, pos)
     else
       temp_var = <<>>
     end
     temp_var1 = nil
-    if (pos + 8 < length(self)) do
-      temp_var1 = :binary.part(self.b, pos + 8, ((self.length - pos) - 8))
+    if (pos + 8 < length(struct)) do
+      temp_var1 = :binary.part(struct.b, pos + 8, ((struct.length - pos) - 8))
     else
       temp_var1 = <<>>
     end
     b = <<temp_var::binary, v::float-little-size(64), temp_var1::binary>>
   end
-  def get_float(pos) do
-    if (pos < 0 or pos + 4 > length(self)) do
+  def get_float(struct, pos) do
+    if (pos < 0 or pos + 4 > length(struct)) do
       throw("Out of bounds")
     end
-    <<value::float-little-size(32)>> = :binary.part(self.b, pos, 4); value
+    <<value::float-little-size(32)>> = :binary.part(struct.b, pos, 4); value
   end
-  def set_float(pos, v) do
-    if (pos < 0 or pos + 4 > length(self)) do
+  def set_float(struct, pos, v) do
+    if (pos < 0 or pos + 4 > length(struct)) do
       throw("Out of bounds")
     end
     temp_var = nil
     if (pos > 0) do
-      temp_var = :binary.part(self.b, 0, pos)
+      temp_var = :binary.part(struct.b, 0, pos)
     else
       temp_var = <<>>
     end
     temp_var1 = nil
-    if (pos + 4 < length(self)) do
-      temp_var1 = :binary.part(self.b, pos + 4, ((self.length - pos) - 4))
+    if (pos + 4 < length(struct)) do
+      temp_var1 = :binary.part(struct.b, pos + 4, ((struct.length - pos) - 4))
     else
       temp_var1 = <<>>
     end
     b = <<temp_var::binary, v::float-little-size(32), temp_var1::binary>>
   end
-  def get_u_int16(pos) do
-    if (pos < 0 or pos + 2 > length(self)) do
+  def get_u_int16(struct, pos) do
+    if (pos < 0 or pos + 2 > length(struct)) do
       throw("Out of bounds")
     end
-    <<value::little-unsigned-size(16)>> = :binary.part(self.b, pos, 2); value
+    <<value::little-unsigned-size(16)>> = :binary.part(struct.b, pos, 2); value
   end
-  def set_u_int16(pos, v) do
-    if (pos < 0 or pos + 2 > length(self)) do
+  def set_u_int16(struct, pos, v) do
+    if (pos < 0 or pos + 2 > length(struct)) do
       throw("Out of bounds")
     end
     temp_var = nil
     if (pos > 0) do
-      temp_var = :binary.part(self.b, 0, pos)
+      temp_var = :binary.part(struct.b, 0, pos)
     else
       temp_var = <<>>
     end
     temp_var1 = nil
-    if (pos + 2 < length(self)) do
-      temp_var1 = :binary.part(self.b, pos + 2, ((self.length - pos) - 2))
+    if (pos + 2 < length(struct)) do
+      temp_var1 = :binary.part(struct.b, pos + 2, ((struct.length - pos) - 2))
     else
       temp_var1 = <<>>
     end
     b = <<temp_var::binary, v::little-unsigned-size(16), temp_var1::binary>>
   end
-  def get_int32(pos) do
-    if (pos < 0 or pos + 4 > length(self)) do
+  def get_int32(struct, pos) do
+    if (pos < 0 or pos + 4 > length(struct)) do
       throw("Out of bounds")
     end
-    <<value::little-signed-size(32)>> = :binary.part(self.b, pos, 4); value
+    <<value::little-signed-size(32)>> = :binary.part(struct.b, pos, 4); value
   end
-  def set_int32(pos, v) do
-    if (pos < 0 or pos + 4 > length(self)) do
+  def set_int32(struct, pos, v) do
+    if (pos < 0 or pos + 4 > length(struct)) do
       throw("Out of bounds")
     end
     temp_var = nil
     if (pos > 0) do
-      temp_var = :binary.part(self.b, 0, pos)
+      temp_var = :binary.part(struct.b, 0, pos)
     else
       temp_var = <<>>
     end
     temp_var1 = nil
-    if (pos + 4 < length(self)) do
-      temp_var1 = :binary.part(self.b, pos + 4, ((self.length - pos) - 4))
+    if (pos + 4 < length(struct)) do
+      temp_var1 = :binary.part(struct.b, pos + 4, ((struct.length - pos) - 4))
     else
       temp_var1 = <<>>
     end
     b = <<temp_var::binary, v::little-signed-size(32), temp_var1::binary>>
   end
-  def get_int64(pos) do
-    if (pos < 0 or pos + 8 > length(self)) do
+  def get_int64(struct, pos) do
+    if (pos < 0 or pos + 8 > length(struct)) do
       throw("Out of bounds")
     end
-    <<value::little-signed-size(64)>> = :binary.part(self.b, pos, 8); value
+    <<value::little-signed-size(64)>> = :binary.part(struct.b, pos, 8); value
   end
-  def set_int64(pos, v) do
-    if (pos < 0 or pos + 8 > length(self)) do
+  def set_int64(struct, pos, v) do
+    if (pos < 0 or pos + 8 > length(struct)) do
       throw("Out of bounds")
     end
     temp_var = nil
     if (pos > 0) do
-      temp_var = :binary.part(self.b, 0, pos)
+      temp_var = :binary.part(struct.b, 0, pos)
     else
       temp_var = <<>>
     end
     temp_var1 = nil
-    if (pos + 8 < length(self)) do
-      temp_var1 = :binary.part(self.b, pos + 8, ((self.length - pos) - 8))
+    if (pos + 8 < length(struct)) do
+      temp_var1 = :binary.part(struct.b, pos + 8, ((struct.length - pos) - 8))
     else
       temp_var1 = <<>>
     end
     b = <<temp_var::binary, v::little-signed-size(64), temp_var1::binary>>
   end
-  def read_string(pos, len) do
-    :unicode.characters_to_list(self, :utf8)
+  def read_string(struct, pos, len) do
+    :unicode.characters_to_list(struct, :utf8)
   end
-  def to_hex() do
-    Base.encode16(self.b, case: :lower)
+  def to_hex(struct) do
+    Base.encode16(struct.b, case: :lower)
   end
   def alloc(length) do
     Bytes.new(length2, (:binary.copy(<<0>>, length2)))
