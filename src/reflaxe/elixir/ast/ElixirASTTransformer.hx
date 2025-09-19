@@ -3055,15 +3055,78 @@ class ElixirASTTransformer {
     /**
      * Recursively transform AST nodes
      */
+    // Track visited nodes to detect cycles
+    private static var visitedNodes: Map<String, Int> = new Map();
+    private static var nodeVisitCounter: Int = 0;
+    private static var maxNodeVisits: Int = 10000;
+
+    // Helper to transform an array only if elements change
+    private static function transformArray(arr: Array<ElixirAST>, transformer: (ElixirAST) -> ElixirAST): {array: Array<ElixirAST>, changed: Bool} {
+        var changed = false;
+        var result = arr;
+
+        for (i in 0...arr.length) {
+            var original = arr[i];
+            var transformed = transformNode(original, transformer);
+            if (transformed != original) {
+                if (!changed) {
+                    // First change - copy the array
+                    result = arr.copy();
+                    changed = true;
+                }
+                result[i] = transformed;
+            }
+        }
+
+        return {array: result, changed: changed};
+    }
+
     public static function transformNode(ast: ElixirAST, transformer: (ElixirAST) -> ElixirAST): ElixirAST {
+        #if debug_transformer_hang
+        nodeVisitCounter++;
+
+        // Create a unique identifier for this node
+        var nodeId = Type.enumConstructor(ast.def) + "_" + Std.string(ast.pos);
+
+        // Track visit frequency
+        var visits = visitedNodes.get(nodeId);
+        if (visits == null) visits = 0;
+        visits++;
+        visitedNodes.set(nodeId, visits);
+
+        // Log breadcrumbs
+        if (nodeVisitCounter % 1000 == 0) {
+            trace('[TRANSFORMER BREADCRUMB] Node ${nodeVisitCounter}: ${Type.enumConstructor(ast.def)}');
+        }
+
+        // Detect excessive visits to same node (cycle)
+        if (visits > 100) {
+            trace('[CYCLE DETECTED] Node ${nodeId} visited ${visits} times!');
+            trace('[CYCLE DETECTED] AST def: ${ast.def}');
+            throw 'Infinite recursion detected in transformer: ${nodeId}';
+        }
+
+        // Overall safety limit
+        if (nodeVisitCounter > maxNodeVisits) {
+            trace('[TRANSFORMER HANG] Exceeded ${maxNodeVisits} node visits');
+            trace('[TRANSFORMER HANG] Last node: ${Type.enumConstructor(ast.def)}');
+            throw 'Transformer exceeded maximum node visit limit';
+        }
+        #end
+
         // First transform children
         var transformed = switch(ast.def) {
             case EModule(name, attributes, body):
-                makeASTWithMeta(
-                    EModule(name, attributes, body.map(e -> transformNode(e, transformer))),
-                    ast.metadata,
-                    ast.pos
-                );
+                var bodyResult = transformArray(body, transformer);
+                if (bodyResult.changed) {
+                    makeASTWithMeta(
+                        EModule(name, attributes, bodyResult.array),
+                        ast.metadata,
+                        ast.pos
+                    );
+                } else {
+                    ast;  // Return original if nothing changed
+                }
                 
             case EDef(name, args, guards, body):
                 makeASTWithMeta(
@@ -3084,11 +3147,16 @@ class ElixirASTTransformer {
                 );
                 
             case EBlock(expressions):
-                makeASTWithMeta(
-                    EBlock(expressions.map(e -> transformNode(e, transformer))),
-                    ast.metadata,
-                    ast.pos
-                );
+                var expResult = transformArray(expressions, transformer);
+                if (expResult.changed) {
+                    makeASTWithMeta(
+                        EBlock(expResult.array),
+                        ast.metadata,
+                        ast.pos
+                    );
+                } else {
+                    ast;  // Return original if nothing changed
+                }
                 
             case EIf(condition, thenBranch, elseBranch):
                 makeASTWithMeta(
@@ -3190,12 +3258,32 @@ class ElixirASTTransformer {
                 );
                 
             // Literals and simple nodes - no children to transform
+            // These have no children, so just return them as-is for the transformer to process
             default:
                 ast;
         };
-        
-        // Then apply the transformation to this node
-        return transformer(transformed);
+
+        // Apply the transformation to this node
+        var finalResult = transformer(transformed);
+
+        // CRITICAL FIX: Prevent infinite recursion
+        // Special handling for atoms which were causing infinite loops
+        switch(finalResult.def) {
+            case EAtom(_):
+                // Atoms are terminal nodes and should never be recursively transformed
+                // Just return them immediately to break any potential loops
+                return finalResult;
+            default:
+                // For other nodes, check if the transformation actually changed anything
+                // Use standard equality check
+                if (finalResult == transformed) {
+                    // If the same object was returned, no transformation occurred
+                    return finalResult;
+                }
+
+                // Otherwise return the transformed result
+                return finalResult;
+        }
     }
     
     /**
