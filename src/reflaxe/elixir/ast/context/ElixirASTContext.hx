@@ -67,6 +67,14 @@ class ElixirASTContext {
     public var patternVariableRegistry: Map<Int, String> = new Map();
 
     /**
+     * Renamed variable tracking: TVar.id -> {original, renamed}
+     * Tracks when Haxe renames variables to avoid shadowing (e.g., options → options2)
+     * This allows us to detect and handle field references that use original names
+     * while the variable has been renamed
+     */
+    public var renamedVariableMap: Map<Int, {original: String, renamed: String}> = new Map();
+
+    /**
      * Temp variable mappings: temp name -> actual name
      * Maps generated temps (g, g1) to meaningful names
      */
@@ -477,6 +485,48 @@ class ElixirASTContext {
         tempVariableMap.set(tempName, actualName);
     }
 
+    /**
+     * Register a renamed variable
+     * Called when Haxe renames a variable to avoid shadowing
+     * @param tvarId The variable ID
+     * @param originalName The original variable name (e.g., "options")
+     * @param renamedName The renamed variable name (e.g., "options2")
+     */
+    public function registerRenamedVariable(tvarId: Int, originalName: String, renamedName: String): Void {
+        renamedVariableMap.set(tvarId, {original: originalName, renamed: renamedName});
+        // Also update the global variable map to use the renamed name
+        globalVariableMap.set(tvarId, renamedName);
+
+        #if debug_variable_renaming
+        trace('[ElixirASTContext] Registered renamed variable: $originalName -> $renamedName (ID: $tvarId)');
+        #end
+    }
+
+    /**
+     * Get the renamed mapping for a variable
+     * @param tvarId The variable ID
+     * @return The mapping or null if not renamed
+     */
+    public function getRenamedMapping(tvarId: Int): Null<{original: String, renamed: String}> {
+        return renamedVariableMap.get(tvarId);
+    }
+
+    /**
+     * Check if a variable name is the original name of a renamed variable
+     * Used to detect field references that still use the original name
+     * @param name The field name to check
+     * @return The renamed variable ID if found, null otherwise
+     */
+    public function findRenamedVariableByOriginalName(name: String): Null<Int> {
+        for (id in renamedVariableMap.keys()) {
+            var mapping = renamedVariableMap.get(id);
+            if (mapping != null && mapping.original == name) {
+                return id;
+            }
+        }
+        return null;
+    }
+
     // ===== Clause Context Management =====
 
     /**
@@ -757,6 +807,7 @@ class ElixirASTContext {
         globalVariableMap.clear();
         patternVariableRegistry.clear();
         tempVariableMap.clear();
+        renamedVariableMap.clear();
         clauseContextStack = [];
         nodeMetadata.clear();
         testResults.clear();
@@ -856,6 +907,7 @@ class ElixirASTContext {
         globalVariableMap.clear();
         patternVariableRegistry.clear();
         tempVariableMap.clear();
+        renamedVariableMap.clear();
         clauseContextStack = [];
         nodeMetadata.clear();
         enumTypeCache.clear();
