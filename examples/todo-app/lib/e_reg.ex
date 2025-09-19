@@ -1,0 +1,2 @@
+defmodule EReg do
+end

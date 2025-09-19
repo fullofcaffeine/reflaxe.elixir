@@ -318,6 +318,20 @@ class ElixirASTBuilder {
         var exprType = Type.enumConstructor(expr.expr);
         var exprId = '${exprType}_${expr.pos}';
 
+        // Debug circular reference issue
+        if (exprType == "TParenthesis" || exprType == "TVar" || exprType == "TBinop") {
+            Sys.println('[HANG DEBUG] Processing ${exprType} at ${expr.pos}');
+            switch(expr.expr) {
+                case TVar(v, _):
+                    Sys.println('[HANG DEBUG]   TVar: ${v.name} (id: ${v.id})');
+                case TParenthesis(e):
+                    Sys.println('[HANG DEBUG]   TParenthesis wrapping: ${Type.enumConstructor(e.expr)}');
+                case TBinop(op, _, _):
+                    Sys.println('[HANG DEBUG]   TBinop operator: ${op}');
+                default:
+            }
+        }
+
         // Only detect and report cycles - don't interfere with compilation
         detectCycle(exprId);
         enterNode(exprType, exprId);
@@ -1038,224 +1052,43 @@ class ElixirASTBuilder {
             // Binary Operations
             // ================================================================
             case TBinop(op, e1, e2):
-                // Delegate to BinaryOpBuilder for all binary operation handling
-                var ast = BinaryOpBuilder.buildBinop(
-                    op, e1, e2,
-                    function(e) return buildFromTypedExpr(e, currentContext),
-                    function(e) return extractPattern(e),
-                    function(s) return toSnakeCase(s)
-                );
-                ast.def;
-                // Special handling for field != nil or field == nil comparisons
-                // These are checking for optional fields and need safe access
-                var isNilComparison = switch(op) {
-                    case OpEq | OpNotEq: 
-                        switch(e2.expr) {
-                            case TConst(TNull): true;
-                            default: false;
-                        }
-                    default: false;
+                // Handle assignments specially since they need pattern extraction
+                var result = switch(op) {
+                    case OpAssign:
+                        // Assignment needs pattern extraction for the left side
+                        var pattern = extractPattern(e1);
+                        var rightAST = buildFromTypedExpr(e2, currentContext);
+                        EMatch(pattern, rightAST);
+
+                    case OpAssignOp(innerOp):
+                        // Compound assignment: x += 1 becomes x = x + 1
+                        var pattern = extractPattern(e1);
+                        var leftAST = buildFromTypedExpr(e1, currentContext);
+                        var rightAST = buildFromTypedExpr(e2, currentContext);
+
+                        // Build the inner binary operation
+                        var innerBinop = BinaryOpBuilder.buildBinopFromAST(
+                            innerOp, leftAST, rightAST,
+                            e1, e2,
+                            function(s) return toSnakeCase(s)
+                        );
+                        EMatch(pattern, innerBinop);
+
+                    default:
+                        // Regular binary operations
+                        var leftAST = buildFromTypedExpr(e1, currentContext);
+                        var rightAST = buildFromTypedExpr(e2, currentContext);
+
+                        // Pass pre-built ASTs to BinaryOpBuilder
+                        var ast = BinaryOpBuilder.buildBinopFromAST(
+                            op, leftAST, rightAST,
+                            e1, e2,  // Keep original exprs for type checking
+                            function(s) return toSnakeCase(s)
+                        );
+                        ast.def;
                 };
-                
-                // Check if either operand is an inline expansion block
-                var left = switch(e1.expr) {
-                    case TBlock(el) if (ElixirASTPatterns.isInlineExpansionBlock(el)):
-                        makeAST(ElixirASTPatterns.transformInlineExpansion(el, function(e) return buildFromTypedExpr(e, currentContext), function(name) return toElixirVarName(name)));
-                    case TField(target, FAnon(cf)) if (isNilComparison):
-                        // For optional field checks, use Map.get for safe access
-                        var targetAst = buildFromTypedExpr(target, currentContext);
-                        var fieldName = toSnakeCase(cf.get().name);
-                        makeAST(ERemoteCall(
-                            makeAST(EVar("Map")),
-                            "get",
-                            [targetAst, makeAST(EAtom(fieldName))]
-                        ));
-                    case _:
-                        buildFromTypedExpr(e1, currentContext);
-                };
-                
-                var right = switch(e2.expr) {
-                    case TBlock(el) if (ElixirASTPatterns.isInlineExpansionBlock(el)):
-                        makeAST(ElixirASTPatterns.transformInlineExpansion(el, function(e) return buildFromTypedExpr(e, currentContext), function(name) return toElixirVarName(name)));
-                    case _:
-                        buildFromTypedExpr(e2, currentContext);
-                };
-                
-                switch(op) {
-                    /**
-                     * ADDITION AND STRING CONCATENATION OPERATOR
-                     * 
-                     * WHY: Elixir distinguishes between numeric addition and string concatenation
-                     * - Numbers use + operator for addition
-                     * - Strings use <> operator for concatenation
-                     * - Using + on strings causes compilation errors in Elixir
-                     * 
-                     * WHAT: Type-aware operator selection for addition operations
-                     * - Detect String types through type inspection
-                     * - Generate StringConcat for string operations
-                     * - Generate Add for numeric operations
-                     * 
-                     * HOW: Examine left operand type to determine operation
-                     * - TInst with name "String": String class instance
-                     * - TAbstract with name "String": String abstract type
-                     * - All other types: Numeric addition
-                     * 
-                     * EXAMPLES:
-                     * - Haxe: `"hello" + "world"` → Elixir: `"hello" <> "world"`
-                     * - Haxe: `5 + 3` → Elixir: `5 + 3`
-                     * - Haxe: `str1 + str2` → Elixir: `str1 <> str2` (if str1 is String)
-                     */
-                    case OpAdd: 
-                        // Detect string concatenation based on left operand type
-                        var isStringConcat = switch(e1.t) {
-                            case TInst(_.get() => {name: "String"}, _): true;      // String class instance
-                            case TAbstract(_.get() => {name: "String"}, _): true;  // String abstract type
-                            default: false;
-                        };
-                        
-                        // Generate appropriate binary operation
-                        if (isStringConcat) {
-                            // For string concatenation, ensure right operand is a string
-                            var rightStr = switch(e2.t) {
-                                case TInst(_.get() => {name: "String"}, _): right;
-                                case TAbstract(_.get() => {name: "String"}, _): right;
-                                default: 
-                                    // Non-string needs conversion
-                                    makeAST(ERemoteCall(makeAST(EVar("Kernel")), "to_string", [right]));
-                            };
-                            EBinary(StringConcat, left, rightStr);  // String concatenation: <>
-                        } else {
-                            EBinary(Add, left, right);           // Numeric addition: +
-                        }
-                    case OpSub: EBinary(Subtract, left, right);
-                    case OpMult: EBinary(Multiply, left, right);
-                    case OpDiv: EBinary(Divide, left, right);
-                    case OpMod: EBinary(Remainder, left, right);
-                    
-                    case OpEq: EBinary(Equal, left, right);
-                    case OpNotEq: EBinary(NotEqual, left, right);
-                    case OpLt: EBinary(Less, left, right);
-                    case OpLte: EBinary(LessEqual, left, right);
-                    case OpGt: EBinary(Greater, left, right);
-                    case OpGte: EBinary(GreaterEqual, left, right);
-                    
-                    case OpBoolAnd: EBinary(AndAlso, left, right);
-                    case OpBoolOr: EBinary(OrElse, left, right);
-                    
-                    case OpAssign: EMatch(extractPattern(e1), right);
-                    
-                    /**
-                     * COMPOUND ASSIGNMENT OPERATOR HANDLING
-                     * 
-                     * WHY: Elixir strings are immutable, requiring special handling for string concatenation
-                     * - Numeric types use standard operators: +=, -=, *=, etc.
-                     * - String concatenation MUST use <> operator, not +
-                     * - Haxe's += on strings needs conversion to Elixir's <> operator
-                     * 
-                     * WHAT: Transform compound assignments (a += b) into expanded form (a = a op b)
-                     * - Detect when the target variable is a String type
-                     * - Use StringConcat operator for string concatenation
-                     * - Use standard arithmetic operators for numeric types
-                     * 
-                     * HOW: Type-based operator selection
-                     * 1. Check if operator is OpAdd (potential string concatenation)
-                     * 2. Examine the type of the left-hand expression
-                     * 3. Select StringConcat for String types, Add for numeric types
-                     * 4. Generate EMatch with expanded binary operation
-                     * 
-                     * EXAMPLES:
-                     * - Haxe: `result += "\\n"` → Elixir: `result = result <> "\\n"`
-                     * - Haxe: `count += 1` → Elixir: `count = count + 1`
-                     * - Haxe: `buffer += content` → Elixir: `buffer = buffer <> content` (if buffer is String)
-                     * 
-                     * EDGE CASES:
-                     * - Dynamic types: Falls back to Add operator (may cause runtime errors)
-                     * - Mixed types: Relies on Haxe's type checking for correctness
-                     * - Null strings: Handled by Elixir's <> operator semantics
-                     */
-                    case OpAssignOp(op2): 
-                        // Transform compound assignment: a += b becomes a = a + b
-                        // Special handling for string concatenation in Elixir
-                        var innerOp = if (op2 == OpAdd) {
-                            // Detect string concatenation based on left-hand expression type
-                            var isStringConcat = switch(e1.t) {
-                                case TInst(_.get() => {name: "String"}, _): true;      // String class instance
-                                case TAbstract(_.get() => {name: "String"}, _): true;  // String abstract type
-                                default: false;
-                            };
-                            // Select appropriate operator: <> for strings, + for numbers
-                            isStringConcat ? StringConcat : Add;
-                        } else {
-                            // Non-addition operators: -, *, /, %, &, |, ^, <<, >>
-                            convertAssignOp(op2);
-                        }
-                        // Generate assignment with expanded binary operation
-                        EMatch(extractPattern(e1), makeAST(EBinary(innerOp, left, right)));
-                    
-                    case OpAnd: EBinary(BitwiseAnd, left, right);
-                    case OpOr: EBinary(BitwiseOr, left, right);
-                    case OpXor: EBinary(BitwiseXor, left, right);
-                    case OpShl: EBinary(ShiftLeft, left, right);
-                    case OpShr: EBinary(ShiftRight, left, right);
-                    case OpUShr: EBinary(ShiftRight, left, right); // No unsigned in Elixir
-                    
-                    case OpInterval: 
-                        // Haxe's ... is exclusive (0...3 means 0,1,2)
-                        // We have two options:
-                        // 1. Use exclusive range in Elixir: 0...3 (prints as "0...3")
-                        // 2. Use inclusive with end-1: 0..2 (prints as "0..2")
-                        // Going with option 2 to match expected test output
-                        ERange(left, makeAST(EBinary(Subtract, right, makeAST(EInteger(1)))), false);
-                    case OpArrow: EFn([{
-                        args: [PVar("_arrow")], // Placeholder, will be transformed
-                        body: right
-                    }]);
-                    case OpIn: EBinary(In, left, right);
-                    case OpNullCoal: 
-                        // a ?? b needs special handling to avoid double evaluation
-                        // For complex expressions, we need a temp variable in the condition
-                        // Generate: if (tmp = a) != nil, do: tmp, else: b
-                        
-                        // Check if left is a simple variable that can be referenced multiple times
-                        var isSimple = switch(left.def) {
-                            case EVar(_): true;
-                            case ENil: true;
-                            case EBoolean(_): true;
-                            case EInteger(_): true;
-                            case EString(_): true;
-                            case _: false;
-                        };
-                        
-                        if (isSimple) {
-                            // Simple expression can be used directly
-                            var ifExpr = makeAST(EIf(
-                                makeAST(EBinary(NotEqual, left, makeAST(ENil))),
-                                left,
-                                right
-                            ));
-                            // Mark as inline for null coalescing
-                            if (ifExpr.metadata == null) ifExpr.metadata = {};
-                            ifExpr.metadata.keepInlineInAssignment = true;
-                            ifExpr.def;
-                        } else {
-                            // Complex expression needs temp variable to avoid double evaluation
-                            // Generate: if (tmp = expr) != nil, do: tmp, else: default
-                            var tmpVar = makeAST(EVar("tmp"));
-                            var assignment = makeAST(EMatch(PVar("tmp"), left));
-                            
-                            // Mark this if expression to stay inline when assigned
-                            var ifExpr = makeAST(EIf(
-                                makeAST(EBinary(NotEqual, assignment, makeAST(ENil))),
-                                tmpVar,
-                                right
-                            ));
-                            // Set metadata to indicate this should stay inline
-                            if (ifExpr.metadata == null) ifExpr.metadata = {};
-                            ifExpr.metadata.keepInlineInAssignment = true;
-                            ifExpr.def;
-                        }
-                }
-                
+                result;
+
             // ================================================================
             // Unary Operations
             // ================================================================

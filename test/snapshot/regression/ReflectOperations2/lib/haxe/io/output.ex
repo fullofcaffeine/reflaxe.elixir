@@ -6,7 +6,7 @@ defmodule Output do
     nil
   end
   def write_bytes(b, pos, len) do
-    if (pos < 0 || len < 0 || pos + len > length(b)) do
+    if (pos < 0 or len < 0 or pos + len > length(b)) do
       throw("Invalid parameters")
     end
     k = len

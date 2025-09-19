@@ -1,0 +1,2 @@
+defmodule SafePubSubMacros do
+end

@@ -1,0 +1,2 @@
+defmodule IMap do
+end

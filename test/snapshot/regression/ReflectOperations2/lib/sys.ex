@@ -68,7 +68,7 @@ defmodule Sys do
     System.halt(code)
   end
   def command(cmd, args) do
-    if (args == nil || length(args) == 0) do
+    if (args == nil or length(args) == 0) do
       
                 case System.cmd("sh", ["-c", cmd]) do
                     {_, 0} -> 0
