@@ -995,14 +995,15 @@ class ElixirASTBuilder {
                                 var tempVarName = tempVar.name;
                                 // FIX: When patterns use canonical names, assignments from temp vars that don't exist
                                 // should be skipped entirely. The pattern already binds the correct variable.
-                                // Example: pattern {:ok, _value} already binds _value, so "value = g" is wrong (g doesn't exist)
+                                // Example: pattern {:ok, value} already binds value, so "value = g" is wrong (g doesn't exist)
                                 if (tempVarName == "g" || (tempVarName.length > 1 && tempVarName.charAt(0) == "g" &&
                                     tempVarName.charAt(1) >= '0' && tempVarName.charAt(1) <= '9')) {
-                                    // Check if this temp var actually exists in the pattern
-                                    // If not, skip the assignment entirely
+                                    // This is trying to assign from a temp var (g, g1, g2, etc.)
+                                    // For idiomatic enums, the pattern directly extracts to the real name
+                                    // so there is no temp var 'g' - skip this redundant assignment
                                     shouldSkipAssignment = true;
                                     #if debug_enum_extraction
-                                    trace('[TVar] Skipping assignment from non-existent temp var in case clause: $finalVarName = $tempVarName');
+                                    trace('[TVar] Skipping assignment from non-existent temp var in idiomatic enum case: $finalVarName = $tempVarName');
                                     #end
                                 }
                             case _:

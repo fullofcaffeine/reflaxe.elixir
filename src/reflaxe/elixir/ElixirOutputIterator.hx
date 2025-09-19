@@ -42,7 +42,12 @@ class ElixirOutputIterator {
      * Reference to the compiler containing compiled AST nodes
      */
     var compiler: ElixirCompiler;
-    
+
+    /**
+     * Compilation context for transformations
+     */
+    var context: reflaxe.elixir.CompilationContext;
+
     /**
      * Current position in the iteration
      */
@@ -63,6 +68,7 @@ class ElixirOutputIterator {
      */
     public function new(compiler: ElixirCompiler) {
         this.compiler = compiler;
+        this.context = compiler.createCompilationContext();
         index = 0;
         
         // Calculate total items (classes + enums + typedefs + abstracts)
@@ -141,7 +147,8 @@ class ElixirOutputIterator {
         // Apply transformation passes to the AST
         // The metadata from the outer AST node needs to be preserved
         // when passing to the transformer
-        final transformedAST = ElixirASTTransformer.transform(astData.data);
+        // Pass the context to ensure metadata is available to transformation passes
+        final transformedAST = ElixirASTTransformer.transform(astData.data, context);
         
         #if debug_output_iterator
         trace('[ElixirOutputIterator] Transformation complete');
