@@ -1,5 +1,6 @@
 package;
 
+using ArrayTools;
 /**
  * Test idiomatic Map transformations
  * 

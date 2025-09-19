@@ -1,5 +1,6 @@
 package;
 
+using ArrayTools;
 /**
  * Test Lambda standard library implementation
  * 

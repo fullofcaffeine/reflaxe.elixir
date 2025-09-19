@@ -1,3 +1,4 @@
+using ArrayTools;
 import haxe.validation.Email;
 import haxe.validation.UserId;
 import haxe.validation.PositiveInt;
