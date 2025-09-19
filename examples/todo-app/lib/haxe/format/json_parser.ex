@@ -1,2 +1,0 @@
-defmodule JsonParser do
-end

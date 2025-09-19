@@ -1,2 +1,0 @@
-defmodule NotVoid_Impl_ do
-end
