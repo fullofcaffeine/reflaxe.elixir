@@ -1050,6 +1050,40 @@ class ElixirCompiler extends GenericCompiler<
                 context.currentReceiverParamName = null;
             }
 
+            // Populate tempVarRenameMap for function parameters BEFORE building the body
+            // This fixes the issue where parameters with numeric suffixes (like options2)
+            // aren't mapped correctly in the function body
+            if (funcData.tfunc != null) {
+                for (arg in funcData.tfunc.args) {
+                    var originalName = arg.v.name;
+                    var idKey = Std.string(arg.v.id);
+
+                    // Check if parameter has numeric suffix that indicates shadowing
+                    var strippedName = originalName;
+                    var renamedPattern = ~/^(.+?)(\d+)$/;
+                    if (renamedPattern.match(originalName)) {
+                        var baseWithoutSuffix = renamedPattern.matched(1);
+                        var suffix = renamedPattern.matched(2);
+
+                        // Only strip suffix for common field names
+                        var commonFieldNames = ["options", "columns", "name", "value", "type", "data", "fields", "items"];
+                        if ((suffix == "2" || suffix == "3") && commonFieldNames.indexOf(baseWithoutSuffix) >= 0) {
+                            strippedName = baseWithoutSuffix;
+
+                            #if debug_variable_renaming
+                            trace('[ElixirCompiler] Registering renamed parameter mapping: $originalName (id: ${arg.v.id}) -> $strippedName');
+                            #end
+                        }
+                    }
+
+                    // Register the mapping for use in function body
+                    var finalName = reflaxe.elixir.ast.NameUtils.toSnakeCase(strippedName);
+                    if (!context.tempVarRenameMap.exists(idKey)) {
+                        context.tempVarRenameMap.set(idKey, finalName);
+                    }
+                }
+            }
+
             // Build the function body with proper context
             var funcBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
 
@@ -1064,7 +1098,22 @@ class ElixirCompiler extends GenericCompiler<
             // Add the regular function parameters
             if (funcData.tfunc != null) {
                 for (arg in funcData.tfunc.args) {
-                    var paramName = reflaxe.elixir.ast.NameUtils.toSnakeCase(arg.v.name);
+                    var originalName = arg.v.name;
+                    var strippedName = originalName;
+
+                    // Apply same stripping logic as above for consistency
+                    var renamedPattern = ~/^(.+?)(\d+)$/;
+                    if (renamedPattern.match(originalName)) {
+                        var baseWithoutSuffix = renamedPattern.matched(1);
+                        var suffix = renamedPattern.matched(2);
+
+                        var commonFieldNames = ["options", "columns", "name", "value", "type", "data", "fields", "items"];
+                        if ((suffix == "2" || suffix == "3") && commonFieldNames.indexOf(baseWithoutSuffix) >= 0) {
+                            strippedName = baseWithoutSuffix;
+                        }
+                    }
+
+                    var paramName = reflaxe.elixir.ast.NameUtils.toSnakeCase(strippedName);
                     params.push(PVar(paramName));
                 }
             }
