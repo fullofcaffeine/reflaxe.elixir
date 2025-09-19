@@ -79,11 +79,11 @@ end)
     else
       if (c < 0) do
         result = self.remove_loop(k, node.left)
-        if (result != nil && result.found), do: %{:node => struct.balance(result.node, node.key, node.value, node.right), :found => true}
+        if (result != nil and result.found), do: %{:node => struct.balance(result.node, node.key, node.value, node.right), :found => true}
         %{:node => node, :found => false}
       else
         result = self.remove_loop(k, node.right)
-        if (result != nil && result.found), do: %{:node => struct.balance(node.left, node.key, node.value, result.node), :found => true}
+        if (result != nil and result.found), do: %{:node => struct.balance(node.left, node.key, node.value, result.node), :found => true}
         %{:node => node, :found => false}
       end
     end

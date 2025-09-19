@@ -6,7 +6,7 @@ defmodule EnumValueMap do
     p2 = Type.enum_parameters(k2)
     ld = (length(p1) - length(p2))
     if (ld != 0), do: ld
-    if (length(p1) == 0 && length(p2) == 0), do: 0
+    if (length(p1) == 0 and length(p2) == 0), do: 0
     struct.compare_args(p1, p2)
   end
   defp compare_args(a1, a2) do
@@ -25,7 +25,7 @@ end)
     0
   end
   defp compare_arg(v1, v2) do
-    if (is_tuple(v1) and is_atom(elem(v1, 0)) && is_tuple(v2) and is_atom(elem(v2, 0))), do: struct.compare(v1, v2)
+    if (is_tuple(v1) and is_atom(elem(v1, 0)) and is_tuple(v2) and is_atom(elem(v2, 0))), do: struct.compare(v1, v2)
     cond do
       v1 < v2 ->
         -1

@@ -5,6 +5,8 @@ package reflaxe.elixir.ast.builders;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
+import reflaxe.elixir.ast.ElixirAST.EBinaryOp;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 
@@ -43,7 +45,150 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 class BinaryOpBuilder {
 
     /**
-     * Build binary operation expression
+     * Build binary operation from pre-built AST nodes
+     *
+     * WHY: Avoids infinite recursion by accepting already-built operands. When modularizing
+     * recursive AST builders, the "driver" (ElixirASTBuilder) must own all recursion to prevent
+     * infinite loops. Specialized builders receive pre-transformed children.
+     *
+     * WHAT: Creates binary operation AST from pre-built left and right operands that have
+     * already been transformed from TypedExpr to ElixirAST by the main builder.
+     *
+     * HOW: Combines pre-built ASTs with the appropriate Elixir operator based on the
+     * binary operation type and operand types (e.g., string concatenation vs addition).
+     *
+     * @param op The binary operator (OpAdd, OpEq, OpAssign, etc.) from Haxe's AST
+     * @param leftAST The pre-built ElixirAST for the left operand (e.g., a variable, literal, or expression)
+     *                Example: For "x + 1", leftAST would be EVar("x") already built from TLocal
+     * @param rightAST The pre-built ElixirAST for the right operand
+     *                 Example: For "x + 1", rightAST would be EInteger(1) already built from TConst
+     * @param e1 The original TypedExpr for the left operand (kept for type checking)
+     *           Used to determine if we need string concatenation vs numeric addition
+     * @param e2 The original TypedExpr for the right operand (kept for type checking)
+     *           Used for type analysis without triggering recursion
+     * @param toSnakeCase Function to convert camelCase to snake_case for Elixir naming
+     * @param metadata Optional metadata to attach to the resulting AST node
+     * @return ElixirAST node representing the binary operation
+     *
+     * ## Example Usage:
+     * ```haxe
+     * // In ElixirASTBuilder when processing "x + 1":
+     * case TBinop(OpAdd, e1, e2):
+     *     var leftAST = buildFromTypedExpr(e1, context);   // Builds EVar("x")
+     *     var rightAST = buildFromTypedExpr(e2, context);  // Builds EInteger(1)
+     *     return BinaryOpBuilder.buildBinopFromAST(
+     *         OpAdd, leftAST, rightAST, e1, e2, toSnakeCase
+     *     );  // Returns EBinary(Add, EVar("x"), EInteger(1))
+     * ```
+     *
+     * ## Architecture Pattern:
+     * This follows the "driver + handlers" pattern where:
+     * - ElixirASTBuilder is the driver that controls recursion
+     * - BinaryOpBuilder is a handler that receives pre-processed inputs
+     * - No callbacks to buildExpr prevents re-entry and infinite loops
+     */
+    public static function buildBinopFromAST(op: Binop, leftAST: ElixirAST, rightAST: ElixirAST,
+                                            e1: TypedExpr, e2: TypedExpr,  // Original exprs for type checking
+                                            toSnakeCase: String -> String,
+                                            metadata: ElixirMetadata = null): ElixirAST {
+
+        var def = switch(op) {
+            case OpAdd:
+                // Detect string concatenation based on left operand type
+                var isStringConcat = isStringType(e1.t);
+
+                if (isStringConcat) {
+                    // For string concatenation, ensure right operand is a string
+                    var rightStr = if (isStringType(e2.t)) {
+                        rightAST;
+                    } else {
+                        // Convert non-string to string for concatenation
+                        makeAST(ElixirASTDef.ECall(rightAST, "to_string", []));
+                    };
+                    // String concatenation in Elixir uses <> operator
+                    ElixirASTDef.EBinary(EBinaryOp.StringConcat, leftAST, rightStr);
+                } else {
+                    // Regular addition
+                    ElixirASTDef.EBinary(EBinaryOp.Add, leftAST, rightAST);
+                }
+
+            // Assignment and compound assignments
+            case OpAssign:
+                // Assignments require pattern extraction from the left operand,
+                // which needs access to extractPattern() from ElixirASTBuilder.
+                // This is handled in ElixirASTBuilder's TBinop case to avoid
+                // circular dependencies and maintain clear architectural boundaries.
+                // This case should not be reached - ElixirASTBuilder handles OpAssign specially.
+                throw "OpAssign should be handled in ElixirASTBuilder";
+
+            case OpAssignOp(innerOp):
+                // Compound assignments (+=, -=, etc.) also require pattern extraction
+                // and are handled in ElixirASTBuilder's TBinop case.
+                // This case should not be reached - ElixirASTBuilder handles OpAssignOp specially.
+                throw "OpAssignOp should be handled in ElixirASTBuilder";
+
+            // Arithmetic operations
+            case OpMult:
+                ElixirASTDef.EBinary(EBinaryOp.Multiply, leftAST, rightAST);
+            case OpDiv:
+                ElixirASTDef.EBinary(EBinaryOp.Divide, leftAST, rightAST);
+            case OpSub:
+                ElixirASTDef.EBinary(EBinaryOp.Subtract, leftAST, rightAST);
+            case OpMod:
+                ElixirASTDef.EBinary(EBinaryOp.Remainder, leftAST, rightAST);
+
+            // Comparison operations
+            case OpEq:
+                ElixirASTDef.EBinary(EBinaryOp.Equal, leftAST, rightAST);
+            case OpNotEq:
+                ElixirASTDef.EBinary(EBinaryOp.NotEqual, leftAST, rightAST);
+            case OpGt:
+                ElixirASTDef.EBinary(EBinaryOp.Greater, leftAST, rightAST);
+            case OpGte:
+                ElixirASTDef.EBinary(EBinaryOp.GreaterEqual, leftAST, rightAST);
+            case OpLt:
+                ElixirASTDef.EBinary(EBinaryOp.Less, leftAST, rightAST);
+            case OpLte:
+                ElixirASTDef.EBinary(EBinaryOp.LessEqual, leftAST, rightAST);
+
+            // Logical operations
+            case OpBoolAnd:
+                ElixirASTDef.EBinary(EBinaryOp.And, leftAST, rightAST);
+            case OpBoolOr:
+                ElixirASTDef.EBinary(EBinaryOp.Or, leftAST, rightAST);
+
+            // Bitwise operations
+            case OpAnd:
+                ElixirASTDef.EBinary(EBinaryOp.BitwiseAnd, leftAST, rightAST);
+            case OpOr:
+                ElixirASTDef.EBinary(EBinaryOp.BitwiseOr, leftAST, rightAST);
+            case OpXor:
+                ElixirASTDef.EBinary(EBinaryOp.BitwiseXor, leftAST, rightAST);
+            case OpShl:
+                ElixirASTDef.EBinary(EBinaryOp.ShiftLeft, leftAST, rightAST);
+            case OpShr:
+                ElixirASTDef.EBinary(EBinaryOp.ShiftRight, leftAST, rightAST);
+            case OpUShr:
+                ElixirASTDef.EBinary(EBinaryOp.ShiftRight, leftAST, rightAST); // No unsigned shift in Elixir
+
+            // Special operations
+            case OpInterval:
+                ElixirASTDef.ERange(leftAST, rightAST, false);  // Inclusive range by default
+            case OpIn:
+                ElixirASTDef.EBinary(EBinaryOp.In, leftAST, rightAST);
+            case OpNullCoal:
+                // a ?? b becomes: if a == nil, do: b, else: a
+                var nilCheck = makeAST(ElixirASTDef.EBinary(EBinaryOp.Equal, leftAST, makeAST(ElixirASTDef.ENil)));
+                ElixirASTDef.EIf(nilCheck, rightAST, leftAST);
+            case OpArrow:
+                throw "Arrow operator not supported in Elixir context";
+        };
+
+        return metadata != null ? makeASTWithMeta(def, metadata) : makeAST(def);
+    }
+
+    /**
+     * Build binary operation expression (DEPRECATED - causes infinite recursion)
      *
      * WHY: Binary operations need type-aware handling
      * WHAT: Converts TBinop to appropriate ElixirAST
