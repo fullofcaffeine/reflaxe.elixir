@@ -1,9 +1,9 @@
 defmodule StringBuf do
-  defp get_length() do
-    joined = Enum.join(self.parts, "")
+  defp get_length(struct) do
+    joined = Enum.join(struct.parts, "")
     length(joined)
   end
-  def add(x) do
+  def add(struct, x) do
     temp_string = nil
     if (x == nil) do
       temp_string = "null"
@@ -12,10 +12,10 @@ defmodule StringBuf do
     end
     struct = %{struct | parts: struct.parts ++ [temp_string]}
   end
-  def add_char(c) do
+  def add_char(struct, c) do
     struct.parts ++ [String.from_char_code(c)]
   end
-  def add_sub(s, pos, len) do
+  def add_sub(struct, s, pos, len) do
     if (s == nil), do: nil
     temp_string = nil
     if (len == nil) do
@@ -25,7 +25,7 @@ defmodule StringBuf do
     end
     %{struct | parts: struct.parts ++ [temp_string]}
   end
-  def to_string() do
-    IO.iodata_to_binary(self.parts)
+  def to_string(struct) do
+    IO.iodata_to_binary(struct.parts)
   end
 end

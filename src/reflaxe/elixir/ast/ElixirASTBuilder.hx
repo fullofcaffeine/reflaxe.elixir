@@ -61,9 +61,7 @@ class ElixirASTBuilder {
     // All state has been moved to CompilationContext - no more static variables!
     // This eliminates static state contamination during parallel test execution.
 
-    // Deprecated static variables still referenced (will be removed when fully migrated):
-    public static var isInClassMethodContext: Bool = false;
-    public static var currentReceiverParamName: Null<String> = null;
+    // Module-level state (will be migrated to context in future)
     public static var currentModule: String = null;
     public static var currentModuleHasPresence: Bool = false;
     public static var currentClauseContext: Null<ClauseContext> = null;
@@ -363,10 +361,8 @@ class ElixirASTBuilder {
         // This is temporary during the migration phase
         // tempVarRenameMap is accessed via currentContext
         // underscorePrefixedVars is accessed via currentContext
-        // functionParameterIds is accessed via currentContext
-        isInClassMethodContext = context.isInClassMethodContext;
-        currentReceiverParamName = context.currentReceiverParamName;
-        // patternVariableRegistry is accessed via currentContext
+        // Context fields are accessed via currentContext
+        // Method context is now properly set by ElixirCompiler
         currentModule = context.currentModule;
         currentModuleHasPresence = context.currentModuleHasPresence;
         currentClauseContext = context.currentClauseContext;
@@ -481,6 +477,15 @@ class ElixirASTBuilder {
                             #end
                             // Regular string
                             EString(s);
+                        }
+                    case TThis:
+                        // Handle 'this' references - use the receiver parameter name from context
+                        // In instance methods, this refers to the first parameter (struct)
+                        if (currentContext.isInClassMethodContext && currentContext.currentReceiverParamName != null) {
+                            EVar(currentContext.currentReceiverParamName);
+                        } else {
+                            // Fallback to 'self' for non-instance contexts
+                            EVar("self");
                         }
                     default:
                         // Delegate to CoreExprBuilder for other constants
@@ -3318,8 +3323,8 @@ class ElixirASTBuilder {
                     
                     // Track the first parameter as the receiver for instance methods
                     // This will be used for TThis references
-                    if (isFirstParam && isInClassMethodContext) {
-                        currentReceiverParamName = finalName;
+                    if (isFirstParam && currentContext.isInClassMethodContext) {
+                        currentContext.currentReceiverParamName = finalName;
                         isFirstParam = false;
                     }
                     
