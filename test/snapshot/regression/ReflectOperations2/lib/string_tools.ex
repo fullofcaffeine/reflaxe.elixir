@@ -30,22 +30,22 @@ end)
     s = s |> StringTools.replace("&gt;", ">") |> StringTools.replace("&lt;", "<") |> StringTools.replace("&quot;", "\"") |> StringTools.replace("&#039;", "'") |> StringTools.replace("&amp;", "&")
   end
   def starts_with(s, start) do
-    length(s) >= length(start) && String.slice(s, 0, length(start)) == start
+    length(s) >= length(start) and String.slice(s, 0, length(start)) == start
   end
   def ends_with(s, end) do
     elen = length(end_)
     slen = length(s)
-    slen >= elen && String.slice(s, (slen - elen), elen) == end_
+    slen >= elen and String.slice(s, (slen - elen), elen) == end_
   end
   def is_space(s, pos) do
     c = s.char_code_at(pos)
-    c > 8 && c < 14 || c == 32
+    c > 8 and c < 14 or c == 32
   end
   def ltrim(s) do
     l = length(s)
     r = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r, :ok}, fn _, {acc_s, acc_l, acc_r, acc_state} ->
-  if (acc_r < acc_l && StringTools.is_space(acc_s, acc_r)) do
+  if (acc_r < acc_l and StringTools.is_space(acc_s, acc_r)) do
     acc_r = acc_r + 1
     {:cont, {acc_s, acc_l, acc_r, acc_state}}
   else
@@ -62,7 +62,7 @@ end)
     l = length(s)
     r = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, r, :ok}, fn _, {acc_s, acc_l, acc_r, acc_state} ->
-  if (acc_r < acc_l && StringTools.is_space(acc_s, ((acc_l - acc_r) - 1))) do
+  if (acc_r < acc_l and StringTools.is_space(acc_s, ((acc_l - acc_r) - 1))) do
     acc_r = acc_r + 1
     {:cont, {acc_s, acc_l, acc_r, acc_state}}
   else
@@ -114,10 +114,10 @@ end)
     s.char_code_at(index)
   end
   def is_high_surrogate(code) do
-    code >= 55296 && code <= 56319
+    code >= 55296 and code <= 56319
   end
   def is_low_surrogate(code) do
-    code >= 56320 && code <= 57343
+    code >= 56320 and code <= 57343
   end
   def quote_regexp_meta(s) do
     special_chars = ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"]

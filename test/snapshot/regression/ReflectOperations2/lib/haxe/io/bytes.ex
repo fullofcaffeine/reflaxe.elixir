@@ -3,7 +3,7 @@ defmodule Bytes do
     if (encoding == nil) do
       encoding = {:utf8}
     end
-    if (pos < 0 || len < 0 || pos + len > length(self)) do
+    if (pos < 0 or len < 0 or pos + len > length(self)) do
       throw("Out of bounds")
     end
     slice = :binary.part(self.b, pos, len)
@@ -13,13 +13,13 @@ defmodule Bytes do
     :unicode.characters_to_list(self, :utf8)
   end
   def get(pos) do
-    if (pos < 0 || pos >= length(self)) do
+    if (pos < 0 or pos >= length(self)) do
       throw("Out of bounds")
     end
     :binary.at(self.b, pos)
   end
   def set(pos, v) do
-    if (pos < 0 || pos >= length(self)) do
+    if (pos < 0 or pos >= length(self)) do
       throw("Out of bounds")
     end
     temp_var = nil
@@ -37,7 +37,7 @@ defmodule Bytes do
     b = <<temp_var::binary, v::8, temp_var1::binary>>
   end
   def blit(pos, src, srcpos, len) do
-    if (pos < 0 || srcpos < 0 || len < 0 || pos + len > length(self) || srcpos + len > length(src)) do
+    if (pos < 0 or srcpos < 0 or len < 0 or pos + len > length(self) or srcpos + len > length(src)) do
       throw("Out of bounds")
     end
     src_slice = :binary.part(src.b, srcpos, len)
@@ -56,14 +56,14 @@ defmodule Bytes do
     b = <<temp_var::binary, src_slice::binary, temp_var1::binary>>
   end
   def sub(pos, len) do
-    if (pos < 0 || len < 0 || pos + len > length(self)) do
+    if (pos < 0 or len < 0 or pos + len > length(self)) do
       throw("Out of bounds")
     end
     sub_binary = :binary.part(self.b, pos, len)
     Bytes.new(len, sub_binary)
   end
   def fill(pos, len, value) do
-    if (pos < 0 || len < 0 || pos + len > length(self)) do
+    if (pos < 0 or len < 0 or pos + len > length(self)) do
       throw("Out of bounds")
     end
     fill_bytes = :binary.copy(<<value::8>>, len)
@@ -92,13 +92,13 @@ defmodule Bytes do
     struct.b
   end
   def get_double(pos) do
-    if (pos < 0 || pos + 8 > length(self)) do
+    if (pos < 0 or pos + 8 > length(self)) do
       throw("Out of bounds")
     end
     <<value::float-little-size(64)>> = :binary.part(self.b, pos, 8); value
   end
   def set_double(pos, v) do
-    if (pos < 0 || pos + 8 > length(self)) do
+    if (pos < 0 or pos + 8 > length(self)) do
       throw("Out of bounds")
     end
     temp_var = nil
@@ -116,13 +116,13 @@ defmodule Bytes do
     b = <<temp_var::binary, v::float-little-size(64), temp_var1::binary>>
   end
   def get_float(pos) do
-    if (pos < 0 || pos + 4 > length(self)) do
+    if (pos < 0 or pos + 4 > length(self)) do
       throw("Out of bounds")
     end
     <<value::float-little-size(32)>> = :binary.part(self.b, pos, 4); value
   end
   def set_float(pos, v) do
-    if (pos < 0 || pos + 4 > length(self)) do
+    if (pos < 0 or pos + 4 > length(self)) do
       throw("Out of bounds")
     end
     temp_var = nil
@@ -140,13 +140,13 @@ defmodule Bytes do
     b = <<temp_var::binary, v::float-little-size(32), temp_var1::binary>>
   end
   def get_u_int16(pos) do
-    if (pos < 0 || pos + 2 > length(self)) do
+    if (pos < 0 or pos + 2 > length(self)) do
       throw("Out of bounds")
     end
     <<value::little-unsigned-size(16)>> = :binary.part(self.b, pos, 2); value
   end
   def set_u_int16(pos, v) do
-    if (pos < 0 || pos + 2 > length(self)) do
+    if (pos < 0 or pos + 2 > length(self)) do
       throw("Out of bounds")
     end
     temp_var = nil
@@ -164,13 +164,13 @@ defmodule Bytes do
     b = <<temp_var::binary, v::little-unsigned-size(16), temp_var1::binary>>
   end
   def get_int32(pos) do
-    if (pos < 0 || pos + 4 > length(self)) do
+    if (pos < 0 or pos + 4 > length(self)) do
       throw("Out of bounds")
     end
     <<value::little-signed-size(32)>> = :binary.part(self.b, pos, 4); value
   end
   def set_int32(pos, v) do
-    if (pos < 0 || pos + 4 > length(self)) do
+    if (pos < 0 or pos + 4 > length(self)) do
       throw("Out of bounds")
     end
     temp_var = nil
@@ -188,13 +188,13 @@ defmodule Bytes do
     b = <<temp_var::binary, v::little-signed-size(32), temp_var1::binary>>
   end
   def get_int64(pos) do
-    if (pos < 0 || pos + 8 > length(self)) do
+    if (pos < 0 or pos + 8 > length(self)) do
       throw("Out of bounds")
     end
     <<value::little-signed-size(64)>> = :binary.part(self.b, pos, 8); value
   end
   def set_int64(pos, v) do
-    if (pos < 0 || pos + 8 > length(self)) do
+    if (pos < 0 or pos + 8 > length(self)) do
       throw("Out of bounds")
     end
     temp_var = nil

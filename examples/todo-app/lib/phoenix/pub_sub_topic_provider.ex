@@ -1,0 +1,2 @@
+defmodule PubSubTopicProvider do
+end
