@@ -1,2 +1,0 @@
-defmodule FlatEnum_Impl_ do
-end

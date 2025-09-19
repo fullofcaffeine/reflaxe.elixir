@@ -97,3 +97,11 @@ examples/*/*.test.exs
 
 # Deprecated templates (no longer used)
 /templates/test/test-results.tmp
+
+# Generated files in project root
+*.ex
+!lib/*.ex
+_GeneratedFiles.json
+_any/
+_enum_value/
+haxe/
