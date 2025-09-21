@@ -149,13 +149,19 @@ class ElixirOutputIterator {
         // when passing to the transformer
         // Pass the context to ensure metadata is available to transformation passes
         final transformedAST = ElixirASTTransformer.transform(astData.data, context);
-        
+
         #if debug_output_iterator
         trace('[ElixirOutputIterator] Transformation complete');
         #end
-        
+
         // Convert AST to string
         var output = ElixirASTPrinter.print(transformedAST, 0);
+
+        // Debug: Check if we're getting empty output
+        if (output == null || output.length == 0) {
+            trace('[ElixirOutputIterator ERROR] Empty output for module!');
+            trace('[ElixirOutputIterator] AST def: ${transformedAST.def}');
+        }
         
         #if debug_output_iterator
         trace('[ElixirOutputIterator] Generated ${output.length} characters of output');
