@@ -10,6 +10,10 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 
+import reflaxe.preprocessors.BasePreprocessor;
+import reflaxe.data.ClassFuncData;
+import reflaxe.BaseCompiler;
+
 using reflaxe.helpers.ModuleTypeHelper;
 using reflaxe.helpers.NullableMetaAccessHelper;
 using reflaxe.helpers.NullHelper;
@@ -36,19 +40,24 @@ using reflaxe.helpers.TypedExprHelper;
  * ARCHITECTURAL ALIGNMENT: Follows Reflaxe's established preprocessor pattern
  *                         instead of inventing ad-hoc detection systems.
  */
-class RemoveOrphanedEnumParametersImpl {
+class RemoveOrphanedEnumParametersImpl extends BasePreprocessor {
     var exprList: Array<TypedExpr>;
-    
+
     /**
-     * Static entry point following Reflaxe preprocessor pattern
+     * Process function data according to BasePreprocessor interface
      */
-    public static function remove(list: Array<TypedExpr>): Array<TypedExpr> {
-        final processor = new RemoveOrphanedEnumParametersImpl(list);
-        return processor.removeOrphanedEnumParameters();
+    public function process(data: ClassFuncData, compiler: BaseCompiler): Void {
+        if (data.expr != null) {
+            exprList = [data.expr];
+            var result = removeOrphanedEnumParameters();
+            if (result.length > 0 && result[0] != data.expr) {
+                data.setExpr(result[0]);
+            }
+        }
     }
-    
-    public function new(list: Array<TypedExpr>) {
-        exprList = list;
+
+    public function new() {
+        exprList = [];
     }
     
     var foundOrphaned: Bool = false;

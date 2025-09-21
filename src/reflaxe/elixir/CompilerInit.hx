@@ -9,6 +9,8 @@ import reflaxe.elixir.ElixirCompiler;
 import reflaxe.preprocessors.ExpressionPreprocessor;
 import reflaxe.preprocessors.ExpressionPreprocessor.*;
 import reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.RemoveTemporaryVariablesMode;
+import reflaxe.elixir.preprocessors.PreserveSwitchReturnsImpl;
+import reflaxe.elixir.preprocessors.RemoveOrphanedEnumParametersImpl;
 
 /**
  * Initialization and registration of the Elixir compiler
@@ -43,7 +45,16 @@ class CompilerInit {
             // Configure Reflaxe 4.0 preprocessors for optimized code generation
             // These preprocessors clean up the AST before we compile it to Elixir
             expressionPreprocessors: [
-                SanitizeEverythingIsExpression({}),                      // Convert "everything is expression" to imperative
+                // CRITICAL: PreserveSwitchReturns MUST run FIRST before any other preprocessors
+                // This prevents Haxe's typer from simplifying switch-in-return expressions
+                // which would lose all pattern matching structure needed for Elixir
+                Custom(new PreserveSwitchReturnsImpl()),                 // Preserve switch expressions in return position
+
+                // DISABLED: EverythingIsExprSanitizer is for statement-oriented targets (C++, Java)
+                // Elixir is expression-oriented like Haxe - expressions can appear everywhere
+                // This sanitizer was causing bugs like losing switch bodies in return statements
+                // SanitizeEverythingIsExpression({}),  // NOT needed for Elixir
+
                 RemoveTemporaryVariables(RemoveTemporaryVariablesMode.AllTempVariables), // Remove only "temp" prefixed variables
                 PreventRepeatVariables({}),                              // Ensure unique variable names
                 RemoveSingleExpressionBlocks,                            // Simplify single-expression blocks
@@ -51,7 +62,8 @@ class CompilerInit {
                 RemoveUnnecessaryBlocks,                                 // Remove redundant blocks
                 RemoveReassignedVariableDeclarations,                    // Optimize variable declarations
                 RemoveLocalVariableAliases,                              // Remove unnecessary aliases
-                MarkUnusedVariables                                      // Mark unused variables for removal
+                MarkUnusedVariables,                                     // Mark unused variables for removal
+                Custom(new RemoveOrphanedEnumParametersImpl())          // Remove orphaned enum parameter extractions
             ]
         });
     }

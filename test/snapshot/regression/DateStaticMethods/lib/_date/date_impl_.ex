@@ -36,13 +36,7 @@ defmodule Date_Impl_ do
   def get_day(this1) do
     date = DateTime.to_date(this1)
     dow = Date.day_of_week(date)
-    temp_result = nil
-    if (dow == 7) do
-      temp_result = 0
-    else
-      temp_result = dow
-    end
-    temp_result
+    if (dow == 7), do: 0, else: dow
   end
   def get_hours(this1) do
     this1.hour
@@ -66,15 +60,9 @@ defmodule Date_Impl_ do
     this1.day
   end
   def get_utc_day(this1) do
-    temp_result = nil
     date = DateTime.to_date(this1)
     dow = Date.day_of_week(date)
-    if (dow == 7) do
-      temp_result = 0
-    else
-      temp_result = dow
-    end
-    temp_result
+    if (dow == 7), do: 0, else: dow
   end
   def get_utc_hours(this1) do
     this1.hour

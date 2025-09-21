@@ -58,19 +58,15 @@ end)
       TreeNode.new(nil, k, v, nil, -1)
     end
     c = struct.compare(k, node.key)
-    temp_result = nil
     if (c == 0) do
-      temp_result = TreeNode.new(node.left, k, v, node.right, node.get_height())
+      TreeNode.new(node.left, k, v, node.right, node.get_height())
     else
       if (c < 0) do
-        nl = struct.set_loop(k, v, node.left)
-        temp_result = struct.balance(nl, node.key, node.value, node.right)
+        struct.balance((struct.set_loop(k, v, node.left)), node.key, node.value, node.right)
       else
-        nr = struct.set_loop(k, v, node.right)
-        temp_result = struct.balance(node.left, node.key, node.value, nr)
+        struct.balance(node.left, node.key, node.value, (struct.set_loop(k, v, node.right)))
       end
     end
-    temp_result
   end
   defp remove_loop(struct, k, node) do
     if (node == nil), do: %{:node => nil, :found => false}
@@ -123,31 +119,23 @@ end)
   defp balance(struct, l, k, v, r) do
     hl = l.get_height()
     hr = r.get_height()
-    temp_result = nil
     if (hl > hr + 2) do
       if (l.left.get_height() >= l.right.get_height()) do
-        temp_result = TreeNode.new(l.left, l.key, l.value, TreeNode.new(l.right, k, v, r, -1), -1)
+        TreeNode.new(l.left, l.key, l.value, TreeNode.new(l.right, k, v, r, -1), -1)
       else
-        temp_result = TreeNode.new(TreeNode.new(l.left, l.key, l.value, l.right.left, -1), l.right.key, l.right.value, TreeNode.new(l.right.right, k, v, r, -1), -1)
+        TreeNode.new(TreeNode.new(l.left, l.key, l.value, l.right.left, -1), l.right.key, l.right.value, TreeNode.new(l.right.right, k, v, r, -1), -1)
       end
     else
       if (hr > hl + 2) do
         if (r.right.get_height() > r.left.get_height()) do
-          temp_result = TreeNode.new(TreeNode.new(l, k, v, r.left, -1), r.key, r.value, r.right, -1)
+          TreeNode.new(TreeNode.new(l, k, v, r.left, -1), r.key, r.value, r.right, -1)
         else
-          temp_result = TreeNode.new(TreeNode.new(l, k, v, r.left.left, -1), r.left.key, r.left.value, TreeNode.new(r.left.right, r.key, r.value, r.right, -1), -1)
+          TreeNode.new(TreeNode.new(l, k, v, r.left.left, -1), r.left.key, r.left.value, TreeNode.new(r.left.right, r.key, r.value, r.right, -1), -1)
         end
       else
-        temp_number = nil
-        if (hl > hr) do
-          temp_number = hl
-        else
-          temp_number = hr
-        end
-        temp_result = TreeNode.new(l, k, v, r, (temp_number) + 1)
+        TreeNode.new(l, k, v, r, (if (hl > hr), do: hl, else: hr) + 1)
       end
     end
-    temp_result
   end
   defp compare(struct, k1, k2) do
     cond do
@@ -160,13 +148,7 @@ end)
     end
   end
   def to_string(struct) do
-    temp_result = nil
-    if (struct.root == nil) do
-      temp_result = "[]"
-    else
-      temp_result = "[" <> struct.root.to_string() <> "]"
-    end
-    temp_result
+    if (struct.root == nil), do: "[]", else: "[" <> struct.root.to_string() <> "]"
   end
   def clear(struct) do
     root = nil

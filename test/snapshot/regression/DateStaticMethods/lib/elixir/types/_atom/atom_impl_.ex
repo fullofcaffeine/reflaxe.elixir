@@ -12,6 +12,7 @@ defmodule Atom_Impl_ do
     this1 != other
   end
   def from_string(s) do
-    (s)
+    this1 = s
+    this1
   end
 end

@@ -739,6 +739,26 @@ class ElixirASTBuilder {
                                 #end
                             }
 
+                        case TSwitch(switchExpr, cases, edef):
+                #if debug_ast_builder
+                trace('[TSwitch] Building switch expression');
+                trace('[TSwitch]   Switch has ${cases.length} cases');
+                trace('[TSwitch]   Has default: ${edef != null}');
+                #end
+                            // EverythingIsExprSanitizer lifts switch expressions to temp vars
+                            // We need to properly build the switch expression here
+                            varOrigin = UserDefined;
+
+                            #if debug_everythingisexpr
+                            trace('[TVar] Switch expression lifted by EverythingIsExprSanitizer detected');
+                            trace('[TVar] Variable: ${v.name} will hold switch result');
+                            trace('[TVar] Building proper case expression instead of losing it');
+                            #end
+
+                            // CRITICAL FIX: Build the switch expression properly
+                            // Without this, the switch body is lost and only "value" appears
+                            // This handles cases like unwrapOr where EverythingIsExprSanitizer lifts the switch
+
                         case _:
                             varOrigin = UserDefined;  // Default for other cases
                     }
@@ -844,6 +864,31 @@ class ElixirASTBuilder {
 
                 // Handle variable initialization
                 var matchNode = if (init != null) {
+                    #if debug_everythingisexpr
+                    trace('[TVar init] Processing init for ${v.name}, type: ${Type.enumConstructor(init.expr)}');
+
+                    // Check if this looks like a lifted switch (static methods returning switches often get this pattern)
+                    if (v.name.startsWith("_g") || v.name == "temp_result" || v.name.contains("result")) {
+                        trace('[TVar init] Possible lifted switch variable: ${v.name}');
+
+                        // Log what we actually have
+                        switch(init.expr) {
+                            case TLocal(localVar):
+                                trace('[TVar init]   Init is TLocal: ${localVar.name}');
+                                // This is the problem - EverythingIsExprSanitizer replaced the switch with just a local reference
+                            case TBlock(exprs):
+                                trace('[TVar init]   Init is TBlock with ${exprs.length} expressions');
+                                for (i in 0...exprs.length) {
+                                    trace('[TVar init]     Expr[$i]: ${Type.enumConstructor(exprs[i].expr)}');
+                                }
+                            case TSwitch(e, cases, edef):
+                                trace('[TVar init]   TSwitch detected with ${cases.length} cases, default: ${edef != null}');
+                            default:
+                                trace('[TVar init]   Other type: ${Type.enumConstructor(init.expr)}');
+                        }
+                    }
+                    #end
+
                     // Check if init is a TBlock with null coalescing pattern
                     var initValue = switch(init.expr) {
                         case TBlock([{expr: TVar(tmpVar, tmpInit)}, {expr: TBinop(OpNullCoal, {expr: TLocal(localVar)}, defaultExpr)}])
@@ -988,11 +1033,31 @@ class ElixirASTBuilder {
                                         buildFromTypedExpr(init, currentContext);
                                     }
                                     
+                                case TSwitch(_, _, _):
+                                    // Special handling for switch expressions lifted by EverythingIsExprSanitizer
+                                    // These need to be built as complete case expressions
+                                    #if debug_everythingisexpr
+                                    trace('[TVar init] Building TSwitch expression for ${v.name}');
+                                    #end
+
+                                    // Build the switch expression directly
+                                    var switchAST = buildFromTypedExpr(init, currentContext);
+
+                                    #if debug_everythingisexpr
+                                    if (switchAST != null) {
+                                        trace('[TVar init] Switch AST generated successfully');
+                                    } else {
+                                        trace('[TVar init] WARNING: Switch AST is null!');
+                                    }
+                                    #end
+
+                                    switchAST;
+
                                 default:
                                     // Regular init expression
                                     buildFromTypedExpr(init, currentContext);
                             };
-                            
+
                             initExpr;
                     };
                     
@@ -1016,11 +1081,24 @@ class ElixirASTBuilder {
                                 // FIX: When patterns use canonical names, assignments from temp vars that don't exist
                                 // should be skipped entirely. The pattern already binds the correct variable.
                                 // Example: pattern {:ok, value} already binds value, so "value = g" is wrong (g doesn't exist)
-                                if (tempVarName == "g" || (tempVarName.length > 1 && tempVarName.charAt(0) == "g" &&
-                                    tempVarName.charAt(1) >= '0' && tempVarName.charAt(1) <= '9')) {
-                                    // This is trying to assign from a temp var (g, g1, g2, etc.)
+                                // Handle both bare "g" patterns and underscore-prefixed "_g" patterns
+                                var isTempVar = false;
+                                if (tempVarName == "g" || tempVarName == "_g") {
+                                    isTempVar = true;
+                                } else if (tempVarName.length > 1) {
+                                    // Check for g1, g2, etc. OR _g1, _g2, etc.
+                                    if (tempVarName.charAt(0) == "g" && tempVarName.charAt(1) >= '0' && tempVarName.charAt(1) <= '9') {
+                                        isTempVar = true;
+                                    } else if (tempVarName.length > 2 && tempVarName.charAt(0) == "_" &&
+                                               tempVarName.charAt(1) == "g" && tempVarName.charAt(2) >= '0' && tempVarName.charAt(2) <= '9') {
+                                        isTempVar = true;
+                                    }
+                                }
+
+                                if (isTempVar) {
+                                    // This is trying to assign from a temp var (g, g1, g2, _g, _g1, _g2, etc.)
                                     // For idiomatic enums, the pattern directly extracts to the real name
-                                    // so there is no temp var 'g' - skip this redundant assignment
+                                    // so there is no temp var - skip this redundant assignment
                                     shouldSkipAssignment = true;
                                     #if debug_enum_extraction
                                     trace('[TVar] Skipping assignment from non-existent temp var in idiomatic enum case: $finalVarName = $tempVarName');
@@ -2925,8 +3003,42 @@ class ElixirASTBuilder {
                 }
                 
             case TReturn(e):
+                // In Elixir, everything is an expression, including returns
+                // We don't need a special return statement, just the expression itself
                 if (e != null) {
-                    buildFromTypedExpr(e, currentContext).def; // Return value is implicit in Elixir
+                    #if debug_ast_builder
+                    trace('[TReturn] Processing return expression');
+                    trace('[TReturn] Expression type: ${Type.enumConstructor(e.expr)}');
+
+                    // Check if it's a switch, potentially wrapped in metadata
+                    var innerExpr = e;
+                    switch(e.expr) {
+                        case TMeta(_, inner):
+                            trace('[TReturn] Found TMeta wrapper, checking inner expression');
+                            innerExpr = inner;
+                        case _:
+                    }
+
+                    switch(innerExpr.expr) {
+                        case TLocal(v):
+                            trace('[TReturn] Returning TLocal variable: ${v.name}');
+                        case TSwitch(_, cases, _):
+                            trace('[TReturn] Found TSwitch in return! Cases: ${cases.length}');
+                            trace('[TReturn] Building full case structure to preserve extraction');
+                        case _:
+                            trace('[TReturn] Other type: ${innerExpr.expr}');
+                    }
+                    #end
+
+                    // Build the expression - this will properly handle switches and preserve their structure
+                    var returnExpr = buildFromTypedExpr(e, currentContext);
+
+                    #if debug_ast_builder
+                    trace('[TReturn] Built return expression type: ${returnExpr.def}');
+                    #end
+
+                    // Return the def - the AST builder will have built the complete structure
+                    returnExpr.def;
                 } else {
                     ENil; // Explicit nil return
                 }
@@ -2941,6 +3053,11 @@ class ElixirASTBuilder {
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
+                #if debug_ast_builder
+                trace('[TSwitch] Building switch expression');
+                trace('[TSwitch]   Switch has ${cases.length} cases');
+                trace('[TSwitch]   Has default: ${edef != null}');
+                #end
                 #if debug_compilation_hang
                 Sys.println('[HANG DEBUG] 🎯 TSwitch START - ${cases.length} cases, hasDefault: ${edef != null}');
                 var switchStartTime = haxe.Timer.stamp() * 1000;
@@ -3236,7 +3353,10 @@ class ElixirASTBuilder {
                         makeAST(EVar(tempVarName))
                     ]);
                 } else {
-                    caseNode.def;
+                    #if debug_ast_builder
+                    trace('[TSwitch] Returning caseNode.def');
+                    #end
+                    caseNode.def;  // Return the def as expected by the switch
                 }
                 
             // ================================================================
@@ -3266,6 +3386,48 @@ class ElixirASTBuilder {
                 #if debug_ast_pipeline
                 for (arg in f.args) {
                     trace('[AST Builder] TFunction arg: ${arg.v.name} (id=${arg.v.id})');
+                }
+                #end
+
+                #if debug_everythingisexpr
+                // Special debug for ChangesetUtils methods that are failing
+                if (currentContext != null && currentModule != null && currentModule.contains("ChangesetUtils")) {
+                    trace('[TFunction] Processing function in module: ${currentModule}');
+                    if (f.expr != null) {
+                        trace('[TFunction] Function body type: ${Type.enumConstructor(f.expr.expr)}');
+
+                        // Check what the function body looks like
+                        switch(f.expr.expr) {
+                            case TBlock(exprs):
+                                trace('[TFunction] Function body is TBlock with ${exprs.length} expressions');
+                                for (i in 0...exprs.length) {
+                                    trace('[TFunction]   Expr[$i]: ${Type.enumConstructor(exprs[i].expr)}');
+
+                                    // Check if it's a TVar with problematic init
+                                    switch(exprs[i].expr) {
+                                        case TVar(v, init):
+                                            trace('[TFunction]     TVar ${v.name}');
+                                            if (init != null) {
+                                                trace('[TFunction]       Init type: ${Type.enumConstructor(init.expr)}');
+
+                                                // Check if it's TLocal(value)
+                                                switch(init.expr) {
+                                                    case TLocal(localVar):
+                                                        trace('[TFunction]       Init is TLocal: ${localVar.name}');
+                                                    default:
+                                                }
+                                            }
+                                        default:
+                                    }
+                                }
+                            case TReturn(expr):
+                                if (expr != null) {
+                                    trace('[TFunction] Direct return, expr type: ${Type.enumConstructor(expr.expr)}');
+                                }
+                            default:
+                                trace('[TFunction] Other body type');
+                        }
+                    }
                 }
                 #end
                 
@@ -3778,6 +3940,10 @@ class ElixirASTBuilder {
                 
             case TMeta(m, e):
                 // Metadata wrapping - preserve the expression
+                #if debug_ast_builder
+                trace('[TMeta] Processing metadata: ${m.name}');
+                trace('[TMeta] Inner expression type: ${Type.enumConstructor(e.expr)}');
+                #end
                 // Special handling for :mergeBlock which wraps null coalescing patterns
                 if (m.name == ":mergeBlock") {
                     // Check if this is a null coalescing pattern
@@ -3818,7 +3984,12 @@ class ElixirASTBuilder {
                         default:
                     }
                 }
-                buildFromTypedExpr(e, currentContext).def;
+                // Build the inner expression
+                var innerAST = buildFromTypedExpr(e, currentContext);
+                #if debug_ast_builder
+                trace('[TMeta] Returning innerAST.def');
+                #end
+                innerAST.def;  // Return the def as expected by the switch
                 
             // ================================================================
             // Special Cases
