@@ -157,13 +157,11 @@ end)
     {:halt, {acc_result, acc_g, acc_g1, acc_state}}
   end
 end)
-    temp_result = nil
     if negative do
-      temp_result = -result
+      -result
     else
-      temp_result = result
+      result
     end
-    temp_result
   end
   def parse_float(str) do
     Std.parse_float(str)

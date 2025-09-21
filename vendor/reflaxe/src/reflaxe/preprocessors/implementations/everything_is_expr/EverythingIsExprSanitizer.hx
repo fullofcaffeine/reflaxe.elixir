@@ -731,7 +731,7 @@ class EverythingIsExprSanitizer {
 		};
 
 		final eiec = new EverythingIsExprSanitizer(e, options, this, idExpr, nameGenerator);
-		
+
 		final initNull = options.setUninitializedVariablesToNull;
 
 		// Wrap `e.t` with `Null<T>` if initializing with `null`.

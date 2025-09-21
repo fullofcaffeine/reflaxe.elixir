@@ -1038,6 +1038,33 @@ class ElixirCompiler extends GenericCompiler<
             var expr = funcData.expr;
             if (expr == null) continue;
 
+            #if debug_ast_builder
+            trace('[ElixirCompiler] Compiling function: ${funcData.field.name}');
+            if (expr != null) {
+                trace('[ElixirCompiler]   Body type: ${Type.enumConstructor(expr.expr)}');
+                switch(expr.expr) {
+                    case TReturn(e) if (e != null):
+                        trace('[ElixirCompiler]   TReturn contains: ${Type.enumConstructor(e.expr)}');
+                        switch(e.expr) {
+                            case TSwitch(_, cases, _):
+                                trace('[ElixirCompiler]     Direct return of TSwitch with ${cases.length} cases');
+                            case TLocal(v):
+                                trace('[ElixirCompiler]     Return of TLocal: ${v.name}');
+                            default:
+                                trace('[ElixirCompiler]     Return of: ${Type.enumConstructor(e.expr)}');
+                        }
+                    case TBlock(exprs):
+                        trace('[ElixirCompiler]   TBlock with ${exprs.length} expressions');
+                        if (exprs.length > 0) {
+                            var last = exprs[exprs.length - 1];
+                            trace('[ElixirCompiler]     Last expr: ${Type.enumConstructor(last.expr)}');
+                        }
+                    default:
+                        trace('[ElixirCompiler]   Other: ${Type.enumConstructor(expr.expr)}');
+                }
+            }
+            #end
+
             // Set method context for instance methods
             // Instance methods need a struct parameter in Elixir
             var isStaticMethod = funcData.isStatic;
@@ -1086,7 +1113,67 @@ class ElixirCompiler extends GenericCompiler<
             }
 
             // Build the function body with proper context
-            var funcBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
+            // Special handling for direct switch returns that may have lost context
+            #if debug_switch_return
+            trace("[SwitchReturnDebug] Building function body for: " + funcData.field.name);
+            trace("[SwitchReturnDebug] expr.expr type: " + Type.enumConstructor(expr.expr));
+            #end
+
+            var funcBody = switch(expr.expr) {
+                case TReturn(e) if (e != null):
+                    #if debug_switch_return
+                    trace("[SwitchReturnDebug] Found TReturn with non-null expression");
+                    trace("[SwitchReturnDebug] Return expr type: " + (e != null ? Type.enumConstructor(e.expr) : "null"));
+                    #end
+
+                    // Check if it's a return of a switch (potentially wrapped in metadata)
+                    var innerExpr = e;
+                    switch(e.expr) {
+                        case TMeta(_, inner):
+                            #if debug_switch_return
+                            trace("[SwitchReturnDebug] Found TMeta wrapper, unwrapping");
+                            #end
+                            innerExpr = inner;
+                        case _:
+                    }
+
+                    #if debug_switch_return
+                    trace("[SwitchReturnDebug] Inner expr type: " + Type.enumConstructor(innerExpr.expr));
+                    #end
+
+                    switch(innerExpr.expr) {
+                        case TSwitch(_, _, _):
+                            #if debug_switch_return
+                            trace("[SwitchReturnDebug] *** Direct switch return detected! Building switch AST directly ***");
+                            #end
+                            // For direct switch returns, build the switch expression and wrap in parentheses
+                            // This ensures the full case structure is preserved
+                            var switchAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
+
+                            #if debug_switch_return
+                            trace("[SwitchReturnDebug] Built switch AST def: " + switchAST.def);
+                            #end
+
+                            // The switch itself is the body - no need for additional wrapping
+                            switchAST;
+                        case _:
+                            #if debug_switch_return
+                            trace("[SwitchReturnDebug] Not a switch, building normal return");
+                            #end
+                            // Normal return handling
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
+                    }
+                case _:
+                    #if debug_switch_return
+                    trace("[SwitchReturnDebug] Not a direct return, building normally");
+                    #end
+                    // Normal expression handling
+                    reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
+            };
+
+            #if debug_ast_builder
+            trace('[ElixirCompiler] Function ${funcData.field.name} body AST: ${funcBody.def}');
+            #end
 
             // Get function parameters from tfunc
             var params: Array<EPattern> = [];

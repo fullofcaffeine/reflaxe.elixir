@@ -787,8 +787,37 @@ class ElixirASTTransformer {
                     switch(exprs[0].def) {
                         case EMatch(PVar(tmp), bindExpr):
                             var second = exprs[1];
+
+                            // Debug output to see what we're processing
+                            #if debug_temp_binding
+                            trace('[InlineTempBindingInExpr] Processing block with temp var: ' + tmp);
+                            trace('[InlineTempBindingInExpr] bindExpr type: ' + Type.enumConstructor(bindExpr.def));
+                            #end
+
                             // Check if tmp is actually used in the second expression
                             if (containsVar(second, tmp)) {
+                                // Check if bindExpr is a case expression that needs preservation
+                                var shouldPreserve = switch(bindExpr.def) {
+                                    case ECase(_): true;
+                                    case EBlock(exprs) if (exprs.length > 0):
+                                        // Check if block ends with a case
+                                        switch(exprs[exprs.length - 1].def) {
+                                            case ECase(_): true;
+                                            default: false;
+                                        }
+                                    default: false;
+                                };
+
+                                if (shouldPreserve) {
+                                    #if debug_temp_binding
+                                    trace('[InlineTempBindingInExpr] Preserving case expression - not collapsing');
+                                    trace('[InlineTempBindingInExpr]   tmp      = ' + tmp);
+                                    trace('[InlineTempBindingInExpr]   bindExpr = case expression');
+                                    #end
+                                    // Return the block unchanged to preserve the case structure
+                                    return node; // Return unchanged to preserve pattern matching
+                                }
+
                                 var collapsed = replaceVar(second, tmp, bindExpr);
                                 #if debug_temp_binding
                                 trace('[InlineTempBindingInExpr] Collapsing temp binding in expression context');
@@ -1060,18 +1089,27 @@ class ElixirASTTransformer {
                                                 case EVar(v):
                                                     // Check if this is an assignment from a temp variable
                                                     // Handle both "g" and "_g" patterns
-                                                    var baseVar = if (v.charAt(0) == "_") v.substr(1) else v;
-                                                    if (baseVar == "g" || (baseVar.length > 1 && baseVar.charAt(0) == "g" &&
-                                                        baseVar.charAt(1) >= '0' && baseVar.charAt(1) <= '9')) {
-                                                        // CRITICAL FIX: For idiomatic enums, the pattern uses canonical names directly
-                                                        // (like {:ok, value}) instead of temp vars (like {:ok, g}).
-                                                        // This means assignments like "value = g" are trying to assign from a
-                                                        // non-existent variable 'g'. These MUST be removed unconditionally.
-                                                        //
-                                                        // The issue: Haxe generates TVar(value, TLocal(g)) expecting 'g' to exist,
-                                                        // but idiomatic enum patterns bind directly to 'value', not 'g'.
+                                                    // CRITICAL FIX: For idiomatic enums, the pattern uses the actual variable names
+                                                    // (like {:ok, value}) instead of temp vars (like {:ok, g}).
+                                                    // This means assignments like "id = g" are trying to assign from a
+                                                    // non-existent variable 'g'. These MUST be removed unconditionally.
+                                                    //
+                                                    // Check if RHS is a temp variable (g, g1, g2, _g, _g1, _g2)
+                                                    if (v == "g" || v == "_g") {
                                                         isRedundant = true;
-                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment from non-existent temp var: $varName = $v (idiomatic enum fix)');
+                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment from non-existent temp var: $varName = $v');
+                                                    } else if (v.length > 1) {
+                                                        // Check for numbered temp vars: g1, g2, etc.
+                                                        if (v.charAt(0) == "g" && v.charAt(1) >= '0' && v.charAt(1) <= '9') {
+                                                            isRedundant = true;
+                                                            trace('[RemoveRedundantEnumExtraction] Removing assignment from non-existent temp var: $varName = $v');
+                                                        }
+                                                        // Check for underscore-prefixed numbered temp vars: _g1, _g2, etc.
+                                                        else if (v.length > 2 && v.charAt(0) == "_" && v.charAt(1) == "g" &&
+                                                                 v.charAt(2) >= '0' && v.charAt(2) <= '9') {
+                                                            isRedundant = true;
+                                                            trace('[RemoveRedundantEnumExtraction] Removing assignment from non-existent temp var: $varName = $v');
+                                                        }
                                                     }
 
                                                 case ECall(targetExpr, funcName, args) if (funcName == "elem" && args.length == 1):
@@ -1113,11 +1151,11 @@ class ElixirASTTransformer {
 
                                 // Return filtered block or single expression if only one left
                                 if (filtered.length == 0) {
-                                    makeAST(ENil);
+                                    return makeAST(ENil);
                                 } else if (filtered.length == 1) {
-                                    filtered[0];
+                                    return filtered[0];
                                 } else {
-                                    makeAST(EBlock(filtered));
+                                    return makeAST(EBlock(filtered));
                                 }
 
                             default:
