@@ -33,6 +33,10 @@ import reflaxe.elixir.ast.ElixirAST;
  * @see PatternMatchBuilder for future home when modularized
  */
 class ClauseContext {
+    // Parent context for nested switches - allows lookups to fall through
+    // This supports embedded switch expressions inside larger switch cases
+    public var parent: Null<ClauseContext> = null;
+
     // Maps Haxe TVar.id to the canonical pattern variable name
     public var localToName: Map<Int, String> = new Map();
 
@@ -49,10 +53,68 @@ class ClauseContext {
     // Track which names have been used
     private var usedNames: Map<String, Bool> = new Map();
 
-    public function new(?locals: Map<String, Bool>, ?varMapping: Map<Int, String>, ?enumPlan: Map<Int, {finalName: String, isUsed: Bool}>) {
-        if (locals != null) this.localsInScope = locals;
+    // Pattern bindings that override normal variable resolution
+    // This maps TVar IDs to the actual names used in patterns (like "g" when pattern uses temp vars)
+    private var patternBindings: Map<Int, String> = new Map();
+
+    public function new(?parentContext: ClauseContext, ?varMapping: Map<Int, String>, ?enumPlan: Map<Int, {finalName: String, isUsed: Bool}>) {
+        this.parent = parentContext;
+
+        // If we have a parent, inherit its locals in scope to avoid name collisions
+        if (parentContext != null && parentContext.localsInScope != null) {
+            // Copy parent's locals to our scope
+            for (name => _ in parentContext.localsInScope) {
+                this.localsInScope.set(name, true);
+            }
+        }
+
         if (varMapping != null) this.localToName = varMapping;
         if (enumPlan != null) this.enumBindingPlan = enumPlan;
+    }
+
+    /**
+     * Push pattern bindings from the pattern builder
+     * These bindings override normal variable resolution in the case body
+     *
+     * @param bindings Array of (varId, binderName) pairs where varId is the TVar.id
+     *                 and binderName is what was actually emitted in the pattern (e.g., "g")
+     */
+    public function pushPatternBindings(bindings: Array<{varId: Int, binderName: String}>): Void {
+        for (binding in bindings) {
+            patternBindings.set(binding.varId, binding.binderName);
+            #if debug_clause_context
+            trace('[ClauseContext] Registered pattern binding: var ${binding.varId} -> "${binding.binderName}"');
+            #end
+        }
+    }
+
+    /**
+     * Clear pattern bindings when leaving the clause
+     */
+    public function clearPatternBindings(): Void {
+        patternBindings.clear();
+    }
+
+    /**
+     * Look up the name for a TVar ID, checking pattern bindings first
+     *
+     * @param varId The TVar.id to look up
+     * @return The name to use in the generated code, or null if not mapped
+     */
+    public function lookupVariable(varId: Int): Null<String> {
+        // Pattern bindings have highest priority - these are what the pattern actually bound
+        if (patternBindings.exists(varId)) {
+            return patternBindings.get(varId);
+        }
+        // Fall back to normal variable mappings
+        if (localToName.exists(varId)) {
+            return localToName.get(varId);
+        }
+        // Check parent context for inherited mappings (for variables from outer scopes)
+        if (parent != null) {
+            return parent.lookupVariable(varId);
+        }
+        return null;
     }
 
     /**

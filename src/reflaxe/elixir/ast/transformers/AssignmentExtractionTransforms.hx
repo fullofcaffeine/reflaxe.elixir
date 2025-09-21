@@ -281,10 +281,15 @@ class AssignmentExtractionTransforms {
      * should be preserved, not extracted.
      */
     static function transformClauseBody(body: ElixirAST): ElixirAST {
+        // Null safety check
+        if (body == null || body.def == null) {
+            return body;
+        }
+
         #if debug_assignment_extraction
         trace('[XRay AssignmentExtraction] Transforming clause body type: ${Type.enumConstructor(body.def)}');
         #end
-        
+
         // Simply recurse through the AST structure without extraction
         switch(body.def) {
             case EBlock(statements):
