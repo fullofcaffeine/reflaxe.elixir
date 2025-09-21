@@ -802,12 +802,23 @@ class ElixirCompiler extends GenericCompiler<
         // Pass context as second parameter to ensure isolated state
         var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
 
+        trace('[AST Pipeline] After Builder - AST type: ${ast != null ? Type.enumConstructor(ast.def) : "null"}');
+
         // Apply transformations to all expressions, not just function bodies
         // Pass context to transformer as well
         if (ast != null) {
-            ast = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast, context);
+            var originalAstId = Std.string(ast);
+            var transformedAst = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast, context);
+            var transformedAstId = Std.string(transformedAst);
+
+            trace('[AST Pipeline] After Transformer - Same object: ${originalAstId == transformedAstId}');
+            trace('[AST Pipeline]   Original AST ID: $originalAstId');
+            trace('[AST Pipeline]   Transformed AST ID: $transformedAstId');
+
+            ast = transformedAst;
         }
 
+        trace('[AST Pipeline] Returning AST to caller');
         return ast;
     }
     
@@ -1036,6 +1047,7 @@ class ElixirCompiler extends GenericCompiler<
 
             // Get the function expression
             var expr = funcData.expr;
+            // Skip functions without body - they might be extern or abstract
             if (expr == null) continue;
 
             #if debug_ast_builder
@@ -1116,7 +1128,11 @@ class ElixirCompiler extends GenericCompiler<
             // Special handling for direct switch returns that may have lost context
             #if debug_switch_return
             trace("[SwitchReturnDebug] Building function body for: " + funcData.field.name);
-            trace("[SwitchReturnDebug] expr.expr type: " + Type.enumConstructor(expr.expr));
+            if (expr != null) {
+                trace("[SwitchReturnDebug] expr.expr type: " + Type.enumConstructor(expr.expr));
+            } else {
+                trace("[SwitchReturnDebug] expr is null (no body)");
+            }
             #end
 
             var funcBody = switch(expr.expr) {

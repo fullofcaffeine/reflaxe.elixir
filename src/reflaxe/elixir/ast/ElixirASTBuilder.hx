@@ -1078,6 +1078,12 @@ class ElixirASTBuilder {
                                 #end
                             case TLocal(tempVar):
                                 var tempVarName = tempVar.name;
+
+                                #if debug_enum_extraction
+                                trace('[TVar TLocal] Checking assignment: $finalVarName = $tempVarName');
+                                trace('[TVar TLocal] Is in case clause: ${currentClauseContext != null}');
+                                #end
+
                                 // FIX: When patterns use canonical names, assignments from temp vars that don't exist
                                 // should be skipped entirely. The pattern already binds the correct variable.
                                 // Example: pattern {:ok, value} already binds value, so "value = g" is wrong (g doesn't exist)
@@ -1095,14 +1101,33 @@ class ElixirASTBuilder {
                                     }
                                 }
 
+                                #if debug_enum_extraction
+                                trace('[TVar TLocal] Is temp var: $isTempVar');
+                                #end
+
                                 if (isTempVar) {
                                     // This is trying to assign from a temp var (g, g1, g2, _g, _g1, _g2, etc.)
-                                    // For idiomatic enums, the pattern directly extracts to the real name
-                                    // so there is no temp var - skip this redundant assignment
-                                    shouldSkipAssignment = true;
-                                    #if debug_enum_extraction
-                                    trace('[TVar] Skipping assignment from non-existent temp var in idiomatic enum case: $finalVarName = $tempVarName');
-                                    #end
+                                    // Check if the temp var actually exists in the binding plan
+                                    var tempVarExists = false;
+
+                                    if (currentClauseContext != null && currentClauseContext.enumBindingPlan != null) {
+                                        // Check if any binding plan entry uses this temp var name
+                                        for (info in currentClauseContext.enumBindingPlan) {
+                                            if (info.finalName == tempVarName || info.finalName == tempVarName.substr(1)) {
+                                                tempVarExists = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if (!tempVarExists) {
+                                        // The temp var doesn't exist because the pattern used canonical names
+                                        // Skip this redundant assignment entirely
+                                        shouldSkipAssignment = true;
+                                        #if debug_enum_extraction
+                                        trace('[TVar] Skipping assignment from non-existent temp var: $finalVarName = $tempVarName (temp var not in pattern)');
+                                        #end
+                                    }
                                 }
                             case _:
                         }
@@ -4710,6 +4735,7 @@ class ElixirASTBuilder {
                  * - Ignored parameters: Pattern extracts to temp var but it's not used
                  * - Nested enums: Multiple levels of extraction
                  * - Abstract types: May not have ClauseContext mappings
+                 * - ChangesetUtils: Patterns use canonical names but body expects temp vars
                  */
 
                 // Debug trace to understand the extraction context
@@ -4728,16 +4754,50 @@ class ElixirASTBuilder {
                 }
                 #end
 
+                // CRITICAL FIX for ChangesetUtils pattern-body mismatch:
+                // When TEnumParameter tries to extract from a variable like 'g' that doesn't exist
+                // because the pattern used canonical names directly (like {:ok, value}),
+                // we need to detect this and return the correct variable.
+
+                // First, check what variable we're trying to extract from
+                var sourceVarName: String = null;
+                switch(e.expr) {
+                    case TLocal(v):
+                        sourceVarName = toElixirVarName(v.name);
+                        #if debug_enum_extraction
+                        trace('[TEnumParameter] Extracting from variable: $sourceVarName');
+                        #end
+                    default:
+                        // Not a local variable
+                }
+
                 // Check if we have a binding plan for this index
                 if (currentClauseContext != null && currentClauseContext.enumBindingPlan.exists(index)) {
                     // Use the variable name from the binding plan
                     var info = currentClauseContext.enumBindingPlan.get(index);
 
                     #if debug_enum_extraction
-                    trace('  - Using binding plan variable: ${info.finalName}');
+                    trace('  - Binding plan says to use: ${info.finalName}');
                     #end
 
-                    // The pattern already extracted this to the planned variable name
+                    // CRITICAL: Check if we're trying to extract from a temp var that doesn't exist
+                    // This happens when the pattern used canonical names directly
+                    if (sourceVarName != null &&
+                        (sourceVarName == "g" || (sourceVarName.startsWith("g") && sourceVarName.length > 1 &&
+                         sourceVarName.charAt(1) >= '0' && sourceVarName.charAt(1) <= '9'))) {
+                        // We're trying to extract from a temp var like 'g', 'g1', 'g2'
+                        // But if the binding plan uses a different name, the pattern already extracted it
+                        if (info.finalName != sourceVarName) {
+                            #if debug_enum_extraction
+                            trace('[TEnumParameter] Pattern used ${info.finalName}, not temp var $sourceVarName');
+                            trace('[TEnumParameter] Returning ${info.finalName} directly (already extracted by pattern)');
+                            #end
+                            // The pattern already extracted to the correct variable
+                            return EVar(info.finalName);
+                        }
+                    }
+
+                    // Normal case: use the binding plan variable
                     EVar(info.finalName);
                 } else {
                     // Fallback to the old logic for backward compatibility
@@ -5578,6 +5638,18 @@ class ElixirASTBuilder {
      * ENHANCEMENT: Prioritizes pattern variables from case values over body analysis
      */
     static function analyzeEnumParameterExtraction(caseExpr: TypedExpr, caseValues: Array<TypedExpr> = null): Array<String> {
+        // Debug output to understand the issue
+        #if debug_idiomatic_enum
+        trace('[analyzeEnumParameterExtraction] Called with caseExpr: ${caseExpr.expr}');
+        if (caseValues != null) {
+            trace('[analyzeEnumParameterExtraction] caseValues length: ${caseValues.length}');
+            for (i in 0...caseValues.length) {
+                var val = caseValues[i];
+                trace('[analyzeEnumParameterExtraction]   Value $i: ${val.expr}');
+            }
+        }
+        #end
+
         // First try to extract pattern variables directly from case values
         if (caseValues != null) {
             #if debug_ast_builder
@@ -5587,12 +5659,15 @@ class ElixirASTBuilder {
                 trace('  Value $i: ${val.expr}');
             }
             #end
-            
+
             var patternVars = extractPatternVariableNamesFromValues(caseValues);
             if (patternVars.length > 0 && patternVars.filter(v -> v != null).length > 0) {
                 // We found pattern variables, use them
                 #if debug_ast_pipeline
                 trace('[analyzeEnumParameterExtraction] Found pattern variables from case values: ${patternVars}');
+                #end
+                #if debug_idiomatic_enum
+                trace('[analyzeEnumParameterExtraction] Returning early with pattern variables: ${patternVars}');
                 #end
                 return patternVars;
             }
@@ -6139,21 +6214,49 @@ class ElixirASTBuilder {
                          * - Pattern vars are ["red", "green", "blue"] (from case pattern)
                          * - Temp vars are ["g", "g1", "g2"] (from Haxe extraction)
                          * - We can't access pattern vars directly from TypedExpr!
-                         * 
+                         *
                          * CURRENT SOLUTION:
                          * - Prefer canonical names for readability
                          * - Fall back to temp names when canonical not available
                          * - Accept that pattern var names (red, green, blue) are lost
                          * - The case body will handle remapping via assignments
                          */
+
+                        // CRITICAL FIX FOR MULTI-PARAMETER ENUMS:
+                        // Check if ANY parameter uses canonical names. If so, ALL parameters
+                        // should use temp vars for consistency.
+                        var hasCanonicalNames = false;
+                        if (extractedParams != null && canonicalNames != null) {
+                            for (i in 0...paramCount) {
+                                if (i < extractedParams.length && i < canonicalNames.length &&
+                                    extractedParams[i] != null && extractedParams[i] == canonicalNames[i]) {
+                                    hasCanonicalNames = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        #if debug_enum
+                        if (hasCanonicalNames) {
+                            trace('[CRITICAL FIX] Regular enum: Detected canonical names, will use temp vars for ALL parameters');
+                        }
+                        #end
+
                         for (i in 0...paramCount) {
-                            // M0.3 FIX: Trust extractedParams as they come from EnumBindingPlan
-                            // The binding plan is the single source of truth and has already made
-                            // the decision about what names to use based on priority hierarchy
                             if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null) {
-                                // Use the name from binding plan (via extractedParams)
-                                // This is the authoritative name decision
-                                paramPatterns.push(PVar(extractedParams[i]));
+                                if (hasCanonicalNames) {
+                                    // When we have canonical names anywhere, use temp vars for ALL parameters
+                                    // This ensures consistency in multi-parameter enums
+                                    var tempVarName = i == 0 ? "g" : 'g${i}';
+                                    paramPatterns.push(PVar(tempVarName));
+
+                                    #if debug_enum
+                                    trace('[CRITICAL FIX] Regular enum: Using temp var $tempVarName for parameter $i (was ${extractedParams[i]})');
+                                    #end
+                                } else {
+                                    // Use the extracted param name as-is (might be a temp var already)
+                                    paramPatterns.push(PVar(extractedParams[i]));
+                                }
 
                                 #if debug_ast_pipeline
                                 trace('[M0.3] Using binding plan name for param ${i}: ${extractedParams[i]}');
@@ -6211,10 +6314,14 @@ class ElixirASTBuilder {
                     for (i in 0...paramCount) {
                         if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
                             paramPatterns.push(PVar(extractedParams[i]));
-                        } else if (i < canonicalNames.length) {
-                            paramPatterns.push(PVar(canonicalNames[i]));
                         } else {
-                            paramPatterns.push(PWildcard);
+                            // CRITICAL FIX: When extractedParams is null (like in ChangesetUtils),
+                            // use temp var names (g, g1, g2) instead of canonical names.
+                            // This ensures the pattern matches what TEnumParameter generates in the body.
+                            // Without this, we get patterns like {:ok, value} but body has value = g
+                            // where g doesn't exist because the pattern didn't create it.
+                            var tempVarName = i == 0 ? "g" : 'g${i}';
+                            paramPatterns.push(PVar(tempVarName));
                         }
                     }
                     PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
@@ -6294,20 +6401,47 @@ class ElixirASTBuilder {
                         // Use canonical names for pattern variables
                         var paramPatterns = [];
 
+                        // Debug output to understand the issue
+                        #if debug_idiomatic_enum
+                        trace('[DEBUG IDIOMATIC] extractedParams: ${extractedParams}');
+                        trace('[DEBUG IDIOMATIC] canonicalNames: ${canonicalNames}');
+                        #end
+
+                        // CRITICAL FIX FOR IDIOMATIC ENUMS:
+                        // For idiomatic enums (Result, Option, etc.), ALWAYS use temp vars (g, g1, g2)
+                        // when we have extractedParams. This is because TEnumParameter in the case body
+                        // generates assignments like `value = g`, expecting the pattern to have `g`.
+                        // This fixes UserController where patterns had {:ok, user} but body expected `g`.
+                        var shouldUseTempVars = extractedParams != null && extractedParams.length > 0;
+
+                        #if debug_idiomatic_enum
+                        if (shouldUseTempVars) {
+                            trace('[CRITICAL FIX] Idiomatic enum with extractedParams, will use temp vars for ALL parameters');
+                        }
+                        #end
+
                         for (i in 0...paramCount) {
                             // Check if this parameter is actually used in the case body
                             var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
 
-                            // M0.2 FIX: Use extractedParams (what TEnumParameter expects) not canonical names
-                            // This ensures the pattern binds the exact variable names that the body references
-                            // Even if they're temp vars like "v", we must use them for consistency
                             if (isUsed && extractedParams[i] != null) {
-                                // Use the extracted param name that TEnumParameter will reference
-                                // This might be "v" or another temp var, but it matches the body
-                                paramPatterns.push(PVar(extractedParams[i]));
+                                if (shouldUseTempVars) {
+                                    // For idiomatic enums, ALWAYS use temp vars when we have extractedParams
+                                    // This ensures the pattern matches what TEnumParameter expects
+                                    var tempVarName = i == 0 ? "g" : 'g${i}';
+                                    paramPatterns.push(PVar(tempVarName));
+
+                                    #if debug_idiomatic_enum
+                                    trace('[CRITICAL FIX] Using temp var $tempVarName for parameter $i (was ${extractedParams[i]})');
+                                    #end
+                                } else {
+                                    // This shouldn't happen for idiomatic enums, but keep as fallback
+                                    paramPatterns.push(PVar(extractedParams[i]));
+                                }
                             } else if (isUsed && i < canonicalNames.length) {
-                                // Fallback to canonical names if no extracted param
-                                paramPatterns.push(PVar(canonicalNames[i]));
+                                // Fallback: No extracted param, use temp var
+                                var tempVarName = i == 0 ? "g" : 'g${i}';
+                                paramPatterns.push(PVar(tempVarName));
                             } else {
                                 // Use wildcard for unused parameter
                                 paramPatterns.push(PWildcard);
