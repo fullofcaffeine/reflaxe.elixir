@@ -1202,13 +1202,19 @@ class ElixirASTTransformer {
 
                                 // Return filtered block or single expression if only one left
                                 // CRITICAL FIX: Must actually evaluate to a value, not just execute expressions
+                                // ALSO: Ensure immutability by creating new AST nodes
                                 if (filtered.length == 0) {
                                     makeAST(ENil);
                                 } else if (filtered.length == 1) {
-                                    filtered[0];
+                                    // Recursively transform the single expression to ensure complete immutability
+                                    transformNode(filtered[0], function(n) { return n; });
                                 } else {
+                                    // Recursively transform each filtered expression to ensure immutability
+                                    var transformedFiltered = filtered.map(function(expr) {
+                                        return transformNode(expr, function(n) { return n; });
+                                    });
                                     // Preserve metadata when creating new block
-                                    makeASTWithMeta(EBlock(filtered), body.metadata, body.pos);
+                                    makeASTWithMeta(EBlock(transformedFiltered), body.metadata, body.pos);
                                 };
 
                             default:
@@ -1216,11 +1222,12 @@ class ElixirASTTransformer {
                         };
 
                         // Create new clause with updated body
-                        // Note: transformNode naturally handles nested structures recursively
+                        // IMPORTANT: Recursively transform the new body to ensure all nested structures are processed
+                        var fullyTransformedBody = transformNode(newBody, function(n) { return n; });
                         newClauses.push({
                             pattern: pattern,
                             guard: guard,
-                            body: newBody
+                            body: fullyTransformedBody
                         });
                     }
 
@@ -3730,6 +3737,11 @@ class ElixirASTTransformer {
                     // First pass: identify all nil assignments
                     while (i < expressions.length) {
                         var expr = expressions[i];
+                        // Null safety check
+                        if (expr == null || expr.def == null) {
+                            i++;
+                            continue;
+                        }
                         switch(expr.def) {
                             case EMatch(PVar(varName), nilValue):
                                 if (isNilValue(nilValue)) {
@@ -3747,8 +3759,13 @@ class ElixirASTTransformer {
                     i = 0;
                     while (i < expressions.length) {
                         var expr = expressions[i];
+                        // Null safety check
+                        if (expr == null || expr.def == null) {
+                            i++;
+                            continue;
+                        }
                         var shouldSkip = false;
-                        
+
                         // Check if this is a nil assignment that should be removed
                         switch(expr.def) {
                             case EMatch(PVar(varName), nilValue):
@@ -3761,10 +3778,12 @@ class ElixirASTTransformer {
                                         #end
                                         // Check immediate next expression for reassignment
                                         if (i + 1 < expressions.length) {
-                                            #if debug_ast_transformer
-                                            trace('[XRay RemoveRedundantNilInit] Next expr at ${i+1}: ${expressions[i + 1].def}');
-                                            #end
-                                            switch(expressions[i + 1].def) {
+                                            var nextExpr = expressions[i + 1];
+                                            if (nextExpr != null && nextExpr.def != null) {
+                                                #if debug_ast_transformer
+                                                trace('[XRay RemoveRedundantNilInit] Next expr at ${i+1}: ${nextExpr.def}');
+                                                #end
+                                                switch(nextExpr.def) {
                                                 case EMatch(PVar(nextVarName), value) if (nextVarName == varName):
                                                     if (isNilValue(value)) {
                                                         // Don't skip if it's another nil
@@ -3785,12 +3804,17 @@ class ElixirASTTransformer {
                                                 }
                                             }
                                         }
-                                        
+
                                         // If not skipped yet, check if this variable is assigned again later
                                         if (!shouldSkip) {
                                             var j = i + 1;
                                             while (j < expressions.length) {
-                                                switch(expressions[j].def) {
+                                                var checkExpr = expressions[j];
+                                                if (checkExpr == null || checkExpr.def == null) {
+                                                    j++;
+                                                    continue;
+                                                }
+                                                switch(checkExpr.def) {
                                                     case EMatch(PVar(nextVarName), value) if (nextVarName == varName):
                                                         // Found reassignment - check if the value is not nil
                                                         if (isNilValue(value)) {
@@ -3809,6 +3833,7 @@ class ElixirASTTransformer {
                                             }
                                         }
                                     }
+                                }
                             default:
                                 // Not a match expression
                         }

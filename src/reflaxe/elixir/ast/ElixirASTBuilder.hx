@@ -64,7 +64,8 @@ class ElixirASTBuilder {
     // Module-level state (will be migrated to context in future)
     public static var currentModule: String = null;
     public static var currentModuleHasPresence: Bool = false;
-    public static var currentClauseContext: Null<ClauseContext> = null;
+    // REMOVED: currentClauseContext - Now using context.currentClauseContext for proper context propagation
+    public static var switchNestingLevel: Int = 0; // Track how deep we are in nested switches
 
     // ================================================================
     // Compilation Instrumentation for Hanging Diagnosis
@@ -365,7 +366,7 @@ class ElixirASTBuilder {
         // Method context is now properly set by ElixirCompiler
         currentModule = context.currentModule;
         currentModuleHasPresence = context.currentModuleHasPresence;
-        currentClauseContext = context.currentClauseContext;
+        // No need to set currentClauseContext here - it's already part of the context
 
         #if debug_ast_builder
         trace('[XRay AST Builder] Converting TypedExpr: ${expr.expr}');
@@ -509,17 +510,21 @@ class ElixirASTBuilder {
                     #end
                     EVar(mappedName);
                 }
-                // M0.2 FIX: Check currentClauseContext for mapped names from EnumBindingPlan
-                else if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
-                    var mappedName = currentClauseContext.localToName.get(v.id);
-
-                    #if debug_ast_pipeline
-                    trace('[M0.2] TLocal: Using mapped name from ClauseContext: ${v.name} (id=${v.id}) -> ${mappedName}');
-                    #end
-
-                    EVar(mappedName);
+                // CRITICAL FIX: Use ClauseContext's lookupVariable which checks pattern bindings first
+                else if (currentContext.currentClauseContext != null) {
+                    var mappedName = currentContext.currentClauseContext.lookupVariable(v.id);
+                    if (mappedName != null) {
+                        #if debug_clause_context
+                        trace('[ClauseContext] TLocal: Using mapped name from ClauseContext: ${v.name} (id=${v.id}) -> ${mappedName}');
+                        #end
+                        EVar(mappedName);
+                    } else {
+                        // No mapping found in ClauseContext, use default
+                        var ast = CoreExprBuilder.buildLocal(v);
+                        ast.def;
+                    }
                 } else {
-                    // No mapping found, use CoreExprBuilder
+                    // No context available, use CoreExprBuilder
                     var ast = CoreExprBuilder.buildLocal(v);
                     ast.def;
                 }
@@ -673,10 +678,23 @@ class ElixirASTBuilder {
                             trace('  - Index: $index');
                             #end
 
+                            // CRITICAL: Register pattern binding with ClauseContext
+                            // When patterns use temp vars (g), we must track which TVar they map to
+                            if (currentContext.currentClauseContext != null && tempVarName.charAt(0) == 'g') {
+                                // This temp var will be used in the pattern, register the binding
+                                // The pattern will have 'g' and this TVar extracts to 'g'
+                                currentContext.currentClauseContext.pushPatternBindings([{varId: v.id, binderName: tempVarName}]);
+
+                                #if debug_clause_context
+                                trace('[ClauseContext Integration] Registered pattern binding for TEnumParameter:');
+                                trace('  - TVar ID ${v.id} maps to pattern var "$tempVarName"');
+                                #end
+                            }
+
                             // Check if EnumBindingPlan already provides this variable
                             // If so, the pattern already extracts it correctly and we should skip this assignment
-                            if (currentClauseContext != null && currentClauseContext.enumBindingPlan != null) {
-                                var plan = currentClauseContext.enumBindingPlan;
+                            if (currentContext.currentClauseContext != null && currentContext.currentClauseContext.enumBindingPlan != null) {
+                                var plan = currentContext.currentClauseContext.enumBindingPlan;
                                 if (plan.exists(index)) {
                                     // The binding plan already handles this extraction in the pattern
                                     shouldSkipRedundantExtraction = true;
@@ -704,9 +722,23 @@ class ElixirASTBuilder {
                                 extractedFromTemp = tempVar.name;
                                 varOrigin = PatternBinder;  // This is the actual pattern variable
 
+                                // CRITICAL: Update pattern binding in ClauseContext
+                                // This is the second assignment: value = g
+                                // After this point, references should use 'value' not 'g'
+                                if (currentContext.currentClauseContext != null) {
+                                    // Override the temp var binding with the user variable name
+                                    var userVarName = toElixirVarName(v.name);
+                                    currentContext.currentClauseContext.pushPatternBindings([{varId: v.id, binderName: userVarName}]);
+
+                                    #if debug_clause_context
+                                    trace('[ClauseContext Integration] Updated pattern binding after assignment:');
+                                    trace('  - TVar ID ${v.id} now maps to user var "$userVarName" (was temp "${tempVar.name}")');
+                                    #end
+                                }
+
                                 // If we have an EnumBindingPlan, these assignments are redundant
                                 // because the pattern already uses the correct names
-                                if (currentClauseContext != null && currentClauseContext.enumBindingPlan != null) {
+                                if (currentContext.currentClauseContext != null && currentContext.currentClauseContext.enumBindingPlan != null) {
                                     #if debug_enum_extraction
                                     trace('[TVar] Skipping redundant temp assignment ${v.name} = ${tempVar.name} - binding plan handles it');
                                     #end
@@ -1067,7 +1099,7 @@ class ElixirASTBuilder {
 
                     // Skip assignments from TEnumParameter extraction in case clauses
                     // These are redundant because pattern matching already binds the variables
-                    if (init != null && currentClauseContext != null) {
+                    if (init != null && currentContext.currentClauseContext != null) {
                         // We're inside a case clause
                         switch(init.expr) {
                             case TEnumParameter(_, _, _):
@@ -1079,9 +1111,12 @@ class ElixirASTBuilder {
                             case TLocal(tempVar):
                                 var tempVarName = tempVar.name;
 
+                                trace('[DEBUG EMBEDDED] Checking assignment: $finalVarName = $tempVarName');
+                                trace('[DEBUG EMBEDDED] Is in case clause: ${currentContext.currentClauseContext != null}');
+
                                 #if debug_enum_extraction
                                 trace('[TVar TLocal] Checking assignment: $finalVarName = $tempVarName');
-                                trace('[TVar TLocal] Is in case clause: ${currentClauseContext != null}');
+                                trace('[TVar TLocal] Is in case clause: ${currentContext.currentClauseContext != null}');
                                 #end
 
                                 // FIX: When patterns use canonical names, assignments from temp vars that don't exist
@@ -1107,12 +1142,27 @@ class ElixirASTBuilder {
 
                                 if (isTempVar) {
                                     // This is trying to assign from a temp var (g, g1, g2, _g, _g1, _g2, etc.)
-                                    // Check if the temp var actually exists in the binding plan
+                                    // Check if we're assigning to a variable that was already bound by the pattern
+                                    var elixirTempName = toElixirVarName(tempVarName);
+
+                                    // EMBEDDED SWITCH FIX: Skip assignments where pattern already extracted the value
+                                    // Pattern {:some, action} already binds "action", so "action = g" is invalid
+                                    if (elixirTempName == "g" ||
+                                        (elixirTempName.charAt(0) == "g" && elixirTempName.length > 1 &&
+                                         elixirTempName.charAt(1) >= '0' && elixirTempName.charAt(1) <= '9')) {
+                                        shouldSkipAssignment = true;
+                                        trace('[DEBUG EMBEDDED] WILL SKIP: $finalVarName = $elixirTempName');
+                                        #if debug_enum_extraction
+                                        trace('[TVar TLocal] EMBEDDED SWITCH FIX: Skipping invalid temp var assignment: $finalVarName = $elixirTempName');
+                                        #end
+                                    }
+                                } else if (false) {
+                                    // Original logic preserved but disabled to fix embedded switch issue
                                     var tempVarExists = false;
 
-                                    if (currentClauseContext != null && currentClauseContext.enumBindingPlan != null) {
+                                    if (currentContext.currentClauseContext != null && currentContext.currentClauseContext.enumBindingPlan != null) {
                                         // Check if any binding plan entry uses this temp var name
-                                        for (info in currentClauseContext.enumBindingPlan) {
+                                        for (info in currentContext.currentClauseContext.enumBindingPlan) {
                                             if (info.finalName == tempVarName || info.finalName == tempVarName.substr(1)) {
                                                 tempVarExists = true;
                                                 break;
@@ -1136,9 +1186,13 @@ class ElixirASTBuilder {
                     // Note: Redundant enum extraction is now handled at TBlock level
                     // We generate the assignment here, but TBlock will filter it out if redundant
                     var result = if (shouldSkipAssignment) {
-                        // Skip the assignment, return nil as a placeholder
-                        // The TBlock handler will filter this out
-                        makeAST(ENil);
+                        // Skip the assignment, return null to be filtered out by TBlock
+                        // The TBlock handler at line 3036 filters out null expressions
+                        null;
+                    } else if (initValue == null) {
+                        // If initValue is null (e.g., from skipped TEnumParameter), skip the assignment
+                        trace('[DEBUG EMBEDDED TVar] Skipping assignment because initValue is null for: $finalVarName');
+                        null;
                     } else {
                         var matchNode = makeAST(EMatch(
                             PVar(finalVarName),
@@ -1864,8 +1918,8 @@ class ElixirASTBuilder {
                                     // e.g., Email_Impl_.get_domain(g) not Email_Impl_.get_domain(value)
                                     
                                     // Check ClauseContext for mapped names (from pattern matching)
-                                    if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
-                                        var mappedName = currentClauseContext.localToName.get(v.id);
+                                    if (currentContext.currentClauseContext != null && currentContext.currentClauseContext.localToName.exists(v.id)) {
+                                        var mappedName = currentContext.currentClauseContext.localToName.get(v.id);
                                         #if debug_ast_pipeline
                                         trace('[AST Builder] TCall: Using mapped name from ClauseContext for abstract type: ${v.name} (id=${v.id}) -> ${mappedName}');
                                         #end
@@ -2568,6 +2622,7 @@ class ElixirASTBuilder {
             // Control Flow (Basic)
             // ================================================================
             case TIf(econd, eif, eelse):
+                trace('[DEBUG EMBEDDED] TIf - currentContext.currentClauseContext exists: ${currentContext.currentClauseContext != null}');
                 #if debug_loop_transformation
                 // Debug nested if statements in loop bodies - specifically for meta variable issue
                 trace('[XRay LoopTransform] TIf condition: ${Type.enumConstructor(econd.expr)}');
@@ -2615,6 +2670,10 @@ class ElixirASTBuilder {
                     case _:
                         buildFromTypedExpr(econd, currentContext);
                 };
+
+                // CRITICAL FIX: Propagate ClauseContext through if branches
+                // This ensures embedded switches have access to the EnumBindingPlan
+                // Without this, nested switches can't resolve pattern variable names correctly
                 var thenBranch = buildFromTypedExpr(eif, currentContext);
                 var elseBranch = eelse != null ? buildFromTypedExpr(eelse, currentContext) : null;
                 EIf(condition, thenBranch, elseBranch);
@@ -2915,7 +2974,7 @@ class ElixirASTBuilder {
                             // Try to inline immediately when the temp var is used exactly once
                             // BUT: Skip inlining in case clause bodies (statement contexts)
                             // and other contexts where variable declarations should be preserved
-                            var isInCaseClause = currentClauseContext != null;
+                            var isInCaseClause = currentContext.currentClauseContext != null;
                             
                             // CRITICAL FIX: Skip inlining when the body contains nested if statements
                             // This preserves variable declarations that need to be visible in nested scopes
@@ -2945,7 +3004,7 @@ class ElixirASTBuilder {
 
                 // CRITICAL: Don't filter TEnumParameter when inside case clauses
                 // ClauseContext needs these extractions to build proper variable mappings
-                var isInCaseClause = currentClauseContext != null;
+                var isInCaseClause = currentContext.currentClauseContext != null;
 
                 for (e in el) {
                     // Check if this is a redundant enum extraction we should skip
@@ -3004,7 +3063,12 @@ class ElixirASTBuilder {
                 for (i in 0...expressions.length - 1) {
                     var current = expressions[i];
                     var next = expressions[i + 1];
-                    
+
+                    // Null safety check
+                    if (current == null || next == null || current.def == null || next.def == null) {
+                        continue;
+                    }
+
                     // Check for assignment followed by method call pattern
                     switch([current.def, next.def]) {
                         case [EMatch(_, _), ECall(_, _, _)]:
@@ -3078,6 +3142,8 @@ class ElixirASTBuilder {
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
+                switchNestingLevel++;
+                trace('[DEBUG EMBEDDED] TSwitch - nesting level: ${switchNestingLevel}, currentContext.currentClauseContext exists: ${currentContext.currentClauseContext != null}');
                 #if debug_ast_builder
                 trace('[TSwitch] Building switch expression');
                 trace('[TSwitch]   Switch has ${cases.length} cases');
@@ -3209,6 +3275,11 @@ class ElixirASTBuilder {
                 }
                 #end
 
+                // Save context for the entire switch processing
+                // This ensures all cases and nested switches can access it
+                var switchSavedContext = currentContext.currentClauseContext;
+                trace('[DEBUG EMBEDDED] Switch-level context save: ${switchSavedContext != null}');
+
                 for (c in cases) {
                     // Analyze the case body FIRST to detect enum parameter extraction
                     // This is critical for determining whether to use wildcards or named patterns
@@ -3294,23 +3365,30 @@ class ElixirASTBuilder {
                     }
                     
                     // Set up ClauseContext for alpha-renaming before building the case body
-                    var savedClauseContext = currentClauseContext;
-                    currentClauseContext = new ClauseContext(null, varMapping, enumBindingPlan);
-                    
+                    // IMPORTANT: For embedded switches, we need to isolate their context
+                    // Save the current context (which might be from an outer switch)
+                    var savedClauseContext = currentContext.currentClauseContext;
+                    trace('[DEBUG EMBEDDED] Case #${cases.indexOf(c)} - Saving context: ${savedClauseContext != null}, varMapping size: ${Lambda.count(varMapping)}');
+
+                    // Create a new ClauseContext for this switch case
+                    // This ensures embedded switches get their own variable mappings
+                    currentContext.currentClauseContext = new ClauseContext(savedClauseContext, varMapping, enumBindingPlan);
+                    trace('[DEBUG EMBEDDED] Case #${cases.indexOf(c)} - Created new context with parent: ${savedClauseContext != null}, bindingPlan: ${enumBindingPlan != null}');
+
                     // Build the case body with the ClauseContext active
+                    // Any embedded switches will now create their own isolated contexts
+                    trace('[DEBUG EMBEDDED] Case #${cases.indexOf(c)} - Building body with context: ${currentContext.currentClauseContext != null}');
                     var body = buildFromTypedExpr(c.expr, currentContext);
-                    
+                    trace('[DEBUG EMBEDDED] Case #${cases.indexOf(c)} - Body built, context still: ${currentContext.currentClauseContext != null}');
+
                     // Attach the varIdToName mapping to the body's metadata
                     // This allows later transformation passes to resolve variables correctly
                     if (body.metadata == null) body.metadata = {};
                     body.metadata.varIdToName = varMapping;
-                    
-                    // Restore previous context
-                    currentClauseContext = savedClauseContext;
-                    
+
                     // processEnumCaseBody is disabled - we use VariableUsageAnalyzer instead
                     // which provides more accurate detection across the entire function scope
-                    
+
                     // Multiple patterns become multiple clauses
                     for (pattern in patterns) {
                         // Apply underscore prefix to unused pattern variables
@@ -3322,10 +3400,11 @@ class ElixirASTBuilder {
 
                         // If mapping was updated, rebuild the body with the new mapping
                         var finalBody = if (updatedMapping != varMapping) {
-                            var savedCtx = currentClauseContext;
-                            currentClauseContext = new ClauseContext(null, updatedMapping, enumBindingPlan);
+                            // DON'T save/restore here - we're already inside a context management block
+                            // Just update the existing context with new mapping
+                            currentContext.currentClauseContext = new ClauseContext(savedClauseContext, updatedMapping, enumBindingPlan);
                             var newBody = buildFromTypedExpr(c.expr, currentContext);
-                            currentClauseContext = savedCtx;
+                            // Context will be restored at the end of the case processing
                             newBody;
                         } else {
                             body;
@@ -3337,8 +3416,12 @@ class ElixirASTBuilder {
                             body: finalBody
                         });
                     }
+
+                    // DON'T restore context here - it will be restored after ALL cases are processed
+                    // This ensures embedded switches can still access the parent's context
+                    trace('[DEBUG EMBEDDED] Case #${cases.indexOf(c)} - NOT restoring context yet, keeping it active for other cases');
                 }
-                
+
                 // Default case
                 if (edef != null) {
                     clauses.push({
@@ -3370,6 +3453,14 @@ class ElixirASTBuilder {
                         #end
                     }
                 }
+
+                // Restore the saved context for the entire switch
+                currentContext.currentClauseContext = switchSavedContext;
+                trace('[DEBUG EMBEDDED] Switch-level context restore: ${switchSavedContext != null}');
+
+                // Decrement nesting level before returning
+                switchNestingLevel--;
+                trace('[DEBUG EMBEDDED] TSwitch exit - nesting level now: ${switchNestingLevel}');
 
                 // If in return context and needs temp var, wrap in assignment
                 if (isReturnContext && needsTempVar) {
@@ -4744,11 +4835,11 @@ class ElixirASTBuilder {
                 trace('  - Expression type: ${e.expr}');
                 trace('  - Enum field: ${ef.name}');
                 trace('  - Index: $index');
-                trace('  - Has ClauseContext: ${currentClauseContext != null}');
-                if (currentClauseContext != null) {
-                    trace('  - Has EnumBindingPlan: ${currentClauseContext.enumBindingPlan != null && currentClauseContext.enumBindingPlan.keys().hasNext()}');
-                    if (currentClauseContext.enumBindingPlan.exists(index)) {
-                        var info = currentClauseContext.enumBindingPlan.get(index);
+                trace('  - Has ClauseContext: ${currentContext.currentClauseContext != null}');
+                if (currentContext.currentClauseContext != null) {
+                    trace('  - Has EnumBindingPlan: ${currentContext.currentClauseContext.enumBindingPlan != null && currentContext.currentClauseContext.enumBindingPlan.keys().hasNext()}');
+                    if (currentContext.currentClauseContext.enumBindingPlan.exists(index)) {
+                        var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
                         trace('  - Binding plan for index $index: ${info.finalName} (used: ${info.isUsed})');
                     }
                 }
@@ -4772,9 +4863,11 @@ class ElixirASTBuilder {
                 }
 
                 // Check if we have a binding plan for this index
-                if (currentClauseContext != null && currentClauseContext.enumBindingPlan.exists(index)) {
+                if (currentContext.currentClauseContext != null && currentContext.currentClauseContext.enumBindingPlan.exists(index)) {
                     // Use the variable name from the binding plan
-                    var info = currentClauseContext.enumBindingPlan.get(index);
+                    var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
+
+                    trace('[DEBUG EMBEDDED TEnumParameter] Binding plan says to use: ${info.finalName}, sourceVarName: $sourceVarName');
 
                     #if debug_enum_extraction
                     trace('  - Binding plan says to use: ${info.finalName}');
@@ -4788,6 +4881,7 @@ class ElixirASTBuilder {
                         // We're trying to extract from a temp var like 'g', 'g1', 'g2'
                         // But if the binding plan uses a different name, the pattern already extracted it
                         if (info.finalName != sourceVarName) {
+                            trace('[DEBUG EMBEDDED TEnumParameter] RETURNING DIRECT VAR: ${info.finalName}');
                             #if debug_enum_extraction
                             trace('[TEnumParameter] Pattern used ${info.finalName}, not temp var $sourceVarName');
                             trace('[TEnumParameter] Returning ${info.finalName} directly (already extracted by pattern)');
@@ -4798,8 +4892,22 @@ class ElixirASTBuilder {
                     }
 
                     // Normal case: use the binding plan variable
+                    trace('[DEBUG EMBEDDED TEnumParameter] RETURNING BINDING PLAN VAR: ${info.finalName}');
                     EVar(info.finalName);
                 } else {
+                    trace('[DEBUG EMBEDDED TEnumParameter] NO BINDING PLAN! ClauseContext: ${currentContext.currentClauseContext != null}, index: $index, sourceVarName: $sourceVarName');
+
+                    // CRITICAL FIX: When there's no binding plan and we're trying to extract from
+                    // a temp var that doesn't exist (like 'g'), return null to skip the assignment
+                    // This happens in embedded switches where the pattern uses the actual variable name
+                    if (sourceVarName != null &&
+                        (sourceVarName == "g" || (sourceVarName.startsWith("g") && sourceVarName.length > 1 &&
+                         sourceVarName.charAt(1) >= '0' && sourceVarName.charAt(1) <= '9'))) {
+                        trace('[DEBUG EMBEDDED TEnumParameter] Skipping extraction from non-existent temp var: $sourceVarName');
+                        // Return null to skip the assignment - the pattern already extracted the value
+                        return null;
+                    }
+
                     // Fallback to the old logic for backward compatibility
 
                     // Check if this is extracting from an already-extracted pattern variable
@@ -4817,10 +4925,10 @@ class ElixirASTBuilder {
 
                                 #if debug_enum_extraction
                                 trace('  - TLocal variable: ${v.name} -> $varName');
-                                if (currentClauseContext != null) {
-                                    trace('  - ClauseContext has mapping: ${currentClauseContext.localToName.exists(v.id)}');
-                                    if (currentClauseContext.localToName.exists(v.id)) {
-                                        trace('  - Mapped to: ${currentClauseContext.localToName.get(v.id)}');
+                                if (currentContext.currentClauseContext != null) {
+                                    trace('  - ClauseContext has mapping: ${currentContext.currentClauseContext.localToName.exists(v.id)}');
+                                    if (currentContext.currentClauseContext.localToName.exists(v.id)) {
+                                        trace('  - Mapped to: ${currentContext.currentClauseContext.localToName.get(v.id)}');
                                     }
                                 }
                                 #end
@@ -4828,9 +4936,9 @@ class ElixirASTBuilder {
                                 // Check if this variable was extracted by the pattern
                                 // Pattern extraction creates variables like 'g', 'g1', 'g2' for ignored params
                                 // or uses actual names for named params
-                                if (currentClauseContext != null && currentClauseContext.localToName.exists(v.id)) {
+                                if (currentContext.currentClauseContext != null && currentContext.currentClauseContext.localToName.exists(v.id)) {
                                     // This variable was mapped in the pattern, it's already extracted
-                                    extractedVarName = currentClauseContext.localToName.get(v.id);
+                                    extractedVarName = currentContext.currentClauseContext.localToName.get(v.id);
                                     skipExtraction = true;
 
                                     #if debug_enum_extraction
@@ -5638,6 +5746,59 @@ class ElixirASTBuilder {
      * ENHANCEMENT: Prioritizes pattern variables from case values over body analysis
      */
     static function analyzeEnumParameterExtraction(caseExpr: TypedExpr, caseValues: Array<TypedExpr> = null): Array<String> {
+        // Enhanced debug output for embedded switches
+        #if debug_embedded_switch
+        trace('[analyzeEnumParameterExtraction] ====== ANALYSIS START ======');
+        trace('[analyzeEnumParameterExtraction] Called with caseExpr type: ${Type.enumConstructor(caseExpr.expr)}');
+
+        // Check if this is a simple embedded switch (like in TodoPubSub)
+        var isSimpleEmbedded = false;
+        switch(caseExpr.expr) {
+            case TCall(_, _):
+                trace('[analyzeEnumParameterExtraction] Case body is TCall - likely embedded switch constructor');
+                isSimpleEmbedded = true;
+            case TBlock([single]):
+                switch(single.expr) {
+                    case TCall(_, _):
+                        trace('[analyzeEnumParameterExtraction] Case body is single TCall in block - embedded switch');
+                        isSimpleEmbedded = true;
+                    case _:
+                }
+            case _:
+        }
+
+        if (caseValues != null) {
+            trace('[analyzeEnumParameterExtraction] caseValues length: ${caseValues.length}');
+            for (i in 0...caseValues.length) {
+                var val = caseValues[i];
+                trace('[analyzeEnumParameterExtraction]   Value $i type: ${Type.enumConstructor(val.expr)}');
+
+                // Analyze the structure of case values
+                switch(val.expr) {
+                    case TCall(e, params):
+                        trace('[analyzeEnumParameterExtraction]     Value is TCall with ${params.length} params');
+                        for (j in 0...params.length) {
+                            var param = params[j];
+                            switch(param.expr) {
+                                case TConst(TString(s)):
+                                    trace('[analyzeEnumParameterExtraction]       Param $j: String constant "$s"');
+                                case TLocal(v):
+                                    trace('[analyzeEnumParameterExtraction]       Param $j: Local variable "${v.name}"');
+                                case _:
+                                    trace('[analyzeEnumParameterExtraction]       Param $j: ${Type.enumConstructor(param.expr)}');
+                            }
+                        }
+                    case _:
+                        trace('[analyzeEnumParameterExtraction]     Value structure: ${val.expr}');
+                }
+            }
+        } else {
+            trace('[analyzeEnumParameterExtraction] No caseValues provided');
+        }
+
+        trace('[analyzeEnumParameterExtraction] Is simple embedded: $isSimpleEmbedded');
+        #end
+
         // Debug output to understand the issue
         #if debug_idiomatic_enum
         trace('[analyzeEnumParameterExtraction] Called with caseExpr: ${caseExpr.expr}');
@@ -5679,6 +5840,44 @@ class ElixirASTBuilder {
         
         switch(caseExpr.expr) {
             case TBlock(exprs):
+                // Special case: single TCall in a block (simple embedded switch)
+                if (exprs.length == 1) {
+                    switch(exprs[0].expr) {
+                        case TCall(e, params):
+                            // Handle like direct TCall case
+                            #if debug_embedded_switch
+                            trace('[analyzeEnumParameterExtraction] Single TCall in block with ${params.length} params');
+                            #end
+
+                            for (i in 0...params.length) {
+                                var param = params[i];
+                                switch(param.expr) {
+                                    case TLocal(v):
+                                        var varName = toElixirVarName(v.name);
+                                        while (extractedParams.length <= i) {
+                                            extractedParams.push(null);
+                                        }
+                                        extractedParams[i] = varName;
+
+                                        #if debug_embedded_switch
+                                        trace('[analyzeEnumParameterExtraction]   Param $i from block TCall: "${v.name}" -> "$varName"');
+                                        #end
+                                    case _:
+                                }
+                            }
+
+                            // If we found parameters, return early
+                            if (extractedParams.length > 0) {
+                                #if debug_embedded_switch
+                                trace('[analyzeEnumParameterExtraction] Extracted from single TCall in block: ${extractedParams}');
+                                #end
+                                // Continue to final return at the end
+                            }
+                        case _:
+                            // Not a single TCall, continue with normal block processing
+                    }
+                }
+
                 // First pass: Find TEnumParameter extractions and map temp vars
                 for (expr in exprs) {
                     switch(expr.expr) {
@@ -5845,15 +6044,116 @@ class ElixirASTBuilder {
                     scanForUsedVariables(exprs[i]);
                 }
                 
+            case TCall(e, params):
+                // Handle simple embedded switch constructors (like case Some(action): Some(BulkUpdate(action)))
+                // These have a direct TCall without a TBlock wrapper
+
+                #if debug_embedded_switch
+                trace('[analyzeEnumParameterExtraction] Handling TCall case body with ${params.length} params');
+                #end
+
+                // For each parameter in the constructor call, check if it's a TLocal reference
+                // These are likely the pattern variables being passed through
+                for (i in 0...params.length) {
+                    var param = params[i];
+                    switch(param.expr) {
+                        case TLocal(v):
+                            // This is a local variable reference - likely our pattern variable
+                            var varName = toElixirVarName(v.name);
+
+                            // Ensure array is large enough
+                            while (extractedParams.length <= i) {
+                                extractedParams.push(null);
+                            }
+
+                            extractedParams[i] = varName;
+
+                            #if debug_embedded_switch
+                            trace('[analyzeEnumParameterExtraction]   Param $i: Found TLocal "${v.name}" -> "$varName"');
+                            #end
+
+                        case _:
+                            // Not a simple variable reference - might be a constant or expression
+                            #if debug_embedded_switch
+                            trace('[analyzeEnumParameterExtraction]   Param $i: Not a TLocal (${Type.enumConstructor(param.expr)})');
+                            #end
+                    }
+                }
+
+                #if debug_embedded_switch
+                trace('[analyzeEnumParameterExtraction] Extracted from TCall: ${extractedParams}');
+                #end
+
+            case TIf(cond, thenExpr, elseExpr):
+                // Handle if expressions that contain embedded switches (like TodoPubSub)
+                // Recursively analyze branches as recommended by Codex
+
+                #if debug_embedded_switch
+                trace('[analyzeEnumParameterExtraction] Handling TIf case body - recursing into branches');
+                #end
+
+                // Recursively analyze the then branch
+                var thenParams = analyzeEnumParameterExtraction(thenExpr, caseValues);
+
+                #if debug_embedded_switch
+                trace('[analyzeEnumParameterExtraction] Then branch extracted: ${thenParams}');
+                #end
+
+                // Recursively analyze the else branch if it exists
+                var elseParams = [];
+                if (elseExpr != null) {
+                    elseParams = analyzeEnumParameterExtraction(elseExpr, caseValues);
+                    #if debug_embedded_switch
+                    trace('[analyzeEnumParameterExtraction] Else branch extracted: ${elseParams}');
+                    #end
+                }
+
+                // Merge results - prefer non-empty results
+                if (thenParams.length > 0) {
+                    extractedParams = thenParams;
+                } else if (elseParams.length > 0) {
+                    extractedParams = elseParams;
+                }
+                // If both branches have results, prefer the one with more specific names
+                // (i.e., not just temp vars like 'g')
+                else if (thenParams.length > 0 && elseParams.length > 0) {
+                    // Check if then branch has more meaningful names
+                    var thenHasMeaningful = false;
+                    for (name in thenParams) {
+                        if (name != null && name != "g" && !name.startsWith("g")) {
+                            thenHasMeaningful = true;
+                            break;
+                        }
+                    }
+                    extractedParams = thenHasMeaningful ? thenParams : elseParams;
+                }
+
+                #if debug_embedded_switch
+                trace('[analyzeEnumParameterExtraction] TIf merged result: ${extractedParams}');
+                #end
+
             default:
+                // No extraction patterns found - return empty array
+                #if debug_embedded_switch
+                trace('[analyzeEnumParameterExtraction] No recognized pattern in case body (${Type.enumConstructor(caseExpr.expr)})');
+                #end
         }
-        
+
         #if debug_ast_builder
         trace('[DEBUG ENUM] Final extracted params: $extractedParams');
         #end
 
         #if debug_pattern_usage
         trace('[analyzeEnumParameterExtraction] FINAL RETURN VALUE: ${extractedParams}');
+        #end
+
+        #if debug_embedded_switch
+        trace('[analyzeEnumParameterExtraction] ====== ANALYSIS COMPLETE ======');
+        trace('[analyzeEnumParameterExtraction] Final extractedParams: ${extractedParams}');
+        trace('[analyzeEnumParameterExtraction] Returning ${extractedParams.length} parameters');
+        for (i in 0...extractedParams.length) {
+            trace('[analyzeEnumParameterExtraction]   Param $i: "${extractedParams[i]}"');
+        }
         #end
 
         return extractedParams;
