@@ -846,6 +846,7 @@ class ElixirASTTransformer {
      * HOW: Wraps complex expressions in parentheses to ensure valid syntax
      */
     static function throwStatementTransformPass(ast: ElixirAST): ElixirAST {
+        if (ast == null || ast.def == null) return ast;
         return switch(ast.def) {
             case EThrow(value):
                 // Transform the throw value to ensure it's a valid single expression
@@ -1019,7 +1020,6 @@ class ElixirASTTransformer {
      *     value
      */
     static function removeRedundantEnumExtractionPass(ast: ElixirAST): ElixirAST {
-        // trace('[RemoveRedundantEnumExtraction] Starting pass - ALWAYS');
         #if debug_redundant_extraction
         trace('[RemoveRedundantEnumExtraction] Debug mode enabled');
         #end
@@ -1032,6 +1032,16 @@ class ElixirASTTransformer {
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case ECase(target, clauses):
+                    // Enhanced debug for ChangesetUtils issue
+                    var targetDebug = switch(target.def) {
+                        case EVar(v): 'variable: $v';
+                        case EParen(inner): switch(inner.def) {
+                            case EVar(v): 'variable in parens: $v';
+                            default: 'complex expression';
+                        };
+                        default: 'complex expression';
+                    };
+                    trace('[RemoveRedundantEnumExtraction] Processing ECase with ${clauses.length} clauses, target: $targetDebug');
                     // Check if this case has an enum binding plan
                     currentCaseHasBindingPlan = node.metadata != null && node.metadata.hasEnumBindingPlan == true;
                     #if debug_enum_extraction
@@ -1054,11 +1064,29 @@ class ElixirASTTransformer {
                     // trace('[RemoveRedundantEnumExtraction] Processing case with target: $caseTargetVar');
                     // Process each case clause
                     var newClauses = [];
-                    for (clause in clauses) {
+                    for (i in 0...clauses.length) {
+                        var clause = clauses[i];
                         // ECaseClause is a typedef with pattern, guard, and body fields
                         var pattern = clause.pattern;
                         var guard = clause.guard;
                         var body = clause.body;
+
+                        // Debug pattern to understand ChangesetUtils issue
+                        var patternDebug = switch(pattern) {
+                            case PTuple(elements):
+                                var elemStrs = [for (e in elements) switch(e) {
+                                    case PLiteral(ast):
+                                        switch(ast.def) {
+                                            case EAtom(a): ':$a';
+                                            default: '?';
+                                        }
+                                    case PVar(v): v;
+                                    default: '?';
+                                }];
+                                '{${elemStrs.join(", ")}}';
+                            default: 'other pattern';
+                        };
+                        trace('[RemoveRedundantEnumExtraction] Clause $i pattern: $patternDebug');
 
                         // Propagate the binding plan flag to the clause body
                         if (currentCaseHasBindingPlan && body != null) {
@@ -1081,8 +1109,13 @@ class ElixirASTTransformer {
                                     // Check if this is a redundant extraction
                                     switch(expr.def) {
                                         case EMatch(PVar(varName), rhs):
-                                            trace('[RemoveRedundantEnumExtraction] Found EMatch with varName: $varName');
-                                            trace('[RemoveRedundantEnumExtraction]   RHS type: ${rhs.def}');
+                                            // Enhanced debug for ChangesetUtils issues
+                                            var rhsDebug = switch(rhs.def) {
+                                                case EVar(v): 'EVar($v)';
+                                                case ECall(_, fn, _): 'ECall($fn)';
+                                                default: Type.enumConstructor(rhs.def);
+                                            };
+                                            trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = ... (RHS: $rhsDebug, caseTarget: $caseTargetVar)');
 
                                             // Check if RHS is a reference to a temp variable (g, g1, g2, _g, etc.)
                                             switch(rhs.def) {
@@ -1091,24 +1124,42 @@ class ElixirASTTransformer {
                                                     // Handle both "g" and "_g" patterns
                                                     // CRITICAL FIX: For idiomatic enums, the pattern uses the actual variable names
                                                     // (like {:ok, value}) instead of temp vars (like {:ok, g}).
-                                                    // This means assignments like "id = g" are trying to assign from a
+                                                    // This means assignments like "value = g" are trying to assign from a
                                                     // non-existent variable 'g'. These MUST be removed unconditionally.
                                                     //
-                                                    // Check if RHS is a temp variable (g, g1, g2, _g, _g1, _g2)
+                                                    // Enhanced: For idiomatic enums with canonical pattern names,
+                                                    // ANY assignment where RHS is "g" or a temp var should be removed
+                                                    // because patterns already extract the values
+
+                                                    // First, check if RHS is "g" (regardless of what LHS is)
+                                                    // This catches "value = g" in idiomatic enums
                                                     if (v == "g" || v == "_g") {
                                                         isRedundant = true;
-                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment from non-existent temp var: $varName = $v');
-                                                    } else if (v.length > 1) {
-                                                        // Check for numbered temp vars: g1, g2, etc.
-                                                        if (v.charAt(0) == "g" && v.charAt(1) >= '0' && v.charAt(1) <= '9') {
+                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent temp var)');
+                                                    }
+                                                    // Check for numbered temp vars in RHS: g1, g2, etc.
+                                                    else if (v.length > 1 && v.charAt(0) == "g" &&
+                                                             v.length == 2 && v.charAt(1) >= '0' && v.charAt(1) <= '9') {
+                                                        isRedundant = true;
+                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent numbered temp var)');
+                                                    }
+                                                    // Check for underscore-prefixed numbered temp vars: _g1, _g2, etc.
+                                                    else if (v.length == 3 && v.charAt(0) == "_" && v.charAt(1) == "g" &&
+                                                             v.charAt(2) >= '0' && v.charAt(2) <= '9') {
+                                                        isRedundant = true;
+                                                        trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent underscore temp var)');
+                                                    }
+                                                    // Also check for "g = result" pattern where result is case target
+                                                    else if (v == caseTargetVar) {
+                                                        // Remove assignments like "g = result" where g is a temp var
+                                                        if (varName == "g" || varName == "_g" ||
+                                                            (varName.length == 2 && varName.charAt(0) == "g" &&
+                                                             varName.charAt(1) >= '0' && varName.charAt(1) <= '9') ||
+                                                            (varName.length == 3 && varName.charAt(0) == "_" &&
+                                                             varName.charAt(1) == "g" && varName.charAt(2) >= '0' &&
+                                                             varName.charAt(2) <= '9')) {
                                                             isRedundant = true;
-                                                            trace('[RemoveRedundantEnumExtraction] Removing assignment from non-existent temp var: $varName = $v');
-                                                        }
-                                                        // Check for underscore-prefixed numbered temp vars: _g1, _g2, etc.
-                                                        else if (v.length > 2 && v.charAt(0) == "_" && v.charAt(1) == "g" &&
-                                                                 v.charAt(2) >= '0' && v.charAt(2) <= '9') {
-                                                            isRedundant = true;
-                                                            trace('[RemoveRedundantEnumExtraction] Removing assignment from non-existent temp var: $varName = $v');
+                                                            trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (temp var from case target)');
                                                         }
                                                     }
 
@@ -1150,19 +1201,22 @@ class ElixirASTTransformer {
                                 }
 
                                 // Return filtered block or single expression if only one left
+                                // CRITICAL FIX: Must actually evaluate to a value, not just execute expressions
                                 if (filtered.length == 0) {
-                                    return makeAST(ENil);
+                                    makeAST(ENil);
                                 } else if (filtered.length == 1) {
-                                    return filtered[0];
+                                    filtered[0];
                                 } else {
-                                    return makeAST(EBlock(filtered));
-                                }
+                                    // Preserve metadata when creating new block
+                                    makeASTWithMeta(EBlock(filtered), body.metadata, body.pos);
+                                };
 
                             default:
                                 body; // Not a block, keep as-is
                         };
 
                         // Create new clause with updated body
+                        // Note: transformNode naturally handles nested structures recursively
                         newClauses.push({
                             pattern: pattern,
                             guard: guard,
@@ -1170,7 +1224,8 @@ class ElixirASTTransformer {
                         });
                     }
 
-                    return makeAST(ECase(target, newClauses));
+                    // Create new ECase node preserving original metadata and position
+                    return makeASTWithMeta(ECase(target, newClauses), node.metadata, node.pos);
 
                 default:
                     return node;
@@ -1376,6 +1431,11 @@ class ElixirASTTransformer {
         
         // Recursive function to deeply traverse the AST
         function checkForHSigil(node: ElixirAST): Void {
+            // Check for null node or def before processing
+            if (node == null || node.def == null) {
+                return;
+            }
+
             switch(node.def) {
                 case ESigil(type, _, _):
                     #if debug_phoenix_component_import
@@ -1539,6 +1599,11 @@ class ElixirASTTransformer {
         
         // First, find the module name to determine the app name
         function findModuleName(node: ElixirAST): Void {
+            // Check for null node or def before processing
+            if (node == null || node.def == null) {
+                return;
+            }
+
             switch(node.def) {
                 case EDefmodule(name, _):
                     moduleName = name;
@@ -2090,13 +2155,18 @@ class ElixirASTTransformer {
         
         // Recursive function to deeply traverse the AST
         function checkForBitwise(node: ElixirAST): Void {
+            // Check for null node or def before processing
+            if (node == null || node.def == null) {
+                return;
+            }
+
             #if debug_bitwise_import
             var nodeType = Type.enumConstructor(node.def);
             if (nodeType == "EBinary") {
                 trace('[XRay BitwiseImport] Checking EBinary node');
             }
             #end
-            
+
             switch(node.def) {
                 case EBinary(op, left, right):
                     #if debug_bitwise_import
@@ -2486,10 +2556,15 @@ class ElixirASTTransformer {
     static function statementContextTransformPass(ast: ElixirAST): ElixirAST {
         // Transform with context tracking
         function transformWithContext(node: ElixirAST, isStatementContext: Bool): ElixirAST {
+            // Check for null node or def before processing
+            if (node == null || node.def == null) {
+                return node;
+            }
+
             #if debug_ast_transformer
             trace('[XRay StatementContext] Processing node: ${node.def}, context: ${isStatementContext ? "statement" : "expression"}');
             #end
-            
+
             // First, recursively transform children with appropriate context
             var transformed = switch(node.def) {
                 case EDefmodule(name, doBlock):
@@ -3147,6 +3222,11 @@ class ElixirASTTransformer {
     }
 
     public static function transformNode(ast: ElixirAST, transformer: (ElixirAST) -> ElixirAST): ElixirAST {
+        // Handle null AST nodes or nodes with null def
+        if (ast == null || ast.def == null) {
+            return ast;  // Return as-is if null
+        }
+
         #if debug_transformer_hang
         nodeVisitCounter++;
 
@@ -4181,90 +4261,103 @@ class ElixirASTTransformer {
      * Helper function to iterate over AST nodes without transformation
      */
     static function iterateAST(node: ElixirAST, visitor: ElixirAST -> Void): Void {
+        // Check for null node or def before processing
+        if (node == null || node.def == null) {
+            return;
+        }
+
         switch(node.def) {
             case EBlock(expressions):
-                for (expr in expressions) visitor(expr);
+                for (expr in expressions) if (expr != null) visitor(expr);
             case EModule(name, attributes, body):
-                for (b in body) visitor(b);
+                for (b in body) if (b != null) visitor(b);
             case EDefmodule(name, doBlock):
-                visitor(doBlock);
+                if (doBlock != null) visitor(doBlock);
             case EDef(name, args, guards, body):
-                visitor(body);
+                if (body != null) visitor(body);
             case EDefp(name, args, guards, body):
-                visitor(body);
+                if (body != null) visitor(body);
             case EIf(condition, thenBranch, elseBranch):
-                visitor(condition);
-                visitor(thenBranch);
+                if (condition != null) visitor(condition);
+                if (thenBranch != null) visitor(thenBranch);
                 if (elseBranch != null) visitor(elseBranch);
             case ECase(expr, clauses):
-                visitor(expr);
+                if (expr != null) visitor(expr);
                 for (clause in clauses) {
-                    if (clause.guard != null) visitor(clause.guard);
-                    visitor(clause.body);
+                    if (clause != null) {
+                        if (clause.guard != null) visitor(clause.guard);
+                        if (clause.body != null) visitor(clause.body);
+                    }
                 }
             case EMatch(pattern, expr):
-                visitor(expr);
+                if (expr != null) visitor(expr);
             case EBinary(op, left, right):
-                visitor(left);
-                visitor(right);
+                if (left != null) visitor(left);
+                if (right != null) visitor(right);
             case EUnary(op, expr):
-                visitor(expr);
+                if (expr != null) visitor(expr);
             case ECall(target, funcName, args):
                 if (target != null) visitor(target);
-                for (arg in args) visitor(arg);
+                for (arg in args) if (arg != null) visitor(arg);
             case EMacroCall(macroName, args, doBlock):
-                for (arg in args) visitor(arg);
-                visitor(doBlock);
+                for (arg in args) if (arg != null) visitor(arg);
+                if (doBlock != null) visitor(doBlock);
             case ETuple(elements):
-                for (elem in elements) visitor(elem);
+                for (elem in elements) if (elem != null) visitor(elem);
             case EList(elements):
-                for (elem in elements) visitor(elem);
+                for (elem in elements) if (elem != null) visitor(elem);
             case EMap(pairs):
                 for (pair in pairs) {
-                    visitor(pair.key);
-                    visitor(pair.value);
+                    if (pair != null) {
+                        if (pair.key != null) visitor(pair.key);
+                        if (pair.value != null) visitor(pair.value);
+                    }
                 }
             case EStruct(name, fields):
-                for (field in fields) visitor(field.value);
+                for (field in fields) if (field != null && field.value != null) visitor(field.value);
             case EFor(generators, filters, body, into, uniq):
                 for (gen in generators) {
-                    visitor(gen.expr);
+                    if (gen != null && gen.expr != null) visitor(gen.expr);
                 }
-                for (filter in filters) visitor(filter);
-                visitor(body);
+                for (filter in filters) if (filter != null) visitor(filter);
+                if (body != null) visitor(body);
                 if (into != null) visitor(into);
             case EFn(clauses):
                 for (clause in clauses) {
-                    if (clause.guard != null) visitor(clause.guard);
-                    visitor(clause.body);
+                    if (clause != null) {
+                        if (clause.guard != null) visitor(clause.guard);
+                        if (clause.body != null) visitor(clause.body);
+                    }
                 }
             case EReceive(clauses, after):
                 for (clause in clauses) {
-                    if (clause.guard != null) visitor(clause.guard);
-                    visitor(clause.body);
+                    if (clause != null) {
+                        if (clause.guard != null) visitor(clause.guard);
+                        if (clause.body != null) visitor(clause.body);
+                    }
                 }
                 if (after != null) {
-                    visitor(after.timeout);
-                    visitor(after.body);
+                    if (after.timeout != null) visitor(after.timeout);
+                    if (after.body != null) visitor(after.body);
                 }
             case ERemoteCall(module, funcName, args):
                 if (module != null) visitor(module);
-                for (arg in args) visitor(arg);
+                for (arg in args) if (arg != null) visitor(arg);
             case EParen(expr):
-                visitor(expr);
+                if (expr != null) visitor(expr);
             case EDo(body):
-                for (stmt in body) visitor(stmt);
+                for (stmt in body) if (stmt != null) visitor(stmt);
             case ETry(body, rescue, catchClauses, afterBlock, elseBlock):
-                visitor(body);
+                if (body != null) visitor(body);
                 if (rescue != null) {
                     for (clause in rescue) {
                         // ERescueClause structure would need checking
-                        visitor(clause.body);
+                        if (clause != null && clause.body != null) visitor(clause.body);
                     }
                 }
                 if (catchClauses != null) {
                     for (clause in catchClauses) {
-                        visitor(clause.body);
+                        if (clause != null && clause.body != null) visitor(clause.body);
                     }
                 }
                 if (afterBlock != null) visitor(afterBlock);
@@ -4272,23 +4365,25 @@ class ElixirASTTransformer {
             case EWith(clauses, doBlock, elseBlock):
                 for (clause in clauses) {
                     // Pattern is not an ElixirAST, only visit the expression
-                    visitor(clause.expr);
+                    if (clause != null && clause.expr != null) visitor(clause.expr);
                 }
-                visitor(doBlock);
+                if (doBlock != null) visitor(doBlock);
                 if (elseBlock != null) visitor(elseBlock);
             case ECond(clauses):
                 for (clause in clauses) {
-                    visitor(clause.condition);
-                    visitor(clause.body);
+                    if (clause != null) {
+                        if (clause.condition != null) visitor(clause.condition);
+                        if (clause.body != null) visitor(clause.body);
+                    }
                 }
             case EField(object, field):
-                visitor(object);
+                if (object != null) visitor(object);
             case EModuleAttribute(name, value):
-                visitor(value);
+                if (value != null) visitor(value);
             case EKeywordList(pairs):
                 // Visit values in keyword list
                 for (pair in pairs) {
-                    visitor(pair.value);
+                    if (pair != null && pair.value != null) visitor(pair.value);
                 }
             case _:
                 // Leaf nodes - nothing to iterate
