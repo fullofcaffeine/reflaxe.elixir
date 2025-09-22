@@ -1,6 +1,7 @@
 package reflaxe.elixir.ast.transformers;
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirASTBuilder;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
 
 using reflaxe.elixir.ast.ElixirASTTransformer;
@@ -108,10 +109,41 @@ class AssignmentExtractionTransforms {
             default:
                 // For all other nodes, use the standard recursive transformation
         }
-        
-        // Standard recursive transformation for non-ECase nodes
-        var transformedNode = ElixirASTTransformer.transformAST(node, transformAssignments);
-        
+
+        // For non-ECase nodes, first recurse into children, then check if this node needs transformation
+        // IMPORTANT: We don't pass transformAssignments to avoid infinite recursion
+        // Instead, we manually handle the recursion for the specific node types we care about
+        var transformedNode = node;
+
+        // Manually recurse for node types that can contain assignments
+        switch(node.def) {
+            case EBlock(expressions):
+                transformedNode = makeASTWithMeta(
+                    EBlock(expressions.map(transformAssignments)),
+                    node.metadata,
+                    node.pos
+                );
+            case EIf(cond, thenBranch, elseBranch):
+                transformedNode = makeASTWithMeta(
+                    EIf(
+                        transformAssignments(cond),
+                        transformAssignments(thenBranch),
+                        elseBranch != null ? transformAssignments(elseBranch) : null
+                    ),
+                    node.metadata,
+                    node.pos
+                );
+            case EBinary(op, left, right):
+                transformedNode = makeASTWithMeta(
+                    EBinary(op, transformAssignments(left), transformAssignments(right)),
+                    node.metadata,
+                    node.pos
+                );
+            default:
+                // For other node types, keep as-is
+                transformedNode = node;
+        }
+
         // Handle null nodes (which can indicate removed nodes)
         if (transformedNode == null) {
             return null;
@@ -204,11 +236,11 @@ class AssignmentExtractionTransforms {
                 // Process clauses but preserve variable declarations in their bodies
                 var processedClauses = [];
                 for (clause in clauses) {
-                    // Clause bodies are statement contexts - don't extract assignments
+                    var transformedBody = transformClauseBody(clause.body);
                     processedClauses.push({
                         pattern: clause.pattern,
                         guard: clause.guard,
-                        body: clause.body  // Keep the body as-is, it's already been recursively processed
+                        body: transformedBody
                     });
                 }
                 
@@ -299,7 +331,14 @@ class AssignmentExtractionTransforms {
                 // Transform each statement recursively but keep them all
                 var transformedStatements = [];
                 for (stmt in statements) {
-                    transformedStatements.push(transformClauseBody(stmt));
+                    var transformedStmt = transformClauseBody(stmt);
+                    if (shouldDropTempAssignment(transformedStmt)) {
+                        #if debug_assignment_extraction
+                        trace('[XRay AssignmentExtraction] Dropping temp assignment statement');
+                        #end
+                        continue;
+                    }
+                    transformedStatements.push(transformedStmt);
                 }
                 return makeASTWithMeta(
                     EBlock(transformedStatements),
@@ -311,6 +350,41 @@ class AssignmentExtractionTransforms {
             default:
                 return ElixirASTTransformer.transformAST(body, transformAssignments);
         }
+    }
+
+    static function shouldDropTempAssignment(stmt: ElixirAST): Bool {
+        if (stmt == null || stmt.def == null) {
+            return false;
+        }
+
+        return switch(stmt.def) {
+            case EMatch(pattern, value):
+                switch pattern {
+                    case PVar(name):
+                        var valueVar = switch(value.def) {
+                            case EVar(varName): varName;
+                            default: null;
+                        };
+
+                        if (ElixirASTBuilder.isTempPatternVarName(name)) {
+                            return true;
+                        }
+
+                        if (valueVar != null) {
+                            if (valueVar == name) {
+                                return true;
+                            }
+                            if (ElixirASTBuilder.isTempPatternVarName(valueVar)) {
+                                return true;
+                            }
+                        }
+                        false;
+                    default:
+                        false;
+                };
+            default:
+                false;
+        };
     }
     
     /**
@@ -447,6 +521,25 @@ class AssignmentExtractionTransforms {
                     
                     // First extract any assignments from the value expression itself
                     var cleanValue = extractFromExpr(value);
+
+                    // Skip extraction for temp pattern variables (g, g1, etc.)
+                    switch pattern {
+                        case PVar(name) if (ElixirASTBuilder.isTempPatternVarName(name)):
+                            #if debug_assignment_extraction
+                            trace('[XRay AssignmentExtraction] ⚠️ Skipping temp pattern assignment for $name');
+                            #end
+                            return cleanValue;
+                        case PVar(name):
+                            switch(cleanValue.def) {
+                                case EVar(varName) if (varName == name):
+                                    #if debug_assignment_extraction
+                                    trace('[XRay AssignmentExtraction] ⚠️ Skipping redundant self-assignment: $name = $varName');
+                                    #end
+                                    return cleanValue;
+                                default:
+                            }
+                        default:
+                    }
                     
                     // Then extract this assignment
                     extracted.push(makeASTWithMeta(
