@@ -10,8 +10,6 @@ defmodule EnumValueMap do
     struct.compare_args(p1, p2)
   end
   defp compare_args(struct, a1, a2) do
-    g = 0
-    g1 = length(a1)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, g1, :ok}, fn _, {acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
@@ -44,7 +42,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, :ok}, fn _, {acc_k, acc_state} ->
   if (acc_k.has_next()) do
     k2 = acc_k.next()
-    Map.put(copied, k2, Map.get(struct, k2))
+    copied = Map.put(copied, k2, Map.get(struct, k2))
     {:cont, {acc_k, acc_state}}
   else
     {:halt, {acc_k, acc_state}}

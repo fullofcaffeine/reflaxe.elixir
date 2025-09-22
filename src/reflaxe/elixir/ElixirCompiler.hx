@@ -1115,9 +1115,25 @@ class ElixirCompiler extends GenericCompiler<
                         }
                     }
 
+                    // Check if this parameter is unused in the function body
+                    var isUnused = if (arg.v.meta != null && arg.v.meta.has("-reflaxe.unused")) {
+                        true;
+                    } else if (funcData.expr != null) {
+                        // Use UsageDetector to check if parameter is actually used
+                        !reflaxe.elixir.helpers.UsageDetector.isParameterUsed(arg.v, funcData.expr);
+                    } else {
+                        false;
+                    };
+                    
                     // Register the mapping for use in function body
                     // Use toSafeElixirParameterName to handle reserved keywords
-                    var finalName = reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(strippedName);
+                    var baseName = reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(strippedName);
+                    // Add underscore prefix for unused parameters
+                    var finalName = if (isUnused && !baseName.startsWith("_")) {
+                        "_" + baseName;
+                    } else {
+                        baseName;
+                    };
                     if (!context.tempVarRenameMap.exists(idKey)) {
                         context.tempVarRenameMap.set(idKey, finalName);
                     }
@@ -1202,23 +1218,32 @@ class ElixirCompiler extends GenericCompiler<
             // Add the regular function parameters
             if (funcData.tfunc != null) {
                 for (arg in funcData.tfunc.args) {
-                    var originalName = arg.v.name;
-                    var strippedName = originalName;
+                    // Look up the mapped name from tempVarRenameMap
+                    // This will have the underscore prefix if the parameter is unused
+                    var idKey = Std.string(arg.v.id);
+                    var paramName = if (context.tempVarRenameMap.exists(idKey)) {
+                        context.tempVarRenameMap.get(idKey);
+                    } else {
+                        // Fallback to original logic if not mapped (shouldn't happen)
+                        var originalName = arg.v.name;
+                        var strippedName = originalName;
 
-                    // Apply same stripping logic as above for consistency
-                    var renamedPattern = ~/^(.+?)(\d+)$/;
-                    if (renamedPattern.match(originalName)) {
-                        var baseWithoutSuffix = renamedPattern.matched(1);
-                        var suffix = renamedPattern.matched(2);
+                        // Apply same stripping logic as above for consistency
+                        var renamedPattern = ~/^(.+?)(\d+)$/;
+                        if (renamedPattern.match(originalName)) {
+                            var baseWithoutSuffix = renamedPattern.matched(1);
+                            var suffix = renamedPattern.matched(2);
 
-                        var commonFieldNames = ["options", "columns", "name", "value", "type", "data", "fields", "items"];
-                        if ((suffix == "2" || suffix == "3") && commonFieldNames.indexOf(baseWithoutSuffix) >= 0) {
-                            strippedName = baseWithoutSuffix;
+                            var commonFieldNames = ["options", "columns", "name", "value", "type", "data", "fields", "items"];
+                            if ((suffix == "2" || suffix == "3") && commonFieldNames.indexOf(baseWithoutSuffix) >= 0) {
+                                strippedName = baseWithoutSuffix;
+                            }
                         }
-                    }
 
-                    // Use toSafeElixirParameterName to handle reserved keywords
-                    var paramName = reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(strippedName);
+                        // Use toSafeElixirParameterName to handle reserved keywords
+                        reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(strippedName);
+                    };
+                    
                     params.push(PVar(paramName));
                 }
             }
