@@ -601,6 +601,28 @@ class ElixirASTBuilder {
                 if (init != null) {
                     switch(init.expr) {
                         case TBlock(blockStmts) if (blockStmts.length >= 3):
+#if debug_map_literal
+                            trace('[MapLiteral Debug] TVar name=${v.name} id=${v.id} with block init (length=${blockStmts.length})');
+                            for (i in 0...blockStmts.length) {
+                                trace('  stmt[' + i + '] = ' + Type.enumConstructor(blockStmts[i].expr));
+                                switch(blockStmts[i].expr) {
+                                    case TVar(tempVar, tempInit):
+                                        var initKind = tempInit != null ? Type.enumConstructor(tempInit.expr) : "null";
+                                        trace('    TVar ' + tempVar.name + ' init=' + initKind);
+                                    case TBinop(op, lhs, rhs):
+                                        trace('    TBinop op=' + Std.string(op) + ' lhs=' + Type.enumConstructor(lhs.expr) + ' rhs=' + Type.enumConstructor(rhs.expr));
+                                    case TCall(func, args):
+                                        trace('    TCall func=' + Type.enumConstructor(func.expr) + ' args=' + [for (a in args) Type.enumConstructor(a.expr)].join(","));
+                                    case TLocal(localVar):
+                                        trace('    TLocal name=' + localVar.name);
+                                    case _:
+                                }
+                            }
+#end
+                            var mapLiteral = tryBuildMapLiteralFromBlock(blockStmts, currentContext);
+                            if (mapLiteral != null) {
+                                return EMatch(PVar(toElixirVarName(v.name)), mapLiteral);
+                            }
                             // Check if this is a conditional comprehension pattern
                             var isConditionalComp = false;
                             var tempVarName = "";
@@ -1340,7 +1362,12 @@ class ElixirASTBuilder {
                                 };
 
                                 if (isTempPatternVarName(name)) {
-                                    shouldSkipAssign = true;
+                                    shouldSkipAssign = switch(rightAST != null ? rightAST.def : null) {
+                                        case EVar(varName) if (varName == name || isTempPatternVarName(varName)):
+                                            true;
+                                        default:
+                                            false;
+                                    };
                                 } else if (valueName != null) {
                                     if (valueName == name) {
                                         shouldSkipAssign = true;
@@ -2281,8 +2308,14 @@ class ElixirASTBuilder {
                                     // Transform Map methods to Elixir Map module functions
                                     switch(fieldName) {
                                         case "set" if (args.length == 2):
-                                            // map.set(key, value) → Map.put(map, key, value)
-                                            ERemoteCall(makeAST(EVar("Map")), "put", [objAst].concat(args));
+                                            // map.set(key, value) → map = Map.put(map, key, value)
+                                            var callAst = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [objAst].concat(args)));
+                                            switch(objAst.def) {
+                                                case EVar(_):
+                                                    EBinary(Match, objAst, callAst);
+                                                default:
+                                                    callAst.def;
+                                            }
                                         case "get" if (args.length == 1):
                                             // map.get(key) → Map.get(map, key)
                                             ERemoteCall(makeAST(EVar("Map")), "get", [objAst].concat(args));
@@ -9401,6 +9434,65 @@ class ElixirASTBuilder {
     /**
      * Helper: Check if expression contains push to specific variable
      */
+    static function tryBuildMapLiteralFromBlock(blockStmts: Array<TypedExpr>, context: CompilationContext): Null<ElixirAST> {
+        if (blockStmts == null || blockStmts.length < 3) {
+            return null;
+        }
+
+        var tempVar: TVar = null;
+        var tempInit: TypedExpr = null;
+
+        switch(blockStmts[0].expr) {
+            case TVar(tv, init) if (init != null):
+                tempVar = tv;
+                tempInit = init;
+            default:
+                return null;
+        }
+
+        if (tempVar == null || tempInit == null) {
+            return null;
+        }
+
+        var isMapCtor = switch(tempInit.expr) {
+            case TNew(c, _, _):
+                var className = c.get().name;
+                className == "StringMap" || className == "Map" || className.endsWith("Map");
+            default:
+                false;
+        };
+
+        if (!isMapCtor) {
+            return null;
+        }
+
+        var tempName = tempVar.name;
+        var pairs: Array<EMapPair> = [];
+
+        for (i in 1...blockStmts.length - 1) {
+            var stmt = blockStmts[i];
+            switch(stmt.expr) {
+                case TCall({expr: TField({expr: TLocal(local)}, FInstance(_, _, cf))}, callArgs):
+                    if (local.name != tempName || cf.get().name != "set" || callArgs.length != 2) {
+                        return null;
+                    }
+
+                    var keyAst = buildFromTypedExpr(callArgs[0], context);
+                    var valueAst = buildFromTypedExpr(callArgs[1], context);
+                    pairs.push({key: keyAst, value: valueAst});
+                default:
+                    return null;
+            }
+        }
+
+        switch(blockStmts[blockStmts.length - 1].expr) {
+            case TLocal(retVar) if (retVar.name == tempName):
+                return makeAST(EMap(pairs));
+            default:
+                return null;
+        }
+    }
+
     static function containsPushToVar(expr: TypedExpr, varName: String): Bool {
         return switch(expr.expr) {
             case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, _) if (v.name == varName && cf.get().name == "push"):
