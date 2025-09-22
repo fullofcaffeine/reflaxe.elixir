@@ -6522,41 +6522,13 @@ class ElixirASTBuilder {
                          * - The case body will handle remapping via assignments
                          */
 
-                        // CRITICAL FIX FOR MULTI-PARAMETER ENUMS:
-                        // Check if ANY parameter uses canonical names. If so, ALL parameters
-                        // should use temp vars for consistency.
-                        var hasCanonicalNames = false;
-                        if (extractedParams != null && canonicalNames != null) {
-                            for (i in 0...paramCount) {
-                                if (i < extractedParams.length && i < canonicalNames.length &&
-                                    extractedParams[i] != null && extractedParams[i] == canonicalNames[i]) {
-                                    hasCanonicalNames = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        #if debug_enum
-                        if (hasCanonicalNames) {
-                            trace('[CRITICAL FIX] Regular enum: Detected canonical names, will use temp vars for ALL parameters');
-                        }
-                        #end
-
                         for (i in 0...paramCount) {
                             if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null) {
-                                if (hasCanonicalNames) {
-                                    // When we have canonical names anywhere, use temp vars for ALL parameters
-                                    // This ensures consistency in multi-parameter enums
-                                    var tempVarName = i == 0 ? "g" : 'g${i}';
-                                    paramPatterns.push(PVar(tempVarName));
-
-                                    #if debug_enum
-                                    trace('[CRITICAL FIX] Regular enum: Using temp var $tempVarName for parameter $i (was ${extractedParams[i]})');
-                                    #end
-                                } else {
-                                    // Use the extracted param name as-is (might be a temp var already)
-                                    paramPatterns.push(PVar(extractedParams[i]));
-                                }
+                                // Use the extracted param name directly
+                                // This will be either:
+                                // - The canonical name from the enum definition (e.g., "value", "message")
+                                // - A temp var name if pattern extraction failed ("g", "g1", etc.)
+                                paramPatterns.push(PVar(extractedParams[i]));
 
                                 #if debug_ast_pipeline
                                 trace('[M0.3] Using binding plan name for param ${i}: ${extractedParams[i]}');

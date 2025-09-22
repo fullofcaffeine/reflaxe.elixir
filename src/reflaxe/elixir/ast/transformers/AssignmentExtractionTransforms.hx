@@ -327,28 +327,36 @@ class AssignmentExtractionTransforms {
         
         function buildParentMap(node: ElixirAST, parent: Null<ElixirAST>): Void {
             // Skip null nodes
-            if (node == null) {
+            if (node == null || node.def == null) {
                 return;
             }
-            
+
             if (parent != null) {
                 parentOf.set(node, parent);
             }
-            
+
             switch(node.def) {
                 case ECase(expr, clauses):
                     buildParentMap(expr, node);
-                    for (clause in clauses) {
-                        // The clause body's parent is the ECase, which is important for context
-                        buildParentMap(clause.body, node);
-                        if (clause.guard != null) {
-                            buildParentMap(clause.guard, node);
+                    if (clauses != null) {
+                        for (clause in clauses) {
+                            // The clause body's parent is the ECase, which is important for context
+                            if (clause != null && clause.body != null) {
+                                buildParentMap(clause.body, node);
+                            }
+                            if (clause != null && clause.guard != null) {
+                                buildParentMap(clause.guard, node);
+                            }
                         }
                     }
                     
                 case EBlock(statements):
-                    for (stmt in statements) {
-                        buildParentMap(stmt, node);
+                    if (statements != null) {
+                        for (stmt in statements) {
+                            if (stmt != null) {
+                                buildParentMap(stmt, node);
+                            }
+                        }
                     }
                     
                 case EIf(condition, thenBranch, elseBranch):
