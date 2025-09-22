@@ -3,8 +3,6 @@ defmodule StringTools do
 
   def url_encode(s) do
     result = ""
-    g = 0
-    g1 = length(s)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
@@ -121,7 +119,6 @@ end)
   end
   def quote_regexp_meta(s) do
     special_chars = ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"]
-    g = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, special_chars, g, :ok}, fn _, {acc_s, acc_special_chars, acc_g, acc_state} -> nil end)
     s
   end
@@ -129,8 +126,6 @@ end)
     if (str.substr(0, 2) == "0x") do
       hex = str.substr(2)
       result = 0
-      g = 0
-      g1 = length(hex)
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} -> nil end)
       result
     end
@@ -145,8 +140,6 @@ end)
         start = 1
       end
     end
-    g = start
-    g1 = length(str)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, g, g1, :ok}, fn _, {acc_result, acc_g, acc_g1, acc_state} ->
   if (acc_g < acc_g1) do
     i = acc_g = acc_g + 1
