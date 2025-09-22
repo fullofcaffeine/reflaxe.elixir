@@ -23,6 +23,25 @@
 # Application-specific configuration
 -D app_name=TodoApp
 
+# Enable dead code elimination to remove unused functions
+# 
+# DCE (Dead Code Elimination) is CRITICAL for abstract types with operator overloads.
+# Without DCE, ALL @:op annotated methods in abstracts (like Date's comparison operators)
+# are compiled to helper functions in the _Impl_ module, even if never used.
+# 
+# Example: Date abstract defines lt, lte, gt, gte, eq, neq operators
+# - Without DCE: All 6 functions generated in Date_Impl_, causing "unused function" warnings
+# - With DCE full: Only used functions are kept, eliminating warnings
+#
+# DCE levels:
+# - no: Disable DCE (causes unused function warnings)
+# - std: Remove unused std library classes only
+# - full: Remove all unreachable code (RECOMMENDED for production)
+#
+# Note: Reflaxe.Elixir correctly respects DCE - eliminated code is removed before
+# transpilation, resulting in cleaner and smaller Elixir output.
+-dce full
+
 # (Optional) Debug traces for dynamic assignment fix
 # Disabled by default to avoid noisy generation in some modules
 # -D debug_dynamic_assignment
