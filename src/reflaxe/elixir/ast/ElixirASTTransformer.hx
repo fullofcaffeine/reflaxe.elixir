@@ -3,6 +3,7 @@ package reflaxe.elixir.ast;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import haxe.macro.Expr.Position;
 import reflaxe.elixir.ast.ElixirASTBuilder;
 import reflaxe.elixir.ast.ElixirAST.VarOrigin;
 import reflaxe.elixir.ast.naming.ElixirAtom;
@@ -429,6 +430,13 @@ class ElixirASTTransformer {
             pass: structFieldAssignmentTransformPass
         });
 
+        passes.push({
+            name: "MapBuilderCollapse",
+            description: "Replace Map.put builder blocks with literal maps",
+            enabled: true,
+            pass: mapBuilderCollapsePass
+        });
+
         // Cleanup redundant temp alias assignments introduced during enum extraction
         passes.push({
             name: "TempAliasCleanup",
@@ -603,21 +611,112 @@ class ElixirASTTransformer {
     }
 
     static function tempAliasCleanupPass(ast: ElixirAST): ElixirAST {
+        return ast;
+    }
+
+    static function mapBuilderCollapsePass(ast: ElixirAST): ElixirAST {
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case EBlock(statements):
-                    var cleaned: Array<ElixirAST> = [];
-                    for (stmt in statements) {
-                        if (stmt == null || shouldDropTempAlias(stmt)) {
-                            continue;
-                        }
-                        cleaned.push(tempAliasCleanupPass(stmt));
+                    var collapsed = tryCollapseMapBuilder(statements, node.metadata, node.pos);
+                    if (collapsed != null) {
+                        return collapsed;
                     }
-                    return makeASTWithMeta(EBlock(cleaned), node.metadata, node.pos);
+                    return node;
                 default:
                     return node;
             }
         });
+    }
+
+    static function tryCollapseMapBuilder(statements: Array<ElixirAST>, metadata: ElixirMetadata, pos: Position): Null<ElixirAST> {
+        if (statements == null || statements.length < 2) {
+            return null;
+        }
+
+        var tempName: String = null;
+        var pairs: Array<EMapPair> = null;
+
+        switch(statements[0].def) {
+            case EMatch(pattern, initExpr):
+                switch pattern {
+                    case PVar(name):
+                        tempName = name;
+#if debug_map_literal
+                        trace('[MapCollapse] temp var=' + tempName);
+#end
+                    default:
+                        return null;
+                }
+
+                switch(initExpr.def) {
+                    case EMap(initialPairs):
+                        pairs = initialPairs.copy();
+#if debug_map_literal
+                        trace('[MapCollapse] initial pairs count=' + pairs.length);
+#end
+                    default:
+                        return null;
+                }
+            default:
+                return null;
+        }
+
+        if (tempName == null) {
+            return null;
+        }
+
+        for (i in 1...statements.length - 1) {
+            var stmt = statements[i];
+            switch(stmt.def) {
+                case EBinary(Match, leftExpr, rightExpr):
+                    switch(leftExpr.def) {
+                        case EVar(varName) if (varName == tempName):
+#if debug_map_literal
+                            trace('[MapCollapse] assignment to ' + varName);
+#end
+                        default:
+                            return null;
+                    }
+
+                    switch(rightExpr.def) {
+                        case ERemoteCall(moduleExpr, funcName, args) if (funcName == "put" && args.length == 3):
+#if debug_map_literal
+                            trace('[MapCollapse] Map.put detected');
+#end
+                            switch(moduleExpr.def) {
+                                case EVar(moduleName) if (moduleName == "Map"):
+                                default:
+                                    return null;
+                            }
+
+                            switch(args[0].def) {
+                                case EVar(varName) if (varName == tempName):
+                                default:
+                                    return null;
+                            }
+
+                            pairs.push({key: args[1], value: args[2]});
+#if debug_map_literal
+                            trace('[MapCollapse] appended pair #' + pairs.length);
+#end
+                        default:
+                            return null;
+                    }
+                default:
+                    return null;
+            }
+        }
+
+        switch(statements[statements.length - 1].def) {
+            case EVar(varName) if (varName == tempName):
+#if debug_map_literal
+                trace('[MapCollapse] success - collapsing to literal');
+#end
+                return makeASTWithMeta(EMap(pairs), metadata, pos);
+            default:
+                return null;
+        }
     }
 
     static function shouldDropTempAlias(stmt: ElixirAST): Bool {
@@ -634,16 +733,42 @@ class ElixirASTTransformer {
                             default: null;
                         };
 
+#if debug_temp_alias
+                        if (ElixirASTBuilder.isTempPatternVarName(name) || (rhsVar != null && ElixirASTBuilder.isTempPatternVarName(rhsVar))) {
+                            var exprPreview = try ElixirASTPrinter.printAST(value) catch (e:Dynamic) '???';
+                            trace('[TempAliasCleanup] inspect lhs=' + name + ' rhs=' + Std.string(rhsVar) + ' expr=' + exprPreview);
+                        }
+#end
+
                         if (ElixirASTBuilder.isTempPatternVarName(name)) {
-                            return true;
+                            return switch(value.def) {
+                                case EVar(tempName) if (tempName == name || ElixirASTBuilder.isTempPatternVarName(tempName)):
+                                    #if debug_temp_alias
+                                    trace('[TempAliasCleanup] drop lhs temp alias: ' + name + ' <- ' + tempName);
+                                    #end
+                                    true;
+                                default:
+                                    false;
+                            };
                         }
 
                         if (rhsVar != null) {
                             if (rhsVar == name) {
+                                #if debug_temp_alias
+                                trace('[TempAliasCleanup] drop self alias: ' + name);
+                                #end
                                 return true;
                             }
                             if (ElixirASTBuilder.isTempPatternVarName(rhsVar)) {
-                                return true;
+                                return switch(value.def) {
+                                    case EVar(_):
+                                        #if debug_temp_alias
+                                        trace('[TempAliasCleanup] drop alias referencing temp: ' + name + ' <- ' + rhsVar);
+                                        #end
+                                        true;
+                                    default:
+                                        false;
+                                };
                             }
                         }
                         false;
