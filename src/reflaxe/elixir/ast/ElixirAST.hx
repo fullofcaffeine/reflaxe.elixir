@@ -650,6 +650,7 @@ typedef ElixirMetadata = {
     ?inPipeline: Bool,            // Part of pipe chain
     ?inComprehension: Bool,       // Inside for comprehension
     ?inGuard: Bool,               // Inside guard clause
+    ?redundantEnumExtraction: Bool, // Marks redundant enum extraction for removal
     
     // Array Comprehension Reconstruction
     ?isUnrolledComprehension: Bool, // Block contains unrolled array comprehension
