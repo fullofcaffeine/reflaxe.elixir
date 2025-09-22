@@ -659,6 +659,10 @@ typedef ElixirMetadata = {
     // Variable Resolution
     ?varIdToName: Map<Int, String>, // Clause-local variable renaming mappings
     ?requiresIdiomaticTransform: Bool,  // Enum needs idiomatic compilation
+    
+    // Inheritance Information
+    ?parentModule: String,         // Parent class module name for inheritance
+    ?isException: Bool,            // Whether this class extends haxe.Exception
     ?idiomaticEnumType: String,   // Name of the idiomatic enum type
     ?hasEnumBindingPlan: Bool,    // M0.5: Case has proper enum parameter mappings
     ?enumBindingPlanId: String,   // Unique ID linking to EnumBindingPlan in context

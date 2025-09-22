@@ -1613,8 +1613,156 @@ class ElixirASTTransformer {
      * Example: super.toString() -> ParentModule.to_string(struct)
      */
     static function selfReferenceTransformPass(ast: ElixirAST): ElixirAST {
+        // First pass: collect module metadata for context
+        var moduleMetadata: ElixirMetadata = null;
+        
+        function collectModuleMetadata(node: ElixirAST): Void {
+            if (node == null || node.def == null) return;
+            
+            switch(node.def) {
+                case EModule(_, _, _):
+                    if (node.metadata != null) {
+                        moduleMetadata = node.metadata;
+                        #if debug_super_handling
+                        trace("[SuperTransform] Collected module metadata: parentModule=" + 
+                              (moduleMetadata.parentModule != null ? moduleMetadata.parentModule : "null"));
+                        #end
+                    }
+                default:
+                    // Continue traversing
+                    iterateAST(node, collectModuleMetadata);
+            }
+        }
+        
+        collectModuleMetadata(ast);
+        
+        // Second pass: transform with context
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch(node.def) {
+                // Transform method calls on super
+                // Note: In ElixirASTBuilder, super.toString() becomes:
+                // ECall(target=null, methodName="call", args=[EField(EVar("super"), "to_string"), ...])
+                // But we need to check for the direct case too:
+                // ECall(target=EField(EVar("super"), "to_string"), methodName="call", args)
+                case ECall(target, methodName, args):
+                    #if debug_super_handling
+                    trace("[SuperTransform] Processing ECall:");
+                    trace("  target = " + target);
+                    trace("  methodName = " + methodName);
+                    trace("  args = " + args);
+                    #end
+                    
+                    // First check if this is a call where the first arg is super.field access
+                    if (methodName == "call" && args.length > 0) {
+                        switch(args[0].def) {
+                            case EField(superVar, fieldName):
+                                if (superVar.def.match(EVar("super"))) {
+                                    #if debug_super_handling
+                                    trace("[SuperTransform] Found super." + fieldName + " as first argument");
+                                    #end
+                                    if (fieldName == "to_string" || fieldName == "toString") {
+                                        #if debug_super_handling
+                                        trace("[SuperTransform] Transforming super.toString() call to empty string");
+                                        #end
+                                        return makeAST(EString(""));
+                                    }
+                                }
+                            default:
+                        }
+                    }
+                    
+                    // Also check if target itself is super.field or just super
+                    if (target != null) {
+                        switch(target.def) {
+                            case EVar("super"):
+                                // Direct super.method() call where super is the target
+                                #if debug_super_handling
+                                trace("[SuperTransform] Direct super as target detected!");
+                                trace("  methodName = " + methodName);
+                                trace("  node.metadata = " + node.metadata);
+                                #end
+                                
+                                // Look for parent module in metadata
+                                var parentModule = if (node.metadata != null && node.metadata.parentModule != null) {
+                                    node.metadata.parentModule;
+                                } else if (moduleMetadata != null && moduleMetadata.parentModule != null) {
+                                    // Use collected module metadata
+                                    moduleMetadata.parentModule;
+                                } else {
+                                    // No parent module available
+                                    null;
+                                };
+                                
+                                if (parentModule != null) {
+                                    // Transform super.method() to ParentModule.method(struct, args...)
+                                    #if debug_super_handling
+                                    trace("[SuperTransform] Delegating to parent module: " + parentModule);
+                                    #end
+                                    
+                                    // Convert method name to snake_case for Elixir
+                                    var elixirMethodName = if (methodName == "toString") {
+                                        "to_string";
+                                    } else {
+                                        NameUtils.toSnakeCase(methodName);
+                                    };
+                                    
+                                    // Build delegation call: ParentModule.method(struct, original_args...)
+                                    var delegationArgs = [makeAST(EVar("struct"))].concat(args);
+                                    return makeAST(ERemoteCall(
+                                        makeAST(EAtom(parentModule)),
+                                        elixirMethodName,
+                                        delegationArgs
+                                    ));
+                                } else if (methodName == "to_string" || methodName == "toString") {
+                                    // Fallback for toString when parent is unknown
+                                    #if debug_super_handling
+                                    trace("[SuperTransform] No parent module found, using struct.message for toString");
+                                    #end
+                                    // For exception classes, return the message field
+                                    return makeAST(EField(makeAST(EVar("struct")), "message"));
+                                } else {
+                                    // Keep as is if we can't resolve parent
+                                    #if debug_super_handling
+                                    trace("[SuperTransform] No parent module found, keeping super call as is");
+                                    #end
+                                    node;
+                                }
+                                
+                            case EField(superVar, fieldName):
+                                #if debug_super_handling
+                                trace("[SuperTransform] EField target detected:");
+                                trace("  superVar.def = " + superVar.def);
+                                trace("  fieldName = " + fieldName);
+                                #end
+                                
+                                if (superVar.def.match(EVar("super"))) {
+                                    #if debug_super_handling
+                                    trace("[SuperTransform] Super method call detected!");
+                                    #end
+                                    
+                                    // This is super.method() call
+                                    if (fieldName == "to_string" || fieldName == "toString") {
+                                        #if debug_super_handling
+                                        trace("[SuperTransform] Transforming super.toString() to empty string");
+                                        #end
+                                        return makeAST(EString(""));  // Default to empty string for exception base message
+                                    } else {
+                                        // For other methods, keep as is for now
+                                        node;
+                                    }
+                                } else {
+                                    node;
+                                }
+                            default:
+                                #if debug_super_handling
+                                trace("[SuperTransform] Target is not super or field access, keeping node");
+                                #end
+                                node;
+                        }
+                    } else {
+                        node;
+                    }
+                    
                 // Transform self.field and super.field  
                 case EField(target, fieldName):
                     switch(target.def) {
@@ -1622,27 +1770,8 @@ class ElixirASTTransformer {
                             // Replace 'self' with 'struct' (the conventional first parameter)
                             makeAST(EField(makeAST(EVar("struct")), fieldName));
                         case EVar("super"):
-                            // Transform super.method() to Elixir delegation pattern
-                            // Extract parent module from metadata if available
-                            var parentModule = extractParentModule(node);
-                            if (parentModule != null) {
-                                // Generate: ParentModule.method_name(struct, ...args)
-                                var elixirMethodName = toSnakeCase(fieldName);
-                                makeAST(ECall(
-                                    makeAST(EVar(parentModule)),
-                                    elixirMethodName,
-                                    [makeAST(EVar("struct"))]
-                                ));
-                            } else {
-                                // Fallback: generate a placeholder that indicates inheritance is needed
-                                // The compiler should handle this at a higher level
-                                // For now, just call the method on struct directly
-                                makeAST(ECall(
-                                    null,
-                                    toSnakeCase(fieldName),
-                                    [makeAST(EVar("struct"))]
-                                ));
-                            }
+                            // Don't transform super field access here anymore - handle in ECall
+                            node;
                         default:
                             node;
                     }
@@ -1652,8 +1781,10 @@ class ElixirASTTransformer {
                     makeAST(EVar("struct"));
                     
                 // Transform standalone 'super' references
-                case EVar("super"):
-                    makeAST(ENil);
+                // NOTE: Don't transform super to nil - this causes issues with super.method() calls
+                // Super method delegation should be handled at the TCall level when super is the target
+                // case EVar("super"):
+                //     makeAST(ENil);
                     
                 // Handle super calls - Elixir doesn't have super
                 case ECall(target, funcName, args):
@@ -6282,6 +6413,7 @@ class SupervisorOptionsTransformPass {
 
         return analyzeAndTransform(ast);
     }
+
 }
 
 #end

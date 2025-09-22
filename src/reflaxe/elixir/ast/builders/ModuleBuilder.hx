@@ -76,25 +76,65 @@ class ModuleBuilder {
     }
 
     /**
-     * Build a class module AST
+     * Build a class module AST with support for exception classes
      *
-     * @param classType The class type
-     * @param fields Module fields
-     * @return Module AST
+     * @param classType The class type to compile
+     * @param fields Module fields (functions, properties, etc.)
+     * @param metadata Optional metadata containing inheritance info
+     * @return Module AST with appropriate structure (regular module or exception)
+     * 
+     * @example Building a regular class:
+     * ```haxe
+     * var moduleAST = ModuleBuilder.buildClassModule(classType, fields, null);
+     * ```
+     * 
+     * @example Building an exception class:
+     * ```haxe
+     * var metadata = { isException: true, parentModule: "Exception" };
+     * var moduleAST = ModuleBuilder.buildClassModule(classType, fields, metadata);
+     * ```
      */
-    public static function buildClassModule(classType: ClassType, fields: Array<ElixirAST>): ElixirAST {
+    public static function buildClassModule(classType: ClassType, fields: Array<ElixirAST>, ?metadata: ElixirMetadata): ElixirAST {
         #if debug_compilation_hang
         Sys.println('[HANG DEBUG] 🏗️ ModuleBuilder.buildClassModule START - Class: ${classType.name}, Fields: ${fields.length}');
         var moduleStartTime = haxe.Timer.stamp() * 1000;
         #end
 
-        // Stub implementation - return minimal module structure
         var moduleName = extractModuleName(classType);
-        var attributes: Array<EAttribute> = []; // No attributes for stub
+        var attributes: Array<EAttribute> = [];
+
+        // Use provided metadata or create empty object
+        var moduleMetadata = metadata != null ? metadata : {};
+
+        // Check if this is an exception class
+        if (moduleMetadata.isException == true) {
+            #if debug_inheritance
+            trace('[ModuleBuilder] Generating exception module for ${moduleName}');
+            #end
+            
+            // For exceptions, we need to add the defexception structure
+            // In Elixir, defexception creates a struct with a message field
+            // We'll simulate this by adding the appropriate fields
+            
+            // Add exception struct fields at the beginning
+            var exceptionFields = [
+                // defstruct message: ""
+                makeExceptionStructDefinition()
+            ];
+            
+            // Combine exception fields with user-defined fields
+            fields = exceptionFields.concat(fields);
+            
+            // Add @behaviour Exception attribute for proper exception behavior
+            attributes.push({
+                name: "behaviour",
+                value: makeAST(EAtom("Exception"))
+            });
+        }
 
         var result = {
             def: EModule(moduleName, attributes, fields),
-            metadata: {},
+            metadata: moduleMetadata,
             pos: classType.pos
         };
 
@@ -104,6 +144,39 @@ class ModuleBuilder {
         #end
 
         return result;
+    }
+    
+    /**
+     * Create the defstruct definition for exception classes
+     * 
+     * @return AST node representing defstruct with message field
+     * 
+     * Generates: `defstruct message: ""`
+     */
+    static function makeExceptionStructDefinition(): ElixirAST {
+        // Create the struct definition with message field
+        // This simulates defexception which creates a struct with message
+        return makeAST(ECall(
+            null,
+            "defstruct",
+            [makeAST(EKeywordList([
+                {key: "message", value: makeAST(EString(""))}
+            ]))]
+        ));
+    }
+    
+    /**
+     * Helper function to create AST nodes
+     * 
+     * @param def The AST definition
+     * @return ElixirAST node with empty metadata
+     */
+    static inline function makeAST(def: ElixirASTDef): ElixirAST {
+        return {
+            def: def,
+            metadata: {},
+            pos: null
+        };
     }
 }
 
