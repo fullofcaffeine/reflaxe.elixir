@@ -378,7 +378,15 @@ class ElixirASTBuilder {
         // Do the actual conversion
         var metadata = createMetadata(expr);
         var astDef = convertExpression(expr);
-        
+
+        // CRITICAL FIX: If conversion returns null (skipped assignment), propagate the null
+        // This allows TBlock to properly filter out redundant assignments
+        if (astDef == null) {
+            // Restore context before returning null
+            currentContext = previousContext;
+            return null;
+        }
+
         // ONLY mark metadata - NO transformation in builder!
         // Check both direct enum constructor calls AND function calls that return idiomatic enums
         switch(expr.expr) {
@@ -405,7 +413,7 @@ class ElixirASTBuilder {
                 }
             default:
         }
-        
+
         var result = makeASTWithMeta(astDef, metadata, expr.pos);
 
         #if debug_ast_builder
@@ -1094,26 +1102,83 @@ class ElixirASTBuilder {
                     };
                     
                     // Check if we should skip this assignment
-                    // Following Codex's architecture guidance: skip redundant assignments from enum extraction
+                    // Following Codex's architecture guidance: use ID-based tracking
                     var shouldSkipAssignment = false;
 
-                    // Skip assignments from TEnumParameter extraction in case clauses
-                    // These are redundant because pattern matching already binds the variables
-                    if (init != null && currentContext.currentClauseContext != null) {
-                        // We're inside a case clause
+                    // ID-BASED TRACKING: Check if this TVar ID is satisfied by pattern extraction
+                    if (init != null && currentContext.currentClauseContext != null &&
+                        currentContext.currentClauseContext.isVarIdSatisfiedByPattern(v.id)) {
+
+                        // This variable is already extracted by the pattern - skip redundant assignment
+                        shouldSkipAssignment = true;
+
+                        #if debug_redundant_extraction
+                        trace('[TVar] ID-based detection: Skipping assignment for TVar ${v.id} (${v.name}) - already satisfied by pattern');
+                        #end
+                    } else if (init != null) {
+                        // Fallback: Check for self-assignments that would be problematic
                         switch(init.expr) {
-                            case TEnumParameter(_, _, _):
-                                // Skip enum parameter extraction assignments - pattern matching handles this
-                                shouldSkipAssignment = true;
-                                #if debug_enum_extraction
-                                trace('[TVar] Skipping redundant enum extraction assignment in case clause: $finalVarName');
-                                #end
-                            case TLocal(tempVar):
+                            case TEnumParameter(e, ef, index):
+                                // CRITICAL: Check what TEnumParameter would return BEFORE building it
+                                // This avoids creating g = g assignments
+                                if (currentContext.currentClauseContext != null) {
+                                    var hasPlan = currentContext.currentClauseContext.enumBindingPlan.exists(index);
+
+                                    if (hasPlan) {
+                                        var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
+
+                                        if (info.finalName == finalVarName) {
+                                            // This would create g = g
+                                            shouldSkipAssignment = true;
+                                        } else {
+                                            // Fall through to check initValue
+                                        }
+
+                                        if (!shouldSkipAssignment && info.finalName != null && info.finalName.length > 0) {
+                                            var planIsTemp = isTempPatternVarName(info.finalName);
+                                            var lhsIsTemp = isTempPatternVarName(finalVarName);
+                                            if (lhsIsTemp && !planIsTemp) {
+                                                shouldSkipAssignment = true;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Fallback: check the already-built initValue
+                                if (!shouldSkipAssignment && initValue != null) {
+                                    switch(initValue.def) {
+                                        case EVar(varName):
+                                            if (varName == finalVarName) {
+                                                // This would create a self-assignment like "g = g"
+                                                shouldSkipAssignment = true;
+                                                #if debug_enum_extraction
+                                                trace('[TVar] Skipping self-assignment from TEnumParameter: $finalVarName = $varName');
+                                                #end
+                                            }
+                                        case _:
+                                            // Normal extraction, keep it
+                                            #if debug_enum_extraction
+                                            trace('[TVar] Keeping TEnumParameter extraction: $finalVarName');
+                                            #end
+                                    }
+                                } else if (!shouldSkipAssignment) {
+                                    // TEnumParameter already returned null, skip the assignment
+                                    shouldSkipAssignment = true;
+                                    #if debug_enum_extraction
+                                    trace('[TVar] Skipping TEnumParameter assignment - initValue is null');
+                                    #end
+                                }
+                            default:
+                        }
+
+                        // Fallback TLocal handling (separate from enum-specific logic above)
+                        if (!shouldSkipAssignment && init != null) {
+                            switch(init.expr) {
+                                case TLocal(tempVar):
                                 var tempVarName = tempVar.name;
 
                                 trace('[DEBUG EMBEDDED] Checking assignment: $finalVarName = $tempVarName');
                                 trace('[DEBUG EMBEDDED] Is in case clause: ${currentContext.currentClauseContext != null}');
-
                                 #if debug_enum_extraction
                                 trace('[TVar TLocal] Checking assignment: $finalVarName = $tempVarName');
                                 trace('[TVar TLocal] Is in case clause: ${currentContext.currentClauseContext != null}');
@@ -1136,6 +1201,8 @@ class ElixirASTBuilder {
                                     }
                                 }
 
+                                trace('[DEBUG EMBEDDED] Temp analysis -> tempVar? $isTempVar, lhsTemp? ${isTempPatternVarName(finalVarName)}');
+
                                 #if debug_enum_extraction
                                 trace('[TVar TLocal] Is temp var: $isTempVar');
                                 #end
@@ -1156,45 +1223,67 @@ class ElixirASTBuilder {
                                         trace('[TVar TLocal] EMBEDDED SWITCH FIX: Skipping invalid temp var assignment: $finalVarName = $elixirTempName');
                                         #end
                                     }
-                                } else if (false) {
-                                    // Original logic preserved but disabled to fix embedded switch issue
-                                    var tempVarExists = false;
 
-                                    if (currentContext.currentClauseContext != null && currentContext.currentClauseContext.enumBindingPlan != null) {
-                                        // Check if any binding plan entry uses this temp var name
-                                        for (info in currentContext.currentClauseContext.enumBindingPlan) {
-                                            if (info.finalName == tempVarName || info.finalName == tempVarName.substr(1)) {
-                                                tempVarExists = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    if (!tempVarExists) {
-                                        // The temp var doesn't exist because the pattern used canonical names
-                                        // Skip this redundant assignment entirely
+                                    // Additional check: Skip redundant self-assignments like "value = value"
+                                    if (finalVarName == tempVarName) {
                                         shouldSkipAssignment = true;
                                         #if debug_enum_extraction
-                                        trace('[TVar] Skipping assignment from non-existent temp var: $finalVarName = $tempVarName (temp var not in pattern)');
+                                        trace('[TVar] Skipping redundant self-assignment: $finalVarName = $tempVarName');
+                                        #end
+                                    }
+                                } else {
+                                    // Check if this is a non-temp var assignment that creates redundancy
+                                    // For example, when pattern uses canonical names and we try to assign from them
+                                    if (finalVarName == tempVarName) {
+                                        // Skip self-assignments like "value = value"
+                                        shouldSkipAssignment = true;
+                                        #if debug_enum_extraction
+                                        trace('[TVar] Skipping redundant self-assignment: $finalVarName = $tempVarName');
                                         #end
                                     }
                                 }
-                            case _:
+                                case _:
+                                    // Other init expressions
+                            }
                         }
                     }
 
                     // Note: Redundant enum extraction is now handled at TBlock level
                     // We generate the assignment here, but TBlock will filter it out if redundant
+                    trace('[DEBUG TVar] Final decision for ${finalVarName}: shouldSkipAssignment=${shouldSkipAssignment}');
                     var result = if (shouldSkipAssignment) {
                         // Skip the assignment, return null to be filtered out by TBlock
                         // The TBlock handler at line 3036 filters out null expressions
                         null;
                     } else if (initValue == null) {
                         // If initValue is null (e.g., from skipped TEnumParameter), skip the assignment
-                        trace('[DEBUG EMBEDDED TVar] Skipping assignment because initValue is null for: $finalVarName');
+                        trace('[DEBUG EMBEDDED TVar] Skipping assignment because initValue is null for: $finalVarName (extractedFromTemp: $extractedFromTemp)');
+                        // But if this was supposed to be an assignment from a temp var, we have a problem!
+                        if (extractedFromTemp != null) {
+                            trace('[DEBUG g=g] ERROR: initValue is null but we need assignment from temp var $extractedFromTemp to $finalVarName');
+                        }
                         null;
                     } else {
-                        var matchNode = makeAST(EMatch(
+                        // Check for self-assignment right before creating the match node
+                        var shouldSkipSelfAssignment = false;
+                        trace('[DEBUG TVar Assignment] Checking assignment: $finalVarName = ${initValue.def}');
+                        switch(initValue.def) {
+                            case EVar(varName):
+                                trace('[DEBUG TVar Assignment] Comparing: finalVarName="$finalVarName" vs varName="$varName"');
+                                if (varName == finalVarName) {
+                                    // This is a self-assignment like "g = g" or "content = content"
+                                    shouldSkipSelfAssignment = true;
+                                    trace('[DEBUG TVar Assignment] SKIPPING self-assignment: $finalVarName = $varName');
+                                }
+                            case _:
+                                trace('[DEBUG TVar Assignment] Not a var assignment: ${initValue.def}');
+                                // Normal assignment
+                        }
+
+                        if (shouldSkipSelfAssignment) {
+                            null;  // Skip self-assignments
+                        } else {
+                            var matchNode = makeAST(EMatch(
                             PVar(finalVarName),
                             initValue
                         ));
@@ -1218,6 +1307,7 @@ class ElixirASTBuilder {
                         #end
 
                         matchNode;
+                        }  // end shouldSkipSelfAssignment check
                     };
                     result;
                 } else {
@@ -1241,7 +1331,31 @@ class ElixirASTBuilder {
                         // Assignment needs pattern extraction for the left side
                         var pattern = extractPattern(e1);
                         var rightAST = buildFromTypedExpr(e2, currentContext);
-                        EMatch(pattern, rightAST);
+                        var shouldSkipAssign = false;
+                        switch(pattern) {
+                            case PVar(name):
+                                var valueName = switch(rightAST != null ? rightAST.def : null) {
+                                    case EVar(varName): varName;
+                                    default: null;
+                                };
+
+                                if (isTempPatternVarName(name)) {
+                                    shouldSkipAssign = true;
+                                } else if (valueName != null) {
+                                    if (valueName == name) {
+                                        shouldSkipAssign = true;
+                                    } else if (isTempPatternVarName(valueName)) {
+                                        shouldSkipAssign = true;
+                                    }
+                                }
+                            default:
+                        }
+
+                        if (shouldSkipAssign) {
+                            null;
+                        } else {
+                            EMatch(pattern, rightAST);
+                        }
 
                     case OpAssignOp(innerOp):
                         // Compound assignment: x += 1 becomes x = x + 1
@@ -3040,6 +3154,32 @@ class ElixirASTBuilder {
                                         }
                                     case _:
                                 }
+                            case TBinop(OpAssign, {expr: TLocal(lhs)}, {expr: TLocal(rhs)}):
+                                var lhsName = toElixirVarName(lhs.name);
+                                var rhsName = toElixirVarName(rhs.name);
+
+                                if (isTempPatternVarName(lhsName) || lhsName == rhsName || isTempPatternVarName(rhsName)) {
+                                    shouldSkip = true;
+                                    #if debug_redundant_extraction
+                                    trace('[TBlock] Skipping alias assignment: ${lhsName} = ${rhsName}');
+                                    #end
+                                }
+                            case _:
+                        }
+                    }
+
+                    if (!shouldSkip) {
+                        switch(e.expr) {
+                            case TBinop(OpAssign, {expr: TLocal(lhs)}, {expr: TLocal(rhs)}):
+                                var lhsName = toElixirVarName(lhs.name);
+                                var rhsName = toElixirVarName(rhs.name);
+
+                                if (isTempPatternVarName(lhsName) || lhsName == rhsName || isTempPatternVarName(rhsName)) {
+                                    shouldSkip = true;
+                                    #if debug_redundant_extraction
+                                    trace('[TBlock] Skipping alias assignment (case clause aware): ${lhsName} = ${rhsName}');
+                                    #end
+                                }
                             case _:
                         }
                     }
@@ -3048,7 +3188,20 @@ class ElixirASTBuilder {
                         var builtExpr = buildFromTypedExpr(e, currentContext);
                         // Filter out null expressions (returned when skipping redundant assignments)
                         if (builtExpr != null) {
+                            #if debug_redundant_extraction
+                            // Additional check: if the def is null, skip it
+                            if (builtExpr.def == null) {
+                                trace('[TBlock] Filtering out expression with null def');
+                            } else {
+                                expressions.push(builtExpr);
+                            }
+                            #else
                             expressions.push(builtExpr);
+                            #end
+                        } else {
+                            #if debug_redundant_extraction
+                            trace('[TBlock] Filtering out null expression');
+                            #end
                         }
                     } else {
                         #if debug_redundant_extraction
@@ -3292,7 +3445,9 @@ class ElixirASTBuilder {
                     #end
 
                     // Create EnumBindingPlan for consistent variable naming
-                    var enumBindingPlan = createEnumBindingPlan(c.expr, extractedParams, enumType);
+                    var bindingResult = createEnumBindingPlan(c.expr, extractedParams, enumType);
+                    var enumBindingPlan = bindingResult.plan;
+                    var paramIndexToVarId = bindingResult.paramIndexToVarId;
 
                     // M0.5: Track if we have binding plans
                     if (enumBindingPlan != null && enumBindingPlan.keys().hasNext()) {
@@ -3373,6 +3528,13 @@ class ElixirASTBuilder {
                     // Create a new ClauseContext for this switch case
                     // This ensures embedded switches get their own variable mappings
                     currentContext.currentClauseContext = new ClauseContext(savedClauseContext, varMapping, enumBindingPlan);
+
+                    // Mark TVar IDs as satisfied by pattern extraction
+                    // This prevents redundant assignments in the case body
+                    if (paramIndexToVarId != null) {
+                        currentContext.currentClauseContext.markPatternSatisfiedVars(paramIndexToVarId);
+                    }
+
                     trace('[DEBUG EMBEDDED] Case #${cases.indexOf(c)} - Created new context with parent: ${savedClauseContext != null}, bindingPlan: ${enumBindingPlan != null}');
 
                     // Build the case body with the ClauseContext active
@@ -3403,6 +3565,12 @@ class ElixirASTBuilder {
                             // DON'T save/restore here - we're already inside a context management block
                             // Just update the existing context with new mapping
                             currentContext.currentClauseContext = new ClauseContext(savedClauseContext, updatedMapping, enumBindingPlan);
+
+                            // Re-mark TVar IDs as satisfied in the new context
+                            if (paramIndexToVarId != null) {
+                                currentContext.currentClauseContext.markPatternSatisfiedVars(paramIndexToVarId);
+                            }
+
                             var newBody = buildFromTypedExpr(c.expr, currentContext);
                             // Context will be restored at the end of the case processing
                             newBody;
@@ -4891,9 +5059,17 @@ class ElixirASTBuilder {
                         }
                     }
 
-                    // Normal case: use the binding plan variable
-                    trace('[DEBUG EMBEDDED TEnumParameter] RETURNING BINDING PLAN VAR: ${info.finalName}');
-                    EVar(info.finalName);
+                    // ID-BASED TRACKING: Check if this would create a redundant assignment
+                    // If the binding plan says to use the same name as the source, it would create g = g
+                    if (info.finalName == sourceVarName && sourceVarName != null) {
+                        trace('[DEBUG g=g FOUND] Self-assignment detected: ${sourceVarName} = ${sourceVarName}, skipping');
+                        // This would create g = g, skip the assignment by returning null
+                        return null;
+                    } else {
+                        // Normal case: use the binding plan variable
+                        trace('[DEBUG EMBEDDED TEnumParameter] RETURNING BINDING PLAN VAR: ${info.finalName}');
+                        return EVar(info.finalName);
+                    }
                 } else {
                     trace('[DEBUG EMBEDDED TEnumParameter] NO BINDING PLAN! ClauseContext: ${currentContext.currentClauseContext != null}, index: $index, sourceVarName: $sourceVarName');
 
@@ -6171,9 +6347,9 @@ class ElixirASTBuilder {
      * @param caseExpr The case body expression to analyze
      * @param extractedParams The parameter names extracted by analyzeEnumParameterExtraction
      * @param enumType The enum type being switched on (if available)
-     * @return Map from parameter index to binding info with finalName for EVERY parameter
+     * @return Tuple of: (Map from parameter index to binding info, Map from parameter index to TVar ID)
      */
-    static function createEnumBindingPlan(caseExpr: TypedExpr, extractedParams: Array<String>, enumType: Null<EnumType>): Map<Int, {finalName: String, isUsed: Bool}> {
+    static function createEnumBindingPlan(caseExpr: TypedExpr, extractedParams: Array<String>, enumType: Null<EnumType>): {plan: Map<Int, {finalName: String, isUsed: Bool}>, paramIndexToVarId: Map<Int, Int>} {
         var plan: Map<Int, {finalName: String, isUsed: Bool}> = new Map();
 
         // M0.1: First, determine the maximum parameter count we need to handle
@@ -6234,26 +6410,89 @@ class ElixirASTBuilder {
                 }
             }
 
-            // M0.1: Pre-populate the plan with ALL parameters using priority hierarchy
+            function ensureExtractedParamsSize(index:Int): Void {
+                if (extractedParams == null) {
+                    return;
+                }
+                while (extractedParams.length <= index) {
+                    extractedParams.push(null);
+                }
+            }
+
+            function recordMeaningfulName(index: Int, candidate: String): Void {
+                if (candidate == null || candidate.length == 0 || isTempPatternVarName(candidate)) {
+                    return;
+                }
+
+                if (extractedParams != null) {
+                    ensureExtractedParamsSize(index);
+                    var existing = extractedParams[index];
+                    if (existing == null || isTempPatternVarName(existing)) {
+                        var elixirName = toElixirVarName(candidate);
+                        extractedParams[index] = elixirName;
+                        trace('[DEBUG Per-Param] Recorded meaningful name for param $index: $elixirName');
+                    }
+                }
+            }
+
+            function collectEnumParameterBindings(expr: TypedExpr): Void {
+                switch (expr.expr) {
+                    case TVar(v, init) if (init != null):
+                        switch (init.expr) {
+                            case TEnumParameter(_, _, index):
+                                var varName = toElixirVarName(v.name);
+                                recordMeaningfulName(index, varName);
+                            default:
+                        }
+
+                        if (init != null) {
+                            collectEnumParameterBindings(init);
+                        }
+                    case TBlock(exprs):
+                        for (e in exprs) {
+                            collectEnumParameterBindings(e);
+                        }
+                    default:
+                        haxe.macro.TypedExprTools.iter(expr, collectEnumParameterBindings);
+                }
+            }
+
+            if (caseExpr != null) {
+                collectEnumParameterBindings(caseExpr);
+            }
+
+            var canonicalVarNames: Array<String> = [];
+            for (name in canonicalNames) {
+                if (name != null) {
+                    canonicalVarNames.push(toElixirVarName(name));
+                } else {
+                    canonicalVarNames.push(null);
+                }
+            }
+
             for (i in 0...maxParamCount) {
-                var finalName: String;
+                var finalName: String = null;
+                var extractedName = if (extractedParams != null && i < extractedParams.length) extractedParams[i] else null;
 
-                // Priority 1: Use extracted pattern names if available and not temp vars
-                if (extractedParams != null && i < extractedParams.length &&
-                    extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
-                    finalName = extractedParams[i];
-                }
-                // Priority 2: Use canonical names from enum definition
-                else if (i < canonicalNames.length && canonicalNames[i] != null) {
-                    finalName = canonicalNames[i];
-                }
-                // Priority 3: Fall back to temp var names
-                else {
-                    finalName = i == 0 ? "g" : 'g$i';
+                if (extractedName != null && extractedName.length > 0 && !isTempPatternVarName(extractedName)) {
+                    finalName = extractedName;
+                    trace('[DEBUG Per-Param] Using extracted name for parameter $i: $finalName');
+                } else {
+                    var canonicalName = (i < canonicalVarNames.length) ? canonicalVarNames[i] : null;
+                    if (canonicalName != null && canonicalName.length > 0 && !isTempPatternVarName(canonicalName)) {
+                        finalName = canonicalName;
+                        trace('[DEBUG Per-Param] Using canonical name for parameter $i: $finalName');
+                    } else {
+                        finalName = i == 0 ? "g" : 'g$i';
+                        trace('[DEBUG Per-Param] Falling back to temp var for parameter $i: $finalName');
+                    }
                 }
 
-                // Pre-populate with assumption that parameter is used
-                // We'll update this below with actual usage analysis
+                if (extractedParams != null) {
+                    ensureExtractedParamsSize(i);
+                    extractedParams[i] = finalName;
+                }
+
                 plan.set(i, {finalName: finalName, isUsed: true});
             }
         }
@@ -6395,7 +6634,7 @@ class ElixirASTBuilder {
         trace('[EnumBindingPlan] Priority hierarchy applied: extracted > canonical > temp');
         #end
 
-        return plan;
+        return {plan: plan, paramIndexToVarId: paramIndexToVarId};
     }
 
     /**
@@ -6679,39 +6918,52 @@ class ElixirASTBuilder {
                         trace('[DEBUG IDIOMATIC] canonicalNames: ${canonicalNames}');
                         #end
 
-                        // CRITICAL FIX FOR IDIOMATIC ENUMS:
-                        // For idiomatic enums (Result, Option, etc.), ALWAYS use temp vars (g, g1, g2)
-                        // when we have extractedParams. This is because TEnumParameter in the case body
-                        // generates assignments like `value = g`, expecting the pattern to have `g`.
-                        // This fixes UserController where patterns had {:ok, user} but body expected `g`.
-                        var shouldUseTempVars = extractedParams != null && extractedParams.length > 0;
-
-                        #if debug_idiomatic_enum
-                        if (shouldUseTempVars) {
-                            trace('[CRITICAL FIX] Idiomatic enum with extractedParams, will use temp vars for ALL parameters');
+                        // Additional debug to understand what we're getting
+                        trace('[DEBUG Pattern Fix] extractedParams received: ${extractedParams}');
+                        trace('[DEBUG Pattern Fix] paramCount: ${paramCount}');
+                        if (extractedParams != null) {
+                            for (i in 0...extractedParams.length) {
+                                trace('[DEBUG Pattern Fix]   Param $i: "${extractedParams[i]}" (is temp var: ${extractedParams[i] == "g" || (extractedParams[i] != null && extractedParams[i].startsWith("g") && extractedParams[i].length > 1 && extractedParams[i].charAt(1) >= "0" && extractedParams[i].charAt(1) <= "9")})');
+                            }
                         }
-                        #end
+
+                        // FIXED: Use binding plan names directly in patterns
+                        // Based on Codex's architectural guidance:
+                        // The binding plan already has the correct variable names (like debug_track_content).
+                        // We should use those names directly in patterns instead of forcing temp vars.
+                        // This prevents the pattern/body mismatch that causes g = g self-assignments.
 
                         for (i in 0...paramCount) {
                             // Check if this parameter is actually used in the case body
                             var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
 
                             if (isUsed && extractedParams[i] != null) {
-                                if (shouldUseTempVars) {
-                                    // For idiomatic enums, ALWAYS use temp vars when we have extractedParams
-                                    // This ensures the pattern matches what TEnumParameter expects
+                                // Use the actual variable name from the binding plan
+                                // This makes the pattern match what the body expects
+                                var varName = extractedParams[i];
+
+                                // Only use temp vars if the extracted name is already a temp var
+                                // or if we couldn't extract a proper name
+                                if (varName == null || varName == "" ||
+                                    (varName == "g" || varName.startsWith("g") && varName.length > 1 &&
+                                     varName.charAt(1) >= '0' && varName.charAt(1) <= '9')) {
+                                    // Fallback to temp var only when necessary
                                     var tempVarName = i == 0 ? "g" : 'g${i}';
                                     paramPatterns.push(PVar(tempVarName));
 
                                     #if debug_idiomatic_enum
-                                    trace('[CRITICAL FIX] Using temp var $tempVarName for parameter $i (was ${extractedParams[i]})');
+                                    trace('[Pattern Generation] Using temp var $tempVarName for parameter $i (no proper name extracted)');
                                     #end
                                 } else {
-                                    // This shouldn't happen for idiomatic enums, but keep as fallback
-                                    paramPatterns.push(PVar(extractedParams[i]));
+                                    // Use the actual extracted name
+                                    paramPatterns.push(PVar(varName));
+
+                                    #if debug_idiomatic_enum
+                                    trace('[Pattern Generation] Using extracted name $varName for parameter $i');
+                                    #end
                                 }
                             } else if (isUsed && i < canonicalNames.length) {
-                                // Fallback: No extracted param, use temp var
+                                // No extracted param, fallback to temp var
                                 var tempVarName = i == 0 ? "g" : 'g${i}';
                                 paramPatterns.push(PVar(tempVarName));
                             } else {
@@ -7430,6 +7682,52 @@ class ElixirASTBuilder {
         }
 
         return ElixirNaming.toVarName(name);
+    }
+
+    public static function isTempPatternVarName(name: String): Bool {
+        if (name == null || name.length == 0) {
+            return false;
+        }
+
+        function isDigits(str: String): Bool {
+            if (str == null || str.length == 0) {
+                return false;
+            }
+            for (i in 0...str.length) {
+                var c = str.charAt(i);
+                if (c < '0' || c > '9') {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function check(candidate: String): Bool {
+            if (candidate == null || candidate.length == 0) {
+                return false;
+            }
+            if (candidate == "g" || candidate == "_g") {
+                return true;
+            }
+            if (candidate.length > 1 && candidate.charAt(0) == "g" && isDigits(candidate.substr(1))) {
+                return true;
+            }
+            if (candidate.length > 2 && candidate.charAt(0) == "_" && candidate.charAt(1) == "g" && isDigits(candidate.substr(2))) {
+                return true;
+            }
+            return false;
+        }
+
+        if (check(name)) {
+            return true;
+        }
+
+        var canonical = ElixirNaming.toVarName(name);
+        if (canonical != name && check(canonical)) {
+            return true;
+        }
+
+        return false;
     }
     
     /**
