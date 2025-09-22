@@ -1,0 +1,9 @@
+-cp .
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+
+-D elixir_output=out
+-D debug_inheritance
+-D debug_super_handling
