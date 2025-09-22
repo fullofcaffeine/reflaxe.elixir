@@ -57,6 +57,11 @@ class ClauseContext {
     // This maps TVar IDs to the actual names used in patterns (like "g" when pattern uses temp vars)
     private var patternBindings: Map<Int, String> = new Map();
 
+    // Track which TVar IDs are satisfied by pattern extraction
+    // When a pattern like {:ok, g} extracts a value, the corresponding TVar ID is satisfied
+    // This prevents redundant assignments like g = elem(...) or content = g
+    private var patternSatisfiedVarIds: Map<Int, Bool> = new Map();
+
     public function new(?parentContext: ClauseContext, ?varMapping: Map<Int, String>, ?enumPlan: Map<Int, {finalName: String, isUsed: Bool}>) {
         this.parent = parentContext;
 
@@ -93,6 +98,41 @@ class ClauseContext {
      */
     public function clearPatternBindings(): Void {
         patternBindings.clear();
+    }
+
+    /**
+     * Mark TVar IDs as satisfied by pattern extraction
+     * This is used when enum patterns extract values directly
+     *
+     * @param varIds Map from parameter index to TVar ID that receives the extracted value
+     */
+    public function markPatternSatisfiedVars(varIds: Map<Int, Int>): Void {
+        for (index => varId in varIds) {
+            patternSatisfiedVarIds.set(varId, true);
+            #if debug_clause_context
+            trace('[ClauseContext] Marked TVar ${varId} as satisfied by pattern extraction at index ${index}');
+            #end
+        }
+    }
+
+    /**
+     * Check if a TVar ID is already satisfied by pattern extraction
+     *
+     * @param varId The TVar.id to check
+     * @return True if the pattern already extracts this variable, false otherwise
+     */
+    public function isVarIdSatisfiedByPattern(varId: Int): Bool {
+        if (patternSatisfiedVarIds.exists(varId)) {
+            #if debug_clause_context
+            trace('[ClauseContext] TVar ${varId} is satisfied by pattern extraction');
+            #end
+            return true;
+        }
+        // Check parent context for inherited satisfied vars
+        if (parent != null) {
+            return parent.isVarIdSatisfiedByPattern(varId);
+        }
+        return false;
     }
 
     /**
@@ -158,15 +198,42 @@ class ClauseContext {
         // Create a block with bindings followed by the body
         var statements: Array<ElixirAST> = [];
         for (binding in syntheticBindings) {
-            // Create assignment: name = init
-            statements.push({
-                def: EBinary(Match,
-                    {def: EVar(binding.name), metadata: {}, pos: null},
-                    binding.init
-                ),
-                metadata: {},
-                pos: null
-            });
+            // Skip self-assignments like g = g to avoid redundant code
+            var isSelfAssignment = false;
+
+            #if debug_clause_context
+            trace('[ClauseContext.wrapBody] Checking binding: ${binding.name} = (init type: ${binding.init.def})');
+            #end
+
+            switch(binding.init.def) {
+                case EVar(initVarName):
+                    if (initVarName == binding.name) {
+                        isSelfAssignment = true;
+                        #if debug_clause_context
+                        trace('[ClauseContext.wrapBody] ✓ Detected self-assignment: ${binding.name} = ${initVarName} - SKIPPING');
+                        #end
+                    } else {
+                        #if debug_clause_context
+                        trace('[ClauseContext.wrapBody] Normal assignment: ${binding.name} = ${initVarName}');
+                        #end
+                    }
+                default:
+                    #if debug_clause_context
+                    trace('[ClauseContext.wrapBody] Not a simple var assignment');
+                    #end
+            }
+
+            if (!isSelfAssignment) {
+                // Create assignment: name = init
+                statements.push({
+                    def: EBinary(Match,
+                        {def: EVar(binding.name), metadata: {}, pos: null},
+                        binding.init
+                    ),
+                    metadata: {},
+                    pos: null
+                });
+            }
         }
         statements.push(body);
 

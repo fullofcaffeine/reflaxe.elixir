@@ -3,6 +3,7 @@ package reflaxe.elixir.ast;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirASTBuilder;
 import reflaxe.elixir.ast.ElixirAST.VarOrigin;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 using StringTools;
@@ -427,7 +428,15 @@ class ElixirASTTransformer {
             enabled: true,
             pass: structFieldAssignmentTransformPass
         });
-        
+
+        // Cleanup redundant temp alias assignments introduced during enum extraction
+        passes.push({
+            name: "TempAliasCleanup",
+            description: "Remove redundant temp alias assignments in statement contexts",
+            enabled: true,
+            pass: tempAliasCleanupPass
+        });
+
         // Assignment extraction pass (must run before underscore cleanup)
         passes.push({
             name: "AssignmentExtraction",
@@ -591,6 +600,59 @@ class ElixirASTTransformer {
 
         // Return only enabled passes
         return passes.filter(p -> p.enabled);
+    }
+
+    static function tempAliasCleanupPass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case EBlock(statements):
+                    var cleaned: Array<ElixirAST> = [];
+                    for (stmt in statements) {
+                        if (stmt == null || shouldDropTempAlias(stmt)) {
+                            continue;
+                        }
+                        cleaned.push(tempAliasCleanupPass(stmt));
+                    }
+                    return makeASTWithMeta(EBlock(cleaned), node.metadata, node.pos);
+                default:
+                    return node;
+            }
+        });
+    }
+
+    static function shouldDropTempAlias(stmt: ElixirAST): Bool {
+        if (stmt == null || stmt.def == null) {
+            return true;
+        }
+
+        return switch(stmt.def) {
+            case EMatch(pattern, value):
+                switch pattern {
+                    case PVar(name):
+                        var rhsVar = switch(value.def) {
+                            case EVar(varName): varName;
+                            default: null;
+                        };
+
+                        if (ElixirASTBuilder.isTempPatternVarName(name)) {
+                            return true;
+                        }
+
+                        if (rhsVar != null) {
+                            if (rhsVar == name) {
+                                return true;
+                            }
+                            if (ElixirASTBuilder.isTempPatternVarName(rhsVar)) {
+                                return true;
+                            }
+                        }
+                        false;
+                    default:
+                        false;
+                };
+            default:
+                false;
+        };
     }
 
     /**
@@ -1041,7 +1103,9 @@ class ElixirASTTransformer {
                         };
                         default: 'complex expression';
                     };
+                    #if debug_redundant_extraction
                     trace('[RemoveRedundantEnumExtraction] Processing ECase with ${clauses.length} clauses, target: $targetDebug');
+                    #end
                     // Check if this case has an enum binding plan
                     currentCaseHasBindingPlan = node.metadata != null && node.metadata.hasEnumBindingPlan == true;
                     #if debug_enum_extraction
@@ -1130,17 +1194,38 @@ class ElixirASTTransformer {
                                                     case ECall(_, fn, _): 'ECall($fn)';
                                                     default: Type.enumConstructor(rhs.def);
                                                 };
+                                                #if debug_redundant_extraction
                                                 trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = ... (RHS: $rhsDebug, caseTarget: $caseTargetVar)');
+                                                #end
                                             } else {
+                                                #if debug_redundant_extraction
                                                 trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = null (skipped assignment)');
+                                                #end
                                                 // Mark this as redundant since it has no RHS
                                                 isRedundant = true;
                                             }
 
-                                            // Check if RHS is a reference to a temp variable (g, g1, g2, _g, etc.)
-                                            switch(rhs.def) {
-                                                case EVar(v):
-                                                    // Check if this is an assignment from a temp variable
+                                            // Check for self-assignment first (e.g., content = content)
+                                        if (varName == switch(rhs.def) {
+                                            case EVar(v): v;
+                                            default: null;
+                                        }) {
+                                            isRedundant = true;
+                                            #if debug_redundant_extraction
+                                            trace('[RemoveRedundantEnumExtraction] Removing self-assignment: $varName = $varName');
+                                            #end
+                                        }
+                                        // Check if the target variable itself is a temp pattern var
+                                        else if (reflaxe.elixir.ast.ElixirASTBuilder.isTempPatternVarName(varName)) {
+                                            isRedundant = true;
+                                            #if debug_redundant_extraction
+                                            trace('[RemoveRedundantEnumExtraction] Removing temp-var assignment: $varName = ...');
+                                            #end
+                                        }
+                                        // Check if RHS is a reference to a temp variable (g, g1, g2, _g, etc.)
+                                        else switch(rhs.def) {
+                                            case EVar(v):
+                                                // Check if this is an assignment from a temp variable
                                                     // Handle both "g" and "_g" patterns
                                                     // CRITICAL FIX: For idiomatic enums, the pattern uses the actual variable names
                                                     // (like {:ok, value}) instead of temp vars (like {:ok, g}).
@@ -1155,19 +1240,25 @@ class ElixirASTTransformer {
                                                     // This catches "value = g" in idiomatic enums
                                                     if (v == "g" || v == "_g") {
                                                         isRedundant = true;
+                                                        #if debug_redundant_extraction
                                                         trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent temp var)');
+                                                        #end
                                                     }
                                                     // Check for numbered temp vars in RHS: g1, g2, etc.
                                                     else if (v.length > 1 && v.charAt(0) == "g" &&
                                                              v.length == 2 && v.charAt(1) >= '0' && v.charAt(1) <= '9') {
                                                         isRedundant = true;
+                                                        #if debug_redundant_extraction
                                                         trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent numbered temp var)');
+                                                        #end
                                                     }
                                                     // Check for underscore-prefixed numbered temp vars: _g1, _g2, etc.
                                                     else if (v.length == 3 && v.charAt(0) == "_" && v.charAt(1) == "g" &&
                                                              v.charAt(2) >= '0' && v.charAt(2) <= '9') {
                                                         isRedundant = true;
+                                                        #if debug_redundant_extraction
                                                         trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent underscore temp var)');
+                                                        #end
                                                     }
                                                     // Also check for "g = result" pattern where result is case target
                                                     // This is ALWAYS wrong and should be removed - the pattern already extracted g
@@ -1182,20 +1273,28 @@ class ElixirASTTransformer {
                                                              varName.charAt(1) == "g" && varName.charAt(2) >= '0' &&
                                                              varName.charAt(2) <= '9')) {
                                                             isRedundant = true;
+                                                            #if debug_redundant_extraction
                                                             trace('[RemoveRedundantEnumExtraction] Removing incorrect assignment: $varName = $v (pattern already extracted value)');
+                                                            #end
                                                         }
                                                     }
 
                                                 case ECall(targetExpr, funcName, args) if (funcName == "elem" && args.length == 1):
+                                                    #if debug_redundant_extraction
                                                     trace('[RemoveRedundantEnumExtraction]   - Found elem() call');
+                                                    #end
                                                     // Check if elem is extracting from the case target
                                                     var isTargetMatch = switch(targetExpr.def) {
                                                         case EVar(v):
+                                                            #if debug_redundant_extraction
                                                             trace('[RemoveRedundantEnumExtraction]   - elem() target: $v, case target: $caseTargetVar');
+                                                            #end
                                                             // Check if this matches the case target variable
                                                             v == caseTargetVar;
                                                         default:
+                                                            #if debug_redundant_extraction
                                                             trace('[RemoveRedundantEnumExtraction]   - elem() target is not a simple variable');
+                                                            #end
                                                             false;
                                                     };
 
@@ -1206,12 +1305,17 @@ class ElixirASTTransformer {
                                                             (varName.length > 1 && varName.charAt(0) == "g" &&
                                                              varName.charAt(1) >= '0' && varName.charAt(1) <= '9')) {
                                                             isRedundant = true;
-                                                            trace('[RemoveRedundantEnumExtraction] FOUND redundant extraction: $varName = elem($caseTargetVar, ...)');
+                                                            #if debug_redundant_extraction
+                                                            #end
                                                         } else {
+                                                            #if debug_redundant_extraction
                                                             trace('[RemoveRedundantEnumExtraction] Not redundant - varName: $varName does not match g pattern');
+                                                            #end
                                                         }
                                                     } else {
+                                                        #if debug_redundant_extraction
                                                         trace('[RemoveRedundantEnumExtraction] elem() not extracting from case target');
+                                                        #end
                                                     }
                                                 default:
                                             }

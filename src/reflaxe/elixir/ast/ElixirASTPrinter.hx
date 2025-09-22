@@ -3,6 +3,7 @@ package reflaxe.elixir.ast;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirASTBuilder;
 using StringTools;
 
 /**
@@ -215,7 +216,24 @@ class ElixirASTPrinter {
                 // This is used for null coalescing patterns that need to stay on one line
                 var keepInline = expr != null && expr.metadata != null && 
                                 expr.metadata.keepInlineInAssignment == true;
-                
+
+                switch(pattern) {
+                    case PVar(name):
+                        var rhsName = switch(expr != null ? expr.def : null) {
+                            case EVar(varName): varName;
+                            default: null;
+                        };
+
+                        if (rhsName != null && (rhsName == name || ElixirASTBuilder.isTempPatternVarName(rhsName))) {
+                            return '';
+                        }
+
+                        if (ElixirASTBuilder.isTempPatternVarName(name)) {
+                            return '';
+                        }
+                    default:
+                }
+
                 if (keepInline) {
                     // Force inline format for the expression
                     // This ensures null coalescing stays on one line to avoid syntax errors
@@ -882,17 +900,21 @@ class ElixirASTPrinter {
                 } else if (expressions.length == 1) {
                     print(expressions[0], indent);
                 } else {
-                    var result = [];
-                    for (i in 0...expressions.length) {
-                        var expr = expressions[i];
+                    var parts = [];
+                    var printed: Array<String> = [];
+                    for (expr in expressions) {
                         var str = print(expr, indent);
-                        result.push(str);
-                        // Add newline between statements
-                        if (i < expressions.length - 1) {
-                            result.push('\n' + indentStr(indent));
+                        if (str != null && str.trim().length > 0) {
+                            printed.push(str);
                         }
                     }
-                    result.join('');
+                    for (i in 0...printed.length) {
+                        parts.push(printed[i]);
+                        if (i < printed.length - 1) {
+                            parts.push('\n' + indentStr(indent));
+                        }
+                    }
+                    parts.join('');
                 }
                 
             case EParen(expr):
