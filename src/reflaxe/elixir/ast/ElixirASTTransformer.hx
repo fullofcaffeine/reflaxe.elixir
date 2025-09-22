@@ -1697,6 +1697,7 @@ class ElixirASTTransformer {
                                     // Transform super.method() to ParentModule.method(struct, args...)
                                     #if debug_super_handling
                                     trace("[SuperTransform] Delegating to parent module: " + parentModule);
+                                    trace("[SuperTransform] Parent module type: " + Type.typeof(parentModule));
                                     #end
                                     
                                     // Convert method name to snake_case for Elixir
@@ -1709,7 +1710,7 @@ class ElixirASTTransformer {
                                     // Build delegation call: ParentModule.method(struct, original_args...)
                                     var delegationArgs = [makeAST(EVar("struct"))].concat(args);
                                     return makeAST(ERemoteCall(
-                                        makeAST(EAtom(parentModule)),
+                                        makeAST(EVar(parentModule)),  // Use EVar for module alias, not EAtom
                                         elixirMethodName,
                                         delegationArgs
                                     ));

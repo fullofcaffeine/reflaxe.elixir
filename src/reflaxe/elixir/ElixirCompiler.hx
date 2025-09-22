@@ -1313,59 +1313,64 @@ class ElixirCompiler extends GenericCompiler<
             });
         }
 
-        // Build the module using ModuleBuilder
-        var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, fields);
-
-        // Set metadata for special module types to enable AST transformations
-        if (moduleAST != null) {
-            if (moduleAST.metadata == null) {
-                moduleAST.metadata = {};
-            }
-
-            // Detect and store parent class information for inheritance handling
-            if (classType.superClass != null) {
-                var parentClass = classType.superClass.t.get();
-                var parentModuleName = if (parentClass.meta.has(":native")) {
-                    // Use @:native name if specified
-                    var nativeMeta = parentClass.meta.extract(":native");
-                    if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-                        switch(nativeMeta[0].params[0].expr) {
-                            case EConst(CString(s, _)): s;
-                            default: parentClass.name;
-                        }
-                    } else {
-                        parentClass.name;
+        // Prepare metadata for special module types BEFORE building the module
+        var metadata: ElixirMetadata = {};
+        
+        // Detect and store parent class information for inheritance handling
+        if (classType.superClass != null) {
+            var parentClass = classType.superClass.t.get();
+            var parentModuleName = if (parentClass.meta.has(":native")) {
+                // Use @:native name if specified
+                var nativeMeta = parentClass.meta.extract(":native");
+                if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                    switch(nativeMeta[0].params[0].expr) {
+                        case EConst(CString(s, _)): s;
+                        default: parentClass.name;
                     }
                 } else {
                     parentClass.name;
-                };
-                
-                moduleAST.metadata.parentModule = parentModuleName;
-                
-                // Check if this extends haxe.Exception or any Exception subclass
-                var isException = false;
-                var currentClass = parentClass;
-                while (currentClass != null) {
-                    if (currentClass.pack.length == 1 && currentClass.pack[0] == "haxe" && currentClass.name == "Exception") {
-                        isException = true;
-                        break;
-                    }
-                    currentClass = if (currentClass.superClass != null) currentClass.superClass.t.get() else null;
                 }
-                moduleAST.metadata.isException = isException;
-                
-                #if debug_inheritance
-                trace('[ElixirCompiler] Class ${classType.name} extends ${parentModuleName}, isException: ${isException}');
-                #end
+            } else {
+                parentClass.name;
+            };
+            
+            metadata.parentModule = parentModuleName;
+            
+            // Check if this extends haxe.Exception or any Exception subclass
+            var isException = false;
+            var currentClass = parentClass;
+            while (currentClass != null) {
+                if (currentClass.pack.length == 1 && currentClass.pack[0] == "haxe" && currentClass.name == "Exception") {
+                    isException = true;
+                    break;
+                }
+                currentClass = if (currentClass.superClass != null) currentClass.superClass.t.get() else null;
             }
+            metadata.isException = isException;
+            
+            #if debug_inheritance
+            trace('[ElixirCompiler] Class ${classType.name} extends ${parentModuleName}, isException: ${isException}');
+            #end
+        }
 
-            // Enable ExUnit transformation pass for @:exunit modules
-            if (classType.meta.has(":exunit")) {
-                moduleAST.metadata.isExunit = true;
-                #if debug_exunit
-                trace('[ElixirCompiler] Set isExunit=true metadata for ${classType.name}');
-                #end
-            }
+        // Enable ExUnit transformation pass for @:exunit modules
+        if (classType.meta.has(":exunit")) {
+            metadata.isExunit = true;
+        }
+
+        // Build the module using ModuleBuilder with metadata
+        var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, fields, metadata);
+
+        // Additional metadata settings if needed
+        if (moduleAST != null && moduleAST.metadata == null) {
+            moduleAST.metadata = metadata;
+        }
+        
+        // ExUnit debug output
+        if (moduleAST != null && moduleAST.metadata != null && moduleAST.metadata.isExunit == true) {
+            #if debug_exunit
+            trace('[ElixirCompiler] Set isExunit=true metadata for ${classType.name}');
+            #end
         }
 
         #if debug_module_builder
