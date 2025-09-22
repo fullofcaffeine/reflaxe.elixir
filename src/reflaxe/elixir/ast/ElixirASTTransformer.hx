@@ -1104,18 +1104,38 @@ class ElixirASTTransformer {
                                 var filtered = [];
                                 for (i in 0...exprs.length) {
                                     var expr = exprs[i];
+
+                                    // Skip null expressions (these are filtered assignments from TEnumParameter)
+                                    if (expr == null) {
+                                        continue;
+                                    }
+
                                     var isRedundant = false;
+
+                                    // Check if marked as redundant via metadata
+                                    if (expr.metadata != null && expr.metadata.redundantEnumExtraction == true) {
+                                        isRedundant = true;
+                                        #if debug_redundant_extraction
+                                        trace('[RemoveRedundantEnumExtraction] Found node marked as redundant via metadata');
+                                        #end
+                                    }
 
                                     // Check if this is a redundant extraction
                                     switch(expr.def) {
                                         case EMatch(PVar(varName), rhs):
                                             // Enhanced debug for ChangesetUtils issues
-                                            var rhsDebug = switch(rhs.def) {
-                                                case EVar(v): 'EVar($v)';
-                                                case ECall(_, fn, _): 'ECall($fn)';
-                                                default: Type.enumConstructor(rhs.def);
-                                            };
-                                            trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = ... (RHS: $rhsDebug, caseTarget: $caseTargetVar)');
+                                            if (rhs != null) {
+                                                var rhsDebug = switch(rhs.def) {
+                                                    case EVar(v): 'EVar($v)';
+                                                    case ECall(_, fn, _): 'ECall($fn)';
+                                                    default: Type.enumConstructor(rhs.def);
+                                                };
+                                                trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = ... (RHS: $rhsDebug, caseTarget: $caseTargetVar)');
+                                            } else {
+                                                trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = null (skipped assignment)');
+                                                // Mark this as redundant since it has no RHS
+                                                isRedundant = true;
+                                            }
 
                                             // Check if RHS is a reference to a temp variable (g, g1, g2, _g, etc.)
                                             switch(rhs.def) {
@@ -1150,8 +1170,11 @@ class ElixirASTTransformer {
                                                         trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent underscore temp var)');
                                                     }
                                                     // Also check for "g = result" pattern where result is case target
+                                                    // This is ALWAYS wrong and should be removed - the pattern already extracted g
                                                     else if (v == caseTargetVar) {
                                                         // Remove assignments like "g = result" where g is a temp var
+                                                        // The pattern {:error, g} already binds g to the error value
+                                                        // So "g = result" would incorrectly assign the whole tuple
                                                         if (varName == "g" || varName == "_g" ||
                                                             (varName.length == 2 && varName.charAt(0) == "g" &&
                                                              varName.charAt(1) >= '0' && varName.charAt(1) <= '9') ||
@@ -1159,7 +1182,7 @@ class ElixirASTTransformer {
                                                              varName.charAt(1) == "g" && varName.charAt(2) >= '0' &&
                                                              varName.charAt(2) <= '9')) {
                                                             isRedundant = true;
-                                                            trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (temp var from case target)');
+                                                            trace('[RemoveRedundantEnumExtraction] Removing incorrect assignment: $varName = $v (pattern already extracted value)');
                                                         }
                                                     }
 
@@ -4419,7 +4442,7 @@ class ElixirASTTransformer {
      * Helper function to transform AST nodes recursively
      */
     public static function transformAST(node: ElixirAST, transformer: ElixirAST -> ElixirAST): ElixirAST {
-        if (node == null) {
+        if (node == null || node.def == null) {
             return null;
         }
         var transformed = switch(node.def) {
@@ -5361,6 +5384,10 @@ class ElixirASTTransformer {
                 case EBlock(statements):
                     var fixedStatements = [];
                     for (stmt in statements) {
+                        // Add null check to prevent null pointer exceptions
+                        if (stmt == null) {
+                            continue;
+                        }
                         var fixed = switch(stmt.def) {
                             // Check for bare concatenation: var ++ [value] or struct.field ++ [value]
                             case EBinary(Concat, left, right):
