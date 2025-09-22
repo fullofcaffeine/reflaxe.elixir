@@ -50,14 +50,14 @@ end)
     buf = StringBuf.new()
     last = nil
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {last, :ok}, fn _, {acc_last, acc_state} ->
-  if (acc_last >= 0) do
+  if ((acc_last = struct.read_byte()) >= 0) do
     if (acc_last == 10) do
       throw(:break)
     end
     if (acc_last != 13), do: buf.add_char(acc_last)
-    {:cont, {struct.read_byte(), acc_state}}
+    {:cont, {acc_last, acc_state}}
   else
-    {:halt, {struct.read_byte(), acc_state}}
+    {:halt, {acc_last, acc_state}}
   end
 end)
     IO.iodata_to_binary(buf)
