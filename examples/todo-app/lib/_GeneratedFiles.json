@@ -17,7 +17,7 @@
   "todo_app_web.ex",
   "todo_app/todo.ex",
   "todo_app/repo.ex",
-  "todo_app/application.ex",
+  "todo_app.ex",
   "test_injection.ex",
   "sys.ex",
   "string_tools.ex",
@@ -164,7 +164,7 @@
   "_date/date_impl_.ex",
   "_any/any_impl_.ex"
 ],
-  "id": 603,
+  "id": 619,
   "wasCached": false,
   "version": 1
 }

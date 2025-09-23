@@ -799,10 +799,32 @@ class AnnotationTransforms {
      * HOW: Detects isApplication metadata and transforms module body
      */
     public static function applicationTransformPass(ast: ElixirAST): ElixirAST {
+        #if debug_annotation_transforms
+        if (ast.metadata != null && ast.metadata.isApplication == true) {
+            trace('[XRay Application Transform] PASS START - Found Application module with metadata');
+            trace('[XRay Application Transform] AST type: ${Type.enumConstructor(ast.def)}');
+        }
+        #end
+        
         // Check the top-level node first for Application modules
         switch(ast.def) {
+            case EModule(name, attributes, body) if (ast.metadata?.isApplication == true):
+                #if debug_annotation_transforms
+                trace('[XRay Application Transform] Processing EModule: $name');
+                #end
+                
+                // For EModule, body is Array<ElixirAST>, need to handle differently
+                var appBody = buildApplicationBodyFromArray(name, body);
+                
+                return makeASTWithMeta(
+                    EModule(name, attributes, appBody),
+                    ast.metadata,
+                    ast.pos
+                );
+                
             case EDefmodule(name, body) if (ast.metadata?.isApplication == true):
                 #if debug_annotation_transforms
+                trace('[XRay Application Transform] Processing EDefmodule: $name');
                 #end
                 
                 var appBody = buildApplicationBody(name, body);
@@ -820,7 +842,33 @@ class AnnotationTransforms {
     }
     
     /**
-     * Build OTP Application module body
+     * Build OTP Application module body for Array<ElixirAST> (from EModule)
+     */
+    static function buildApplicationBodyFromArray(moduleName: String, existingBody: Array<ElixirAST>): Array<ElixirAST> {
+        var result = [];
+        
+        #if debug_annotation_transforms
+        trace('[XRay Application Transform] buildApplicationBodyFromArray - existing functions: ${existingBody.length}');
+        #end
+        
+        // Add use Application
+        result.push(makeAST(EUse("Application", [])));
+        
+        // Add existing functions
+        for (func in existingBody) {
+            #if debug_annotation_transforms
+            if (func.def != null) {
+                trace('[XRay Application Transform] Adding existing function: ${Type.enumConstructor(func.def)}');
+            }
+            #end
+            result.push(func);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Build OTP Application module body for ElixirAST (from EDefmodule)
      */
     static function buildApplicationBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
         var statements = [];
