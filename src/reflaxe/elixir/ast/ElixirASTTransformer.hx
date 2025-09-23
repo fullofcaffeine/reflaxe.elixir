@@ -1968,17 +1968,16 @@ class ElixirASTTransformer {
                     if (hasNonString && parts.length > 1) {
                         // Build interpolated string
                         var result = '"';
-                        var isFirst = true;
                         
-                        for (part in parts) {
+                        for (i in 0...parts.length) {
+                            var part = parts[i];
                             if (part.isString) {
-                                if (part.value != "" || !isFirst) { // Skip leading empty strings
-                                    // Add literal string part (escape special characters)
-                                    var escaped = part.value;
-                                    escaped = escaped.split('\\').join('\\\\');
-                                    escaped = escaped.split('"').join('\\"');
-                                    result += escaped;
-                                }
+                                // Add literal string part (escape special characters)
+                                var escaped = part.value;
+                                escaped = escaped.split('\\').join('\\\\');
+                                escaped = escaped.split('"').join('\\"');
+                                escaped = escaped.split('#{').join('\\#{');  // Escape interpolation syntax
+                                result += escaped;
                             } else {
                                 // Add interpolated expression
                                 // First recursively transform the expression
@@ -1986,7 +1985,6 @@ class ElixirASTTransformer {
                                 var exprStr = ElixirASTPrinter.printAST(transformedExpr);
                                 result += '#{' + exprStr + '}';
                             }
-                            isFirst = false;
                         }
                         
                         result += '"';
@@ -2040,6 +2038,58 @@ class ElixirASTTransformer {
                 case EBinary(op, left, right) if (op != StringConcat):
                     makeASTWithMeta(
                         EBinary(op, transform(left), transform(right)),
+                        node.metadata,
+                        node.pos
+                    );
+                
+                // Transform function calls (e.g., Log.trace with string concatenation arguments)
+                case ECall(target, method, args):
+                    makeASTWithMeta(
+                        ECall(
+                            target != null ? transform(target) : null,
+                            method,
+                            args.map(transform)
+                        ),
+                        node.metadata,
+                        node.pos
+                    );
+                
+                // Transform remote calls (module function calls)
+                case ERemoteCall(module, func, args):
+                    makeASTWithMeta(
+                        ERemoteCall(
+                            transform(module),
+                            func,
+                            args.map(transform)
+                        ),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                // Transform match expressions (assignments)
+                case EMatch(pattern, expr):
+                    makeASTWithMeta(
+                        EMatch(pattern, transform(expr)),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                // Transform if expressions
+                case EIf(condition, then_expr, else_expr):
+                    makeASTWithMeta(
+                        EIf(
+                            transform(condition),
+                            transform(then_expr),
+                            else_expr != null ? transform(else_expr) : null
+                        ),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                // Transform list literals (for array building patterns)
+                case EList(items):
+                    makeASTWithMeta(
+                        EList(items.map(transform)),
                         node.metadata,
                         node.pos
                     );
