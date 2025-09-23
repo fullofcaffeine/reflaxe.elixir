@@ -225,25 +225,158 @@ Some tests in the suite compile to JavaScript instead of Elixir. These are part 
 - TestRunner is just plumbing - ignore it unless fixing compilation issues
 - If tests fail to compile with "Type not found: TestRunner", the stub needs updating
 
-## 🔧 Running Tests
+## 🔧 Running Tests - Complete Guide
 
-### Quick Commands
+### Primary Test Commands (Updated 2025)
 
 ```bash
 # Run all tests (parallel by default with -j8)
-make                           # Uses 8-way parallelization automatically
-npm test                       # Also uses -j8 by default
+npm test                       # Recommended - uses make with 8-way parallelization
+make -C test -j8              # Direct make command (same as npm test)
 
-# Run specific test category
-make test-core/arrays
-make test-regression/nested_switch
+# Run specific test categories
+npm run test:core             # Core language features only
+npm run test:phoenix          # Phoenix framework tests
+npm run test:ecto            # Ecto ORM tests  
+npm run test:stdlib          # Standard library tests
+npm run test:regression      # Bug fix regression tests
 
-# Run sequentially (for debugging)
-make -j1                       # Force sequential execution
-npm run test:sequential        # Alternative sequential command
+# Run tests by pattern matching
+./scripts/test-runner.sh --pattern "*array*"      # All array-related tests
+./scripts/test-runner.sh --pattern "*loop*"       # All loop-related tests
+./scripts/test-runner.sh --pattern "infrastructure_var_naming"  # Specific test
+
+# Smart test running
+npm run test:changed          # Only tests affected by git changes
+npm run test:failed          # Re-run only failed tests from last run
+
+# Sequential execution (for debugging)
+npm run test:sequential       # Force sequential execution (-j1)
+make -C test -j1             # Direct sequential make command
 
 # Update expected output after fixing compiler
-make update-intended TEST=core/arrays
+make -C test update-intended TEST=core/arrays     # Update specific test
+./scripts/test-runner.sh --update --pattern "test_name"  # Auto-update failures
+```
+
+### Test Directory Structure & Paths
+
+```bash
+# Tests MUST be in test/snapshot/, organized by category:
+test/snapshot/
+├── core/             # Language features (arrays, classes, loops, etc.)
+├── phoenix/          # Phoenix framework features
+├── ecto/            # Database ORM features
+├── otp/             # OTP patterns
+├── stdlib/          # Standard library
+├── exunit/          # Test framework
+├── loops/           # Loop-specific tests
+└── regression/      # Bug fixes (ALWAYS create test when fixing bugs)
+
+# NEVER create test/tests/ - this is the WRONG location
+```
+
+### Running Individual Tests
+
+```bash
+# Method 1: Using test runner (RECOMMENDED)
+./scripts/test-runner.sh --pattern "infrastructure_var_naming"
+
+# Method 2: Direct compilation (from project root)
+cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+npx haxe test/snapshot/regression/infrastructure_var_naming/compile.hxml
+
+# Method 3: From test directory (compile.hxml must use relative paths)
+cd test/snapshot/regression/infrastructure_var_naming
+npx haxe compile.hxml
+
+# Note: Make targets for individual tests may not work for all paths
+# Use test-runner.sh with --pattern for best results
+```
+
+### Creating and Validating New Tests
+
+```bash
+# 1. Create test structure
+mkdir -p test/snapshot/regression/my_bug_fix
+cd test/snapshot/regression/my_bug_fix
+
+# 2. Create Main.hx with minimal reproduction
+cat > Main.hx << 'EOF'
+class Main {
+    static function main() {
+        // Minimal code to reproduce issue
+    }
+}
+EOF
+
+# 3. Create compile.hxml with RELATIVE paths
+cat > compile.hxml << 'EOF'
+-cp .
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-D elixir_output=out
+EOF
+
+# 4. Compile and check output
+cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+npx haxe test/snapshot/regression/my_bug_fix/compile.hxml
+cat test/snapshot/regression/my_bug_fix/out/Main.ex
+
+# 5. If output is correct, save as intended
+cd test/snapshot/regression/my_bug_fix
+cp -r out intended
+
+# 6. Verify test passes
+cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+./scripts/test-runner.sh --pattern "my_bug_fix"
+```
+
+### Advanced Test Runner Features
+
+```bash
+# Category-based testing
+./scripts/test-runner.sh --category core        # Core tests only
+./scripts/test-runner.sh --category regression  # Regression tests only
+
+# Parallel control
+./scripts/test-runner.sh --parallel 4           # Use 4 parallel jobs
+./scripts/test-runner.sh --parallel 1           # Sequential execution
+
+# Auto-update mode
+./scripts/test-runner.sh --update --pattern "failing_test"  # Updates intended output
+
+# Verbose output
+./scripts/test-runner.sh --verbose --pattern "*"  # Show all output
+
+# Dry run (see what would be tested)
+./scripts/test-runner.sh --dry-run --changed    # Preview changed tests
+```
+
+### Common Issues and Solutions
+
+**Issue: "No rule to make target"**
+```bash
+# Make targets may not exist for all test paths
+# Solution: Use test-runner.sh instead
+./scripts/test-runner.sh --pattern "test_name"
+```
+
+**Issue: "Type not found: Main"**
+```bash
+# compile.hxml has wrong paths
+# Solution: Use relative paths in compile.hxml
+-cp .                    # NOT: -cp test/snapshot/...
+-D elixir_output=out     # NOT: -D elixir_output=test/snapshot/.../out
+```
+
+**Issue: Test passes locally but fails in CI**
+```bash
+# Likely due to uncommitted intended/ files
+git add test/snapshot/category/test_name/intended/
+git commit -m "test: add intended output for test_name"
 ```
 
 ### ⚡ Parallel Execution is DEFAULT
