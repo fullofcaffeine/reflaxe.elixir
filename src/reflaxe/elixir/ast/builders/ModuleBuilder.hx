@@ -112,24 +112,9 @@ class ModuleBuilder {
             trace('[ModuleBuilder] Generating exception module for ${moduleName}');
             #end
             
-            // For exceptions, we need to add the defexception structure
-            // In Elixir, defexception creates a struct with a message field
-            // We'll simulate this by adding the appropriate fields
-            
-            // Add exception struct fields at the beginning
-            var exceptionFields = [
-                // defstruct message: ""
-                makeExceptionStructDefinition()
-            ];
-            
-            // Combine exception fields with user-defined fields
-            fields = exceptionFields.concat(fields);
-            
-            // Add @behaviour Exception attribute for proper exception behavior
-            attributes.push({
-                name: "behaviour",
-                value: makeAST(EAtom("Exception"))
-            });
+            // Don't add defstruct for exceptions - defexception handles it automatically
+            // The ElixirASTPrinter will handle the defexception macro when it sees isException metadata
+            // Just keep the regular fields (methods like toString)
         }
 
         var result = {

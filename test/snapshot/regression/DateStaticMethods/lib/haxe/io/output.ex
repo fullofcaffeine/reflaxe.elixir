@@ -2,7 +2,7 @@ defmodule Output do
   defp set_big_endian(struct, b) do
     b
   end
-  def write_byte(struct, c) do
+  def write_byte(struct, _c) do
     nil
   end
   def write_bytes(struct, b, pos, len) do
