@@ -54,7 +54,11 @@ class Telemetry {
      * Child specification for OTP supervisor
      * 
      * Returns a proper child spec map for Supervisor.start_link
+     * 
+     * NOTE: @:keep is still required until we implement macro-time preservation
+     * for supervisor functions. The AST transformation happens too late to prevent DCE.
      */
+    @:keep
     public static function child_spec(opts: TelemetryOptions): ChildSpec {
         // Return a properly typed child spec structure
         return {
@@ -81,7 +85,10 @@ class Telemetry {
      * 
      * @param args Telemetry configuration options
      * @return Application result with supervisor PID
+     * 
+     * NOTE: @:keep is still required until we implement macro-time preservation
      */
+    @:keep
     public static function start_link(args: TelemetryOptions): ApplicationResult {
         // Start with empty children - telemetry reporters are added dynamically at runtime
         // This is the standard OTP pattern for telemetry supervisors
