@@ -267,6 +267,18 @@ class ElixirCompiler extends GenericCompiler<
      * @return True if the class should be compiled
      */
     public override function shouldGenerateClass(classType: ClassType): Bool {
+        // Debug for TodoApp investigation
+        #if debug_annotation_transforms
+        if (classType.name == "TodoApp") {
+            trace('[shouldGenerateClass] Checking TodoApp...');
+            trace('[shouldGenerateClass]   isExtern: ${classType.isExtern}');
+            trace('[shouldGenerateClass]   has @:application: ${classType.meta.has(":application")}');
+            trace('[shouldGenerateClass]   has @:native: ${classType.meta.has(":native")}');
+            var result = super.shouldGenerateClass(classType);
+            trace('[shouldGenerateClass]   super.shouldGenerateClass returns: ${result}');
+        }
+        #end
+        
         // Skip internal Haxe types that shouldn't generate modules
         // Module names in Elixir must start with uppercase letters
         if (classType.name.startsWith("__") || classType.name == "___Int64") {
@@ -292,6 +304,15 @@ class ElixirCompiler extends GenericCompiler<
         // Check if this is a @:coreApi class (like Date, Sys, etc.)
         // These need to be generated as Elixir modules
         if (classType.meta.has(":coreApi")) {
+            return true;
+        }
+        
+        // Check if this is an @:application class
+        // These need to be compiled to generate OTP application modules
+        if (classType.meta.has(":application")) {
+            #if debug_annotation_transforms
+            trace('[shouldGenerateClass] Forcing compilation of @:application class: ${classType.name}');
+            #end
             return true;
         }
         
@@ -476,6 +497,26 @@ class ElixirCompiler extends GenericCompiler<
      */
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
         if (classType == null) return null;
+
+        // Debug output for TodoApp investigation
+        #if debug_annotation_transforms
+        if (classType.name == "TodoApp") {
+            trace('[ElixirCompiler.compileClassImpl] === TodoApp Debug Info ===');
+            trace('[ElixirCompiler.compileClassImpl] funcFields received: ${funcFields.length}');
+            for (f in funcFields) {
+                trace('[ElixirCompiler.compileClassImpl]   - Function: ${f.field.name}');
+            }
+            trace('[ElixirCompiler.compileClassImpl] isExtern: ${classType.isExtern}');
+            trace('[ElixirCompiler.compileClassImpl] metadata: [${[for (m in classType.meta.get()) m.name].join(", ")}]');
+            
+            // Check if GenericCompiler considers this class extern
+            trace('[ElixirCompiler.compileClassImpl] classType.fields.get().length: ${classType.fields.get().length}');
+            trace('[ElixirCompiler.compileClassImpl] classType.statics.get().length: ${classType.statics.get().length}');
+            for (field in classType.statics.get()) {
+                trace('[ElixirCompiler.compileClassImpl]   Static field: ${field.name}, kind: ${field.kind}');
+            }
+        }
+        #end
 
         // Skip standard library classes that shouldn't generate Elixir modules
         if (isStandardLibraryClass(classType.name)) {
@@ -995,6 +1036,15 @@ class ElixirCompiler extends GenericCompiler<
         trace('[ElixirCompiler.buildClassAST] Metadata: ${[for (m in classType.meta.get()) m.name]}');
         #end
 
+        #if debug_annotation_transforms
+        if (classType.name == "TodoApp") {
+            trace('[ElixirCompiler.buildClassAST] TodoApp received ${funcFields.length} functions');
+            for (f in funcFields) {
+                trace('[ElixirCompiler.buildClassAST] Function: ${f.field.name}');
+            }
+        }
+        #end
+
         // Skip built-in types that shouldn't generate modules
         if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name)) {
             return null;
@@ -1358,6 +1408,15 @@ class ElixirCompiler extends GenericCompiler<
             metadata.isExunit = true;
         }
 
+        // Enable Application transformation pass for @:application modules
+        if (classType.meta.has(":application")) {
+            metadata.isApplication = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isApplication=true metadata for ${classType.name}');
+            trace('[ElixirCompiler] Passing ${fields.length} fields to ModuleBuilder for ${classType.name}');
+            #end
+        }
+
         // Build the module using ModuleBuilder with metadata
         var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, fields, metadata);
 
@@ -1370,6 +1429,13 @@ class ElixirCompiler extends GenericCompiler<
         if (moduleAST != null && moduleAST.metadata != null && moduleAST.metadata.isExunit == true) {
             #if debug_exunit
             trace('[ElixirCompiler] Set isExunit=true metadata for ${classType.name}');
+            #end
+        }
+
+        // Application debug output
+        if (moduleAST != null && moduleAST.metadata != null && moduleAST.metadata.isApplication == true) {
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Module ${classType.name} has isApplication metadata after building');
             #end
         }
 
