@@ -310,6 +310,13 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.exunitTransformPass
         });
         
+        passes.push({
+            name: "SupervisorTransform",
+            description: "Preserve supervisor functions from dead code elimination",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.supervisorTransformPass
+        });
+        
         // Constant folding pass
         // String interpolation transformation (should run before constant folding)
         passes.push({

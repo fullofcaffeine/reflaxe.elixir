@@ -683,6 +683,8 @@ typedef ElixirMetadata = {
     ?isLiveView: Bool,            // @:liveview Phoenix.LiveView
     ?isSchema: Bool,              // @:schema Ecto.Schema
     ?isRepo: Bool,                // @:repo Ecto.Repo
+    ?isSupervisor: Bool,          // @:supervisor OTP Supervisor
+    ?isKeep: Bool,                // @:keep - Prevent dead code elimination
     ?isPostgrexTypes: Bool,       // @:postgrexTypes Postgrex precompiled types module (sugar)
     ?isDbTypes: Bool,             // @:dbTypes generic DB types module
     ?dbAdapter: String,           // Adapter name (e.g., "postgrex")
