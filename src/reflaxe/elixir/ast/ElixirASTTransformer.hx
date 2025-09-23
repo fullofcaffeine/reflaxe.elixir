@@ -311,6 +311,14 @@ class ElixirASTTransformer {
         });
         
         // Constant folding pass
+        // String interpolation transformation (should run before constant folding)
+        passes.push({
+            name: "StringInterpolation",
+            description: "Convert string concatenation to idiomatic string interpolation",
+            enabled: true,
+            pass: stringInterpolationPass
+        });
+
         #if !disable_constant_folding
         passes.push({
             name: "ConstantFolding",
@@ -2301,6 +2309,138 @@ class ElixirASTTransformer {
                     node; // Not a foldable expression
             }
         });
+    }
+    
+    /**
+     * String interpolation pass - convert string concatenation to idiomatic interpolation
+     * 
+     * WHY: Elixir's string interpolation #{} is more idiomatic and readable than concatenation
+     * WHAT: Transforms EBinary(StringConcat, ...) chains into interpolated strings
+     * HOW: Finds string concatenation chains and replaces them with interpolated strings
+     * 
+     * NOTE: We use a custom traversal instead of transformNode to avoid recursive transformation
+     */
+    static function stringInterpolationPass(ast: ElixirAST): ElixirAST {
+        function transform(node: ElixirAST): ElixirAST {
+            // First check if this is a string concatenation chain at the top level
+            switch(node.def) {
+                case EBinary(StringConcat, _, _):
+                    // Collect all parts of the concatenation chain
+                    var parts = [];
+                    
+                    function collectParts(expr: ElixirAST) {
+                        switch(expr.def) {
+                            case EBinary(StringConcat, l, r):
+                                collectParts(l);
+                                collectParts(r);
+                            case EString(s):
+                                parts.push({isString: true, value: s, expr: null});
+                            default:
+                                parts.push({isString: false, value: null, expr: expr});
+                        }
+                    }
+                    
+                    collectParts(node);
+                    
+                    // Check if we should convert to interpolation
+                    var hasNonString = false;
+                    var hasEmptyString = false;
+                    for (part in parts) {
+                        if (!part.isString) {
+                            hasNonString = true;
+                        } else if (part.value == "") {
+                            hasEmptyString = true;
+                        }
+                    }
+                    
+                    // Only convert if we have non-string parts and multiple parts
+                    if (hasNonString && parts.length > 1) {
+                        // Build interpolated string
+                        var result = '"';
+                        var isFirst = true;
+                        
+                        for (part in parts) {
+                            if (part.isString) {
+                                if (part.value != "" || !isFirst) { // Skip leading empty strings
+                                    // Add literal string part (escape special characters)
+                                    var escaped = part.value;
+                                    escaped = escaped.split('\\').join('\\\\');
+                                    escaped = escaped.split('"').join('\\"');
+                                    result += escaped;
+                                }
+                            } else {
+                                // Add interpolated expression
+                                // First recursively transform the expression
+                                var transformedExpr = transform(part.expr);
+                                var exprStr = ElixirASTPrinter.printAST(transformedExpr);
+                                result += '#{' + exprStr + '}';
+                            }
+                            isFirst = false;
+                        }
+                        
+                        result += '"';
+                        
+                        // Return raw interpolated string
+                        return makeASTWithMeta(ERaw(result), node.metadata, node.pos);
+                    }
+                    
+                default:
+                    // Not a string concatenation at top level
+            }
+            
+            // For all other nodes, recursively transform children
+            return switch(node.def) {
+                case EModule(name, attributes, body):
+                    makeASTWithMeta(
+                        EModule(name, attributes, body.map(transform)),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                case EDefmodule(name, doBlock):
+                    makeASTWithMeta(
+                        EDefmodule(name, transform(doBlock)),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                case EDef(name, args, guards, body):
+                    makeASTWithMeta(
+                        EDef(name, args, guards, transform(body)),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                case EDefp(name, args, guards, body):
+                    makeASTWithMeta(
+                        EDefp(name, args, guards, transform(body)),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                case EBlock(expressions):
+                    makeASTWithMeta(
+                        EBlock(expressions.map(transform)),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                // For other binary operations that aren't StringConcat, transform children
+                case EBinary(op, left, right) if (op != StringConcat):
+                    makeASTWithMeta(
+                        EBinary(op, transform(left), transform(right)),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                default:
+                    // For all other nodes, return unchanged
+                    // We're only transforming the specific nodes we care about
+                    node;
+            }
+        }
+        
+        return transform(ast);
     }
     
     /**
