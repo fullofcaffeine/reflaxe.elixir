@@ -1,9 +1,9 @@
+# Compilation configuration for pattern matching transform test
 -cp .
 -lib reflaxe
 -lib reflaxe.elixir
--main Main
 --no-output
---macro reflaxe.elixir.ElixirCompiler.compileToDir("out")
--D elixir.output_dir=out
+-main Main
+-D elixir_output=out
 -D analyzer-optimize
 -dce full

@@ -3838,6 +3838,7 @@ class ElixirASTTransformer {
         // Helper function to check if an AST node represents nil
         // In Elixir, nil is represented as the atom :nil
         inline function isNilValue(ast: ElixirAST): Bool {
+            if (ast == null) return false;
             return switch(ast.def) {
                 case EAtom(a): a == "nil";
                 case ENil: true; // Legacy support, though this shouldn't occur
@@ -5533,6 +5534,7 @@ class ElixirASTTransformer {
      */
     static function fixBareConcatenationsPass(ast: ElixirAST): ElixirAST {
         function fixConcatenations(node: ElixirAST): ElixirAST {
+            if (node == null) return null;
             return switch(node.def) {
                 case EBlock(statements):
                     var fixedStatements = [];
