@@ -73,7 +73,7 @@ defmodule Date_Impl_ do
   def get_utc_seconds(this1) do
     this1.second
   end
-  def get_timezone_offset(this1) do
+  def get_timezone_offset(_this1) do
     0
   end
   def add(this1, amount, unit) do

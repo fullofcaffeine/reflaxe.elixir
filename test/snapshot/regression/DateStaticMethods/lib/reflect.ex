@@ -20,7 +20,7 @@ defmodule Reflect do
   def copy(o) do
     o
   end
-  def call_method(o, func, args) do
+  def call_method(_o, func, args) do
     apply(func, args)
   end
   def compare(a, b) do

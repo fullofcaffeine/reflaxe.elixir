@@ -107,6 +107,141 @@ Using `@:native` lets us:
 
 **Fix Needed**: Ensure ModuleBuilder preserves BehaviorTransformer transformations when building function bodies.
 
+## 🔄 Inheritance via Delegation Pattern
+
+**STATUS**: Fully Implemented (September 2025)
+**ARCHITECTURE**: Transforms OOP inheritance to Elixir's delegation pattern
+
+### Overview
+Since Elixir doesn't support traditional OOP inheritance, we transform Haxe's inheritance model into idiomatic Elixir delegation patterns. This system detects parent-child relationships at compile time and generates appropriate delegation calls.
+
+### How It Works
+
+#### 1. Parent Class Detection (ElixirCompiler.hx:1320-1354)
+```haxe
+// Detect parent class via ClassType.superClass
+if (classType.superClass != null) {
+    var parentClass = classType.superClass.t.get();
+    var parentModuleName = parentClass.name;
+    metadata.parentModule = parentModuleName;
+    
+    // Traverse inheritance chain for Exception detection
+    var currentClass = parentClass;
+    while (currentClass != null) {
+        if (/* is haxe.Exception */) {
+            metadata.isException = true;
+            break;
+        }
+        currentClass = currentClass.superClass?.t.get();
+    }
+}
+```
+
+#### 2. Metadata Flow Through Pipeline
+The inheritance information flows through the AST pipeline via `ElixirMetadata`:
+```haxe
+typedef ElixirMetadata = {
+    ?parentModule: String,    // Parent class module name
+    ?isException: Bool,       // Whether extends haxe.Exception
+    // ... other metadata
+}
+```
+
+#### 3. Super Method Transformation (ElixirASTTransformer.hx)
+Super method calls are transformed in the `selfReferenceTransformPass`:
+```haxe
+// Transform: super.method(args)
+// Into: ParentModule.method(struct, args)
+case EField(EVar("super"), methodName):
+    var parentModule = metadata.parentModule;
+    return ERemoteCall(
+        EVar(parentModule),    // Module reference (not atom!)
+        methodName,
+        [EVar("struct"), ...args]  // Prepend struct parameter
+    );
+```
+
+#### 4. Exception Class Handling (ModuleBuilder.hx)
+Classes that extend Exception get special treatment:
+```haxe
+if (metadata.isException == true) {
+    // Generate defexception instead of defmodule
+    // Implements Exception protocol automatically
+}
+```
+
+### Example Transformations
+
+#### Basic Inheritance
+```haxe
+// Haxe Input
+class Parent {
+    public function describe(): String {
+        return "Parent";
+    }
+}
+
+class Child extends Parent {
+    override public function describe(): String {
+        return super.describe() + " -> Child";
+    }
+}
+```
+
+```elixir
+# Generated Elixir
+defmodule Parent do
+  def describe(struct) do
+    "Parent"
+  end
+end
+
+defmodule Child do
+  def describe(struct) do
+    Parent.describe(struct) <> " -> Child"  # Delegation
+  end
+end
+```
+
+#### Exception Classes
+```haxe
+// Haxe Input
+class CustomError extends haxe.Exception {
+    public function new(msg: String) {
+        super(msg);
+    }
+}
+```
+
+```elixir
+# Generated Elixir
+defexception CustomError do
+  @impl true
+  def message(exception) do
+    exception.message
+  end
+end
+```
+
+### Multi-Level Inheritance
+The system correctly handles deep inheritance chains:
+- GrandParent → Parent → Child → GrandChild
+- Each level delegates to its immediate parent
+- Exception detection traverses the entire chain
+
+### Limitations & Future Work
+1. **Interfaces**: Not yet implemented - could map to Elixir behaviors
+2. **Abstract Classes**: Haxe doesn't have traditional abstract classes
+3. **Constructor Chaining**: super() in constructors needs special handling
+4. **Multiple Inheritance**: Not supported (Haxe limitation)
+
+### Testing
+Comprehensive tests in `test/snapshot/core/inheritance_delegation/` validate:
+- Basic inheritance with method overrides
+- Super method delegation
+- Exception class generation
+- Multi-level inheritance chains
+
 ## ⚡ Critical Compilation Concepts
 
 ### Macro-Time vs Runtime ⚠️ FUNDAMENTAL

@@ -72,7 +72,7 @@ class ElixirASTPrinter {
         trace('[XRay AST Printer] Printing node: ${ast.def}');
         #end
 
-        // Handle EDefmodule specially to extract unused functions metadata
+        // Handle EDefmodule and EModule specially to access metadata
         var result = switch(ast.def) {
             case EDefmodule(name, doBlock):
                 // Extract unused functions from metadata if available
@@ -104,6 +104,49 @@ class ElixirASTPrinter {
                 currentUnusedFunctions = null;
                 moduleResult;
 
+            case EModule(name, attributes, body):
+                // Check if this is an exception class
+                var isException = ast.metadata != null && ast.metadata.isException == true;
+                
+                if (isException) {
+                    // For exceptions, use defmodule with defexception inside
+                    // This is the proper Elixir pattern for custom exceptions
+                    var result = 'defmodule ${name} do\n';
+                    result += indentStr(indent + 1) + 'defexception [:message]\n';
+                    
+                    // Print any other methods (like toString)
+                    for (expr in body) {
+                        // Skip defstruct calls as defexception handles that
+                        var exprStr = print(expr, indent + 1);
+                        if (!exprStr.startsWith("defstruct")) {
+                            result += '\n' + indentStr(indent + 1) + exprStr + '\n';
+                        }
+                    }
+                    
+                    result += indentStr(indent) + 'end';
+                    result;
+                } else {
+                    // Regular module
+                    var result = 'defmodule ${name} do\n';
+                    
+                    // Print attributes
+                    for (attr in attributes) {
+                        result += indentStr(indent + 1) + printAttribute(attr) + '\n';
+                    }
+                    
+                    if (attributes.length > 0 && body.length > 0) {
+                        result += '\n';
+                    }
+                    
+                    // Print body
+                    for (expr in body) {
+                        result += indentStr(indent + 1) + print(expr, indent + 1) + '\n';
+                    }
+                    
+                    result += indentStr(indent) + 'end';
+                    result;
+                }
+
             default:
                 printNode(ast.def, indent);
         };
@@ -124,6 +167,10 @@ class ElixirASTPrinter {
             // Modules and Structure
             // ================================================================
             case EModule(name, attributes, body):
+                // Check if this is an exception class from metadata
+                // Note: We need access to the full AST node to check metadata
+                // This is handled in the main print() function, not here
+                // For now, generate regular defmodule
                 var result = 'defmodule ${name} do\n';
                 
                 // Print attributes

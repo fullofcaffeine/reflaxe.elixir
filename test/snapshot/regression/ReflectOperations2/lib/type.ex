@@ -1,50 +1,50 @@
 defmodule Type do
-  def typeof(v) do
+  def typeof(_v) do
     {:t_unknown}
   end
-  def enum_index(e) do
+  def enum_index(_e) do
     0
   end
-  def enum_parameters(e) do
+  def enum_parameters(_e) do
     []
   end
-  def enum_constructor(e) do
+  def enum_constructor(_e) do
     ""
   end
   def enum_eq(a, b) do
     a == b
   end
-  def get_class(o) do
+  def get_class(_o) do
     nil
   end
-  def get_super_class(c) do
+  def get_super_class(_c) do
     nil
   end
-  def get_class_name(c) do
+  def get_class_name(_c) do
     ""
   end
-  def get_enum_name(e) do
+  def get_enum_name(_e) do
     ""
   end
-  def is_type(v, t) do
+  def is_type(_v, _t) do
     false
   end
-  def create_instance(cl, args) do
+  def create_instance(_cl, _args) do
     nil
   end
-  def create_empty_instance(cl) do
+  def create_empty_instance(_cl) do
     nil
   end
-  def create_enum(e, constr, params) do
+  def create_enum(_e, _constr, _params) do
     nil
   end
-  def create_enum_index(e, index, params) do
+  def create_enum_index(_e, _index, _params) do
     throw("Type.createEnumIndex not fully implemented for Elixir target")
   end
-  def get_enum_constructs(e) do
+  def get_enum_constructs(_e) do
     []
   end
-  def all_enums(e) do
+  def all_enums(_e) do
     []
   end
 end

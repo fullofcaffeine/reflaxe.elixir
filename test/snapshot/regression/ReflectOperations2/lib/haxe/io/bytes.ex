@@ -204,7 +204,7 @@ end
   def alloc(length) do
     Bytes.new(length, (:binary.copy(<<0>>, length)))
   end
-  def of_string(s, encoding) do
+  def of_string(s, _encoding) do
     binary = :unicode.characters_to_binary(s, :utf8)
     length2 = byte_size(binary)
     Bytes.new(length2, binary)
