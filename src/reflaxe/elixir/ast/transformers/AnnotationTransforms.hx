@@ -78,12 +78,32 @@ class AnnotationTransforms {
      */
     public static function endpointTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
+        trace('[XRay Endpoint Transform] Checking AST node type: ${ast.def}');
+        if (ast.metadata?.isEndpoint == true) {
+            trace('[XRay Endpoint Transform] Found endpoint module with metadata');
+        }
         #end
         
         // Check the top-level node first for Endpoint modules
         switch(ast.def) {
+            case EModule(name, attrs, exprs) if (ast.metadata?.isEndpoint == true):
+                #if debug_annotation_transforms
+                trace('[XRay Endpoint Transform] Processing endpoint EModule: ${name}');
+                #end
+                
+                var appName = ast.metadata.appName ?? "app";
+                var endpointBodyStatements = buildEndpointBodyStatements(name, appName);
+                
+                // Create new module with endpoint body, preserving metadata
+                return makeASTWithMeta(
+                    EModule(name, attrs, endpointBodyStatements),
+                    ast.metadata,
+                    ast.pos
+                );
+                
             case EDefmodule(name, body) if (ast.metadata?.isEndpoint == true):
                 #if debug_annotation_transforms
+                trace('[XRay Endpoint Transform] Processing endpoint EDefmodule: ${name}');
                 #end
                 
                 var appName = ast.metadata.appName ?? "app";
@@ -100,6 +120,24 @@ class AnnotationTransforms {
                 // Not an Endpoint module, just pass through
                 return ast;
         }
+    }
+    
+    /**
+     * Build complete Phoenix.Endpoint module body as array of statements
+     */
+    static function buildEndpointBodyStatements(moduleName: String, appName: String): Array<ElixirAST> {
+        var statements = [];
+        
+        // use Phoenix.Endpoint, otp_app: :app_name
+        var useOptions = makeAST(EKeywordList([
+            {key: "otp_app", value: makeAST(EAtom(appName))}
+        ]));
+        statements.push(makeAST(EUse("Phoenix.Endpoint", [useOptions])));
+        
+        // The rest of the endpoint configuration continues in buildEndpointBody
+        // For now, just add the use statement which is most critical
+        
+        return statements;
     }
     
     /**
@@ -1674,13 +1712,16 @@ class AnnotationTransforms {
                                  metadata?.isApplication != true;
         
         if (needsUseSupervisor) {
-            // Check if we already have use Supervisor
+            // Check if we already have use Supervisor and init/1
             var hasUseSupervisor = false;
+            var hasInit = false;
+            
             for (stmt in statements) {
                 switch(stmt.def) {
                     case EUse("Supervisor", _):
                         hasUseSupervisor = true;
-                        break;
+                    case EDef("init", _, _, _):
+                        hasInit = true;
                     default:
                 }
             }
@@ -1690,6 +1731,32 @@ class AnnotationTransforms {
                 statements.insert(0, makeAST(EUse("Supervisor", [])));
                 #if debug_annotation_transforms
                 trace('[XRay Supervisor Transform] Added use Supervisor statement');
+                #end
+            }
+            
+            if (!hasInit) {
+                // Add default init/1 callback that delegates to start_link
+                var initBody = makeAST(
+                    ETuple([
+                        makeAST(EAtom("ok")),
+                        makeAST(ETuple([
+                            makeAST(EList([])),  // Empty children list
+                            makeAST(EKeywordList([
+                                {key: "strategy", value: makeAST(EAtom("one_for_one"))},
+                                {key: "max_restarts", value: makeAST(EInteger(3))},
+                                {key: "max_seconds", value: makeAST(EInteger(5))}
+                            ]))
+                        ]))
+                    ])
+                );
+                
+                var initFunc = makeAST(
+                    EDef("init", [PVar("_args")], null, initBody)
+                );
+                
+                statements.push(initFunc);
+                #if debug_annotation_transforms
+                trace('[XRay Supervisor Transform] Added default init/1 callback');
                 #end
             }
         }
@@ -1772,13 +1839,16 @@ class AnnotationTransforms {
                                  metadata?.isApplication != true;
         
         if (needsUseSupervisor) {
-            // Check if we already have use Supervisor
+            // Check if we already have use Supervisor and init/1
             var hasUseSupervisor = false;
+            var hasInit = false;
+            
             for (stmt in statements) {
                 switch(stmt.def) {
                     case EUse("Supervisor", _):
                         hasUseSupervisor = true;
-                        break;
+                    case EDef("init", _, _, _):
+                        hasInit = true;
                     default:
                 }
             }
@@ -1788,6 +1858,32 @@ class AnnotationTransforms {
                 statements.insert(0, makeAST(EUse("Supervisor", [])));
                 #if debug_annotation_transforms
                 trace('[XRay Supervisor Transform] Added use Supervisor statement');
+                #end
+            }
+            
+            if (!hasInit) {
+                // Add default init/1 callback that delegates to start_link
+                var initBody = makeAST(
+                    ETuple([
+                        makeAST(EAtom("ok")),
+                        makeAST(ETuple([
+                            makeAST(EList([])),  // Empty children list
+                            makeAST(EKeywordList([
+                                {key: "strategy", value: makeAST(EAtom("one_for_one"))},
+                                {key: "max_restarts", value: makeAST(EInteger(3))},
+                                {key: "max_seconds", value: makeAST(EInteger(5))}
+                            ]))
+                        ]))
+                    ])
+                );
+                
+                var initFunc = makeAST(
+                    EDef("init", [PVar("_args")], null, initBody)
+                );
+                
+                statements.push(initFunc);
+                #if debug_annotation_transforms
+                trace('[XRay Supervisor Transform] Added default init/1 callback');
                 #end
             }
         }
