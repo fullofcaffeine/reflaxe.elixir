@@ -144,6 +144,164 @@ abstract Result<T,E> {
 // with proper Elixir module generation
 ```
 
+## ⚠️ CRITICAL: Architectural Hierarchy - .cross.hx → Externs → Transformations
+
+**FUNDAMENTAL PRINCIPLE: Generate idiomatic code at the EARLIEST possible stage in the compilation pipeline.**
+
+### The Three-Layer Architecture (In Priority Order)
+
+#### 1. **FIRST CHOICE: .cross.hx Override Files (Compile-Time Generation)**
+
+**When to Use**: When you control the type definition and need idiomatic output
+**How it Works**: Replaces Haxe's standard implementation entirely
+**Advantages**:
+- Zero runtime overhead with `extern inline`
+- Generates perfect Elixir code from the start
+- Type checking happens at Haxe compile time
+- No AST manipulation needed
+- Cleanest generated code
+
+**Example**:
+```haxe
+// String.cross.hx - Replaces ALL String methods
+extern inline function toUpperCase(): String {
+    return untyped __elixir__('String.upcase({0})', this);
+}
+// Generates: String.upcase(str) instead of str.to_upper_case()
+```
+
+**Best For**:
+- Core types (String, Array, Map)
+- Standard library utilities (StringTools, Lambda)
+- Mathematical operations (Math)
+- Any type where you want COMPLETE control over generation
+
+#### 2. **SECOND CHOICE: Extern Classes with Native Mapping**
+
+**When to Use**: Wrapping existing Elixir/Erlang/Phoenix/Ecto modules
+**How it Works**: Maps Haxe types to existing Elixir modules
+**Advantages**:
+- Direct access to ecosystem libraries
+- Type-safe wrappers around dynamic APIs
+- No runtime overhead
+- Preserves library semantics exactly
+
+**Example**:
+```haxe
+// Phoenix.LiveView extern
+@:native("Phoenix.LiveView")
+extern class LiveView {
+    @:native("assign")
+    static function assign<T>(socket: Socket<T>, key: String, value: Dynamic): Socket<T>;
+}
+// Generates: Phoenix.LiveView.assign(socket, key, value)
+```
+
+**Best For**:
+- Framework integration (Phoenix, Ecto)
+- Erlang/OTP modules
+- Third-party libraries
+- When you DON'T control the implementation
+
+#### 3. **LAST RESORT: AST Transformation Passes**
+
+**When to Use**: Only for context-dependent patterns that can't be known at definition time
+**How it Works**: Post-processes generated AST to fix patterns
+**Disadvantages**:
+- Performance overhead during compilation
+- Complexity in compiler
+- Harder to debug
+- Can miss edge cases
+- Order-dependent transformations
+
+**Legitimate Use Cases**:
+```haxe
+// Pattern: Immutable array operations
+arr.push(item) → arr = arr ++ [item]
+// This REQUIRES context analysis - is 'arr' a local var or struct field?
+
+// Pattern: Loop to comprehension conversion
+for (i in 0...10) { result.push(i * 2); }
+→ result = for i <- 0..9, do: i * 2
+// Requires analyzing entire loop body structure
+```
+
+**Should Be Transformation**:
+- Immutability transformations (needs usage context)
+- Loop optimizations (needs pattern analysis)
+- Dead code elimination (needs flow analysis)
+- Operator overloading resolution (needs type context)
+
+### Why This Hierarchy Matters
+
+#### Compilation Pipeline Stages:
+```
+1. Haxe Parsing
+2. Type Checking
+3. .cross.hx Override ← EARLIEST INTERVENTION (Best)
+4. Macro Expansion
+5. TypedExpr Generation
+6. ElixirASTBuilder
+7. AST Transformations ← LATEST INTERVENTION (Worst)
+8. Code Printing
+```
+
+#### Performance Impact:
+- **.cross.hx**: ~0ms overhead (compile-time inline)
+- **Externs**: ~0ms overhead (direct mapping)
+- **Transformations**: 10-100ms per pass (AST traversal + pattern matching)
+
+#### Code Quality Impact:
+- **.cross.hx**: Perfect idiomatic code
+- **Externs**: Native library calls
+- **Transformations**: Risk of edge cases, ordering issues
+
+### Decision Tree for Implementation Strategy
+
+```
+Need to change how a type generates code?
+├─ Do you control the type definition?
+│  ├─ YES → Use .cross.hx override
+│  └─ NO → Is it an external library?
+│     ├─ YES → Use extern with @:native
+│     └─ NO → Is it context-dependent?
+│        ├─ YES → Use AST transformation (last resort)
+│        └─ NO → Reconsider - probably needs .cross.hx
+```
+
+### Real-World Example: String Methods Problem
+
+**The Problem**: `str.length` generates as method call, invalid in Elixir
+
+**❌ Wrong Solution (What we initially tried)**:
+```haxe
+// AST Transformation to detect and fix method calls
+case ECall(target, "length", []):
+    makeAST(ERemoteCall(makeAST(EVar("String")), "length", [target]))
+```
+Problems: Complexity, missed edge cases, runs on EVERY compilation
+
+**✅ Right Solution (Using .cross.hx)**:
+```haxe
+// String.cross.hx
+@:coreApi
+extern class String {
+    extern inline var length(get, never): Int;
+    extern inline function get_length(): Int {
+        return untyped __elixir__('String.length({0})', this);
+    }
+}
+```
+Benefits: Zero overhead, always correct, generates `String.length(str)` directly
+
+### Lessons from Other Reflaxe Compilers
+
+**Reflaxe.CPP**: Uses extensive .cross.hx overrides for entire stdlib
+**Reflaxe.CS**: Minimal transformations, mostly externs
+**Reflaxe.Py**: Heavy transformation use (and it's their biggest pain point)
+
+The most successful Reflaxe compilers minimize AST transformations.
+
 ## 🎯 Standard Library Development Rules ⚠️ CRITICAL
 
 ### ❌ NEVER Do This:
