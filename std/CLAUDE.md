@@ -171,12 +171,12 @@ The compiler automatically generates runtime support modules from different sour
    - Uses `untyped __elixir__()` for native Elixir implementations
    - Located at: `/Users/fullofcaffeine/workspace/code/haxe.elixir/std/Std.cross.hx`
 
-2. **`Log` module** → Generated from Haxe's standard library
-   - Source: `/Users/fullofcaffeine/haxe/versions/4.3.7/std/haxe/Log.hx`
-   - Generates `haxe/log.ex` containing the Log module
-   - When you call `trace("hello")` in Haxe, the compiler transforms it to `Log.trace("hello", metadata)`
-   - The Log.hx class defines the `trace()` and `formatOutput()` methods that handle the actual output
-   - Part of official Haxe distribution (haxe.Log package)
+2. **`Log` module** → Generated from our override `/std/haxe/Log.cross.hx`
+   - **OVERRIDE PATTERN**: We use `.cross.hx` files to override Haxe's standard library behavior
+   - Our Log.cross.hx implementation generates idiomatic `IO.inspect()` calls instead of `Log.trace()`
+   - When you call `trace("hello")` in Haxe, it becomes `IO.inspect("hello")` in Elixir
+   - The override uses `untyped __elixir__()` to generate native Elixir code
+   - This produces cleaner, more idiomatic Elixir output for better debugging experience
 
 3. **How the Compiler Knows to Use Log.trace()**:
    - Haxe has a built-in `trace()` function that's part of the language

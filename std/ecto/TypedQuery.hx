@@ -25,15 +25,6 @@ enum abstract SortDirection(String) to String {
     var Desc = "desc"; // Descending order (compiles to :desc atom)
 }
 
-/**
- * Type-safe join types for Ecto queries
- */
-enum JoinType {
-    Inner;     // Inner join (compiles to :inner)
-    Left;      // Left outer join (compiles to :left)
-    Right;     // Right outer join (compiles to :right)
-    FullOuter; // Full outer join (compiles to :full)
-}
 
 /**
  * Opaque extern type representing Ecto.Query struct

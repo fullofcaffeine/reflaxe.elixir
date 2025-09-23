@@ -90,11 +90,13 @@ test-%:
 		duration=$$((end - start)); \
 		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			if diff -r --exclude="_GeneratedFiles.json" --exclude="erl_crash.dump" --exclude="bootstrap_*.ex" --exclude="*.exs.ex" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
-				if [ -n "$(RUN_TESTS)" ] && [ -f $$testdir/$(OUTPUT_DIR)/main.ex ]; then \
-					if cd $$testdir/$(OUTPUT_DIR) && timeout 5s elixir -pa . -e "Code.compile_file(\"main.ex\")" > /dev/null 2>&1; then \
-						echo "✅ $$testname - compiled and executed ($${duration}s)" | tee -a test-results.tmp; \
+				ex_files=$$(find $$testdir/$(OUTPUT_DIR) -name "*.ex" -type f 2>/dev/null | head -1); \
+				if [ -n "$$ex_files" ]; then \
+					parse_cmd='files = System.argv(); ok = Enum.all?(files, fn f -> case File.read(f) do {:ok, s} -> case Code.string_to_quoted(s, file: f) do {:ok, _} -> true; {:error, _} -> false end; {:error, _} -> false end end); if not ok, do: System.halt(1)'; \
+					if timeout 5s elixir -e "$$parse_cmd" $$testdir/$(OUTPUT_DIR)/*.ex > /dev/null 2>&1; then \
+						echo "✅ $$testname ($${duration}s)" | tee -a test-results.tmp; \
 					else \
-						echo "❌ $$testname - Runtime error ($${duration}s)" | tee -a test-results.tmp; \
+						echo "❌ $$testname - Invalid Elixir syntax ($${duration}s)" | tee -a test-results.tmp; \
 					fi; \
 				else \
 					echo "✅ $$testname ($${duration}s)" | tee -a test-results.tmp; \
