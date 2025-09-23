@@ -1,0 +1,9 @@
+-cp .
+-lib reflaxe
+-lib reflaxe.elixir
+-main Main
+--no-output
+--macro reflaxe.elixir.ElixirCompiler.compileToDir("out")
+-D elixir.output_dir=out
+-D analyzer-optimize
+-dce full
