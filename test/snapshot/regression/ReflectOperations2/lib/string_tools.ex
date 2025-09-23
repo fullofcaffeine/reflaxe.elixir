@@ -80,7 +80,7 @@ end)
     if (length(c) <= 0), do: s
     buf = ""
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, l, buf, :ok}, fn _, {acc_s, acc_l, acc_buf, acc_state} -> nil end)
-    buf <> s
+    "#{buf}#{s}"
   end
   def rpad(s, c, l) do
     if (length(c) <= 0), do: s
