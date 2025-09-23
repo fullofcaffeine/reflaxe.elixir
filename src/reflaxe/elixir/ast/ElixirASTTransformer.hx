@@ -1694,6 +1694,19 @@ class ElixirASTTransformer {
                                 };
                                 
                                 if (parentModule != null) {
+                                    // Special handling for Exception parent (it's a behaviour, not a module with methods)
+                                    if (parentModule == "Exception" && (methodName == "toString" || methodName == "to_string")) {
+                                        #if debug_super_handling
+                                        trace("[SuperTransform] Special handling for Exception.toString()");
+                                        #end
+                                        // For Exception base class, use Kernel.to_string on the message
+                                        return makeAST(ERemoteCall(
+                                            makeAST(EVar("Kernel")),
+                                            "to_string",
+                                            [makeAST(EField(makeAST(EVar("struct")), "message"))]
+                                        ));
+                                    }
+                                    
                                     // Transform super.method() to ParentModule.method(struct, args...)
                                     #if debug_super_handling
                                     trace("[SuperTransform] Delegating to parent module: " + parentModule);
@@ -1717,10 +1730,24 @@ class ElixirASTTransformer {
                                 } else if (methodName == "to_string" || methodName == "toString") {
                                     // Fallback for toString when parent is unknown
                                     #if debug_super_handling
-                                    trace("[SuperTransform] No parent module found, using struct.message for toString");
+                                    trace("[SuperTransform] No parent module found, handling toString for exception");
                                     #end
-                                    // For exception classes, return the message field
-                                    return makeAST(EField(makeAST(EVar("struct")), "message"));
+                                    
+                                    // Check if this is an exception class
+                                    var isException = (moduleMetadata != null && moduleMetadata.isException == true);
+                                    
+                                    if (isException) {
+                                        // For exception classes, use Kernel.to_string on the message field
+                                        // This properly converts the message to a string using Elixir's built-in function
+                                        return makeAST(ERemoteCall(
+                                            makeAST(EVar("Kernel")),
+                                            "to_string",
+                                            [makeAST(EField(makeAST(EVar("struct")), "message"))]
+                                        ));
+                                    } else {
+                                        // For non-exception classes, just return the message field
+                                        return makeAST(EField(makeAST(EVar("struct")), "message"));
+                                    }
                                 } else {
                                     // Keep as is if we can't resolve parent
                                     #if debug_super_handling
@@ -1744,9 +1771,23 @@ class ElixirASTTransformer {
                                     // This is super.method() call
                                     if (fieldName == "to_string" || fieldName == "toString") {
                                         #if debug_super_handling
-                                        trace("[SuperTransform] Transforming super.toString() to empty string");
+                                        trace("[SuperTransform] Transforming super.toString() for exception class");
                                         #end
-                                        return makeAST(EString(""));  // Default to empty string for exception base message
+                                        
+                                        // Check if this is an exception class
+                                        var isException = (moduleMetadata != null && moduleMetadata.isException == true);
+                                        
+                                        if (isException) {
+                                            // For exception classes, use Kernel.to_string on the message field
+                                            return makeAST(ERemoteCall(
+                                                makeAST(EVar("Kernel")),
+                                                "to_string",
+                                                [makeAST(EField(makeAST(EVar("struct")), "message"))]
+                                            ));
+                                        } else {
+                                            // Default to empty string for non-exception classes
+                                            return makeAST(EString(""));
+                                        }
                                     } else {
                                         // For other methods, keep as is for now
                                         node;
