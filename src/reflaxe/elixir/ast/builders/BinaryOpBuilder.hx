@@ -102,8 +102,30 @@ class BinaryOpBuilder {
                     var rightStr = if (isStringType(e2.t)) {
                         rightAST;
                     } else {
-                        // Convert non-string to string for concatenation
-                        makeAST(ElixirASTDef.ECall(rightAST, "to_string", []));
+                        // Check if the expression is an ERaw node (from __elixir__() injection)
+                        // or a block expression that shouldn't have .to_string() called on it
+                        var needsToString = switch(rightAST.def) {
+                            case ERaw(_): false;  // Raw Elixir code handles conversion itself
+                            case ECase(_, _) | ECond(_) | EWith(_, _, _): false; // Block expressions in interpolation auto-convert
+                            case EIf(_, _, elseBranch) if (elseBranch != null): false; // If with else is a block expression
+                            case EBlock(exprs) if (exprs.length > 0):
+                                // Check if the block contains case/cond/with as its last expression
+                                var lastExpr = exprs[exprs.length - 1];
+                                switch(lastExpr.def) {
+                                    case ECase(_, _) | ECond(_) | EWith(_, _, _): false;
+                                    case EIf(_, _, elseBranch) if (elseBranch != null): false;
+                                    default: true;
+                                }
+                            default: true;
+                        };
+                        
+                        if (needsToString) {
+                            // Convert non-string to string for concatenation
+                            makeAST(ElixirASTDef.ECall(rightAST, "to_string", []));
+                        } else {
+                            // Use the expression as-is, Elixir will handle conversion in interpolation context
+                            rightAST;
+                        }
                     };
                     // String concatenation in Elixir uses <> operator
                     ElixirASTDef.EBinary(EBinaryOp.StringConcat, leftAST, rightStr);

@@ -111,108 +111,166 @@ abstract Date(DateTime) from DateTime to DateTime {
      * Current UTC date-time (Haxe standard API)
      */
     public static inline function now(): Date {
+        #if macro
+        // At macro time, explicitly use Haxe's built-in Date to avoid recursion
+        return cast haxe.Date.now();
+        #else
+        // At runtime, use Elixir's DateTime
         return DateTime.utcNow();
+        #end
     }
 
     /**
      * Create from milliseconds since Unix epoch (Haxe standard API)
      */
     public static function fromTime(t: Float): Date {
-        // Use untyped __elixir__ to ensure atom is generated
+        #if macro
+        // At macro time, explicitly use Haxe's built-in Date
+        return cast haxe.Date.fromTime(t);
+        #else
+        // At runtime, use Elixir's DateTime
         return untyped __elixir__('DateTime.from_unix!(Std.int({0}), :millisecond)', t);
+        #end
     }
 
     /**
      * Parse from ISO8601 string (Haxe standard API)
      */
     public static function fromString(s: String): Date {
-        // Need __elixir__ for pattern matching case expression
+        #if macro
+        // At macro time, explicitly use Haxe's built-in Date
+        return cast haxe.Date.fromString(s);
+        #else
+        // At runtime, use Elixir pattern matching
         return untyped __elixir__('
             case DateTime.from_iso8601({0}) do
                 {:ok, dt, _} -> dt
                 _ -> DateTime.utc_now()
             end', s);
+        #end
     }
 
     /**
      * Construct specific date-time in UTC (Haxe standard API)
      */
     public inline function new(year: Int, month: Int, day: Int, hour: Int, min: Int, sec: Int) {
+        #if macro
+        // At macro time, explicitly use Haxe's built-in Date constructor
+        this = cast new haxe.Date(year, month, day, hour, min, sec);
+        #else
         var elixirMonth = month + 1; // Convert Haxe 0-based to Elixir 1-based
         // Use __elixir__ for complex multi-step construction
         this = untyped __elixir__('
             {:ok, naive} = NaiveDateTime.new({0}, {1}, {2}, {3}, {4}, {5})
-            DateTime.from_naive!(naive, "Etc/UTC")', 
+            DateTime.from_naive!(naive, "Etc/UTC")',
             year, elixirMonth, day, hour, min, sec);
+        #end
     }
 
     /**
      * Milliseconds since Unix epoch (Haxe standard API)
      */
     public function getTime(): Float {
-        // Use untyped __elixir__ to ensure atom is generated
+        #if macro
+        // At macro time, explicitly use Haxe's built-in Date
+        return (cast this : haxe.Date).getTime();
+        #else
+        // At runtime, use Elixir's DateTime
         return untyped __elixir__('DateTime.to_unix({0}, :millisecond)', this);
+        #end
     }
 
     /**
      * Get year (Haxe standard API)
      */
     public inline function getFullYear(): Int {
+        #if macro
+        return (cast this : haxe.Date).getFullYear();
+        #else
         return this.year;
+        #end
     }
 
     /**
      * Get month 0-11 (Haxe standard API)
      */
     public inline function getMonth(): Int {
+        #if macro
+        return (cast this : haxe.Date).getMonth();
+        #else
         // Convert from Elixir 1-based to Haxe 0-based
         return this.month - 1;
+        #end
     }
 
     /**
      * Get day of month 1-31 (Haxe standard API)
      */
     public inline function getDate(): Int {
+        #if macro
+        return (cast this : haxe.Date).getDate();
+        #else
         return this.day;
+        #end
     }
 
     /**
      * Get day of week 0-6, Sunday=0 (Haxe standard API)
      */
     public inline function getDay(): Int {
+        #if macro
+        return (cast this : haxe.Date).getDay();
+        #else
         // Use typed externs for conversion
         var date = this.to_date();
         var dow = ElixirDate.day_of_week(date);
         // Convert from Elixir's 1-7 (Mon-Sun) to Haxe's 0-6 (Sun-Sat)
         return dow == 7 ? 0 : dow;
+        #end
     }
 
     /**
      * Get hours 0-23 (Haxe standard API)
      */
     public inline function getHours(): Int {
+        #if macro
+        return (cast this : haxe.Date).getHours();
+        #else
         return this.hour;
+        #end
     }
 
     /**
      * Get minutes 0-59 (Haxe standard API)
      */
     public inline function getMinutes(): Int {
+        #if macro
+        return (cast this : haxe.Date).getMinutes();
+        #else
         return this.minute;
+        #end
     }
 
     /**
      * Get seconds 0-59 (Haxe standard API)
      */
     public inline function getSeconds(): Int {
+        #if macro
+        return (cast this : haxe.Date).getSeconds();
+        #else
         return this.second;
+        #end
     }
 
     /**
      * Convert to string representation (Haxe standard API)
      */
     public inline function toString(): String {
+        #if macro
+        return (cast this : haxe.Date).toString();
+        #else
         return this.to_iso8601();
+        #end
     }
 
     // UTC accessors delegate to local ones since we store UTC

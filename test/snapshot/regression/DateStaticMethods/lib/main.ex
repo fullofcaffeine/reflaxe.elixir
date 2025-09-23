@@ -14,15 +14,15 @@ defmodule Main do
     hour = current_date.hour
     minute = current_date.minute
     second = current_date.second
-    Log.trace("Year: " <> year.to_string(), %{:file_name => "Main.hx", :line_number => 25, :class_name => "Main", :method_name => "main"})
-    Log.trace("Month: " <> month.to_string(), %{:file_name => "Main.hx", :line_number => 26, :class_name => "Main", :method_name => "main"})
-    Log.trace("Day: " <> day.to_string(), %{:file_name => "Main.hx", :line_number => 27, :class_name => "Main", :method_name => "main"})
-    Log.trace("Hour: " <> hour.to_string(), %{:file_name => "Main.hx", :line_number => 28, :class_name => "Main", :method_name => "main"})
-    Log.trace("Minute: " <> minute.to_string(), %{:file_name => "Main.hx", :line_number => 29, :class_name => "Main", :method_name => "main"})
-    Log.trace("Second: " <> second.to_string(), %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "main"})
+    Log.trace("Year: #{year}", %{:file_name => "Main.hx", :line_number => 25, :class_name => "Main", :method_name => "main"})
+    Log.trace("Month: #{month}", %{:file_name => "Main.hx", :line_number => 26, :class_name => "Main", :method_name => "main"})
+    Log.trace("Day: #{day}", %{:file_name => "Main.hx", :line_number => 27, :class_name => "Main", :method_name => "main"})
+    Log.trace("Hour: #{hour}", %{:file_name => "Main.hx", :line_number => 28, :class_name => "Main", :method_name => "main"})
+    Log.trace("Minute: #{minute}", %{:file_name => "Main.hx", :line_number => 29, :class_name => "Main", :method_name => "main"})
+    Log.trace("Second: #{second}", %{:file_name => "Main.hx", :line_number => 30, :class_name => "Main", :method_name => "main"})
     time = Date_Impl_.get_time(current_date)
-    Log.trace("Time in milliseconds: " <> time.to_string(), %{:file_name => "Main.hx", :line_number => 34, :class_name => "Main", :method_name => "main"})
+    Log.trace("Time in milliseconds: #{time}", %{:file_name => "Main.hx", :line_number => 34, :class_name => "Main", :method_name => "main"})
     date_str = DateTime.to_iso8601(current_date)
-    Log.trace("Date string: " <> date_str, %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "main"})
+    Log.trace("Date string: #{date_str}", %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "main"})
   end
 end
