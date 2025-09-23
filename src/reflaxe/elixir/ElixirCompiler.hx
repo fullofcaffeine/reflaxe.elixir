@@ -496,6 +496,11 @@ class ElixirCompiler extends GenericCompiler<
      * @return ElixirAST representing the compiled module
      */
     public function compileClassImpl(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
+        #if debug_compilation_flow
+        trace('[ElixirCompiler.compileClassImpl] START compiling class: ${classType.name}');
+        trace('[ElixirCompiler.compileClassImpl] varFields: ${varFields.length}, funcFields: ${funcFields.length}');
+        #end
+
         if (classType == null) return null;
 
         // Debug output for TodoApp investigation
@@ -520,6 +525,9 @@ class ElixirCompiler extends GenericCompiler<
 
         // Skip standard library classes that shouldn't generate Elixir modules
         if (isStandardLibraryClass(classType.name)) {
+            #if debug_compilation_flow
+            trace('[ElixirCompiler.compileClassImpl] Skipping standard library class: ${classType.name}');
+            #end
             return null;
         }
 
@@ -603,6 +611,10 @@ class ElixirCompiler extends GenericCompiler<
             functionUsageCollector.printStats();
             #end
         }
+
+        #if debug_compilation_flow
+        trace('[ElixirCompiler.compileClassImpl] END compiling class: ${classType.name}');
+        #end
 
         // Return AST directly - transformation and printing handled by ElixirOutputIterator
         return moduleAST;
@@ -923,10 +935,18 @@ class ElixirCompiler extends GenericCompiler<
             
             // Break if we can't add any more (circular dependencies)
             if (!added) {
+                // Debug trace for circular dependency detection
+                #if debug_module_sorting
+                trace('[ElixirCompiler] Breaking circular dependency, remaining: ' + [for (k in remaining.keys()) k].join(', '));
+                #end
+
                 // Add remaining modules anyway to avoid infinite loop
                 for (moduleName in remaining.keys()) {
                     sorted.push(moduleName);
                 }
+
+                // CRITICAL FIX: Clear the remaining map to actually exit the while loop
+                remaining.clear();
                 break;
             }
         }
@@ -967,6 +987,10 @@ class ElixirCompiler extends GenericCompiler<
      *      the moduleDependencies map as a side effect of trackDependency() calls
      */
     function discoverDependencies(classType: ClassType, funcFields: Array<ClassField>): Void {
+        #if debug_compilation_flow
+        trace('[ElixirCompiler.discoverDependencies] START for class: ${classType.name} with ${funcFields.length} functions');
+        #end
+
         // Activate behavior transformer for dependency discovery
         // This replaces the old isInPresenceModule flag with a generic system
         var previousBehavior: Null<String> = null;
@@ -1024,6 +1048,10 @@ class ElixirCompiler extends GenericCompiler<
         if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
             reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior = previousBehavior;
         }
+
+        #if debug_compilation_flow
+        trace('[ElixirCompiler.discoverDependencies] END for class: ${classType.name}');
+        #end
     }
     
     /**

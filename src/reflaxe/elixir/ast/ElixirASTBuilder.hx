@@ -3846,7 +3846,8 @@ class ElixirASTBuilder {
                     var idComponents = [];
 
                     // Add timestamp and random for uniqueness
-                    var timestamp = Date.now().getTime();
+                    // CRITICAL: Use haxe.Timer.stamp() instead of Date.now() which calls Elixir DateTime at macro time!
+                    var timestamp = Std.int(haxe.Timer.stamp() * 1000000); // Microseconds for uniqueness
                     var random = Std.random(10000);
                     idComponents.push('${timestamp}_${random}');
 

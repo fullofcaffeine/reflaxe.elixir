@@ -614,7 +614,20 @@ class ElixirASTPrinter {
                             print(target, indent) + '.(' + argStr + ')';
                         } else {
                             // Method call on object
-                            print(target, indent) + '.' + funcName + '(' + argStr + ')';
+                            // Check if target is a block expression that needs parentheses
+                            var targetStr = switch(target.def) {
+                                case ECase(_, _) | ECond(_) | EWith(_, _, _):
+                                    // Block expressions need parentheses when used as method call targets
+                                    // Generate: (case...end) |> Module.function()
+                                    '(' + print(target, indent) + ') |> Kernel.' + funcName;
+                                case EIf(_, _, elseBranch) if (elseBranch != null):
+                                    // If expressions with else branches need parentheses too
+                                    '(' + print(target, indent) + ') |> Kernel.' + funcName;
+                                default:
+                                    // Regular expressions can be method call targets directly
+                                    print(target, indent) + '.' + funcName;
+                            };
+                            targetStr + '(' + argStr + ')';
                         }
                     } else {
                         funcName + '(' + argStr + ')';

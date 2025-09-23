@@ -353,12 +353,17 @@ class ElixirASTTransformer {
         });
         
         // String method transformation pass (before pipeline optimization)
+        // NOTE: Disabled because we now use String.cross.hx to generate idiomatic code directly
+        // The .cross.hx pattern is better as it generates correct code from the start
+        // rather than transforming it after the fact
+        /*
         passes.push({
             name: "StringMethodTransform",
             description: "Convert string method calls to String module calls",
             enabled: true,
             pass: stringMethodTransformPass
         });
+        */
         
         // Pipeline optimization pass
         #if !disable_pipeline_optimization
@@ -1802,14 +1807,19 @@ class ElixirASTTransformer {
                 // Handle method calls that look like string.method(args)
                 case ECall(target, methodName, args) if (target != null):
                     // Check if this looks like a string method call
+                    // Handle both camelCase and snake_case versions
                     var stringMethod = switch(methodName) {
-                        case "charAt": "at";
-                        case "charCodeAt": "to_charlist"; 
-                        case "toLowerCase": "downcase";
-                        case "toUpperCase": "upcase";
-                        case "indexOf": "index";
+                        case "charAt" | "char_at": "at";
+                        case "charCodeAt" | "char_code_at": "to_charlist"; 
+                        case "toLowerCase" | "to_lower_case": "downcase";
+                        case "toUpperCase" | "to_upper_case": "upcase";
+                        case "indexOf" | "index_of": "index";
                         case "substring" | "substr": "slice";
                         case "split": "split";
+                        case "trim": "trim";
+                        case "length": "length";  // Handle array/string length
+                        case "toString" | "to_string": "to_string";  // Handle toString method calls
+                        case "lastIndexOf" | "last_index_of": null;  // Special handling needed
                         case _: null;
                     };
                     
@@ -1823,14 +1833,37 @@ class ElixirASTTransformer {
                         trace('[StringMethodTransform] Args count: ${args.length}');
                         #end
                         
-                        // Special handling for charCodeAt - needs different function
-                        if (methodName == "charCodeAt") {
+                        // Special handling for different methods
+                        if (methodName == "charCodeAt" || methodName == "char_code_at") {
                             // s.charCodeAt(pos) -> :binary.at(s, pos)
                             makeASTWithMeta(
                                 ERemoteCall(
                                     makeAST(EAtom(ElixirAtom.raw("binary"))),
                                     "at",
                                     [target].concat(args)
+                                ),
+                                node.metadata,
+                                node.pos
+                            );
+                        } else if (methodName == "toString" || methodName == "to_string") {
+                            // Handle toString specially based on target type
+                            // For integers and other primitives, use proper conversion
+                            makeASTWithMeta(
+                                ERemoteCall(
+                                    makeAST(EVar("Integer")),
+                                    "to_string",
+                                    [target].concat(args)
+                                ),
+                                node.metadata,
+                                node.pos
+                            );
+                        } else if (methodName == "length") {
+                            // s.length -> String.length(s)
+                            makeASTWithMeta(
+                                ERemoteCall(
+                                    makeAST(EVar("String")),
+                                    "length",
+                                    [target]
                                 ),
                                 node.metadata,
                                 node.pos
@@ -1848,6 +1881,10 @@ class ElixirASTTransformer {
                                 node.pos
                             );
                         }
+                    } else if (methodName == "lastIndexOf" || methodName == "last_index_of") {
+                        // Special handling for lastIndexOf - no direct Elixir equivalent
+                        // We can't easily transform this, so leave it as is for now
+                        node;
                     } else {
                         node;
                     }
@@ -1982,7 +2019,17 @@ class ElixirASTTransformer {
                                 // Add interpolated expression
                                 // First recursively transform the expression
                                 var transformedExpr = transform(part.expr);
-                                var exprStr = ElixirASTPrinter.printAST(transformedExpr);
+                                
+                                // Strip unnecessary .to_string() calls since Elixir auto-converts in interpolation
+                                var exprToInterpolate = switch(transformedExpr.def) {
+                                    case ECall(target, "to_string", []) if (target != null):
+                                        // Remove the .to_string() wrapper, use the target directly
+                                        target;
+                                    default:
+                                        transformedExpr;
+                                };
+                                
+                                var exprStr = ElixirASTPrinter.printAST(exprToInterpolate);
                                 result += '#{' + exprStr + '}';
                             }
                         }
