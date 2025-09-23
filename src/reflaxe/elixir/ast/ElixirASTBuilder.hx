@@ -232,6 +232,28 @@ class ElixirASTBuilder {
     }
     
     /**
+     * Get variable initialization value with infrastructure variable support
+     * 
+     * WHY: Infrastructure variables (_g, _g1) need their actual initialization values
+     *      not their names when building accumulators
+     * WHAT: Returns the tracked init value for infrastructure vars, or EVar for regular vars
+     * HOW: Checks context.infrastructureVarInitValues map first, falls back to EVar
+     * 
+     * @param varName The variable name to get value for
+     * @param context The current compilation context with tracking info
+     * @return ElixirAST representing the variable's initial value
+     */
+    static function getVariableInitValue(varName: String, context: CompilationContext): ElixirAST {
+        if (context.infrastructureVarInitValues != null && context.infrastructureVarInitValues.exists(varName)) {
+            // Use the tracked initialization value (e.g., 0 for _g, 5 for _g1)
+            return context.infrastructureVarInitValues.get(varName);
+        } else {
+            // For regular variables, use the variable reference
+            return makeAST(EVar(varName));
+        }
+    }
+    
+    /**
      * Main entry point: Convert TypedExpr to ElixirAST
      * 
      * WHY: Single entry point for all AST conversion
@@ -3175,6 +3197,27 @@ class ElixirASTBuilder {
                 }
                 #end
                 
+                // CRITICAL: Track infrastructure variable initialization values
+                // Haxe's desugaring creates variables like _g = 0, _g1 = 5 for loops
+                // We must capture these values for use in reduce_while accumulators
+                for (expr in el) {
+                    switch(expr.expr) {
+                        case TVar(v, init) if (init != null):
+                            // Check if this is an infrastructure variable
+                            if (v.name == "g" || v.name.startsWith("_g") || v.name.indexOf("g") >= 0) {
+                                // Build the initialization AST and store it
+                                var initAST = buildFromTypedExpr(init, currentContext);
+                                currentContext.infrastructureVarInitValues.set(v.name, initAST);
+                                
+                                #if debug_infrastructure_vars
+                                trace('[Infrastructure Variables] Tracked ${v.name} = ${ElixirASTPrinter.printAST(initAST)}');
+                                #end
+                            }
+                        case _:
+                            // Not a variable declaration, skip
+                    }
+                }
+                
                 // CRITICAL: Try to reconstruct array comprehensions from desugared imperative code
                 // This handles nested comprehensions that Haxe has already desugared
                 var comprehension = tryBuildArrayComprehensionFromBlock(el, currentContext.variableUsageMap);
@@ -5312,11 +5355,19 @@ class ElixirASTBuilder {
                     var accVarNames: Array<String> = [];
                     
                     for (v in accVarList) {
-                        var varName = v.name;
-                        initialAccValues.push(makeAST(EVar(varName)));
+                        // FIX: Use original TVar name for lookup to match how it's stored
+                        // Infrastructure variables are stored with underscore prefix (e.g., "_g")
+                        // but v.name has the transformed name without underscore (e.g., "g")
+                        var originalName = v.tvar.name;  // Use original name for lookup
+                        var transformedName = v.name;     // Keep transformed name for accumulator pattern
+                        
+                        // CRITICAL FIX: Use actual initialization values for infrastructure variables
+                        // Use our helper function to get the correct initial value
+                        var initialValue = getVariableInitValue(originalName, currentContext);
+                        initialAccValues.push(initialValue);
                         // Use acc_ prefix to avoid shadowing outer variables
-                        accPattern.push(PVar("acc_" + varName));
-                        accVarNames.push(varName);
+                        accPattern.push(PVar("acc_" + transformedName));
+                        accVarNames.push(transformedName);
                     }
                     
                     // Add the original accumulator at the end
