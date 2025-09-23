@@ -28,7 +28,6 @@ defmodule Main do
         "Other binary pattern"
     end
   end
-  end
 
   @doc """
     Test complex binary segment patterns
@@ -277,5 +276,4 @@ defmodule Main do
     Log.trace("Nested Guards: #{test_nested_patterns_with_guards()}", %{:file_name => "Main.hx", :line_number => 270, :class_name => "Main", :method_name => "main"})
     Log.trace("Performance Guards: #{test_complex_guard_performance()}", %{:file_name => "Main.hx", :line_number => 271, :class_name => "Main", :method_name => "main"})
   end
-
 end
