@@ -1416,6 +1416,44 @@ class ElixirCompiler extends GenericCompiler<
             trace('[ElixirCompiler] Passing ${fields.length} fields to ModuleBuilder for ${classType.name}');
             #end
         }
+        
+        // Enable Repo transformation pass for @:repo modules
+        // This was lost when ModuleBuilder was deleted in commit ecf50d9d
+        if (classType.meta.has(":repo")) {
+            metadata.isRepo = true;
+            
+            // Extract repo configuration if provided
+            var repoMeta = classType.meta.extract(":repo");
+            if (repoMeta.length > 0 && repoMeta[0].params != null && repoMeta[0].params.length > 0) {
+                // Parse the configuration object
+                // The configuration handling was also lost in the refactoring
+                // For now, just set the basic metadata
+                metadata.dbAdapter = "Ecto.Adapters.Postgres"; // Default to Postgres
+            }
+            
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isRepo=true metadata for ${classType.name}');
+            #end
+        }
+        
+        // Enable Supervisor transformation pass for @:supervisor modules
+        if (classType.meta.has(":supervisor")) {
+            metadata.isSupervisor = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isSupervisor=true metadata for ${classType.name}');
+            #end
+        }
+        
+        // Enable Endpoint transformation pass for @:endpoint modules
+        // Endpoints are also supervisors and need child_spec/start_link preservation
+        if (classType.meta.has(":endpoint")) {
+            metadata.isEndpoint = true;
+            // Endpoints are supervisors too - they need child_spec/start_link
+            metadata.isSupervisor = true;
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isEndpoint=true and isSupervisor=true metadata for ${classType.name}');
+            #end
+        }
 
         // Build the module using ModuleBuilder with metadata
         var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, fields, metadata);

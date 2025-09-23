@@ -666,10 +666,33 @@ class AnnotationTransforms {
     public static function repoTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
         trace("[XRay Repo Transform] PASS START");
+        if (ast.metadata?.isRepo == true) {
+            trace('[XRay Repo Transform] Found isRepo metadata on AST type: ${Type.enumConstructor(ast.def)}');
+        }
         #end
         
         // Check the top-level node first for Repo modules
         switch(ast.def) {
+            case EModule(name, attributes, body) if (ast.metadata?.isRepo == true):
+                #if debug_annotation_transforms
+                trace('[XRay Repo Transform] ✓ Processing @:repo EModule: $name');
+                #end
+                
+                var appName = extractAppName(name);
+                var repoBodyAST = buildRepoBody(name, appName);
+                
+                // EModule expects Array<ElixirAST> for body, so extract statements from EBlock
+                var repoStatements = switch(repoBodyAST.def) {
+                    case EBlock(stmts): stmts;
+                    default: [repoBodyAST];
+                };
+                
+                return makeASTWithMeta(
+                    EModule(name, attributes, repoStatements),
+                    ast.metadata,
+                    ast.pos
+                );
+                
             case EDefmodule(name, body) if (ast.metadata?.isRepo == true):
                 #if debug_annotation_transforms
                 trace('[XRay Repo Transform] ✓ Processing @:repo module: $name');
@@ -1514,6 +1537,259 @@ class AnnotationTransforms {
             default:
                 // Single expression body
                 statements.push(existingBody);
+        }
+        
+        return makeAST(EBlock(statements));
+    }
+    
+    /**
+     * supervisorTransformPass: Preserve supervisor functions from dead code elimination
+     * 
+     * WHY: Phoenix/OTP calls child_spec/1 and start_link/1 at runtime via supervision tree
+     * WHAT: Ensures these functions are marked with @:keep metadata to prevent DCE
+     * HOW: Detects isSupervisor metadata and marks critical functions for preservation
+     * 
+     * BACKGROUND: Haxe's Dead Code Elimination (DCE) removes "unused" functions. But
+     * supervisor child_spec and start_link are called by the OTP framework at runtime,
+     * not from our Haxe code. Without @:keep, they get deleted and Phoenix crashes.
+     */
+    public static function supervisorTransformPass(ast: ElixirAST): ElixirAST {
+        #if debug_annotation_transforms
+        if (ast.metadata?.isSupervisor == true) {
+            trace('[XRay Supervisor Transform] PASS START - Found Supervisor module');
+            trace('[XRay Supervisor Transform] AST type: ${Type.enumConstructor(ast.def)}');
+        }
+        #end
+        
+        // Check if this is a supervisor module
+        var isSupervisor = ast.metadata?.isSupervisor == true;
+        if (!isSupervisor) {
+            // Not a supervisor, pass through unchanged
+            return ast;
+        }
+        
+        // Process the module to ensure critical functions are preserved
+        switch(ast.def) {
+            case EModule(name, attributes, body):
+                #if debug_annotation_transforms
+                trace('[XRay Supervisor Transform] Processing supervisor EModule: $name');
+                #end
+                
+                // Transform the body array to preserve supervisor functions
+                var transformedBody = preserveSupervisorFunctionsInArray(body, name, ast.metadata);
+                
+                // Return the module with transformed body
+                return makeASTWithMeta(
+                    EModule(name, attributes, transformedBody),
+                    ast.metadata,
+                    ast.pos
+                );
+                
+            case EDefmodule(name, body):
+                #if debug_annotation_transforms
+                trace('[XRay Supervisor Transform] Processing supervisor EDefmodule: $name');
+                #end
+                
+                // Transform the body to preserve supervisor functions
+                var transformedBody = preserveSupervisorFunctionsInAST(body, name, ast.metadata);
+                
+                // Return the module with transformed body
+                return makeASTWithMeta(
+                    EDefmodule(name, transformedBody),
+                    ast.metadata,
+                    ast.pos
+                );
+                
+            default:
+                // Not a module definition, pass through
+                return ast;
+        }
+    }
+    
+    /**
+     * Helper to preserve supervisor functions from DCE in Array body (EModule)
+     */
+    static function preserveSupervisorFunctionsInArray(body: Array<ElixirAST>, moduleName: String, metadata: ElixirMetadata): Array<ElixirAST> {
+        var statements = [];
+        var hasChildSpec = false;
+        var hasStartLink = false;
+        
+        // Process each statement in the array
+        for (expr in body) {
+            switch(expr.def) {
+                case EDef(name, params, guards, fnBody) | EDefp(name, params, guards, fnBody):
+                    if (name == "child_spec") {
+                        hasChildSpec = true;
+                        // Mark with keep metadata
+                        var newMetadata = if (expr.metadata != null) {
+                            var meta = Reflect.copy(expr.metadata);
+                            meta.isKeep = true;
+                            meta;
+                        } else {
+                            {isKeep: true};
+                        };
+                        
+                        var preservedFunc = makeASTWithMeta(
+                            expr.def,
+                            newMetadata,
+                            expr.pos
+                        );
+                        statements.push(preservedFunc);
+                        #if debug_annotation_transforms
+                        trace('[XRay Supervisor Transform] Marked child_spec for preservation');
+                        #end
+                    } else if (name == "start_link") {
+                        hasStartLink = true;
+                        // Mark with keep metadata
+                        var newMetadata = if (expr.metadata != null) {
+                            var meta = Reflect.copy(expr.metadata);
+                            meta.isKeep = true;
+                            meta;
+                        } else {
+                            {isKeep: true};
+                        };
+                        
+                        var preservedFunc = makeASTWithMeta(
+                            expr.def,
+                            newMetadata,
+                            expr.pos
+                        );
+                        statements.push(preservedFunc);
+                        #if debug_annotation_transforms
+                        trace('[XRay Supervisor Transform] Marked start_link for preservation');
+                        #end
+                    } else {
+                        // Keep other functions as-is
+                        statements.push(expr);
+                    }
+                default:
+                    // Keep other expressions
+                    statements.push(expr);
+            }
+        }
+        
+        // If supervisor module needs use Supervisor statement, add it
+        var needsUseSupervisor = metadata?.isSupervisor == true && 
+                                 metadata?.isEndpoint != true && 
+                                 metadata?.isApplication != true;
+        
+        if (needsUseSupervisor) {
+            // Check if we already have use Supervisor
+            var hasUseSupervisor = false;
+            for (stmt in statements) {
+                switch(stmt.def) {
+                    case EUse("Supervisor", _):
+                        hasUseSupervisor = true;
+                        break;
+                    default:
+                }
+            }
+            
+            if (!hasUseSupervisor) {
+                // Add use Supervisor at the beginning
+                statements.insert(0, makeAST(EUse("Supervisor", [])));
+                #if debug_annotation_transforms
+                trace('[XRay Supervisor Transform] Added use Supervisor statement');
+                #end
+            }
+        }
+        
+        return statements;
+    }
+    
+    /**
+     * Helper to preserve supervisor functions from DCE in AST body (EDefmodule)
+     */
+    static function preserveSupervisorFunctionsInAST(body: ElixirAST, moduleName: String, metadata: ElixirMetadata): ElixirAST {
+        var statements = [];
+        var hasChildSpec = false;
+        var hasStartLink = false;
+        
+        // First, check what functions exist and mark them for preservation
+        switch(body.def) {
+            case EBlock(exprs):
+                for (expr in exprs) {
+                    switch(expr.def) {
+                        case EDef(name, params, guards, fnBody) | EDefp(name, params, guards, fnBody):
+                            if (name == "child_spec") {
+                                hasChildSpec = true;
+                                // Mark with keep metadata
+                                var newMetadata = if (expr.metadata != null) {
+                                    var meta = Reflect.copy(expr.metadata);
+                                    meta.isKeep = true;
+                                    meta;
+                                } else {
+                                    {isKeep: true};
+                                };
+                                
+                                var preservedFunc = makeASTWithMeta(
+                                    expr.def,
+                                    newMetadata,
+                                    expr.pos
+                                );
+                                statements.push(preservedFunc);
+                                #if debug_annotation_transforms
+                                trace('[XRay Supervisor Transform] Marked child_spec for preservation');
+                                #end
+                            } else if (name == "start_link") {
+                                hasStartLink = true;
+                                // Mark with keep metadata
+                                var newMetadata = if (expr.metadata != null) {
+                                    var meta = Reflect.copy(expr.metadata);
+                                    meta.isKeep = true;
+                                    meta;
+                                } else {
+                                    {isKeep: true};
+                                };
+                                
+                                var preservedFunc = makeASTWithMeta(
+                                    expr.def,
+                                    newMetadata,
+                                    expr.pos
+                                );
+                                statements.push(preservedFunc);
+                                #if debug_annotation_transforms
+                                trace('[XRay Supervisor Transform] Marked start_link for preservation');
+                                #end
+                            } else {
+                                // Keep other functions as-is
+                                statements.push(expr);
+                            }
+                        default:
+                            // Keep other expressions
+                            statements.push(expr);
+                    }
+                }
+            default:
+                // Single expression body
+                return body;
+        }
+        
+        // If supervisor module needs use Supervisor statement, add it
+        // (This would typically be done in a separate pass, but we can ensure it here)
+        var needsUseSupervisor = metadata?.isSupervisor == true && 
+                                 metadata?.isEndpoint != true && 
+                                 metadata?.isApplication != true;
+        
+        if (needsUseSupervisor) {
+            // Check if we already have use Supervisor
+            var hasUseSupervisor = false;
+            for (stmt in statements) {
+                switch(stmt.def) {
+                    case EUse("Supervisor", _):
+                        hasUseSupervisor = true;
+                        break;
+                    default:
+                }
+            }
+            
+            if (!hasUseSupervisor) {
+                // Add use Supervisor at the beginning
+                statements.insert(0, makeAST(EUse("Supervisor", [])));
+                #if debug_annotation_transforms
+                trace('[XRay Supervisor Transform] Added use Supervisor statement');
+                #end
+            }
         }
         
         return makeAST(EBlock(statements));
