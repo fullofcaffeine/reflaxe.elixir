@@ -1,0 +1,9 @@
+# Compilation configuration for supervisor transformation test
+# This test validates @:supervisor transformation to proper Elixir supervisor modules
+-cp .
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-main Main
+-dce no
+-D elixir_output=out

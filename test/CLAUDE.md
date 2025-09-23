@@ -316,12 +316,29 @@ mkdir test/snapshot/core/new_feature_name
 ```
 
 **STEP 3: Create compile.hxml**
+
+**IMPORTANT: Use relative paths only!** The compile.hxml should be self-contained and work when run from within the test directory:
+
 ```hxml
+# CORRECT: Self-contained with relative paths
 -cp .
 -main Main
 -lib reflaxe
 -lib reflaxe.elixir
 --no-output
+-D elixir_output=out  # Relative output directory
+
+# WRONG: Never use long paths like this:
+# -cp test/snapshot/core/supervisor_transformation
+# -D elixir_output=test/snapshot/core/supervisor_transformation/out
+```
+
+**Running tests from within their directory:**
+```bash
+# Tests can be run from project root OR from within test directory
+cd test/snapshot/core/your_test && npx haxe compile.hxml
+# OR from project root (the Make system handles path resolution):
+make test-core/your_test
 ```
 
 **STEP 4: Create Main.hx**
