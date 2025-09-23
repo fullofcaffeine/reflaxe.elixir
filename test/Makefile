@@ -276,6 +276,78 @@ runtime: all
 	done; \
 	[ $$fail -eq 0 ] || (echo "Some runtime tests failed" && exit 1)
 
+# Test with runtime validation: compile all tests, validate output, then execute to catch runtime errors
+.PHONY: test-with-runtime
+test-with-runtime:
+	@echo "Running full test suite with runtime execution validation..."
+	@rm -f test-results.tmp runtime-results.tmp
+	@echo "========================================" 
+	@echo "Phase 1: Compilation and Output Validation"
+	@echo "========================================"
+	@$(MAKE) -f $(MAKEFILE_LIST) summary
+	@echo ""
+	@echo "========================================"
+	@echo "Phase 2: Runtime Execution Validation"  
+	@echo "========================================"
+	@passed=0; \
+	failed=0; \
+	skipped=0; \
+	for td in $(TESTS); do \
+		testname=$$td; \
+		outdir="$(TEST_DIR)/$$td/out"; \
+		if [ ! -d "$$outdir" ]; then \
+			echo "⚪ $$testname - No output (skipped runtime)"; \
+			skipped=$$((skipped + 1)); \
+			continue; \
+		fi; \
+		entry=$$(ls "$$outdir"/*.exs 2>/dev/null | head -n1); \
+		if [ -z "$$entry" ]; then \
+			if [ -f "$$outdir/Main.ex" ] || [ -f "$$outdir/main.ex" ]; then \
+				mainfile=$$(ls "$$outdir"/[Mm]ain.ex 2>/dev/null | head -n1); \
+				if [ -n "$$mainfile" ]; then \
+					entry="$$mainfile"; \
+				fi; \
+			fi; \
+		fi; \
+		if [ -z "$$entry" ]; then \
+			echo "⚪ $$testname - No executable entry point (skipped)"; \
+			skipped=$$((skipped + 1)); \
+			continue; \
+		fi; \
+		echo -n "Testing $$testname runtime... "; \
+		error_output=$$(cd "$$outdir" && timeout $(RUNTIME_TIMEOUT) elixir -e "Code.compile_file(\"$$(basename $$entry)\"); if function_exported?(Main, :main, 0), do: Main.main()" 2>&1); \
+		exit_code=$$?; \
+		if [ $$exit_code -eq 0 ]; then \
+			echo "✅"; \
+			echo "✅ $$testname - Runtime OK" >> runtime-results.tmp; \
+			passed=$$((passed + 1)); \
+		elif [ $$exit_code -eq 124 ]; then \
+			echo "❌ (timeout)"; \
+			echo "❌ $$testname - Runtime timeout after $(RUNTIME_TIMEOUT)" >> runtime-results.tmp; \
+			failed=$$((failed + 1)); \
+		else \
+			echo "❌"; \
+			echo "❌ $$testname - Runtime error: $$(echo $$error_output | head -n1 | sed 's/^[[:space:]]*//')" >> runtime-results.tmp; \
+			failed=$$((failed + 1)); \
+		fi; \
+	done; \
+	echo ""; \
+	echo "========================================"; \
+	echo "Runtime Validation Results:"; \
+	echo "  ✅ Passed: $$passed"; \
+	echo "  ❌ Failed: $$failed"; \
+	echo "  ⚪ Skipped: $$skipped"; \
+	if [ $$failed -gt 0 ]; then \
+		echo ""; \
+		echo "$(RED)Runtime Failures:$(RESET)"; \
+		cat runtime-results.tmp | grep "❌" | sed 's/^/  /'; \
+		rm -f runtime-results.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)All runtime tests passed! ✅$(RESET)"; \
+		rm -f runtime-results.tmp; \
+	fi
+
 # Category test targets - run specific test categories
 .PHONY: test-core
 test-core:
@@ -350,6 +422,12 @@ help:
 	@echo "  make test-NAME                # Run specific test"
 	@echo "  make single TEST=NAME         # Run specific test (alternative)"
 	@echo ""
+	@echo "Runtime Validation:"
+	@echo "  make test-with-runtime        # Run tests with runtime execution validation"
+	@echo "  make runtime                  # Run only runtime smoke tests (after compilation)"
+	@echo "  make run TEST=NAME            # Execute specific test's generated code"
+	@echo "  make test-exec TEST=NAME      # Compile and execute a single test"
+	@echo ""
 	@echo "Category Testing:"
 	@echo "  make test-core                # Run core language tests"
 	@echo "  make test-stdlib              # Run standard library tests"
@@ -376,8 +454,11 @@ help:
 	@echo "  -j N    Run N tests in parallel (default: 4)"
 	@echo "  -k      Continue running tests even if some fail"
 	@echo "  -s      Silent mode (less output)"
+	@echo "  RUNTIME_TIMEOUT=10s  Set runtime test timeout (default: 5s)"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make test-core -j8            # Run core tests with 8 parallel jobs"
 	@echo "  make test-pattern PATTERN=*date* # Run all date-related tests"
 	@echo "  make test-failed              # Re-run only failed tests"
+	@echo "  make test-with-runtime        # Full validation including runtime execution"
+	@echo "  make test-with-runtime RUNTIME_TIMEOUT=10s # With longer timeout"
