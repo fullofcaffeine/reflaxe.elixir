@@ -7,6 +7,7 @@ import haxe.macro.Expr.Position;
 import reflaxe.elixir.ast.ElixirASTBuilder;
 import reflaxe.elixir.ast.ElixirAST.VarOrigin;
 import reflaxe.elixir.ast.naming.ElixirAtom;
+import reflaxe.elixir.ast.transformers.PatternMatchingTransforms;
 using StringTools;
 
 /**
@@ -514,6 +515,38 @@ class ElixirASTTransformer {
             description: "Transform enum tuple access patterns to idiomatic pattern matching",
             enabled: true,
             pass: idiomaticEnumPatternMatchingPass
+        });
+        
+        // Pattern matching transformation pass (comprehensive switch→case conversion)
+        passes.push({
+            name: "PatternMatching",
+            description: "Transform switch statements to idiomatic Elixir case expressions",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternMatchingPass
+        });
+        
+        // Pattern matching guard optimization pass
+        passes.push({
+            name: "PatternMatchingGuardOptimization",
+            description: "Optimize pattern matching by extracting guards from case bodies",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardOptimizationPass
+        });
+        
+        // Pattern variable binding pass
+        passes.push({
+            name: "PatternVariableBinding",
+            description: "Ensure correct variable scoping in pattern matching",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.patternVariableBindingPass
+        });
+        
+        // Pattern exhaustiveness check pass
+        passes.push({
+            name: "PatternExhaustivenessCheck",
+            description: "Add compile-time verification for pattern completeness",
+            enabled: false, // Disabled by default as it may be verbose
+            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.exhaustivenessCheckPass
         });
         
         // Underscore variable cleanup pass (should run late to catch all generated vars)
