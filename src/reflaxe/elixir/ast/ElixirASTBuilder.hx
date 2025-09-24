@@ -18,6 +18,7 @@ import reflaxe.elixir.ast.ReentrancyGuard;
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
 import reflaxe.elixir.ast.builders.BinaryOpBuilder;
 import reflaxe.elixir.ast.builders.LoopBuilder;
+import reflaxe.elixir.ast.transformers.DesugarredForDetector;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -3196,6 +3197,46 @@ class ElixirASTBuilder {
                     #end
                 }
                 #end
+                
+                // CRITICAL: Check for desugared for loop pattern FIRST
+                // This detects patterns like: var g=0; var g1=5; while(g<g1){...}
+                // and generates idiomatic Elixir (Enum.each or comprehensions)
+                if (currentContext.isFeatureEnabled("loop_builder_enabled")) {
+                    var forPattern = DesugarredForDetector.detectDesugarredFor(el);
+                    if (forPattern != null) {
+                        #if debug_loop_detection
+                        trace('[ElixirASTBuilder] Detected desugared for loop at TBlock level');
+                        trace('  Counter: ${forPattern.counterVar} from ${forPattern.startValue.expr}');
+                        trace('  Limit: ${forPattern.limitVar} to ${forPattern.endValue.expr}');
+                        #end
+                        
+                        // Extract the while loop body and delegate to LoopBuilder
+                        switch(forPattern.whileExpr.expr) {
+                            case TWhile(cond, body, _):
+                                // Use LoopBuilder with full context
+                                var pattern = LoopBuilder.detectDesugarForLoopPattern(cond, body);
+                                if (pattern != null) {
+                                    // Override start/end with actual values from TBlock context
+                                    pattern.startExpr = forPattern.startValue;
+                                    pattern.endExpr = forPattern.endValue;
+                                    
+                                    // Generate idiomatic Elixir
+                                    var result = LoopBuilder.buildFromForPattern(
+                                        pattern, 
+                                        e -> buildFromTypedExpr(e, currentContext),
+                                        s -> toElixirVarName(s)
+                                    );
+                                    
+                                    #if debug_loop_detection
+                                    trace('[ElixirASTBuilder] Generated idiomatic for loop');
+                                    #end
+                                    
+                                    return result.def;
+                                }
+                            default:
+                        }
+                    }
+                }
                 
                 // CRITICAL: Track infrastructure variable initialization values
                 // Haxe's desugaring creates variables like _g = 0, _g1 = 5 for loops
