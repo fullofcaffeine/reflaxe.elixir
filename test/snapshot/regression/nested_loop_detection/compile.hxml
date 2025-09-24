@@ -1,0 +1,6 @@
+-cp test/snapshot/regression/nested_loop_detection
+-main Main
+--no-output
+-lib reflaxe
+-lib reflaxe.elixir
+-D elixir_output=test/snapshot/regression/nested_loop_detection/out

@@ -66,8 +66,12 @@ class ElixirASTTransformer {
      * HOW: Iterates through pass list, applying each to the AST
      */
     public static function transform(ast: ElixirAST, ?context: reflaxe.elixir.CompilationContext): ElixirAST {
-        #if debug_ast_transformer
+        #if sys
+        Sys.println('[XRay AST Transformer] Starting transformation pipeline');
+        #else
         trace('[XRay AST Transformer] Starting transformation pipeline');
+        #end
+        #if debug_ast_transformer
         trace('[XRay AST Transformer] AST type: ${Type.enumConstructor(ast.def)}');
         trace('[XRay AST Transformer] AST metadata: ${ast.metadata}');
         #end
@@ -89,7 +93,9 @@ class ElixirASTTransformer {
         var result = ast;
         
         for (passConfig in passes) {
-            #if debug_ast_transformer
+            #if sys
+            Sys.println('[XRay AST Transformer] Applying pass: ${passConfig.name}');
+            #else
             trace('[XRay AST Transformer] Applying pass: ${passConfig.name}');
             #end
             
@@ -377,6 +383,14 @@ class ElixirASTTransformer {
         
         // Array method transformations are handled in ElixirASTBuilder
         // at the TCall(TField(...)) pattern to generate idiomatic Elixir directly
+        
+        // Unrolled loop transformation pass (should run early to fix unrolled patterns)
+        passes.push({
+            name: "UnrolledLoopTransform",
+            description: "Transform unrolled loops (sequential statements) back to Enum.each",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.LoopTransforms.unrolledLoopTransformPass
+        });
         
         // Loop to comprehension pass
         #if !disable_comprehension_conversion
