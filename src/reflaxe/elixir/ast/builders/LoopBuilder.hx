@@ -213,6 +213,10 @@ class LoopBuilder {
             case TCall(e, _):
                 // Check various call patterns for side-effect functions
                 switch(e.expr) {
+                    case TIdent(s):
+                        // Global functions like trace() that are side-effect only
+                        return s == "trace" || s == "throw" || s == "assert";
+                    
                     case TField(_, FStatic(_, cf)):
                         // Static method calls like Log.trace, Sys.println
                         var name = cf.get().name;
@@ -328,11 +332,23 @@ class LoopBuilder {
         userCode: TypedExpr,
         hasSideEffectsOnly: Bool
     }> {
-        // Check for _g < _g1 pattern in condition
-        var bounds = switch(cond.expr) {
+        #if debug_loop_detection
+        trace('[LoopBuilder] detectDesugarForLoopPattern called with cond: ${cond.expr}');
+        #end
+        
+        // Check for _g < _g1 pattern in condition (may be wrapped in parenthesis)
+        var actualCond = switch(cond.expr) {
+            case TParenthesis(inner): inner;
+            default: cond;
+        };
+        
+        var bounds = switch(actualCond.expr) {
             case TBinop(OpLt | OpLte, e1, e2):
                 var counter = extractInfrastructureVarName(e1);
                 var limit = extractInfrastructureVarName(e2);
+                #if debug_loop_detection
+                trace('[LoopBuilder] Extracted counter: $counter, limit: $limit from e1: ${e1.expr}, e2: ${e2.expr}');
+                #end
                 if (counter != null && limit != null) {
                     {counter: counter, limit: limit};
                 } else null;
@@ -374,9 +390,9 @@ class LoopBuilder {
         return switch(expr.expr) {
             case TLocal(v):
                 var name = v.name;
-                if (name == "_g" || name == "g" || 
-                    name.indexOf("_g") == 0 ||
-                    (name.charAt(0) == "g" && ~/^g[0-9]+/.match(name))) {
+                // Match infrastructure variables: g, g1, g2, _g, _g1, _g2, etc.
+                if (name == "g" || name == "_g" || 
+                    ~/^_?g[0-9]*$/.match(name)) {  // Matches g, g1, g2, _g, _g1, _g2, etc.
                     name;
                 } else null;
             default: null;
@@ -479,6 +495,58 @@ class LoopBuilder {
                 false
             ));
         }
+    }
+
+    /**
+     * Build loop from complete context (alternative entry point)
+     * 
+     * WHY: TBlock detection provides complete context upfront
+     * WHAT: Accepts start/end expressions and while body directly
+     * HOW: Analyzes body to extract user variable and delegates to buildFromForPattern
+     * 
+     * This method complements existing detection by accepting pre-extracted context
+     * from TBlock-level detection where all components are visible together.
+     */
+    public static function buildWithFullContext(
+        startExpr: TypedExpr, 
+        endExpr: TypedExpr, 
+        whileBody: TypedExpr,
+        counterVar: String,  // Infrastructure counter variable (e.g., "g")
+        buildExpr: TypedExpr -> ElixirAST, 
+        toSnakeCase: String -> String
+    ): ElixirAST {
+        // Analyze the while body to extract user variable and code
+        var analysis = analyzeForLoopBody(whileBody, counterVar);
+        
+        if (analysis == null) {
+            // Fallback: if analysis fails, generate a basic range iteration
+            var range = makeAST(ERange(
+                buildExpr(startExpr),
+                buildExpr(endExpr),
+                false
+            ));
+            
+            return makeAST(ERemoteCall(
+                makeAST(EVar("Enum")),
+                "each",
+                [
+                    range,
+                    makeAST(EFn([{
+                        args: [PVar("_")],
+                        body: buildExpr(whileBody)
+                    }]))
+                ]
+            ));
+        }
+        
+        // Delegate to buildFromForPattern with the complete context
+        return buildFromForPattern({
+            userVar: analysis.userVar,
+            startExpr: startExpr,
+            endExpr: endExpr,
+            userCode: analysis.userCode,
+            hasSideEffectsOnly: analysis.hasSideEffectsOnly
+        }, buildExpr, toSnakeCase);
     }
 
     /**

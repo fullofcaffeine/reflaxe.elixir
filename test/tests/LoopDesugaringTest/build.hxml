@@ -1,0 +1,10 @@
+-cp src
+-main Main
+-lib reflaxe
+-cp ../../../src
+--macro reflaxe.elixir.CompilerInit.Start()
+-D reflaxe_src=src
+-D reflaxe_out=out
+-D elixir_output=out
+# -D loop_builder_enabled - disabled to test old behavior
+# -D debug_loop_detection

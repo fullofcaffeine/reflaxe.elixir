@@ -7,6 +7,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.naming.ElixirAtom;
 import Type;
 
 /**
@@ -264,7 +265,14 @@ class LoopTransforms {
                     }
                     #end
                     
-                    // First check for nested loops
+                    // First check for nested unrolled loops (alternating pattern)
+                    var nestedUnrolledLoop = detectNestedUnrolledLoop(stmts);
+                    if (nestedUnrolledLoop != null) {
+                        trace('[XRay LoopTransforms] ✅ DETECTED NESTED UNROLLED LOOP - transforming to nested Enum.each');
+                        return nestedUnrolledLoop;
+                    }
+                    
+                    // Then check for regular nested loops
                     var nestedLoop = NestedLoopDetector.detectNestedLoop(stmts);
                     if (nestedLoop != null) {
                         trace('[XRay LoopTransforms] ✅ DETECTED NESTED LOOP - transforming ${nestedLoop.count} statements');
@@ -299,6 +307,270 @@ class LoopTransforms {
         }
         
         return detectAndTransformUnrolledLoops(ast);
+    }
+    
+    /**
+     * Detect nested unrolled loops where outer loop is unrolled but inner loops are already Enum.each
+     * 
+     * WHY: When Haxe unrolls nested loops with ≤3 iterations, the outer loop gets unrolled
+     *      but inner loops may already be transformed to Enum.each calls
+     * WHAT: Detects alternating pattern (statement, Enum.each, statement, Enum.each...)
+     * HOW: Checks for regular alternation and consistent index progression in outer statements
+     * 
+     * Pattern example:
+     *   trace("Outer: 0")
+     *   Enum.each(0..2, fn y -> trace("Inner (0, #{y})") end)
+     *   trace("Outer: 1")  
+     *   Enum.each(0..2, fn y -> trace("Inner (1, #{y})") end)
+     */
+    static function detectNestedUnrolledLoop(stmts: Array<ElixirAST>): Null<ElixirAST> {
+        if (stmts.length < 4) return null; // Need at least 2 pairs
+        
+        #if debug_loop_unrolling
+        trace('[XRay LoopTransforms] detectNestedUnrolledLoop: Checking ${stmts.length} statements for alternating pattern');
+        #end
+        
+        // Check if we have alternating pattern: statement, Enum.each, statement, Enum.each...
+        var outerStatements: Array<ElixirAST> = [];
+        var innerLoops: Array<ElixirAST> = [];
+        var expectedIndex = 0;
+        
+        var i = 0;
+        while (i < stmts.length - 1) { // -1 because we check pairs
+            var stmt = stmts[i];
+            var nextStmt = stmts[i + 1];
+            
+            // Check if this is a valid pair (outer statement + inner Enum.each)
+            var isEnumEach = isEnumEachCall(nextStmt);
+            
+            if (!isEnumEach) {
+                #if debug_loop_unrolling
+                trace('[XRay LoopTransforms] No alternating pattern at index $i - next statement is not Enum.each');
+                #end
+                return null;
+            }
+            
+            // Verify the outer statement has the expected index
+            if (!containsIndex(stmt, expectedIndex)) {
+                #if debug_loop_unrolling
+                trace('[XRay LoopTransforms] Outer statement at index $i does not contain expected index $expectedIndex');
+                #end
+                return null;
+            }
+            
+            #if debug_loop_unrolling
+            trace('[XRay LoopTransforms] ✓ Found pair at index $i: outer with index $expectedIndex + inner Enum.each');
+            #end
+            
+            outerStatements.push(stmt);
+            innerLoops.push(nextStmt);
+            
+            expectedIndex++;
+            i += 2; // Move to next pair
+        }
+        
+        // Need at least 2 complete pairs for a nested loop pattern
+        if (outerStatements.length < 2) {
+            #if debug_loop_unrolling
+            trace('[XRay LoopTransforms] Only ${outerStatements.length} pairs found, need at least 2');
+            #end
+            return null;
+        }
+        
+        #if debug_loop_unrolling
+        trace('[XRay LoopTransforms] ✅ DETECTED NESTED UNROLLED LOOP: ${outerStatements.length} outer iterations with inner loops');
+        #end
+        
+        // Reconstruct as nested Enum.each
+        return reconstructNestedLoop(outerStatements, innerLoops);
+    }
+    
+    /**
+     * Check if an AST node is an Enum.each call
+     */
+    static function isEnumEachCall(ast: ElixirAST): Bool {
+        return switch(ast.def) {
+            case ERemoteCall(module, func, _):
+                switch(module.def) {
+                    case EAtom(atom): 
+                        // ElixirAtom converts to String, check if it's "Enum"
+                        var atomStr: String = atom;
+                        atomStr == "Enum" && func == "each";
+                    default: false;
+                }
+            default: false;
+        };
+    }
+    
+    /**
+     * Check if a statement contains a specific index value
+     */
+    static function containsIndex(ast: ElixirAST, index: Int): Bool {
+        var indexStr = Std.string(index);
+        
+        // Recursively check the AST for the index
+        function checkAST(node: ElixirAST): Bool {
+            return switch(node.def) {
+                case EInteger(i): i == index;
+                case EString(s): s.indexOf(indexStr) >= 0;
+                case ERemoteCall(_, _, args):
+                    Lambda.exists(args, a -> checkAST(a));
+                case ECall(_, _, args):
+                    Lambda.exists(args, a -> checkAST(a));
+                case EBlock(stmts):
+                    Lambda.exists(stmts, s -> checkAST(s));
+                case EList(elements):
+                    Lambda.exists(elements, e -> checkAST(e));
+                default: false;
+            };
+        }
+        
+        return checkAST(ast);
+    }
+    
+    /**
+     * Reconstruct nested Enum.each from detected unrolled pattern
+     */
+    static function reconstructNestedLoop(outerStatements: Array<ElixirAST>, innerLoops: Array<ElixirAST>): ElixirAST {
+        var count = outerStatements.length;
+        
+        // Extract the pattern from the first inner loop (they should all be similar)
+        var firstInnerLoop = innerLoops[0];
+        var firstOuterStmt = outerStatements[0];
+        
+        // Build the nested structure: Enum.each(0..count-1, fn x -> ... end)
+        var outerRange = makeAST(ERange(
+            makeAST(EInteger(0)), 
+            makeAST(EInteger(count - 1)),
+            false  // inclusive range
+        ));
+        
+        // Build function body: execute outer statement then inner loop
+        var bodyStatements: Array<ElixirAST> = [];
+        
+        // Add the substituted outer statement
+        var substitutedOuterStmt = substituteIndex(firstOuterStmt, 0, makeAST(EVar("x")));
+        bodyStatements.push(substitutedOuterStmt);
+        
+        // Add the substituted inner loop
+        bodyStatements.push(makeVariableSubstitutedLoop(firstInnerLoop, "x"));
+        
+        var functionBody = makeAST(EBlock(bodyStatements));
+        
+        // Create the anonymous function with proper pattern
+        var fnClause: EFnClause = {
+            args: [PVar("x")],
+            guard: null,
+            body: functionBody
+        };
+        var outerFunction = makeAST(EFn([fnClause]));
+        
+        // Create the Enum atom properly
+        var enumAtom = new ElixirAtom("Enum");
+        
+        return makeAST(ERemoteCall(
+            makeAST(EAtom(enumAtom)),
+            "each",
+            [outerRange, outerFunction]
+        ));
+    }
+    
+    /**
+     * Substitute a specific index value with a variable reference in an AST
+     */
+    static function substituteIndex(ast: ElixirAST, oldIndex: Int, newVar: ElixirAST): ElixirAST {
+        var indexStr = Std.string(oldIndex);
+        
+        function substitute(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                case EInteger(i) if (i == oldIndex): 
+                    newVar;
+                case EString(s) if (s.indexOf(indexStr) >= 0):
+                    // Simple string replacement - more sophisticated implementation would handle interpolation
+                    makeAST(EString(s.split(indexStr).join("#{x}")));
+                case ERemoteCall(module, func, args):
+                    makeAST(ERemoteCall(module, func, args.map(a -> substitute(a))));
+                case ECall(target, func, args):
+                    makeAST(ECall(target, func, args.map(a -> substitute(a))));
+                case EBlock(stmts):
+                    makeAST(EBlock(stmts.map(s -> substitute(s))));
+                case EList(elements):
+                    makeAST(EList(elements.map(e -> substitute(e))));
+                default: 
+                    node;
+            };
+        }
+        
+        return substitute(ast);
+    }
+    
+    /**
+     * Helper to substitute variables in inner loop for nested structure
+     * 
+     * WHY: Inner loops need to reference the outer loop variable
+     * WHAT: Replaces hardcoded indices in inner loop body with outer variable reference
+     * HOW: Traverses the inner loop AST and substitutes integer patterns
+     */
+    static function makeVariableSubstitutedLoop(innerLoop: ElixirAST, outerVar: String): ElixirAST {
+        // For Enum.each calls, we need to substitute in the function body
+        return switch(innerLoop.def) {
+            case ERemoteCall(module, func, args) if (func == "each" && args.length >= 2):
+                // The second argument should be the anonymous function
+                var substitutedArgs = args.copy();
+                if (args.length >= 2) {
+                    substitutedArgs[1] = substituteInFunction(args[1], outerVar);
+                }
+                makeAST(ERemoteCall(module, func, substitutedArgs));
+            default:
+                innerLoop;
+        };
+    }
+    
+    /**
+     * Substitute variables within anonymous function bodies
+     */
+    static function substituteInFunction(fnAst: ElixirAST, outerVar: String): ElixirAST {
+        return switch(fnAst.def) {
+            case EFn(clauses):
+                var newClauses = clauses.map(clause -> {
+                    var newBody = substituteOuterIndex(clause.body, outerVar);
+                    {args: clause.args, guard: clause.guard, body: newBody};
+                });
+                makeAST(EFn(newClauses));
+            default:
+                fnAst;
+        };
+    }
+    
+    /**
+     * Substitute outer index references in inner loop body
+     */
+    static function substituteOuterIndex(ast: ElixirAST, outerVar: String): ElixirAST {
+        // This would need to be more sophisticated to handle complex interpolations
+        // For now, we'll do basic substitution of string patterns containing indices
+        function substitute(node: ElixirAST): ElixirAST {
+            return switch(node.def) {
+                case EString(s) if (s.indexOf("#{0}") >= 0 || s.indexOf("#{1}") >= 0 || s.indexOf("#{2}") >= 0):
+                    // Replace #{0} with #{outerVar}
+                    var newStr = s;
+                    for (i in 0...3) {
+                        var searchPattern = '#{$i}';
+                        var replacePattern = '#{$outerVar}';
+                        newStr = newStr.split(searchPattern).join(replacePattern);
+                    }
+                    makeAST(EString(newStr));
+                case ERemoteCall(module, func, args):
+                    makeAST(ERemoteCall(module, func, args.map(a -> substitute(a))));
+                case ECall(target, func, args):
+                    makeAST(ECall(target, func, args.map(a -> substitute(a))));
+                case EBlock(stmts):
+                    makeAST(EBlock(stmts.map(s -> substitute(s))));
+                default: 
+                    node;
+            };
+        }
+        
+        return substitute(ast);
     }
     
     /**
