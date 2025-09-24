@@ -1,0 +1,11 @@
+@:enum
+private class eval.luv._Loop.LoopOption_Impl_ {
+
+	public static var sigprof(default,never):Int;
+
+	@:value(cast 0) @:impl @:enum
+	public static inline var LOOP_BLOCK_SIGNAL:eval.luv.LoopOption<Int> = cast 0;
+
+	@:value(cast 1) @:impl @:enum
+	public static inline var METRICS_IDLE_TIME:eval.luv.LoopOption<eval.luv.NoData> = cast 1;
+}

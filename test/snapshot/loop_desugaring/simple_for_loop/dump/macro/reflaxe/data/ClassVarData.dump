@@ -1,0 +1,104 @@
+class reflaxe.data.ClassVarData {
+
+	public function new(classType:haxe.macro.ClassType, field:haxe.macro.ClassField, isStatic:Bool, read:haxe.macro.VarAccess, write:haxe.macro.VarAccess) {
+		this.classType = classType;
+		this.field = field;
+		this.isStatic = isStatic;
+		this.read = read;
+		this.write = write;
+		this.findGetterAndSetter();
+	}
+
+	public var classType(default,null):haxe.macro.ClassType;
+
+	public var field(default,null):haxe.macro.ClassField;
+
+	public var isStatic(default,null):Bool;
+
+	public var read(default,null):haxe.macro.VarAccess;
+
+	public var write(default,null):haxe.macro.VarAccess;
+
+	public var getter(default,null):Null<haxe.macro.ClassField>;
+
+	public var setter(default,null):Null<haxe.macro.ClassField>;
+
+	function findGetterAndSetter() {
+		var `this = this;
+		var find = function(access:haxe.macro.VarAccess, prefix:String, isStatic:Bool) {
+			@:ast(switch (access) {
+	case AccCall:
+		{
+			var name = prefix + field.getHaxeName();
+			for (f  in  (isStatic ? classType.statics : classType.fields).get()) {
+				if (f.getHaxeName() == name) {
+					return f;
+				};
+			};
+		};	
+	case _:
+}) if (enumIndex access == 4) {
+				{
+					{
+						var name = prefix + reflaxe.helpers.ClassFieldHelper.getHaxeName(`this.field);
+						{
+							var ` = 0;
+							var ` = (if (isStatic) {
+								`this.classType.statics;
+							} else {
+								`this.classType.fields;
+							}).get();
+							while (` < `.length) {
+								var f = `[`];
+								++ `;
+								if (reflaxe.helpers.ClassFieldHelper.getHaxeName(f) == name) {
+									return f;
+								};
+							};
+						};
+					};
+				};
+			} else {};
+			return null;
+		};
+		this.getter = find(this.read, "get_", this.isStatic);
+		this.setter = find(this.write, "set_", this.isStatic);
+	}
+
+	public function hasDefaultValue() {
+		return reflaxe.helpers.ClassFieldHelper.hasDefaultValue(this.field);
+	}
+
+	public function getDefaultUntypedExpr() {
+		var args = reflaxe.helpers.NullableMetaAccessHelper.extractExpressionsFromFirstMeta(this.field.meta, ":value");
+		if (args != null && args.length == 1) {
+			return args[0];
+		};
+		return null;
+	}
+
+	public function findDefaultExpr() {
+		if (this.hasDefaultValue()) {
+			var data = reflaxe.helpers.ClassTypeHelper.extractPreconstructorFieldAssignments(this.classType, null);
+			if (data != null) {
+				{
+					var ` = {
+						var this = data.assignments;
+						cast new haxe.iterators.MapKeyValueIterator(cast this);
+					};
+					while (`.hasNext()) {
+						var ` = `.next();
+						var assignField = `.key;
+						var expr = `.value;
+						{
+							if (this.field.name == assignField.name) {
+								return expr;
+							};
+						};
+					};
+				};
+			};
+		};
+		return null;
+	}
+}

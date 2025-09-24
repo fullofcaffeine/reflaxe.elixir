@@ -4999,6 +4999,27 @@ class ElixirASTBuilder {
                 var whileStartTime = haxe.Timer.stamp() * 1000;
                 #end
 
+                // CRITICAL: First check if LoopBuilder can handle this as a desugared for loop
+                // This detects patterns like for(i in 0...5) that Haxe desugars to TWhile
+                if (currentContext.isFeatureEnabled("loop_builder_enabled")) {
+                    var forPattern = reflaxe.elixir.ast.builders.LoopBuilder.detectDesugarForLoopPattern(econd, e);
+                    if (forPattern != null) {
+                        #if debug_loop_detection
+                        trace("[ElixirASTBuilder] Detected desugared for loop, using LoopBuilder");
+                        #end
+                        var result = reflaxe.elixir.ast.builders.LoopBuilder.buildFromForPattern(
+                            forPattern,
+                            expr -> buildFromTypedExpr(expr, currentContext),
+                            s -> toElixirVarName(s)
+                        );
+                        #if debug_compilation_hang
+                        var elapsedMs = (haxe.Timer.stamp() * 1000) - whileStartTime;
+                        Sys.println('[HANG DEBUG] ✅ TWhile END (via LoopBuilder) - ${elapsedMs}ms');
+                        #end
+                        return result.def;
+                    }
+                }
+
                 // CRITICAL: Detect array iteration patterns and generate idiomatic Enum calls
                 // This prevents Y-combinator pattern generation for array operations
                 

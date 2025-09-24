@@ -1,0 +1,454 @@
+class reflaxe.elixir.ast.transformers.MapAndCollectionTransforms {
+
+	public static function mapBuilderCollapsePass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (node.def) {
+	case EBlock(statements):
+		var collapsed = tryCollapseMapBuilder(statements, node.metadata, node.pos);
+		if (collapsed != null) {
+			return collapsed;
+		};
+		return node;	
+	default:
+		return node;	
+}) {
+				var ` = node.def;
+				if (enumIndex ` == 53) {
+					var ` = `[0];
+					{
+						var statements = `;
+						{
+							var collapsed = reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.tryCollapseMapBuilder(statements, node.metadata, node.pos);
+							if (collapsed != null) {
+								return collapsed;
+							};
+							return node;
+						};
+					};
+				} else {
+					return node;
+				};
+			};
+		});
+	}
+
+	static function tryCollapseMapBuilder(statements:Array<reflaxe.elixir.ast.ElixirAST>, metadata:reflaxe.elixir.ast.ElixirMetadata, pos:haxe.macro.Position) {
+		if (statements == null || statements.length < 2) {
+			return null;
+		};
+		var tempName = null;
+		var pairs = null;
+		@:ast(switch (statements[0].def) {
+	case EMatch(pattern, initExpr):
+		switch pattern {
+			case PVar(name):
+				tempName = name;			
+			default:
+				return null;			
+		};
+		switch (initExpr.def) {
+			case EMap(initialPairs):
+				pairs = initialPairs.copy();			
+			default:
+				return null;			
+		};	
+	default:
+		return null;	
+}) {
+			var ` = statements[0].def;
+			if (enumIndex ` == 8) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var pattern = `;
+					var initExpr = `;
+					{
+						@:ast(switch pattern {
+	case PVar(name):
+		tempName = name;	
+	default:
+		return null;	
+}) if (enumIndex pattern == 0) {
+							var ` = pattern[0];
+							{
+								var name = `;
+								{
+									tempName = name;
+								};
+							};
+						} else {
+							return null;
+						};
+						@:ast(switch (initExpr.def) {
+	case EMap(initialPairs):
+		pairs = initialPairs.copy();	
+	default:
+		return null;	
+}) {
+							var ` = initExpr.def;
+							if (enumIndex ` == 17) {
+								var ` = `[0];
+								{
+									var initialPairs = `;
+									{
+										pairs = initialPairs.copy();
+									};
+								};
+							} else {
+								return null;
+							};
+						};
+					};
+				};
+			} else {
+				return null;
+			};
+		};
+		if (tempName == null) {
+			return null;
+		};
+		{
+			var ` = 1;
+			var ` = statements.length - 1;
+			while (` < `) {
+				var i = ` ++;
+				var stmt = statements[i];
+				@:ast(switch (stmt.def) {
+	case EBinary(Match, leftExpr, rightExpr):
+		switch (leftExpr.def) {
+			case EVar(varName) if (varName == tempName):
+			default:
+				return null;			
+		};
+		switch (rightExpr.def) {
+			case ERemoteCall(moduleExpr, funcName, args) if (funcName == "put" && args.length == 3):
+				switch (moduleExpr.def) {
+					case EVar(moduleName) if (moduleName == "Map"):
+					default:
+						return null;					
+				};
+				switch (args[0].def) {
+					case EVar(varName) if (varName == tempName):
+					default:
+						return null;					
+				};
+				pairs.push({ key : args[1], value : args[2] });			
+			default:
+				return null;			
+		};	
+	default:
+		return null;	
+}) {
+					var ` = stmt.def;
+					if (enumIndex ` == 26) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 27) {
+							{
+								var leftExpr = `;
+								var rightExpr = `;
+								{
+									@:ast(switch (leftExpr.def) {
+	case EVar(varName) if (varName == tempName):
+	default:
+		return null;	
+}) {
+										var ` = leftExpr.def;
+										if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var varName = `;
+												if (varName == tempName) {} else {
+													return null;
+												};
+											};
+										} else {
+											return null;
+										};
+									};
+									@:ast(switch (rightExpr.def) {
+	case ERemoteCall(moduleExpr, funcName, args) if (funcName == "put" && args.length == 3):
+		switch (moduleExpr.def) {
+			case EVar(moduleName) if (moduleName == "Map"):
+			default:
+				return null;			
+		};
+		switch (args[0].def) {
+			case EVar(varName) if (varName == tempName):
+			default:
+				return null;			
+		};
+		pairs.push({ key : args[1], value : args[2] });	
+	default:
+		return null;	
+}) {
+										var ` = rightExpr.def;
+										if (enumIndex ` == 24) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var moduleExpr = `;
+												var funcName = `;
+												var args = `;
+												if (funcName == "put" && args.length == 3) {
+													@:ast(switch (moduleExpr.def) {
+	case EVar(moduleName) if (moduleName == "Map"):
+	default:
+		return null;	
+}) {
+														var ` = moduleExpr.def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var moduleName = `;
+																if (moduleName == "Map") {} else {
+																	return null;
+																};
+															};
+														} else {
+															return null;
+														};
+													};
+													@:ast(switch (args[0].def) {
+	case EVar(varName) if (varName == tempName):
+	default:
+		return null;	
+}) {
+														var ` = args[0].def;
+														if (enumIndex ` == 38) {
+															var ` = `[0];
+															{
+																var varName = `;
+																if (varName == tempName) {} else {
+																	return null;
+																};
+															};
+														} else {
+															return null;
+														};
+													};
+													pairs.push({key : args[1], value : args[2]});
+												} else {
+													return null;
+												};
+											};
+										} else {
+											return null;
+										};
+									};
+								};
+							};
+						} else {
+							return null;
+						};
+					} else {
+						return null;
+					};
+				};
+			};
+		};
+		@:ast(switch (statements[statements.length - 1].def) {
+	case EVar(varName) if (varName == tempName):
+		return makeASTWithMeta(EMap(pairs), metadata, pos);	
+	default:
+		return null;	
+}) {
+			var ` = statements[statements.length - 1].def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				{
+					var varName = `;
+					if (varName == tempName) {
+						return {def : reflaxe.elixir.ast.ElixirASTDef.EMap(pairs), metadata : metadata, pos : pos};
+					} else {
+						return null;
+					};
+				};
+			} else {
+				return null;
+			};
+		};
+	}
+
+	public static function listEffectLiftingPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:reflaxe.elixir.ast.ElixirAST) {
+			@:ast(switch (node.def) {
+	case EList(items):
+		var needsLifting = false;
+		for (item  in  items) {
+			if (hasComplexExpression(item)) {
+				needsLifting = true;
+				break;
+			};
+		};
+		if (needsLifting) {
+			var statements:Array<ElixirAST> = [];
+			var newItems:Array<ElixirAST> = [];
+			var tempCounter = 0;
+			for (item  in  items) {
+				if (hasComplexExpression(item)) {
+					var tempVar = "tmp_list_" + tempCounter++;
+					statements.push(makeAST(EMatch(PVar(tempVar), item)));
+					newItems.push(makeAST(EVar(tempVar)));
+				} else {
+					newItems.push(item);
+				};
+			};
+			statements.push(makeAST(EList(newItems)));
+			return makeAST(EBlock(statements));
+		};
+		return node;	
+	default:
+		return node;	
+}) {
+				var ` = node.def;
+				if (enumIndex ` == 15) {
+					var ` = `[0];
+					{
+						var items = `;
+						{
+							var needsLifting = false;
+							{
+								var ` = 0;
+								while (` < items.length) {
+									var item = items[`];
+									++ `;
+									if (reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.hasComplexExpression(item)) {
+										needsLifting = true;
+										break;
+									};
+								};
+							};
+							if (needsLifting) {
+								var statements = [];
+								var newItems = [];
+								var tempCounter = 0;
+								{
+									var ` = 0;
+									while (` < items.length) {
+										var item = items[`];
+										++ `;
+										if (reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.hasComplexExpression(item)) {
+											var tempVar = "tmp_list_" + tempCounter ++;
+											statements.push({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(tempVar), item), metadata : {}, pos : pos};
+											});
+											newItems.push({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(tempVar), metadata : {}, pos : pos};
+											});
+										} else {
+											newItems.push(item);
+										};
+									};
+								};
+								statements.push({
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EList(newItems), metadata : {}, pos : pos};
+								});
+								return {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(statements), metadata : {}, pos : pos};
+								};
+							};
+							return node;
+						};
+					};
+				} else {
+					return node;
+				};
+			};
+		});
+	}
+
+	static function hasComplexExpression(ast:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (ast.def) {
+	case ECall(_, _, _):
+		true;	
+	case ERemoteCall(_, _, _):
+		true;	
+	case EBinary(_, _, _):
+		true;	
+	case EUnary(_, _):
+		true;	
+	case ECase(_, _):
+		true;	
+	case EIf(_, _, _):
+		true;	
+	case ECond(_):
+		true;	
+	case EBlock(_):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = ast.def;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 27: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+}

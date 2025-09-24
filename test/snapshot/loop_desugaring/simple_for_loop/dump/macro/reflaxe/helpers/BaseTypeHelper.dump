@@ -1,0 +1,117 @@
+class reflaxe.helpers.BaseTypeHelper {
+
+	@:value("_Impl_")
+	static var IMPL_SUFFIX(default,never):String = "_Impl_";
+
+	@:value("_Fields_")
+	static var FIELDS_SUFFIX(default,never):String = "_Fields_";
+
+	public static function namespaces(self:haxe.macro.BaseType) {
+		var moduleMembers = self.module.split(".");
+		var moduleName = moduleMembers[moduleMembers.length - 1];
+		if (moduleName != self.name && (moduleName + reflaxe.helpers.BaseTypeHelper.IMPL_SUFFIX) != self.name && (moduleName + reflaxe.helpers.BaseTypeHelper.FIELDS_SUFFIX) != self.name) {
+			return moduleMembers;
+		};
+		return moduleMembers.slice(0, moduleMembers.length - 2);
+	}
+
+	@:value({ removeSpecialSuffixes : true })
+	public static function uniqueName(self:haxe.macro.BaseType, removeSpecialSuffixes:Bool = true) {
+		var prefix = reflaxe.helpers.BaseTypeHelper.namespaces(self).join("_");
+		var name = self.name;
+		if (removeSpecialSuffixes) {
+			name = reflaxe.helpers.BaseTypeHelper.removeNameSpecialSuffixes(name);
+		};
+		return (if (prefix.length > 0) {
+			(prefix + "_");
+		} else {
+			"";
+		}) + (if (self.module == self.name) {
+			"";
+		} else {
+			("_" + StringTools.replace(self.module, ".", "_") + "_");
+		}) + name;
+	}
+
+	@:value({ removeSpecialSuffixes : true })
+	public static function globalName(self:haxe.macro.BaseType, removeSpecialSuffixes:Bool = true) {
+		var prefix = reflaxe.helpers.BaseTypeHelper.namespaces(self).join("_");
+		var name = self.name;
+		if (removeSpecialSuffixes) {
+			name = reflaxe.helpers.BaseTypeHelper.removeNameSpecialSuffixes(name);
+		};
+		return (if (prefix.length > 0) {
+			(prefix + "_");
+		} else {
+			"";
+		}) + name;
+	}
+
+	public static function equals(self:haxe.macro.BaseType, other:haxe.macro.BaseType) {
+		return reflaxe.helpers.BaseTypeHelper.uniqueName(self, null) == reflaxe.helpers.BaseTypeHelper.uniqueName(other, null);
+	}
+
+	public static function removeNameSpecialSuffixes(name:String) {
+		var result = name;
+		if (StringTools.endsWith(name, reflaxe.helpers.BaseTypeHelper.IMPL_SUFFIX)) {
+			result = result.substring(0, result.length - reflaxe.helpers.BaseTypeHelper.IMPL_SUFFIX.length);
+		};
+		if (StringTools.endsWith(name, reflaxe.helpers.BaseTypeHelper.FIELDS_SUFFIX)) {
+			result = result.substring(0, result.length - reflaxe.helpers.BaseTypeHelper.FIELDS_SUFFIX.length);
+		};
+		return result;
+	}
+
+	public static function moduleId(self:haxe.macro.BaseType) {
+		var module = self.module;
+		if (StringTools.startsWith(module, "/")) {
+			module = module.substring(1, null);
+		};
+		return StringTools.replace(module, ".", "_");
+	}
+
+	public static function matchesDotPath(self:haxe.macro.BaseType, path:String) {
+		if (self.pack.length == 0) {
+			return self.name == path;
+		};
+		if ((self.pack.join(".") + "." + self.name) == path) {
+			return true;
+		};
+		if ((self.module + "." + self.name) == path) {
+			return true;
+		};
+		return false;
+	}
+
+	public static function startsWithDotPath(self:haxe.macro.BaseType, path:String) {
+		if (self.pack.length == 0) {
+			return self.name == path;
+		};
+		if (StringTools.startsWith((self.pack.join(".") + "." + self.name), path)) {
+			return true;
+		};
+		if (self.pack.length > 0) {
+			var lastPackMember = self.pack[self.pack.length - 1];
+			if (lastPackMember.charCodeAt(0) == 95 && (@:mergeBlock {
+				var tmp = {
+					lastPackMember.charCodeAt(1);
+				};
+				if (tmp != null) tmp else {
+					91;
+				};
+			}) <= 90) {
+				if (self.pack.length <= 1 && self.module == path) {
+					return true;
+				};
+				if (StringTools.startsWith((self.pack.slice(0, self.pack.length - 1).join(".") + "." + self.module), path)) {
+					return true;
+				};
+			};
+		};
+		return false;
+	}
+
+	public static function isReflaxeExtern(self:haxe.macro.BaseType) {
+		return self.isExtern || reflaxe.helpers.NameMetaHelper.hasMeta(self, ":extern");
+	}
+}

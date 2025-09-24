@@ -1,0 +1,13 @@
+class reflaxe.elixir.CompilerInit {
+
+	public static function Start() {
+		reflaxe.ReflectCompiler.AddCompiler(new reflaxe.elixir.ElixirCompiler(), {
+			var ` = reflaxe.BaseCompilerFileOutputType.FilePerModule;
+			var ` = [];
+			var ` = cast false;
+			new reflaxe.BaseCompilerOptions([reflaxe.preprocessors.ExpressionPreprocessor.Custom(new reflaxe.elixir.preprocessors.PreserveSwitchReturnsImpl()), reflaxe.preprocessors.ExpressionPreprocessor.RemoveTemporaryVariables(reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode.AllTempVariables), reflaxe.preprocessors.ExpressionPreprocessor.PreventRepeatVariables({
+				new reflaxe.preprocessors.PreventRepeatVariablesOptions(null, null);
+			}), reflaxe.preprocessors.ExpressionPreprocessor.RemoveSingleExpressionBlocks, reflaxe.preprocessors.ExpressionPreprocessor.RemoveConstantBoolIfs, reflaxe.preprocessors.ExpressionPreprocessor.RemoveUnnecessaryBlocks, reflaxe.preprocessors.ExpressionPreprocessor.RemoveReassignedVariableDeclarations, reflaxe.preprocessors.ExpressionPreprocessor.RemoveLocalVariableAliases, reflaxe.preprocessors.ExpressionPreprocessor.MarkUnusedVariables, reflaxe.preprocessors.ExpressionPreprocessor.Custom(new reflaxe.elixir.preprocessors.RemoveOrphanedEnumParametersImpl())], `, ".ex", "elixir_output", null, `, null, "__elixir__", null, null, null, null, null, null, null, `, null, null, null, null, null);
+		});
+	}
+}

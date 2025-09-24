@@ -1,0 +1,310 @@
+@:coreApi
+class sys.thread.EventLoop {
+
+	public function new() {
+		this.started = false;
+		this.pending = [];
+		this.promisedEventsCount = 0;
+		this.mutex = new sys.thread.Mutex();
+		this.isMainThread = ! sys.thread.EventLoop.CREATED;
+		sys.thread.EventLoop.CREATED = true;
+		var result = eval.luv._Loop.Loop_Impl_.init();
+		var tmp;
+		switch ((@:exhaustive enumIndex result)) {
+			case 0: {
+				var v = result[0];
+				tmp = v;
+			};
+			case 1: {
+				var e = result[0];
+				throw new eval.luv.LuvException(e, null, null);
+			};
+		};
+		this.handle = tmp;
+		var result = eval.luv._Async.Async_Impl_.init(this.handle, this.consumePending);
+		var tmp;
+		switch ((@:exhaustive enumIndex result)) {
+			case 0: {
+				var v = result[0];
+				tmp = v;
+			};
+			case 1: {
+				var e = result[0];
+				throw new eval.luv.LuvException(e, null, null);
+			};
+		};
+		this.wakeup = tmp;
+		eval.luv._Handle.Handle_Impl_.unref(this.wakeup);
+	}
+
+	@:allow(eval.luv.Loop)
+	var handle(default,ctor):eval.luv.Loop;
+
+	@:value(new Mutex())
+	var mutex(default,ctor):sys.thread.Mutex;
+
+	var wakeup(default,ctor):eval.luv.Async;
+
+	@:value(0)
+	var promisedEventsCount:Int;
+
+	@:value([])
+	var pending:Array<() -> Void>;
+
+	@:value(false)
+	var started:Bool;
+
+	var isMainThread:Bool;
+
+	public function repeat(event:() -> Void, intervalMs:Int) {
+		var e = new sys.thread._EventLoop.RegularEvent(event);
+		this.mutex.acquire();
+		e.timer = {
+			var result = eval.luv._Timer.Timer_Impl_.init(this.handle);
+			@:ast(switch result {
+	case Ok(v):
+		return v;	
+	case Error(e):
+		throw new LuvException(e);	
+}) switch (@:exhaustive enumIndex result) {
+				case 0: {
+					var ` = result[0];
+					{
+						var v = `;
+						{
+							v;
+						};
+					};
+				};
+				case 1: {
+					var ` = result[0];
+					{
+						var e = `;
+						{
+							throw new eval.luv.LuvException(e, null, null);
+						};
+					};
+				};
+			};
+		};
+		{
+			var result = eval.luv._Timer.Timer_Impl_.start(e.timer, e.run, intervalMs, if ((intervalMs < 1)) 1 else intervalMs);
+			@:ast(switch result {
+	case Ok(v):
+		return v;	
+	case Error(e):
+		throw new LuvException(e);	
+}) switch (@:exhaustive enumIndex result) {
+				case 0: {
+					var ` = result[0];
+					{
+						var v = `;
+						{
+							v;
+						};
+					};
+				};
+				case 1: {
+					var ` = result[0];
+					{
+						var e = `;
+						{
+							throw new eval.luv.LuvException(e, null, null);
+						};
+					};
+				};
+			};
+		};
+		this.mutex.release();
+		eval.luv._Async.Async_Impl_.send(this.wakeup);
+		return e;
+	}
+
+	public function cancel(eventHandler:sys.thread.EventHandler) {
+		this.mutex.acquire();
+		(cast eventHandler).event = sys.thread.EventLoop.noop;
+		this.pending.push(function() {
+			var timer = (cast eventHandler).timer;
+			{
+				var result = eval.luv._Timer.Timer_Impl_.stop(timer);
+				@:ast(switch result {
+	case Ok(v):
+		return v;	
+	case Error(e):
+		throw new LuvException(e);	
+}) switch (@:exhaustive enumIndex result) {
+					case 0: {
+						var ` = result[0];
+						{
+							var v = `;
+							{
+								v;
+							};
+						};
+					};
+					case 1: {
+						var ` = result[0];
+						{
+							var e = `;
+							{
+								throw new eval.luv.LuvException(e, null, null);
+							};
+						};
+					};
+				};
+			};
+			eval.luv._Handle.Handle_Impl_.close(timer, sys.thread.EventLoop.noop);
+		});
+		this.mutex.release();
+		eval.luv._Async.Async_Impl_.send(this.wakeup);
+	}
+
+	public function promise() {
+		this.mutex.acquire();
+		++ this.promisedEventsCount;
+		this.pending.push(this.refUnref);
+		this.mutex.release();
+		eval.luv._Async.Async_Impl_.send(this.wakeup);
+	}
+
+	public function run(event:() -> Void) {
+		this.mutex.acquire();
+		this.pending.push(event);
+		this.mutex.release();
+		eval.luv._Async.Async_Impl_.send(this.wakeup);
+	}
+
+	public function runPromised(event:() -> Void) {
+		this.mutex.acquire();
+		-- this.promisedEventsCount;
+		this.pending.push(this.refUnref);
+		this.pending.push(event);
+		this.mutex.release();
+		eval.luv._Async.Async_Impl_.send(this.wakeup);
+	}
+
+	function refUnref() {
+		if (this.promisedEventsCount > 0 || (this.isMainThread && haxe.MainLoop.hasEvents())) {
+			eval.luv._Handle.Handle_Impl_.ref(this.wakeup);
+		} else {
+			eval.luv._Handle.Handle_Impl_.unref(this.wakeup);
+		};
+	}
+
+	public function progress() {
+		if (this.started) {
+			throw "Event loop already started";
+		};
+		if (eval.luv._Loop.Loop_Impl_.run(this.handle, cast 2)) {
+			return sys.thread.NextEventTime.AnyTime(null);
+		} else {
+			return sys.thread.NextEventTime.Never;
+		};
+	}
+
+	public function wait(timeout:Null<Float> = null) {
+		if (this.started) {
+			throw "Event loop already started";
+		};
+		if (timeout != null) {
+			var timer = {
+				var result = eval.luv._Timer.Timer_Impl_.init(this.handle);
+				@:ast(switch result {
+	case Ok(v):
+		return v;	
+	case Error(e):
+		throw new LuvException(e);	
+}) switch (@:exhaustive enumIndex result) {
+					case 0: {
+						var ` = result[0];
+						{
+							var v = `;
+							{
+								v;
+							};
+						};
+					};
+					case 1: {
+						var ` = result[0];
+						{
+							var e = `;
+							{
+								throw new eval.luv.LuvException(e, null, null);
+							};
+						};
+					};
+				};
+			};
+			eval.luv._Timer.Timer_Impl_.start(timer, function() {
+				{
+					var result = eval.luv._Timer.Timer_Impl_.stop(timer);
+					@:ast(switch result {
+	case Ok(v):
+		return v;	
+	case Error(e):
+		throw new LuvException(e);	
+}) switch (@:exhaustive enumIndex result) {
+						case 0: {
+							var ` = result[0];
+							{
+								var v = `;
+								{
+									v;
+								};
+							};
+						};
+						case 1: {
+							var ` = result[0];
+							{
+								var e = `;
+								{
+									throw new eval.luv.LuvException(e, null, null);
+								};
+							};
+						};
+					};
+				};
+				eval.luv._Handle.Handle_Impl_.close(timer, function() {});
+			}, Std.int(timeout * 1000), null);
+			return eval.luv._Loop.Loop_Impl_.run(this.handle, cast 1);
+		} else {
+			return eval.luv._Loop.Loop_Impl_.run(this.handle, cast 1);
+		};
+	}
+
+	public function loop() {
+		if (this.started) {
+			throw "Event loop already started";
+		};
+		this.started = true;
+		this.consumePending(null);
+		eval.luv._Loop.Loop_Impl_.run(this.handle, cast 0);
+	}
+
+	function consumePending(_:Null<eval.luv.Async> = null) {
+		this.mutex.acquire();
+		var p = this.pending;
+		this.pending = [];
+		this.mutex.release();
+		{
+			var ` = 0;
+			while (` < p.length) {
+				var fn = p[`];
+				++ `;
+				fn();
+			};
+		};
+		if (this.started && this.isMainThread) {
+			var next = haxe.MainLoop.tick();
+			if (haxe.MainLoop.hasEvents()) {
+				eval.luv._Async.Async_Impl_.send(this.wakeup);
+			};
+			this.refUnref();
+		};
+	}
+
+	static var CREATED:Bool;
+
+	@:value(function() { })
+	static var noop(default,never):() -> Void = () {};
+}

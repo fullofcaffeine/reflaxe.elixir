@@ -1,0 +1,375 @@
+class reflaxe.input.ModuleUsageTracker {
+
+	public function new(types:haxe.ds.ReadOnlyArray<haxe.macro.ModuleType>, compiler:reflaxe.BaseCompiler) {
+		this.allModuleTypes = types;
+		this.compiler = compiler;
+		this.outputTypes = [];
+		this.outputTypeMap = {
+			{};
+			new haxe.ds.StringMap();
+		};
+	}
+
+	var allModuleTypes:haxe.ds.ReadOnlyArray<haxe.macro.ModuleType>;
+
+	var compiler:reflaxe.BaseCompiler;
+
+	var outputTypes:Array<haxe.macro.ModuleType>;
+
+	var outputTypeMap:Map<String, Bool>;
+
+	@:value({ stdMeta : null })
+	public function filteredTypes(stdMeta:Null<Array<String>> = null) {
+		var userTypes = this.nonStdTypes(stdMeta);
+		{
+			var ` = 0;
+			while (` < userTypes.length) {
+				var ut = userTypes[`];
+				++ `;
+				this.addUsedModuleType(ut);
+			};
+		};
+		return this.outputTypes;
+	}
+
+	@:value({ stdMeta : null })
+	public function nonStdTypes(stdMeta:Null<Array<String>> = null) {
+		return {
+			var _this = cast this.allModuleTypes;
+			{
+				var ` = [];
+				{
+					var ` = 0;
+					var ` = _this;
+					while (` < `.length) {
+						var v = `[`];
+						++ `;
+						if (function(t:haxe.macro.ModuleType) {
+							return return ! reflaxe.helpers.BaseTypeHelper.isReflaxeExtern(reflaxe.helpers.ModuleTypeHelper.getCommonData(t)) && ! reflaxe.input.ModuleUsageTracker.isStdType(t, stdMeta);
+						}(v)) {
+							`.push(v);
+						};
+					};
+				};
+				`;
+			};
+		};
+	}
+
+	function addUsedModuleType(moduleType:Null<haxe.macro.ModuleType>) {
+		if (moduleType == null || this.hasModuleType(moduleType)) {
+			return;
+		};
+		this.outputTypes.push(moduleType);
+		{
+			var this = this.outputTypeMap;
+			var k = reflaxe.input.ModuleUsageTracker.moduleTypeId(moduleType);
+			cast this.set(k, true);
+			true;
+		};
+		@:ast(switch (moduleType) {
+	case TClassDecl(clsRef):
+		{
+			var cls = clsRef.get();
+			if (cls.superClass != null) {
+				addUsedModuleType(TClassDecl(cls.superClass.t));
+			};
+			var fields = cls.fields.get().concat(cls.statics.get());
+			for (f  in  fields) {
+				addUsedType(f.type);
+				var te = f.expr();
+				if (te != null) {
+					addUsedExpr(te);
+				};
+			};
+		};	
+	case TEnumDecl(enumRef):
+		{
+			var enm = enumRef.get();
+			for (_ => f  in  enm.constructs) {
+				addUsedType(f.type);
+			};
+		};	
+	case TTypeDecl(defTypeRef) if (compiler.options.unwrapTypedefs):
+		{
+			var result = unwrapTypedef(defTypeRef.get());
+			if (result != null) {
+				addUsedModuleType(result);
+			};
+		};	
+	case TAbstract(abRef):
+		{
+			addUsedType(abRef.get().type);
+		};	
+	case _:
+}) if (moduleType == null) {} else switch (enumIndex moduleType) {
+			case 0: {
+				var ` = moduleType[0];
+				{
+					var clsRef = `;
+					{
+						{
+							var cls = clsRef.get();
+							if (cls.superClass != null) {
+								this.addUsedModuleType(haxe.macro.ModuleType.TClassDecl(cls.superClass.t));
+							};
+							var fields = cls.fields.get().concat(cls.statics.get());
+							{
+								var ` = 0;
+								while (` < fields.length) {
+									var f = fields[`];
+									++ `;
+									this.addUsedType(f.type);
+									var te = f.expr();
+									if (te != null) {
+										this.addUsedExpr(te);
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+			case 1: {
+				var ` = moduleType[0];
+				{
+					var enumRef = `;
+					{
+						{
+							var enm = enumRef.get();
+							{
+								var ` = {
+									var this = enm.constructs;
+									cast new haxe.iterators.MapKeyValueIterator(cast this);
+								};
+								while (`.hasNext()) {
+									var ` = `.next();
+									var _ = `.key;
+									var f = `.value;
+									{
+										this.addUsedType(f.type);
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = moduleType[0];
+				{
+					var defTypeRef = `;
+					if (this.compiler.options.unwrapTypedefs) {
+						{
+							var result = this.unwrapTypedef(defTypeRef.get());
+							if (result != null) {
+								this.addUsedModuleType(result);
+							};
+						};
+					} else {};
+				};
+			};
+			case 3: {
+				var ` = moduleType[0];
+				{
+					var abRef = `;
+					{
+						{
+							this.addUsedType(abRef.get().type);
+						};
+					};
+				};
+			};
+			default: {}
+		};
+	}
+
+	function unwrapTypedef(defType:haxe.macro.DefType) {
+		var type = defType.type;
+		var anonModuleType = reflaxe.helpers.TypeHelper.convertAnonToModuleType(type);
+		return if (anonModuleType != null) {
+			anonModuleType;
+		} else {
+			reflaxe.helpers.TypeHelper.toModuleType(type);
+		};
+	}
+
+	function addUsedType(type:haxe.macro.Type) {
+		var params = reflaxe.helpers.TypeHelper.getParams(type);
+		if (params != null) {
+			{
+				var ` = 0;
+				while (` < params.length) {
+					var p = params[`];
+					++ `;
+					this.addUsedType(p);
+				};
+			};
+		};
+		@:ast(switch (type) {
+	case TFun(args, ret):
+		{
+			for (a  in  args) addUsedType(a.t);
+			addUsedType(ret);
+		};	
+	case TAnonymous(a):
+		{
+			for (field  in  a.get().fields) {
+				addUsedType(field.type);
+			};
+		};	
+	case TDynamic(t):
+		{
+			if (t != null) {
+				addUsedType(t);
+			};
+		};	
+	case _:
+		{
+			var mt = TypeHelper.toModuleType(type);
+			if (mt != null) {
+				addUsedModuleType(mt);
+			};
+		};	
+}) switch (enumIndex type) {
+			case 4: {
+				var ` = type[0];
+				var ` = type[1];
+				{
+					var args = `;
+					var ret = `;
+					{
+						{
+							{
+								var ` = 0;
+								while (` < args.length) {
+									var a = args[`];
+									++ `;
+									this.addUsedType(a.t);
+								};
+							};
+							this.addUsedType(ret);
+						};
+					};
+				};
+			};
+			case 5: {
+				var ` = type[0];
+				{
+					var a = `;
+					{
+						{
+							{
+								var ` = 0;
+								var ` = a.get().fields;
+								while (` < `.length) {
+									var field = `[`];
+									++ `;
+									this.addUsedType(field.type);
+								};
+							};
+						};
+					};
+				};
+			};
+			case 6: {
+				var ` = type[0];
+				{
+					var t = `;
+					{
+						{
+							if (t != null) {
+								this.addUsedType(t);
+							};
+						};
+					};
+				};
+			};
+			default: {
+				{
+					var mt = reflaxe.helpers.TypeHelper.toModuleType(type);
+					if (mt != null) {
+						this.addUsedModuleType(mt);
+					};
+				};
+			}
+		};
+	}
+
+	function addUsedExpr(expr:haxe.macro.TypedExpr) {
+		haxe.macro.TypedExprTools.iter(expr, this.checkExprForTypes);
+	}
+
+	function checkExprForTypes(expr:haxe.macro.TypedExpr) {
+		this.addUsedType(expr.t);
+		haxe.macro.TypedExprTools.iter(expr, this.checkExprForTypes);
+	}
+
+	function hasModuleType(moduleType:haxe.macro.ModuleType) {
+		var id = reflaxe.input.ModuleUsageTracker.moduleTypeId(moduleType);
+		return {
+			var this = this.outputTypeMap;
+			cast this.exists(id);
+		} && {
+			var this = this.outputTypeMap;
+			cast this.get(id);
+		} == true;
+	}
+
+	function hasType(type:haxe.macro.Type) {
+		var mt = reflaxe.helpers.TypeHelper.toModuleType(type);
+		return if (mt != null) {
+			this.hasModuleType(mt);
+		} else {
+			false;
+		};
+	}
+
+	static function moduleTypeId(moduleType:haxe.macro.ModuleType) {
+		var data = reflaxe.helpers.ModuleTypeHelper.getCommonData(moduleType);
+		return data.module + "|" + data.name;
+	}
+
+	static function typeId(type:haxe.macro.Type) {
+		var mt = reflaxe.helpers.TypeHelper.toModuleType(type);
+		return if (mt != null) {
+			reflaxe.input.ModuleUsageTracker.moduleTypeId(mt);
+		} else {
+			"";
+		};
+	}
+
+	@:value({ stdMeta : null })
+	static function isStdType(type:haxe.macro.ModuleType, stdMeta:Null<Array<String>> = null) {
+		var cd = reflaxe.helpers.ModuleTypeHelper.getCommonData(type);
+		if (reflaxe.helpers.NameMetaHelper.hasMeta(cd, ":coreApi") || reflaxe.helpers.NameMetaHelper.hasMeta(cd, ":pseudoCoreApi")) {
+			return true;
+		};
+		if (stdMeta != null) {
+			{
+				var ` = 0;
+				while (` < stdMeta.length) {
+					var m = stdMeta[`];
+					++ `;
+					if (reflaxe.helpers.NameMetaHelper.hasMeta(cd, m)) {
+						return true;
+					};
+				};
+			};
+		};
+		var onStdPath = false;
+		{
+			var ` = 0;
+			var ` = haxe.macro.Compiler.getConfiguration().stdPath;
+			while (` < `.length) {
+				var path = `[`];
+				++ `;
+				if (StringTools.startsWith(haxe.macro.Context.getPosInfos(cd.pos).file, path)) {
+					onStdPath = true;
+					break;
+				};
+			};
+		};
+		return onStdPath;
+	}
+}

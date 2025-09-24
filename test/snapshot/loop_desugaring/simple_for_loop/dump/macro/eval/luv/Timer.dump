@@ -1,0 +1,2 @@
+@:using(eval.luv.Handle) @:coreType
+abstract eval.luv.Timer to eval.luv.Handle {}

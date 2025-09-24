@@ -1,0 +1,112 @@
+@:structInit
+class reflaxe.BaseCompilerOptions {
+
+	@:compilerGenerated @:inheritDoc
+	public function new(expressionPreprocessors:Null<Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>>, fileOutputType:Null<reflaxe.BaseCompilerFileOutputType>, fileOutputExtension:Null<String>, outputDirDefineName:Null<String>, defaultOutputFilename:Null<String>, ignoreTypes:Null<Array<String>>, reservedVarNames:Null<Array<String>>, targetCodeInjectionName:Null<Null<String>>, enforceNullTyping:Null<Bool>, unwrapTypedefs:Null<Bool>, manualDCE:Null<Bool>, customStdMeta:Null<Array<String>>, trackUsedTypes:Null<Bool>, trackClassHierarchy:Null<Bool>, deleteOldOutput:Null<Bool>, ignoreBodilessFunctions:Null<Bool>, ignoreExterns:Null<Bool>, ignoreNonPhysicalFields:Null<Bool>, allowMetaMetadata:Null<Bool>, autoNativeMetaFormat:Null<Null<String>>, metadataTemplates:Null<Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>>) {
+		this.metadataTemplates = [];
+		this.autoNativeMetaFormat = null;
+		this.allowMetaMetadata = true;
+		this.ignoreNonPhysicalFields = true;
+		this.ignoreExterns = true;
+		this.ignoreBodilessFunctions = false;
+		this.deleteOldOutput = true;
+		this.trackClassHierarchy = true;
+		this.trackUsedTypes = false;
+		this.customStdMeta = [];
+		this.manualDCE = false;
+		this.unwrapTypedefs = true;
+		this.enforceNullTyping = false;
+		this.targetCodeInjectionName = null;
+		this.reservedVarNames = [];
+		this.ignoreTypes = [];
+		this.defaultOutputFilename = "output";
+		this.outputDirDefineName = "hxoutput";
+		this.fileOutputExtension = ".hxoutput";
+		this.fileOutputType = reflaxe.BaseCompilerFileOutputType.FilePerClass;
+		this.expressionPreprocessors = null;
+		if ((expressionPreprocessors != null)) this.expressionPreprocessors = expressionPreprocessors;
+		if ((fileOutputType != null)) this.fileOutputType = fileOutputType;
+		if ((fileOutputExtension != null)) this.fileOutputExtension = fileOutputExtension;
+		if ((outputDirDefineName != null)) this.outputDirDefineName = outputDirDefineName;
+		if ((defaultOutputFilename != null)) this.defaultOutputFilename = defaultOutputFilename;
+		if ((ignoreTypes != null)) this.ignoreTypes = ignoreTypes;
+		if ((reservedVarNames != null)) this.reservedVarNames = reservedVarNames;
+		if ((targetCodeInjectionName != null)) this.targetCodeInjectionName = targetCodeInjectionName;
+		if ((enforceNullTyping != null)) this.enforceNullTyping = enforceNullTyping;
+		if ((unwrapTypedefs != null)) this.unwrapTypedefs = unwrapTypedefs;
+		if ((manualDCE != null)) this.manualDCE = manualDCE;
+		if ((customStdMeta != null)) this.customStdMeta = customStdMeta;
+		if ((trackUsedTypes != null)) this.trackUsedTypes = trackUsedTypes;
+		if ((trackClassHierarchy != null)) this.trackClassHierarchy = trackClassHierarchy;
+		if ((deleteOldOutput != null)) this.deleteOldOutput = deleteOldOutput;
+		if ((ignoreBodilessFunctions != null)) this.ignoreBodilessFunctions = ignoreBodilessFunctions;
+		if ((ignoreExterns != null)) this.ignoreExterns = ignoreExterns;
+		if ((ignoreNonPhysicalFields != null)) this.ignoreNonPhysicalFields = ignoreNonPhysicalFields;
+		if ((allowMetaMetadata != null)) this.allowMetaMetadata = allowMetaMetadata;
+		if ((autoNativeMetaFormat != null)) this.autoNativeMetaFormat = autoNativeMetaFormat;
+		if ((metadataTemplates != null)) this.metadataTemplates = metadataTemplates;
+	}
+
+	@:value(null)
+	public var expressionPreprocessors:Null<Array<reflaxe.preprocessors.ExpressionPreprocessor>>;
+
+	@:value(FilePerClass)
+	public var fileOutputType:reflaxe.BaseCompilerFileOutputType;
+
+	@:value(".hxoutput")
+	public var fileOutputExtension:String;
+
+	@:value("hxoutput")
+	public var outputDirDefineName:String;
+
+	@:value("output")
+	public var defaultOutputFilename:String;
+
+	@:value([])
+	public var ignoreTypes:Array<String>;
+
+	@:value([])
+	public var reservedVarNames:Array<String>;
+
+	@:value(null)
+	public var targetCodeInjectionName:Null<String>;
+
+	@:value(false)
+	public var enforceNullTyping:Bool;
+
+	@:value(true)
+	public var unwrapTypedefs:Bool;
+
+	@:value(false)
+	public var manualDCE:Bool;
+
+	@:value([])
+	public var customStdMeta:Array<String>;
+
+	@:value(false)
+	public var trackUsedTypes:Bool;
+
+	@:value(true)
+	public var trackClassHierarchy:Bool;
+
+	@:value(true)
+	public var deleteOldOutput:Bool;
+
+	@:value(false)
+	public var ignoreBodilessFunctions:Bool;
+
+	@:value(true)
+	public var ignoreExterns:Bool;
+
+	@:value(true)
+	public var ignoreNonPhysicalFields:Bool;
+
+	@:value(true)
+	public var allowMetaMetadata:Bool;
+
+	@:value(null)
+	public var autoNativeMetaFormat:Null<String>;
+
+	@:value([])
+	public var metadataTemplates:Array<{ paramTypes : Null<Array<reflaxe.MetaArgumentType>>, meta : haxe.macro.MetadataDescription, disallowMultiple : Bool, compileFunc : Null<(haxe.macro.MetadataEntry, Array<String>) -> Null<String>> }>;
+}

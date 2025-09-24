@@ -1,0 +1,9 @@
+@:flatEnum
+enum reflaxe.elixir.ast.transformers.BindingKind {
+	Param;
+	PatternVar;
+	MatchLhs;
+	CompGen;
+	WithGen;
+	RescueVar;
+}

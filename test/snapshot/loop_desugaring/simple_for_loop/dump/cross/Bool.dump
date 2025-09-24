@@ -1,0 +1,2 @@
+@:used @:coreType @:notNull @:runtimeValue
+abstract Bool {}

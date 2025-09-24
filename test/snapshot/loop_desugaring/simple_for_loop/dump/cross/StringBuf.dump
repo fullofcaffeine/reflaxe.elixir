@@ -1,0 +1,39 @@
+@:directlyUsed @:used @:coreApi
+class StringBuf {
+
+	public function new() {
+		this.parts = [];
+	}
+
+	var parts:Array<String>;
+
+	public var length(get,never):Int;
+
+	function get_length() {
+		var joined = this.parts.join("");
+		return joined.length;
+	}
+
+	public function add<T>(x:add.T) {
+		var str = if ((x == null)) "null" else Std.string(x);
+		this.parts.push(str);
+	}
+
+	public function addChar(c:Int) {
+		this.parts.push(@:pure __elixir__("<<{0}::utf8>>", c));
+	}
+
+	public function addSub(s:String, pos:Int, len:Null<Int> = null) {
+		if ((s == null)) return;
+		var substr = if ((len == null)) {
+			var len = null;
+			if ((len == null)) __elixir__("String.slice({0}, {1}..-1)", s, pos) else __elixir__("String.slice({0}, {1}, {2})", s, pos, len);
+		} else if ((len == null)) __elixir__("String.slice({0}, {1}..-1)", s, pos) else __elixir__("String.slice({0}, {1}, {2})", s, pos, len);
+		this.parts.push(substr);
+	}
+
+	@:has_untyped
+	public function toString() {
+		return __elixir__("IO.iodata_to_binary({0})", this.parts);
+	}
+}

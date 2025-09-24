@@ -1,0 +1,7 @@
+@:flatEnum
+enum reflaxe.elixir.ast.VarOrigin {
+	PatternBinder;
+	ExtractionTemp;
+	Synthesized;
+	UserDefined;
+}

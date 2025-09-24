@@ -1,0 +1,26 @@
+@:coreApi
+extern class EReg {
+
+	function new(r:String, opt:String):Void;
+
+	function match(s:String):Bool;
+
+	function matched(n:Int):String;
+
+	function matchedLeft():String;
+
+	function matchedRight():String;
+
+	function matchedPos():{ pos : Int, len : Int };
+
+	@:value({ len : -1 })
+	function matchSub(s:String, pos:Int, len:Int):Bool;
+
+	function split(s:String):Array<String>;
+
+	function replace(s:String, by:String):String;
+
+	function map(s:String, f:EReg -> String):String;
+
+	static function escape(s:String):String;
+}

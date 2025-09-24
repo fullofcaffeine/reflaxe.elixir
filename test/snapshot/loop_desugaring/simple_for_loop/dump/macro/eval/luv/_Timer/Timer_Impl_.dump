@@ -1,0 +1,28 @@
+@:using(eval.luv.Handle)
+private class eval.luv._Timer.Timer_Impl_ {
+
+	public static var repeat(get,set):Int;
+
+	@:noExpr
+	static function get_repeat
+
+	@:noExpr
+	static function set_repeat
+
+	public static var dueIn(get,never):Int;
+
+	@:noExpr
+	static function get_dueIn
+
+	@:noExpr
+	public static function init
+
+	@:noExpr
+	public static function start
+
+	@:noExpr
+	public static function stop
+
+	@:noExpr
+	public static function again
+}

@@ -1,0 +1,28 @@
+@:coreApi
+class sys.FileSystem {
+
+	public static function exists
+
+	public static function rename
+
+	public static function stat
+
+	public static function fullPath
+
+	public static function absolutePath(relPath:String) {
+		if (haxe.io.Path.isAbsolute(relPath)) {
+			return relPath;
+		};
+		return haxe.io.Path.join([Sys.getCwd(), relPath]);
+	}
+
+	public static function isDirectory
+
+	public static function createDirectory
+
+	public static function deleteFile
+
+	public static function deleteDirectory
+
+	public static function readDirectory
+}

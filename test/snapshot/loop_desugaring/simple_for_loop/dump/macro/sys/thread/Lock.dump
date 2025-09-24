@@ -1,0 +1,8 @@
+extern class sys.thread.Lock {
+
+	function new():Void;
+
+	function wait(timeout:Null<Float>):Bool;
+
+	function release():Void;
+}

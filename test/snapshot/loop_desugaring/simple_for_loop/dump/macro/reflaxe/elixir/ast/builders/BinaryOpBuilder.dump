@@ -1,0 +1,985 @@
+class reflaxe.elixir.ast.builders.BinaryOpBuilder {
+
+	@:value({ metadata : null })
+	public static function buildBinopFromAST(op:haxe.macro.Binop, leftAST:reflaxe.elixir.ast.ElixirAST, rightAST:reflaxe.elixir.ast.ElixirAST, e1:haxe.macro.TypedExpr, e2:haxe.macro.TypedExpr, toSnakeCase:String -> String, metadata:Null<reflaxe.elixir.ast.ElixirMetadata> = null) {
+		var def = @:ast(switch (op) {
+	case OpAdd:
+		var isStringConcat = isStringType(e1.t);
+		if (isStringConcat) {
+			var rightStr = if (isStringType(e2.t)) {
+				rightAST;
+			} else {
+				var needsToString = switch (rightAST.def) {
+					case ERaw(_):
+						false;					
+					case ECase(_, _) | ECond(_) | EWith(_, _, _):
+						false;					
+					case EIf(_, _, elseBranch) if (elseBranch != null):
+						false;					
+					case EBlock(exprs) if (exprs.length > 0):
+						var lastExpr = exprs[exprs.length - 1];
+						switch (lastExpr.def) {
+							case ECase(_, _) | ECond(_) | EWith(_, _, _):
+								false;							
+							case EIf(_, _, elseBranch) if (elseBranch != null):
+								false;							
+							default:
+								true;							
+						};					
+					default:
+						true;					
+				};
+				if (needsToString) {
+					makeAST(ElixirASTDef.ECall(rightAST, "to_string", []));
+				} else {
+					rightAST;
+				};
+			};
+			ElixirASTDef.EBinary(EBinaryOp.StringConcat, leftAST, rightStr);
+		} else {
+			ElixirASTDef.EBinary(EBinaryOp.Add, leftAST, rightAST);
+		};	
+	case OpAssign:
+		throw "OpAssign should be handled in ElixirASTBuilder";	
+	case OpAssignOp(innerOp):
+		throw "OpAssignOp should be handled in ElixirASTBuilder";	
+	case OpMult:
+		ElixirASTDef.EBinary(EBinaryOp.Multiply, leftAST, rightAST);	
+	case OpDiv:
+		ElixirASTDef.EBinary(EBinaryOp.Divide, leftAST, rightAST);	
+	case OpSub:
+		ElixirASTDef.EBinary(EBinaryOp.Subtract, leftAST, rightAST);	
+	case OpMod:
+		ElixirASTDef.EBinary(EBinaryOp.Remainder, leftAST, rightAST);	
+	case OpEq:
+		ElixirASTDef.EBinary(EBinaryOp.Equal, leftAST, rightAST);	
+	case OpNotEq:
+		ElixirASTDef.EBinary(EBinaryOp.NotEqual, leftAST, rightAST);	
+	case OpGt:
+		ElixirASTDef.EBinary(EBinaryOp.Greater, leftAST, rightAST);	
+	case OpGte:
+		ElixirASTDef.EBinary(EBinaryOp.GreaterEqual, leftAST, rightAST);	
+	case OpLt:
+		ElixirASTDef.EBinary(EBinaryOp.Less, leftAST, rightAST);	
+	case OpLte:
+		ElixirASTDef.EBinary(EBinaryOp.LessEqual, leftAST, rightAST);	
+	case OpBoolAnd:
+		ElixirASTDef.EBinary(EBinaryOp.And, leftAST, rightAST);	
+	case OpBoolOr:
+		ElixirASTDef.EBinary(EBinaryOp.Or, leftAST, rightAST);	
+	case OpAnd:
+		ElixirASTDef.EBinary(EBinaryOp.BitwiseAnd, leftAST, rightAST);	
+	case OpOr:
+		ElixirASTDef.EBinary(EBinaryOp.BitwiseOr, leftAST, rightAST);	
+	case OpXor:
+		ElixirASTDef.EBinary(EBinaryOp.BitwiseXor, leftAST, rightAST);	
+	case OpShl:
+		ElixirASTDef.EBinary(EBinaryOp.ShiftLeft, leftAST, rightAST);	
+	case OpShr:
+		ElixirASTDef.EBinary(EBinaryOp.ShiftRight, leftAST, rightAST);	
+	case OpUShr:
+		ElixirASTDef.EBinary(EBinaryOp.ShiftRight, leftAST, rightAST);	
+	case OpInterval:
+		ElixirASTDef.ERange(leftAST, rightAST, false);	
+	case OpIn:
+		ElixirASTDef.EBinary(EBinaryOp.In, leftAST, rightAST);	
+	case OpNullCoal:
+		var nilCheck = makeAST(ElixirASTDef.EBinary(EBinaryOp.Equal, leftAST, makeAST(ElixirASTDef.ENil)));
+		ElixirASTDef.EIf(nilCheck, rightAST, leftAST);	
+	case OpArrow:
+		throw "Arrow operator not supported in Elixir context";	
+}) switch (@:exhaustive enumIndex op) {
+			case 0: {
+				{
+					var isStringConcat = reflaxe.elixir.ast.builders.BinaryOpBuilder.isStringType(e1.t);
+					if (isStringConcat) {
+						var rightStr = if (reflaxe.elixir.ast.builders.BinaryOpBuilder.isStringType(e2.t)) {
+							rightAST;
+						} else {
+							var needsToString = @:ast(switch (rightAST.def) {
+	case ERaw(_):
+		false;	
+	case ECase(_, _) | ECond(_) | EWith(_, _, _):
+		false;	
+	case EIf(_, _, elseBranch) if (elseBranch != null):
+		false;	
+	case EBlock(exprs) if (exprs.length > 0):
+		var lastExpr = exprs[exprs.length - 1];
+		switch (lastExpr.def) {
+			case ECase(_, _) | ECond(_) | EWith(_, _, _):
+				false;			
+			case EIf(_, _, elseBranch) if (elseBranch != null):
+				false;			
+			default:
+				true;			
+		};	
+	default:
+		true;	
+}) {
+								var ` = rightAST.def;
+								switch (enumIndex `) {
+									case 6: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											false;
+										};
+									};
+									case 7: {
+										var ` = `[0];
+										{
+											false;
+										};
+									};
+									case 9: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											false;
+										};
+									};
+									case 10: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var elseBranch = `;
+											if (elseBranch != null) {
+												false;
+											} else {
+												true;
+											};
+										};
+									};
+									case 53: {
+										var ` = `[0];
+										{
+											var exprs = `;
+											if (exprs.length > 0) {
+												var lastExpr = exprs[exprs.length - 1];
+												@:ast(switch (lastExpr.def) {
+	case ECase(_, _) | ECond(_) | EWith(_, _, _):
+		false;	
+	case EIf(_, _, elseBranch) if (elseBranch != null):
+		false;	
+	default:
+		true;	
+}) {
+													var ` = lastExpr.def;
+													switch (enumIndex `) {
+														case 6: {
+															var ` = `[0];
+															var ` = `[1];
+															{
+																false;
+															};
+														};
+														case 7: {
+															var ` = `[0];
+															{
+																false;
+															};
+														};
+														case 9: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															{
+																false;
+															};
+														};
+														case 10: {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															{
+																var elseBranch = `;
+																if (elseBranch != null) {
+																	false;
+																} else {
+																	true;
+																};
+															};
+														};
+														default: {
+															true;
+														}
+													};
+												};
+											} else {
+												true;
+											};
+										};
+									};
+									case 62: {
+										var ` = `[0];
+										{
+											false;
+										};
+									};
+									default: {
+										true;
+									}
+								};
+							};
+							if (needsToString) {
+								{
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.ECall(rightAST, "to_string", []), metadata : {}, pos : pos};
+								};
+							} else {
+								rightAST;
+							};
+						};
+						reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.StringConcat, leftAST, rightStr);
+					} else {
+						reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Add, leftAST, rightAST);
+					};
+				};
+			};
+			case 1: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Multiply, leftAST, rightAST);
+				};
+			};
+			case 2: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Divide, leftAST, rightAST);
+				};
+			};
+			case 3: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Subtract, leftAST, rightAST);
+				};
+			};
+			case 4: {
+				{
+					throw "OpAssign should be handled in ElixirASTBuilder";
+				};
+			};
+			case 5: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Equal, leftAST, rightAST);
+				};
+			};
+			case 6: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, leftAST, rightAST);
+				};
+			};
+			case 7: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Greater, leftAST, rightAST);
+				};
+			};
+			case 8: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.GreaterEqual, leftAST, rightAST);
+				};
+			};
+			case 9: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Less, leftAST, rightAST);
+				};
+			};
+			case 10: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.LessEqual, leftAST, rightAST);
+				};
+			};
+			case 11: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.BitwiseAnd, leftAST, rightAST);
+				};
+			};
+			case 12: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.BitwiseOr, leftAST, rightAST);
+				};
+			};
+			case 13: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.BitwiseXor, leftAST, rightAST);
+				};
+			};
+			case 14: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.And, leftAST, rightAST);
+				};
+			};
+			case 15: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Or, leftAST, rightAST);
+				};
+			};
+			case 16: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.ShiftLeft, leftAST, rightAST);
+				};
+			};
+			case 17: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.ShiftRight, leftAST, rightAST);
+				};
+			};
+			case 18: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.ShiftRight, leftAST, rightAST);
+				};
+			};
+			case 19: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Remainder, leftAST, rightAST);
+				};
+			};
+			case 20: {
+				var ` = op[0];
+				{
+					var innerOp = `;
+					{
+						throw "OpAssignOp should be handled in ElixirASTBuilder";
+					};
+				};
+			};
+			case 21: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.ERange(leftAST, rightAST, false);
+				};
+			};
+			case 22: {
+				{
+					throw "Arrow operator not supported in Elixir context";
+				};
+			};
+			case 23: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.In, leftAST, rightAST);
+				};
+			};
+			case 24: {
+				{
+					var nilCheck = {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Equal, leftAST, {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+						}), metadata : {}, pos : pos};
+					};
+					reflaxe.elixir.ast.ElixirASTDef.EIf(nilCheck, rightAST, leftAST);
+				};
+			};
+		};
+		return if (metadata != null) {
+			{
+				var pos = null;
+				{def : def, metadata : metadata, pos : pos};
+			};
+		} else {
+			{
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			};
+		};
+	}
+
+	@:value({ metadata : null })
+	public static function buildBinop(op:haxe.macro.Binop, e1:haxe.macro.TypedExpr, e2:haxe.macro.TypedExpr, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, extractPattern:haxe.macro.TypedExpr -> reflaxe.elixir.ast.EPattern, toSnakeCase:String -> String, metadata:Null<reflaxe.elixir.ast.ElixirMetadata> = null) {
+		var isNilComparison = @:ast(switch (op) {
+	case OpEq | OpNotEq:
+		switch (e2.expr) {
+			case TConst(TNull):
+				true;			
+			default:
+				false;			
+		};	
+	default:
+		false;	
+}) switch (enumIndex op) {
+			case 5, 6: {
+				{
+					@:ast(switch (e2.expr) {
+	case TConst(TNull):
+		true;	
+	default:
+		false;	
+}) {
+						var ` = e2.expr;
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							if (enumIndex ` == 4) {
+								{
+									true;
+								};
+							} else {
+								false;
+							};
+						} else {
+							false;
+						};
+					};
+				};
+			};
+			default: {
+				false;
+			}
+		};
+		var left = @:ast(switch (e1.expr) {
+	case TField(target, FAnon(cf)) if (isNilComparison):
+		var targetAst = buildExpr(target);
+		var fieldName = toSnakeCase(cf.get().name);
+		makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [targetAst, makeAST(EAtom(fieldName))]));	
+	case _:
+		buildExpr(e1);	
+}) {
+			var ` = e1.expr;
+			if (enumIndex ` == 4) {
+				var ` = `[0];
+				var ` = `[1];
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					{
+						var cf = `;
+						var target = `;
+						if (isNilComparison) {
+							var targetAst = buildExpr(target);
+							var fieldName = toSnakeCase(cf.get().name);
+							{
+								var def = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Map"), metadata : {}, pos : pos};
+								}, "get", [targetAst, {
+									var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+										var this;
+										this = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+										cast this;
+									});
+									var pos = null;
+									{def : def, metadata : {}, pos : pos};
+								}]);
+								var pos = null;
+								{def : def, metadata : {}, pos : pos};
+							};
+						} else {
+							buildExpr(e1);
+						};
+					};
+				} else {
+					buildExpr(e1);
+				};
+			} else {
+				buildExpr(e1);
+			};
+		};
+		var right = buildExpr(e2);
+		var def = @:ast(switch (op) {
+	case OpAdd:
+		var isStringConcat = isStringType(e1.t);
+		if (isStringConcat) {
+			var rightStr = if (isStringType(e2.t)) {
+				right;
+			} else {
+				makeAST(ERemoteCall(makeAST(EVar("Kernel")), "to_string", [right]));
+			};
+			EBinary(StringConcat, left, rightStr);
+		} else {
+			EBinary(Add, left, right);
+		};	
+	case OpSub:
+		EBinary(Subtract, left, right);	
+	case OpMult:
+		EBinary(Multiply, left, right);	
+	case OpDiv:
+		EBinary(Divide, left, right);	
+	case OpMod:
+		EBinary(Remainder, left, right);	
+	case OpEq:
+		EBinary(Equal, left, right);	
+	case OpNotEq:
+		EBinary(NotEqual, left, right);	
+	case OpLt:
+		EBinary(Less, left, right);	
+	case OpLte:
+		EBinary(LessEqual, left, right);	
+	case OpGt:
+		EBinary(Greater, left, right);	
+	case OpGte:
+		EBinary(GreaterEqual, left, right);	
+	case OpBoolAnd:
+		EBinary(AndAlso, left, right);	
+	case OpBoolOr:
+		EBinary(OrElse, left, right);	
+	case OpAssign:
+		EMatch(extractPattern(e1), right);	
+	case OpAssignOp(op2):
+		var innerOp = if (op2 == OpAdd) {
+			isStringType(e1.t) ? StringConcat : Add;
+		} else {
+			convertAssignOp(op2);
+		};
+		EMatch(extractPattern(e1), makeAST(EBinary(innerOp, left, right)));	
+	case OpAnd:
+		EBinary(BitwiseAnd, left, right);	
+	case OpOr:
+		EBinary(BitwiseOr, left, right);	
+	case OpXor:
+		EBinary(BitwiseXor, left, right);	
+	case OpShl:
+		EBinary(ShiftLeft, left, right);	
+	case OpShr:
+		EBinary(ShiftRight, left, right);	
+	case OpUShr:
+		EBinary(ShiftRight, left, right);	
+	case OpInterval:
+		ERange(left, makeAST(EBinary(Subtract, right, makeAST(EInteger(1)))), false);	
+	case OpArrow:
+		EFn([{ args : [PVar("_arrow")], body : right }]);	
+	case OpIn:
+		EBinary(In, left, right);	
+	case OpNullCoal:
+		buildNullCoalescing(left, right);	
+}) switch (@:exhaustive enumIndex op) {
+			case 0: {
+				{
+					var isStringConcat = reflaxe.elixir.ast.builders.BinaryOpBuilder.isStringType(e1.t);
+					if (isStringConcat) {
+						var rightStr = if (reflaxe.elixir.ast.builders.BinaryOpBuilder.isStringType(e2.t)) {
+							right;
+						} else {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel"), metadata : {}, pos : pos};
+								}, "to_string", [right]), metadata : {}, pos : pos};
+							};
+						};
+						reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.StringConcat, left, rightStr);
+					} else {
+						reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Add, left, right);
+					};
+				};
+			};
+			case 1: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Multiply, left, right);
+				};
+			};
+			case 2: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Divide, left, right);
+				};
+			};
+			case 3: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Subtract, left, right);
+				};
+			};
+			case 4: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EMatch(extractPattern(e1), right);
+				};
+			};
+			case 5: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Equal, left, right);
+				};
+			};
+			case 6: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, left, right);
+				};
+			};
+			case 7: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Greater, left, right);
+				};
+			};
+			case 8: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.GreaterEqual, left, right);
+				};
+			};
+			case 9: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Less, left, right);
+				};
+			};
+			case 10: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.LessEqual, left, right);
+				};
+			};
+			case 11: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.BitwiseAnd, left, right);
+				};
+			};
+			case 12: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.BitwiseOr, left, right);
+				};
+			};
+			case 13: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.BitwiseXor, left, right);
+				};
+			};
+			case 14: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.AndAlso, left, right);
+				};
+			};
+			case 15: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.OrElse, left, right);
+				};
+			};
+			case 16: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.ShiftLeft, left, right);
+				};
+			};
+			case 17: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.ShiftRight, left, right);
+				};
+			};
+			case 18: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.ShiftRight, left, right);
+				};
+			};
+			case 19: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Remainder, left, right);
+				};
+			};
+			case 20: {
+				var ` = op[0];
+				{
+					var op2 = `;
+					{
+						var innerOp = if (op2 == haxe.macro.Binop.OpAdd) {
+							if (reflaxe.elixir.ast.builders.BinaryOpBuilder.isStringType(e1.t)) {
+								reflaxe.elixir.ast.EBinaryOp.StringConcat;
+							} else {
+								reflaxe.elixir.ast.EBinaryOp.Add;
+							};
+						} else {
+							reflaxe.elixir.ast.builders.BinaryOpBuilder.convertAssignOp(op2);
+						};
+						reflaxe.elixir.ast.ElixirASTDef.EMatch(extractPattern(e1), {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(innerOp, left, right), metadata : {}, pos : pos};
+						});
+					};
+				};
+			};
+			case 21: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.ERange(left, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Subtract, right, {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(1), metadata : {}, pos : pos};
+						}), metadata : {}, pos : pos};
+					}, false);
+				};
+			};
+			case 22: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar("_arrow")], body : right}]);
+				};
+			};
+			case 23: {
+				{
+					reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.In, left, right);
+				};
+			};
+			case 24: {
+				{
+					reflaxe.elixir.ast.builders.BinaryOpBuilder.buildNullCoalescing(left, right);
+				};
+			};
+		};
+		return if (metadata != null) {
+			{
+				var pos = null;
+				{def : def, metadata : metadata, pos : pos};
+			};
+		} else {
+			{
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			};
+		};
+	}
+
+	static function isStringType(t:haxe.macro.Type) {
+		return @:ast(switch (t) {
+	case TInst(_.get() => { name : "String" }, _):
+		true;	
+	case TAbstract(_.get() => { name : "String" }, _):
+		true;	
+	default:
+		false;	
+}) switch (enumIndex t) {
+			case 2: {
+				var ` = t[0];
+				var ` = t[1];
+				{
+					var _hx_tmp;
+					{
+						var ` = (_hx_tmp = `.get()).constructor;
+						var ` = _hx_tmp.doc;
+						var ` = _hx_tmp.fields;
+						var ` = _hx_tmp.init;
+						var ` = _hx_tmp.interfaces;
+						var ` = _hx_tmp.isAbstract;
+						var ` = _hx_tmp.isExtern;
+						var ` = _hx_tmp.isFinal;
+						var ` = _hx_tmp.isInterface;
+						var ` = _hx_tmp.isPrivate;
+						var ` = _hx_tmp.kind;
+						var ` = _hx_tmp.meta;
+						var ` = _hx_tmp.module;
+						var ` = _hx_tmp.name;
+						var ` = _hx_tmp.overrides;
+						var ` = _hx_tmp.pack;
+						var ` = _hx_tmp.params;
+						var ` = _hx_tmp.pos;
+						var ` = _hx_tmp.statics;
+						var ` = _hx_tmp.superClass;
+						if (` == "String") {
+							{
+								true;
+							};
+						} else {
+							false;
+						};
+					};
+				};
+			};
+			case 8: {
+				var ` = t[0];
+				var ` = t[1];
+				{
+					var _hx_tmp;
+					{
+						var ` = (_hx_tmp = `.get()).array;
+						var ` = _hx_tmp.binops;
+						var ` = _hx_tmp.doc;
+						var ` = _hx_tmp.from;
+						var ` = _hx_tmp.impl;
+						var ` = _hx_tmp.isExtern;
+						var ` = _hx_tmp.isPrivate;
+						var ` = _hx_tmp.meta;
+						var ` = _hx_tmp.module;
+						var ` = _hx_tmp.name;
+						var ` = _hx_tmp.pack;
+						var ` = _hx_tmp.params;
+						var ` = _hx_tmp.pos;
+						var ` = _hx_tmp.resolve;
+						var ` = _hx_tmp.resolveWrite;
+						var ` = _hx_tmp.to;
+						var ` = _hx_tmp.type;
+						var ` = _hx_tmp.unops;
+						if (` == "String") {
+							{
+								true;
+							};
+						} else {
+							false;
+						};
+					};
+				};
+			};
+			default: {
+				false;
+			}
+		};
+	}
+
+	static function convertAssignOp(op:haxe.macro.Binop) {
+		return @:ast(switch (op) {
+	case OpAdd:
+		Add;	
+	case OpSub:
+		Subtract;	
+	case OpMult:
+		Multiply;	
+	case OpDiv:
+		Divide;	
+	case OpMod:
+		Remainder;	
+	case OpAnd:
+		BitwiseAnd;	
+	case OpOr:
+		BitwiseOr;	
+	case OpXor:
+		BitwiseXor;	
+	case OpShl:
+		ShiftLeft;	
+	case OpShr:
+		ShiftRight;	
+	case OpUShr:
+		ShiftRight;	
+	default:
+		throw "Unsupported assign op: $op";	
+}) switch (enumIndex op) {
+			case 0: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Add;
+				};
+			};
+			case 1: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Multiply;
+				};
+			};
+			case 2: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Divide;
+				};
+			};
+			case 3: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Subtract;
+				};
+			};
+			case 11: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.BitwiseAnd;
+				};
+			};
+			case 12: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.BitwiseOr;
+				};
+			};
+			case 13: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.BitwiseXor;
+				};
+			};
+			case 16: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.ShiftLeft;
+				};
+			};
+			case 17: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.ShiftRight;
+				};
+			};
+			case 18: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.ShiftRight;
+				};
+			};
+			case 19: {
+				{
+					reflaxe.elixir.ast.EBinaryOp.Remainder;
+				};
+			};
+			default: {
+				throw "Unsupported assign op: " + Std.string(op);
+			}
+		};
+	}
+
+	static function buildNullCoalescing(left:reflaxe.elixir.ast.ElixirAST, right:reflaxe.elixir.ast.ElixirAST) {
+		var isSimple = @:ast(switch (left.def) {
+	case EVar(_):
+		true;	
+	case ENil:
+		true;	
+	case EBoolean(_):
+		true;	
+	case EInteger(_):
+		true;	
+	case EString(_):
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = left.def;
+			switch (enumIndex `) {
+				case 32: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 33: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 35: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 36: {
+					{
+						true;
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+		if (isSimple) {
+			var ifExpr = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EIf({
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, left, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+					}), metadata : {}, pos : pos};
+				}, left, right), metadata : {}, pos : pos};
+			};
+			if (ifExpr.metadata == null) {
+				ifExpr.metadata = {};
+			};
+			ifExpr.metadata.keepInlineInAssignment = true;
+			return ifExpr.def;
+		} else {
+			var tmpVar = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("tmp"), metadata : {}, pos : pos};
+			};
+			var assignment = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar("tmp"), left), metadata : {}, pos : pos};
+			};
+			var ifExpr = {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EIf({
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, assignment, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+					}), metadata : {}, pos : pos};
+				}, tmpVar, right), metadata : {}, pos : pos};
+			};
+			if (ifExpr.metadata == null) {
+				ifExpr.metadata = {};
+			};
+			ifExpr.metadata.keepInlineInAssignment = true;
+			return ifExpr.def;
+		};
+	}
+}

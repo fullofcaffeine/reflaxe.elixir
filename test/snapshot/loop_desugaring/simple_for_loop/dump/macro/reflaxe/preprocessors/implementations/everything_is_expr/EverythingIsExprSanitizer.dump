@@ -1,0 +1,2003 @@
+class reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer {
+
+	@:value({ nGenerator : null, assignee : null, parent : null })
+	public function new(expr:haxe.macro.TypedExpr, options:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions, parent:Null<reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer> = null, assignee:Null<haxe.macro.TypedExpr> = null, nGenerator:Null<reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator> = null) {
+		this.variableUsageCount = null;
+		this.variables = new haxe.ds.IntMap();
+		this.parent = null;
+		this.index = 0;
+		this.haxeExpr = reflaxe.helpers.TypedExprHelper.copy(expr, null);
+		this.options = options;
+		this.parent = parent;
+		if ((parent == null)) this.variableUsageCount = new haxe.ds.IntMap();
+		var _g = this.haxeExpr.expr;
+		var tmp;
+		if ((enumIndex _g == 14)) {
+			var exprs = _g[0];
+			var _g = [];
+			{
+				var _g1 = 0;
+				var _g2 = exprs;
+				while ((_g1 < _g2.length)) {
+					var v = _g2[_g1];
+					++ _g1;
+					_g.push((function(e:haxe.macro.TypedExpr) {
+						return reflaxe.helpers.TypedExprHelper.copy(e, null);
+					})(v));
+				};
+			};
+			tmp = _g;
+		} else tmp = [this.haxeExpr];
+		this.topScopeArray = tmp;
+		if ((assignee != null)) this.assigneeExpr = reflaxe.helpers.TypedExprHelper.copy(assignee, null) else this.assigneeExpr = null;
+		this.nameGenerator = if ((nGenerator != null)) nGenerator else new reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator();
+		this.expressionStack = [];
+		this.metaStack = [];
+	}
+
+	public var haxeExpr:haxe.macro.TypedExpr;
+
+	public var topScopeArray:Array<haxe.macro.TypedExpr>;
+
+	@:value(0)
+	var index:Int;
+
+	var options:reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizerOptions;
+
+	public var assigneeExpr:Null<haxe.macro.TypedExpr>;
+
+	@:value(null)
+	public var parent:Null<reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer>;
+
+	public var nameGenerator:reflaxe.preprocessors.implementations.everything_is_expr.TempVarNameGenerator;
+
+	@:value([])
+	public var variables(default,null):Map<Int, Null<haxe.macro.TypedExpr>>;
+
+	@:value(null)
+	public var variableUsageCount(default,null):Null<Map<Int, Int>>;
+
+	var expressionStack:Array<haxe.macro.TypedExpr>;
+
+	var metaStack:Array<String>;
+
+	function preprocessExpr() {
+		{
+			var ` = 0;
+			var ` = this.topScopeArray.length;
+			while (` < `) {
+				var i = ` ++;
+				this.topScopeArray[i] = this.fixWhile(this.topScopeArray[i]);
+			};
+		};
+	}
+
+	function getVariableUsageCount() {
+		var p = this;
+		while (p.parent != null) {
+			p = p.parent;
+		};
+		return {
+			var maybe = p.variableUsageCount;
+			cast {
+				if (maybe == null) {
+					throw "Trusted on null value.";
+				};
+				@:nullSafety(Off) maybe;
+			};
+		};
+	}
+
+	public function convertedExpr() {
+		this.preprocessExpr();
+		this.index = 0;
+		while (this.index < this.topScopeArray.length) {
+			var expr = this.topScopeArray[this.index];
+			var newExprDef = this.processExpr(expr);
+			if (newExprDef != null) {
+				this.topScopeArray[this.index] = {expr : (cast newExprDef), pos : expr.pos, t : expr.t};
+			};
+			if (this.assigneeExpr != null && this.isLastExpression()) {
+				var old = this.topScopeArray[this.index];
+				if (old == null) {
+					throw "Unexpected null encountered.";
+				};
+				var isNonAssignable = @:ast(switch (old.expr) {
+	case TReturn(_):
+		true;	
+	case TThrow(_):
+		true;	
+	case TBreak:
+		true;	
+	case TContinue:
+		true;	
+	case _:
+		false;	
+}) {
+					var ` = old.expr;
+					switch (enumIndex `) {
+						case 20: {
+							var ` = `[0];
+							{
+								true;
+							};
+						};
+						case 21: {
+							{
+								true;
+							};
+						};
+						case 22: {
+							{
+								true;
+							};
+						};
+						case 23: {
+							var ` = `[0];
+							{
+								true;
+							};
+						};
+						default: {
+							false;
+						}
+					};
+				};
+				if (! isNonAssignable && ! reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.isBlocklikeExpr(old)) {
+					this.topScopeArray[this.index] = {expr : haxe.macro.TypedExprDef.TBinop(haxe.macro.Binop.OpAssign, this.assigneeExpr, old), pos : this.assigneeExpr.pos, t : this.assigneeExpr.t};
+				};
+			};
+			this.index ++;
+		};
+		if (this.topScopeArray.length == 1 && reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.isBlocklikeExpr(this.topScopeArray[0])) {
+			return this.topScopeArray[0];
+		};
+		return {expr : haxe.macro.TypedExprDef.TBlock(this.topScopeArray), pos : this.haxeExpr.pos, t : this.haxeExpr.t};
+	}
+
+	function isLastExpression() {
+		return this.index == (this.topScopeArray.length - 1);
+	}
+
+	function processExpr(expr:haxe.macro.TypedExpr) {
+		if (expr == null) {
+			return null;
+		};
+		var pushed = @:ast(switch (expr.expr) {
+	case TParenthesis(_) | TMeta(_, _):
+		false;	
+	case _:
+		{
+			expressionStack.push(expr);
+			true;
+		};	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					{
+						false;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						false;
+					};
+				};
+				default: {
+					{
+						this.expressionStack.push(expr);
+						true;
+					};
+				}
+			};
+		};
+		var result = @:ast(switch (expr.expr) {
+	case TArray(e1, e2):
+		{
+			TArray(handleValueExpr(e1, "array"), handleValueExpr(e2, "index"));
+		};	
+	case TBinop(op, e1, e2):
+		{
+			var leftExpr = handleValueExpr(e1, "left", op.isAssign());
+			var rightExpr = handleValueExpr(e2, "right");
+			{
+				TBinop(op, leftExpr, rightExpr);
+			};
+		};	
+	case TField(e, field):
+		{
+			TField(handleValueExpr(e), field);
+		};	
+	case TParenthesis(e):
+		{
+			TParenthesis(expr.copy(processExpr(e)));
+		};	
+	case TObjectDecl(fields):
+		{
+			var newFields = [];
+			for (field  in  fields) {
+				newFields.push({ name : field.name, expr : handleValueExpr(field.expr) });
+			};
+			TObjectDecl(newFields);
+		};	
+	case TArrayDecl(el):
+		{
+			TArrayDecl(handleValueExprList(el));
+		};	
+	case TCall(e, el):
+		{
+			var dontSanitize = switch (e.expr) {
+				case TField(_, fa):
+					{
+						switch (fa) {
+							case FInstance(c, _, _) | FStatic(c, _):
+								{
+									c.get().hasMeta(":noReflaxeSanitize");
+								};							
+							case _:
+								false;							
+						};
+					};				
+				case _:
+					false;				
+			};
+			if (dontSanitize) {
+				expr.expr;
+			} else {
+				TCall(handleValueExpr(e), handleValueExprList(el));
+			};
+		};	
+	case TNew(c, params, el):
+		{
+			TNew(c, params, handleValueExprList(el));
+		};	
+	case TUnop(op, postfix, expr):
+		{
+			TUnop(op, postfix, handleValueExpr(expr));
+		};	
+	case TFunction(tfunc):
+		{
+			var newTFunc = Reflect.copy(tfunc).trustMe();
+			newTFunc.expr = handleNonValueBlock(tfunc.expr);
+			TFunction(newTFunc);
+		};	
+	case TVar(tvar, maybeExpr):
+		{
+			if (maybeExpr != null) {
+				variables.set(tvar.id, maybeExpr);
+			};
+			getVariableUsageCount().set(tvar.id, 0);
+			TVar(tvar, maybeExpr != null ? handleValueExpr(maybeExpr) : null);
+		};	
+	case TBlock(exprs):
+		{
+			handleNonValueBlock(expr).expr;
+		};	
+	case TFor(v, e1, e2):
+		{
+			TFor(v, handleValueExpr(e1), handleNonValueBlock(e2));
+		};	
+	case TIf(econd, ifExpr, elseExpr):
+		{
+			TIf(handleValueExpr(econd, "cond"), handleNonValueBlock(ifExpr), elseExpr != null ? handleNonValueBlock(elseExpr) : null);
+		};	
+	case TWhile(econd, expr, normalWhile):
+		{
+			TWhile(handleValueExpr(econd, "cond"), handleNonValueBlock(expr), normalWhile);
+		};	
+	case TSwitch(expr, cases, edef):
+		{
+			var newCases = [];
+			for (c  in  cases) {
+				newCases.push({ values : c.values, expr : handleNonValueBlock(c.expr) });
+			};
+			TSwitch(handleValueExpr(expr), newCases, edef != null ? handleNonValueBlock(edef) : null);
+		};	
+	case TReturn(expr):
+		{
+			TReturn(expr != null ? handleValueExpr(expr, "result") : null);
+		};	
+	case TMeta(m, e):
+		{
+			metaStack.push(m.name);
+			var result = expr.copy(processExpr(e));
+			metaStack.pop();
+			TMeta(m, result);
+		};	
+	case TThrow(e):
+		{
+			TThrow(handleValueExpr(e, "error"));
+		};	
+	case TTry(e, catches):
+		{
+			var newCatches = [];
+			for (c  in  catches) {
+				newCatches.push({ v : c.v, expr : handleNonValueBlock(c.expr) });
+			};
+			TTry(handleNonValueBlock(e), newCatches);
+		};	
+	case TCast(e, m):
+		{
+			TCast(handleValueExpr(e), m);
+		};	
+	case TEnumIndex(e):
+		{
+			TEnumIndex(handleValueExpr(e));
+		};	
+	case TEnumParameter(e, ef, index):
+		{
+			TEnumParameter(handleValueExpr(e), ef, index);
+		};	
+	case TLocal(tvar):
+		{
+			var vuc = getVariableUsageCount();
+			vuc.set(tvar.id, (vuc.get(tvar.id) ?? 0) + 1);
+			null;
+		};	
+	case TBreak | TConst(_) | TContinue | TIdent(_) | TTypeExpr(_):
+		{
+			null;
+		};	
+}) {
+			var ` = expr.expr;
+			switch (@:exhaustive enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					{
+						{
+							null;
+						};
+					};
+				};
+				case 1: {
+					var ` = `[0];
+					{
+						var tvar = `;
+						{
+							{
+								var vuc = this.getVariableUsageCount();
+								{
+									var key = tvar.id;
+									var value = @:mergeBlock {
+										var tmp = {
+											var key = tvar.id;
+											vuc.get(key);
+										};
+										if ((tmp != null)) tmp else 0;
+									} + 1;
+									vuc.set(key, value);
+								};
+								null;
+							};
+						};
+					};
+				};
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TArray(this.handleValueExpr(e1, "array", null), this.handleValueExpr(e2, "index", null));
+							};
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							{
+								var leftExpr = this.handleValueExpr(e1, "left", reflaxe.helpers.OperatorHelper.isAssign(op));
+								var rightExpr = this.handleValueExpr(e2, "right", null);
+								{
+									haxe.macro.TypedExprDef.TBinop(op, leftExpr, rightExpr);
+								};
+							};
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var field = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TField(this.handleValueExpr(e, null, null), field);
+							};
+						};
+					};
+				};
+				case 5: {
+					var ` = `[0];
+					{
+						{
+							null;
+						};
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TParenthesis(reflaxe.helpers.TypedExprHelper.copy(expr, this.processExpr(e)));
+							};
+						};
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						var fields = `;
+						{
+							{
+								var newFields = [];
+								{
+									var ` = 0;
+									while (` < fields.length) {
+										var field = fields[`];
+										++ `;
+										newFields.push({name : field.name, expr : this.handleValueExpr(field.expr, null, null)});
+									};
+								};
+								haxe.macro.TypedExprDef.TObjectDecl(newFields);
+							};
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					{
+						var el = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TArrayDecl(this.handleValueExprList(el));
+							};
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var el = `;
+						{
+							{
+								var dontSanitize = @:ast(switch (e.expr) {
+	case TField(_, fa):
+		{
+			switch (fa) {
+				case FInstance(c, _, _) | FStatic(c, _):
+					{
+						c.get().hasMeta(":noReflaxeSanitize");
+					};				
+				case _:
+					false;				
+			};
+		};	
+	case _:
+		false;	
+}) {
+									var ` = e.expr;
+									if (enumIndex ` == 4) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var fa = `;
+											{
+												{
+													@:ast(switch (fa) {
+	case FInstance(c, _, _) | FStatic(c, _):
+		{
+			c.get().hasMeta(":noReflaxeSanitize");
+		};	
+	case _:
+		false;	
+}) switch (enumIndex fa) {
+														case 0: {
+															var ` = fa[0];
+															var ` = fa[1];
+															var ` = fa[2];
+															{
+																var c = `;
+																{
+																	{
+																		reflaxe.helpers.NameMetaHelper.hasMeta(c.get(), ":noReflaxeSanitize");
+																	};
+																};
+															};
+														};
+														case 1: {
+															var ` = fa[0];
+															var ` = fa[1];
+															{
+																var c = `;
+																{
+																	{
+																		reflaxe.helpers.NameMetaHelper.hasMeta(c.get(), ":noReflaxeSanitize");
+																	};
+																};
+															};
+														};
+														default: {
+															false;
+														}
+													};
+												};
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								if (dontSanitize) {
+									expr.expr;
+								} else {
+									haxe.macro.TypedExprDef.TCall(this.handleValueExpr(e, null, null), this.handleValueExprList(el));
+								};
+							};
+						};
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var c = `;
+						var params = `;
+						var el = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TNew(c, params, this.handleValueExprList(el));
+							};
+						};
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var postfix = `;
+						var expr = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TUnop(op, postfix, this.handleValueExpr(expr, null, null));
+							};
+						};
+					};
+				};
+				case 12: {
+					var ` = `[0];
+					{
+						var tfunc = `;
+						{
+							{
+								var newTFunc = {
+									var maybe = Reflect.copy(tfunc);
+									cast {
+										if (maybe == null) {
+											throw "Trusted on null value.";
+										};
+										@:nullSafety(Off) maybe;
+									};
+								};
+								newTFunc.expr = this.handleNonValueBlock(tfunc.expr);
+								haxe.macro.TypedExprDef.TFunction(newTFunc);
+							};
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var tvar = `;
+						var maybeExpr = `;
+						{
+							{
+								if (maybeExpr != null) {
+									{
+										var this = this.variables;
+										var key = tvar.id;
+										cast this.set(key, maybeExpr);
+									};
+								};
+								{
+									var this = this.getVariableUsageCount();
+									var key = tvar.id;
+									cast this.set(key, 0);
+								};
+								haxe.macro.TypedExprDef.TVar(tvar, if (maybeExpr != null) {
+									this.handleValueExpr(maybeExpr, null, null);
+								} else {
+									null;
+								});
+							};
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								this.handleNonValueBlock(expr).expr;
+							};
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TFor(v, this.handleValueExpr(e1, null, null), this.handleNonValueBlock(e2));
+							};
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var econd = `;
+						var ifExpr = `;
+						var elseExpr = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TIf(this.handleValueExpr(econd, "cond", null), this.handleNonValueBlock(ifExpr), if (elseExpr != null) {
+									this.handleNonValueBlock(elseExpr);
+								} else {
+									null;
+								});
+							};
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var econd = `;
+						var expr = `;
+						var normalWhile = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TWhile(this.handleValueExpr(econd, "cond", null), this.handleNonValueBlock(expr), normalWhile);
+							};
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var expr = `;
+						var cases = `;
+						var edef = `;
+						{
+							{
+								var newCases = [];
+								{
+									var ` = 0;
+									while (` < cases.length) {
+										var c = cases[`];
+										++ `;
+										newCases.push({values : c.values, expr : this.handleNonValueBlock(c.expr)});
+									};
+								};
+								haxe.macro.TypedExprDef.TSwitch(this.handleValueExpr(expr, null, null), newCases, if (edef != null) {
+									this.handleNonValueBlock(edef);
+								} else {
+									null;
+								});
+							};
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var catches = `;
+						{
+							{
+								var newCatches = [];
+								{
+									var ` = 0;
+									while (` < catches.length) {
+										var c = catches[`];
+										++ `;
+										newCatches.push({v : c.v, expr : this.handleNonValueBlock(c.expr)});
+									};
+								};
+								haxe.macro.TypedExprDef.TTry(this.handleNonValueBlock(e), newCatches);
+							};
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var expr = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TReturn(if (expr != null) {
+									this.handleValueExpr(expr, "result", null);
+								} else {
+									null;
+								});
+							};
+						};
+					};
+				};
+				case 21, 22: {
+					{
+						{
+							null;
+						};
+					};
+				};
+				case 23: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TThrow(this.handleValueExpr(e, "error", null));
+							};
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var m = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TCast(this.handleValueExpr(e, null, null), m);
+							};
+						};
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var m = `;
+						var e = `;
+						{
+							{
+								this.metaStack.push(m.name);
+								var result = reflaxe.helpers.TypedExprHelper.copy(expr, this.processExpr(e));
+								this.metaStack.pop();
+								haxe.macro.TypedExprDef.TMeta(m, result);
+							};
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						var ef = `;
+						var index = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TEnumParameter(this.handleValueExpr(e, null, null), ef, index);
+							};
+						};
+					};
+				};
+				case 27: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							{
+								haxe.macro.TypedExprDef.TEnumIndex(this.handleValueExpr(e, null, null));
+							};
+						};
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					{
+						{
+							null;
+						};
+					};
+				};
+			};
+		};
+		if (pushed) {
+			this.expressionStack.pop();
+		};
+		return result;
+	}
+
+	function handleNonValueBlock(e:haxe.macro.TypedExpr) {
+		if (this.options.convertIncrementAndDecrementOperators && this.isUnopExpr(e)) {
+			var newExpr = this.standardizeUnopValue(e, false);
+			if (newExpr != null) {
+				e = newExpr;
+			};
+		};
+		var eiec = new reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer(e, this.options, this, if (this.isLastExpression()) {
+			this.assigneeExpr;
+		} else {
+			null;
+		}, this.nameGenerator);
+		return eiec.convertedExpr();
+	}
+
+	@:value({ isLvalue : false, varNameOverride : null })
+	function handleValueExpr(e:haxe.macro.TypedExpr, varNameOverride:Null<String> = null, isLvalue:Bool = false) {
+		if (e == null) {
+			return {expr : haxe.macro.TypedExprDef.TIdent("null"), pos : reflaxe.helpers.PositionHelper.unknownPos(), t : haxe.macro.Type.TDynamic(null)};
+		};
+		@:ast(switch (e.expr) {
+	case TParenthesis(e):
+		{
+			return { expr : TParenthesis(handleValueExpr(e)), pos : e.pos, t : e.t };
+		};	
+	case _:
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 6) {
+				var ` = `[0];
+				{
+					var e = `;
+					{
+						{
+							return {expr : haxe.macro.TypedExprDef.TParenthesis(this.handleValueExpr(e, null, null)), pos : e.pos, t : e.t};
+						};
+					};
+				};
+			} else {};
+		};
+		if (this.options.convertNullCoalescing && this.isNullCoalExpr(e)) {
+			var newExpr = this.standardizeNullCoalValue(e);
+			if (newExpr != null) {
+				e = newExpr;
+			};
+		};
+		if (this.options.convertIncrementAndDecrementOperators && this.isUnopExpr(e)) {
+			var newExpr = this.standardizeUnopValue(e, true);
+			if (newExpr != null) {
+				e = newExpr;
+			};
+		};
+		if (! isLvalue && this.isFunctionRef(e)) {
+			var newExpr = this.standardizeFunctionValue(e);
+			if (newExpr != null) {
+				e = newExpr;
+			};
+		};
+		if (this.isAssignExpr(e)) {
+			var newExpr = this.standardizeAssignValue(e, this.index, varNameOverride);
+			if (newExpr != null) {
+				this.index += 1;
+				return newExpr;
+			};
+		} else {
+			if (reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.isBlocklikeExpr(e)) {
+				var inlinable = reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.isInlinableBlocklikeExpr(e);
+				if (inlinable != null) {
+					return this.handleValueExpr(inlinable, null, null);
+				};
+				var newExpr = this.standardizeSubscopeValue(e, this.index, varNameOverride);
+				if (newExpr != null) {
+					this.index += 2;
+					return newExpr;
+				};
+			} else {
+				var newExprDef = this.processExpr(e);
+				if (newExprDef != null) {
+					return reflaxe.helpers.TypedExprHelper.copy(e, newExprDef);
+				};
+			};
+		};
+		return reflaxe.helpers.TypedExprHelper.copy(e, null);
+	}
+
+	function handleValueExprList(el:Array<haxe.macro.TypedExpr>) {
+		var newExprs = [];
+		{
+			var ` = 0;
+			while (` < el.length) {
+				var e = el[`];
+				++ `;
+				newExprs.push(this.handleValueExpr(e, null, null));
+			};
+		};
+		return newExprs;
+	}
+
+	function isAssignExpr(e:haxe.macro.TypedExpr) {
+		if (e == null) {
+			return false;
+		};
+		return @:ast(switch (e.expr) {
+	case TBinop(OpAssign | OpAssignOp(_), _, _):
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				switch (enumIndex `) {
+					case 4: {
+						{
+							true;
+						};
+					};
+					case 20: {
+						var ` = `[0];
+						{
+							true;
+						};
+					};
+					default: {
+						false;
+					}
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	@:value({ varNameOverride : null })
+	function standardizeAssignValue(e:haxe.macro.TypedExpr, index:Int, varNameOverride:Null<String> = null) {
+		var eiec = new reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer(e, this.options, this, null, null);
+		this.topScopeArray.insert(index, eiec.convertedExpr());
+		var left = @:ast(switch (e.expr) {
+	case TBinop(OpAssign | OpAssignOp(_), left, _):
+		{
+			left;
+		};	
+	case _:
+		null;	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				switch (enumIndex `) {
+					case 4: {
+						{
+							var left = `;
+							{
+								{
+									left;
+								};
+							};
+						};
+					};
+					case 20: {
+						var ` = `[0];
+						{
+							var left = `;
+							{
+								{
+									left;
+								};
+							};
+						};
+					};
+					default: {
+						null;
+					}
+				};
+			} else {
+				null;
+			};
+		};
+		return if (left != null) {
+			reflaxe.helpers.TypedExprHelper.copy(left, null);
+		} else {
+			null;
+		};
+	}
+
+	@:has_untyped
+	function genTVar(name:String, t:haxe.macro.Type) {
+		var initNull = this.options.setUninitializedVariablesToNull;
+		var ct = haxe.macro.TypeTools.toComplexType(t);
+		if (ct != null && initNull) {
+			ct = cast haxe.macro.ComplexType.TPath({pack : [], name : "Null", params : [haxe.macro.TypeParam.TPType(ct)]});
+		};
+		var untypedExpr = if (initNull) {
+			(cast {expr : haxe.macro.ExprDef.EVars([{name : name, namePos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18145, 18150), type : ct, expr : {expr : haxe.macro.ExprDef.EConst(haxe.macro.Constant.CIdent("null")), pos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18158, 18162)}, isFinal : cast false, isStatic : cast false, meta : []}]), pos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18141, 18144)});
+		} else {
+			(cast {expr : haxe.macro.ExprDef.EVars([{name : name, namePos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18177, 18182), type : ct, expr : null, isFinal : cast false, isStatic : cast false, meta : []}]), pos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18173, 18176)});
+		};
+		var typedExpr = try {
+			reflaxe.helpers.Context.typeExpr(untypedExpr);
+		} catch (`:Dynamic) {
+			{};
+			{};
+			if (true) {
+				null;
+			} else throw `;
+		};
+		var untypedTVar = false;
+		if (typedExpr == null) {
+			typedExpr = reflaxe.helpers.Context.typeExpr(if (initNull) {
+				(cast {expr : haxe.macro.ExprDef.EVars([{name : name, namePos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18684, 18689), type : null, expr : {expr : haxe.macro.ExprDef.EConst(haxe.macro.Constant.CIdent("null")), pos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18692, 18696)}, isFinal : cast false, isStatic : cast false, meta : []}]), pos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18680, 18683)});
+			} else {
+				(cast {expr : haxe.macro.ExprDef.EVars([{name : name, namePos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18711, 18716), type : null, expr : null, isFinal : cast false, isStatic : cast false, meta : []}]), pos : $__mk_pos__("/Users/fullofcaffeine/workspace/code/haxe.elixir/vendor/reflaxe/src/reflaxe/preprocessors/implementations/everything_is_expr/EverythingIsExprSanitizer.hx", 18707, 18710)});
+			});
+			untypedTVar = true;
+		};
+		if (typedExpr == null) {
+			throw "Impossible";
+		};
+		return @:ast(switch (typedExpr.expr) {
+	case TVar(tvar, _):
+		{
+			return if (untypedTVar) {
+				var result:Dynamic = tvar;
+				result.t = t;
+				result;
+			} else {
+				tvar;
+			};
+		};	
+	case _:
+		throw "Impossible. The expressions provided are always TVar.";	
+}) {
+			var ` = typedExpr.expr;
+			if (enumIndex ` == 13) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var tvar = `;
+					{
+						{
+							return if (untypedTVar) {
+								var result = tvar;
+								result.t = t;
+								result;
+							} else {
+								tvar;
+							};
+						};
+					};
+				};
+			} else {
+				throw "Impossible. The expressions provided are always TVar.";
+			};
+		};
+	}
+
+	@:value({ varNameOverride : null })
+	function standardizeSubscopeValue(e:haxe.macro.TypedExpr, index:Int, varNameOverride:Null<String> = null) {
+		var varName = this.nameGenerator.generateName(e.t, varNameOverride);
+		var varAssignExpr = {expr : haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TNull), pos : e.pos, t : e.t};
+		var tvar = this.genTVar(varName, e.t);
+		var tvarExprDef = haxe.macro.TypedExprDef.TLocal(tvar);
+		var idExpr = {expr : tvarExprDef, pos : e.pos, t : e.t};
+		var eiec = new reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer(e, this.options, this, idExpr, this.nameGenerator);
+		var initNull = this.options.setUninitializedVariablesToNull;
+		var t = if (initNull && ! reflaxe.helpers.TypeHelper.isNull(e.t)) {
+			if (reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.standardizeSubscopeValue_absRef == null) {
+				reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.standardizeSubscopeValue_absRef = @:ast(switch (Context.getType("Null")) {
+	case TAbstract(absRef, _):
+		absRef;	
+	case _:
+		throw "`Null` does not refer to an abstract type.";	
+}) {
+					var ` = reflaxe.helpers.Context.getType("Null");
+					if (enumIndex ` == 8) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var absRef = `;
+							{
+								absRef;
+							};
+						};
+					} else {
+						throw "`Null` does not refer to an abstract type.";
+					};
+				};
+			};
+			haxe.macro.Type.TAbstract(reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.standardizeSubscopeValue_absRef, [e.t]);
+		} else {
+			e.t;
+		};
+		var varExpr = {expr : haxe.macro.TypedExprDef.TVar(tvar, if (! initNull) {
+			null;
+		} else {
+			varAssignExpr;
+		}), pos : e.pos, t : t};
+		this.topScopeArray.insert(index, varExpr);
+		this.topScopeArray.insert(index + 1, eiec.convertedExpr());
+		return reflaxe.helpers.TypedExprHelper.copy(e, tvarExprDef);
+	}
+
+	function isNullCoalExpr(e:haxe.macro.TypedExpr) {
+		return @:ast(switch (e.expr) {
+	case TBinop(OpNullCoal, _, _):
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 24) {
+					{
+						true;
+					};
+				} else {
+					false;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	function standardizeNullCoalValue(e:haxe.macro.TypedExpr) {
+		return @:ast(switch (e.expr) {
+	case TBinop(OpNullCoal, e1, e2):
+		{
+			var pos = PositionHelper.unknownPos();
+			var t = TDynamic(null);
+			var newName = nameGenerator.generateName(e.t, "maybeNull");
+			var newNameExpr = { expr : TIdent(newName), t : t, pos : pos };
+			var nullExpr = { expr : TConst(TNull), t : t, pos : pos };
+			{ expr : TBlock([{ expr : TVar(genTVar(newName, e1.t), null), pos : e1.pos, t : t }, { expr : TIf({ expr : TBinop(OpNotEq, newNameExpr, nullExpr), t : t, pos : pos }, newNameExpr, e2), t : e1.t, pos : pos }]), t : e1.t, pos : e.pos };
+		};	
+	case _:
+		null;	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 24) {
+					{
+						var e1 = `;
+						var e2 = `;
+						{
+							{
+								var pos = reflaxe.helpers.PositionHelper.unknownPos();
+								var t = haxe.macro.Type.TDynamic(null);
+								var newName = this.nameGenerator.generateName(e.t, "maybeNull");
+								var newNameExpr = {expr : haxe.macro.TypedExprDef.TIdent(newName), t : t, pos : pos};
+								var nullExpr = {expr : haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TNull), t : t, pos : pos};
+								{expr : haxe.macro.TypedExprDef.TBlock([{expr : haxe.macro.TypedExprDef.TVar(this.genTVar(newName, e1.t), null), pos : e1.pos, t : t}, {expr : haxe.macro.TypedExprDef.TIf({expr : haxe.macro.TypedExprDef.TBinop(haxe.macro.Binop.OpNotEq, newNameExpr, nullExpr), t : t, pos : pos}, newNameExpr, e2), t : e1.t, pos : pos}]), t : e1.t, pos : e.pos};
+							};
+						};
+					};
+				} else {
+					null;
+				};
+			} else {
+				null;
+			};
+		};
+	}
+
+	function isUnopExpr(e:haxe.macro.TypedExpr) {
+		return @:ast(switch (e.expr) {
+	case TUnop(OpIncrement | OpDecrement, _, _):
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 11) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				switch (enumIndex `) {
+					case 0, 1: {
+						{
+							true;
+						};
+					};
+					default: {
+						false;
+					}
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	function standardizeUnopValue(e:haxe.macro.TypedExpr, expectValue:Bool) {
+		var opInfo = @:ast(switch (e.expr) {
+	case TUnop(op, postfix, internalExpr):
+		{ op : op, postfix : postfix, e : internalExpr };	
+	case _:
+		null;	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 11) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var op = `;
+					var postfix = `;
+					var internalExpr = `;
+					{
+						{op : op, postfix : postfix, e : internalExpr};
+					};
+				};
+			} else {
+				null;
+			};
+		};
+		if (opInfo == null) {
+			return null;
+		};
+		var pos = reflaxe.helpers.PositionHelper.unknownPos();
+		var t = e.t;
+		var getAddSubOp = function(isAdd:Bool) return if (isAdd) {
+			haxe.macro.Binop.OpAdd;
+		} else {
+			haxe.macro.Binop.OpSub;
+		};
+		var oneExpr = {expr : haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TInt(1)), pos : pos, t : t};
+		var isInc = opInfo.op == haxe.macro.Unop.OpIncrement;
+		var opExpr = {expr : haxe.macro.TypedExprDef.TBinop(haxe.macro.Binop.OpAssignOp(getAddSubOp(isInc)), opInfo.e, oneExpr), pos : pos, t : t};
+		return if (expectValue) {
+			var secondExpr = if (opInfo.postfix) {
+				{expr : haxe.macro.TypedExprDef.TBinop(getAddSubOp(! isInc), opInfo.e, oneExpr), pos : pos, t : t};
+			} else {
+				opInfo.e;
+			};
+			{expr : haxe.macro.TypedExprDef.TBlock([opExpr, secondExpr]), pos : pos, t : t};
+		} else {
+			opExpr;
+		};
+	}
+
+	function isFunctionRef(e:Null<haxe.macro.TypedExpr>) {
+		var option = this.options.wrapFunctionReferencesWithLambda;
+		if (option == reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType.Never) {
+			return false;
+		};
+		var lastExpr = this.expressionStack[this.expressionStack.length - 1];
+		if (lastExpr != null) {
+			@:ast(switch (lastExpr.expr) {
+	case TCall(_, _):
+		return false;	
+	case _:
+}) {
+				var ` = lastExpr.expr;
+				if (enumIndex ` == 9) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						return false;
+					};
+				} else {};
+			};
+		};
+		if (this.metaStack.contains(":wrappedInLambda")) {
+			return false;
+		};
+		if (e == null) {
+			return false;
+		};
+		var fieldAccess = null;
+		@:ast(switch (e.t) {
+	case TFun(_, _):
+		{
+			switch (e.expr) {
+				case TField(_, fa):
+					{
+						fieldAccess = fa;
+					};				
+				case _:
+			};
+		};	
+	case _:
+}) {
+			var ` = e.t;
+			if (enumIndex ` == 4) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					{
+						@:ast(switch (e.expr) {
+	case TField(_, fa):
+		{
+			fieldAccess = fa;
+		};	
+	case _:
+}) {
+							var ` = e.expr;
+							if (enumIndex ` == 4) {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var fa = `;
+									{
+										{
+											fieldAccess = fa;
+										};
+									};
+								};
+							} else {};
+						};
+					};
+				};
+			} else {};
+		};
+		if (fieldAccess != null) {
+			if (option == reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType.Yes) {
+				return true;
+			};
+			var clsExtern = false;
+			@:ast(switch (fieldAccess) {
+	case FInstance(clsTypeRef, _, cfRef) | FStatic(clsTypeRef, cfRef):
+		clsExtern = clsTypeRef.get().isExtern;	
+	case _:
+}) if (fieldAccess == null) {} else switch (enumIndex fieldAccess) {
+				case 0: {
+					var ` = fieldAccess[0];
+					var ` = fieldAccess[1];
+					var ` = fieldAccess[2];
+					{
+						var clsTypeRef = `;
+						var cfRef = `;
+						{
+							clsExtern = clsTypeRef.get().isExtern;
+						};
+					};
+				};
+				case 1: {
+					var ` = fieldAccess[0];
+					var ` = fieldAccess[1];
+					{
+						var clsTypeRef = `;
+						var cfRef = `;
+						{
+							clsExtern = clsTypeRef.get().isExtern;
+						};
+					};
+				};
+				default: {}
+			};
+			@:ast(switch (fieldAccess) {
+	case FInstance(_, _, cfRef) | FStatic(_, cfRef) | FAnon(cfRef) | FClosure(_, cfRef):
+		{
+			var cf = cfRef.get();
+			if (option == ExternOnly && (clsExtern || cf.isExtern)) {
+				return true;
+			};
+			var m = cf.meta;
+			for (metaName  in  options.wrapFunctionMetadata) {
+				if (m.maybeHas(metaName)) {
+					return true;
+				};
+			};
+		};	
+	case _:
+}) if (fieldAccess == null) {} else switch (enumIndex fieldAccess) {
+				case 0: {
+					var ` = fieldAccess[0];
+					var ` = fieldAccess[1];
+					var ` = fieldAccess[2];
+					{
+						var cfRef = `;
+						{
+							{
+								var cf = cfRef.get();
+								if (option == reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType.ExternOnly && (clsExtern || cf.isExtern)) {
+									return true;
+								};
+								var m = cf.meta;
+								{
+									var ` = 0;
+									var ` = this.options.wrapFunctionMetadata;
+									while (` < `.length) {
+										var metaName = `[`];
+										++ `;
+										if (reflaxe.helpers.NullableMetaAccessHelper.maybeHas(m, metaName)) {
+											return true;
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+				case 1: {
+					var ` = fieldAccess[0];
+					var ` = fieldAccess[1];
+					{
+						var cfRef = `;
+						{
+							{
+								var cf = cfRef.get();
+								if (option == reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType.ExternOnly && (clsExtern || cf.isExtern)) {
+									return true;
+								};
+								var m = cf.meta;
+								{
+									var ` = 0;
+									var ` = this.options.wrapFunctionMetadata;
+									while (` < `.length) {
+										var metaName = `[`];
+										++ `;
+										if (reflaxe.helpers.NullableMetaAccessHelper.maybeHas(m, metaName)) {
+											return true;
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+				case 2: {
+					var ` = fieldAccess[0];
+					{
+						var cfRef = `;
+						{
+							{
+								var cf = cfRef.get();
+								if (option == reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType.ExternOnly && (clsExtern || cf.isExtern)) {
+									return true;
+								};
+								var m = cf.meta;
+								{
+									var ` = 0;
+									var ` = this.options.wrapFunctionMetadata;
+									while (` < `.length) {
+										var metaName = `[`];
+										++ `;
+										if (reflaxe.helpers.NullableMetaAccessHelper.maybeHas(m, metaName)) {
+											return true;
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+				case 4: {
+					var ` = fieldAccess[0];
+					var ` = fieldAccess[1];
+					{
+						var cfRef = `;
+						{
+							{
+								var cf = cfRef.get();
+								if (option == reflaxe.preprocessors.implementations.everything_is_expr.LambdaWrapType.ExternOnly && (clsExtern || cf.isExtern)) {
+									return true;
+								};
+								var m = cf.meta;
+								{
+									var ` = 0;
+									var ` = this.options.wrapFunctionMetadata;
+									while (` < `.length) {
+										var metaName = `[`];
+										++ `;
+										if (reflaxe.helpers.NullableMetaAccessHelper.maybeHas(m, metaName)) {
+											return true;
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		return false;
+	}
+
+	function standardizeFunctionValue(e:haxe.macro.TypedExpr) {
+		var pos = reflaxe.helpers.PositionHelper.unknownPos();
+		var args = [];
+		var createArgs = [];
+		var retType = null;
+		@:ast(switch (e.t) {
+	case TFun(tfunArgs, tfunRet):
+		{
+			for (a  in  tfunArgs) {
+				args.push({ expr : TIdent(a.name), pos : pos, t : a.t });
+				createArgs.push(genTVar(a.name, a.t));
+				retType = tfunRet;
+			};
+		};	
+	case _:
+		false;	
+}) {
+			var ` = e.t;
+			if (enumIndex ` == 4) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var tfunArgs = `;
+					var tfunRet = `;
+					{
+						{
+							{
+								var ` = 0;
+								while (` < tfunArgs.length) {
+									var a = tfunArgs[`];
+									++ `;
+									args.push({expr : haxe.macro.TypedExprDef.TIdent(a.name), pos : pos, t : a.t});
+									createArgs.push(this.genTVar(a.name, a.t));
+									retType = tfunRet;
+								};
+							};
+						};
+					};
+				};
+			} else {
+				false;
+			};
+		};
+		var voidType = reflaxe.helpers.Context.getType("Void");
+		if (voidType == null) {
+			throw "Could not find void";
+		};
+		retType = cast if (retType != null) {
+			retType;
+		} else {
+			voidType;
+		};
+		var funcExpr = {expr : haxe.macro.TypedExprDef.TReturn({expr : haxe.macro.TypedExprDef.TCall({expr : haxe.macro.TypedExprDef.TMeta({name : ":wrappedInLambda", pos : pos}, e), pos : pos, t : cast cast {
+			if (retType == null) {
+				throw "Trusted on null value.";
+			};
+			@:nullSafety(Off) retType;
+		}}, args), pos : pos, t : voidType}), pos : pos, t : e.t};
+		var result = {expr : haxe.macro.TypedExprDef.TBlock([{expr : haxe.macro.TypedExprDef.TFunction({t : cast cast {
+			if (retType == null) {
+				throw "Trusted on null value.";
+			};
+			@:nullSafety(Off) retType;
+		}, expr : funcExpr, args : {
+			var ` = [];
+			{
+				var ` = 0;
+				var ` = createArgs;
+				while (` < `.length) {
+					var v = `[`];
+					++ `;
+					`.push(function(a:haxe.macro.TVar) {
+						return {value : null, v : a};
+					}(v));
+				};
+			};
+			`;
+		}}), pos : e.pos, t : e.t}]), pos : pos, t : e.t};
+		var eiec = new reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer(result, this.options, this, null, this.nameGenerator);
+		return this.unwrapBlock(eiec.convertedExpr());
+	}
+
+	function unwrapBlock(e:haxe.macro.TypedExpr) {
+		return @:ast(switch (e.expr) {
+	case TBlock(el) if (el.length == 1):
+		el[0];	
+	case _:
+		e;	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var el = `;
+					if (el.length == 1) {
+						el[0];
+					} else {
+						e;
+					};
+				};
+			} else {
+				e;
+			};
+		};
+	}
+
+	function fixWhile(e:haxe.macro.TypedExpr) {
+		@:ast(switch (e.expr) {
+	case TWhile(econd, e, normalWhile):
+		{
+			if (isDisallowedInWhile(econd)) {
+				var newCond = makeTExpr(TConst(TBool(true)), econd.pos, econd.t);
+				var ifExpr = makeTExpr(TIf(makeTExpr(TUnop(OpNot, false, econd)), makeTExpr(TBreak), null));
+				var newBlockExpr = makeTExpr(TBlock(normalWhile ? [ifExpr, e] : [e, ifExpr]));
+				return { expr : TWhile(newCond, newBlockExpr, normalWhile), pos : e.pos, t : e.t };
+			};
+		};	
+	case _:
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 17) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var econd = `;
+					var e = `;
+					var normalWhile = `;
+					{
+						{
+							if (this.isDisallowedInWhile(econd)) {
+								var newCond = this.makeTExpr(haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TBool(true)), econd.pos, econd.t);
+								var ifExpr = this.makeTExpr(haxe.macro.TypedExprDef.TIf(this.makeTExpr(haxe.macro.TypedExprDef.TUnop(haxe.macro.Unop.OpNot, false, econd), null, null), this.makeTExpr(haxe.macro.TypedExprDef.TBreak, null, null), null), null, null);
+								var newBlockExpr = this.makeTExpr(haxe.macro.TypedExprDef.TBlock(if (normalWhile) {
+									[ifExpr, e];
+								} else {
+									[e, ifExpr];
+								}), null, null);
+								return {expr : haxe.macro.TypedExprDef.TWhile(newCond, newBlockExpr, normalWhile), pos : e.pos, t : e.t};
+							};
+						};
+					};
+				};
+			} else {};
+		};
+		return haxe.macro.TypedExprTools.map(e, this.fixWhile);
+	}
+
+	function isDisallowedInWhile(e:haxe.macro.TypedExpr) {
+		var `this = this;
+		return @:ast(switch (e.expr) {
+	case TBlock(_):
+		true;	
+	case TIf(_, _, _):
+		true;	
+	case TSwitch(_, _, _):
+		true;	
+	case TTry(_, _):
+		true;	
+	case TBinop(OpAssign, _, _):
+		true;	
+	case TBinop(OpAssignOp(_), _, _):
+		true;	
+	case TUnop(OpIncrement | OpDecrement, _, _):
+		true;	
+	case TParenthesis(e1) | TMeta(_, e1):
+		isDisallowedInWhile(e1);	
+	case _:
+		{
+			var result = false;
+			haxe.macro.TypedExprTools.iter(e, function(e) {
+				if (isDisallowedInWhile(e)) {
+					result = true;
+				};
+			});
+			result;
+		};	
+}) {
+			var ` = e.expr;
+			switch (enumIndex `) {
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					switch (enumIndex `) {
+						case 4: {
+							{
+								true;
+							};
+						};
+						case 20: {
+							var ` = `[0];
+							{
+								true;
+							};
+						};
+						default: {
+							{
+								var result = [false];
+								haxe.macro.TypedExprTools.iter(e, function(e:haxe.macro.TypedExpr) {
+									if (`this.isDisallowedInWhile(e)) {
+										result[0] = true;
+									};
+								});
+								result[0];
+							};
+						}
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							this.isDisallowedInWhile(e1);
+						};
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					switch (enumIndex `) {
+						case 0, 1: {
+							{
+								true;
+							};
+						};
+						default: {
+							{
+								var result = [false];
+								haxe.macro.TypedExprTools.iter(e, function(e:haxe.macro.TypedExpr) {
+									if (`this.isDisallowedInWhile(e)) {
+										result[0] = true;
+									};
+								});
+								result[0];
+							};
+						}
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						{
+							this.isDisallowedInWhile(e1);
+						};
+					};
+				};
+				default: {
+					{
+						var result = [false];
+						haxe.macro.TypedExprTools.iter(e, function(e:haxe.macro.TypedExpr) {
+							if (`this.isDisallowedInWhile(e)) {
+								result[0] = true;
+							};
+						});
+						result[0];
+					};
+				}
+			};
+		};
+	}
+
+	@:value({ t : null, pos : null })
+	function makeTExpr(def:haxe.macro.TypedExprDef, pos:Null<haxe.macro.Position> = null, t:Null<haxe.macro.Type> = null) {
+		return {expr : def, pos : {
+			var defaultVal = reflaxe.helpers.PositionHelper.unknownPos();
+			if (pos != null) {
+				pos;
+			} else {
+				defaultVal;
+			};
+		}, t : cast if (t != null) {
+			t;
+		} else {
+			haxe.macro.Type.TDynamic(null);
+		}};
+	}
+
+	@:noCompletion
+	public static var standardizeSubscopeValue_absRef:Null<haxe.macro.Ref<haxe.macro.AbstractType>> = null;
+
+	public static function isBlocklikeExpr(e:haxe.macro.TypedExpr) {
+		if (e == null) {
+			return false;
+		};
+		return @:ast(switch (e.expr) {
+	case TBlock(_):
+		true;	
+	case TIf(_, _, _):
+		true;	
+	case TSwitch(_, _, _):
+		true;	
+	case TTry(_, _):
+		true;	
+	case TParenthesis(e1) | TMeta(_, e1):
+		isBlocklikeExpr(e1);	
+	case _:
+		false;	
+}) {
+			var ` = e.expr;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.isBlocklikeExpr(e1);
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e1 = `;
+						{
+							reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.isBlocklikeExpr(e1);
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	public static function isInlinableBlocklikeExpr(e:haxe.macro.TypedExpr) {
+		if (e == null) {
+			return null;
+		};
+		return @:ast(switch (e.expr) {
+	case TBlock(expressions) if (expressions.length == 1):
+		expressions[0];	
+	case TParenthesis(e1):
+		{
+			var inner = isInlinableBlocklikeExpr(e1);
+			inner != null ? e.copy(TParenthesis(inner)) : null;
+		};	
+	case TMeta(m, e1):
+		{
+			var inner = isInlinableBlocklikeExpr(e1);
+			inner != null ? e.copy(TMeta(m, inner)) : null;
+		};	
+	case _:
+		null;	
+}) {
+			var ` = e.expr;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					{
+						var e1 = `;
+						{
+							{
+								var inner = reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.isInlinableBlocklikeExpr(e1);
+								if (inner != null) {
+									reflaxe.helpers.TypedExprHelper.copy(e, haxe.macro.TypedExprDef.TParenthesis(inner));
+								} else {
+									null;
+								};
+							};
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var expressions = `;
+						if (expressions.length == 1) {
+							expressions[0];
+						} else {
+							null;
+						};
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var m = `;
+						var e1 = `;
+						{
+							{
+								var inner = reflaxe.preprocessors.implementations.everything_is_expr.EverythingIsExprSanitizer.isInlinableBlocklikeExpr(e1);
+								if (inner != null) {
+									reflaxe.helpers.TypedExprHelper.copy(e, haxe.macro.TypedExprDef.TMeta(m, inner));
+								} else {
+									null;
+								};
+							};
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+}

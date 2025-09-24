@@ -1,0 +1,1 @@
+abstract sys.thread.Thread from sys.thread._Thread.ThreadImpl {}

@@ -1,0 +1,125 @@
+@:used
+class Math {
+
+	@:value(3.141592653589793)
+	public static inline var PI:Float = 3.141592653589793;
+
+	@:value(1.0 / 0.0 * -1.0)
+	public static inline var NEGATIVE_INFINITY:Float = 1.0 / 0.0 * -1.0;
+
+	@:value(1.0 / 0.0)
+	public static inline var POSITIVE_INFINITY:Float = 1.0 / 0.0;
+
+	@:value(0.0 / 0.0)
+	public static inline var NaN:Float = 0.0 / 0.0;
+
+	public static inline function abs(v:Float) {
+		return if ((v < 0)) - v else v;
+	}
+
+	@:has_untyped
+	public static inline function ceil(v:Float) {
+		return __elixir__("ceil({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function floor(v:Float) {
+		return __elixir__("floor({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function round(v:Float) {
+		return __elixir__("round({0})", v);
+	}
+
+	public static inline function min(a:Float, b:Float) {
+		return if ((a < b)) a else b;
+	}
+
+	public static inline function max(a:Float, b:Float) {
+		return if ((a > b)) a else b;
+	}
+
+	@:has_untyped
+	public static inline function cos(v:Float) {
+		return __elixir__(":math.cos({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function sin(v:Float) {
+		return __elixir__(":math.sin({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function tan(v:Float) {
+		return __elixir__(":math.tan({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function acos(v:Float) {
+		return __elixir__(":math.acos({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function asin(v:Float) {
+		return __elixir__(":math.asin({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function atan(v:Float) {
+		return __elixir__(":math.atan({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function atan2(y:Float, x:Float) {
+		return __elixir__(":math.atan2({0}, {1})", y, x);
+	}
+
+	@:has_untyped
+	public static inline function exp(v:Float) {
+		return __elixir__(":math.exp({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function log(v:Float) {
+		return __elixir__(":math.log({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function pow(base:Float, exp:Float) {
+		return __elixir__(":math.pow({0}, {1})", base, exp);
+	}
+
+	@:has_untyped
+	public static inline function sqrt(v:Float) {
+		return __elixir__(":math.sqrt({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function random() {
+		return __elixir__(":rand.uniform()");
+	}
+
+	public static inline function isFinite(v:Float) {
+		return v == v && v != 1.0 / 0.0 && v != 1.0 / 0.0 * -1.0;
+	}
+
+	public static inline function isNaN(v:Float) {
+		return v != v;
+	}
+
+	@:has_untyped
+	public static inline function ffloor(v:Float) {
+		return __elixir__(":math.floor({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function fceil(v:Float) {
+		return __elixir__(":math.ceil({0})", v);
+	}
+
+	@:has_untyped
+	public static inline function fround(v:Float) {
+		return __elixir__("Float.round({0})", v);
+	}
+}

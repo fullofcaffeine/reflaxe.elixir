@@ -4,3 +4,4 @@
 -lib reflaxe.elixir
 --no-output
 -main Main
+-D elixir_output=out

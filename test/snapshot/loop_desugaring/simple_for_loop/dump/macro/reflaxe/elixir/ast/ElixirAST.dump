@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.ElixirAST = { ?pos : Null<haxe.macro.Position>, metadata : reflaxe.elixir.ast.ElixirMetadata, def : reflaxe.elixir.ast.ElixirASTDef }

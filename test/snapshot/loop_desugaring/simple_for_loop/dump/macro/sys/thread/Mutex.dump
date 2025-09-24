@@ -1,0 +1,10 @@
+extern class sys.thread.Mutex {
+
+	function new():Void;
+
+	function acquire():Void;
+
+	function tryAcquire():Bool;
+
+	function release():Void;
+}

@@ -1,0 +1,32 @@
+private class eval.luv._Handle.Handle_Impl_ {
+
+	@:noExpr
+	public static function close
+
+	@:noExpr
+	public static function isActive
+
+	@:noExpr
+	public static function isClosing
+
+	@:noExpr
+	public static function ref
+
+	@:noExpr
+	public static function unref
+
+	@:noExpr
+	public static function hasRef
+
+	@:noExpr
+	public static function sendBufferSize
+
+	@:noExpr
+	public static function setSendBufferSize
+
+	@:noExpr
+	public static function recvBufferSize
+
+	@:noExpr
+	public static function setRecvBufferSize
+}

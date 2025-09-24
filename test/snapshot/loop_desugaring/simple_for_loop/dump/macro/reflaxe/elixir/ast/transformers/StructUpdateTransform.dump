@@ -1,0 +1,674 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.transformers.StructUpdateTransform {
+
+	public static function structUpdateTransformPass(ast:reflaxe.elixir.ast.ElixirAST) {
+		return reflaxe.elixir.ast.transformers.StructUpdateTransform.transformStructUpdates(ast);
+	}
+
+	static function transformStructUpdates(node:reflaxe.elixir.ast.ElixirAST) {
+		var transformedNode = reflaxe.elixir.ast.ElixirASTTransformer.transformAST(node, reflaxe.elixir.ast.transformers.StructUpdateTransform.transformStructUpdates);
+		if (transformedNode == null) {
+			return null;
+		};
+		@:ast(switch (transformedNode.def) {
+	case EDef(name, args, guards, body):
+		var transformedBody = transformFunctionBody(body, name);
+		if (transformedBody != body) {
+			return makeAST(EDef(name, args, guards, transformedBody));
+		};	
+	case EDefp(name, args, guards, body):
+		var transformedBody = transformFunctionBody(body, name);
+		if (transformedBody != body) {
+			return makeAST(EDefp(name, args, guards, transformedBody));
+		};	
+	default:
+}) {
+			var ` = transformedNode.def;
+			switch (enumIndex `) {
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						{
+							var transformedBody = reflaxe.elixir.ast.transformers.StructUpdateTransform.transformFunctionBody(body, name);
+							if (transformedBody != body) {
+								return {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDef(name, args, guards, transformedBody), metadata : {}, pos : pos};
+								};
+							};
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					var ` = `[3];
+					{
+						var name = `;
+						var args = `;
+						var guards = `;
+						var body = `;
+						{
+							var transformedBody = reflaxe.elixir.ast.transformers.StructUpdateTransform.transformFunctionBody(body, name);
+							if (transformedBody != body) {
+								return {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EDefp(name, args, guards, transformedBody), metadata : {}, pos : pos};
+								};
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		return transformedNode;
+	}
+
+	static function transformFunctionBody(body:reflaxe.elixir.ast.ElixirAST, functionName:String) {
+		if (body == null) {
+			return null;
+		};
+		if (functionName == "set") {
+			return reflaxe.elixir.ast.transformers.StructUpdateTransform.transformSetMethod(body);
+		};
+		if (reflaxe.elixir.ast.transformers.StructUpdateTransform.isFluentAPIMethod(functionName)) {
+			return reflaxe.elixir.ast.transformers.StructUpdateTransform.transformFluentMethod(body);
+		};
+		@:ast(switch (body.def) {
+	case EBlock(exprs):
+		var filteredExprs = [];
+		for (expr  in  exprs) {
+			if (!isProblematicFieldAssignment(expr, functionName)) {
+				filteredExprs.push(transformFunctionBody(expr, functionName));
+			} else { };
+		};
+		return makeAST(EBlock(filteredExprs));	
+	default:
+		return ElixirASTTransformer.transformAST(body, function(node) ->  @:implicitReturn return transformFunctionBody(node, functionName));	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					{
+						var filteredExprs = [];
+						{
+							var ` = 0;
+							while (` < exprs.length) {
+								var expr = exprs[`];
+								++ `;
+								if (! reflaxe.elixir.ast.transformers.StructUpdateTransform.isProblematicFieldAssignment(expr, functionName)) {
+									filteredExprs.push(reflaxe.elixir.ast.transformers.StructUpdateTransform.transformFunctionBody(expr, functionName));
+								} else {};
+							};
+						};
+						return {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(filteredExprs), metadata : {}, pos : pos};
+						};
+					};
+				};
+			} else {
+				return reflaxe.elixir.ast.ElixirASTTransformer.transformAST(body, function(node:reflaxe.elixir.ast.ElixirAST) return reflaxe.elixir.ast.transformers.StructUpdateTransform.transformFunctionBody(node, functionName));
+			};
+		};
+	}
+
+	static function isFluentAPIMethod(name:String) {
+		return StringTools.startsWith(name, "add_") || StringTools.startsWith(name, "set_") || StringTools.startsWith(name, "with_") || name == "push" || name == "append";
+	}
+
+	static function transformFluentMethod(body:reflaxe.elixir.ast.ElixirAST) {
+		if (body == null) {
+			return null;
+		};
+		@:ast(switch (body.def) {
+	case EBlock(exprs):
+		if (exprs.length == 2) {
+			var mutation = detectAndExtractFieldMutation(exprs[0]);
+			if (mutation != null && isReturnStruct(exprs[1])) {
+				return makeAST(EStructUpdate(makeAST(EVar("struct")), [mutation]));
+			};
+		};
+		var transformedExprs = [];
+		var hasTransformations = false;
+		for (i  in  0 ... exprs.length) {
+			var expr = exprs[i];
+			var transformed = transformStructMethodCall(expr);
+			if (transformed != null) {
+				transformedExprs.push(transformed);
+				hasTransformations = true;
+			} else if (isIgnoredFieldMutation(expr)) {
+				var update = extractFieldUpdate(expr);
+				if (update != null) {
+					transformedExprs.push(makeAST(EStructUpdate(makeAST(EVar("struct")), [update])));
+					hasTransformations = true;
+				};
+			} else {
+				transformedExprs.push(expr);
+			};
+		};
+		return hasTransformations ? makeAST(EBlock(transformedExprs)) : body;	
+	default:
+		return body;	
+}) {
+			var ` = body.def;
+			if (enumIndex ` == 53) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					{
+						if (exprs.length == 2) {
+							var mutation = reflaxe.elixir.ast.transformers.StructUpdateTransform.detectAndExtractFieldMutation(exprs[0]);
+							if (mutation != null && reflaxe.elixir.ast.transformers.StructUpdateTransform.isReturnStruct(exprs[1])) {
+								return {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EStructUpdate({
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EVar("struct"), metadata : {}, pos : pos};
+									}, [mutation]), metadata : {}, pos : pos};
+								};
+							};
+						};
+						var transformedExprs = [];
+						var hasTransformations = false;
+						{
+							var ` = 0;
+							var ` = exprs.length;
+							while (` < `) {
+								var i = ` ++;
+								var expr = exprs[i];
+								var transformed = reflaxe.elixir.ast.transformers.StructUpdateTransform.transformStructMethodCall(expr);
+								if (transformed != null) {
+									transformedExprs.push(transformed);
+									hasTransformations = true;
+								} else {
+									if (reflaxe.elixir.ast.transformers.StructUpdateTransform.isIgnoredFieldMutation(expr)) {
+										var update = reflaxe.elixir.ast.transformers.StructUpdateTransform.extractFieldUpdate(expr);
+										if (update != null) {
+											transformedExprs.push({
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EStructUpdate({
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar("struct"), metadata : {}, pos : pos};
+												}, [update]), metadata : {}, pos : pos};
+											});
+											hasTransformations = true;
+										};
+									} else {
+										transformedExprs.push(expr);
+									};
+								};
+							};
+						};
+						return if (hasTransformations) {
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(transformedExprs), metadata : {}, pos : pos};
+							};
+						} else {
+							body;
+						};
+					};
+				};
+			} else {
+				return body;
+			};
+		};
+	}
+
+	static function transformStructMethodCall(expr:reflaxe.elixir.ast.ElixirAST) {
+		if (expr == null) {
+			return null;
+		};
+		@:ast(switch (expr.def) {
+	case ECall(target, method, args):
+		if (target != null && target.def != null) {
+			switch (target.def) {
+				case EVar("struct"):
+					return makeAST(EMatch(PVar("struct"), makeAST(ECall(target, method, args))));				
+				default:
+			};
+		};	
+	default:
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 22) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var target = `;
+					var method = `;
+					var args = `;
+					{
+						if (target != null && target.def != null) {
+							@:ast(switch (target.def) {
+	case EVar("struct"):
+		return makeAST(EMatch(PVar("struct"), makeAST(ECall(target, method, args))));	
+	default:
+}) {
+								var ` = target.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									if (` == "struct") {
+										{
+											return {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar("struct"), {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.ECall(target, method, args), metadata : {}, pos : pos};
+												}), metadata : {}, pos : pos};
+											};
+										};
+									} else {};
+								} else {};
+							};
+						};
+					};
+				};
+			} else {};
+		};
+		return null;
+	}
+
+	static function detectAndExtractFieldMutation(expr:reflaxe.elixir.ast.ElixirAST) {
+		if (expr == null) {
+			return null;
+		};
+		@:ast(switch (expr.def) {
+	case EBinary(Concat, left, right):
+		switch (left.def) {
+			case EField(obj, field):
+				switch (obj.def) {
+					case EVar("struct"):
+						return { key : field, value : makeAST(EBinary(Concat, left, right)) };					
+					default:
+				};			
+			default:
+		};	
+	case EField(obj, field):
+		switch (obj.def) {
+			case EVar("struct"):
+				return null;			
+			default:
+		};	
+	default:
+}) {
+			var ` = expr.def;
+			switch (enumIndex `) {
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 23) {
+						{
+							var left = `;
+							var right = `;
+							{
+								@:ast(switch (left.def) {
+	case EField(obj, field):
+		switch (obj.def) {
+			case EVar("struct"):
+				return { key : field, value : makeAST(EBinary(Concat, left, right)) };			
+			default:
+		};	
+	default:
+}) {
+									var ` = left.def;
+									if (enumIndex ` == 28) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var obj = `;
+											var field = `;
+											{
+												@:ast(switch (obj.def) {
+	case EVar("struct"):
+		return { key : field, value : makeAST(EBinary(Concat, left, right)) };	
+	default:
+}) {
+													var ` = obj.def;
+													if (enumIndex ` == 38) {
+														var ` = `[0];
+														if (` == "struct") {
+															{
+																return {key : field, value : {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Concat, left, right), metadata : {}, pos : pos};
+																}};
+															};
+														} else {};
+													} else {};
+												};
+											};
+										};
+									} else {};
+								};
+							};
+						};
+					} else {};
+				};
+				case 28: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var obj = `;
+						var field = `;
+						{
+							@:ast(switch (obj.def) {
+	case EVar("struct"):
+		return null;	
+	default:
+}) {
+								var ` = obj.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									if (` == "struct") {
+										{
+											return null;
+										};
+									} else {};
+								} else {};
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		return null;
+	}
+
+	static function isIgnoredFieldMutation(expr:reflaxe.elixir.ast.ElixirAST) {
+		if (expr == null) {
+			return false;
+		};
+		@:ast(switch (expr.def) {
+	case EBinary(Concat, left, right):
+		switch (left.def) {
+			case EField(obj, field):
+				switch (obj.def) {
+					case EVar("struct"):
+						return true;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 26) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 23) {
+					{
+						var left = `;
+						var right = `;
+						{
+							@:ast(switch (left.def) {
+	case EField(obj, field):
+		switch (obj.def) {
+			case EVar("struct"):
+				return true;			
+			default:
+		};	
+	default:
+}) {
+								var ` = left.def;
+								if (enumIndex ` == 28) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var obj = `;
+										var field = `;
+										{
+											@:ast(switch (obj.def) {
+	case EVar("struct"):
+		return true;	
+	default:
+}) {
+												var ` = obj.def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													if (` == "struct") {
+														{
+															return true;
+														};
+													} else {};
+												} else {};
+											};
+										};
+									};
+								} else {};
+							};
+						};
+					};
+				} else {};
+			} else {};
+		};
+		return false;
+	}
+
+	static function extractFieldUpdate(expr:reflaxe.elixir.ast.ElixirAST) {
+		if (expr == null) {
+			return null;
+		};
+		@:ast(switch (expr.def) {
+	case EBinary(Concat, left, right):
+		switch (left.def) {
+			case EField(obj, field):
+				switch (obj.def) {
+					case EVar("struct"):
+						return { key : field, value : makeAST(EBinary(Concat, left, right)) };					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 26) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 23) {
+					{
+						var left = `;
+						var right = `;
+						{
+							@:ast(switch (left.def) {
+	case EField(obj, field):
+		switch (obj.def) {
+			case EVar("struct"):
+				return { key : field, value : makeAST(EBinary(Concat, left, right)) };			
+			default:
+		};	
+	default:
+}) {
+								var ` = left.def;
+								if (enumIndex ` == 28) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var obj = `;
+										var field = `;
+										{
+											@:ast(switch (obj.def) {
+	case EVar("struct"):
+		return { key : field, value : makeAST(EBinary(Concat, left, right)) };	
+	default:
+}) {
+												var ` = obj.def;
+												if (enumIndex ` == 38) {
+													var ` = `[0];
+													if (` == "struct") {
+														{
+															return {key : field, value : {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Concat, left, right), metadata : {}, pos : pos};
+															}};
+														};
+													} else {};
+												} else {};
+											};
+										};
+									};
+								} else {};
+							};
+						};
+					};
+				} else {};
+			} else {};
+		};
+		return null;
+	}
+
+	static function isReturnStruct(expr:reflaxe.elixir.ast.ElixirAST) {
+		if (expr == null) {
+			return false;
+		};
+		@:ast(switch (expr.def) {
+	case EVar("struct"):
+		return true;	
+	default:
+		return false;	
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 38) {
+				var ` = `[0];
+				if (` == "struct") {
+					{
+						return true;
+					};
+				} else {
+					return false;
+				};
+			} else {
+				return false;
+			};
+		};
+	}
+
+	static function transformSetMethod(body:reflaxe.elixir.ast.ElixirAST) {
+		if (body == null) {
+			return null;
+		};
+		@:ast(switch (body.def) {
+	case EMatch(PVar("root"), right):
+		return makeAST(EStructUpdate(makeAST(EVar("struct")), [{ key : "root", value : right }]));	
+	case EBlock(exprs):
+		if (exprs.length > 0) {
+			var lastIndex = exprs.length - 1;
+			var lastExpr = exprs[lastIndex];
+			var transformed = transformSetMethod(lastExpr);
+			if (transformed != lastExpr) {
+				var newExprs = exprs.copy();
+				newExprs[lastIndex] = transformed;
+				return makeAST(EBlock(newExprs));
+			};
+		};
+		return body;	
+	default:
+		return body;	
+}) {
+			var ` = body.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					if (enumIndex ` == 0) {
+						var ` = `[0];
+						if (` == "root") {
+							{
+								var right = `;
+								{
+									return {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EStructUpdate({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EVar("struct"), metadata : {}, pos : pos};
+										}, [{key : "root", value : right}]), metadata : {}, pos : pos};
+									};
+								};
+							};
+						} else {
+							return body;
+						};
+					} else {
+						return body;
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							if (exprs.length > 0) {
+								var lastIndex = exprs.length - 1;
+								var lastExpr = exprs[lastIndex];
+								var transformed = reflaxe.elixir.ast.transformers.StructUpdateTransform.transformSetMethod(lastExpr);
+								if (transformed != lastExpr) {
+									var newExprs = exprs.copy();
+									newExprs[lastIndex] = transformed;
+									return {
+										var pos = null;
+										{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(newExprs), metadata : {}, pos : pos};
+									};
+								};
+							};
+							return body;
+						};
+					};
+				};
+				default: {
+					return body;
+				}
+			};
+		};
+	}
+
+	static function isProblematicFieldAssignment(expr:reflaxe.elixir.ast.ElixirAST, functionName:String) {
+		if (expr == null) {
+			return false;
+		};
+		@:ast(switch (expr.def) {
+	case EMatch(PVar("root"), right):
+		if (functionName == "set" || functionName == "remove" || functionName == "clear") {
+			return true;
+		};	
+	default:
+}) {
+			var ` = expr.def;
+			if (enumIndex ` == 8) {
+				var ` = `[0];
+				var ` = `[1];
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					if (` == "root") {
+						{
+							var right = `;
+							{
+								if (functionName == "set" || functionName == "remove" || functionName == "clear") {
+									return true;
+								};
+							};
+						};
+					} else {};
+				} else {};
+			} else {};
+		};
+		return false;
+	}
+}

@@ -1,0 +1,75 @@
+class reflaxe.output.PluginHook1<DataType, T> {
+
+	public function new() {
+		this.hooks = [];
+	}
+
+	var hooks:Array<(Null<reflaxe.output.PluginHook1.DataType>, reflaxe.output.PluginHook1.T) -> reflaxe.output.PluginHookResult<reflaxe.output.PluginHook1.DataType>>;
+
+	public function addHook(func:(Null<reflaxe.output.PluginHook1.DataType>, reflaxe.output.PluginHook1.T) -> reflaxe.output.PluginHookResult<reflaxe.output.PluginHook1.DataType>) {
+		this.hooks.push(func);
+	}
+
+	public function call(code:Null<reflaxe.output.PluginHook1.DataType>, obj:reflaxe.output.PluginHook1.T) {
+		if (this.hooks.length == 0) {
+			return @:implicitCast reflaxe.output._PluginHook.PluginHookResult_Impl_.fromT(code);
+		};
+		var result = code;
+		{
+			var ` = 0;
+			var ` = this.hooks;
+			while (` < `.length) {
+				var h = `[`];
+				++ `;
+				@:ast(switch (h(result, obj)) {
+	case null | IgnorePlugin:
+		{
+			continue;
+		};	
+	case OutputNothing:
+		{
+			return OutputNothing;
+		};	
+	case OverwriteOutput(output):
+		{
+			result = output;
+		};	
+}) {
+					var ` = h(result, obj);
+					if (` == null) {
+						{
+							continue;
+						};
+					} else switch (@:exhaustive enumIndex `) {
+						case 0: {
+							{
+								{
+									continue;
+								};
+							};
+						};
+						case 1: {
+							{
+								{
+									return reflaxe.output.IPluginHookResult.OutputNothing;
+								};
+							};
+						};
+						case 2: {
+							var ` = cast `[0];
+							{
+								var output = `;
+								{
+									{
+										result = output;
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+		return @:implicitCast reflaxe.output._PluginHook.PluginHookResult_Impl_.fromT(result);
+	}
+}

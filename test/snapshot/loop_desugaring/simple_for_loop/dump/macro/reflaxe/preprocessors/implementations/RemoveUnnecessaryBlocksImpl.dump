@@ -1,0 +1,331 @@
+class reflaxe.preprocessors.implementations.RemoveUnnecessaryBlocksImpl {
+
+	@:value({ parentMultiUseVarNames : null })
+	public function new(list:Array<haxe.macro.TypedExpr>, parentMultiUseVarNames:Null<Array<String>> = null) {
+		this.exprList = list;
+		this.requiredNames = [];
+		this.declaredVars = [];
+		this.multiUseVarNames = parentMultiUseVarNames;
+	}
+
+	var exprList:Array<haxe.macro.TypedExpr>;
+
+	var requiredNames:Array<String>;
+
+	var declaredVars:Array<String>;
+
+	var multiUseVarNames:Null<Array<String>>;
+
+	public function removeUnnecessaryBlocks() {
+		if (this.multiUseVarNames == null) {
+			this.multiUseVarNames = this.findMultiUseVarNames();
+		};
+		{
+			var ` = 0;
+			var ` = this.exprList;
+			while (` < `.length) {
+				var e = `[`];
+				++ `;
+				this.trackExpr(e);
+			};
+		};
+		return this.handleBlockList(this.exprList);
+	}
+
+	function trackExpr(e:haxe.macro.TypedExpr) {
+		@:ast(switch (e.expr) {
+	case TBlock(_):
+		return;	
+	case TLocal(v):
+		addRequiredName(v.getNameOrNative());	
+	case TTypeExpr(m):
+		addRequiredName(m.getNameOrNative());	
+	case TVar(v, _):
+		{
+			var n = v.getNameOrNative();
+			addDeclaredVars(n);
+		};	
+	case TEnumParameter(_, ef, _):
+		addRequiredName(ef.getNameOrNative());	
+	case TIdent(s):
+		addRequiredName(s);	
+	case _:
+}) {
+			var ` = e.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							this.addRequiredName(reflaxe.helpers.NameMetaHelper.getNameOrNative(v));
+						};
+					};
+				};
+				case 5: {
+					var ` = `[0];
+					{
+						var m = `;
+						{
+							this.addRequiredName(reflaxe.helpers.ModuleTypeHelper.getNameOrNative(m));
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						{
+							{
+								var n = reflaxe.helpers.NameMetaHelper.getNameOrNative(v);
+								this.addDeclaredVars(n);
+							};
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						return;
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var ef = `;
+						{
+							this.addRequiredName(reflaxe.helpers.NameMetaHelper.getNameOrNative(ef));
+						};
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					{
+						var s = `;
+						{
+							this.addRequiredName(s);
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		haxe.macro.TypedExprTools.iter(e, this.trackExpr);
+	}
+
+	function addRequiredName(n:String) {
+		if (! this.requiredNames.contains(n)) {
+			this.requiredNames.push(n);
+		};
+	}
+
+	function addDeclaredVars(n:String) {
+		if (! this.declaredVars.contains(n)) {
+			this.declaredVars.push(n);
+		};
+	}
+
+	function handleBlockList(exprList:Array<haxe.macro.TypedExpr>) {
+		var result = [];
+		{
+			var ` = 0;
+			var ` = exprList.length;
+			while (` < `) {
+				var i = ` ++;
+				var expr = exprList[i];
+				@:ast(switch (expr.expr) {
+	case TBlock([]):
+		{ };	
+	case TBlock(el):
+		{
+			var ubr = new RemoveUnnecessaryBlocksImpl(el, multiUseVarNames);
+			var newExprList = ubr.removeUnnecessaryBlocks();
+			var shouldMerge = true;
+			for (name  in  ubr.declaredVars) {
+				if (multiUseVarNames.trustMe().contains(name) || requiredNames.contains(name)) {
+					shouldMerge = false;
+					break;
+				};
+			};
+			if (shouldMerge) {
+				for (expr  in  newExprList) {
+					result.push(expr.copy());
+				};
+			} else {
+				result.push(expr);
+			};
+		};	
+	case _:
+		{
+			result.push(findNewBlock(expr));
+		};	
+}) {
+					var ` = expr.expr;
+					if (enumIndex ` == 14) {
+						var ` = `[0];
+						if (`.length == 0) {
+							{
+								{};
+							};
+						} else {
+							var el = `;
+							{
+								{
+									var ubr = new reflaxe.preprocessors.implementations.RemoveUnnecessaryBlocksImpl(el, this.multiUseVarNames);
+									var newExprList = ubr.removeUnnecessaryBlocks();
+									var shouldMerge = true;
+									{
+										var ` = 0;
+										var ` = ubr.declaredVars;
+										while (` < `.length) {
+											var name = `[`];
+											++ `;
+											if ({
+												var maybe = this.multiUseVarNames;
+												cast {
+													if (maybe == null) {
+														throw "Trusted on null value.";
+													};
+													@:nullSafety(Off) maybe;
+												};
+											}.contains(name) || this.requiredNames.contains(name)) {
+												shouldMerge = false;
+												break;
+											};
+										};
+									};
+									if (shouldMerge) {
+										{
+											var ` = 0;
+											while (` < newExprList.length) {
+												var expr = newExprList[`];
+												++ `;
+												result.push(reflaxe.helpers.TypedExprHelper.copy(expr, null));
+											};
+										};
+									} else {
+										result.push(expr);
+									};
+								};
+							};
+						};
+					} else {
+						{
+							result.push(this.findNewBlock(expr));
+						};
+					};
+				};
+			};
+		};
+		return result;
+	}
+
+	function findNewBlock(e:haxe.macro.TypedExpr) {
+		return @:ast(switch (e.expr) {
+	case TBlock(el):
+		{
+			return { expr : TBlock(handleBlockList(el)), pos : e.pos, t : e.t };
+		};	
+	case _:
+		haxe.macro.TypedExprTools.map(e, findNewBlock);	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var el = `;
+					{
+						{
+							return {expr : haxe.macro.TypedExprDef.TBlock(this.handleBlockList(el)), pos : e.pos, t : e.t};
+						};
+					};
+				};
+			} else {
+				haxe.macro.TypedExprTools.map(e, this.findNewBlock);
+			};
+		};
+	}
+
+	function findMultiUseVarNames() {
+		var varInstanceCount = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var exprIter = [null];
+		exprIter[0] = function(e:haxe.macro.TypedExpr) {
+			@:ast(switch (e.expr) {
+	case TVar(tvar, _):
+		{
+			if (!varInstanceCount.exists(tvar.name)) varInstanceCount.set(tvar.name, []);
+			var count = varInstanceCount.get(tvar.name);
+			if (count != null) {
+				count.push(tvar.id);
+			};
+		};	
+	case _:
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 13) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var tvar = `;
+						{
+							{
+								if (! {
+									var key = tvar.name;
+									varInstanceCount.exists(key);
+								}) {
+									{
+										var key = tvar.name;
+										varInstanceCount.set(key, []);
+									};
+								};
+								var count = {
+									var key = tvar.name;
+									varInstanceCount.get(key);
+								};
+								if (count != null) {
+									count.push(tvar.id);
+								};
+							};
+						};
+					};
+				} else {};
+			};
+			haxe.macro.TypedExprTools.iter(e, exprIter[0]);
+		};
+		{
+			var ` = 0;
+			var ` = this.exprList;
+			while (` < `.length) {
+				var e = `[`];
+				++ `;
+				exprIter[0](e);
+			};
+		};
+		var result = [];
+		{
+			var ` = cast new haxe.iterators.MapKeyValueIterator(varInstanceCount);
+			while (`.hasNext()) {
+				var ` = `.next();
+				var name = `.key;
+				var useCount = `.value;
+				{
+					if (useCount.length > 1) {
+						result.push(name);
+					};
+				};
+			};
+		};
+		return result;
+	}
+
+	public static function process(list:Array<haxe.macro.TypedExpr>) {
+		var ubr = new reflaxe.preprocessors.implementations.RemoveUnnecessaryBlocksImpl(list, null);
+		return ubr.removeUnnecessaryBlocks();
+	}
+}
