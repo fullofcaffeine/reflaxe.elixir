@@ -8,6 +8,7 @@ import reflaxe.elixir.ast.ElixirASTBuilder;
 import reflaxe.elixir.ast.ElixirAST.VarOrigin;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.transformers.PatternMatchingTransforms;
+import reflaxe.elixir.ast.transformers.LoopVariableRestorer;
 using StringTools;
 
 /**
@@ -331,6 +332,14 @@ class ElixirASTTransformer {
             description: "Convert string concatenation to idiomatic string interpolation",
             enabled: true,
             pass: stringInterpolationPass
+        });
+        
+        // Loop variable restoration pass (must run after string interpolation)
+        passes.push({
+            name: "LoopVariableRestore",
+            description: "Restore loop variables in string interpolations (fixes Haxe optimizer issue)",
+            enabled: true,
+            pass: LoopVariableRestorer.restoreLoopVariablesPass
         });
 
         #if !disable_constant_folding
