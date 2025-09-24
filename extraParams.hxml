@@ -42,3 +42,6 @@
 
 # Import global functions for Elixir target
 --macro include('ElixirGlobal')
+
+# Prevent loop unrolling to preserve expressions in generated code
+-D loop_unroll_max_cost=10
