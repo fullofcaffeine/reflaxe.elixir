@@ -4,25 +4,24 @@
 
 This file contains AST-specific development guidance for agents working on the Reflaxe.Elixir AST transformation pipeline.
 
-## 🚨 CRITICAL: ElixirASTBuilder.hx Size Crisis - ABSOLUTE PROHIBITION
+## 🚨 CRITICAL: ElixirASTBuilder.hx Size Crisis - EXTRACT AND REFACTOR
 
-### ❌ HARD RULE: NO ADDITIONS TO ElixirASTBuilder.hx EVER
+### ⚠️ RULE: MODIFY BUT EXTRACT - Keep ElixirASTBuilder.hx Maintainable
 
 **CURRENT SIZE**: 11,137 lines (as of January 2025)
 **VIOLATION LEVEL**: 10x larger than recommended maximum (1,000 lines)
-**STATUS**: EMERGENCY - File violates every software engineering principle
+**STATUS**: EMERGENCY - Needs aggressive refactoring while fixing issues
 
-### The Prohibition
+### The Directive
 
-**UNDER NO CIRCUMSTANCES may ANY new code be added to ElixirASTBuilder.hx**
+**When modifying ElixirASTBuilder.hx, you MUST follow SOLID principles:**
 
-This includes:
-- ❌ NO new functions
-- ❌ NO new cases in switch statements
-- ❌ NO new helper methods
-- ❌ NO "quick fixes"
-- ❌ NO "temporary" additions
-- ❌ NO exceptions to this rule
+- ✅ **FIX issues directly** - Don't work around bugs in other files
+- ✅ **EXTRACT while fixing** - Move related code to specialized builders
+- ✅ **REFACTOR as you go** - Improve structure, don't just add code
+- ❌ **NO net increase in size** - Every fix should extract more than it adds
+- ❌ **NO quick patches** - Fix properly and refactor simultaneously
+- ❌ **NO monolithic additions** - Large features go to specialized modules
 
 ### Where New Code MUST Go Instead
 
