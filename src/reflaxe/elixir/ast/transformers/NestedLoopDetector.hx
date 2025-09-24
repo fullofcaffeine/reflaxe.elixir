@@ -45,10 +45,13 @@ class NestedLoopDetector {
                     if (dimensions != null && dimensions.length >= 2) {
                         trace('[NestedLoopDetector] ✅ Detected ${dimensions.length}D nested loop: ${dimensions}');
                         
+                        // Analyze all statements to infer expressions
+                        var expressionInfo = analyzeExpressionPatterns(subset, patterns, dimensions);
+                        
                         // Build nested Enum.each structure
                         // Use the second statement if available (workaround for Haxe bug)
                         var sampleStmt = subset.length > 1 ? subset[1] : subset[0];
-                        var transformed = buildNestedEnumEach(sampleStmt, dimensions);
+                        var transformed = buildNestedEnumEachWithExpressions(sampleStmt, dimensions, expressionInfo);
                         
                         return {
                             transformed: transformed,
@@ -126,6 +129,7 @@ class NestedLoopDetector {
     
     /**
      * Extract indices from an argument (typically ERaw with interpolations)
+     * Enhanced to capture expression patterns for reconstruction
      */
     static function extractIndicesFromArg(arg: ElixirAST): Null<Array<Int>> {
         switch(arg.def) {
@@ -146,6 +150,25 @@ class NestedLoopDetector {
                         indices.push(index);
                     }
                     tempStr = regex.matchedRight();
+                }
+                
+                // Also check for bracket notation patterns like [#{0}][#{1}]
+                // This handles cases like "Grid[#{0}][#{1}]"
+                if (indices.length == 0) {
+                    var bracketRegex = ~/\[#{([0-9]+)}\]/g;
+                    tempStr = s;
+                    
+                    while (bracketRegex.match(tempStr)) {
+                        var index = Std.parseInt(bracketRegex.matched(1));
+                        if (index != null) {
+                            indices.push(index);
+                        }
+                        tempStr = bracketRegex.matchedRight();
+                    }
+                    
+                    if (indices.length > 0) {
+                        trace('[NestedLoopDetector] Found bracket notation indices: $indices');
+                    }
                 }
                 
                 if (indices.length > 0) {
@@ -257,6 +280,81 @@ class NestedLoopDetector {
     }
     
     /**
+     * Analyze expression patterns across all statements to infer multipliers and offsets
+     */
+    static function analyzeExpressionPatterns(stmts: Array<ElixirAST>, patterns: Array<Array<Int>>, dimensions: Array<Int>): Dynamic {
+        // For now, return empty info - this is a placeholder for expression analysis
+        // In a full implementation, we would analyze the sequence of values to detect
+        // patterns like arithmetic progressions (i * 3, j * 2, etc.)
+        return {
+            multipliers: [],
+            offsets: []
+        };
+    }
+    
+    /**
+     * Build nested Enum.each with expression reconstruction
+     */
+    static function buildNestedEnumEachWithExpressions(sampleStmt: ElixirAST, dimensions: Array<Int>, expressionInfo: Dynamic): ElixirAST {
+        // For now, delegate to the original method
+        // In a full implementation, we would use expressionInfo to reconstruct expressions
+        return buildNestedEnumEach(sampleStmt, dimensions);
+    }
+    
+    /**
+     * Attempt to reconstruct expressions from evaluated values
+     * For example, if we see #{0}, #{3}, #{6} in a pattern, we can infer i * 3
+     */
+    static function reconstructExpressions(s: String, varNames: Array<String>): String {
+        // Extract all numeric interpolations (both parentheses and bracket notation)
+        var values: Array<Int> = [];
+        
+        // Check for parentheses notation: #{N}
+        var regex = ~/#{([0-9]+)}/g;
+        var temp = s;
+        
+        while (regex.match(temp)) {
+            var val = Std.parseInt(regex.matched(1));
+            if (val != null) values.push(val);
+            temp = regex.matchedRight();
+        }
+        
+        // Also check for bracket notation: [#{N}]
+        if (values.length == 0) {
+            var bracketRegex = ~/\[#{([0-9]+)}\]/g;
+            temp = s;
+            
+            while (bracketRegex.match(temp)) {
+                var val = Std.parseInt(bracketRegex.matched(1));
+                if (val != null) values.push(val);
+                temp = bracketRegex.matchedRight();
+            }
+        }
+        
+        if (values.length < 2) return s; // Need at least 2 values to detect pattern
+        
+        // Try to detect arithmetic progression for each value position
+        var result = s;
+        
+        // For 2D patterns like "Grid[#{0}][#{3}]" or "Cell (#{0}, #{1})"
+        if (values.length == 2 && varNames.length >= 2) {
+            // First value might be i * multiplier
+            // Second value might be j * multiplier
+            
+            // For now, just replace with variables
+            // TODO: Detect actual multipliers from the sequence
+            result = StringTools.replace(result, '#{' + values[0] + '}', '#{' + varNames[0] + '}');
+            result = StringTools.replace(result, '#{' + values[1] + '}', '#{' + varNames[1] + '}');
+            
+            // Also handle bracket notation replacements
+            result = StringTools.replace(result, '[#{' + values[0] + '}]', '[#{' + varNames[0] + '}]');
+            result = StringTools.replace(result, '[#{' + values[1] + '}]', '[#{' + varNames[1] + '}]');
+        }
+        
+        return result;
+    }
+    
+    /**
      * Build nested Enum.each calls for the detected dimensions
      */
     static function buildNestedEnumEach(sampleStmt: ElixirAST, dimensions: Array<Int>): ElixirAST {
@@ -314,6 +412,7 @@ class NestedLoopDetector {
     
     /**
      * Recreate the function call with loop variables
+     * Enhanced to reconstruct expressions from patterns
      */
     static function recreateFunctionCall(callInfo: {module: String, func: String, args: Array<ElixirAST>}, varNames: Array<String>): ElixirAST {
         // Transform the first argument to use loop variables
@@ -322,19 +421,29 @@ class NestedLoopDetector {
         if (callInfo.args.length > 0) {
             var firstArg = callInfo.args[0];
             
-            // Replace indices with variable names
+            // Replace indices with variable names or reconstructed expressions
             var transformedArg = switch(firstArg.def) {
                 case ERaw(s):
                     trace('[NestedLoopDetector] Original string: "$s"');
                     trace('[NestedLoopDetector] Variable names: $varNames');
                     
-                    // Replace #{0}, #{1}, etc. with #{i}, #{j}, etc.
-                    var result = s;
-                    for (i in 0...varNames.length) {
-                        var pattern = '#{' + i + '}';
-                        var replacement = '#{' + varNames[i] + '}';
-                        trace('[NestedLoopDetector] Replacing "$pattern" with "$replacement"');
-                        result = StringTools.replace(result, pattern, replacement);
+                    // Try to detect and reconstruct expressions
+                    var result = reconstructExpressions(s, varNames);
+                    
+                    // Fallback to simple replacement if reconstruction fails
+                    if (result == s) {
+                        for (i in 0...varNames.length) {
+                            // Handle both parentheses notation: (#{0}, #{1})
+                            var pattern = '#{' + i + '}';
+                            var replacement = '#{' + varNames[i] + '}';
+                            trace('[NestedLoopDetector] Replacing "$pattern" with "$replacement"');
+                            result = StringTools.replace(result, pattern, replacement);
+                            
+                            // Also handle bracket notation: [#{0}][#{1}]
+                            var bracketPattern = '[#{' + i + '}]';
+                            var bracketReplacement = '[#{' + varNames[i] + '}]';
+                            result = StringTools.replace(result, bracketPattern, bracketReplacement);
+                        }
                     }
                     
                     trace('[NestedLoopDetector] Final string: "$result"');
