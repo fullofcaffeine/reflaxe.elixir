@@ -4933,6 +4933,20 @@ class ElixirASTBuilder {
                 var forStartTime = haxe.Timer.stamp() * 1000;
                 #end
 
+                // METADATA PRESERVATION: Capture original loop body expression
+                // This allows reconstruction of expressions like "i * 2 + 1" instead of pre-computed values
+                var loopMetadata = createMetadata(expr);
+                
+                // Extract and preserve the loop body expression text
+                // We'll use this to reconstruct idiomatic expressions in the transformer
+                loopMetadata.loopVariableName = v.name;
+                loopMetadata.originalLoopExpression = captureExpressionText(e2, v.name);
+                
+                #if debug_loop_metadata
+                trace('[Loop Metadata] Variable: ${v.name}');
+                trace('[Loop Metadata] Preserved expression: ${loopMetadata.originalLoopExpression}');
+                #end
+
                 // Check if LoopBuilder is enabled and use it with reentrancy protection
                 if (currentContext != null && currentContext.isFeatureEnabled("loop_builder_enabled")) {
                     // Use ReentrancyGuard to prevent infinite recursion
@@ -4958,14 +4972,25 @@ class ElixirASTBuilder {
 
                     // Process with reentrancy protection
                     var ast = guard.process(forExpr, safeBuilder);
-                    ast.def;
+                    
+                    // Attach the loop metadata to the resulting AST
+                    if (ast != null) {
+                        makeASTWithMeta(ast.def, loopMetadata, expr.pos).def;
+                    } else {
+                        ast.def;
+                    }
                 } else {
                     // Fall back to simple for comprehension when LoopBuilder is disabled
                     var varName = toElixirVarName(v.name);
                     var pattern = PVar(varName);
                     var iteratorExpr = buildFromTypedExpr(e1, currentContext);
                     var bodyExpr = buildFromTypedExpr(e2, currentContext);
-                    EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false);
+                    
+                    // Create the for comprehension with metadata preserved
+                    var forDef = EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false);
+                    
+                    // Return with metadata attached
+                    makeASTWithMeta(forDef, loopMetadata, expr.pos).def;
                 }
                 
             case TWhile(econd, e, normalWhile):
@@ -11183,6 +11208,123 @@ class ElixirASTBuilder {
             default:
         }
         return null;
+    }
+    
+    /**
+     * EXPRESSION PRESERVATION: Captures the textual representation of an expression
+     * 
+     * WHY: When Haxe evaluates expressions at compile-time (e.g., i * 2 + 1 becomes 1, 3, 5),
+     *      we lose the original expression structure. By preserving the text representation,
+     *      we can reconstruct idiomatic Elixir code in the transformer phase.
+     * 
+     * WHAT: Extracts a simplified string representation of the expression that can be
+     *       reconstructed with proper variable substitution in generated Elixir code.
+     * 
+     * HOW: Analyzes the TypedExpr structure and builds a string representation,
+     *      replacing loop variable references with placeholders for later substitution.
+     * 
+     * @param expr The expression to capture
+     * @param loopVar The loop variable name to track in the expression
+     * @return String representation of the expression, or null if too complex
+     */
+    static function captureExpressionText(expr: TypedExpr, loopVar: String): Null<String> {
+        if (expr == null) return null;
+        
+        // Recursively build expression text
+        function buildExprText(e: TypedExpr): Null<String> {
+            return switch(e.expr) {
+                case TConst(c):
+                    switch(c) {
+                        case TInt(i): Std.string(i);
+                        case TFloat(f): Std.string(f);
+                        case TString(s): '"$s"';
+                        case TBool(b): Std.string(b);
+                        case TNull: "nil";
+                        default: null;
+                    }
+                    
+                case TLocal(v):
+                    // Replace loop variable with placeholder
+                    if (v.name == loopVar) {
+                        "#{" + loopVar + "}";
+                    } else {
+                        v.name;
+                    }
+                    
+                case TBinop(op, e1, e2):
+                    var left = buildExprText(e1);
+                    var right = buildExprText(e2);
+                    if (left == null || right == null) return null;
+                    
+                    var opStr = switch(op) {
+                        case OpAdd: "+";
+                        case OpSub: "-";
+                        case OpMult: "*";
+                        case OpDiv: "/";
+                        case OpMod: "%";
+                        case OpAnd: "&&";
+                        case OpOr: "||";
+                        case OpEq: "==";
+                        case OpNotEq: "!=";
+                        case OpLt: "<";
+                        case OpLte: "<=";
+                        case OpGt: ">";
+                        case OpGte: ">=";
+                        default: null;
+                    };
+                    
+                    if (opStr == null) return null;
+                    '($left $opStr $right)';
+                    
+                case TUnop(op, postfix, e):
+                    var inner = buildExprText(e);
+                    if (inner == null) return null;
+                    
+                    switch(op) {
+                        case OpNot: '!$inner';
+                        case OpNeg: '-$inner';
+                        case OpIncrement: postfix ? '$inner++' : '++$inner';
+                        case OpDecrement: postfix ? '$inner--' : '--$inner';
+                        default: null;
+                    }
+                    
+                case TParenthesis(e):
+                    var inner = buildExprText(e);
+                    if (inner == null) return null;
+                    '($inner)';
+                    
+                case TCall(e, args):
+                    // For simple function calls like trace()
+                    switch(e.expr) {
+                        case TField(_, FStatic(_, cf)):
+                            if (cf.get().name == "trace" && args.length == 1) {
+                                var arg = buildExprText(args[0]);
+                                if (arg != null) {
+                                    return 'trace($arg)';
+                                }
+                            }
+                        default:
+                    }
+                    // Too complex - don't preserve
+                    null;
+                    
+                default:
+                    // Complex expressions we don't preserve
+                    null;
+            }
+        }
+        
+        var result = buildExprText(expr);
+        
+        #if debug_loop_metadata
+        if (result != null) {
+            trace('[Expression Capture] Successfully captured: $result');
+        } else {
+            trace('[Expression Capture] Expression too complex to preserve');
+        }
+        #end
+        
+        return result;
     }
 }
 

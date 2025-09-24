@@ -722,6 +722,10 @@ typedef ElixirMetadata = {
     // Whether the original Haxe class had @:timestamps annotation
     ?hasTimestamps: Bool,
     
+    // Loop Expression Preservation (Added for idiomatic loop generation)
+    ?originalLoopExpression: String,  // Original loop expression text (e.g., "i * 2 + 1")
+    ?loopVariableName: String,        // The loop variable name for reconstruction
+    
     // Optimization Hints
     ?canInline: Bool,             // Can be inlined
     ?keepInlineInAssignment: Bool, // Keep inline when assigned (e.g., null coalescing)
