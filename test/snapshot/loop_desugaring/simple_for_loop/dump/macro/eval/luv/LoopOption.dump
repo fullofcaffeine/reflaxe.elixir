@@ -1,0 +1,2 @@
+@:enum
+abstract eval.luv.LoopOption<T> {}

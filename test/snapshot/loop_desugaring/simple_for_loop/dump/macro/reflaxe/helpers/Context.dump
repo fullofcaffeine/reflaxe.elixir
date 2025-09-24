@@ -1,0 +1,227 @@
+class reflaxe.helpers.Context {
+
+	public static function error(msg:String, pos:haxe.macro.Position) {
+		return haxe.macro.Context.error(msg, pos, null);
+	}
+
+	public static function fatalError(msg:String, pos:haxe.macro.Position) {
+		return haxe.macro.Context.fatalError(msg, pos, null);
+	}
+
+	public static function warning(msg:String, pos:haxe.macro.Position) {
+		haxe.macro.Context.warning(msg, pos, null);
+	}
+
+	public static function info(msg:String, pos:haxe.macro.Position) {
+		{
+			haxe.macro.Context.info(msg, pos, null);
+			return;
+		};
+	}
+
+	public static function getMessages() {
+		return haxe.macro.Context.getMessages();
+	}
+
+	public static function filterMessages(predicate:haxe.macro.Message -> Bool) {
+		haxe.macro.Context.filterMessages(predicate);
+	}
+
+	public static function resolvePath(file:String) {
+		return haxe.macro.Context.resolvePath(file);
+	}
+
+	public static function getClassPath() {
+		return haxe.macro.Context.getClassPath();
+	}
+
+	public static function containsDisplayPosition(pos:haxe.macro.Position) {
+		return haxe.macro.Context.containsDisplayPosition(pos);
+	}
+
+	public static function currentPos() {
+		return haxe.macro.Context.currentPos();
+	}
+
+	public static function getExpectedType() {
+		return haxe.macro.Context.getExpectedType();
+	}
+
+	public static function getCallArguments() {
+		return haxe.macro.Context.getCallArguments();
+	}
+
+	public static function getLocalClass() {
+		return haxe.macro.Context.getLocalClass();
+	}
+
+	public static function getLocalModule() {
+		return haxe.macro.Context.getLocalModule();
+	}
+
+	public static function getLocalType() {
+		return haxe.macro.Context.getLocalType();
+	}
+
+	public static function getLocalMethod() {
+		return haxe.macro.Context.getLocalMethod();
+	}
+
+	public static function getLocalUsing() {
+		return haxe.macro.Context.getLocalUsing();
+	}
+
+	public static function getLocalImports() {
+		return haxe.macro.Context.getLocalImports();
+	}
+
+	public static function getLocalTVars() {
+		return haxe.macro.Context.getLocalTVars();
+	}
+
+	public static function defined(s:String) {
+		return haxe.macro.Context.defined(s);
+	}
+
+	public static function definedValue(key:String) {
+		return haxe.macro.Context.definedValue(key);
+	}
+
+	public static function getDefines() {
+		return haxe.macro.Context.getDefines();
+	}
+
+	public static function getType(name:String) {
+		return haxe.macro.Context.getType(name);
+	}
+
+	public static function getModule(name:String) {
+		return haxe.macro.Context.getModule(name);
+	}
+
+	public static function parse(expr:String, pos:haxe.macro.Position) {
+		return haxe.macro.Context.parse(expr, pos);
+	}
+
+	public static function parseInlineString(expr:String, pos:haxe.macro.Position) {
+		return haxe.macro.Context.parseInlineString(expr, pos);
+	}
+
+	public static function makeExpr(v:Dynamic, pos:haxe.macro.Position) {
+		return haxe.macro.Context.makeExpr(v, pos);
+	}
+
+	public static function signature(v:Dynamic) {
+		return haxe.macro.Context.signature(v);
+	}
+
+	@:value({ persistent : true })
+	public static function onGenerate(callback:Array<haxe.macro.Type> -> Void, persistent:Bool = true) {
+		{
+			haxe.macro.Context.onGenerate(callback, persistent);
+			return;
+		};
+	}
+
+	public static function onAfterGenerate(callback:() -> Void) {
+		{
+			haxe.macro.Context.onAfterGenerate(callback);
+			return;
+		};
+	}
+
+	public static function onAfterTyping(callback:Array<haxe.macro.ModuleType> -> Void) {
+		{
+			haxe.macro.Context.onAfterTyping(callback);
+			return;
+		};
+	}
+
+	public static function onTypeNotFound(callback:String -> haxe.macro.TypeDefinition) {
+		{
+			haxe.macro.Context.onTypeNotFound(callback);
+			return;
+		};
+	}
+
+	public static function typeof(e:haxe.macro.Expr) {
+		return haxe.macro.Context.typeof(e);
+	}
+
+	public static function typeExpr(e:haxe.macro.Expr) {
+		return haxe.macro.Context.typeExpr(e);
+	}
+
+	public static function resolveType(t:haxe.macro.ComplexType, p:haxe.macro.Position) {
+		return haxe.macro.Context.resolveType(t, p);
+	}
+
+	public static function toComplexType(t:haxe.macro.Type) {
+		return haxe.macro.Context.toComplexType(t);
+	}
+
+	public static function unify(t1:haxe.macro.Type, t2:haxe.macro.Type) {
+		return haxe.macro.Context.unify(t1, t2);
+	}
+
+	public static function follow(t:haxe.macro.Type, once:Null<Bool> = null) {
+		return haxe.macro.Context.follow(t, once);
+	}
+
+	@:value({ once : false })
+	public static function followWithAbstracts(t:haxe.macro.Type, once:Bool = false) {
+		return haxe.macro.Context.followWithAbstracts(t, once);
+	}
+
+	public static function getPosInfos(p:haxe.macro.Position) {
+		return haxe.macro.Context.getPosInfos(p);
+	}
+
+	public static function makePosition(inf:{ min : Int, max : Int, file : String }) {
+		return haxe.macro.Context.makePosition(inf);
+	}
+
+	public static function getResources() {
+		return haxe.macro.Context.getResources();
+	}
+
+	public static function addResource(name:String, data:haxe.io.Bytes) {
+		haxe.macro.Context.addResource(name, data);
+	}
+
+	public static function getBuildFields() {
+		return haxe.macro.Context.getBuildFields();
+	}
+
+	public static function defineType(t:haxe.macro.TypeDefinition, moduleDependency:Null<String> = null) {
+		haxe.macro.Context.defineType(t, moduleDependency);
+	}
+
+	public static function defineModule(modulePath:String, types:Array<haxe.macro.TypeDefinition>, imports:Null<Array<haxe.macro.ImportExpr>> = null, usings:Null<Array<haxe.macro.TypePath>> = null) {
+		haxe.macro.Context.defineModule(modulePath, types, imports, usings);
+	}
+
+	public static function getTypedExpr(t:reflaxe.helpers.RTypedExpr) {
+		return haxe.macro.Context.getTypedExpr(t);
+	}
+
+	public static function storeTypedExpr(t:reflaxe.helpers.RTypedExpr) {
+		return haxe.macro.Context.storeTypedExpr(t);
+	}
+
+	public static function storeExpr(e:haxe.macro.Expr) {
+		return haxe.macro.Context.storeExpr(e);
+	}
+
+	public static function registerModuleDependency(modulePath:String, externFile:String) {
+		haxe.macro.Context.registerModuleDependency(modulePath, externFile);
+	}
+
+	public static function timer(id:String) {
+		return haxe.macro.Context.timer(id);
+	}
+
+	public static function getMainExpr() {
+		return haxe.macro.Context.getMainExpr();
+	}
+}

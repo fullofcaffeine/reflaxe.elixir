@@ -1,0 +1,7 @@
+@:flatEnum
+enum reflaxe.elixir.ast.ECatchKind {
+	Error;
+	Exit;
+	Throw;
+	Any;
+}

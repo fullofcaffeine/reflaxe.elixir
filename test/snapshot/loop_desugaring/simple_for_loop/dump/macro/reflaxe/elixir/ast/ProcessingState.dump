@@ -1,0 +1,5 @@
+enum reflaxe.elixir.ast.ProcessingState {
+	NotStarted;
+	InProgress;
+	Completed(result:reflaxe.elixir.ast.ElixirAST);
+}

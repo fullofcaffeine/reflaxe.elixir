@@ -1,0 +1,248 @@
+@:enum
+private class eval.luv._UVError.UVError_Impl_ {
+
+	@:value(cast 0) @:impl @:enum
+	public static inline var UV_E2BIG:eval.luv.UVError = cast 0;
+
+	@:value(cast 1) @:impl @:enum
+	public static inline var UV_EACCES:eval.luv.UVError = cast 1;
+
+	@:value(cast 2) @:impl @:enum
+	public static inline var UV_EADDRINUSE:eval.luv.UVError = cast 2;
+
+	@:value(cast 3) @:impl @:enum
+	public static inline var UV_EADDRNOTAVAIL:eval.luv.UVError = cast 3;
+
+	@:value(cast 4) @:impl @:enum
+	public static inline var UV_EAFNOSUPPORT:eval.luv.UVError = cast 4;
+
+	@:value(cast 5) @:impl @:enum
+	public static inline var UV_EAGAIN:eval.luv.UVError = cast 5;
+
+	@:value(cast 6) @:impl @:enum
+	public static inline var UV_EAI_ADDRFAMILY:eval.luv.UVError = cast 6;
+
+	@:value(cast 7) @:impl @:enum
+	public static inline var UV_EAI_AGAIN:eval.luv.UVError = cast 7;
+
+	@:value(cast 8) @:impl @:enum
+	public static inline var UV_EAI_BADFLAGS:eval.luv.UVError = cast 8;
+
+	@:value(cast 9) @:impl @:enum
+	public static inline var UV_EAI_BADHINTS:eval.luv.UVError = cast 9;
+
+	@:value(cast 10) @:impl @:enum
+	public static inline var UV_EAI_CANCELED:eval.luv.UVError = cast 10;
+
+	@:value(cast 11) @:impl @:enum
+	public static inline var UV_EAI_FAIL:eval.luv.UVError = cast 11;
+
+	@:value(cast 12) @:impl @:enum
+	public static inline var UV_EAI_FAMILY:eval.luv.UVError = cast 12;
+
+	@:value(cast 13) @:impl @:enum
+	public static inline var UV_EAI_MEMORY:eval.luv.UVError = cast 13;
+
+	@:value(cast 14) @:impl @:enum
+	public static inline var UV_EAI_NODATA:eval.luv.UVError = cast 14;
+
+	@:value(cast 15) @:impl @:enum
+	public static inline var UV_EAI_NONAME:eval.luv.UVError = cast 15;
+
+	@:value(cast 16) @:impl @:enum
+	public static inline var UV_EAI_OVERFLOW:eval.luv.UVError = cast 16;
+
+	@:value(cast 17) @:impl @:enum
+	public static inline var UV_EAI_PROTOCOL:eval.luv.UVError = cast 17;
+
+	@:value(cast 18) @:impl @:enum
+	public static inline var UV_EAI_SERVICE:eval.luv.UVError = cast 18;
+
+	@:value(cast 19) @:impl @:enum
+	public static inline var UV_EAI_SOCKTYPE:eval.luv.UVError = cast 19;
+
+	@:value(cast 20) @:impl @:enum
+	public static inline var UV_EALREADY:eval.luv.UVError = cast 20;
+
+	@:value(cast 21) @:impl @:enum
+	public static inline var UV_EBADF:eval.luv.UVError = cast 21;
+
+	@:value(cast 22) @:impl @:enum
+	public static inline var UV_EBUSY:eval.luv.UVError = cast 22;
+
+	@:value(cast 23) @:impl @:enum
+	public static inline var UV_ECANCELED:eval.luv.UVError = cast 23;
+
+	@:value(cast 25) @:impl @:enum
+	public static inline var UV_ECONNABORTED:eval.luv.UVError = cast 25;
+
+	@:value(cast 26) @:impl @:enum
+	public static inline var UV_ECONNREFUSED:eval.luv.UVError = cast 26;
+
+	@:value(cast 27) @:impl @:enum
+	public static inline var UV_ECONNRESET:eval.luv.UVError = cast 27;
+
+	@:value(cast 28) @:impl @:enum
+	public static inline var UV_EDESTADDRREQ:eval.luv.UVError = cast 28;
+
+	@:value(cast 29) @:impl @:enum
+	public static inline var UV_EEXIST:eval.luv.UVError = cast 29;
+
+	@:value(cast 30) @:impl @:enum
+	public static inline var UV_EFAULT:eval.luv.UVError = cast 30;
+
+	@:value(cast 31) @:impl @:enum
+	public static inline var UV_EFBIG:eval.luv.UVError = cast 31;
+
+	@:value(cast 32) @:impl @:enum
+	public static inline var UV_EHOSTUNREACH:eval.luv.UVError = cast 32;
+
+	@:value(cast 33) @:impl @:enum
+	public static inline var UV_EINTR:eval.luv.UVError = cast 33;
+
+	@:value(cast 34) @:impl @:enum
+	public static inline var UV_EINVAL:eval.luv.UVError = cast 34;
+
+	@:value(cast 35) @:impl @:enum
+	public static inline var UV_EIO:eval.luv.UVError = cast 35;
+
+	@:value(cast 36) @:impl @:enum
+	public static inline var UV_EISCONN:eval.luv.UVError = cast 36;
+
+	@:value(cast 37) @:impl @:enum
+	public static inline var UV_EISDIR:eval.luv.UVError = cast 37;
+
+	@:value(cast 38) @:impl @:enum
+	public static inline var UV_ELOOP:eval.luv.UVError = cast 38;
+
+	@:value(cast 39) @:impl @:enum
+	public static inline var UV_EMFILE:eval.luv.UVError = cast 39;
+
+	@:value(cast 40) @:impl @:enum
+	public static inline var UV_EMSGSIZE:eval.luv.UVError = cast 40;
+
+	@:value(cast 41) @:impl @:enum
+	public static inline var UV_ENAMETOOLONG:eval.luv.UVError = cast 41;
+
+	@:value(cast 42) @:impl @:enum
+	public static inline var UV_ENETDOWN:eval.luv.UVError = cast 42;
+
+	@:value(cast 43) @:impl @:enum
+	public static inline var UV_ENETUNREACH:eval.luv.UVError = cast 43;
+
+	@:value(cast 44) @:impl @:enum
+	public static inline var UV_ENFILE:eval.luv.UVError = cast 44;
+
+	@:value(cast 45) @:impl @:enum
+	public static inline var UV_ENOBUFS:eval.luv.UVError = cast 45;
+
+	@:value(cast 46) @:impl @:enum
+	public static inline var UV_ENODEV:eval.luv.UVError = cast 46;
+
+	@:value(cast 47) @:impl @:enum
+	public static inline var UV_ENOENT:eval.luv.UVError = cast 47;
+
+	@:value(cast 48) @:impl @:enum
+	public static inline var UV_ENOMEM:eval.luv.UVError = cast 48;
+
+	@:value(cast 49) @:impl @:enum
+	public static inline var UV_ENONET:eval.luv.UVError = cast 49;
+
+	@:value(cast 50) @:impl @:enum
+	public static inline var UV_ENOPROTOOPT:eval.luv.UVError = cast 50;
+
+	@:value(cast 51) @:impl @:enum
+	public static inline var UV_ENOSPC:eval.luv.UVError = cast 51;
+
+	@:value(cast 52) @:impl @:enum
+	public static inline var UV_ENOSYS:eval.luv.UVError = cast 52;
+
+	@:value(cast 53) @:impl @:enum
+	public static inline var UV_ENOTCONN:eval.luv.UVError = cast 53;
+
+	@:value(cast 54) @:impl @:enum
+	public static inline var UV_ENOTDIR:eval.luv.UVError = cast 54;
+
+	@:value(cast 55) @:impl @:enum
+	public static inline var UV_ENOTEMPTY:eval.luv.UVError = cast 55;
+
+	@:value(cast 56) @:impl @:enum
+	public static inline var UV_ENOTSOCK:eval.luv.UVError = cast 56;
+
+	@:value(cast 57) @:impl @:enum
+	public static inline var UV_ENOTSUP:eval.luv.UVError = cast 57;
+
+	@:value(cast 58) @:impl @:enum
+	public static inline var UV_EPERM:eval.luv.UVError = cast 58;
+
+	@:value(cast 59) @:impl @:enum
+	public static inline var UV_EPIPE:eval.luv.UVError = cast 59;
+
+	@:value(cast 60) @:impl @:enum
+	public static inline var UV_EPROTO:eval.luv.UVError = cast 60;
+
+	@:value(cast 61) @:impl @:enum
+	public static inline var UV_EPROTONOSUPPORT:eval.luv.UVError = cast 61;
+
+	@:value(cast 62) @:impl @:enum
+	public static inline var UV_EPROTOTYPE:eval.luv.UVError = cast 62;
+
+	@:value(cast 63) @:impl @:enum
+	public static inline var UV_ERANGE:eval.luv.UVError = cast 63;
+
+	@:value(cast 64) @:impl @:enum
+	public static inline var UV_EROFS:eval.luv.UVError = cast 64;
+
+	@:value(cast 65) @:impl @:enum
+	public static inline var UV_ESHUTDOWN:eval.luv.UVError = cast 65;
+
+	@:value(cast 66) @:impl @:enum
+	public static inline var UV_ESPIPE:eval.luv.UVError = cast 66;
+
+	@:value(cast 67) @:impl @:enum
+	public static inline var UV_ESRCH:eval.luv.UVError = cast 67;
+
+	@:value(cast 68) @:impl @:enum
+	public static inline var UV_ETIMEDOUT:eval.luv.UVError = cast 68;
+
+	@:value(cast 69) @:impl @:enum
+	public static inline var UV_ETXTBSY:eval.luv.UVError = cast 69;
+
+	@:value(cast 70) @:impl @:enum
+	public static inline var UV_EXDEV:eval.luv.UVError = cast 70;
+
+	@:value(cast 71) @:impl @:enum
+	public static inline var UV_UNKNOWN:eval.luv.UVError = cast 71;
+
+	@:value(cast 72) @:impl @:enum
+	public static inline var UV_EOF:eval.luv.UVError = cast 72;
+
+	@:value(cast 73) @:impl @:enum
+	public static inline var UV_ENXIO:eval.luv.UVError = cast 73;
+
+	@:value(cast 74) @:impl @:enum
+	public static inline var UV_EMLINK:eval.luv.UVError = cast 74;
+
+	@:value(cast 75) @:impl @:enum
+	public static inline var UV_ENOTTY:eval.luv.UVError = cast 75;
+
+	@:value(cast 76) @:impl @:enum
+	public static inline var UV_EFTYPE:eval.luv.UVError = cast 76;
+
+	@:value(cast 77) @:impl @:enum
+	public static inline var UV_EILSEQ:eval.luv.UVError = cast 77;
+
+	@:value(cast 78) @:impl @:enum
+	public static inline var UV_EOVERFLOW:eval.luv.UVError = cast 78;
+
+	@:value(cast 79) @:impl @:enum
+	public static inline var UV_ESOCKTNOSUPPORT:eval.luv.UVError = cast 79;
+
+	public static function translateSysError
+
+	public static function setOnUnhandledException
+
+	public static function errName
+
+	public static function toString
+}

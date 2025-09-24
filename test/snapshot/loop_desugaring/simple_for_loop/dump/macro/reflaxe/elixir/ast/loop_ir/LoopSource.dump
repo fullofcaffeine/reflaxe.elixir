@@ -1,0 +1,8 @@
+enum reflaxe.elixir.ast.loop_ir.LoopSource {
+	Range(start:reflaxe.elixir.ast.ElixirAST, end:reflaxe.elixir.ast.ElixirAST, step:Int);
+	Collection(expr:reflaxe.elixir.ast.ElixirAST);
+	Stream(generator:reflaxe.elixir.ast.ElixirAST);
+	Condition(expr:reflaxe.elixir.ast.ElixirAST);
+	MapKeys(mapExpr:reflaxe.elixir.ast.ElixirAST);
+	ReflectFields(objExpr:reflaxe.elixir.ast.ElixirAST);
+}

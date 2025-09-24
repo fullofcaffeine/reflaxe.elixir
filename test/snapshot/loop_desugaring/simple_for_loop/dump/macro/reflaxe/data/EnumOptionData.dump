@@ -1,0 +1,21 @@
+class reflaxe.data.EnumOptionData {
+
+	public function new(enumType:haxe.macro.EnumType, field:haxe.macro.EnumField, name:String) {
+		this.enumType = enumType;
+		this.field = field;
+		this.name = name;
+		this.args = [];
+	}
+
+	public var enumType(default,null):haxe.macro.EnumType;
+
+	public var field(default,null):haxe.macro.EnumField;
+
+	public var name(default,null):String;
+
+	public var args(default,null):Array<reflaxe.data.EnumOptionArg>;
+
+	public function addArg(arg:reflaxe.data.EnumOptionArg) {
+		this.args.push(arg);
+	}
+}

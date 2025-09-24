@@ -1,0 +1,6 @@
+@:enum
+private class eval.luv._Result.NoData_Impl_ {
+
+	@:value(cast null) @:impl @:enum
+	public static inline var NoData:eval.luv.NoData = cast null;
+}

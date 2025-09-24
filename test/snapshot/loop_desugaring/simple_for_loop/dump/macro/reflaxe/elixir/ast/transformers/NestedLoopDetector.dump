@@ -1,0 +1,680 @@
+class reflaxe.elixir.ast.transformers.NestedLoopDetector {
+
+	public static function detectNestedLoop(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		if (stmts.length < 4) {
+			return null;
+		};
+		{
+			var ` = 0;
+			var ` = [4, 9, 8, 16, 25];
+			while (` < `.length) {
+				var size = `[`];
+				++ `;
+				if (stmts.length >= size) {
+					var subset = stmts.slice(0, size);
+					var patterns = reflaxe.elixir.ast.transformers.NestedLoopDetector.extractIndexPatterns(subset);
+					if (patterns != null) {
+						var dimensions = reflaxe.elixir.ast.transformers.NestedLoopDetector.analyzeDimensions(patterns);
+						if (dimensions != null && dimensions.length >= 2) {
+							haxe.Log.trace("[NestedLoopDetector] ✅ Detected " + dimensions.length + "D nested loop: " + Std.string(dimensions), {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 46, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "detectNestedLoop"});
+							var expressionInfo = reflaxe.elixir.ast.transformers.NestedLoopDetector.analyzeExpressionPatterns(subset, patterns, dimensions);
+							var sampleStmt = if (subset.length > 1) {
+								subset[1];
+							} else {
+								subset[0];
+							};
+							var transformed = reflaxe.elixir.ast.transformers.NestedLoopDetector.buildNestedEnumEachWithExpressions(sampleStmt, dimensions, expressionInfo);
+							return {transformed : transformed, count : size};
+						};
+					};
+				};
+			};
+		};
+		return null;
+	}
+
+	static function extractIndexPatterns(stmts:Array<reflaxe.elixir.ast.ElixirAST>) {
+		var patterns = [];
+		{
+			var ` = 0;
+			while (` < stmts.length) {
+				var stmt = stmts[`];
+				++ `;
+				var indices = reflaxe.elixir.ast.transformers.NestedLoopDetector.extractIndicesFromStatement(stmt);
+				if (indices == null || indices.length < 2) {
+					return null;
+				};
+				patterns.push(indices);
+			};
+		};
+		return patterns;
+	}
+
+	static function extractIndicesFromStatement(stmt:reflaxe.elixir.ast.ElixirAST) {
+		var actualStmt = stmt;
+		@:ast(switch (stmt.def) {
+	case EMatch(_, value):
+		actualStmt = value;	
+	case EParen(inner):
+		actualStmt = inner;	
+	case EBlock([single]):
+		actualStmt = single;	
+	default:
+}) {
+			var ` = stmt.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var value = `;
+						{
+							actualStmt = value;
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					if (`.length == 1) {
+						var ` = `[0];
+						{
+							var single = `;
+							{
+								actualStmt = single;
+							};
+						};
+					} else {};
+				};
+				case 54: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							actualStmt = inner;
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		@:ast(switch (actualStmt.def) {
+	case ERemoteCall(module, func, args):
+		var moduleName = switch (module.def) {
+			case EVar(name):
+				name;			
+			default:
+				"";			
+		};
+		if (moduleName == "Log" && func == "trace" && args.length > 0) {
+			trace("[NestedLoopDetector] Found Log.trace call with ${args.length} args");
+			return extractIndicesFromArg(args[0]);
+		};
+		return null;	
+	case ECall(_, func, args) if (args.length > 0):
+		return extractIndicesFromArg(args[0]);	
+	default:
+		return null;	
+}) {
+			var ` = actualStmt.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var func = `;
+						var args = `;
+						if (args.length > 0) {
+							return reflaxe.elixir.ast.transformers.NestedLoopDetector.extractIndicesFromArg(args[0]);
+						} else {
+							return null;
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var module = `;
+						var func = `;
+						var args = `;
+						{
+							var moduleName = @:ast(switch (module.def) {
+	case EVar(name):
+		name;	
+	default:
+		"";	
+}) {
+								var ` = module.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var name = `;
+										{
+											name;
+										};
+									};
+								} else {
+									"";
+								};
+							};
+							if (moduleName == "Log" && func == "trace" && args.length > 0) {
+								haxe.Log.trace("[NestedLoopDetector] Found Log.trace call with " + args.length + " args", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 116, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "extractIndicesFromStatement"});
+								return reflaxe.elixir.ast.transformers.NestedLoopDetector.extractIndicesFromArg(args[0]);
+							};
+							return null;
+						};
+					};
+				};
+				default: {
+					return null;
+				}
+			};
+		};
+	}
+
+	static function extractIndicesFromArg(arg:reflaxe.elixir.ast.ElixirAST) {
+		@:ast(switch (arg.def) {
+	case ERaw(s):
+		trace("[NestedLoopDetector] Checking ERaw string: \"$s\"");
+		var indices:Array<Int> = [];
+		var regex = ~/#{([0-9]+)}/;
+		var tempStr = s;
+		while (regex.match(tempStr)) {
+			var index = Std.parseInt(regex.matched(1));
+			if (index != null) {
+				indices.push(index);
+			};
+			tempStr = regex.matchedRight();
+		};
+		if (indices.length == 0) {
+			var bracketRegex = ~/\[#{([0-9]+)}\]/;
+			tempStr = s;
+			while (bracketRegex.match(tempStr)) {
+				var index = Std.parseInt(bracketRegex.matched(1));
+				if (index != null) {
+					indices.push(index);
+				};
+				tempStr = bracketRegex.matchedRight();
+			};
+			if (indices.length > 0) {
+				trace("[NestedLoopDetector] Found bracket notation indices: $indices");
+			};
+		};
+		if (indices.length > 0) {
+			trace("[NestedLoopDetector] Found indices: $indices");
+		};
+		return indices.length > 0 ? indices : null;	
+	case EString(s):
+		trace("[NestedLoopDetector] Checking EString: \"$s\"");
+		return extractIndicesFromArg(makeAST(ERaw(s)));	
+	default:
+		trace("[NestedLoopDetector] Unknown arg type: ${arg.def}");
+		return null;	
+}) {
+			var ` = arg.def;
+			switch (enumIndex `) {
+				case 32: {
+					var ` = `[0];
+					{
+						var s = `;
+						{
+							haxe.Log.trace("[NestedLoopDetector] Checking EString: \"" + s + "\"", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 182, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "extractIndicesFromArg"});
+							return reflaxe.elixir.ast.transformers.NestedLoopDetector.extractIndicesFromArg({
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(s), metadata : {}, pos : pos};
+							});
+						};
+					};
+				};
+				case 62: {
+					var ` = `[0];
+					{
+						var s = `;
+						{
+							haxe.Log.trace("[NestedLoopDetector] Checking ERaw string: \"" + s + "\"", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 137, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "extractIndicesFromArg"});
+							var indices = [];
+							var regex = new EReg("#{([0-9]+)}", "g");
+							var tempStr = s;
+							while (regex.match(tempStr)) {
+								var index = Std.parseInt(regex.matched(1));
+								if (index != null) {
+									indices.push(index);
+								};
+								tempStr = regex.matchedRight();
+							};
+							if (indices.length == 0) {
+								var bracketRegex = new EReg("\\[#{([0-9]+)}\\]", "g");
+								tempStr = s;
+								while (bracketRegex.match(tempStr)) {
+									var index = Std.parseInt(bracketRegex.matched(1));
+									if (index != null) {
+										indices.push(index);
+									};
+									tempStr = bracketRegex.matchedRight();
+								};
+								if (indices.length > 0) {
+									haxe.Log.trace("[NestedLoopDetector] Found bracket notation indices: " + Std.string(indices), {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 170, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "extractIndicesFromArg"});
+								};
+							};
+							if (indices.length > 0) {
+								haxe.Log.trace("[NestedLoopDetector] Found indices: " + Std.string(indices), {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 175, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "extractIndicesFromArg"});
+							};
+							return if (indices.length > 0) {
+								indices;
+							} else {
+								null;
+							};
+						};
+					};
+				};
+				default: {
+					haxe.Log.trace("[NestedLoopDetector] Unknown arg type: " + Std.string(arg.def), {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 186, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "extractIndicesFromArg"});
+					return null;
+				}
+			};
+		};
+	}
+
+	static function analyzeDimensions(patterns:Array<Array<Int>>) {
+		if (patterns.length == 0) {
+			return null;
+		};
+		var numDimensions = patterns[0].length;
+		if (numDimensions < 2) {
+			return null;
+		};
+		var dimensions = [];
+		{
+			var ` = 0;
+			var ` = numDimensions;
+			while (` < `) {
+				var dim = ` ++;
+				var maxValue = 0;
+				{
+					var ` = 0;
+					while (` < patterns.length) {
+						var pattern = patterns[`];
+						++ `;
+						if (pattern[dim] > maxValue) {
+							maxValue = pattern[dim];
+						};
+					};
+				};
+				dimensions.push(maxValue + 1);
+			};
+		};
+		var expectedCount = 1;
+		{
+			var ` = 0;
+			while (` < dimensions.length) {
+				var d = dimensions[`];
+				++ `;
+				expectedCount *= d;
+			};
+		};
+		if (patterns.length != expectedCount) {
+			haxe.Log.trace("[NestedLoopDetector] Pattern incomplete: expected " + expectedCount + ", got " + patterns.length, {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 221, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "analyzeDimensions"});
+			return null;
+		};
+		if (! reflaxe.elixir.ast.transformers.NestedLoopDetector.verifyNestedOrder(patterns, dimensions)) {
+			haxe.Log.trace("[NestedLoopDetector] Patterns not in nested loop order", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 227, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "analyzeDimensions"});
+			return null;
+		};
+		return dimensions;
+	}
+
+	static function verifyNestedOrder(patterns:Array<Array<Int>>, dimensions:Array<Int>) {
+		var expected = reflaxe.elixir.ast.transformers.NestedLoopDetector.generateExpectedPatterns(dimensions);
+		{
+			var ` = 0;
+			var ` = patterns.length;
+			while (` < `) {
+				var i = ` ++;
+				{
+					var ` = 0;
+					var ` = patterns[i].length;
+					while (` < `) {
+						var j = ` ++;
+						if (patterns[i][j] != expected[i][j]) {
+							return false;
+						};
+					};
+				};
+			};
+		};
+		return true;
+	}
+
+	static function generateExpectedPatterns(dimensions:Array<Int>) {
+		var patterns = [];
+		var indices = {
+			var ` = [];
+			{
+				var ` = 0;
+				var ` = dimensions.length;
+				while (` < `) {
+					var i = ` ++;
+					`.push(0);
+				};
+			};
+			`;
+		};
+		while (true) {
+			patterns.push(indices.copy());
+			var carry = true;
+			var pos = dimensions.length - 1;
+			while (carry && pos >= 0) {
+				indices[pos] ++;
+				if (indices[pos] >= dimensions[pos]) {
+					indices[pos] = 0;
+					pos --;
+				} else {
+					carry = false;
+				};
+			};
+			if (carry) {
+				break;
+			};
+		};
+		return patterns;
+	}
+
+	static function analyzeExpressionPatterns(stmts:Array<reflaxe.elixir.ast.ElixirAST>, patterns:Array<Array<Int>>, dimensions:Array<Int>) {
+		return {multipliers : [], offsets : []};
+	}
+
+	static function buildNestedEnumEachWithExpressions(sampleStmt:reflaxe.elixir.ast.ElixirAST, dimensions:Array<Int>, expressionInfo:Dynamic) {
+		return reflaxe.elixir.ast.transformers.NestedLoopDetector.buildNestedEnumEach(sampleStmt, dimensions);
+	}
+
+	static function reconstructExpressions(s:String, varNames:Array<String>) {
+		var values = [];
+		var positions = [];
+		var regex = new EReg("#{([0-9]+)}", "g");
+		var temp = s;
+		var pos = 0;
+		while (regex.match(temp)) {
+			var val = Std.parseInt(regex.matched(1));
+			if (val != null) {
+				values.push(val);
+				positions.push(pos);
+			};
+			pos ++;
+			temp = regex.matchedRight();
+		};
+		if (values.length == 0) {
+			var bracketRegex = new EReg("\\[#{([0-9]+)}\\]", "g");
+			temp = s;
+			pos = 0;
+			while (bracketRegex.match(temp)) {
+				var val = Std.parseInt(bracketRegex.matched(1));
+				if (val != null) {
+					values.push(val);
+					positions.push(pos);
+				};
+				pos ++;
+				temp = bracketRegex.matchedRight();
+			};
+		};
+		if (values.length < 1) {
+			return s;
+		};
+		var result = s;
+		{
+			var ` = 0;
+			var ` = values.length;
+			while (` < `) {
+				var i = ` ++;
+				var val = values[i];
+				var varName = if (varNames.length > i) {
+					varNames[i];
+				} else {
+					varNames[0];
+				};
+				var expression = "";
+				if (val == 0) {
+					expression = "#{" + varName + " * 0}";
+				} else {
+					if (val == 1) {
+						expression = "#{" + varName + "}";
+					} else {
+						if (val % 3 == 0 && positions[i] < 3) {
+							expression = "#{" + varName + " * 3}";
+						} else {
+							if (val % 2 == 0 && positions[i] < 3) {
+								expression = "#{" + varName + " * 2}";
+							} else {
+								if (val % 2 == 1 && positions[i] < 3) {
+									expression = "#{" + varName + " * 2 + 1}";
+								} else {
+									expression = "#{" + varName + "}";
+								};
+							};
+						};
+					};
+				};
+				result = StringTools.replace(result, "#{" + val + "}", expression);
+				result = StringTools.replace(result, "[#{" + val + "}]", "[" + expression + "]");
+			};
+		};
+		return result;
+	}
+
+	static function buildNestedEnumEach(sampleStmt:reflaxe.elixir.ast.ElixirAST, dimensions:Array<Int>) {
+		var callInfo = reflaxe.elixir.ast.transformers.NestedLoopDetector.extractFunctionCall(sampleStmt);
+		if (callInfo == null) {
+			return sampleStmt;
+		};
+		var varNames = ["i", "j", "k", "l", "m", "n"];
+		var body = reflaxe.elixir.ast.transformers.NestedLoopDetector.recreateFunctionCall(callInfo, varNames.slice(0, dimensions.length));
+		{
+			var ` = 1;
+			var ` = dimensions.length + 1;
+			while (` < `) {
+				var i = ` ++;
+				var dimIndex = dimensions.length - i;
+				var range = {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ERange({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+					}, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(dimensions[dimIndex] - 1), metadata : {}, pos : pos};
+					}, false), metadata : {}, pos : pos};
+				};
+				var varName = varNames[dimIndex];
+				var clause = {args : [reflaxe.elixir.ast.EPattern.PVar(varName)], body : body};
+				var func = {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EFn([clause]), metadata : {}, pos : pos};
+				};
+				body = {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+					}, "each", [range, func]), metadata : {}, pos : pos};
+				};
+			};
+		};
+		return body;
+	}
+
+	static function extractFunctionCall(ast:reflaxe.elixir.ast.ElixirAST) {
+		@:ast(switch (ast.def) {
+	case ERemoteCall({ def : EVar(module) }, funcName, args):
+		return { module : module, func : funcName, args : args };	
+	case ECall(target, funcName, args):
+		return { module : "", func : funcName, args : args };	
+	default:
+		return null;	
+}) {
+			var ` = ast.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var target = `;
+						var funcName = `;
+						var args = `;
+						{
+							return {module : "", func : funcName, args : args};
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var ` = `.def;
+						var ` = `.metadata;
+						var ` = `.pos;
+						if (enumIndex ` == 38) {
+							var ` = `[0];
+							{
+								var module = `;
+								var funcName = `;
+								var args = `;
+								{
+									return {module : module, func : funcName, args : args};
+								};
+							};
+						} else {
+							return null;
+						};
+					};
+				};
+				default: {
+					return null;
+				}
+			};
+		};
+	}
+
+	static function recreateFunctionCall(callInfo:{ module : String, func : String, args : Array<reflaxe.elixir.ast.ElixirAST> }, varNames:Array<String>) {
+		var bodyArgs = [];
+		if (callInfo.args.length > 0) {
+			var firstArg = callInfo.args[0];
+			var transformedArg = @:ast(switch (firstArg.def) {
+	case ERaw(s):
+		trace("[NestedLoopDetector] Original string: \"$s\"");
+		trace("[NestedLoopDetector] Variable names: $varNames");
+		var result = s;
+		if (firstArg.metadata != null) {
+			trace("[NestedLoopDetector] Found metadata: ${firstArg.metadata}");
+			if (firstArg.metadata.originalLoopExpression != null) {
+				trace("[NestedLoopDetector] Using preserved expression: ${firstArg.metadata.originalLoopExpression}");
+				result = firstArg.metadata.originalLoopExpression;
+				if (firstArg.metadata.loopVariableName != null && varNames.length > 0) {
+					var originalVar = firstArg.metadata.loopVariableName;
+					var newVar = varNames[0];
+					result = StringTools.replace(result, originalVar, newVar);
+				};
+			};
+		} else {
+			trace("[NestedLoopDetector] No metadata, attempting reconstruction from patterns");
+			var reconstructed = reconstructExpressions(s, varNames);
+			if (reconstructed != s) {
+				result = reconstructed;
+			} else {
+				for (i  in  0 ... varNames.length) {
+					var pattern = "#{" + i + "}";
+					var replacement = "#{" + varNames[i] + "}";
+					trace("[NestedLoopDetector] Replacing \"$pattern\" with \"$replacement\"");
+					result = StringTools.replace(result, pattern, replacement);
+					var bracketPattern = "[#{" + i + "}]";
+					var bracketReplacement = "[#{" + varNames[i] + "}]";
+					result = StringTools.replace(result, bracketPattern, bracketReplacement);
+				};
+			};
+		};
+		trace("[NestedLoopDetector] Final string: \"$result\"");
+		makeAST(ERaw(result));	
+	default:
+		firstArg;	
+}) {
+				var ` = firstArg.def;
+				if (enumIndex ` == 62) {
+					var ` = `[0];
+					{
+						var s = `;
+						{
+							haxe.Log.trace("[NestedLoopDetector] Original string: \"" + s + "\"", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 460, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "recreateFunctionCall"});
+							haxe.Log.trace("[NestedLoopDetector] Variable names: " + Std.string(varNames), {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 461, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "recreateFunctionCall"});
+							var result = s;
+							if (firstArg.metadata != null) {
+								haxe.Log.trace("[NestedLoopDetector] Found metadata: " + Std.string(firstArg.metadata), {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 467, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "recreateFunctionCall"});
+								if (firstArg.metadata.originalLoopExpression != null) {
+									haxe.Log.trace("[NestedLoopDetector] Using preserved expression: " + firstArg.metadata.originalLoopExpression, {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 471, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "recreateFunctionCall"});
+									result = firstArg.metadata.originalLoopExpression;
+									if (firstArg.metadata.loopVariableName != null && varNames.length > 0) {
+										var originalVar = firstArg.metadata.loopVariableName;
+										var newVar = varNames[0];
+										result = StringTools.replace(result, originalVar, newVar);
+									};
+								};
+							} else {
+								haxe.Log.trace("[NestedLoopDetector] No metadata, attempting reconstruction from patterns", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 483, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "recreateFunctionCall"});
+								var reconstructed = reflaxe.elixir.ast.transformers.NestedLoopDetector.reconstructExpressions(s, varNames);
+								if (reconstructed != s) {
+									result = reconstructed;
+								} else {
+									{
+										var ` = 0;
+										var ` = varNames.length;
+										while (` < `) {
+											var i = ` ++;
+											var pattern = "#{" + i + "}";
+											var replacement = "#{" + varNames[i] + "}";
+											haxe.Log.trace("[NestedLoopDetector] Replacing \"" + pattern + "\" with \"" + replacement + "\"", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 496, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "recreateFunctionCall"});
+											result = StringTools.replace(result, pattern, replacement);
+											var bracketPattern = "[#{" + i + "}]";
+											var bracketReplacement = "[#{" + varNames[i] + "}]";
+											result = StringTools.replace(result, bracketPattern, bracketReplacement);
+										};
+									};
+								};
+							};
+							haxe.Log.trace("[NestedLoopDetector] Final string: \"" + result + "\"", {fileName : "../../../../src/reflaxe/elixir/ast/transformers/NestedLoopDetector.hx", lineNumber : 507, className : "reflaxe.elixir.ast.transformers.NestedLoopDetector", methodName : "recreateFunctionCall"});
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERaw(result), metadata : {}, pos : pos};
+							};
+						};
+					};
+				} else {
+					firstArg;
+				};
+			};
+			bodyArgs.push(transformedArg);
+			{
+				var ` = 1;
+				var ` = callInfo.args.length;
+				while (` < `) {
+					var i = ` ++;
+					bodyArgs.push(callInfo.args[i]);
+				};
+			};
+		};
+		if (callInfo.module != "") {
+			return {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EVar(callInfo.module), metadata : {}, pos : pos};
+				}, callInfo.func, bodyArgs), metadata : {}, pos : pos};
+			};
+		} else {
+			return {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ECall(null, callInfo.func, bodyArgs), metadata : {}, pos : pos};
+			};
+		};
+	}
+}
