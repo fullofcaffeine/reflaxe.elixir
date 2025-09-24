@@ -1,0 +1,7 @@
+-cp test/snapshot/regression/nested_loop_variable_substitution
+-main Main
+--no-output
+-lib reflaxe
+-lib reflaxe.elixir
+-D elixir_output=test/snapshot/regression/nested_loop_variable_substitution/out
+-D analyzer-optimize
