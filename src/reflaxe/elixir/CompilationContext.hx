@@ -122,6 +122,13 @@ class CompilationContext implements BuildContext {
      */
     public var whileLoopCounter: Int;
 
+    /**
+     * Infrastructure variable initialization values
+     * Maps variable names (like "_g", "_g1") to their initialization AST nodes
+     * Used to properly initialize reduce_while accumulator in loop desugaring
+     */
+    public var infrastructureVarInitValues: Map<String, ElixirAST>;
+
     // ========================================================================
     // Module Context
     // ========================================================================
@@ -211,6 +218,7 @@ class CompilationContext implements BuildContext {
         // Initialize counters
         loopCounter = 0;
         whileLoopCounter = 0;
+        infrastructureVarInitValues = new Map();
 
         // Compiler references will be set by ElixirCompiler
         compiler = null;

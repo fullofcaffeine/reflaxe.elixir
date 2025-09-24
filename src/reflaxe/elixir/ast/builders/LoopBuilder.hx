@@ -210,13 +210,32 @@ class LoopBuilder {
      */
     static function hasSideEffectsOnly(expr: TypedExpr): Bool {
         switch(expr.expr) {
-            case TCall({expr: TField(_, FStatic(_, cf))}, _):
-                // Check if it's a trace or log call
-                var name = cf.get().name;
-                return name == "trace" || name == "log" || name == "println";
+            case TCall(e, _):
+                // Check various call patterns for side-effect functions
+                switch(e.expr) {
+                    case TField(_, FStatic(_, cf)):
+                        // Static method calls like Log.trace, Sys.println
+                        var name = cf.get().name;
+                        return name == "trace" || name == "log" || name == "println" || 
+                               name == "print" || name == "debug" || name == "info" ||
+                               name == "warn" || name == "error";
+                    
+                    case TField(_, FInstance(_, _, cf)):
+                        // Instance method calls that might be side effects
+                        var name = cf.get().name;
+                        return name == "push" || name == "add" || name == "remove" ||
+                               name == "set" || name == "clear";
+                    
+                    default:
+                        // Check if the call itself looks like a trace call
+                        // This handles cases where trace might be accessed differently
+                        return false;
+                }
 
             case TBlock(exprs):
                 // Check if all expressions in block are side-effect only
+                // Empty blocks are side-effect only
+                if (exprs.length == 0) return true;
                 for (e in exprs) {
                     if (!hasSideEffectsOnly(e)) return false;
                 }
@@ -234,6 +253,14 @@ class LoopBuilder {
                 // If both branches are side-effect only
                 return hasSideEffectsOnly(then_) &&
                        (else_ == null || hasSideEffectsOnly(else_));
+            
+            case TConst(_):
+                // Constants alone don't have side effects, but also don't produce meaningful values in a loop
+                return true;
+            
+            case TLocal(_):
+                // Just referencing a variable is effectively a side effect only in a loop context
+                return true;
 
             default:
                 // Conservative - assume it produces a value
