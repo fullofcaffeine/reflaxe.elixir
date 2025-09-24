@@ -6,19 +6,19 @@ defmodule Main do
     Log.trace(str3, %{:file_name => "Main.hx", :line_number => 15, :class_name => "Main", :method_name => "stringBasics"})
     multiline = "This is\na multi-line\nstring"
     Log.trace(multiline, %{:file_name => "Main.hx", :line_number => 21, :class_name => "Main", :method_name => "stringBasics"})
-    Log.trace("Length of \"#{str3}\": #{str3.length |> Kernel.to_string()}", %{:file_name => "Main.hx", :line_number => 24, :class_name => "Main", :method_name => "stringBasics"})
+    Log.trace("Length of \"#{str3}\": #{str3.length}", %{:file_name => "Main.hx", :line_number => 24, :class_name => "Main", :method_name => "stringBasics"})
   end
   def string_interpolation() do
     name = "Alice"
     age = 30
     pi = 3.14159
     Log.trace("Hello, #{name}!", %{:file_name => "Main.hx", :line_number => 34, :class_name => "Main", :method_name => "stringInterpolation"})
-    Log.trace("Age: #{age |> Kernel.to_string()}", %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "stringInterpolation"})
-    Log.trace("Next year, #{name} will be #{(age + 1) |> Kernel.to_string()}", %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "stringInterpolation"})
-    Log.trace("Pi rounded: #{(round(pi * 100) / 100) |> Kernel.to_string()}", %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "stringInterpolation"})
+    Log.trace("Age: #{age}", %{:file_name => "Main.hx", :line_number => 35, :class_name => "Main", :method_name => "stringInterpolation"})
+    Log.trace("Next year, #{name} will be #{(age + 1)}", %{:file_name => "Main.hx", :line_number => 38, :class_name => "Main", :method_name => "stringInterpolation"})
+    Log.trace("Pi rounded: #{round(pi * 100) / 100}", %{:file_name => "Main.hx", :line_number => 39, :class_name => "Main", :method_name => "stringInterpolation"})
     person_name = "Bob"
     person_age = 25
-    Log.trace("Person: #{person_name} is #{person_age |> Kernel.to_string()} years old", %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "stringInterpolation"})
+    Log.trace("Person: #{person_name} is #{person_age} years old", %{:file_name => "Main.hx", :line_number => 43, :class_name => "Main", :method_name => "stringInterpolation"})
     items = ["apple", "banana", "orange"]
     Log.trace("Items: #{Enum.join(items, ", ")}", %{:file_name => "Main.hx", :line_number => 47, :class_name => "Main", :method_name => "stringInterpolation"})
     Log.trace("First item: #{String.upcase(items[0])}", %{:file_name => "Main.hx", :line_number => 48, :class_name => "Main", :method_name => "stringInterpolation"})
@@ -37,23 +37,23 @@ String.slice(text, 0, len)}"
     Log.trace("Char at 0: #{String.at(text, 0) || ""}", %{:file_name => "Main.hx", :line_number => 68, :class_name => "Main", :method_name => "stringMethods"})
     Log.trace((
 "Char code at 0: #{result = :binary.at(text, 0)
-if result == nil, do: nil, else: result.to_string()}"
+if result == nil, do: nil, else: result}"
 ), %{:file_name => "Main.hx", :line_number => 69, :class_name => "Main", :method_name => "stringMethods"})
-    Log.trace("Index of \"World\": #{(case :binary.match(text, "World") do
+    Log.trace("Index of \"World\": #{case :binary.match(text, "World") do
                 {pos, _} -> pos
                 nil -> -1
-            end) |> Kernel.to_string()}", %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "stringMethods"})
+            end}", %{:file_name => "Main.hx", :line_number => 72, :class_name => "Main", :method_name => "stringMethods"})
     Log.trace((
 "Last index of \"o\": #{start_index = nil
 if (start_index == nil) do
   start_index = text.length
 end
 sub = String.slice(text, 0, start_index)
-(case String.split(sub, "o") do
+case String.split(sub, "o") do
             parts when length(parts) > 1 ->
                 String.length(Enum.join(Enum.slice(parts, 0..-2), "o"))
             _ -> -1
-        end) |> Kernel.to_string()}"
+        end}"
 ), %{:file_name => "Main.hx", :line_number => 73, :class_name => "Main", :method_name => "stringMethods"})
     parts = String.split(text, ", ")
     Log.trace("Split parts: #{Std.string(parts)}", %{:file_name => "Main.hx", :line_number => 77, :class_name => "Main", :method_name => "stringMethods"})
@@ -88,11 +88,11 @@ sub = String.slice(text, 0, start_index)
     result = IO.iodata_to_binary(buf)
     Log.trace("Built string: #{result}", %{:file_name => "Main.hx", :line_number => 122, :class_name => "Main", :method_name => "stringBuilding"})
     parts = []
-    parts = parts ++ ["Item #{1.to_string()}"]
-    parts = parts ++ ["Item #{2.to_string()}"]
-    parts = parts ++ ["Item #{3.to_string()}"]
-    parts = parts ++ ["Item #{4.to_string()}"]
-    parts = parts ++ ["Item #{5.to_string()}"]
+    parts = parts ++ ["Item #{1}"]
+    parts = parts ++ ["Item #{2}"]
+    parts = parts ++ ["Item #{3}"]
+    parts = parts ++ ["Item #{4}"]
+    parts = parts ++ ["Item #{5}"]
     list = Enum.join(parts, ", ")
     Log.trace("List: #{list}", %{:file_name => "Main.hx", :line_number => 130, :class_name => "Main", :method_name => "stringBuilding"})
   end
@@ -130,7 +130,7 @@ sub = String.slice(text, 0, start_index)
   def unicode_strings() do
     unicode = "Hello 世界 🌍"
     Log.trace("Unicode string: #{unicode}", %{:file_name => "Main.hx", :line_number => 189, :class_name => "Main", :method_name => "unicodeStrings"})
-    Log.trace("Length: #{unicode.length.to_string()}", %{:file_name => "Main.hx", :line_number => 190, :class_name => "Main", :method_name => "unicodeStrings"})
+    Log.trace("Length: #{unicode.length}", %{:file_name => "Main.hx", :line_number => 190, :class_name => "Main", :method_name => "unicodeStrings"})
     escaped = "Line 1\nLine 2\tTabbed\r\nLine 3"
     Log.trace("Escaped: #{escaped}", %{:file_name => "Main.hx", :line_number => 194, :class_name => "Main", :method_name => "unicodeStrings"})
     quote_ = "She said \"Hello\""

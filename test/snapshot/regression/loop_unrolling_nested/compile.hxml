@@ -1,0 +1,7 @@
+-cp test/snapshot/regression/loop_unrolling_nested
+-main Main
+--no-output
+-lib reflaxe
+-lib reflaxe.elixir
+-D elixir_output=test/snapshot/regression/loop_unrolling_nested/out
+-D analyzer-optimize

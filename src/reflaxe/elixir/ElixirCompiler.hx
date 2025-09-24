@@ -763,9 +763,13 @@ class ElixirCompiler extends GenericCompiler<
             context.setFeatureFlag("new_module_builder", value != "false");
         }
 
+        // Enable loop_builder by default - can be disabled with -D elixir.feature.loop_builder_enabled=false
         if (haxe.macro.Context.defined("elixir.feature.loop_builder_enabled")) {
             var value = haxe.macro.Context.definedValue("elixir.feature.loop_builder_enabled");
             context.setFeatureFlag("loop_builder_enabled", value != "false");
+        } else {
+            // Default to enabled for better loop generation
+            context.setFeatureFlag("loop_builder_enabled", true);
         }
 
         if (haxe.macro.Context.defined("elixir.feature.idiomatic_comprehensions")) {
