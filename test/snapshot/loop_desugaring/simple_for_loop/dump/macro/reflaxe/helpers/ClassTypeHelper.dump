@@ -1,0 +1,247 @@
+class reflaxe.helpers.ClassTypeHelper {
+
+	public static function isTypeParameter(cls:haxe.macro.ClassType) {
+		return @:ast(switch (cls.kind) {
+	case KTypeParameter(_):
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = cls.kind;
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					true;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	public static function isExprClass(cls:haxe.macro.ClassType) {
+		return @:ast(switch (cls.kind) {
+	case KExpr(_):
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = cls.kind;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				{
+					true;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	@:value({ overrideConstructorExpr : null })
+	public static function extractPreconstructorFieldAssignments(cls:haxe.macro.ClassType, overrideConstructorExpr:Null<haxe.macro.TypedExpr> = null) {
+		if (cls.constructor == null) {
+			return null;
+		};
+		var constructorExpr = if (overrideConstructorExpr != null) {
+			overrideConstructorExpr;
+		} else {
+			var constructor = cls.constructor.get();
+			constructor.expr();
+		};
+		if (constructorExpr == null) {
+			return null;
+		};
+		var exprList = @:ast(switch (constructorExpr.expr) {
+	case TFunction(tfunc):
+		{
+			switch (tfunc.expr.expr) {
+				case TBlock(exprList):
+					exprList;				
+				case _:
+					return null;				
+			};
+		};	
+	case TBlock(exprList):
+		exprList;	
+	case _:
+		return null;	
+}) {
+			var ` = constructorExpr.expr;
+			switch (enumIndex `) {
+				case 12: {
+					var ` = `[0];
+					{
+						var tfunc = `;
+						{
+							{
+								@:ast(switch (tfunc.expr.expr) {
+	case TBlock(exprList):
+		exprList;	
+	case _:
+		return null;	
+}) {
+									var ` = tfunc.expr.expr;
+									if (enumIndex ` == 14) {
+										var ` = `[0];
+										{
+											var exprList = `;
+											{
+												exprList;
+											};
+										};
+									} else {
+										return null;
+									};
+								};
+							};
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprList = `;
+						{
+							exprList;
+						};
+					};
+				};
+				default: {
+					return null;
+				}
+			};
+		};
+		var exprList = cast cast {
+			if (exprList == null) {
+				throw "Trusted on null value.";
+			};
+			@:nullSafety(Off) exprList;
+		};
+		var remainingExprsIndex = 0;
+		var expressions = [];
+		var result = {
+			{};
+			new haxe.ds.ObjectMap();
+		};
+		{
+			var ` = 0;
+			var ` = cast cast {
+				if (exprList == null) {
+					throw "Trusted on null value.";
+				};
+				@:nullSafety(Off) exprList;
+			};
+			while (` < `.length) {
+				var expr = `[`];
+				++ `;
+				remainingExprsIndex ++;
+				var fieldExpr = null;
+				var defaultExpr = @:ast(switch (expr.expr) {
+	case TBinop(OpAssign, field, defaultExpr):
+		{
+			fieldExpr = field;
+			defaultExpr;
+		};	
+	case _:
+		null;	
+}) {
+					var ` = expr.expr;
+					if (enumIndex ` == 3) {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						if (enumIndex ` == 4) {
+							{
+								var field = `;
+								var defaultExpr = `;
+								{
+									{
+										fieldExpr = field;
+										defaultExpr;
+									};
+								};
+							};
+						} else {
+							null;
+						};
+					} else {
+						null;
+					};
+				};
+				if (defaultExpr == null || fieldExpr == null) {
+					break;
+				};
+				var classField = @:ast(switch (fieldExpr.expr) {
+	case TField({ expr : TConst(TThis) }, FInstance(_.get() => fieldClass, _, cf)) if (Std.string(fieldClass) == Std.string(cls)):
+		{
+			var classField = cf.get();
+			if (classField.hasDefaultValue()) {
+				classField;
+			} else {
+				null;
+			};
+		};	
+	case _:
+		null;	
+}) {
+					var ` = fieldExpr.expr;
+					if (enumIndex ` == 4) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ` = `.expr;
+							var ` = `.pos;
+							var ` = `.t;
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								if (enumIndex ` == 5) {
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var _hx_tmp;
+											{
+												var fieldClass = (_hx_tmp = `.get());
+												var cf = `;
+												if (Std.string(fieldClass) == Std.string(cls)) {
+													{
+														var classField = cf.get();
+														if (reflaxe.helpers.ClassFieldHelper.hasDefaultValue(classField)) {
+															classField;
+														} else {
+															null;
+														};
+													};
+												} else {
+													null;
+												};
+											};
+										};
+									} else {
+										null;
+									};
+								} else {
+									null;
+								};
+							} else {
+								null;
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				if (classField == null) {
+					break;
+				};
+				expressions.push(expr);
+				{
+					result.set(classField, defaultExpr);
+				};
+			};
+		};
+		return {assignments : result, expressions : expressions, modifiedConstructor : {expr : haxe.macro.TypedExprDef.TBlock(exprList.slice(remainingExprsIndex - 1, null)), pos : constructorExpr.pos, t : constructorExpr.t}};
+	}
+}

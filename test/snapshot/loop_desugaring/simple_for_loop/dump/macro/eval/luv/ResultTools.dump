@@ -1,0 +1,52 @@
+class eval.luv.ResultTools {
+
+	public static inline function resolve<T>(result:eval.luv.Result<resolve.T>) {
+		@:ast(switch result {
+	case Ok(v):
+		return v;	
+	case Error(e):
+		throw new LuvException(e);	
+}) switch (@:exhaustive enumIndex result) {
+			case 0: {
+				var ` = result[0];
+				{
+					var v = `;
+					{
+						return v;
+					};
+				};
+			};
+			case 1: {
+				var ` = result[0];
+				{
+					var e = `;
+					{
+						throw new eval.luv.LuvException(e, null, null);
+					};
+				};
+			};
+		};
+	}
+
+	public static inline function isOk<T>(result:eval.luv.Result<isOk.T>) {
+		return @:ast(switch result {
+	case Ok(_):
+		true;	
+	case Error(_):
+		false;	
+}) switch (@:exhaustive enumIndex result) {
+			case 0: {
+				var ` = result[0];
+				{
+					true;
+				};
+			};
+			case 1: {
+				var ` = result[0];
+				{
+					false;
+				};
+			};
+		};
+	}
+}

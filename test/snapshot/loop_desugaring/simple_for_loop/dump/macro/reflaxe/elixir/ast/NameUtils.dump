@@ -1,0 +1,41 @@
+class reflaxe.elixir.ast.NameUtils {
+
+	public static function toSnakeCase(name:String) {
+		if (name == null || name.length == 0) {
+			return name;
+		};
+		var result = new EReg("([A-Z]+)([A-Z][a-z])", "g").replace(name, "$1_$2");
+		result = new EReg("([a-z\\d])([A-Z])", "g").replace(result, "$1_$2");
+		return result.toLowerCase();
+	}
+
+	public static function getElixirModuleName(typeName:String) {
+		var parts = typeName.split(".");
+		return parts[parts.length - 1];
+	}
+
+	public static inline function toElixirName(name:String) {
+		return reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+	}
+
+	public static function isElixirReserved(name:String) {
+		var reserved = ["after", "and", "catch", "cond", "do", "else", "end", "false", "fn", "in", "nil", "not", "or", "rescue", "true", "when", "with", "alias", "case", "def", "defp", "defmodule", "defmacro", "defmacrop", "defstruct", "defdelegate", "defprotocol", "defimpl", "for", "if", "import", "quote", "receive", "require", "super", "try", "unless", "unquote", "use"];
+		return reserved.indexOf(name, null) >= 0;
+	}
+
+	public static function toSafeElixirFunctionName(name:String) {
+		var snakeName = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+		if (reflaxe.elixir.ast.NameUtils.isElixirReserved(snakeName)) {
+			return snakeName + "_fn";
+		};
+		return snakeName;
+	}
+
+	public static function toSafeElixirParameterName(name:String) {
+		var snakeName = reflaxe.elixir.ast.NameUtils.toSnakeCase(name);
+		if (reflaxe.elixir.ast.NameUtils.isElixirReserved(snakeName)) {
+			return "_" + snakeName;
+		};
+		return snakeName;
+	}
+}

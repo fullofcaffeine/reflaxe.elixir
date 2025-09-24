@@ -1,0 +1,12 @@
+class sys.thread.NoEventLoopException extends haxe.Exception {
+
+	@:value({ msg : "Event loop is not available. Refer to sys.thread.Thread.runWithEventLoop." })
+	public function new(msg:String = "Event loop is not available. Refer to sys.thread.Thread.runWithEventLoop.", previous:Null<haxe.Exception> = null) {
+		{
+			super(msg, previous, null);
+		};
+		{
+			this.__skipStack ++;
+		};
+	}
+}

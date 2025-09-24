@@ -1,0 +1,676 @@
+class reflaxe.data.ClassFuncData {
+
+	@:value({ property : null, extractArgumentMetadata : true })
+	public function new(id:String, classType:haxe.macro.ClassType, field:haxe.macro.ClassField, isStatic:Bool, kind:haxe.macro.MethodKind, ret:haxe.macro.Type, args:Array<reflaxe.data.ClassFuncArg>, tfunc:Null<haxe.macro.TFunc>, expr:Null<haxe.macro.TypedExpr>, extractArgumentMetadata:Bool = true, property:Null<haxe.macro.ClassField> = null) {
+		this.id = id;
+		this.classType = classType;
+		this.field = field;
+		this.isStatic = isStatic;
+		this.kind = kind;
+		this.ret = ret;
+		this.args = args;
+		this.tfunc = tfunc;
+		this.expr = expr;
+		if (extractArgumentMetadata) {
+			this.extractArgumentMeta();
+		};
+		this.property = @:mergeBlock {
+			var tmp = {
+				property;
+			};
+			if (tmp != null) tmp else {
+				this.findProperty();
+			};
+		};
+	}
+
+	public var id(default,ctor):String;
+
+	public var classType(default,ctor):haxe.macro.ClassType;
+
+	public var field(default,ctor):haxe.macro.ClassField;
+
+	public var isStatic(default,ctor):Bool;
+
+	public var kind(default,ctor):haxe.macro.MethodKind;
+
+	public var ret(default,ctor):haxe.macro.Type;
+
+	public var args(default,ctor):Array<reflaxe.data.ClassFuncArg>;
+
+	public var tfunc(default,ctor):Null<haxe.macro.TFunc>;
+
+	public var property(default,ctor):Null<haxe.macro.ClassField>;
+
+	public var expr(default,null):Null<haxe.macro.TypedExpr>;
+
+	var variableUsageCount:Null<Map<Int, Int>>;
+
+	public function clone() {
+		return new reflaxe.data.ClassFuncData(this.id, this.classType, this.field, this.isStatic, this.kind, this.ret, this.args, this.tfunc, this.expr, false, this.property);
+	}
+
+	public function applyPreprocessors(compiler:reflaxe.BaseCompiler, preprocessors:Array<reflaxe.preprocessors.ExpressionPreprocessor>) {
+		{
+			var ` = 0;
+			while (` < preprocessors.length) {
+				var processor = preprocessors[`];
+				++ `;
+				reflaxe.preprocessors.ExpressionPreprocessorHelper.process(processor, this, compiler);
+			};
+		};
+	}
+
+	function findProperty() {
+		var property = null;
+		if (StringTools.startsWith(reflaxe.helpers.ClassFieldHelper.getHaxeName(this.field), "get_")) {
+			var propName = reflaxe.helpers.ClassFieldHelper.getHaxeName(this.field).substr("get_".length, null);
+			if (propName.length == 0) {
+				return null;
+			};
+			{
+				var ` = 0;
+				var ` = (if (this.isStatic) {
+					this.classType.statics;
+				} else {
+					this.classType.fields;
+				}).get();
+				while (` < `.length) {
+					var f = `[`];
+					++ `;
+					var hasGetter = @:ast(switch (f.kind) {
+	case FVar(AccCall, _):
+		true;	
+	case _:
+		false;	
+}) {
+						var ` = f.kind;
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							var ` = `[1];
+							if (enumIndex ` == 4) {
+								{
+									true;
+								};
+							} else {
+								false;
+							};
+						} else {
+							false;
+						};
+					};
+					if (hasGetter && reflaxe.helpers.ClassFieldHelper.getHaxeName(f) == propName) {
+						property = f;
+						break;
+					};
+				};
+			};
+		} else {
+			if (StringTools.startsWith(reflaxe.helpers.ClassFieldHelper.getHaxeName(this.field), "set_")) {
+				var propName = reflaxe.helpers.ClassFieldHelper.getHaxeName(this.field).substr("set_".length, null);
+				if (propName.length == 0) {
+					return null;
+				};
+				{
+					var ` = 0;
+					var ` = (if (this.isStatic) {
+						this.classType.statics;
+					} else {
+						this.classType.fields;
+					}).get();
+					while (` < `.length) {
+						var f = `[`];
+						++ `;
+						var hasSetter = @:ast(switch (f.kind) {
+	case FVar(_, AccCall):
+		true;	
+	case _:
+		false;	
+}) {
+							var ` = f.kind;
+							if (enumIndex ` == 0) {
+								var ` = `[0];
+								var ` = `[1];
+								if (enumIndex ` == 4) {
+									{
+										true;
+									};
+								} else {
+									false;
+								};
+							} else {
+								false;
+							};
+						};
+						if (hasSetter && reflaxe.helpers.ClassFieldHelper.getHaxeName(f) == propName) {
+							property = f;
+							break;
+						};
+					};
+				};
+			};
+		};
+		return property;
+	}
+
+	function extractArgumentMeta() {
+		{
+			var ` = 0;
+			var ` = this.field.meta.get();
+			while (` < `.length) {
+				var meta = `[`];
+				++ `;
+				if (meta.name == ":argMeta") {
+					@:ast(switch (meta.params) {
+	case [{ expr : EConst(CInt(Std.parseInt(_) => index)) }, { expr : ECall({ expr : EConst(constant) }, metaArgs) }] if (index != null):
+		{
+			if (index < args.length) {
+				var metaName = switch (constant) {
+					case CIdent(s):
+						s;					
+					case CString(s, _):
+						s;					
+					case _:
+						continue;					
+				};
+				args[index].addExtraMetadata({ name : metaName, pos : meta.pos, params : metaArgs });
+			};
+		};	
+	case _:
+}) {
+						var ` = meta.params;
+						if (` == null) {} else if (`.length == 2) {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var ` = `.expr;
+								var ` = `.pos;
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var ` = `.expr;
+											var ` = `.pos;
+											if (enumIndex ` == 7) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													if (enumIndex ` == 0) {
+														var ` = `[0];
+														if (` == null) {
+															var _hx_tmp;
+															{
+																var constant = `;
+																var metaArgs = `;
+																var index = (_hx_tmp = Std.parseInt(`));
+																if (index != null) {
+																	{
+																		if (index < this.args.length) {
+																			var metaName = @:ast(switch (constant) {
+	case CIdent(s):
+		s;	
+	case CString(s, _):
+		s;	
+	case _:
+		continue;	
+}) switch (enumIndex constant) {
+																				case 2: {
+																					var ` = constant[0];
+																					var ` = constant[1];
+																					{
+																						var s = `;
+																						{
+																							s;
+																						};
+																					};
+																				};
+																				case 3: {
+																					var ` = constant[0];
+																					{
+																						var s = `;
+																						{
+																							s;
+																						};
+																					};
+																				};
+																				default: {
+																					continue;
+																				}
+																			};
+																			this.args[index].addExtraMetadata({name : metaName, pos : meta.pos, params : metaArgs});
+																		};
+																	};
+																} else {};
+															};
+														} else {
+															var _hx_tmp;
+															{
+																var constant = `;
+																var metaArgs = `;
+																var index = (_hx_tmp = Std.parseInt(`));
+																if (index != null) {
+																	{
+																		if (index < this.args.length) {
+																			var metaName = @:ast(switch (constant) {
+	case CIdent(s):
+		s;	
+	case CString(s, _):
+		s;	
+	case _:
+		continue;	
+}) switch (enumIndex constant) {
+																				case 2: {
+																					var ` = constant[0];
+																					var ` = constant[1];
+																					{
+																						var s = `;
+																						{
+																							s;
+																						};
+																					};
+																				};
+																				case 3: {
+																					var ` = constant[0];
+																					{
+																						var s = `;
+																						{
+																							s;
+																						};
+																					};
+																				};
+																				default: {
+																					continue;
+																				}
+																			};
+																			this.args[index].addExtraMetadata({name : metaName, pos : meta.pos, params : metaArgs});
+																		};
+																	};
+																} else {};
+															};
+														};
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								} else {};
+							};
+						} else {};
+					};
+				};
+			};
+		};
+	}
+
+	inline function isGetterName() return StringTools.startsWith(reflaxe.helpers.ClassFieldHelper.getHaxeName(this.field), "get_")
+
+	inline function isSetterName() return StringTools.startsWith(reflaxe.helpers.ClassFieldHelper.getHaxeName(this.field), "set_")
+
+	public function isGetter() {
+		return StringTools.startsWith(reflaxe.helpers.ClassFieldHelper.getHaxeName(this.field), "get_") && this.property != null;
+	}
+
+	public function isSetter() {
+		return StringTools.startsWith(reflaxe.helpers.ClassFieldHelper.getHaxeName(this.field), "set_") && this.property != null;
+	}
+
+	public function setExpr(e:haxe.macro.TypedExpr) {
+		this.expr = e;
+		this.variableUsageCount = null;
+	}
+
+	public function setExprList(expressions:Array<haxe.macro.TypedExpr>) {
+		if (expressions.length == 1) {
+			this.setExpr({
+				var maybe = expressions[0];
+				cast {
+					if (maybe == null) {
+						throw "Trusted on null value.";
+					};
+					@:nullSafety(Off) maybe;
+				};
+			});
+		} else {
+			if (this.expr != null) {
+				this.setExpr(reflaxe.helpers.TypedExprHelper.copy(this.expr, haxe.macro.TypedExprDef.TBlock(expressions)));
+			} else {
+				throw "`expr` must not be `null` when using ClassFuncData.setExprList.";
+			};
+		};
+	}
+
+	public function getOrFindVariableUsageCount() {
+		if (this.expr == null) {
+			return {
+				{};
+				new haxe.ds.IntMap();
+			};
+		};
+		var map = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		var count = [null];
+		count[0] = function(e:haxe.macro.TypedExpr) {
+			@:ast(switch (e.expr) {
+	case TVar(tvar, _):
+		{
+			map.set(tvar.id, 0);
+		};	
+	case TLocal(tvar):
+		{
+			map.set(tvar.id, (map.get(tvar.id) ?? 0) + 1);
+		};	
+	case _:
+}) {
+				var ` = e.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var tvar = `;
+							{
+								{
+									{
+										var key = tvar.id;
+										var value = @:mergeBlock {
+											var tmp = {
+												var key = tvar.id;
+												map.get(key);
+											};
+											if ((tmp != null)) tmp else 0;
+										} + 1;
+										map.set(key, value);
+									};
+								};
+							};
+						};
+					};
+					case 13: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var tvar = `;
+							{
+								{
+									{
+										var key = tvar.id;
+										map.set(key, 0);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+			return haxe.macro.TypedExprTools.map(e, count[0]);
+		};
+		count[0](this.expr);
+		return this.variableUsageCount = map;
+	}
+
+	public function setVariableUsageCount(usageMap:Map<Int, Int>) {
+		this.variableUsageCount = usageMap;
+	}
+
+	public function argumentsMatch(childData:reflaxe.data.ClassFuncData) {
+		if (this.args.length != childData.args.length) {
+			return false;
+		};
+		{
+			var ` = 0;
+			var ` = this.args.length;
+			while (` < `) {
+				var i = ` ++;
+				if (! {
+					var a = this.args[i].type;
+					var b = childData.args[i].type;
+					Type.enumEq(a, b);
+				}) {
+					return false;
+				};
+			};
+		};
+		return true;
+	}
+
+	@:value({ nativeExpressionGenerator : null, noNullPadMeta : null })
+	public function replacePadNullsWithDefaults(passedArgs:Array<haxe.macro.TypedExpr>, noNullPadMeta:Null<String> = null, nativeExpressionGenerator:Null<(String, haxe.macro.Position) -> haxe.macro.TypedExpr> = null) {
+		if (noNullPadMeta != null && nativeExpressionGenerator == null) {
+			throw "Missing \"nativeExpressionGenerator\" argument.";
+		};
+		var hasDefaults = false;
+		{
+			var ` = 0;
+			var ` = this.args;
+			while (` < `.length) {
+				var a = `[`];
+				++ `;
+				if (a.expr != null || (noNullPadMeta != null && a.hasMetadata(noNullPadMeta))) {
+					hasDefaults = true;
+					break;
+				};
+			};
+		};
+		if (! hasDefaults) {
+			return passedArgs;
+		};
+		var nullPadRemovedAtIndex = null;
+		var result = [];
+		{
+			var ` = 0;
+			var ` = this.args.length;
+			while (` < `) {
+				var i = ` ++;
+				var arg = this.args[i];
+				var hasPassedArg = i < passedArgs.length;
+				var useDefault = ! hasPassedArg || reflaxe.helpers.TypedExprHelper.isNullExpr(passedArgs[i]);
+				var noNullPad = if (noNullPadMeta != null) {
+					arg.hasMetadata(noNullPadMeta);
+				} else {
+					false;
+				};
+				var noNullPadDefaultValue = if (noNullPad) {
+					arg.getMetadataFirstString(cast cast {
+						if (noNullPadMeta == null) {
+							throw "Trusted on null value.";
+						};
+						@:nullSafety(Off) noNullPadMeta;
+					});
+				} else {
+					null;
+				};
+				var resultValue = null;
+				if (useDefault && (arg.expr != null || noNullPad)) {
+					if (noNullPad) {
+						if (noNullPadDefaultValue == null) {
+							nullPadRemovedAtIndex = i;
+						} else {
+							if (nativeExpressionGenerator != null) {
+								var pos = {
+									var maybe = arg.getMetadataFirstPosition(cast {
+										if ((noNullPadMeta == null)) throw "Trusted on null value.";
+										@:nullSafety(Off) noNullPadMeta;
+									});
+									cast {
+										if (maybe == null) {
+											throw "Trusted on null value.";
+										};
+										@:nullSafety(Off) maybe;
+									};
+								};
+								resultValue = nativeExpressionGenerator(noNullPadDefaultValue, pos);
+							};
+						};
+					} else {
+						if (arg.hasConflictingDefaultValue()) {
+							var e = passedArgs[i];
+							if (e != null) {
+								resultValue = {expr : haxe.macro.TypedExprDef.TMeta({name : "-conflicting-default-value", pos : e.pos}, e), pos : e.pos, t : e.t};
+							};
+						} else {
+							if (arg.expr != null) {
+								resultValue = arg.expr;
+							};
+						};
+					};
+				} else {
+					if (hasPassedArg) {
+						resultValue = passedArgs[i];
+					};
+				};
+				if (resultValue != null) {
+					if (nullPadRemovedAtIndex != null) {
+						reflaxe.helpers.Context.error("`null` padding removed at index " + nullPadRemovedAtIndex + ", but argument still exists at index " + i + ".", {
+							if (hasPassedArg) {
+								passedArgs[i].pos;
+							} else {
+								if (passedArgs.length > 0) {
+									passedArgs[passedArgs.length - 1].pos;
+								} else {
+									reflaxe.helpers.Context.currentPos();
+								};
+							};
+						});
+					};
+					result.push(resultValue);
+				};
+			};
+		};
+		return result;
+	}
+
+	@:value({ preventRepeats : false, frontOptionalsOnly : false })
+	public function findAllArgumentVariations(frontOptionalsOnly:Bool = false, preventRepeats:Bool = false) {
+		var end = if (frontOptionalsOnly) {
+			var latestRequired = -1;
+			{
+				var ` = 0;
+				var ` = this.args.length;
+				while (` < `) {
+					var i = ` ++;
+					if (! this.args[i].opt) {
+						latestRequired = i;
+					};
+				};
+			};
+			latestRequired;
+		} else {
+			this.args.length;
+		};
+		if (end == -1) {
+			return [];
+		};
+		var optionalIndexes = [];
+		{
+			var ` = 0;
+			var ` = end;
+			while (` < `) {
+				var i = ` ++;
+				if (this.args[i].opt) {
+					optionalIndexes.push(i);
+				};
+			};
+		};
+		if (optionalIndexes.length == 0) {
+			return [{args : this.args, padExprs : {
+				var _this = this.args;
+				{
+					var ` = [];
+					{
+						var ` = 0;
+						var ` = _this;
+						while (` < `.length) {
+							var v = `[`];
+							++ `;
+							`.push(function(a:reflaxe.data.ClassFuncArg) {
+								return reflaxe.helpers.TypedExprHelper.make(haxe.macro.TypedExprDef.TIdent(a.getName()), a.type, null);
+							}(v));
+						};
+					};
+					`;
+				};
+			}}];
+		};
+		var result = [];
+		var optionalCount = optionalIndexes.length;
+		var possibleCombos = Std.int(Math.pow(2, optionalCount));
+		{
+			var ` = 0;
+			var ` = possibleCombos;
+			while (` < `) {
+				var comboID = ` ++;
+				var tempArgs = [];
+				var padExprs = [];
+				{
+					var ` = 0;
+					var ` = this.args.length;
+					while (` < `) {
+						var j = ` ++;
+						var index = optionalIndexes.indexOf(j, null);
+						var arg = this.args[j];
+						if (index < 0 || ((comboID & Std.int(Math.pow(2, index))) > 0)) {
+							tempArgs.push(arg);
+							padExprs.push(reflaxe.helpers.TypedExprHelper.make(haxe.macro.TypedExprDef.TIdent(arg.getName()), arg.type, null));
+						} else {
+							padExprs.push(@:mergeBlock {
+								var tmp = {
+									arg.expr;
+								};
+								if (tmp != null) tmp else {
+									reflaxe.helpers.TypedExprHelper.make(haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TNull), arg.type, null);
+								};
+							});
+						};
+					};
+				};
+				result.push({args : tempArgs, padExprs : padExprs});
+			};
+		};
+		if (preventRepeats) {
+			var keys = {
+				{};
+				new haxe.ds.StringMap();
+			};
+			var newResult = [];
+			{
+				var ` = 0;
+				while (` < result.length) {
+					var data = result[`];
+					++ `;
+					var key = Std.string({
+						var _this = data.args;
+						{
+							var ` = [];
+							{
+								var ` = 0;
+								var ` = _this;
+								while (` < `.length) {
+									var v = `[`];
+									++ `;
+									`.push(function(a:reflaxe.data.ClassFuncArg) {
+										return a.type;
+									}(v));
+								};
+							};
+							`;
+						};
+					});
+					if (! keys.exists(key)) {
+						{
+							keys.set(key, true);
+						};
+						newResult.push(data);
+					};
+				};
+			};
+			return newResult;
+		};
+		return result;
+	}
+}

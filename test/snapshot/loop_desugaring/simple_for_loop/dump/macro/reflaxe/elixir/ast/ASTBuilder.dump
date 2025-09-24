@@ -1,0 +1,143 @@
+class reflaxe.elixir.ast.ASTBuilder {
+
+	public function new() {
+		this.metadata = {};
+	}
+
+	var def:reflaxe.elixir.ast.ElixirASTDef;
+
+	var metadata:reflaxe.elixir.ast.ElixirMetadata;
+
+	var pos:haxe.macro.Position;
+
+	public function nil() {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.ENil;
+		return this;
+	}
+
+	public function var_(name:String) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EVar(name);
+		return this;
+	}
+
+	public function string(value:String) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EString(value);
+		return this;
+	}
+
+	public function int(value:Int) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EInteger(value);
+		return this;
+	}
+
+	public function float(value:Float) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EFloat(value);
+		return this;
+	}
+
+	public function bool(value:Bool) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EBoolean(value);
+		return this;
+	}
+
+	public function atom(value:String) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+			var this;
+			this = reflaxe.elixir.ast.NameUtils.toSnakeCase(value);
+			cast cast this;
+		});
+		return this;
+	}
+
+	public function match(pattern:reflaxe.elixir.ast.EPattern, expr:reflaxe.elixir.ast.ElixirAST) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EMatch(pattern, expr);
+		return this;
+	}
+
+	public function if_(condition:reflaxe.elixir.ast.ElixirAST, thenBranch:reflaxe.elixir.ast.ElixirAST, elseBranch:Null<reflaxe.elixir.ast.ElixirAST> = null) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EIf(condition, thenBranch, elseBranch);
+		return this;
+	}
+
+	public function binary(op:reflaxe.elixir.ast.EBinaryOp, left:reflaxe.elixir.ast.ElixirAST, right:reflaxe.elixir.ast.ElixirAST) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EBinary(op, left, right);
+		return this;
+	}
+
+	public function call(module:reflaxe.elixir.ast.ElixirAST, function_:String, args:Array<reflaxe.elixir.ast.ElixirAST>) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(module, function_, args);
+		return this;
+	}
+
+	public function block(exprs:Array<reflaxe.elixir.ast.ElixirAST>) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EBlock(exprs);
+		return this;
+	}
+
+	public function paren(expr:reflaxe.elixir.ast.ElixirAST) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EParen(expr);
+		return this;
+	}
+
+	public function list(items:Array<reflaxe.elixir.ast.ElixirAST>) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EList(items);
+		return this;
+	}
+
+	public function map(fields:Array<{ value : reflaxe.elixir.ast.ElixirAST, key : reflaxe.elixir.ast.ElixirAST }>) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.EMap(fields);
+		return this;
+	}
+
+	public function tuple(items:Array<reflaxe.elixir.ast.ElixirAST>) {
+		this.def = reflaxe.elixir.ast.ElixirASTDef.ETuple(items);
+		return this;
+	}
+
+	public function setInline() {
+		this.metadata.canInline = true;
+		this.metadata.keepInlineInAssignment = true;
+		return this;
+	}
+
+	public function withType(type:haxe.macro.Type) {
+		this.metadata.type = type;
+		return this;
+	}
+
+	public function withSourceExpr(expr:haxe.macro.TypedExpr) {
+		this.metadata.sourceExpr = expr;
+		this.metadata.sourceLine = reflaxe.elixir.ast.ASTBuilder.getLineNumber(expr.pos);
+		return this;
+	}
+
+	public function withMetadata(meta:reflaxe.elixir.ast.ElixirMetadata) {
+		{
+			var ` = 0;
+			var ` = Reflect.fields(meta);
+			while (` < `.length) {
+				var field = `[`];
+				++ `;
+				Reflect.setField(this.metadata, field, Reflect.field(meta, field));
+			};
+		};
+		return this;
+	}
+
+	public function atPos(pos:haxe.macro.Position) {
+		this.pos = pos;
+		return this;
+	}
+
+	public function build() {
+		if (this.def == null) {
+			throw "ASTBuilder: No AST definition set";
+		};
+		return {def : this.def, metadata : this.metadata, pos : this.pos};
+	}
+
+	static function getLineNumber(pos:haxe.macro.Position) {
+		var posInfo = haxe.macro.Context.getPosInfos(pos);
+		return posInfo.min;
+	}
+}

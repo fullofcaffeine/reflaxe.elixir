@@ -1,0 +1,104 @@
+private class sys.thread._Thread.Thread_Impl_ {
+
+	public static var events(get,never):sys.thread.EventLoop;
+
+	@:noCompletion
+	static inline function _new(h:eval.vm.NativeThread) {
+		var this;
+		this = h;
+		return cast this;
+	}
+
+	public static inline function sendMessage(this:sys.thread._Thread.ThreadImpl, msg:Dynamic) {
+		this.sendMessage(msg);
+	}
+
+	public static inline function current() {
+		return {
+			var h = eval.vm.NativeThread.self();
+			var this;
+			this = h;
+			cast cast this;
+		};
+	}
+
+	public static inline function create(job:() -> Void) {
+		return {
+			var h = new eval.vm.NativeThread(job);
+			var this;
+			this = h;
+			cast cast this;
+		};
+	}
+
+	public static function runWithEventLoop(job:() -> Void) {
+		var thread = eval.vm.NativeThread.self();
+		if (thread.get_events() == null) {
+			thread.set_events(new sys.thread.EventLoop());
+			try {
+				job();
+				thread.get_events().loop();
+				thread.set_events(null);
+			} catch (`:Dynamic) {
+				var ` = haxe.Exception.caught(`);
+				{};
+				if (true) {
+					var e = cast `;
+					{
+						thread.set_events(null);
+						throw e;
+					};
+				} else throw `;
+			};
+		} else {
+			job();
+		};
+	}
+
+	public static inline function createWithEventLoop(job:() -> Void) {
+		return {
+			var h = new eval.vm.NativeThread(function() {
+				var thread = eval.vm.NativeThread.self();
+				thread.set_events(new sys.thread.EventLoop());
+				job();
+				thread.get_events().loop();
+			});
+			var this;
+			this = h;
+			cast cast this;
+		};
+	}
+
+	public static inline function readMessage(block:Bool) {
+		return eval.vm.NativeThread.readMessage(block);
+	}
+
+	public static inline function yield() {
+		eval.vm.NativeThread.yield();
+	}
+
+	@:op(A == B)
+	public static inline function equals(this:sys.thread._Thread.ThreadImpl, other:sys.thread.Thread) {
+		return cast this.id() == cast other.id();
+	}
+
+	static inline function getHandle(this:sys.thread._Thread.ThreadImpl) {
+		return this;
+	}
+
+	static function get_events(this:sys.thread._Thread.ThreadImpl) {
+		if (this.get_events() == null) {
+			throw new sys.thread.NoEventLoopException(null, null);
+		};
+		return this.get_events();
+	}
+
+	@:keep
+	static function processEvents() {
+		eval.vm.NativeThread.self().get_events().loop();
+	}
+
+	static function __init__() {
+		eval.vm.NativeThread.self().set_events(new sys.thread.EventLoop());
+	}
+}

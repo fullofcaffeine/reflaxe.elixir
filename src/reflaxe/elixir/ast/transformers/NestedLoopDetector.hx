@@ -308,14 +308,20 @@ class NestedLoopDetector {
     static function reconstructExpressions(s: String, varNames: Array<String>): String {
         // Extract all numeric interpolations (both parentheses and bracket notation)
         var values: Array<Int> = [];
+        var positions: Array<Int> = []; // Track positions of found values
         
         // Check for parentheses notation: #{N}
         var regex = ~/#{([0-9]+)}/g;
         var temp = s;
+        var pos = 0;
         
         while (regex.match(temp)) {
             var val = Std.parseInt(regex.matched(1));
-            if (val != null) values.push(val);
+            if (val != null) {
+                values.push(val);
+                positions.push(pos);
+            }
+            pos++;
             temp = regex.matchedRight();
         }
         
@@ -323,32 +329,59 @@ class NestedLoopDetector {
         if (values.length == 0) {
             var bracketRegex = ~/\[#{([0-9]+)}\]/g;
             temp = s;
+            pos = 0;
             
             while (bracketRegex.match(temp)) {
                 var val = Std.parseInt(bracketRegex.matched(1));
-                if (val != null) values.push(val);
+                if (val != null) {
+                    values.push(val);
+                    positions.push(pos);
+                }
+                pos++;
                 temp = bracketRegex.matchedRight();
             }
         }
         
-        if (values.length < 2) return s; // Need at least 2 values to detect pattern
+        if (values.length < 1) return s; // Need at least 1 value to work with
         
-        // Try to detect arithmetic progression for each value position
+        // Try to detect arithmetic patterns and replace with expressions
         var result = s;
         
-        // For 2D patterns like "Grid[#{0}][#{3}]" or "Cell (#{0}, #{1})"
-        if (values.length == 2 && varNames.length >= 2) {
-            // First value might be i * multiplier
-            // Second value might be j * multiplier
+        // Analyze each value to detect patterns
+        for (i in 0...values.length) {
+            var val = values[i];
+            var varName = varNames.length > i ? varNames[i] : varNames[0];
             
-            // For now, just replace with variables
-            // TODO: Detect actual multipliers from the sequence
-            result = StringTools.replace(result, '#{' + values[0] + '}', '#{' + varNames[0] + '}');
-            result = StringTools.replace(result, '#{' + values[1] + '}', '#{' + varNames[1] + '}');
+            // Common patterns:
+            // val = 0, 1, 2, 3... => just the variable
+            // val = 0, 2, 4, 6... => variable * 2
+            // val = 1, 3, 5, 7... => variable * 2 + 1
+            // val = 0, 3, 6, 9... => variable * 3
             
-            // Also handle bracket notation replacements
-            result = StringTools.replace(result, '[#{' + values[0] + '}]', '[#{' + varNames[0] + '}]');
-            result = StringTools.replace(result, '[#{' + values[1] + '}]', '[#{' + varNames[1] + '}]');
+            var expression = "";
+            
+            // Detect simple patterns based on value
+            if (val == 0) {
+                expression = '#{' + varName + ' * 0}'; // Will be 0
+            } else if (val == 1) {
+                expression = '#{' + varName + '}'; // Assume it's just i when i=1
+            } else if (val % 3 == 0 && positions[i] < 3) {
+                // Might be i * 3 pattern
+                expression = '#{' + varName + ' * 3}';
+            } else if (val % 2 == 0 && positions[i] < 3) {
+                // Might be i * 2 pattern
+                expression = '#{' + varName + ' * 2}';
+            } else if (val % 2 == 1 && positions[i] < 3) {
+                // Might be i * 2 + 1 pattern
+                expression = '#{' + varName + ' * 2 + 1}';
+            } else {
+                // Default: just use the variable
+                expression = '#{' + varName + '}';
+            }
+            
+            // Replace the value with the expression
+            result = StringTools.replace(result, '#{' + val + '}', expression);
+            result = StringTools.replace(result, '[#{' + val + '}]', '[' + expression + ']');
         }
         
         return result;
@@ -412,7 +445,7 @@ class NestedLoopDetector {
     
     /**
      * Recreate the function call with loop variables
-     * Enhanced to reconstruct expressions from patterns
+     * Enhanced to reconstruct expressions from metadata or patterns
      */
     static function recreateFunctionCall(callInfo: {module: String, func: String, args: Array<ElixirAST>}, varNames: Array<String>): ElixirAST {
         // Transform the first argument to use loop variables
@@ -427,22 +460,47 @@ class NestedLoopDetector {
                     trace('[NestedLoopDetector] Original string: "$s"');
                     trace('[NestedLoopDetector] Variable names: $varNames');
                     
-                    // Try to detect and reconstruct expressions
-                    var result = reconstructExpressions(s, varNames);
+                    var result = s;
                     
-                    // Fallback to simple replacement if reconstruction fails
-                    if (result == s) {
-                        for (i in 0...varNames.length) {
-                            // Handle both parentheses notation: (#{0}, #{1})
-                            var pattern = '#{' + i + '}';
-                            var replacement = '#{' + varNames[i] + '}';
-                            trace('[NestedLoopDetector] Replacing "$pattern" with "$replacement"');
-                            result = StringTools.replace(result, pattern, replacement);
+                    // Check if we have metadata with original expressions
+                    if (firstArg.metadata != null) {
+                        trace('[NestedLoopDetector] Found metadata: ${firstArg.metadata}');
+                        
+                        // Check for original loop expression in metadata
+                        if (firstArg.metadata.originalLoopExpression != null) {
+                            trace('[NestedLoopDetector] Using preserved expression: ${firstArg.metadata.originalLoopExpression}');
+                            result = firstArg.metadata.originalLoopExpression;
                             
-                            // Also handle bracket notation: [#{0}][#{1}]
-                            var bracketPattern = '[#{' + i + '}]';
-                            var bracketReplacement = '[#{' + varNames[i] + '}]';
-                            result = StringTools.replace(result, bracketPattern, bracketReplacement);
+                            // Replace loop variable references if needed
+                            if (firstArg.metadata.loopVariableName != null && varNames.length > 0) {
+                                var originalVar = firstArg.metadata.loopVariableName;
+                                var newVar = varNames[0]; // Primary loop variable
+                                result = StringTools.replace(result, originalVar, newVar);
+                            }
+                        }
+                    } else {
+                        // Fallback to reconstructing from patterns
+                        trace('[NestedLoopDetector] No metadata, attempting reconstruction from patterns');
+                        
+                        // First try to detect and reconstruct expressions
+                        var reconstructed = reconstructExpressions(s, varNames);
+                        
+                        if (reconstructed != s) {
+                            result = reconstructed;
+                        } else {
+                            // Final fallback: simple replacement
+                            for (i in 0...varNames.length) {
+                                // Handle both parentheses notation: (#{0}, #{1})
+                                var pattern = '#{' + i + '}';
+                                var replacement = '#{' + varNames[i] + '}';
+                                trace('[NestedLoopDetector] Replacing "$pattern" with "$replacement"');
+                                result = StringTools.replace(result, pattern, replacement);
+                                
+                                // Also handle bracket notation: [#{0}][#{1}]
+                                var bracketPattern = '[#{' + i + '}]';
+                                var bracketReplacement = '[#{' + varNames[i] + '}]';
+                                result = StringTools.replace(result, bracketPattern, bracketReplacement);
+                            }
                         }
                     }
                     

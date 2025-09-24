@@ -1,0 +1,1 @@
+abstract reflaxe.elixir.ast.naming.ElixirAtom to String {}

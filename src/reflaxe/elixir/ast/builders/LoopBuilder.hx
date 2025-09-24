@@ -273,11 +273,26 @@ class LoopBuilder {
      *
      * WHY: Entry point for TWhile transformation
      * WHAT: Analyzes loop and generates appropriate Elixir
-     * HOW: Runs analyzers, builds IR, selects strategy, emits code
+     * HOW: First checks for desugared for-loop patterns, then runs analyzers
      */
     public static function buildWhile(econd: TypedExpr, e: TypedExpr,
                                      normalWhile: Bool,
-                                     buildExpr: TypedExpr -> ElixirAST): ElixirAST {
+                                     buildExpr: TypedExpr -> ElixirAST,
+                                     toSnakeCase: String -> String = null): ElixirAST {
+        
+        // Default snake case converter if not provided
+        if (toSnakeCase == null) {
+            toSnakeCase = function(s) return s.toLowerCase();
+        }
+        
+        // CRITICAL: First detect if this is a desugared for loop
+        var forPattern = detectDesugarForLoopPattern(econd, e);
+        if (forPattern != null) {
+            #if debug_loop_detection
+            trace("[LoopBuilder] Detected desugared for loop pattern");
+            #end
+            return buildFromForPattern(forPattern, buildExpr, toSnakeCase);
+        }
 
         // Create the full TWhile expression for analysis
         var whileExpr: TypedExpr = {
@@ -291,11 +306,178 @@ class LoopBuilder {
 
         // Check confidence and decide emission strategy
         if (ir.confidence >= CONFIDENCE_THRESHOLD) {
-            return emitFromIR(ir, buildExpr, null, function(s) return s);
+            return emitFromIR(ir, buildExpr, null, toSnakeCase);
         } else {
             // Fall back to legacy - would delegate to original TWhile handling
             // For now, use simple reduce_while
             return buildLegacyWhile(buildExpr(econd), buildExpr(e), normalWhile, buildExpr);
+        }
+    }
+    
+    /**
+     * Detect if TWhile is actually a desugared for loop
+     * 
+     * WHY: Haxe desugars for(i in 0...5) into TWhile with _g variables
+     * WHAT: Detects the pattern and extracts loop bounds
+     * HOW: Looks for _g < _g1 pattern in condition, _g++ in body
+     */
+    public static function detectDesugarForLoopPattern(cond: TypedExpr, body: TypedExpr): Null<{
+        userVar: String,
+        startExpr: TypedExpr,
+        endExpr: TypedExpr,
+        userCode: TypedExpr,
+        hasSideEffectsOnly: Bool
+    }> {
+        // Check for _g < _g1 pattern in condition
+        var bounds = switch(cond.expr) {
+            case TBinop(OpLt | OpLte, e1, e2):
+                var counter = extractInfrastructureVarName(e1);
+                var limit = extractInfrastructureVarName(e2);
+                if (counter != null && limit != null) {
+                    {counter: counter, limit: limit};
+                } else null;
+            default: null;
+        };
+        
+        if (bounds == null) return null;
+        
+        // Analyze body for user variable and increment
+        var bodyInfo = analyzeForLoopBody(body, bounds.counter);
+        if (bodyInfo == null) return null;
+        
+        // Create simple start/end expressions (will be refined later with actual init values)
+        var startExpr: TypedExpr = {
+            expr: TConst(TInt(0)),
+            pos: cond.pos,
+            t: cond.t
+        };
+        
+        // For limit, we need to extract from context or use a placeholder
+        var endExpr = switch(cond.expr) {
+            case TBinop(_, _, limit): limit;
+            default: startExpr;
+        };
+        
+        return {
+            userVar: bodyInfo.userVar,
+            startExpr: startExpr,
+            endExpr: endExpr,
+            userCode: bodyInfo.userCode,
+            hasSideEffectsOnly: bodyInfo.hasSideEffectsOnly
+        };
+    }
+    
+    /**
+     * Extract infrastructure variable name from expression
+     */
+    static function extractInfrastructureVarName(expr: TypedExpr): Null<String> {
+        return switch(expr.expr) {
+            case TLocal(v):
+                var name = v.name;
+                if (name == "_g" || name == "g" || 
+                    name.indexOf("_g") == 0 ||
+                    (name.charAt(0) == "g" && ~/^g[0-9]+/.match(name))) {
+                    name;
+                } else null;
+            default: null;
+        };
+    }
+    
+    /**
+     * Analyze for loop body structure
+     */
+    static function analyzeForLoopBody(body: TypedExpr, counterVar: String): Null<{
+        userVar: String,
+        userCode: TypedExpr,
+        hasSideEffectsOnly: Bool
+    }> {
+        switch(body.expr) {
+            case TBlock(exprs) if (exprs.length >= 2):
+                // Look for pattern: [optional var assignment, user code, increment]
+                var userVar = "i"; // Default
+                var userCodeStart = 0;
+                
+                // Check if first expr is var assignment from counter
+                switch(exprs[0].expr) {
+                    case TVar(v, init) if (init != null):
+                        if (extractInfrastructureVarName(init) == counterVar) {
+                            userVar = v.name;
+                            userCodeStart = 1;
+                        }
+                    default:
+                }
+                
+                // Check last expr is increment
+                var lastExpr = exprs[exprs.length - 1];
+                var isIncrement = switch(lastExpr.expr) {
+                    case TUnop(OpIncrement, _, e): extractInfrastructureVarName(e) == counterVar;
+                    case TBinop(OpAssign, e1, _): extractInfrastructureVarName(e1) == counterVar;
+                    default: false;
+                };
+                
+                if (!isIncrement) return null;
+                
+                // Extract user code
+                var userCodeExprs = exprs.slice(userCodeStart, exprs.length - 1);
+                var userCode = if (userCodeExprs.length == 1) {
+                    userCodeExprs[0];
+                } else {
+                    {expr: TBlock(userCodeExprs), pos: body.pos, t: body.t};
+                };
+                
+                return {
+                    userVar: userVar,
+                    userCode: userCode,
+                    hasSideEffectsOnly: hasSideEffectsOnly(userCode)
+                };
+            default: 
+                return null;
+        }
+    }
+    
+    /**
+     * Build AST from detected for loop pattern
+     */
+    public static function buildFromForPattern(pattern: {
+        userVar: String,
+        startExpr: TypedExpr,
+        endExpr: TypedExpr,
+        userCode: TypedExpr,
+        hasSideEffectsOnly: Bool
+    }, buildExpr: TypedExpr -> ElixirAST, toSnakeCase: String -> String): ElixirAST {
+        
+        // Build range
+        var range = makeAST(ERange(
+            buildExpr(pattern.startExpr),
+            buildExpr(pattern.endExpr),
+            false // inclusive
+        ));
+        
+        var varName = toSnakeCase(pattern.userVar);
+        var body = buildExpr(pattern.userCode);
+        
+        // Generate Enum.each for side-effect-only loops
+        if (pattern.hasSideEffectsOnly) {
+            return makeAST(ERemoteCall(
+                makeAST(EVar("Enum")),
+                "each",
+                [
+                    range,
+                    makeAST(EFn([{
+                        args: [PVar(varName)],
+                        body: body
+                    }]))
+                ]
+            ));
+        } else {
+            // Generate comprehension for value-producing loops
+            return makeAST(EFor(
+                [{pattern: PVar(varName), expr: range}],
+                [],
+                body,
+                null,
+                false
+            ));
         }
     }
 
