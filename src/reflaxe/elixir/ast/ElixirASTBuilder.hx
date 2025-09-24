@@ -3213,26 +3213,21 @@ class ElixirASTBuilder {
                         // Extract the while loop body and delegate to LoopBuilder
                         switch(forPattern.whileExpr.expr) {
                             case TWhile(cond, body, _):
-                                // Use LoopBuilder with full context
-                                var pattern = LoopBuilder.detectDesugarForLoopPattern(cond, body);
-                                if (pattern != null) {
-                                    // Override start/end with actual values from TBlock context
-                                    pattern.startExpr = forPattern.startValue;
-                                    pattern.endExpr = forPattern.endValue;
-                                    
-                                    // Generate idiomatic Elixir
-                                    var result = LoopBuilder.buildFromForPattern(
-                                        pattern, 
-                                        e -> buildFromTypedExpr(e, currentContext),
-                                        s -> toElixirVarName(s)
-                                    );
-                                    
-                                    #if debug_loop_detection
-                                    trace('[ElixirASTBuilder] Generated idiomatic for loop');
-                                    #end
-                                    
-                                    return result.def;
-                                }
+                                // Use LoopBuilder with full context from TBlock analysis
+                                var result = LoopBuilder.buildWithFullContext(
+                                    forPattern.startValue,
+                                    forPattern.endValue,
+                                    body,
+                                    forPattern.counterVar,  // Pass the infrastructure counter variable
+                                    e -> buildFromTypedExpr(e, currentContext),
+                                    s -> toElixirVarName(s)
+                                );
+                                
+                                #if debug_loop_detection
+                                trace('[ElixirASTBuilder] Generated idiomatic for loop');
+                                #end
+                                
+                                return result.def;
                             default:
                         }
                     }

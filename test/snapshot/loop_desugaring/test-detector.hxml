@@ -1,0 +1,9 @@
+-cp ../../../src
+-cp ../../../std
+-lib reflaxe
+-D reflaxe_runtime
+-D debug_loop_detection
+-D debug_ast_builder
+--main TestDetector
+--no-output
+--macro reflaxe.elixir.CompilerInit.Start()

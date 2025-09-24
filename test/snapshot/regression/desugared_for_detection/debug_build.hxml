@@ -1,0 +1,8 @@
+-cp .
+-main Main
+-lib reflaxe.elixir
+-D elixir
+-D elixir.output=out
+-D debug_loop_detection
+-D debug_ast_builder
+-D loop_builder_enabled

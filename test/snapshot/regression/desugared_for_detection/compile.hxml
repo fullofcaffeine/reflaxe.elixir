@@ -1,0 +1,10 @@
+# Compilation configuration for desugared for detection test
+-cp .
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-main Main
+-D elixir_output=out
+
+# Enable the desugared for loop detection feature
+-D elixir.feature.loop_builder_enabled=true
