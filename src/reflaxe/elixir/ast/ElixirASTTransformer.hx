@@ -390,6 +390,14 @@ class ElixirASTTransformer {
         });
         #end
         
+        // Instance method transformation pass for standard library types
+        passes.push({
+            name: "InstanceMethodTransform",
+            description: "Transform instance.method() to Module.function(instance) for stdlib types",
+            enabled: true,
+            pass: instanceMethodTransformPass
+        });
+        
         // Array method transformations are handled in ElixirASTBuilder
         // at the TCall(TField(...)) pattern to generate idiomatic Elixir directly
         
@@ -399,6 +407,14 @@ class ElixirASTTransformer {
             description: "Transform unrolled loops (sequential statements) back to Enum.each",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LoopTransforms.unrolledLoopTransformPass
+        });
+        
+        // Fix Enum.map bodies that contain infrastructure variables
+        passes.push({
+            name: "FixEnumMapBody",
+            description: "Remove infrastructure variable references from Enum.map bodies",
+            enabled: true,
+            pass: fixEnumMapBodyPass
         });
         
         // Loop to comprehension pass
@@ -1824,6 +1840,145 @@ class ElixirASTTransformer {
      * - str.toLowerCase() → String.downcase(str)
      * - str.toUpperCase() → String.upcase(str)
      */
+    /**
+     * Instance method transformation pass
+     * Transforms instance method calls to module function calls for standard library types
+     * Example: buffer.add(str) → StringBuf.add(buffer, str)
+     */
+    static function instanceMethodTransformPass(ast: ElixirAST): ElixirAST {
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            #if debug_instance_methods
+            switch(node.def) {
+                case ECall(target, methodName, args):
+                    trace('[InstanceMethodTransform] DEBUG - ECall detected:');
+                    trace('  methodName: ${methodName}');
+                    if (target != null) {
+                        trace('  target.def: ${target.def}');
+                    }
+                    trace('  args.length: ${args.length}');
+                default:
+            }
+            #end
+            
+            return switch(node.def) {
+                // Handle instance method calls like instance.method(args)
+                case ECall({def: EField(target, field), metadata: fieldMeta, pos: fieldPos}, methodName, args):
+                    // This handles chained field access: struct.buffer.add()
+                    // The field access (struct.buffer) becomes the target
+                    // Transform to: StringBuf.add(struct.buffer, args)
+                    
+                    // Detect StringBuf methods
+                    if (methodName == "add" || methodName == "toString" || methodName == "to_string") {
+                        #if debug_instance_methods
+                        trace('[InstanceMethodTransform] Detected potential StringBuf method: ${methodName}');
+                        #end
+                        
+                        // For now, assume it's a StringBuf if it has these methods
+                        // A more sophisticated approach would track types through metadata
+                        var moduleName = switch(methodName) {
+                            case "add": "StringBuf";
+                            case "toString" | "to_string": "StringBuf";
+                            default: null;
+                        };
+                        
+                        if (moduleName != null) {
+                            // Transform instance.method(args) to Module.method(instance, args)
+                            var moduleRef = makeAST(EVar(moduleName));
+                            var targetField = makeASTWithMeta(EField(target, field), fieldMeta, fieldPos);
+                            var newArgs = [targetField].concat(args);
+                            var functionName = switch(methodName) {
+                                case "toString" | "to_string": "to_string";
+                                default: methodName;
+                            };
+                            
+                            return makeASTWithMeta(
+                                ERemoteCall(moduleRef, functionName, newArgs),
+                                node.metadata,
+                                node.pos
+                            );
+                        }
+                    }
+                    
+                    // Check for other known instance types
+                    // Could extend this to Map, List, etc.
+                    node;
+                    
+                case ECall(target, methodName, args) if (target != null):
+                    // Handle direct method calls (without field access chain)
+                    // Check if this is a method that should be transformed
+                    switch(target.def) {
+                        case EVar(varName):
+                            // Direct variable method call: buffer.add() or struct.write_value()
+                            if (methodName == "add" || methodName == "toString" || methodName == "to_string") {
+                                #if debug_instance_methods
+                                trace('[InstanceMethodTransform] Direct method call on var: ${varName}.${methodName}');
+                                #end
+                                
+                                // Transform to module function call
+                                var moduleName = "StringBuf"; // Assume StringBuf for these methods
+                                var moduleRef = makeAST(EVar(moduleName));
+                                var functionName = switch(methodName) {
+                                    case "toString" | "to_string": "to_string";
+                                    default: methodName;
+                                };
+                                
+                                return makeASTWithMeta(
+                                    ERemoteCall(moduleRef, functionName, [target].concat(args)),
+                                    node.metadata,
+                                    node.pos
+                                );
+                            } else if (methodName == "write_value" || methodName == "writeValue") {
+                                #if debug_instance_methods
+                                trace('[InstanceMethodTransform] Struct method call on var: ${varName}.${methodName}');
+                                #end
+                                
+                                // Transform struct.write_value(args) to write_value(struct, args)  
+                                var functionName = switch(methodName) {
+                                    case "writeValue": "write_value";
+                                    default: methodName;
+                                };
+                                
+                                // Transform to local function call with struct as first argument
+                                return makeASTWithMeta(
+                                    ECall(null, functionName, [target].concat(args)),
+                                    node.metadata,
+                                    node.pos
+                                );
+                            }
+                        case EField(obj, field):
+                            // Method call on field access: struct.write_value()
+                            // These should become local function calls: write_value(struct, ...)
+                            if (methodName == "write_value" || methodName == "writeValue") {
+                                #if debug_instance_methods
+                                trace('[InstanceMethodTransform] Struct method call: ${field}.${methodName}');
+                                #end
+                                
+                                // Transform struct.method(args) to method(struct, args)
+                                var functionName = switch(methodName) {
+                                    case "writeValue": "write_value";
+                                    default: methodName;
+                                };
+                                
+                                // Create the target (struct.field)
+                                var targetExpr = makeAST(EField(obj, field));
+                                
+                                // Transform to local function call with struct as first argument
+                                return makeASTWithMeta(
+                                    ECall(null, functionName, [targetExpr].concat(args)),
+                                    node.metadata,
+                                    node.pos
+                                );
+                            }
+                        default:
+                    }
+                    node;
+                    
+                default:
+                    node;
+            };
+        });
+    }
+    
     static function stringMethodTransformPass(ast: ElixirAST): ElixirAST {
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch(node.def) {
@@ -3859,6 +4014,227 @@ class ElixirASTTransformer {
      * end
      * ```
      */
+    
+    /**
+     * Fix Enum.map bodies that contain infrastructure variables
+     * 
+     * WHY: When Haxe desugars for-in loops over arrays, it creates infrastructure 
+     * variables (g, _g) and array indexing patterns. When these get compiled to
+     * Enum.map, the body incorrectly references array[g] instead of using the
+     * function parameter.
+     * 
+     * WHAT: Detects Enum.map calls with bodies containing array indexing and
+     * infrastructure variable references, and removes them. Also cleans up
+     * infrastructure variable declarations around Enum.map calls.
+     * 
+     * HOW: 
+     * 1. Finds patterns like `item = arr[g]` and `g + 1` in the function body
+     * 2. Removes them, leaving only actual operations using the parameter
+     * 3. Also removes infrastructure variable declarations (g = 0) around the call
+     */
+    static function fixEnumMapBodyPass(ast: ElixirAST): ElixirAST {
+        #if debug_ast_transformer
+        trace('[FixEnumMapBody] Pass starting...');
+        #end
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            // First, handle blocks that contain infrastructure variables and Enum.map
+            switch(node.def) {
+                case EBlock(stmts):
+                    var hasInfrastructureVar = false;
+                    var hasEnumMap = false;
+                    var infraVarName: String = null;
+                    
+                    // Check if this block has g = 0 or similar and Enum.map
+                    for (stmt in stmts) {
+                        switch(stmt.def) {
+                            // Assignments in Elixir AST are EMatch patterns
+                            case EMatch(PVar(v), intAst) if ((v == "g" || v == "_g" || v.startsWith("g"))):
+                                switch(intAst.def) {
+                                    case EInteger(0):
+                                        hasInfrastructureVar = true;
+                                        infraVarName = v;
+                                    default:
+                                }
+                            case ERemoteCall(moduleAst, "map", _):
+                                switch(moduleAst.def) {
+                                    case EVar("Enum"):
+                                        hasEnumMap = true;
+                                    default:
+                                }
+                            default:
+                        }
+                    }
+                    
+                    if (hasInfrastructureVar && hasEnumMap) {
+                        #if debug_ast_transformer
+                        trace('[FixEnumMapBody] Found block with infrastructure variable $infraVarName and Enum.map');
+                        #end
+                        
+                        // Filter out the infrastructure variable declaration
+                        var cleaned = [];
+                        for (stmt in stmts) {
+                            var skip = false;
+                            switch(stmt.def) {
+                                // Already handled by the EMatch case below
+                                case EMatch(PVar(v), intAst) if (v == infraVarName):
+                                    switch(intAst.def) {
+                                        case EInteger(0):
+                                            skip = true;
+                                            #if debug_ast_transformer
+                                            trace('[FixEnumMapBody] Removing infrastructure variable declaration: $v = 0');
+                                            #end
+                                        default:
+                                    }
+                                default:
+                            }
+                            
+                            if (!skip) {
+                                // Also clean up Enum.map if it's this statement
+                                switch(stmt.def) {
+                                    case ERemoteCall(module, "map", [array, fn]):
+                                        cleaned.push(fixEnumMapCall(stmt));
+                                    default:
+                                        cleaned.push(stmt);
+                                }
+                            }
+                        }
+                        
+                        if (cleaned.length != stmts.length) {
+                            return makeASTWithMeta(EBlock(cleaned), node.metadata, node.pos);
+                        }
+                    }
+                    
+                // Also handle standalone Enum.map calls
+                case ERemoteCall(module, funcName, args) if (funcName == "map"):
+                    #if debug_ast_transformer
+                    trace('[FixEnumMapBody] Found remote call to map, module: ${module.def}');
+                    #end
+                    switch(module.def) {
+                        case EVar("Enum"):
+                            #if debug_ast_transformer
+                            trace('[FixEnumMapBody] Found Enum.map call');
+                            #end
+                            return fixEnumMapCall(node);
+                        default:
+                            #if debug_ast_transformer
+                            trace('[FixEnumMapBody] Module was not Enum: ${module.def}');
+                            #end
+                    }
+                    
+                default:
+            }
+            return node;
+        });
+    }
+    
+    static function fixEnumMapCall(node: ElixirAST): ElixirAST {
+        switch(node.def) {
+            case ERemoteCall(module, "map", [array, fn]):
+                switch(fn.def) {
+                    case EFn([clause]):
+                        var paramName = switch(clause.args[0]) {
+                            case PVar(name): name;
+                            default: null;
+                        };
+                        
+                        if (paramName != null) {
+                            // Clean up the function body
+                            var cleanBody = cleanupEnumMapBody(clause.body, paramName, array);
+                            if (cleanBody != clause.body) {
+                                #if debug_ast_transformer
+                                trace('[FixEnumMapBody] Cleaned up Enum.map body for parameter: $paramName');
+                                #end
+                                return makeAST(ERemoteCall(
+                                    module, 
+                                    "map", 
+                                    [array, makeAST(EFn([{
+                                        args: clause.args,
+                                        guard: clause.guard,
+                                        body: cleanBody
+                                    }]))]
+                                ));
+                            }
+                        }
+                    default:
+                }
+            default:
+        }
+        return node;
+    }
+    
+    /**
+     * Clean up the body of an Enum.map function
+     * Removes infrastructure variable assignments and increments
+     */
+    static function cleanupEnumMapBody(body: ElixirAST, paramName: String, array: ElixirAST): ElixirAST {
+        switch(body.def) {
+            case EBlock(stmts):
+                var cleaned = [];
+                for (stmt in stmts) {
+                    var skip = false;
+                    
+                    #if debug_ast_transformer
+                    trace('[FixEnumMapBody] Checking statement: ${stmt.def}');
+                    #end
+                    
+                    // Skip patterns like: item = arr[g] 
+                    switch(stmt.def) {
+                        case EMatch(PVar(v), expr) if (v == paramName):
+                            // Check if this is assigning from array indexing
+                            switch(expr.def) {
+                                case EAccess(arr, index):
+                                    // Check if the index is a g variable
+                                    switch(index.def) {
+                                        case EVar(indexVar) if (indexVar == "g" || indexVar == "_g" || indexVar.startsWith("g")):
+                                            // Skip this assignment - it's infrastructure
+                                            skip = true;
+                                            #if debug_ast_transformer
+                                            trace('[FixEnumMapBody] Removing array indexing assignment: $v = array[$indexVar]');
+                                            #end
+                                        default:
+                                    }
+                                case ECall(arr, "[]", [index]):  // Alternate pattern
+                                    // Skip this assignment - it's infrastructure
+                                    skip = true;
+                                    #if debug_ast_transformer
+                                    trace('[FixEnumMapBody] Removing array indexing assignment (call pattern): $v = array[...]');
+                                    #end
+                                default:
+                            }
+                        
+                        // Skip patterns like: g + 1 (infrastructure increment)
+                        case EBinary(Add, left, right):
+                            switch(left.def) {
+                                case EVar(v) if (v == "g" || v == "_g" || v.startsWith("g")):
+                                    skip = true;
+                                    #if debug_ast_transformer
+                                    trace('[FixEnumMapBody] Removing infrastructure increment: $v + 1');
+                                    #end
+                                default:
+                            }
+                            
+                        default:
+                    }
+                    
+                    if (!skip) {
+                        cleaned.push(stmt);
+                    }
+                }
+                
+                // If we removed statements, return the cleaned block
+                if (cleaned.length != stmts.length) {
+                    #if debug_ast_transformer
+                    trace('[FixEnumMapBody] Reduced statements from ${stmts.length} to ${cleaned.length}');
+                    #end
+                    return cleaned.length == 1 ? cleaned[0] : makeAST(EBlock(cleaned));
+                }
+                
+            default:
+        }
+        
+        return body;
+    }
+    
     static function conditionalReassignmentPass(ast: ElixirAST): ElixirAST {
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
