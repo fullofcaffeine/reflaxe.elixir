@@ -4,6 +4,7 @@ package reflaxe.elixir;
 
 import reflaxe.ReflectCompiler;
 import reflaxe.elixir.ElixirCompiler;
+import reflaxe.elixir.macros.LiveViewPreserver;
 
 // Import preprocessor types
 import reflaxe.preprocessors.ExpressionPreprocessor;
@@ -32,6 +33,9 @@ class CompilerInit {
                 return;
         }
         #end
+        
+        // Initialize LiveView preservation to prevent DCE from removing Phoenix methods
+        LiveViewPreserver.init();
         
         // Register the Elixir compiler with Reflaxe
         ReflectCompiler.AddCompiler(new ElixirCompiler(), {
