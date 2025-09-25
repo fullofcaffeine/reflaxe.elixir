@@ -8,7 +8,7 @@
 -D elixir_output=out
 -D reflaxe_runtime
 # Enable full optimization to see maximum difference
--D analyzer-optimize
+# NOTE: -D analyzer-optimize removed - destroys functional patterns
 -dce full
 # Enable debug output
 -D debug_optimization_test

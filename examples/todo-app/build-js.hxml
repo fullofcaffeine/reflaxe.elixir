@@ -3,7 +3,7 @@
 -main client.TodoApp
 -js assets/js/todo-app-haxe.js
 -dce full
--D analyzer-optimize
+# NOTE: -D analyzer-optimize removed - destroys functional patterns
 -D js-es=6
 -D no-traces
 

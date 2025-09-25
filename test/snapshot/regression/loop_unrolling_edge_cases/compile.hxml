@@ -4,4 +4,6 @@
 -lib reflaxe
 -lib reflaxe.elixir
 -D elixir_output=test/snapshot/regression/loop_unrolling_edge_cases/out
--D analyzer-optimize
+# NOTE: # NOTE: -D analyzer-optimize removed - destroys functional patterns removed to preserve loop structures
+# However, arithmetic expressions are still evaluated at compile time
+# by Haxe's constant folding that occurs before our transpiler runs

@@ -5,6 +5,7 @@ This guide helps you resolve common issues when working with Reflaxe.Elixir. If 
 ## Table of Contents
 - [Installation Issues](#installation-issues)
 - [Compilation Errors](#compilation-errors)
+- [Code Generation Issues](#code-generation-issues)
 - [Runtime Errors](#runtime-errors)
 - [Type System Issues](#type-system-issues)
 - [Phoenix Integration Problems](#phoenix-integration-problems)
@@ -162,6 +163,77 @@ class MyClass {
     // class implementation
 }
 ```
+
+## Code Generation Issues
+
+### Problem: Generated Elixir code is verbose/repetitive instead of using loops
+
+**Symptom:**
+Instead of idiomatic Elixir loops, you see repetitive statements:
+```elixir
+# Non-idiomatic generated code
+Log.trace("Item 0", ...)
+Log.trace("Item 1", ...)
+Log.trace("Item 2", ...)
+```
+
+**Cause:**
+You're using `-D analyzer-optimize` flag which triggers Haxe's aggressive optimizations designed for C++/JavaScript.
+
+**Solution:**
+Remove `-D analyzer-optimize` from your build configuration:
+```hxml
+# Remove this line from your .hxml file:
+# -D analyzer-optimize
+
+# Keep these optimizations (they're safe):
+-dce full                    # Dead code elimination
+-D loop_unroll_max_cost=10   # Reasonable loop unrolling limit
+```
+
+The compiler will then generate idiomatic Elixir:
+```elixir
+# Idiomatic generated code
+Enum.each(0..2, fn i ->
+  Log.trace("Item #{i}", ...)
+end)
+```
+
+### Problem: Arithmetic expressions are evaluated at compile-time
+
+**Symptom:**
+Expressions like `n * 2` become literal values `0, 2, 4` in generated code.
+
+**Cause:**
+Haxe's constant folding evaluates compile-time constants even without optimization flags.
+
+**Solution:**
+This is a limitation when using literal ranges with arithmetic. Use variables or dynamic ranges:
+```haxe
+// This gets evaluated at compile-time
+for (n in 0...3) {
+    trace('Result: ' + (n * 2));  // Becomes "Result: 0", "Result: 2", etc.
+}
+
+// This preserves the expression
+var max = 3;
+for (n in 0...max) {
+    trace('Result: ' + (n * 2));  // Preserves calculation
+}
+```
+
+### Problem: Abstract types generate many unused functions
+
+**Symptom:**
+Abstract types generate hundreds of lines of unused operator functions.
+
+**Solution:**
+Use dead code elimination:
+```hxml
+-dce full  # Removes all unused functions
+```
+
+For detailed compiler configuration guidance, see [Compiler Flags Guide](../01-getting-started/compiler-flags-guide.md).
 
 ## Runtime Errors
 

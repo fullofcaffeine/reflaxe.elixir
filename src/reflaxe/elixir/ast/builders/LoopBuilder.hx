@@ -126,6 +126,20 @@ class LoopBuilder {
     }
 
     /**
+     * Extract integer value from constant expression
+     * 
+     * WHY: Need to know loop bounds for metadata
+     * WHAT: Extracts integer from TConst(TInt(_)) expressions
+     * HOW: Pattern matches on TypedExpr structure
+     */
+    static function extractIntValue(expr: TypedExpr): Int {
+        return switch(expr.expr) {
+            case TConst(TInt(i)): i;
+            default: 0;  // Default for unknown patterns
+        };
+    }
+    
+    /**
      * Build AST from transformation instructions
      *
      * WHY: Convert analysis results to actual AST
@@ -151,8 +165,34 @@ class LoopBuilder {
 
                 var snakeVar = toSnakeCase(varName);
                 var bodyAst = buildExpr(body);
+                
+                // Create loop context metadata for variable restoration
+                // WHY: Loop variables get replaced with literals during compilation
+                // RELATES TO: LoopVariableRestorer will use this to restore variables
+                var loopContext: LoopContext = {
+                    variableName: varName,
+                    rangeMin: extractIntValue(startExpr),
+                    rangeMax: extractIntValue(endExpr) - 1,  // Exclusive range
+                    depth: 0,
+                    iteratorExpr: "${extractIntValue(startExpr)}..${extractIntValue(endExpr) - 1}"
+                };
+                
+                var metadata: ElixirMetadata = {
+                    loopContextStack: [loopContext],
+                    isWithinLoop: true,
+                    loopVariableName: varName
+                };
+                
+                // Attach metadata to body AST for propagation
+                if (bodyAst.metadata == null) bodyAst.metadata = {};
+                if (bodyAst.metadata.loopContextStack == null) {
+                    bodyAst.metadata.loopContextStack = [loopContext];
+                } else {
+                    bodyAst.metadata.loopContextStack.push(loopContext);
+                }
+                bodyAst.metadata.isWithinLoop = true;
 
-                return makeAST(ERemoteCall(
+                var result = makeAST(ERemoteCall(
                     makeAST(EVar("Enum")),
                     "each",
                     [
@@ -163,14 +203,43 @@ class LoopBuilder {
                         }]))
                     ]
                 ));
+                
+                // Attach metadata to the result
+                result.metadata = metadata;
+                return result;
 
             case EnumEachCollection(varName, collection, body):
                 // Build Enum.each with collection
                 var collectionAst = buildExpr(collection);
                 var snakeVar = toSnakeCase(varName);
                 var bodyAst = buildExpr(body);
+                
+                // For collections, we can't know the exact values but we can still track the variable
+                // This helps with nested loops where inner loop uses collection
+                var loopContext: LoopContext = {
+                    variableName: varName,
+                    rangeMin: 0,
+                    rangeMax: 999,  // Unknown upper bound for collections
+                    depth: 0,
+                    iteratorExpr: "collection"
+                };
+                
+                var metadata: ElixirMetadata = {
+                    loopContextStack: [loopContext],
+                    isWithinLoop: true,
+                    loopVariableName: varName
+                };
+                
+                // Attach metadata to body AST
+                if (bodyAst.metadata == null) bodyAst.metadata = {};
+                if (bodyAst.metadata.loopContextStack == null) {
+                    bodyAst.metadata.loopContextStack = [loopContext];
+                } else {
+                    bodyAst.metadata.loopContextStack.push(loopContext);
+                }
+                bodyAst.metadata.isWithinLoop = true;
 
-                return makeAST(ERemoteCall(
+                var result = makeAST(ERemoteCall(
                     makeAST(EVar("Enum")),
                     "each",
                     [
@@ -181,6 +250,9 @@ class LoopBuilder {
                         }]))
                     ]
                 ));
+                
+                result.metadata = metadata;
+                return result;
 
             case Comprehension(targetVar, v, iterator, filter, body):
                 // For now, just use standard for pattern to avoid compilation issues

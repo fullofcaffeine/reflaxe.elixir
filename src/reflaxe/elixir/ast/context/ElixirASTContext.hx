@@ -111,6 +111,20 @@ class ElixirASTContext {
      * True when building pattern matching expressions (case patterns)
      */
     public var isInPattern: Bool = false;
+    
+    /**
+     * Loop depth counter for nested loop tracking
+     * Incremented when entering a loop, decremented when exiting
+     * Used to generate proper loop context metadata
+     */
+    public var loopDepth: Int = 0;
+    
+    /**
+     * Current loop context stack for variable preservation
+     * Tracks loop variables at each nesting level
+     * Used to restore variables after Haxe's optimizer replaces them
+     */
+    public var loopContextStack: Array<LoopContext> = [];
 
     /**
      * Enum binding plans storage

@@ -4,7 +4,7 @@
 -lib reflaxe
 -main Main
 -D elixir_output=out
--D analyzer-optimize
+# NOTE: -D analyzer-optimize removed - destroys functional patterns
 # Enable DCE to see its effects
 -dce full
 --macro reflaxe.elixir.CompilerInit.Start()

@@ -306,82 +306,68 @@ class NestedLoopDetector {
      * For example, if we see #{0}, #{3}, #{6} in a pattern, we can infer i * 3
      */
     static function reconstructExpressions(s: String, varNames: Array<String>): String {
-        // Extract all numeric interpolations (both parentheses and bracket notation)
-        var values: Array<Int> = [];
-        var positions: Array<Int> = []; // Track positions of found values
+        // For nested loops with unrolled string interpolations like "Cell (#{0},#{1})",
+        // we need to replace each numeric interpolation with the corresponding loop variable.
+        // The challenge is that the same value might appear multiple times (e.g., #{0} twice).
+        // We need to replace based on position in the string, not value.
         
-        // Check for parentheses notation: #{N}
-        var regex = ~/#{([0-9]+)}/g;
-        var temp = s;
-        var pos = 0;
-        
-        while (regex.match(temp)) {
-            var val = Std.parseInt(regex.matched(1));
-            if (val != null) {
-                values.push(val);
-                positions.push(pos);
-            }
-            pos++;
-            temp = regex.matchedRight();
-        }
-        
-        // Also check for bracket notation: [#{N}]
-        if (values.length == 0) {
-            var bracketRegex = ~/\[#{([0-9]+)}\]/g;
-            temp = s;
-            pos = 0;
-            
-            while (bracketRegex.match(temp)) {
-                var val = Std.parseInt(bracketRegex.matched(1));
-                if (val != null) {
-                    values.push(val);
-                    positions.push(pos);
-                }
-                pos++;
-                temp = bracketRegex.matchedRight();
-            }
-        }
-        
-        if (values.length < 1) return s; // Need at least 1 value to work with
-        
-        // Try to detect arithmetic patterns and replace with expressions
+        trace('[reconstructExpressions] Input: "$s", varNames: $varNames');
         var result = s;
         
-        // Analyze each value to detect patterns
-        for (i in 0...values.length) {
-            var val = values[i];
-            var varName = varNames.length > i ? varNames[i] : varNames[0];
+        // Build a list of all interpolation patterns and their positions
+        var interpolations: Array<{pos: Int, value: Int, pattern: String}> = [];
+        
+        // Find all #{N} patterns
+        var regex = ~/#{([0-9]+)}/g;
+        var searchStr = s;
+        var offset = 0;
+        
+        while (regex.match(searchStr)) {
+            var matchPos = offset + regex.matchedPos().pos;
+            var val = Std.parseInt(regex.matched(1));
+            if (val != null) {
+                trace('[reconstructExpressions] Found interpolation at pos $matchPos: ${regex.matched(0)}');
+                interpolations.push({
+                    pos: matchPos,
+                    value: val,
+                    pattern: regex.matched(0)
+                });
+            }
+            offset += regex.matchedPos().pos + regex.matched(0).length;
+            searchStr = regex.matchedRight();
+        }
+        
+        trace('[reconstructExpressions] Found ${interpolations.length} interpolations');
+        
+        // Sort by position to process in order
+        interpolations.sort(function(a, b) return a.pos - b.pos);
+        
+        // For nested loops, replace interpolations based on their order in the string
+        // For "Cell (#{0},#{1})", the first interpolation gets varNames[0], second gets varNames[1]
+        if (interpolations.length > 0 && varNames.length > 0) {
+            // Build the result by replacing from end to start (to preserve positions)
+            var parts = [];
+            var lastEnd = 0;
             
-            // Common patterns:
-            // val = 0, 1, 2, 3... => just the variable
-            // val = 0, 2, 4, 6... => variable * 2
-            // val = 1, 3, 5, 7... => variable * 2 + 1
-            // val = 0, 3, 6, 9... => variable * 3
-            
-            var expression = "";
-            
-            // Detect simple patterns based on value
-            if (val == 0) {
-                expression = '#{' + varName + ' * 0}'; // Will be 0
-            } else if (val == 1) {
-                expression = '#{' + varName + '}'; // Assume it's just i when i=1
-            } else if (val % 3 == 0 && positions[i] < 3) {
-                // Might be i * 3 pattern
-                expression = '#{' + varName + ' * 3}';
-            } else if (val % 2 == 0 && positions[i] < 3) {
-                // Might be i * 2 pattern
-                expression = '#{' + varName + ' * 2}';
-            } else if (val % 2 == 1 && positions[i] < 3) {
-                // Might be i * 2 + 1 pattern
-                expression = '#{' + varName + ' * 2 + 1}';
-            } else {
-                // Default: just use the variable
-                expression = '#{' + varName + '}';
+            for (i in 0...interpolations.length) {
+                var interp = interpolations[i];
+                var varName = varNames[i % varNames.length]; // Use modulo to handle more interpolations than variables
+                
+                // Add the part before this interpolation
+                parts.push(s.substring(lastEnd, interp.pos));
+                
+                // Add the replacement
+                parts.push('#{' + varName + '}');
+                
+                lastEnd = interp.pos + interp.pattern.length;
             }
             
-            // Replace the value with the expression
-            result = StringTools.replace(result, '#{' + val + '}', expression);
-            result = StringTools.replace(result, '[#{' + val + '}]', '[' + expression + ']');
+            // Add any remaining part
+            if (lastEnd < s.length) {
+                parts.push(s.substring(lastEnd));
+            }
+            
+            result = parts.join("");
         }
         
         return result;
@@ -463,6 +449,7 @@ class NestedLoopDetector {
                     var result = s;
                     
                     // Check if we have metadata with original expressions
+                    var hasOriginalExpression = false;
                     if (firstArg.metadata != null) {
                         trace('[NestedLoopDetector] Found metadata: ${firstArg.metadata}');
                         
@@ -470,6 +457,7 @@ class NestedLoopDetector {
                         if (firstArg.metadata.originalLoopExpression != null) {
                             trace('[NestedLoopDetector] Using preserved expression: ${firstArg.metadata.originalLoopExpression}');
                             result = firstArg.metadata.originalLoopExpression;
+                            hasOriginalExpression = true;
                             
                             // Replace loop variable references if needed
                             if (firstArg.metadata.loopVariableName != null && varNames.length > 0) {
@@ -478,16 +466,22 @@ class NestedLoopDetector {
                                 result = StringTools.replace(result, originalVar, newVar);
                             }
                         }
-                    } else {
+                    }
+                    
+                    // If we didn't find originalLoopExpression, try reconstruction
+                    if (!hasOriginalExpression) {
                         // Fallback to reconstructing from patterns
-                        trace('[NestedLoopDetector] No metadata, attempting reconstruction from patterns');
+                        trace('[NestedLoopDetector] No original expression in metadata, attempting reconstruction from patterns');
                         
                         // First try to detect and reconstruct expressions
+                        trace('[NestedLoopDetector] Attempting reconstruction with string: "$s" and varNames: $varNames');
                         var reconstructed = reconstructExpressions(s, varNames);
+                        trace('[NestedLoopDetector] Reconstruction result: "$reconstructed"');
                         
                         if (reconstructed != s) {
                             result = reconstructed;
                         } else {
+                            trace('[NestedLoopDetector] Reconstruction unchanged, trying fallback replacement');
                             // Final fallback: simple replacement
                             for (i in 0...varNames.length) {
                                 // Handle both parentheses notation: (#{0}, #{1})
