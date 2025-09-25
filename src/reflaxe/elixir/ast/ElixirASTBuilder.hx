@@ -2414,6 +2414,43 @@ class ElixirASTBuilder {
                             // Convert to snake_case for Elixir method names
                             fieldName = toSnakeCase(fieldName);
                             
+                            // ARCHITECTURAL FIX: Check if obj is itself a field access
+                            // This handles patterns like struct.buffer.add() where buffer is a StringBuf
+                            // We need to detect the type of the field and transform accordingly
+                            var shouldTransformFieldMethod = false;
+                            var fieldClassName: String = null;
+                            
+                            // Check if this is a field access (e.g., struct.buffer)
+                            switch(obj.expr) {
+                                case TField(parentObj, parentFa):
+                                    // Get the type of the object being accessed
+                                    switch(obj.t) {
+                                        case TInst(classRef, _):
+                                            var cls = classRef.get();
+                                            // StringBuf and other regular non-extern classes should use module function syntax
+                                            if (!cls.isExtern && cls.name == "StringBuf") {
+                                                shouldTransformFieldMethod = true;
+                                                fieldClassName = cls.name;
+                                                #if debug_ast_builder
+                                                trace('[AST Builder] Detected StringBuf field method: ${fieldName}');
+                                                #end
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                            
+                            // Transform field.method(args) to Module.method(field, args) for StringBuf
+                            if (shouldTransformFieldMethod && fieldClassName != null) {
+                                var fieldAccess = buildFromTypedExpr(obj, currentContext);
+                                #if debug_ast_builder
+                                trace('[AST Builder] Transforming field method call: ${fieldClassName}.${fieldName}(field, ...)');
+                                #end
+                                trackDependency(fieldClassName);
+                                // Use remote call to properly generate Module.function syntax
+                                return ERemoteCall(makeAST(EVar(fieldClassName)), fieldName, [fieldAccess].concat(args));
+                            }
+                            
                             // Check if obj is a local variable that might have been renamed in a switch case
                             var objAst = switch(obj.expr) {
                                 case TLocal(v):
@@ -2492,6 +2529,19 @@ class ElixirASTBuilder {
                                             trackDependency(moduleName);
                                             return ERemoteCall(makeAST(EVar(moduleName)), methodName, [objAst].concat(args));
                                         }
+                                    } else if (!cls.isExtern) {
+                                        // ARCHITECTURAL FIX: Regular (non-extern) class instance methods
+                                        // In Elixir, all functions are module-level. Instance methods become
+                                        // module functions with the instance as the first parameter.
+                                        // Transform: obj.method(args) → Module.method(obj, args)
+                                        var className = cls.name;
+                                        #if debug_ast_builder
+                                        trace('[AST Builder] Transforming instance method ${fieldName} on regular class ${className}');
+                                        #end
+                                        
+                                        // For all non-extern classes, use remote call syntax with module name
+                                        trackDependency(className);
+                                        return ERemoteCall(makeAST(EVar(className)), fieldName, [objAst].concat(args));
                                     }
                                 default:
                             }
@@ -3379,7 +3429,50 @@ class ElixirASTBuilder {
                                 trace('[ElixirASTBuilder] Generated idiomatic loop via enhanced LoopIntent');
                                 #end
                                 
-                                return result.def;
+                                // CRITICAL FIX: Build a complete block with ALL non-infrastructure statements
+                                // We must preserve buffer.add() calls, fields = Reflect.fields(), etc.
+                                var blockStatements: Array<ElixirAST> = [];
+                                
+                                // Process all statements in order
+                                for (i in 0...el.length) {
+                                    if (el[i] == forPattern.whileExpr) {
+                                        // Replace the while loop with our transformed version
+                                        blockStatements.push(result);
+                                    } else {
+                                        // Check if this is an infrastructure variable
+                                        var isInfrastructure = false;
+                                        switch(el[i].expr) {
+                                            case TVar(tvar, _):
+                                                // Skip infrastructure variables
+                                                if (tvar.name == forPattern.counterVar || 
+                                                    tvar.name == forPattern.limitVar ||
+                                                    (forPattern.arrayVar != null && tvar.name == forPattern.arrayVar)) {
+                                                    isInfrastructure = true;
+                                                    #if debug_loop_detection
+                                                    trace('[ElixirASTBuilder] Skipping infrastructure variable: ${tvar.name}');
+                                                    #end
+                                                }
+                                            default:
+                                        }
+                                        
+                                        if (!isInfrastructure) {
+                                            // Build this statement and add it to the block
+                                            var stmt = buildFromTypedExpr(el[i], currentContext);
+                                            if (stmt != null) {
+                                                blockStatements.push(stmt);
+                                                #if debug_loop_detection
+                                                trace('[ElixirASTBuilder] Preserving statement: ${Type.enumConstructor(el[i].expr)}');
+                                                #end
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Return the complete block
+                                #if debug_loop_detection
+                                trace('[ElixirASTBuilder] Returning complete block with ${blockStatements.length} statements');
+                                #end
+                                return EBlock(blockStatements);
                             default:
                         }
                     }
