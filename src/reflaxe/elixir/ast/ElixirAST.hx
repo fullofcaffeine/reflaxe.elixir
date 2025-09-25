@@ -628,6 +628,30 @@ typedef ElixirAST = {
 /**
  * Comprehensive metadata structure for AST nodes
  */
+/**
+ * Loop context information for metadata preservation
+ * 
+ * WHY THIS EXISTS: When Haxe's analyzer optimization is enabled (-D analyzer-optimize),
+ * it replaces loop variables with literal values during compilation. For example,
+ * `"Cell (" + i + "," + j + ")"` becomes `"Cell (0,1)"` before our compiler sees it.
+ * This structure preserves the original loop context so we can restore variable names.
+ * 
+ * WHAT IT RELATES TO:
+ * - Created in: ElixirASTBuilder.hx when processing TFor nodes
+ * - Attached to: ElixirAST nodes via metadata field
+ * - Consumed by: LoopVariableRestorer.hx to restore variable names in strings
+ * 
+ * HOW IT WORKS: Each loop creates a context that travels with the AST through all
+ * transformation passes, allowing late-stage restoration of variable names.
+ */
+typedef LoopContext = {
+    var variableName: String;         // Original loop variable name from Haxe source (i, j, k)
+    var rangeMin: Int;               // Start of range (0 in "0...5") - used to identify which literals to replace
+    var rangeMax: Int;               // End of range (4 in "0...5") - helps detect loop-generated values
+    var depth: Int;                  // Nesting level (0=outermost, 1=first nested) - handles nested loops
+    var iteratorExpr: String;        // Original iterator expression - for debugging and complex cases
+}
+
 typedef ElixirMetadata = {
     // Source Information
     ?sourceExpr: haxe.macro.Type.TypedExpr,        // Original Haxe expression
@@ -722,9 +746,28 @@ typedef ElixirMetadata = {
     // Whether the original Haxe class had @:timestamps annotation
     ?hasTimestamps: Bool,
     
-    // Loop Expression Preservation (Added for idiomatic loop generation)
-    ?originalLoopExpression: String,  // Original loop expression text (e.g., "i * 2 + 1")
-    ?loopVariableName: String,        // The loop variable name for reconstruction
+    // Loop Expression Preservation (Critical for idiomatic Elixir generation)
+    // WHY: Haxe's optimizer replaces loop variables with literals BEFORE our compiler runs
+    // WHAT: These fields preserve loop information from the original TypedExpr
+    // RELATES TO: Loop variable substitution bug (see LOOP_VARIABLE_FIX_PRD.md)
+    
+    ?originalLoopExpression: String,  // Captures loop body expression before optimization ("i * 2 + 1" not "0 * 2 + 1")
+                                     // USED BY: String reconstruction in transformer passes
+    
+    ?loopVariableName: String,        // Preserves original variable name ("i", "j", "k")
+                                     // USED BY: Legacy compatibility with existing restorer code
+    
+    ?loopContextStack: Array<LoopContext>, // Stack of all enclosing loop contexts for nested loops
+                                          // WHY: Nested loops need access to all parent loop variables
+                                          // USED BY: LoopVariableRestorer to handle multi-level nesting
+    
+    ?isWithinLoop: Bool,              // Marks nodes that are inside a loop body
+                                     // WHY: Only restore variables in loop contexts, not everywhere
+                                     // USED BY: Transformation passes to enable/disable restoration
+    
+    ?parentLoopVar: String,           // Direct parent loop variable for simple nested detection
+                                     // WHY: Quick check for immediate parent without full stack traversal
+                                     // USED BY: Optimization passes for common two-level nesting
     
     // Optimization Hints
     ?canInline: Bool,             // Can be inlined

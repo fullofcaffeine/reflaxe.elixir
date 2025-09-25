@@ -18,6 +18,8 @@ npx haxe build.hxml        # Basic compilation
 npx haxe build.hxml -D source-map  # With debugging support
 ```
 
+⚠️ **Important**: See [Compiler Flags Guide](compiler-flags-guide.md) for critical information about which optimization flags to avoid (particularly `-D analyzer-optimize`).
+
 ### File Watching (Recommended)
 ```bash
 # Start automatic recompilation (todo-app example)

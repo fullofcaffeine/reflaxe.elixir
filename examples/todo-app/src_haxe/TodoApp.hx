@@ -20,9 +20,6 @@ class TodoApp {
      */
     @:keep
     public static function start(type: ApplicationStartType, args: ApplicationArgs): ApplicationResult {
-        // Use the app name directly - later this could be replaced by the compiler
-        var appName = "TodoApp";
-        
         // Define children for the supervision tree using type-safe child specs
         var children: Array<ChildSpecFormat> = [
             // Database repository - Ecto.Repo handles Postgrex.TypeManager internally

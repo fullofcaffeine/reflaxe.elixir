@@ -574,6 +574,20 @@ class ElixirASTBuilder {
                         var ast = CoreExprBuilder.buildLocal(v);
                         ast.def;
                     }
+                } 
+                // LOOP VARIABLE PRESERVATION: Check if we're in a loop context
+                // This prevents premature substitution of loop variables with literals
+                else if (currentContext != null && currentContext.astContext != null && 
+                         currentContext.astContext.loopContextStack != null &&
+                         currentContext.astContext.loopContextStack.length > 0) {
+                    // We're within a loop - preserve the variable name
+                    #if debug_loop_variable_restore
+                    trace('[LoopPreservation] Preserving loop variable: ${v.name} (within loop context)');
+                    #end
+                    var ast = CoreExprBuilder.buildLocal(v);
+                    // Attach loop context metadata if available
+                    ast.metadata = {loopContextStack: currentContext.astContext.loopContextStack};
+                    ast.def;
                 } else {
                     // No context available, use CoreExprBuilder
                     var ast = CoreExprBuilder.buildLocal(v);
@@ -4969,14 +4983,39 @@ class ElixirASTBuilder {
                 var forStartTime = haxe.Timer.stamp() * 1000;
                 #end
 
-                // METADATA PRESERVATION: Capture original loop body expression
-                // This allows reconstruction of expressions like "i * 2 + 1" instead of pre-computed values
+                // METADATA PRESERVATION: Critical for fixing loop variable substitution bug
+                // WHY: This is WHERE we capture loop information BEFORE expressions are evaluated
+                // CRITICAL: The issue occurs EVEN WITHOUT -D analyzer-optimize!
+                // The problem is in our own expression processing, not just Haxe's optimizer
+                // RELATES TO: LOOP_VARIABLE_FIX_PRD.md and LOOP_VARIABLE_SUBSTITUTION_CRITICAL_FINDING.md
                 var loopMetadata = createMetadata(expr);
                 
-                // Extract and preserve the loop body expression text
-                // We'll use this to reconstruct idiomatic expressions in the transformer
+                // Create loop context that will survive all transformation passes
+                // WHY EACH FIELD:
+                // - variableName: The actual variable name to restore ("i", not "0")
+                // - rangeMin/Max: Identifies which literal values are from this loop (0,1,2 from 0...3)
+                // - depth: Handles nested loops correctly (outer i vs inner i)
+                // - iteratorExpr: Debugging aid and future complex iterator support
+                var loopContext: LoopContext = {
+                    variableName: v.name,
+                    rangeMin: extractRangeMin(e1),      // Extract start value (0 from 0...5)
+                    rangeMax: extractRangeMax(e1),      // Extract end value (4 from 0...5)
+                    depth: currentContext != null && currentContext.astContext != null && currentContext.astContext.loopDepth != null ? currentContext.astContext.loopDepth + 1 : 0,
+                    iteratorExpr: captureIteratorExpression(e1)  // Preserve original iterator text
+                };
+                
+                // Build context stack for nested loop support
+                // WHY: Inner loops need access to ALL parent loop contexts
+                // EXAMPLE: In nested loops, "Cell (0,1)" needs both i and j contexts
+                if (loopMetadata.loopContextStack == null) {
+                    loopMetadata.loopContextStack = [];
+                }
+                loopMetadata.loopContextStack.push(loopContext);
+                
+                // Preserve original expression and variable name for compatibility
                 loopMetadata.loopVariableName = v.name;
                 loopMetadata.originalLoopExpression = captureExpressionText(e2, v.name);
+                loopMetadata.isWithinLoop = true;
                 
                 #if debug_loop_metadata
                 trace('[Loop Metadata] Variable: ${v.name}');
@@ -11382,6 +11421,94 @@ class ElixirASTBuilder {
         #end
         
         return result;
+    }
+    
+    /**
+     * Extract minimum value from range iterator expression
+     * 
+     * WHY NEEDED: To identify which literal values in the output belong to this loop.
+     * When we see "#{0}" in output, we need to know if 0 came from a loop starting at 0.
+     * 
+     * WHAT IT DOES: Extracts the starting value from Haxe's range syntax (0...5 → 0)
+     * 
+     * RELATES TO: LoopVariableRestorer uses this to know which literals to replace
+     * 
+     * @param iterator The iterator expression (e.g., TBinop(OpInterval, min, max))
+     * @return The minimum value or 0 if not determinable
+     */
+    static function extractRangeMin(iterator: TypedExpr): Int {
+        if (iterator == null) return 0;
+        
+        return switch(iterator.expr) {
+            case TBinop(OpInterval, {expr: TConst(TInt(min))}, _): min;
+            case TConst(TInt(v)): v; // Single value
+            case TLocal(v) if (v.name == "__iterator__"): 0; // Default for iterator variables
+            default: 0;
+        }
+    }
+    
+    /**
+     * Extract maximum value from range iterator expression
+     * 
+     * WHY NEEDED: To identify the upper bound of loop-generated values.
+     * If a loop runs 0...3, we know values 0,1,2 might need variable restoration.
+     * 
+     * WHAT IT DOES: Extracts the ending value from Haxe's range syntax (0...5 → 4)
+     * Note: Haxe ranges are exclusive, so we subtract 1 from the upper bound
+     * 
+     * RELATES TO: LoopVariableRestorer uses this to limit replacement scope
+     * 
+     * @param iterator The iterator expression
+     * @return The maximum value or -1 if not determinable
+     */
+    static function extractRangeMax(iterator: TypedExpr): Int {
+        if (iterator == null) return -1;
+        
+        return switch(iterator.expr) {
+            case TBinop(OpInterval, _, {expr: TConst(TInt(max))}): max - 1; // Exclusive range
+            case TConst(TInt(v)): v; // Single value
+            case TLocal(v) if (v.name == "__iterator__"): -1; // Unknown for iterator variables
+            default: -1;
+        }
+    }
+    
+    /**
+     * Capture string representation of iterator expression
+     * 
+     * WHY NEEDED: For debugging and handling complex iterators beyond simple ranges.
+     * Helps identify which loop generated specific output when troubleshooting.
+     * 
+     * WHAT IT DOES: Creates a human-readable representation of the iterator
+     * (e.g., "0...5", "myArray", "function(3 args)")
+     * 
+     * RELATES TO: Debug output and future support for array/collection iteration
+     * 
+     * @param iterator The iterator expression
+     * @return String representation for metadata
+     */
+    static function captureIteratorExpression(iterator: TypedExpr): String {
+        if (iterator == null) return "unknown";
+        
+        return switch(iterator.expr) {
+            case TBinop(OpInterval, e1, e2): 
+                var min = switch(e1.expr) {
+                    case TConst(TInt(v)): Std.string(v);
+                    case TLocal(v): v.name;
+                    default: "?";
+                };
+                var max = switch(e2.expr) {
+                    case TConst(TInt(v)): Std.string(v);
+                    case TLocal(v): v.name;
+                    default: "?";
+                };
+                '$min...$max';
+                
+            case TLocal(v): v.name;
+            case TConst(TInt(v)): Std.string(v);
+            case TArrayDecl(el): '[${el.length} elements]';
+            case TCall(_, el): 'function(${el.length} args)';
+            default: "complex";
+        }
     }
 }
 

@@ -15,7 +15,7 @@
 # JavaScript target with modern ES6 modules via genes
 -js assets/js/app.js
 -D js-unflatten               # Better module structure 
--D analyzer-optimize          # Enable optimizations
+# NOTE: -D analyzer-optimize removed - destroys functional patterns
 --dce=full
 
 # Haxe 4.3+ optimizations

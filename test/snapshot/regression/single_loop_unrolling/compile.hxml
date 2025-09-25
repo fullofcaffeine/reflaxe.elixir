@@ -4,4 +4,4 @@
 -lib reflaxe.elixir
 --no-output
 -D elixir_output=test/snapshot/regression/single_loop_unrolling/out
--D analyzer-optimize
+# NOTE: -D analyzer-optimize removed - destroys functional patterns

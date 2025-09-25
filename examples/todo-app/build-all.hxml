@@ -15,7 +15,7 @@
 -main TodoApp
 -js priv/static/js/todo-app.js
 -dce full
--D analyzer-optimize
+# NOTE: -D analyzer-optimize removed - destroys functional patterns
 --cmd echo "✅ JavaScript compilation complete!"
 
 --cmd echo "🚀 Full compilation complete! Both Elixir and JavaScript targets built."
