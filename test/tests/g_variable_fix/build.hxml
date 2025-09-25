@@ -1,0 +1,9 @@
+-cp ../../../std
+-lib reflaxe
+-cp ../../../src
+--macro reflaxe.elixir.CompilerInit.Start()
+-D elixir-output=out
+-D elixir-overwrite
+-D no-inline
+-dce no
+Main

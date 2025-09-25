@@ -1476,7 +1476,7 @@ class ElixirASTTransformer {
                 //     makeAST(ENil);
                     
                 // Handle super calls - Elixir doesn't have super
-                case ECall(target, funcName, args):
+                case ECall(_target, funcName, _args):
                     if (funcName == "__super__") {
                         // Generate error or warning - super is not supported in Elixir
                         // For now, just return nil

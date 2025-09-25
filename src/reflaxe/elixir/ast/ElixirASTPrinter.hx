@@ -271,13 +271,17 @@ class ElixirASTPrinter {
                             default: null;
                         };
 
-                        if (rhsName != null && (rhsName == name || ElixirASTBuilder.isTempPatternVarName(rhsName))) {
+                        // Only skip printing if the RHS is the same variable (self-assignment)
+                        // and NOT a temporary pattern variable that will be used later
+                        if (rhsName != null && rhsName == name && !ElixirASTBuilder.isTempPatternVarName(name)) {
                             return '';
                         }
 
-                        if (ElixirASTBuilder.isTempPatternVarName(name)) {
-                            return '';
-                        }
+                        // IMPORTANT: Haxe-generated temporary variables (g, g1, _g, etc.) MUST be printed
+                        // These are created by Haxe during compilation for switch expressions and other patterns.
+                        // Example: switch(parseMessage(msg)) becomes _g = parseMessage(msg); switch(_g)
+                        // Without printing these assignments, we get "undefined variable 'g'" errors in Elixir.
+                        // See ElixirASTBuilder.isTempPatternVarName for full documentation on these variables.
                     default:
                 }
 
