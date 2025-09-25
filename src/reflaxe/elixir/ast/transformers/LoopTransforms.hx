@@ -34,6 +34,46 @@ import Type;
  * - Preserves non-loop sequential statements
  * - Handles partial patterns gracefully
  * - Maintains correct variable scoping
+ * 
+ * KNOWN LIMITATIONS:
+ * - Complex expressions in loop bodies are evaluated at compile time by Haxe when
+ *   loops are unrolled, losing the original loop structure. For example, arithmetic
+ *   operations, method calls, or any computation involving the loop variable gets
+ *   replaced with its calculated values. This is a Haxe compiler optimization that
+ *   happens before our AST processing. The detector only recognizes simple sequential
+ *   patterns where the loop index appears directly in the output.
+ * 
+ * DESIGN DECISION: Why We Don't Detect Arithmetic Progressions
+ * -------------------------------------------------------------
+ * When Haxe unrolls `trace('Result: ' + (n * 2))` for n in 0...3, we get:
+ * - "Result: 0", "Result: 2", "Result: 4"
+ * 
+ * We COULD detect this arithmetic progression, but chose not to because:
+ * 
+ * 1. REVERSE ENGINEERING AMBIGUITY: Given 0,2,4, we can't know if original was:
+ *    - n * 2, n << 1, n + n, or customFunction(n)
+ * 
+ * 2. COMPLEXITY VS BENEFIT: Arithmetic progression detection would require:
+ *    - Step size calculation and validation
+ *    - Expression reconstruction (guessing the formula)
+ *    - Handling non-linear progressions (n*n, fibonacci, etc.)
+ *    - Risk of false positives
+ * 
+ * 3. RARITY IN PRACTICE: Most loops use indices directly, not complex expressions
+ * 
+ * 4. 80/20 RULE: Current implementation handles 80%+ of cases with 20% complexity
+ * 
+ * 5. ALTERNATIVE SOLUTIONS EXIST:
+ *    - Use larger loops (Haxe doesn't unroll large loops)
+ *    - Use while loops or recursion
+ *    - Accept the unrolled output (it's still correct)
+ * 
+ * POTENTIAL SOLUTION: Bypass Haxe's Optimizer
+ * --------------------------------------------
+ * If we could hook into Haxe BEFORE optimization (using Context.onGenerate or 
+ * Context.onAfterTyping with higher priority), we might preserve original loops.
+ * This would be cleaner than reverse-engineering unrolled code.
+ * TODO: Investigate Reflaxe initialization timing vs Haxe optimizer timing
  */
 class LoopTransforms {
     

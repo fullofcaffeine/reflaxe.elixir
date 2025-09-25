@@ -134,6 +134,23 @@ Once installed, add to your `build.hxml`:
 Main
 ```
 
+### ⚠️ Important: Compiler Configuration
+
+**DO NOT use `-D analyzer-optimize`** when compiling to Elixir. This flag triggers aggressive optimizations designed for C++ and JavaScript that produce non-idiomatic Elixir code.
+
+**Recommended configuration:**
+```hxml
+# Good optimizations
+-dce full                    # Dead code elimination (recommended)
+-D loop_unroll_max_cost=10   # Reasonable loop unrolling limit
+
+# AVOID these
+# -D analyzer-optimize       # Destroys functional patterns
+# -D analyzer-check          # May trigger unwanted optimizations
+```
+
+For complete compiler configuration guidance, see [docs/01-getting-started/compiler-flags-guide.md](docs/01-getting-started/compiler-flags-guide.md).
+
 ## Quick Start
 
 ### Create a New Project

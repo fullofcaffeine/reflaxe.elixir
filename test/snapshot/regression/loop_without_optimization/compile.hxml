@@ -1,0 +1,7 @@
+-cp test/snapshot/regression/loop_without_optimization
+-main Main
+--no-output
+-lib reflaxe
+-lib reflaxe.elixir
+-D elixir_output=test/snapshot/regression/loop_without_optimization/out
+# NOTE: NO # NOTE: -D analyzer-optimize removed - destroys functional patterns flag here!

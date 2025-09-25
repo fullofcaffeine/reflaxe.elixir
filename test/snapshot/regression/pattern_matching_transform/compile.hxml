@@ -5,5 +5,5 @@
 --no-output
 -main Main
 -D elixir_output=out
--D analyzer-optimize
+# NOTE: -D analyzer-optimize removed - destroys functional patterns
 -dce full

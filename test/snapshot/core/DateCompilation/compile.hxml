@@ -4,6 +4,6 @@
 -cp ../../../../src
 --macro reflaxe.elixir.CompilerInit.Start()
 -D reflaxe-elixir
--D analyzer-optimize
+# NOTE: -D analyzer-optimize removed - destroys functional patterns
 --dce full
 --main Main

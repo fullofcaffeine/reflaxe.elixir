@@ -116,6 +116,52 @@ npx haxe build.hxml -D debug_ast_pipeline -D debug_ast_transformer
 npx haxe build.hxml -D debug_otp_child_spec -D debug_pattern_matching
 ```
 
+## ⚠️ CRITICAL: Compiler Optimization Flags - DO NOT USE `-D analyzer-optimize`
+
+**FUNDAMENTAL RULE: NEVER use `-D analyzer-optimize` when compiling Haxe to Elixir.**
+
+### Why This is Critical
+The `-D analyzer-optimize` flag triggers Haxe's aggressive optimizations designed for imperative targets like C++ and JavaScript. These optimizations **destroy idiomatic Elixir patterns** and produce verbose, non-functional code.
+
+### What Goes Wrong with `-D analyzer-optimize`
+1. **Loop Unrolling**: Converts `for (i in 0...3)` into three sequential statements instead of `Enum.each`
+2. **Constant Folding**: Evaluates expressions like `n * 2` at compile-time, losing the original calculation
+3. **Pattern Destruction**: Breaks functional patterns that are core to Elixir's philosophy
+
+### Example of the Damage
+```haxe
+// Haxe source
+for (i in 0...3) {
+    trace('Item: ' + i);
+}
+
+// WITH -D analyzer-optimize (WRONG - verbose, non-idiomatic)
+Log.trace("Item: 0", ...)
+Log.trace("Item: 1", ...)
+Log.trace("Item: 2", ...)
+
+// WITHOUT -D analyzer-optimize (CORRECT - idiomatic Elixir)
+Enum.each(0..2, fn i -> 
+  Log.trace("Item: #{i}", ...)
+end)
+```
+
+### Recommended Compiler Configuration
+```hxml
+# ✅ GOOD optimizations
+-dce full                    # Dead code elimination (removes unused code)
+-D loop_unroll_max_cost=10   # Reasonable loop unrolling limit
+
+# ❌ NEVER use these
+# -D analyzer-optimize       # Destroys functional patterns
+# -D analyzer-check          # May trigger unwanted optimizations
+```
+
+### Philosophy
+**For Elixir, optimize for humans, not machines.** The BEAM VM handles performance optimization at runtime. Our job is to generate **readable, maintainable, idiomatic Elixir code** that looks hand-written by an expert.
+
+**See**: [`docs/01-getting-started/compiler-flags-guide.md`](docs/01-getting-started/compiler-flags-guide.md) - Complete compiler flags documentation
+
 ## ⚠️ CRITICAL: Target-Conditional Classpath Architecture (January 2025 Discovery)
 
 **FUNDAMENTAL ARCHITECTURAL ISSUE**: The current `.cross.hx` staging mechanism is flawed - it makes Elixir-specific code available in ALL compilation contexts (macro, interp, etc.) when it should ONLY be available when compiling to Elixir target.
@@ -540,15 +586,18 @@ This is not just about convenience - it's about **eliminating entire categories 
 
 ### Development Workflow
 ```bash
-# Build and test
+# Build and test (with CORRECT flags - no analyzer-optimize!)
 npm test                          # Full test suite (mandatory before commit)
-npx haxe build-server.hxml       # Compile Haxe to Elixir
+npx haxe build-server.hxml       # Compile Haxe to Elixir (check .hxml for flags)
 mix compile --force               # Compile generated Elixir
 mix phx.server                    # Run Phoenix application
 
 # Integration testing
 cd examples/todo-app && npx haxe build-server.hxml && mix compile
 curl http://localhost:4000        # Test application response
+
+# ⚠️ IMPORTANT: Never add -D analyzer-optimize to build commands
+# It destroys idiomatic Elixir patterns. Use -dce full instead.
 ```
 
 ### Quick Testing
