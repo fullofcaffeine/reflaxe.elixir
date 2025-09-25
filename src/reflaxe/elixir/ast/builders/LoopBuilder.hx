@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.builders;
 
 import haxe.macro.Type;
 import haxe.macro.Expr;
+import haxe.macro.Expr.Binop;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -164,6 +165,9 @@ class LoopBuilder {
                 ));
 
                 var snakeVar = toSnakeCase(varName);
+                #if debug_loop_builder
+                trace('[LoopBuilder] EnumEachRange - Original varName: $varName, snakeVar: $snakeVar');
+                #end
                 var bodyAst = buildExpr(body);
                 
                 // Create loop context metadata for variable restoration
@@ -192,6 +196,9 @@ class LoopBuilder {
                 }
                 bodyAst.metadata.isWithinLoop = true;
 
+                #if debug_loop_builder
+                trace('[LoopBuilder] Creating EFn with PVar($snakeVar) for Enum.each');
+                #end
                 var result = makeAST(ERemoteCall(
                     makeAST(EVar("Enum")),
                     "each",
@@ -590,13 +597,38 @@ class LoopBuilder {
         // Analyze the while body to extract user variable and code
         var analysis = analyzeForLoopBody(whileBody, counterVar);
         
+        #if debug_loop_builder
+        trace('[LoopBuilder] buildWithFullContext - counterVar: $counterVar');
+        if (analysis != null) {
+            trace('[LoopBuilder] Analysis found userVar: ${analysis.userVar}');
+        } else {
+            trace('[LoopBuilder] Analysis returned null - using fallback with default variable');
+        }
+        #end
+        
         if (analysis == null) {
-            // Fallback: if analysis fails, generate a basic range iteration
+            // Fallback: if analysis fails, generate a basic range iteration with a default variable name
+            // Use "i" as a sensible default for numeric loops instead of underscore
+            var defaultVar = "i";  // Common convention for loop indices
+            
             var range = makeAST(ERange(
                 buildExpr(startExpr),
                 buildExpr(endExpr),
                 false
             ));
+            
+            #if debug_loop_builder
+            trace('[LoopBuilder] WARNING: Analysis failed, using default variable name: $defaultVar');
+            trace('[LoopBuilder] Original whileBody type: ${whileBody.expr}');
+            #end
+            
+            // Filter out infrastructure variable assignments (like i = g = g + 1)
+            // These are artifacts from Haxe's desugaring and shouldn't appear in output
+            var cleanedBody = cleanLoopBodyFromInfrastructure(whileBody, counterVar, defaultVar);
+            
+            #if debug_loop_builder
+            trace('[LoopBuilder] Cleaned body: ${cleanedBody}');
+            #end
             
             return makeAST(ERemoteCall(
                 makeAST(EVar("Enum")),
@@ -604,8 +636,8 @@ class LoopBuilder {
                 [
                     range,
                     makeAST(EFn([{
-                        args: [PVar("_")],
-                        body: buildExpr(whileBody)
+                        args: [PVar(defaultVar)],  // Fixed: Use sensible default instead of underscore
+                        body: buildExpr(cleanedBody)
                     }]))
                 ]
             ));
@@ -976,6 +1008,63 @@ class LoopBuilder {
         ));
     }
 
+    /**
+     * Clean loop body from infrastructure variable assignments
+     *
+     * WHY: When loop analysis fails, the raw while body contains infrastructure
+     *      variable assignments like "i = g = g + 1" from Haxe's desugaring
+     * WHAT: Filters out assignments that involve infrastructure variables (g, g1, _g)
+     * HOW: Recursively traverses the TypedExpr and removes problematic assignments
+     */
+    static function cleanLoopBodyFromInfrastructure(expr: TypedExpr, counterVar: String, userVar: String): TypedExpr {
+        return switch(expr.expr) {
+            case TBlock(exprs):
+                var cleaned = [];
+                for (e in exprs) {
+                    var shouldInclude = switch(e.expr) {
+                        // Skip assignments involving infrastructure variables
+                        case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TBinop(OpAssign, {expr: TLocal(v2)}, _)}):
+                            // This is a double assignment like "i = g = g + 1"
+                            false;
+                        case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TLocal(v2)}) 
+                            if (v.name == userVar && (v2.name == counterVar || v2.name.indexOf("g") == 0 || v2.name.indexOf("_g") == 0)):
+                            // Skip assignments like "i = g" or "i = g1"
+                            false;
+                        case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, _)}) 
+                            if (v.name == counterVar && v2.name == counterVar):
+                            // Skip counter increments like "g = g + 1"
+                            false;
+                        default:
+                            true;
+                    };
+                    
+                    if (shouldInclude) {
+                        // Recursively clean nested expressions
+                        var cleanedExpr = cleanLoopBodyFromInfrastructure(e, counterVar, userVar);
+                        cleaned.push(cleanedExpr);
+                    }
+                }
+                
+                // If we cleaned everything out, return a no-op
+                if (cleaned.length == 0) {
+                    // Return nil as a no-op
+                    {expr: TConst(TNull), pos: expr.pos, t: expr.t};
+                } else if (cleaned.length == 1) {
+                    cleaned[0];
+                } else {
+                    {expr: TBlock(cleaned), pos: expr.pos, t: expr.t};
+                }
+                
+            case TIf(cond, thenExpr, elseExpr):
+                var cleanedThen = cleanLoopBodyFromInfrastructure(thenExpr, counterVar, userVar);
+                var cleanedElse = elseExpr != null ? cleanLoopBodyFromInfrastructure(elseExpr, counterVar, userVar) : null;
+                {expr: TIf(cond, cleanedThen, cleanedElse), pos: expr.pos, t: expr.t};
+                
+            default:
+                expr; // Return unchanged for other expression types
+        };
+    }
+    
     /**
      * Build legacy for from IR
      */

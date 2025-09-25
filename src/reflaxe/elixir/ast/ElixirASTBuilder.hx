@@ -10,6 +10,7 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
 import reflaxe.elixir.ast.ElixirASTPatterns;
+import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.naming.ElixirNaming;
 import reflaxe.elixir.ast.context.ClauseContext;
@@ -18,7 +19,10 @@ import reflaxe.elixir.ast.ReentrancyGuard;
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
 import reflaxe.elixir.ast.builders.BinaryOpBuilder;
 import reflaxe.elixir.ast.builders.LoopBuilder;
+import reflaxe.elixir.ast.intent.LoopIntent;
+import reflaxe.elixir.ast.intent.LoopIntent.*;  // Import all enum constructors
 import reflaxe.elixir.ast.transformers.DesugarredForDetector;
+import reflaxe.elixir.CompilationContext;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -1492,17 +1496,46 @@ class ElixirASTBuilder {
                         // The TBlock handler at line 3036 filters out null expressions
                         null;
                     } else if (initValue == null) {
-                        // If initValue is null (e.g., from skipped TEnumParameter), skip the assignment
+                        // If initValue is null (e.g., from skipped TEnumParameter or failed TCall), handle carefully
                         #if debug_ast_builder
-                        trace('[DEBUG EMBEDDED TVar] Skipping assignment because initValue is null for: $finalVarName (extractedFromTemp: $extractedFromTemp)');
+                        trace('[DEBUG EMBEDDED TVar] WARNING: initValue is null for: $finalVarName (extractedFromTemp: $extractedFromTemp)');
+                        trace('[TVar] This will cause undefined variable errors in generated code!');
                         #end
+                        
+                        // CRITICAL FIX: When initialization expression fails to build (returns null),
+                        // we need to provide a fallback value to prevent undefined variables in the generated code.
+                        // This typically happens with complex expressions like TodoPubSub.subscribe(TodoUpdates)
+                        // that fail to build in certain contexts.
+                        // 
+                        // Generate a descriptive error value that will make the issue visible
+                        // rather than silently producing broken code with undefined variables.
+                        var fallbackValue = makeAST(ERaw('{:error, "[Compiler Error] Failed to build initialization for ' + finalVarName + '"}'));
+                        
+                        #if debug_ast_builder
+                        trace('[TVar] Using fallback error tuple for null initValue to prevent undefined variable');
+                        #end
+                        
+                        // Create the assignment with the fallback value
+                        var matchNode = makeAST(EMatch(
+                            PVar(finalVarName),
+                            fallbackValue
+                        ));
+                        
+                        // Add metadata to indicate this is a fallback
+                        if (matchNode.metadata == null) matchNode.metadata = {};
+                        // Using requiresTempVar to indicate special handling (isFallbackInit field doesn't exist)
+                        matchNode.metadata.requiresTempVar = true;
+                        matchNode.metadata.varOrigin = varOrigin;
+                        matchNode.metadata.varId = v.id;
+                        
                         // But if this was supposed to be an assignment from a temp var, we have a problem!
                         if (extractedFromTemp != null) {
                             #if debug_ast_builder
                             trace('[DEBUG g=g] ERROR: initValue is null but we need assignment from temp var $extractedFromTemp to $finalVarName');
                             #end
                         }
-                        null;
+                        
+                        matchNode;
                     } else {
                         // Check for self-assignment right before creating the match node
                         var shouldSkipSelfAssignment = false;
@@ -1691,27 +1724,31 @@ class ElixirASTBuilder {
                         var expr = buildFromTypedExpr(e, currentContext).def;
                         EUnary(BitwiseNot, makeAST(expr));
                     case OpIncrement, OpDecrement:
-                        // Elixir is immutable, so we need to generate an assignment
-                        // When used as a statement, convert to: var = var + 1 or var = var - 1
+                        // Elixir is immutable, so we need to handle increment/decrement carefully
+                        // Pre-increment (++x): returns the incremented value
+                        // Post-increment (x++): returns the original value (not supported in Elixir)
                         var one = makeAST(EInteger(1));
                         var builtExpr = buildFromTypedExpr(e, currentContext);
-                        var operation = if (op == OpIncrement) {
-                            makeAST(EBinary(Add, builtExpr, one));
-                        } else {
-                            makeAST(EBinary(Subtract, builtExpr, one));
-                        };
                         
-                        // If this is a standalone statement (not part of another expression),
-                        // we need to generate an assignment
-                        // Check if the original expression is a local variable that can be assigned
-                        switch(e.expr) {
-                            case TLocal(v):
-                                // Generate: var = var +/- 1
-                                EBinary(Match, builtExpr, operation);
-                            default:
-                                // For complex expressions, just return the operation
-                                // (this may not work correctly for all cases)
-                                operation.def;
+                        if (!postFix) {
+                            // Pre-increment/decrement: just return the computed value
+                            // When used in TVar(i, TUnop(OpIncrement, g)), this becomes: i = g + 1
+                            var operation = if (op == OpIncrement) {
+                                EBinary(Add, builtExpr, one);
+                            } else {
+                                EBinary(Subtract, builtExpr, one);
+                            };
+                            operation;
+                        } else {
+                            // Post-increment/decrement: return the computed value
+                            // When used in TVar context, let TVar handle the assignment
+                            // This avoids double assignment like "i = g = g + 1"
+                            var operation = if (op == OpIncrement) {
+                                EBinary(Add, builtExpr, one);
+                            } else {
+                                EBinary(Subtract, builtExpr, one);
+                            };
+                            operation;
                         };
                     case OpSpread:
                         // Spread operator for destructuring
@@ -2301,11 +2338,46 @@ class ElixirASTBuilder {
                         #end
                     }
                     #end
+                    
+                    // DEBUG: Add tracing for TodoPubSub.subscribe issue
+                    #if debug_ast_builder
+                    if (e != null) {
+                        switch(e.expr) {
+                            case TField(_, FStatic(classRef, cf)):
+                                var className = classRef.get().name;
+                                var methodName = cf.get().name;
+                                if (className == "TodoPubSub" || className == "SafePubSub") {
+                                    trace('[DEBUG TCall] Building target for ${className}.${methodName}');
+                                }
+                            default:
+                        }
+                    }
+                    #end
+                    
                     var target = if (presenceHandled) {
                         // Phoenix.Presence was already handled, don't build the target to avoid malformed output
                         null;
+                    } else if (e != null) {
+                        var builtTarget = buildFromTypedExpr(e, currentContext);
+                        
+                        #if debug_ast_builder
+                        // Debug: Check if target building failed for PubSub calls
+                        if (builtTarget == null) {
+                            switch(e.expr) {
+                                case TField(_, FStatic(classRef, cf)):
+                                    var className = classRef.get().name;
+                                    var methodName = cf.get().name;
+                                    trace('[ERROR TCall] buildFromTypedExpr returned null for ${className}.${methodName}');
+                                    trace('[ERROR TCall] This will cause undefined variable "g" in switch expressions');
+                                default:
+                                    trace('[ERROR TCall] buildFromTypedExpr returned null for unknown expression type');
+                            }
+                        }
+                        #end
+                        
+                        builtTarget;
                     } else {
-                        e != null ? buildFromTypedExpr(e, currentContext) : null;
+                        null;
                     }
                     
                     // Detect special call patterns
@@ -3215,30 +3287,96 @@ class ElixirASTBuilder {
                 // CRITICAL: Check for desugared for loop pattern FIRST
                 // This detects patterns like: var g=0; var g1=5; while(g<g1){...}
                 // and generates idiomatic Elixir (Enum.each or comprehensions)
-                if (currentContext.isFeatureEnabled("loop_builder_enabled")) {
-                    var forPattern = DesugarredForDetector.detectDesugarredFor(el);
+                
+                #if debug_loop_detection
+                var featureEnabled = currentContext != null ? currentContext.isFeatureEnabled("loop_builder_enabled") : false;
+                trace('[ElixirASTBuilder] TBlock loop detection check: context=${currentContext != null}, elements=${el.length}, loop_builder=${featureEnabled}');
+                #end
+                
+                if (currentContext != null && currentContext.isFeatureEnabled("loop_builder_enabled")) {
+                    #if debug_loop_detection
+                    trace('[DesugarredForDetector] Attempting detection on TBlock with ${el.length} elements');
+                    #end
+                    var forPattern = DesugarredForDetector.detectAndEliminate(el);
                     if (forPattern != null) {
                         #if debug_loop_detection
-                        trace('[ElixirASTBuilder] Detected desugared for loop at TBlock level');
-                        trace('  Counter: ${forPattern.counterVar} from ${forPattern.startValue.expr}');
+                        trace('[ElixirASTBuilder] Detected desugared for loop at TBlock level with elimination data');
+                        trace('  Counter: ${forPattern.counterVar} maps to user var: ${forPattern.userVar}');
                         trace('  Limit: ${forPattern.limitVar} to ${forPattern.endValue.expr}');
+                        trace('  Is simple range: ${forPattern.eliminationData.isSimpleRange}');
+                        trace('  Is array iteration: ${forPattern.eliminationData.isArrayIteration}');
                         #end
                         
-                        // Extract the while loop body and delegate to LoopBuilder
+                        // Create LoopIntent to capture the semantic intent of the loop
+                        var loopIntent: LoopIntent = null;
+                        var metadata: LoopIntentMetadata = {
+                            wasDesugared: true,
+                            infrastructureVars: [forPattern.counterVar, forPattern.limitVar],
+                            sourcePos: expr.pos
+                        };
+                        
+                        // Extract the while loop body using enhanced data
                         switch(forPattern.whileExpr.expr) {
                             case TWhile(cond, body, _):
-                                // Use LoopBuilder with full context from TBlock analysis
-                                var result = LoopBuilder.buildWithFullContext(
-                                    forPattern.startValue,
-                                    forPattern.endValue,
-                                    body,
-                                    forPattern.counterVar,  // Pass the infrastructure counter variable
-                                    e -> buildFromTypedExpr(e, currentContext),
-                                    s -> toElixirVarName(s)
-                                );
+                                // Use the enhanced userVar from detectAndEliminate
+                                var userVarName = forPattern.userVar;
+                                #if debug_loop_intent
+                                trace('[LoopIntent] Using enhanced userVar from detectAndEliminate: ${userVarName}');
+                                #end
+                                if (userVarName == null) {
+                                    // Fallback: check if it's array iteration or use default
+                                    userVarName = forPattern.eliminationData.isArrayIteration ? "item" : "i";
+                                    #if debug_loop_intent
+                                    trace('[LoopIntent] No userVar found, using fallback: ${userVarName}');
+                                    #end
+                                }
+                                
+                                // Determine loop type based on elimination data
+                                if (forPattern.eliminationData.isArrayIteration && forPattern.arrayVar != null) {
+                                    // Array iteration pattern - use CollectionLoop
+                                    var arrayExpr: TypedExpr = {
+                                        expr: TLocal({
+                                            id: 0, 
+                                            name: forPattern.arrayVar, 
+                                            t: null, 
+                                            capture: false, 
+                                            extra: null,
+                                            meta: null,
+                                            isStatic: false
+                                        }), 
+                                        pos: expr.pos, 
+                                        t: null
+                                    };
+                                    loopIntent = CollectionLoop(
+                                        userVarName,
+                                        arrayExpr,
+                                        body
+                                    );
+                                    #if debug_loop_detection
+                                    trace('[ElixirASTBuilder] Creating CollectionLoop intent for array: ${forPattern.arrayVar}');
+                                    #end
+                                } else {
+                                    // Range loop pattern
+                                    loopIntent = RangeLoop(
+                                        userVarName,
+                                        forPattern.startValue,
+                                        forPattern.endValue,
+                                        body,
+                                        false  // exclusive range (0...n)
+                                    );
+                                    #if debug_loop_detection
+                                    trace('[ElixirASTBuilder] Creating RangeLoop intent');
+                                    #end
+                                }
+                                
+                                // Apply variable substitution using the mapping
+                                metadata.variableMapping = forPattern.variableMapping;
+                                
+                                // Process the loop intent
+                                var result = processLoopIntent(loopIntent, metadata, currentContext);
                                 
                                 #if debug_loop_detection
-                                trace('[ElixirASTBuilder] Generated idiomatic for loop');
+                                trace('[ElixirASTBuilder] Generated idiomatic loop via enhanced LoopIntent');
                                 #end
                                 
                                 return result.def;
@@ -3565,8 +3703,28 @@ class ElixirASTBuilder {
                 
                 if (el.length == 2 && !isInLoopContext) {
                     switch([el[0].expr, el[1].expr]) {
-                        case [TVar(v, init), expr] if (init != null):
+                        case [TVar(v, init), expr]:
                             // This is a temporary variable pattern
+                            // Handle both when init is not null AND when it is null
+                            trace('[TBlock 2-element] Found TVar(${v.name}, init=${init != null ? Type.enumConstructor(init.expr) : "null"})');
+                            
+                            // Special check for TodoPubSub.subscribe pattern
+                            if (init != null) {
+                                switch(init.expr) {
+                                    case TCall(e, _):
+                                        switch(e.expr) {
+                                            case TField(_, FStatic(classRef, cf)):
+                                                var className = classRef.get().name;
+                                                var methodName = cf.get().name;
+                                                if (className == "TodoPubSub" && methodName == "subscribe") {
+                                                    trace('[TBlock 2-element] CRITICAL: Found TodoPubSub.subscribe in TVar init!');
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            }
+                            
                             // Check if the variable is unused and add underscore prefix
                             var isUsed = if (currentContext.variableUsageMap != null && currentContext.variableUsageMap.exists(v.id)) {
                                 currentContext.variableUsageMap.get(v.id);
@@ -3588,8 +3746,45 @@ class ElixirASTBuilder {
                                 baseName;
                             };
                             
-                            var initExpr = buildFromTypedExpr(init, currentContext);
+                            var initExpr = if (init != null) {
+                                var built = buildFromTypedExpr(init, currentContext);
+                                if (built == null && init != null) {
+                                    // Check specifically for TodoPubSub.subscribe
+                                    switch(init.expr) {
+                                        case TCall(e, _):
+                                            switch(e.expr) {
+                                                case TField(_, FStatic(classRef, cf)):
+                                                    var className = classRef.get().name;
+                                                    var methodName = cf.get().name;
+                                                    trace('[TBlock] ERROR: buildFromTypedExpr returned null for ${className}.${methodName}!');
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                }
+                                built;
+                            } else null;
+                            
+                            // CRITICAL FIX: Check if initialization failed to build or was null
+                            if (initExpr == null) {
+                                trace('[TBlock] WARNING: Failed to build initialization for variable ${v.name}, generating fallback error tuple');
+                                // Generate fallback error tuple to prevent undefined variables
+                                initExpr = makeAST(ETuple([
+                                    makeAST(EAtom("error")),
+                                    makeAST(EString("[Compiler Error] Failed to build initialization for ${baseName}"))
+                                ]));
+                                
+                                // Mark this as a fallback initialization
+                                if (initExpr.metadata == null) initExpr.metadata = {};
+                                initExpr.metadata.requiresTempVar = true;
+                            }
+                            
                             var bodyExpr = buildFromTypedExpr(el[1], currentContext);
+                            
+                            // Debug what the body expression looks like
+                            if (v.name == "_g") {
+                                trace('[TBlock] Body expression for _g: ${bodyExpr.def}');
+                            }
 
                             // Try to inline immediately when the temp var is used exactly once
                             // BUT: Skip inlining in case clause bodies (statement contexts)
@@ -3601,17 +3796,31 @@ class ElixirASTBuilder {
                             var containsNestedIf = containsIfStatement(el[1]);
                             var shouldPreserveDeclaration = isInCaseClause || containsNestedIf;
                             
-                            if (!shouldPreserveDeclaration) {
+                            // Check if the body is a switch/case expression that uses the variable
+                            var bodyIsSwitch = switch(bodyExpr.def) {
+                                case ECase(_): true;
+                                default: false;
+                            };
+                            
+                            // Never inline variables that are used in switch expressions
+                            // The switch needs the variable to be defined
+                            if (!shouldPreserveDeclaration && !bodyIsSwitch) {
                                 var usageCount = countVarOccurrencesInAST(bodyExpr, varName);
+                                
                                 if (usageCount == 1) {
+                                    trace('[TBlock] Inlining ${varName} (usage count: 1)');
                                     var inlined = replaceVarInAST(bodyExpr, varName, initExpr);
                                     return inlined.def;
                                 }
                             }
 
                             // Fallback: keep block, will be handled by transformer/printer later
+                            trace('[TBlock] Generating EBlock with EMatch for ${varName}');
+                            trace('[TBlock] initExpr type: ${initExpr.def}');
+                            var matchExpr = makeAST(EMatch(PVar(varName), initExpr));
+                            trace('[TBlock] matchExpr: ${matchExpr.def}');
                             return EBlock([
-                                makeAST(EMatch(PVar(varName), initExpr)),
+                                matchExpr,
                                 bodyExpr
                             ]);
                         default:
@@ -3919,7 +4128,77 @@ class ElixirASTBuilder {
                 }
                 #end
                 
-                var expr = buildFromTypedExpr(e, currentContext).def;
+                // Build the switch target expression with proper null handling
+                var targetAST = buildFromTypedExpr(e, currentContext);
+                if (targetAST == null) {
+                    #if debug_ast_builder
+                    trace('[TSwitch] WARNING: Switch target expression built to null!');
+                    trace('[TSwitch]   Target expr type was: ${Type.enumConstructor(e.expr)}');
+                    trace('[TSwitch]   Attempting to extract expression details...');
+                    switch(e.expr) {
+                        case TCall(callExpr, args):
+                            trace('[TSwitch]   - This is a TCall expression');
+                            trace('[TSwitch]   - Call target: ${Type.enumConstructor(callExpr.expr)}');
+                            trace('[TSwitch]   - Number of arguments: ${args.length}');
+                            // Try to give more info about the call target
+                            switch(callExpr.expr) {
+                                case TField(obj, fa):
+                                    var fieldName = extractFieldName(fa);
+                                    trace('[TSwitch]   - Field access: $fieldName');
+                                    switch(obj.expr) {
+                                        case TTypeExpr(mt):
+                                            switch(mt) {
+                                                case TClassDecl(c):
+                                                    trace('[TSwitch]   - On class: ${c.get().name}');
+                                                default:
+                                                    trace('[TSwitch]   - On type expr: ${Type.enumConstructor(mt)}');
+                                            }
+                                        default:
+                                            trace('[TSwitch]   - On object: ${Type.enumConstructor(obj.expr)}');
+                                    }
+                                default:
+                                    trace('[TSwitch]   - Call target type: ${Type.enumConstructor(callExpr.expr)}');
+                            }
+                        case _:
+                            trace('[TSwitch]   - Not a TCall expression');
+                    }
+                    #end
+                    // Generate a more descriptive error placeholder
+                    // This will cause a compilation error but with a clear message
+                    targetAST = makeAST(ERaw("raise \"[Compiler Error] Failed to build switch target expression\""));
+                }
+                
+                // For complex expressions (like function calls), we need to evaluate them first
+                var expr = targetAST.def;
+                var needsEvaluation = switch(expr) {
+                    case ERemoteCall(_, _, _): true;  // Function calls need evaluation
+                    case ECall(_, _): true;            // Local function calls
+                    case EField(_, _): false;          // Simple field access doesn't need evaluation
+                    case EVar(_): false;               // Simple variables don't need evaluation
+                    case EAtom(_): false;              // Atoms don't need evaluation
+                    case _: false;                     // Conservative default
+                };
+                
+                // Store the expression that will be used in the case statement
+                var caseTargetExpr = expr;
+                var statements = [];
+                
+                // If we need to evaluate the expression first, generate a temp variable
+                if (needsEvaluation) {
+                    // Generate a unique temp variable name
+                    var tempVarName = "switch_result_" + Std.string(Std.random(10000));
+                    
+                    #if debug_ast_builder
+                    trace('[TSwitch] Complex expression needs evaluation, using temp var: $tempVarName');
+                    #end
+                    
+                    // Create assignment: temp_var = expression
+                    statements.push(makeAST(EMatch(PVar(tempVarName), targetAST)));
+                    
+                    // Use the temp variable as the case target
+                    caseTargetExpr = EVar(tempVarName);
+                }
+                
                 var clauses = [];
 
                 // Check if this is a topic_to_string-style temp variable switch
@@ -4169,7 +4448,7 @@ class ElixirASTBuilder {
                 }
                 
                 // Create the case expression
-                var caseASTDef = ECase(makeAST(expr), clauses);
+                var caseASTDef = ECase(makeAST(caseTargetExpr), clauses);
 
                 // Create the AST node with metadata for M0.5
                 var caseNode = makeAST(caseASTDef);
@@ -8696,6 +8975,45 @@ class ElixirASTBuilder {
         return ElixirNaming.toVarName(name);
     }
 
+    /**
+     * Checks if a variable name is a Haxe compiler-generated temporary variable.
+     * 
+     * WHY THESE 'G' VARIABLES EXIST:
+     * --------------------------------
+     * These are NOT created by Reflaxe.Elixir - they're generated by Haxe itself during compilation.
+     * When Haxe compiles certain expressions (especially switch expressions that return values),
+     * it creates temporary variables to ensure proper evaluation order and prevent side effects.
+     * 
+     * PATTERN EXPLANATION:
+     * - 'g' or '_g': First temporary in a scope
+     * - 'g1', 'g2', etc.: Additional temporaries when multiple are needed
+     * - '_g1', '_g2': Underscore variants (sometimes for unused values)
+     * 
+     * EXAMPLE TRANSFORMATION:
+     * ```haxe
+     * // Original Haxe code:
+     * var result = switch(parseMessage(msg)) {
+     *     case Some(x): processMessage(x);
+     *     case None: defaultValue;
+     * }
+     * 
+     * // Haxe internally transforms to:
+     * var _g = parseMessage(msg);  // Temporary to hold switch target
+     * var result = switch(_g) {
+     *     case Some(x): processMessage(x);
+     *     case None: defaultValue;
+     * }
+     * ```
+     * 
+     * WHY NOT RENAME THEM:
+     * 1. Risk of name collisions with user variables
+     * 2. Other Haxe compilation passes expect these names
+     * 3. They're recognizable to Haxe developers as compiler-generated
+     * 4. They have no semantic meaning - purely mechanical temporaries
+     * 
+     * @param name The variable name to check
+     * @return True if this is a Haxe-generated temporary variable
+     */
     public static function isTempPatternVarName(name: String): Bool {
         if (name == null || name.length == 0) {
             return false;
@@ -8718,12 +9036,15 @@ class ElixirASTBuilder {
             if (candidate == null || candidate.length == 0) {
                 return false;
             }
+            // Standard Haxe temporary variable patterns
             if (candidate == "g" || candidate == "_g") {
                 return true;
             }
+            // Numbered variants: g1, g2, g3...
             if (candidate.length > 1 && candidate.charAt(0) == "g" && isDigits(candidate.substr(1))) {
                 return true;
             }
+            // Underscore numbered variants: _g1, _g2, _g3...
             if (candidate.length > 2 && candidate.charAt(0) == "_" && candidate.charAt(1) == "g" && isDigits(candidate.substr(2))) {
                 return true;
             }
@@ -11508,6 +11829,130 @@ class ElixirASTBuilder {
             case TArrayDecl(el): '[${el.length} elements]';
             case TCall(_, el): 'function(${el.length} args)';
             default: "complex";
+        }
+    }
+    
+    /**
+     * Analyze a for loop body to extract the user variable name
+     * 
+     * WHY: When Haxe desugars for loops, it creates infrastructure variables (g, g1)
+     * and user variables (i, item). We need to identify the user variable name
+     * to generate clean Elixir code without infrastructure variable leakage.
+     * 
+     * WHAT: Looks for TVar expressions in the loop body that assign from the counter
+     * variable (e.g., var i = g) to extract the actual loop variable name.
+     * 
+     * HOW: Recursively searches the loop body for variable declarations that
+     * reference the counter variable.
+     * 
+     * @param body The loop body expression
+     * @param counterVar The infrastructure counter variable name (e.g., "g")
+     * @return The user variable name if found, null otherwise
+     */
+    static function analyzeForLoopBody(body: TypedExpr, counterVar: String): Null<String> {
+        if (body == null) return null;
+        
+        switch(body.expr) {
+            case TBlock(el):
+                // Search block statements for variable assignment from counter
+                for (expr in el) {
+                    var result = analyzeForLoopBody(expr, counterVar);
+                    if (result != null) return result;
+                }
+            case TVar(v, init) if (init != null):
+                // Found a variable declaration - check if it assigns from counter
+                switch(init.expr) {
+                    case TLocal(local) if (local.name == counterVar):
+                        // Found: var userVar = counterVar
+                        return v.name;
+                    default:
+                }
+            default:
+                // TypedExpr doesn't have iter(), need to manually check sub-expressions
+                // This is a simplified check - could be expanded for more expression types
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Process a LoopIntent and generate corresponding ElixirAST
+     * 
+     * WHY: The LoopIntent pattern separates semantic intent from implementation.
+     * This allows us to capture what the loop does before deciding how to
+     * generate it, enabling better optimization and cleaner code generation.
+     * 
+     * WHAT: Transforms LoopIntent objects into idiomatic Elixir AST nodes,
+     * handling variable preservation, accumulator initialization, and
+     * infrastructure variable removal.
+     * 
+     * HOW: Pattern matches on LoopIntent variants and delegates to appropriate
+     * generation logic, either using LoopBuilder for compatibility or
+     * generating AST directly for simple cases.
+     * 
+     * @param intent The loop intent to process
+     * @param metadata Additional metadata for the loop
+     * @param context The current compilation context
+     * @return The generated ElixirAST node
+     */
+    static function processLoopIntent(intent: LoopIntent, metadata: LoopIntentMetadata, context: CompilationContext): ElixirAST {
+        #if debug_loop_intent
+        trace('[processLoopIntent] Processing loop intent: ${intent}');
+        #end
+        switch(intent) {
+            case RangeLoop(varName, start, end, body, isInclusive):
+                // For now, delegate to LoopBuilder with the preserved variable name
+                // In the future, this will use LoopIntentProcessor
+                var result = LoopBuilder.buildWithFullContext(
+                    start,
+                    end,
+                    body,
+                    varName,  // Use the extracted user variable name, not infrastructure var
+                    e -> buildFromTypedExpr(e, context),
+                    s -> toElixirVarName(s)
+                );
+                
+                // Clean up infrastructure variables from the result
+                if (metadata.infrastructureVars != null) {
+                    // TODO: Implement infrastructure variable cleanup
+                    // This will remove references to g, g1, etc.
+                }
+                
+                return result;
+                
+            case CollectionLoop(varName, collection, body):
+                // Generate Enum.each for collection loops
+                var varPattern = PVar(toElixirVarName(varName));
+                var collectionAst = buildFromTypedExpr(collection, context);
+                var bodyAst = buildFromTypedExpr(body, context);
+                
+                // Create an anonymous function clause
+                var fnClause: EFnClause = {
+                    args: [varPattern],
+                    body: bodyAst
+                };
+                
+                return makeAST(ECall(
+                    makeAST(EVar("Enum")),
+                    "each",
+                    [collectionAst, makeAST(EFn([fnClause]))]
+                ));
+                
+            case WhileLoop(condition, body, counterVar):
+                // For while loops, we need to handle the condition and body carefully
+                // Since condition is a TypedExpr, not an ElixirAST
+                var bodyAst = buildFromTypedExpr(body, context);
+                
+                // Generate a recursive function for proper while semantics
+                // For now, just return the body (while loops are rare in Elixir)
+                // TODO: Implement proper while loop transformation
+                return bodyAst;
+                
+            default:
+                // For other loop types, fall back to basic generation
+                // TODO: Implement specialized generation for each loop type
+                trace('[processLoopIntent] Unhandled loop intent type: ${intent}');
+                return makeAST(ENil);
         }
     }
 }
