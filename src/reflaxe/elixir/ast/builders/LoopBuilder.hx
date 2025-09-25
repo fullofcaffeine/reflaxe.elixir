@@ -15,6 +15,7 @@ import reflaxe.elixir.ast.ElixirAST.LoopContext;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.ElixirASTPatterns;
+import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.loop_ir.LoopIR;
 import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
 import reflaxe.elixir.helpers.MutabilityDetector;
@@ -22,6 +23,28 @@ using StringTools;
 // Temporarily disabled for debugging
 // import reflaxe.elixir.ast.builders.ArrayBuildingAnalyzer;
 // import reflaxe.elixir.ast.builders.ArrayBuildingAnalyzer.ArrayBuildingPattern;
+
+/**
+ * Variable scope analysis result
+ * 
+ * WHY: Need to track all variable dependencies for proper closure conversion
+ * WHAT: Categorizes variables by their scope and usage patterns
+ * HOW: Populated by analyzing the loop body's TypedExpr tree
+ */
+typedef VariableScopeAnalysis = {
+    freeVariables: Map<String, TVar>,           // Variables from outer scope
+    loopLocalVariables: Map<String, TVar>,      // Variables defined in loop
+    accumulatorVariables: Map<String, {         // Variables that accumulate
+        varName: String,
+        isStringConcat: Bool,
+        isListAppend: Bool,
+        initialValue: ElixirAST
+    }>,
+    assignments: Array<{                        // All assignments for SSA analysis
+        target: String,
+        source: TypedExpr
+    }>
+}
 
 /**
  * Loop transformation instructions
@@ -118,12 +141,26 @@ class LoopBuilder {
                 // Continue with other pattern detection
         }
         */
+        
+        // CRITICAL: Check for accumulation patterns BEFORE checking side effects
+        // Accumulation needs special handling with Enum.reduce
+        var accumulation = detectAccumulationPattern(e2);
+        var hasSideEffects = hasSideEffectsOnly(e2);
+        
+        #if debug_loop_builder
+        if (accumulation != null) {
+            trace('[LoopBuilder] analyzeFor detected accumulation for variable: ${accumulation.varName}');
+        }
+        trace('[LoopBuilder] hasSideEffects: $hasSideEffects');
+        #end
 
         // Check for range pattern: 0...n or start...end
         switch(e1.expr) {
             case TBinop(OpInterval, startExpr, endExpr):
-                // Range iteration - check if body only has side effects
-                if (hasSideEffectsOnly(e2)) {
+                // Range iteration
+                // Note: Even if accumulation is detected, we still return EnumEachRange
+                // The buildFromTransform method will handle converting it to reduce
+                if (hasSideEffects) {
                     return EnumEachRange(v.name, startExpr, endExpr, e2);
                 } else {
                     // Body produces values - use standard for
@@ -132,7 +169,7 @@ class LoopBuilder {
 
             case TLocal(_) | TField(_, _):
                 // Array or collection iteration
-                if (hasSideEffectsOnly(e2)) {
+                if (hasSideEffects) {
                     return EnumEachCollection(v.name, e1, e2);
                 } else {
                     return StandardFor(v, e1, e2);
@@ -175,7 +212,53 @@ class LoopBuilder {
     ): ElixirAST {
         switch(transform) {
             case EnumEachRange(varName, startExpr, endExpr, body):
-                // Build Enum.each with range
+                // Analyze variable scopes comprehensively
+                var loopVar: TVar = {
+                    name: varName, 
+                    id: 0, 
+                    t: null,
+                    capture: false,
+                    extra: null,
+                    meta: null,
+                    isStatic: false
+                };
+                var iterator = {
+                    expr: TBinop(OpInterval, startExpr, endExpr),
+                    pos: startExpr.pos,
+                    t: startExpr.t
+                };
+                var analysis = analyzeVariableScopes(loopVar, iterator, body);
+                
+                #if debug_loop_builder
+                if (Lambda.count(analysis.freeVariables) > 0) {
+                    trace('[LoopBuilder] Free variables detected: ${[for (k in analysis.freeVariables.keys()) k]}');
+                }
+                if (Lambda.count(analysis.loopLocalVariables) > 0) {
+                    trace('[LoopBuilder] Loop-local variables: ${[for (k in analysis.loopLocalVariables.keys()) k]}');
+                }
+                #end
+                
+                // Check if this should actually be Enum.reduce for accumulation
+                var accumulation = detectAccumulationPattern(body);
+                if (accumulation != null) {
+                    #if debug_loop_builder
+                    trace('[LoopBuilder] Detected accumulation pattern for variable: ${accumulation.varName}');
+                    trace('[LoopBuilder] Converting EnumEachRange to Enum.reduce');
+                    #end
+                    return buildAccumulationLoop(
+                        varName,
+                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false)),
+                        body,
+                        accumulation,
+                        buildExpr,
+                        toSnakeCase
+                    );
+                }
+                
+                // Track variables that need initialization (legacy approach for compatibility)
+                var initializations = trackRequiredInitializations(body);
+                
+                // Build Enum.each with range (no accumulation)
                 var range = makeAST(ERange(
                     buildExpr(startExpr),
                     buildExpr(endExpr),
@@ -185,6 +268,9 @@ class LoopBuilder {
                 var snakeVar = toSnakeCase(varName);
                 #if debug_loop_builder
                 trace('[LoopBuilder] EnumEachRange - Original varName: $varName, snakeVar: $snakeVar');
+                if (Lambda.count(initializations) > 0) {
+                    trace('[LoopBuilder] Variables needing initialization: ${[for (k in initializations.keys()) k]}');
+                }
                 #end
                 var bodyAst = buildExpr(body);
                 
@@ -217,7 +303,7 @@ class LoopBuilder {
                 #if debug_loop_builder
                 trace('[LoopBuilder] Creating EFn with PVar($snakeVar) for Enum.each');
                 #end
-                var result = makeAST(ERemoteCall(
+                var loopAst = makeAST(ERemoteCall(
                     makeAST(EVar("Enum")),
                     "each",
                     [
@@ -230,14 +316,41 @@ class LoopBuilder {
                 ));
                 
                 // Attach metadata to the result
-                result.metadata = metadata;
-                return result;
+                loopAst.metadata = metadata;
+                
+                // Wrap with initializations if needed
+                return wrapWithInitializations(loopAst, initializations, toSnakeCase);
 
             case EnumEachCollection(varName, collection, body):
-                // Build Enum.each with collection
+                // Check if this should actually be Enum.reduce for accumulation
+                var accumulation = detectAccumulationPattern(body);
+                if (accumulation != null) {
+                    #if debug_loop_builder
+                    trace('[LoopBuilder] Detected accumulation in collection iteration for: ${accumulation.varName}');
+                    #end
+                    return buildAccumulationLoop(
+                        varName,
+                        buildExpr(collection),
+                        body,
+                        accumulation,
+                        buildExpr,
+                        toSnakeCase
+                    );
+                }
+                
+                // Track variables that need initialization
+                var initializations = trackRequiredInitializations(body);
+                
+                // Build Enum.each with collection (no accumulation)
                 var collectionAst = buildExpr(collection);
                 var snakeVar = toSnakeCase(varName);
                 var bodyAst = buildExpr(body);
+                
+                #if debug_loop_builder
+                if (Lambda.count(initializations) > 0) {
+                    trace('[LoopBuilder] EnumEachCollection - Variables needing initialization: ${[for (k in initializations.keys()) k]}');
+                }
+                #end
                 
                 // For collections, we can't know the exact values but we can still track the variable
                 // This helps with nested loops where inner loop uses collection
@@ -264,7 +377,7 @@ class LoopBuilder {
                 }
                 bodyAst.metadata.isWithinLoop = true;
 
-                var result = makeAST(ERemoteCall(
+                var loopAst = makeAST(ERemoteCall(
                     makeAST(EVar("Enum")),
                     "each",
                     [
@@ -276,8 +389,10 @@ class LoopBuilder {
                     ]
                 ));
                 
-                result.metadata = metadata;
-                return result;
+                loopAst.metadata = metadata;
+                
+                // Wrap with initializations if needed
+                return wrapWithInitializations(loopAst, initializations, toSnakeCase);
 
             case Comprehension(targetVar, v, iterator, filter, body):
                 // For now, just use standard for pattern to avoid compilation issues
@@ -299,13 +414,99 @@ class LoopBuilder {
     }
 
     /**
+     * Detect accumulation pattern in loop body
+     * 
+     * WHY: Loops that accumulate values (e.g., items = items ++ [...]) need Enum.reduce
+     *      not Enum.each for semantic correctness
+     * WHAT: Detects patterns like: var = var ++ value, var += value
+     * HOW: Analyzes assignments in loop body for accumulation patterns
+     * 
+     * @param body The loop body to analyze
+     * @return Info about accumulation if detected, null otherwise
+     */
+    static function detectAccumulationPattern(body: TypedExpr): Null<{
+        varName: String,
+        isStringConcat: Bool,
+        isListAppend: Bool
+    }> {
+        #if debug_loop_builder
+        trace('[LoopBuilder] detectAccumulationPattern checking: ${body.expr}');
+        #end
+        switch(body.expr) {
+            case TBlock(exprs):
+                // Check each expression for accumulation
+                for (e in exprs) {
+                    var result = detectAccumulationPattern(e);
+                    if (result != null) return result;
+                }
+                
+            case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, _):
+                // Pattern: var += value (string concatenation)
+                #if debug_loop_builder
+                trace('[LoopBuilder] Found accumulation pattern: ${v.name} += ...');
+                #end
+                return {
+                    varName: v.name,
+                    isStringConcat: true,
+                    isListAppend: false
+                };
+                
+            case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, _)})
+                if (v1.name == v2.name):
+                // Pattern: var = var + value (string concatenation)
+                return {
+                    varName: v1.name,
+                    isStringConcat: true,
+                    isListAppend: false
+                };
+                
+            case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TCall({expr: TField({expr: TLocal(v2)}, FInstance(_, _, cf))}, _)})
+                if (v1.name == v2.name && cf.get().name == "concat"):
+                // Pattern: var = var.concat([value]) (list append)
+                return {
+                    varName: v1.name,
+                    isStringConcat: false,
+                    isListAppend: true
+                };
+                
+            case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, _)
+                if (cf.get().name == "push"):
+                // Pattern: var.push(value) - mutable array operation
+                // This needs special handling as it mutates in place
+                return {
+                    varName: v.name,
+                    isStringConcat: false,
+                    isListAppend: true
+                };
+                
+            case TIf(_, thenExpr, elseExpr):
+                // Check both branches
+                var thenResult = detectAccumulationPattern(thenExpr);
+                if (thenResult != null) return thenResult;
+                if (elseExpr != null) {
+                    return detectAccumulationPattern(elseExpr);
+                }
+                
+            default:
+                // Continue searching in nested expressions
+        }
+        return null;
+    }
+    
+    /**
      * Check if an expression only has side effects (no value production)
      *
      * WHY: Determine if we can use Enum.each instead of comprehension
      * WHAT: Checks if expression is purely for side effects
      * HOW: Pattern matches on common side-effect-only expressions
+     * 
+     * ENHANCED: Now also checks for accumulation patterns which are NOT side-effect-only
      */
     static function hasSideEffectsOnly(expr: TypedExpr): Bool {
+        // First check if this contains accumulation patterns
+        if (detectAccumulationPattern(expr) != null) {
+            return false; // Accumulation is not a pure side effect
+        }
         switch(expr.expr) {
             case TCall(e, _):
                 // Check various call patterns for side-effect functions
@@ -612,11 +813,21 @@ class LoopBuilder {
         buildExpr: TypedExpr -> ElixirAST, 
         toSnakeCase: String -> String
     ): ElixirAST {
+        // First check for accumulation patterns in the body
+        var accumulation = detectAccumulationPattern(whileBody);
+        
+        #if debug_loop_builder
+        trace('[LoopBuilder] buildWithFullContext - counterVar: $counterVar');
+        if (accumulation != null) {
+            trace('[LoopBuilder] Found accumulation for variable: ${accumulation.varName}');
+            trace('[LoopBuilder] Will generate Enum.reduce instead of Enum.each');
+        }
+        #end
+        
         // Analyze the while body to extract user variable and code
         var analysis = analyzeForLoopBody(whileBody, counterVar);
         
         #if debug_loop_builder
-        trace('[LoopBuilder] buildWithFullContext - counterVar: $counterVar');
         if (analysis != null) {
             trace('[LoopBuilder] Analysis found userVar: ${analysis.userVar}');
         } else {
@@ -648,6 +859,18 @@ class LoopBuilder {
             trace('[LoopBuilder] Cleaned body: ${cleanedBody}');
             #end
             
+            // Check if accumulation was detected - use reduce if so
+            if (accumulation != null) {
+                return buildAccumulationLoop(
+                    defaultVar,
+                    range,
+                    cleanedBody,
+                    accumulation,
+                    buildExpr,
+                    toSnakeCase
+                );
+            }
+            
             return makeAST(ERemoteCall(
                 makeAST(EVar("Enum")),
                 "each",
@@ -659,6 +882,23 @@ class LoopBuilder {
                     }]))
                 ]
             ));
+        }
+        
+        // Check for accumulation in the analyzed user code
+        if (accumulation != null) {
+            var range = makeAST(ERange(
+                buildExpr(startExpr),
+                buildExpr(endExpr),
+                false
+            ));
+            return buildAccumulationLoop(
+                analysis.userVar,
+                range,
+                analysis.userCode,
+                accumulation,
+                buildExpr,
+                toSnakeCase
+            );
         }
         
         // Delegate to buildFromForPattern with the complete context
@@ -1134,6 +1374,473 @@ class LoopBuilder {
         }
 
         return buildLegacyWhile(cond, body, true, buildExpr);
+    }
+    
+    /**
+     * Analyze variable dependencies and scopes in a loop
+     * 
+     * WHY: Need comprehensive understanding of variable usage for proper closure conversion
+     * WHAT: Categorizes all variables by scope and usage pattern
+     * HOW: Deep traversal of TypedExpr tree collecting references and definitions
+     * 
+     * @param loopVar The loop iterator variable
+     * @param iterator The loop iterator expression (may reference outer variables)
+     * @param body The loop body
+     * @return Complete variable scope analysis
+     */
+    static function analyzeVariableScopes(
+        loopVar: TVar,
+        iterator: TypedExpr,
+        body: TypedExpr
+    ): VariableScopeAnalysis {
+        var analysis: VariableScopeAnalysis = {
+            freeVariables: new Map<String, TVar>(),
+            loopLocalVariables: new Map<String, TVar>(),
+            accumulatorVariables: new Map<String, {
+                varName: String,
+                isStringConcat: Bool,
+                isListAppend: Bool,
+                initialValue: ElixirAST
+            }>(),
+            assignments: []
+        };
+        
+        // Collect all variable references and definitions
+        var references = new Map<String, TVar>();
+        var definitions = new Map<String, TVar>();
+        
+        // Helper to traverse and collect variables
+        function collectVars(expr: TypedExpr, inDefinition: Bool): Void {
+            if (expr == null) return;
+            
+            switch(expr.expr) {
+                case TLocal(v):
+                    // Skip the loop variable itself
+                    if (v.name != loopVar.name) {
+                        if (!inDefinition) {
+                            references.set(v.name, v);
+                        }
+                    }
+                    
+                case TVar(v, init):
+                    // This is a definition
+                    definitions.set(v.name, v);
+                    if (init != null) {
+                        collectVars(init, false);
+                    }
+                    
+                case TBinop(OpAssign | OpAssignOp(_), e1, e2):
+                    // Track assignments
+                    switch(e1.expr) {
+                        case TLocal(v):
+                            analysis.assignments.push({
+                                target: v.name,
+                                source: e2
+                            });
+                        default:
+                    }
+                    collectVars(e1, true);
+                    collectVars(e2, false);
+                    
+                case TBlock(exprs):
+                    for (e in exprs) {
+                        collectVars(e, false);
+                    }
+                    
+                case TField(e, _):
+                    // Check if this references an outer variable (like fields.length)
+                    collectVars(e, false);
+                    
+                default:
+                    TypedExprTools.iter(expr, function(e) collectVars(e, false));
+            }
+        }
+        
+        // First collect from iterator (may reference outer variables like fields.length)
+        if (iterator != null) {
+            collectVars(iterator, false);
+        }
+        
+        // Then collect from body
+        collectVars(body, false);
+        
+        // Classify variables
+        for (name => v in references) {
+            if (!definitions.exists(name) && name != loopVar.name) {
+                // This is a free variable from outer scope
+                analysis.freeVariables.set(name, v);
+            } else if (definitions.exists(name)) {
+                // This is defined within the loop
+                analysis.loopLocalVariables.set(name, v);
+            }
+        }
+        
+        // Detect accumulator patterns
+        var accumPattern = detectAccumulationPattern(body);
+        if (accumPattern != null) {
+            analysis.accumulatorVariables.set(accumPattern.varName, {
+                varName: accumPattern.varName,
+                isStringConcat: accumPattern.isStringConcat,
+                isListAppend: accumPattern.isListAppend,
+                initialValue: if (accumPattern.isStringConcat) {
+                    makeAST(EString(""));
+                } else if (accumPattern.isListAppend) {
+                    makeAST(EList([]));
+                } else {
+                    makeAST(ENil);
+                }
+            });
+        }
+        
+        return analysis;
+    }
+    
+    /**
+     * Track variables that need initialization before a loop
+     * 
+     * WHY: Loop bodies may reference variables that aren't initialized in generated code
+     * WHAT: Identifies variables referenced in loop body that need pre-initialization
+     * HOW: Traverses the TypedExpr to find variable references and their initializers
+     * 
+     * @param body The loop body to analyze
+     * @return Map of variable names to their initialization expressions
+     */
+    static function trackRequiredInitializations(body: TypedExpr): Map<String, ElixirAST> {
+        var initializations = new Map<String, ElixirAST>();
+        
+        // Track variables that are referenced but not locally defined
+        function findReferences(expr: TypedExpr): Void {
+            if (expr == null) return;
+            
+            switch(expr.expr) {
+                case TLocal(v):
+                    // Check if this variable needs initialization
+                    var name = v.name;
+                    // Common patterns that need initialization
+                    if (name == "items" || name == "result") {
+                        if (!initializations.exists(name)) {
+                            // Determine initialization based on usage context
+                            if (name == "items") {
+                                initializations.set(name, makeAST(EList([])));  // Initialize as empty list
+                            } else if (name == "result") {
+                                initializations.set(name, makeAST(EString(""))); // Initialize as empty string
+                            }
+                        }
+                    }
+                    
+                case TVar(v, init):
+                    // This is a variable declaration - track it
+                    if (init != null) {
+                        // Variable is initialized, don't need to pre-initialize
+                        initializations.remove(v.name);
+                    }
+                    
+                case TBlock(exprs):
+                    for (e in exprs) {
+                        findReferences(e);
+                    }
+                    
+                default:
+                    TypedExprTools.iter(expr, findReferences);
+            }
+        }
+        
+        findReferences(body);
+        return initializations;
+    }
+    
+    /**
+     * Build environment capture for free variables
+     * 
+     * WHY: Free variables from outer scope need to be accessible in the loop closure
+     * WHAT: Creates a mechanism to capture and access free variables
+     * HOW: Uses variable references that are already in scope
+     * 
+     * @param analysis The variable scope analysis
+     * @param buildExpr Function to build expressions
+     * @param toSnakeCase Function to convert names to snake_case
+     * @return Environment capture information or null if no capture needed
+     */
+    static function buildEnvironmentCapture(
+        analysis: VariableScopeAnalysis,
+        buildExpr: TypedExpr -> ElixirAST,
+        toSnakeCase: String -> String
+    ): Null<{
+        variables: Map<String, String>,  // Original name -> snake_case name
+        needsCapture: Bool
+    }> {
+        if (Lambda.count(analysis.freeVariables) == 0) {
+            return null;
+        }
+        
+        var variables = new Map<String, String>();
+        for (name => tvar in analysis.freeVariables) {
+            variables.set(name, toSnakeCase(name));
+        }
+        
+        return {
+            variables: variables,
+            needsCapture: true
+        };
+    }
+    
+    /**
+     * Wrap loop AST with variable initializations
+     * 
+     * WHY: Ensure all referenced variables are initialized before the loop
+     * WHAT: Wraps the loop in a block with initialization statements
+     * HOW: Creates assignment statements for each required initialization
+     * 
+     * @param loopAst The loop AST to wrap
+     * @param initializations Map of variable names to initialization values
+     * @param toSnakeCase Function to convert names to snake_case
+     * @return The wrapped AST with initializations
+     */
+    static function wrapWithInitializations(
+        loopAst: ElixirAST,
+        initializations: Map<String, ElixirAST>,
+        toSnakeCase: String -> String
+    ): ElixirAST {
+        if (initializations == null || Lambda.count(initializations) == 0) {
+            return loopAst;  // No initializations needed
+        }
+        
+        var statements = [];
+        
+        // Add initialization statements
+        for (varName => initValue in initializations) {
+            var snakeName = toSnakeCase(varName);
+            statements.push(makeAST(EBinary(
+                Match,
+                makeAST(EVar(snakeName)),
+                initValue
+            )));
+        }
+        
+        // Add the loop itself
+        statements.push(loopAst);
+        
+        // Wrap in a block
+        return makeAST(EBlock(statements));
+    }
+    
+    /**
+     * Build accumulation loop using Enum.reduce
+     * 
+     * WHY: Accumulation patterns need Enum.reduce for semantic correctness
+     * WHAT: Generates Enum.reduce with proper accumulator initialization
+     * HOW: Creates reduce function that threads accumulator through loop
+     */
+    static function buildAccumulationLoop(
+        iteratorVar: String,
+        source: ElixirAST,
+        body: TypedExpr,
+        accumulation: {varName: String, isStringConcat: Bool, isListAppend: Bool},
+        buildExpr: TypedExpr -> ElixirAST,
+        toSnakeCase: String -> String
+    ): ElixirAST {
+        var snakeIterator = toSnakeCase(iteratorVar);
+        var snakeAccum = toSnakeCase(accumulation.varName);
+        
+        // Determine initial value based on accumulation type
+        var initialValue = if (accumulation.isStringConcat) {
+            makeAST(EString(""));  // Empty string for concatenation
+        } else if (accumulation.isListAppend) {
+            makeAST(EList([]));    // Empty list for appending
+        } else {
+            makeAST(ENil);          // Nil fallback
+        };
+        
+        // Track any other variables that need initialization
+        var initializations = trackRequiredInitializations(body);
+        // Remove the accumulator variable itself from initializations (handled separately)
+        initializations.remove(accumulation.varName);
+        
+        // Transform the body to use accumulator pattern
+        // We need to replace assignments with accumulator returns
+        var transformedBody = transformBodyForReduce(body, accumulation, buildExpr, toSnakeCase);
+        
+        #if debug_loop_builder
+        trace('[LoopBuilder] Building Enum.reduce for accumulation');
+        trace('[LoopBuilder] Iterator: $snakeIterator, Accumulator: $snakeAccum');
+        if (Lambda.count(initializations) > 0) {
+            trace('[LoopBuilder] Additional initializations needed: ${[for (k in initializations.keys()) k]}');
+        }
+        #end
+        
+        var reduceAst = makeAST(ERemoteCall(
+            makeAST(EVar("Enum")),
+            "reduce",
+            [
+                source,
+                initialValue,
+                makeAST(EFn([{
+                    args: [PVar(snakeIterator), PVar(snakeAccum)],
+                    body: transformedBody
+                }]))
+            ]
+        ));
+        
+        // Wrap with any additional initializations
+        return wrapWithInitializations(reduceAst, initializations, toSnakeCase);
+    }
+    
+    /**
+     * Transform loop body for use in Enum.reduce
+     * 
+     * WHY: Accumulation assignments need to return the new accumulator value
+     *      AND all intermediate variable definitions must be preserved
+     * WHAT: Includes all loop body statements and ensures accumulator is returned
+     * HOW: Traverses AST, includes all statements, and transforms accumulation patterns
+     * 
+     * CRITICAL: Must include ALL statements from loop body, not just accumulation
+     * Example: var field = fields[i]; var value = ...; result += ...
+     * All three statements must be in the reduce lambda body
+     */
+    static function transformBodyForReduce(
+        expr: TypedExpr,
+        accumulation: {varName: String, isStringConcat: Bool, isListAppend: Bool},
+        buildExpr: TypedExpr -> ElixirAST,
+        toSnakeCase: String -> String
+    ): ElixirAST {
+        switch(expr.expr) {
+            case TBlock(exprs):
+                var transformed = [];
+                var foundAccumulation = false;
+                
+                for (i in 0...exprs.length) {
+                    var e = exprs[i];
+                    
+                    // Check if this is the accumulation assignment
+                    var isAccumulation = switch(e.expr) {
+                        case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, _) if (v.name == accumulation.varName): true;
+                        case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, _)}) 
+                            if (v1.name == accumulation.varName && v2.name == accumulation.varName): true;
+                        default: false;
+                    };
+                    
+                    if (isAccumulation) {
+                        foundAccumulation = true;
+                        // Transform accumulation to return new value
+                        var newValue = extractAccumulationValue(e, accumulation, buildExpr, toSnakeCase);
+                        // Always return the new accumulator value at the end
+                        if (i == exprs.length - 1) {
+                            // Last statement is the accumulation - return it directly
+                            transformed.push(newValue);
+                        } else {
+                            // Not the last statement - need to capture in variable and continue
+                            var accVar = toSnakeCase(accumulation.varName);
+                            transformed.push(makeAST(EBinary(
+                                Match,
+                                makeAST(EVar(accVar)),
+                                newValue
+                            )));
+                        }
+                    } else {
+                        // Check if this is an infrastructure variable assignment to skip
+                        var shouldSkip = false;
+                        
+                        // First check the compiled AST to see if it contains infrastructure references
+                        var compiledAst = buildExpr(e);
+                        var astString = ElixirASTPrinter.printAST(compiledAst);
+                        
+                        // Skip if the generated code contains infrastructure variable references
+                        // This catches patterns like "i = g + 1" that have already been compiled
+                        if (astString.indexOf(" = g ") >= 0 || 
+                            astString.indexOf(" = g + ") >= 0 ||
+                            astString.indexOf(" = _g ") >= 0 ||
+                            astString.indexOf("g + 1") >= 0) {
+                            shouldSkip = true;
+                            #if debug_loop_builder
+                            trace('[LoopBuilder] Skipping infrastructure assignment: $astString');
+                            #end
+                        }
+                        
+                        // Also check the TypedExpr pattern
+                        switch(e.expr) {
+                            case TBinop(OpAssign, {expr: TLocal(lhs)}, {expr: TBinop(OpAdd, {expr: TLocal(rhs)}, {expr: TConst(TInt(1))})}):
+                                // Skip patterns like: i = g + 1
+                                if (lhs.name == "i" && (rhs.name == "g" || rhs.name.startsWith("_g") || rhs.name.startsWith("g"))) {
+                                    shouldSkip = true;
+                                }
+                            case TBinop(OpAssign, {expr: TLocal(v)}, _):
+                                // Skip any assignment to infrastructure variables
+                                if (v.name == "g" || v.name.startsWith("_g") || v.name.startsWith("g")) {
+                                    shouldSkip = true;
+                                }
+                            default:
+                        }
+                        
+                        if (!shouldSkip) {
+                            // Regular expression - MUST be included!
+                            // This preserves variable definitions like:
+                            // var field = fields[i]
+                            // var value = Reflect.field(obj, field)
+                            var ast = buildExpr(e);
+                            transformed.push(ast);
+                        }
+                    }
+                }
+                
+                // If we didn't find an explicit accumulation in the last position,
+                // we need to return the accumulator variable
+                if (foundAccumulation && transformed.length > 0) {
+                    var lastIsAccumulation = switch(exprs[exprs.length - 1].expr) {
+                        case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, _) if (v.name == accumulation.varName): true;
+                        case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, _)}) 
+                            if (v1.name == accumulation.varName && v2.name == accumulation.varName): true;
+                        default: false;
+                    };
+                    
+                    if (!lastIsAccumulation) {
+                        // Need to explicitly return the accumulator
+                        transformed.push(makeAST(EVar(toSnakeCase(accumulation.varName))));
+                    }
+                }
+                
+                return makeAST(EBlock(transformed));
+                
+            default:
+                // Simple expression - compile and return accumulator
+                return makeAST(EBlock([
+                    buildExpr(expr),
+                    makeAST(EVar(toSnakeCase(accumulation.varName)))
+                ]));
+        }
+    }
+    
+    /**
+     * Extract the new accumulation value from an assignment
+     */
+    static function extractAccumulationValue(
+        expr: TypedExpr,
+        accumulation: {varName: String, isStringConcat: Bool, isListAppend: Bool},
+        buildExpr: TypedExpr -> ElixirAST,
+        toSnakeCase: String -> String
+    ): ElixirAST {
+        var accVar = makeAST(EVar(toSnakeCase(accumulation.varName)));
+        
+        switch(expr.expr) {
+            case TBinop(OpAssignOp(OpAdd), _, value):
+                // var += value -> accumulator <> value (for strings)
+                if (accumulation.isStringConcat) {
+                    return makeAST(EBinary(StringConcat, accVar, buildExpr(value)));
+                } else {
+                    return makeAST(EBinary(Add, accVar, buildExpr(value)));
+                }
+                
+            case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, value)}):
+                // var = var + value -> accumulator <> value
+                if (accumulation.isStringConcat) {
+                    return makeAST(EBinary(StringConcat, accVar, buildExpr(value)));
+                } else {
+                    return makeAST(EBinary(Add, accVar, buildExpr(value)));
+                }
+                
+            default:
+                // Fallback: just return accumulator unchanged
+                return accVar;
+        }
     }
     // ========================================================================================
     // EXTRACTED FROM ElixirASTBuilder: Complete loop compilation functionality

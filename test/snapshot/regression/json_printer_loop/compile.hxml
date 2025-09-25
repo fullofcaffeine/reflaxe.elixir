@@ -3,5 +3,5 @@
 -lib reflaxe
 -lib reflaxe.elixir
 -dce full
--D reflaxe-elixir
--D elixir-output=out
+-D reflaxe_elixir
+-D elixir_output=out
