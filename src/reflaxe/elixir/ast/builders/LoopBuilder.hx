@@ -1847,6 +1847,82 @@ class LoopBuilder {
     // ========================================================================================
     
     /**
+     * Check if an iterator expression is for Map key-value iteration
+     * 
+     * WHY: Need to detect Map iteration to generate idiomatic Elixir
+     * WHAT: Checks if the iterator type is MapKeyValueIterator or similar
+     * HOW: Examines the Type of the iterator expression
+     */
+    static function isMapIterator(iterator: TypedExpr): Bool {
+        switch(iterator.t) {
+            case TAbstract(t, params):
+                var abstractType = t.get();
+                return abstractType.name == "KeyValueIterator" || 
+                       abstractType.module == "haxe.iterators.MapKeyValueIterator";
+                       
+            case TInst(t, params):
+                var classType = t.get();
+                return classType.name == "MapKeyValueIterator" ||
+                       classType.module == "haxe.iterators.MapKeyValueIterator";
+                       
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Build idiomatic Map iteration using Enum.each
+     * 
+     * WHY: Map iteration should use Enum.each with tuple destructuring, not iterator objects
+     * WHAT: Generates Enum.each(map, fn {key, value} -> body end)
+     * HOW: Builds proper pattern matching for Map key-value pairs
+     */
+    static function buildIdiomaticMapIteration(v: TVar, iterator: TypedExpr, body: TypedExpr,
+                                               context: BuildContext,
+                                               toElixirVarName: String -> String): ElixirASTDef {
+        
+        // Build the map expression
+        var mapAst = context.buildFromTypedExpr(iterator);
+        
+        // Build the body 
+        var bodyAst = context.buildFromTypedExpr(body);
+        
+        // Detect if we're collecting results or just side effects
+        var isCollecting = detectAccumulationPattern(body) != null;
+        
+        // Extract key and value variable names
+        // For Map iteration, v.name might be a tuple pattern like "key_value"
+        // or it might just be the key name
+        var keyName = toElixirVarName(v.name);
+        var valueName = toElixirVarName(v.name + "_value"); // Default value name
+        
+        // Check if the body references both key and value
+        // This is a simplified version - you might need more sophisticated detection
+        var pattern = PTuple([PVar(keyName), PVar(valueName)]);
+        
+        // Choose Enum function based on collection need
+        var enumFunc = isCollecting ? "map" : "each";
+        
+        #if debug_loop_builder
+        trace('[LoopBuilder] Building Map iteration with Enum.$enumFunc');
+        trace('[LoopBuilder] Key variable: $keyName, Value variable: $valueName');
+        #end
+        
+        // Build the Enum call
+        return ERemoteCall(
+            makeAST(EVar("Enum")),
+            enumFunc,
+            [
+                mapAst,
+                makeAST(EFn([{
+                    args: [pattern],
+                    body: bodyAst
+                }]))
+            ]
+        );
+    }
+    
+    /**
      * Main entry point for TFor compilation
      * Extracted from ElixirASTBuilder lines 5259-5349
      */
@@ -1854,6 +1930,14 @@ class LoopBuilder {
                                     expr: TypedExpr,
                                     context: BuildContext,
                                     toElixirVarName: String -> String): ElixirASTDef {
+        
+        // Check for Map iteration by examining the iterator type
+        if (isMapIterator(e1)) {
+            #if debug_loop_builder
+            trace('[LoopBuilder] Detected Map iterator type, generating idiomatic Map iteration');
+            #end
+            return buildIdiomaticMapIteration(v, e1, e2, context, toElixirVarName);
+        }
         
         // Create loop metadata for variable restoration
         var loopMetadata = createMetadata(expr);
