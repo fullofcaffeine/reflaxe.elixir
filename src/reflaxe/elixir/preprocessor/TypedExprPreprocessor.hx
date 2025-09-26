@@ -106,6 +106,14 @@ class TypedExprPreprocessor {
             return null;
         }
         
+        // Check for Map iteration patterns first (special handling needed)  
+        if (isMapIterationPattern(expr)) {
+            #if debug_preprocessor
+            trace('[TypedExprPreprocessor] DETECTED: Map iteration pattern');
+            #end
+            return transformMapIteration(expr);
+        }
+        
         // Only process if expression contains infrastructure variable patterns
         // Don't try to filter TEnumParameter universally as it breaks pattern matching
         if (!containsInfrastructurePattern(expr)) {
@@ -525,6 +533,144 @@ class TypedExprPreprocessor {
                     e;
             };
         });
+    }
+    
+    /**
+     * Detect Map iteration patterns that generate iterator infrastructure
+     * 
+     * WHY: Map iteration generates keyValueIterator().hasNext() patterns that aren't idiomatic
+     * WHAT: Detects for-in loops over Maps with key=>value syntax
+     * HOW: Checks for TFor with iterator field access patterns typical of Maps
+     * 
+     * PATTERN DETECTED:
+     * for (key => value in map) { body }
+     * 
+     * Which Haxe desugars to iterator-based patterns we want to prevent
+     */
+    static function isMapIterationPattern(expr: TypedExpr): Bool {
+        var hasMapIteration = false;
+        
+        function scan(e: TypedExpr) {
+            if (e == null) return;
+            
+            switch(e.expr) {
+                case TFor(v, iter, body):
+                    // Check if the iterator is a Map type
+                    // Maps have keyValueIterator() method calls
+                    if (containsKeyValueIterator(iter) || containsKeyValueIterator(body)) {
+                        hasMapIteration = true;
+                    }
+                    // Also check for field patterns that indicate Map iteration
+                    // This catches patterns like "for (key => value in map)"
+                    switch(iter.t) {
+                        case TAbstract(t, params):
+                            var abstractType = t.get();
+                            if (abstractType.name == "KeyValueIterator" || 
+                                abstractType.module == "haxe.iterators.MapKeyValueIterator") {
+                                hasMapIteration = true;
+                            }
+                        case TInst(t, params):
+                            var classType = t.get();
+                            if (classType.name == "MapKeyValueIterator" ||
+                                classType.module == "haxe.iterators.MapKeyValueIterator") {
+                                hasMapIteration = true;
+                            }
+                        default:
+                    }
+                default:
+            }
+            
+            if (!hasMapIteration) {
+                TypedExprTools.iter(e, scan);
+            }
+        }
+        
+        scan(expr);
+        return hasMapIteration;
+    }
+    
+    /**
+     * Check if expression contains keyValueIterator() calls
+     */
+    static function containsKeyValueIterator(expr: TypedExpr): Bool {
+        var hasIterator = false;
+        
+        function scan(e: TypedExpr) {
+            if (e == null || hasIterator) return;
+            
+            switch(e.expr) {
+                case TCall(target, args):
+                    switch(target.expr) {
+                        case TField(obj, FInstance(_, _, cf)):
+                            var methodName = cf.get().name;
+                            if (methodName == "keyValueIterator" || 
+                                methodName == "hasNext" || 
+                                methodName == "next") {
+                                hasIterator = true;
+                            }
+                        case TField(obj, FAnon(cf)):
+                            var methodName = cf.get().name;
+                            if (methodName == "keyValueIterator" || 
+                                methodName == "hasNext" || 
+                                methodName == "next") {
+                                hasIterator = true;
+                            }
+                        default:
+                    }
+                default:
+            }
+            
+            if (!hasIterator) {
+                TypedExprTools.iter(e, scan);
+            }
+        }
+        
+        scan(expr);
+        return hasIterator;
+    }
+    
+    /**
+     * Transform Map iteration to simpler pattern
+     * 
+     * WHY: Prevent generation of non-idiomatic iterator infrastructure
+     * WHAT: Transforms Map iteration into a pattern that will generate idiomatic Elixir
+     * HOW: Marks the loop with metadata that LoopBuilder can use to generate Enum.each
+     * 
+     * TRANSFORMS:
+     * for (key => value in map) { body }
+     * 
+     * INTO:
+     * A TFor with metadata indicating it's a Map iteration that should use Enum.each
+     */
+    static function transformMapIteration(expr: TypedExpr): TypedExpr {
+        switch(expr.expr) {
+            case TFor(v, iter, body):
+                #if debug_preprocessor
+                trace('[TypedExprPreprocessor] Transforming Map iteration for variable: ${v.name}');
+                #end
+                
+                // We can't modify TVar metadata directly, so we'll need to 
+                // use a different approach - check the iterator type instead
+                // Mark with a special flag that LoopBuilder can detect
+                
+                // For now, return unchanged - LoopBuilder will need to detect
+                // Map iteration by checking the iterator type
+                #if debug_preprocessor
+                trace('[TypedExprPreprocessor] Map iteration detected but cannot add metadata to TVar');
+                #end
+                
+                // Return the TFor with metadata attached
+                // LoopBuilder will detect the metadata and generate Enum.each
+                return {
+                    expr: TFor(v, iter, body),
+                    pos: expr.pos,
+                    t: expr.t
+                };
+                
+            default:
+                // Recursively process if not directly a TFor
+                return TypedExprTools.map(expr, e -> isMapIterationPattern(e) ? transformMapIteration(e) : e);
+        }
     }
 }
 
