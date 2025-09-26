@@ -11723,11 +11723,6 @@ class ElixirASTBuilder {
                     s -> toElixirVarName(s)
                 );
                 
-                // Clean up infrastructure variables from the result
-                if (metadata.infrastructureVars != null) {
-                    // TODO: Implement infrastructure variable cleanup
-                    // This will remove references to g, g1, etc.
-                }
                 
                 return result;
                 

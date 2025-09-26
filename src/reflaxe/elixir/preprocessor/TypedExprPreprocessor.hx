@@ -217,6 +217,63 @@ class TypedExprPreprocessor {
                 // Return empty block to skip generating the assignment
                 {expr: TBlock([]), pos: expr.pos, t: expr.t};
                 
+            // Handle field access on infrastructure variables (like g.next())
+            case TField(e, field):
+                // Check if this is field access on an infrastructure variable
+                switch(e.expr) {
+                    case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+                        // Substitute the infrastructure variable with its actual value
+                        var substituted = substitutions.get(v.name);
+                        #if debug_preprocessor
+                        trace('[TypedExprPreprocessor] SUBSTITUTING: Field access ${v.name}.${field} with substituted base');
+                        #end
+                        // Create new TField with substituted base
+                        var newFieldExpr = {
+                            expr: TField(substituted, field),
+                            pos: expr.pos,
+                            t: expr.t
+                        };
+                        // Process the new expression recursively
+                        processExpr(newFieldExpr, substitutions);
+                    default:
+                        // Normal field access - just recurse
+                        TypedExprTools.map(expr, e -> processExpr(e, substitutions));
+                }
+                
+            // Handle method calls on infrastructure variables (like g.next())
+            case TCall(e, args):
+                // Check if this is a method call on an infrastructure variable
+                switch(e.expr) {
+                    case TField(obj, method):
+                        switch(obj.expr) {
+                            case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+                                // Substitute the infrastructure variable with its actual value
+                                var substituted = substitutions.get(v.name);
+                                #if debug_preprocessor
+                                trace('[TypedExprPreprocessor] SUBSTITUTING: Method call ${v.name}.${method}() with substituted base');
+                                #end
+                                // Create new TCall with substituted base
+                                var newFieldExpr = {
+                                    expr: TField(substituted, method),
+                                    pos: e.pos,
+                                    t: e.t
+                                };
+                                var newCallExpr = {
+                                    expr: TCall(newFieldExpr, args.map(a -> processExpr(a, substitutions))),
+                                    pos: expr.pos,
+                                    t: expr.t
+                                };
+                                // Return the processed call
+                                newCallExpr;
+                            default:
+                                // Normal method call - recurse normally
+                                TypedExprTools.map(expr, e -> processExpr(e, substitutions));
+                        }
+                    default:
+                        // Not a method call on a field - recurse normally
+                        TypedExprTools.map(expr, e -> processExpr(e, substitutions));
+                }
+                
             // Recursively process other expression types
             default:
                 TypedExprTools.map(expr, e -> processExpr(e, substitutions));
