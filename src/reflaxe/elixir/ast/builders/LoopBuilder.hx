@@ -1931,8 +1931,30 @@ class LoopBuilder {
                                     context: BuildContext,
                                     toElixirVarName: String -> String): ElixirASTDef {
         
-        // Check for Map iteration by examining the iterator type
-        if (isMapIterator(e1)) {
+        // Debug: Check what the iterator expression actually is
+        #if debug_map_iteration
+        trace('[LoopBuilder] TFor iterator expression: ${e1.expr}');
+        switch(e1.expr) {
+            case TCall({expr: TField(map, field)}, args):
+                trace('[LoopBuilder] Iterator is a call to field: $field');
+                switch(field) {
+                    case FInstance(_, _, cf):
+                        trace('[LoopBuilder] Field name: ${cf.get().name}');
+                    default:
+                }
+            default:
+        }
+        #end
+        
+        // Check for Map iteration by examining the iterator expression
+        var isMapIter = switch(e1.expr) {
+            case TCall({expr: TField(_, FInstance(_, _, cf))}, []) if (cf.get().name == "keyValueIterator"):
+                true;
+            default:
+                isMapIterator(e1);
+        };
+        
+        if (isMapIter) {
             #if debug_loop_builder
             trace('[LoopBuilder] Detected Map iterator type, generating idiomatic Map iteration');
             #end
