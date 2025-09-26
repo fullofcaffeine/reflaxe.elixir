@@ -2367,6 +2367,9 @@ class ElixirASTTransformer {
     static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
         if (ast == null) return null;
         
+        #if sys
+        Sys.println("[MapIteratorTransform] PASS IS RUNNING");
+        #end
         #if debug_map_iterator
         trace("[MapIteratorTransform] Starting transformation pass");
         #end
