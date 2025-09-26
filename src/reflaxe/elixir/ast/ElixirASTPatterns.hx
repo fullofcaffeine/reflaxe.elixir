@@ -5,6 +5,7 @@ package reflaxe.elixir.ast;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.makeAST;
 using reflaxe.helpers.TypedExprHelper;
 
 /**
@@ -168,11 +169,6 @@ class ElixirASTPatterns {
         var nonNullBranch = isEqNull ? pattern.elseExpr : pattern.thenExpr;
         
         // Generate: if (tmp = init) == nil, do: nullBranch, else: nonNullBranch
-        // Create inline helper since ElixirAST.makeAST isn't accessible from here
-        inline function makeAST(def: ElixirASTDef): ElixirAST {
-            return {def: def, metadata: {}};
-        }
-        
         var ifExpr = makeAST(EIf(
             makeAST(EBinary(Equal,
                 makeAST(EMatch(PVar(tmpVarName), initAst)),
@@ -342,6 +338,319 @@ class ElixirASTPatterns {
         }
         
         return null;
+    }
+    
+    // =========================================================================
+    // Map Iterator Patterns
+    // =========================================================================
+    
+    /**
+     * Detects Map iteration patterns that use key_value_iterator()
+     * 
+     * WHY: Haxe desugars `for (key => value in map)` into complex while loops with
+     *      iterator method calls that generate non-idiomatic Elixir code
+     * 
+     * WHAT: Detects patterns like:
+     *       - map.key_value_iterator()
+     *       - iterator.has_next()
+     *       - iterator.next().key / iterator.next().value
+     * 
+     * @param ast The ElixirAST node to check
+     * @return true if this is a Map iteration pattern
+     */
+    public static function isMapIterationPattern(ast: ElixirAST): Bool {
+        if (ast == null || ast.def == null) return false;
+        
+        // Look for Enum.reduce_while with iterator method calls
+        return switch(ast.def) {
+            case ECall(func, _, args) if (args != null && args.length == 3):
+                // Check if it's an Enum.reduce_while call
+                var isReduceWhile = switch(func.def) {
+                    case ERemoteCall(module, funcName, _):
+                        switch(module.def) {
+                            case EVar(modName): modName == "Enum" && funcName == "reduce_while";
+                            default: false;
+                        }
+                    default: false;
+                };
+                
+                if (!isReduceWhile) return false;
+                
+                // Check if the loop function contains iterator patterns
+                var loopFunc = args[2];
+                return containsMapIteratorCalls(loopFunc);
+                
+            default:
+                false;
+        };
+    }
+    
+    /**
+     * Checks if an AST node contains Map iterator method calls
+     */
+    static function containsMapIteratorCalls(ast: ElixirAST): Bool {
+        if (ast == null || ast.def == null) return false;
+        
+        var hasIteratorCalls = false;
+        var hasKeyValueAccess = false;
+        
+        function scan(node: ElixirAST): Void {
+            if (node == null || node.def == null) return;
+            
+            switch(node.def) {
+                case EField(obj, field):
+                    // Check for iterator method names
+                    if (field == "key_value_iterator" || field == "has_next" || field == "next") {
+                        hasIteratorCalls = true;
+                    }
+                    // Check for key/value field access
+                    if (field == "key" || field == "value") {
+                        hasKeyValueAccess = true;
+                    }
+                    scan(obj);
+                    
+                case ECall(func, _, args):
+                    scan(func);
+                    if (args != null) {
+                        for (arg in args) scan(arg);
+                    }
+                    
+                case EFn(clauses):
+                    for (clause in clauses) {
+                        if (clause.body != null) scan(clause.body);
+                    }
+                    
+                case EBlock(exprs):
+                    for (expr in exprs) scan(expr);
+                    
+                case EIf(cond, thenBranch, elseBranch):
+                    scan(cond);
+                    scan(thenBranch);
+                    if (elseBranch != null) scan(elseBranch);
+                    
+                default:
+                    // Continue scanning other node types as needed
+            }
+        }
+        
+        scan(ast);
+        return hasIteratorCalls && hasKeyValueAccess;
+    }
+    
+    /**
+     * Extracts information from a Map iteration pattern
+     * 
+     * @return null if not a Map iteration pattern, otherwise returns extracted data
+     */
+    public static function extractMapIterationData(ast: ElixirAST): Null<{
+        mapVar: String,
+        loopBody: ElixirAST,
+        isCollecting: Bool
+    }> {
+        if (!isMapIterationPattern(ast)) return null;
+        
+        return switch(ast.def) {
+            case ECall(_, _, args) if (args != null && args.length == 3):
+                var initial = args[1];
+                var loopFunc = args[2];
+                
+                // Extract map variable from initial value
+                var mapVar: String = null;
+                if (initial != null) switch(initial.def) {
+                    case ETuple(elements) if (elements.length == 1):
+                        switch(elements[0].def) {
+                            case EVar(name): mapVar = name;
+                            default:
+                        }
+                    case EVar(name): mapVar = name;
+                    default:
+                }
+                
+                if (mapVar == null) return null;
+                
+                // Extract loop body and check if collecting results
+                var loopBody: ElixirAST = null;
+                var isCollecting = false;
+                
+                switch(loopFunc.def) {
+                    case EFn(clauses) if (clauses.length > 0):
+                        // Extract the actual loop logic (removing iterator machinery)
+                        var firstClause = clauses[0];
+                        if (firstClause.body != null) {
+                            loopBody = extractCleanLoopBody(firstClause.body, mapVar);
+                            isCollecting = detectResultCollection(firstClause.body);
+                        }
+                    default:
+                }
+                
+                if (loopBody == null) return null;
+                
+                return {
+                    mapVar: mapVar,
+                    loopBody: loopBody,
+                    isCollecting: isCollecting
+                };
+                
+            default:
+                null;
+        };
+    }
+    
+    /**
+     * Extracts the clean loop body without iterator infrastructure
+     */
+    static function extractCleanLoopBody(body: ElixirAST, mapVar: String): ElixirAST {
+        // The body typically has an if statement checking has_next()
+        // We need to extract the actual loop logic (not the iteration machinery)
+        
+        switch(body.def) {
+            case EIf(_, thenBranch, _):
+                // The then branch contains the actual loop body
+                return cleanupIteratorInfrastructure(thenBranch, mapVar);
+                
+            case EBlock(exprs):
+                // Look for the if statement in the block
+                for (expr in exprs) {
+                    var extracted = extractCleanLoopBody(expr, mapVar);
+                    if (extracted != null) return extracted;
+                }
+                
+            default:
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Removes iterator infrastructure code from the loop body
+     */
+    public static function cleanupIteratorInfrastructure(body: ElixirAST, mapVar: String): ElixirAST {
+        switch(body.def) {
+            case EBlock(exprs):
+                var cleaned = [];
+                for (expr in exprs) {
+                    // Skip infrastructure assignments like:
+                    // key = map.key_value_iterator().next().key
+                    // value = map.key_value_iterator().next().value
+                    // {:cont, {map}}
+                    var skip = false;
+                    
+                    switch(expr.def) {
+                        case EMatch(pattern, value):
+                            // Check if it's a key/value extraction
+                            switch(pattern) {
+                                case PVar(name) if (name == "key" || name == "value"):
+                                    if (isIteratorMethodChain(value)) skip = true;
+                                default:
+                            }
+                            
+                        case ETuple(elements) if (elements.length == 2):
+                            // Skip continuation tuples {:cont, {map}}
+                            switch(elements[0].def) {
+                                case EAtom(atom) if (atom == "cont" || atom == "halt"):
+                                    skip = true;
+                                default:
+                            }
+                            
+                        default:
+                    }
+                    
+                    if (!skip) {
+                        cleaned.push(expr);
+                    }
+                }
+                
+                // Return cleaned block or single expression
+                if (cleaned.length == 1) {
+                    return cleaned[0];
+                } else if (cleaned.length > 0) {
+                    return {def: EBlock(cleaned), pos: body.pos, metadata: body.metadata};
+                }
+                
+            default:
+                return body;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Checks if an expression is an iterator method chain
+     */
+    static function isIteratorMethodChain(expr: ElixirAST): Bool {
+        if (expr == null || expr.def == null) return false;
+        
+        switch(expr.def) {
+            case EField(obj, field):
+                if (field == "key" || field == "value") {
+                    return isIteratorCall(obj);
+                }
+            default:
+        }
+        return false;
+    }
+    
+    /**
+     * Checks if an expression is an iterator call
+     */
+    static function isIteratorCall(expr: ElixirAST): Bool {
+        if (expr == null || expr.def == null) return false;
+        
+        switch(expr.def) {
+            case ECall(func, _):
+                switch(func.def) {
+                    case EField(_, field):
+                        return field == "next" || field == "key_value_iterator" || field == "has_next";
+                    default:
+                }
+            case EField(_, field):
+                return field == "next" || field == "key_value_iterator" || field == "has_next";
+            default:
+        }
+        return false;
+    }
+    
+    /**
+     * Detects if the loop is collecting results (for choosing Enum.map vs Enum.each)
+     */
+    static function detectResultCollection(body: ElixirAST): Bool {
+        if (body == null || body.def == null) return false;
+        
+        var hasCollection = false;
+        
+        function scan(node: ElixirAST): Void {
+            if (node == null || node.def == null) return;
+            
+            switch(node.def) {
+                case ECall(func, _, args):
+                    // Check if it's Array.push
+                    switch(func.def) {
+                        case ERemoteCall(module, funcName, _):
+                            switch(module.def) {
+                                case EVar(modName) if (modName == "Array" && funcName == "push"):
+                                    hasCollection = true;
+                                default:
+                            }
+                        default:
+                    }
+                    scan(func);
+                    if (args != null) {
+                        for (arg in args) scan(arg);
+                    }
+                    
+                case EBlock(exprs):
+                    for (expr in exprs) scan(expr);
+                    
+                case EIf(_, thenBranch, elseBranch):
+                    scan(thenBranch);
+                    if (elseBranch != null) scan(elseBranch);
+                    
+                default:
+            }
+        }
+        
+        scan(body);
+        return hasCollection;
     }
 }
 
