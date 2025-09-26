@@ -3663,21 +3663,31 @@ class ElixirASTBuilder {
                 // This detects patterns like: var iterator = map.keyValueIterator(); while(iterator.hasNext()) { var kv = iterator.next(); ... }
                 // and generates idiomatic Elixir: Enum.each(map, fn {key, value} -> ... end)
                 
-                #if debug_map_iteration
-                trace('[ElixirASTBuilder] Checking TBlock for Map iteration pattern, ${el.length} elements');
-                #end
-                
-                // Map iteration detection
-                var mapIterationPattern = detectMapIterationPattern(el);
-                if (mapIterationPattern != null) {
+                // Actually check for Map iteration pattern as the comment says we should
+                if (el.length >= 2) {
+                    // Add debug to see what expressions we're checking
                     #if debug_map_iteration
-                    trace('[ElixirASTBuilder] ✓ Detected Map iteration pattern');
-                    trace('  Map source: ${mapIterationPattern.mapExpr}');
-                    trace('  Key var: ${mapIterationPattern.keyVar}');
-                    trace('  Value var: ${mapIterationPattern.valueVar}');
+                    trace('[ElixirASTBuilder] Checking TBlock for Map iteration pattern...');
+                    trace('  Block has ${el.length} expressions');
+                    for (i in 0...Math.ceil(Math.min(3, el.length))) {
+                        trace('  Expr[$i]: ${el[i].expr}');
+                    }
                     #end
                     
-                    return buildMapIteration(mapIterationPattern, currentContext);
+                    var mapPattern = detectMapIterationPattern(el);
+                    if (mapPattern != null) {
+                        #if debug_map_iteration
+                        trace('[ElixirASTBuilder] ✓ Detected Map iteration pattern, generating idiomatic Elixir');
+                        trace('  Map expr: ${mapPattern.mapExpr}');
+                        trace('  Key var: ${mapPattern.keyVar}');
+                        trace('  Value var: ${mapPattern.valueVar}');
+                        #end
+                        return buildMapIteration(mapPattern, currentContext);
+                    } else {
+                        #if debug_map_iteration
+                        trace('[ElixirASTBuilder] No Map iteration pattern detected in this block');
+                        #end
+                    }
                 }
                 
                 // CRITICAL: Check for desugared for loop pattern NEXT
@@ -4353,10 +4363,10 @@ class ElixirASTBuilder {
                             }
 
                             // Fallback: keep block, will be handled by transformer/printer later
-                            trace('[TBlock] Generating EBlock with EMatch for ${varName}');
-                            trace('[TBlock] initExpr type: ${initExpr.def}');
+                            // trace('[TBlock] Generating EBlock with EMatch for ${varName}');
+                            // trace('[TBlock] initExpr type: ${initExpr.def}');
                             var matchExpr = makeAST(EMatch(PVar(varName), initExpr));
-                            trace('[TBlock] matchExpr: ${matchExpr.def}');
+                            // trace('[TBlock] matchExpr: ${matchExpr.def}');
                             return EBlock([
                                 matchExpr,
                                 bodyExpr
