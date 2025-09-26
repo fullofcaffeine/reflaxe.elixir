@@ -1820,6 +1820,21 @@ class StringBuf {
 - **Ensures idiomatic code** - Forces thinking about Elixir best practices
 - **Tests must run from project root** - Always `cd` to project root before running tests
 
+### ⚠️ CRITICAL: Test File Location Rules
+
+**FUNDAMENTAL RULE: NEVER create test files in the project root. ALL tests MUST go in the proper test directories.**
+
+**Where test files MUST go:**
+- ✅ **Snapshot tests**: `test/snapshot/{category}/{test_name}/` (e.g., `test/snapshot/regression/MapIteration/`)
+- ✅ **Categories**: core, phoenix, ecto, otp, stdlib, exunit, loops, regression
+- ❌ **NEVER in project root**: Do not create `TestSomething.hx` files in `/Users/fullofcaffeine/workspace/code/haxe.elixir/`
+- ❌ **NEVER in test/tests/**: This directory should not exist (use `test/snapshot/` instead)
+
+**If you need to debug compiler issues:**
+- Use existing tests in `test/snapshot/`
+- Or create a proper test in the correct category
+- Clean up any temporary files immediately after debugging
+
 ### After ANY Compiler Change
 
 #### Quick Iteration Testing (NEW - Recommended)
