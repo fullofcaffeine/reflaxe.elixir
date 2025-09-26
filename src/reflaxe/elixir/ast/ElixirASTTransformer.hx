@@ -467,13 +467,12 @@ class ElixirASTTransformer {
         
         // Statement context transformation pass (MUST run after immutability)
         // Map iterator transformation pass (should run before statement context)
-        // TODO: Re-enable after fixing forward reference issue
-        // passes.push({
-        //     name: "MapIteratorTransform",
-        //     description: "Transform Map iteration patterns to idiomatic Elixir (Enum.each/map)",
-        //     enabled: true,
-        //     pass: mapIteratorTransformPass
-        // });
+        passes.push({
+            name: "MapIteratorTransform",
+            description: "Transform Map iteration patterns to idiomatic Elixir (Enum.each/map)",
+            enabled: true,
+            pass: mapIteratorTransformPass
+        });
         
         #if !disable_statement_context_transform
         passes.push({
@@ -2367,48 +2366,93 @@ class ElixirASTTransformer {
     static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
         if (ast == null) return null;
         
-        #if sys
-        Sys.println("[MapIteratorTransform] PASS IS RUNNING");
-        #end
+        // Always show debug output to verify the pass is running
+        trace("[MapIteratorTransform] PASS IS RUNNING - checking AST");
+        
         #if debug_map_iterator
         trace("[MapIteratorTransform] Starting transformation pass");
         #end
         
         // Use transformNode to recursively transform all nodes
         return transformNode(ast, function(node) {
-            // Check if this is a Map iteration pattern using ElixirASTPatterns
-            if (ElixirASTPatterns.isMapIterationPattern(node)) {
-                #if debug_map_iterator
-                trace("[MapIteratorTransform] Found Map iteration pattern!");
-                #end
-                var data = ElixirASTPatterns.extractMapIterationData(node);
-                if (data != null) {
-                    // Clean up the body to remove iterator infrastructure
-                    var cleanedBody = ElixirASTPatterns.cleanupIteratorInfrastructure(data.loopBody, data.mapVar);
-                    
-                    if (data.isCollecting) {
-                        // Transform to Enum.map
-                        return makeAST(ERemoteCall(
-                            makeAST(EVar("Enum")),
-                            "map",
-                            [makeAST(EVar(data.mapVar)), makeAST(EFn([{
-                                args: [PTuple([PVar("key"), PVar("value")])],
-                                guard: null,
-                                body: cleanedBody
-                            }]))]
-                        ));
-                    } else {
-                        // Transform to Enum.each  
-                        return makeAST(ERemoteCall(
-                            makeAST(EVar("Enum")),
-                            "each",
-                            [makeAST(EVar(data.mapVar)), makeAST(EFn([{
-                                args: [PTuple([PVar("key"), PVar("value")])],
-                                guard: null,
-                                body: cleanedBody
-                            }]))]
-                        ));
+            // Debug: Check what nodes we're seeing
+            #if debug_map_iterator
+            switch(node.def) {
+                case ERemoteCall(module, funcName, args):
+                    switch(module.def) {
+                        case EVar(modName):
+                            if (modName == "Enum" && funcName == "reduce_while") {
+                                trace('[MapIteratorTransform] Found Enum.reduce_while call');
+                                // Let's check what's inside the function body
+                                if (args != null && args.length >= 3) {
+                                    var loopFunc = args[2];
+                                    trace('[MapIteratorTransform] Loop function type: ${Type.enumConstructor(loopFunc.def)}');
+                                    // Check if it has iterator calls
+                                    var hasIteratorCalls = containsIteratorPatterns(loopFunc);
+                                    trace('[MapIteratorTransform] Contains iterator patterns: $hasIteratorCalls');
+                                }
+                            }
+                        default:
                     }
+                case EField(target, field):
+                    if (field == "key_value_iterator" || field == "has_next" || field == "next" || field == "key" || field == "value") {
+                        trace('[MapIteratorTransform] Found iterator field access: $field');
+                        trace('[MapIteratorTransform] AST structure: ${printASTStructure(node)}');
+                    }
+                default:
+            }
+            #end
+            
+            // Use the new pattern detection abstraction
+            var pattern = ElixirASTPatterns.detectPattern(node);
+            if (pattern != null) {
+                #if debug_map_iterator
+                trace('[MapIteratorTransform] Detected pattern: ${Type.enumConstructor(pattern.type)}');
+                #end
+                
+                switch(pattern.type) {
+                    case MapKeyValueIteration(mapVar, keyVar, valueVar):
+                        #if debug_map_iterator
+                        trace('[MapIteratorTransform] Transforming Map iteration for map: $mapVar with keys: $keyVar and values: $valueVar');
+                        #end
+                        
+                        // Extract additional data if available
+                        var data = ElixirASTPatterns.extractMapIterationData(node);
+                        if (data != null && data.loopBody != null) {
+                            // Clean up the body to remove iterator infrastructure
+                            var cleanedBody = ElixirASTPatterns.cleanupIteratorInfrastructure(data.loopBody, data.mapVar);
+                            
+                            // Create the idiomatic Elixir pattern
+                            var funcName = data.isCollecting ? "map" : "each";
+                            
+                            return makeAST(ERemoteCall(
+                                makeAST(EVar("Enum")),
+                                funcName,
+                                [makeAST(EVar(mapVar)), makeAST(EFn([{
+                                    args: [PTuple([PVar(keyVar), PVar(valueVar)])],
+                                    guard: null,
+                                    body: cleanedBody
+                                }]))]
+                            ));
+                        }
+                        
+                    case YCombinatorLoop(iterVar, accumulator):
+                        #if debug_map_iterator
+                        trace('[MapIteratorTransform] Found Y-combinator pattern - needs transformation');
+                        #end
+                        // Let the Y-combinator elimination pass handle this
+                        return node;
+                        
+                    case InfrastructureVariable(name, purpose):
+                        #if debug_map_iterator
+                        trace('[MapIteratorTransform] Found infrastructure variable: $name for $purpose');
+                        #end
+                        // Infrastructure variables should be eliminated by other passes
+                        return node;
+                        
+                    default:
+                        // Other patterns are handled by their respective passes
+                        return node;
                 }
             }
             
@@ -2416,6 +2460,133 @@ class ElixirASTTransformer {
             return node;
         });
     }
+    
+    // Helper function to check if an AST contains Map iterator patterns
+    static function containsIteratorPatterns(ast: ElixirAST): Bool {
+        if (ast == null || ast.def == null) return false;
+        
+        var hasKeyValueIterator = false;
+        var hasHasNext = false;
+        var hasNext = false;
+        
+        function scan(node: ElixirAST): Void {
+            if (node == null || node.def == null) return;
+            
+            switch(node.def) {
+                case EField(obj, field):
+                    // Check for Map iterator method names
+                    if (field == "key_value_iterator") {
+                        hasKeyValueIterator = true;
+                        #if debug_map_iterator
+                        trace('[MapIteratorTransform/scan] Found key_value_iterator field');
+                        #end
+                    } else if (field == "has_next") {
+                        hasHasNext = true;
+                        #if debug_map_iterator
+                        trace('[MapIteratorTransform/scan] Found has_next field');
+                        #end
+                    } else if (field == "next") {
+                        hasNext = true;
+                        #if debug_map_iterator
+                        trace('[MapIteratorTransform/scan] Found next field');
+                        #end
+                    }
+                    scan(obj);
+                    
+                case ECall(func, callType, args):
+                    // Also check the function being called
+                    switch(func.def) {
+                        case EField(obj, field):
+                            if (field == "key_value_iterator" || field == "has_next" || field == "next") {
+                                if (field == "key_value_iterator") hasKeyValueIterator = true;
+                                if (field == "has_next") hasHasNext = true;
+                                if (field == "next") hasNext = true;
+                                #if debug_map_iterator
+                                trace('[MapIteratorTransform/scan] Found iterator method call: $field()');
+                                #end
+                            }
+                            scan(obj);
+                        default:
+                            scan(func);
+                    }
+                    if (args != null) {
+                        for (arg in args) scan(arg);
+                    }
+                    
+                case EFn(clauses):
+                    for (clause in clauses) {
+                        if (clause.body != null) scan(clause.body);
+                    }
+                    
+                case EBlock(exprs):
+                    for (expr in exprs) scan(expr);
+                    
+                case EIf(cond, thenBranch, elseBranch):
+                    scan(cond);
+                    scan(thenBranch);
+                    if (elseBranch != null) scan(elseBranch);
+                    
+                case ETuple(elements):
+                    for (elem in elements) scan(elem);
+                    
+                case ERemoteCall(module, funcName, args):
+                    scan(module);
+                    if (args != null) {
+                        for (arg in args) scan(arg);
+                    }
+                    
+                case EVar(_):
+                    // Terminal case, no scanning needed
+                    
+                case EAtom(_) | EString(_):
+                    // Terminal cases - literals don't need scanning
+                    
+                default:
+                    #if debug_map_iterator
+                    var nodeType = Type.enumConstructor(node.def);
+                    trace('[MapIteratorTransform/scan] Unhandled node type: $nodeType');
+                    #end
+            }
+        }
+        
+        scan(ast);
+        
+        // We need at least key_value_iterator to be a Map pattern
+        var result = hasKeyValueIterator;
+        
+        #if debug_map_iterator
+        if (result) {
+            trace('[MapIteratorTransform/scan] ✅ PATTERN DETECTED - hasKeyValueIterator: $hasKeyValueIterator, hasHasNext: $hasHasNext, hasNext: $hasNext');
+        }
+        #end
+        
+        return result;
+    }
+    
+    // Helper to print AST structure for debugging
+    #if debug_map_iterator
+    static function printASTStructure(ast: ElixirAST, depth: Int = 0): String {
+        if (ast == null || ast.def == null) return "null";
+        if (depth > 3) return "..."; // Prevent too deep recursion
+        
+        var indent = [for (i in 0...depth) "  "].join("");
+        var nodeType = Type.enumConstructor(ast.def);
+        
+        return switch(ast.def) {
+            case EField(obj, field):
+                '$nodeType(.$field on ${printASTStructure(obj, depth + 1)})';
+            case ECall(func, callType, args):
+                var argsStr = args != null ? '[${args.length} args]' : '[no args]';
+                '$nodeType($argsStr, func=${printASTStructure(func, depth + 1)})';
+            case EVar(name):
+                '$nodeType($name)';
+            case EAtom(atom):
+                '$nodeType(:$atom)';
+            default:
+                nodeType;
+        };
+    }
+    #end
     
     /**
      * Comprehension conversion pass - convert loops to comprehensions
@@ -6580,378 +6751,6 @@ class SupervisorOptionsTransformPass {
      * 
      * To: Enum.each(map, fn {key, value} -> ... end)
      */
-    static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
-        if (ast == null) return null;
-        
-        // Use ElixirASTPatterns for detection
-        if (ElixirASTPatterns.isMapIterationPattern(ast)) {
-            #if debug_ast_transformer
-            trace('[XRay MapIterator] Detected Map iteration pattern');
-            #end
-            
-            // Extract data using ElixirASTPatterns
-            var data = ElixirASTPatterns.extractMapIterationData(ast);
-            if (data != null) {
-                #if debug_ast_transformer
-                trace('[XRay MapIterator] Extracted map var: ${data.mapVar}, collecting: ${data.isCollecting}');
-                #end
-                
-                // Clean up the loop body
-                var cleanedBody = ElixirASTPatterns.cleanupIteratorInfrastructure(data.loopBody, data.mapVar);
-                
-                // Transform to idiomatic Elixir
-                if (data.isCollecting) {
-                    // Use Enum.map for collecting results
-                    return makeAST(ERemoteCall(
-                        makeAST(EVar("Enum")),
-                        "map",
-                        [
-                            makeAST(EVar(data.mapVar)),
-                            makeAST(EFn([
-                                {
-                                    args: [PTuple([PVar("key"), PVar("value")])],
-                                    guard: null,
-                                    body: cleanedBody
-                                }
-                            ]))
-                        ]
-                    ));
-                } else {
-                    // Use Enum.each for side effects
-                    return makeAST(ERemoteCall(
-                        makeAST(EVar("Enum")),
-                        "each",
-                        [
-                            makeAST(EVar(data.mapVar)),
-                            makeAST(EFn([
-                                {
-                                    args: [PTuple([PVar("key"), PVar("value")])],
-                                    guard: null,
-                                    body: cleanedBody
-                                }
-                            ]))
-                        ]
-                    ));
-                }
-            }
-        }
-        
-        // Recursively apply to children
-        return switch(ast.def) {
-            case EBlock(exprs):
-                makeAST(EBlock([for (e in exprs) mapIteratorTransformPass(e)]));
-            case EIf(cond, then, el):
-                makeAST(EIf(
-                    mapIteratorTransformPass(cond),
-                    mapIteratorTransformPass(then),
-                    el != null ? mapIteratorTransformPass(el) : null
-                ));
-            case ECall(target, funcName, args):
-                makeAST(ECall(
-                    target != null ? mapIteratorTransformPass(target) : null,
-                    funcName,
-                    [for (arg in args) mapIteratorTransformPass(arg)]
-                ));
-            default:
-                ast;
-        };
-    }
-    
-    // Old local helper functions - replaced by ElixirASTPatterns
-    #if false
-    /**
-     * Check if an AST node represents a Map iteration pattern
-     */
-    static function isMapIterationPattern(ast: ElixirAST): Bool {
-        // Look for characteristic patterns:
-        // 1. reduce_while with Stream.iterate
-        // 2. Body contains key_value_iterator() calls
-        // 3. Access to .key and .value properties
-        
-        var hasIteratorCalls = false;
-        var hasKeyValueAccess = false;
-        
-        function scan(node: ElixirAST): Void {
-            if (node == null || node.def == null) return;
-            
-            switch(node.def) {
-                case EField(obj, field):
-                    // Check for iterator method calls
-                    if (field == "key_value_iterator" || field == "has_next" || field == "next") {
-                        hasIteratorCalls = true;
-                    }
-                    // Check for key/value access
-                    if (field == "key" || field == "value") {
-                        hasKeyValueAccess = true;
-                    }
-                    scan(obj);
-                    
-                case ECall(func, args):
-                    scan(func);
-                    if (args != null) {
-                        for (arg in args) scan(arg);
-                    }
-                    
-                case EBlock(exprs):
-                    for (expr in exprs) scan(expr);
-                    
-                case EIf(cond, thenBranch, elseBranch):
-                    scan(cond);
-                    scan(thenBranch);
-                    if (elseBranch != null) scan(elseBranch);
-                    
-                case EFunction(args, body):
-                    scan(body);
-                    
-                default:
-                    // Continue scanning other node types as needed
-            }
-        }
-        
-        scan(ast);
-        return hasIteratorCalls && hasKeyValueAccess;
-    }
-    
-    /**
-     * Transform a Map iteration pattern into idiomatic Elixir
-     */
-    static function transformMapIteration(ast: ElixirAST): ElixirAST {
-        // Extract the map variable and body from the reduce_while pattern
-        switch(ast.def) {
-            case ECall(func, args) if (args != null && args.length == 3):
-                var stream = args[0];
-                var initial = args[1];
-                var loopFunc = args[2];
-                
-                // Extract map variable from initial value
-                var mapVar: String = null;
-                if (initial != null) switch(initial.def) {
-                    case ETuple(elements) if (elements.length == 1):
-                        switch(elements[0].def) {
-                            case EVar(name): mapVar = name;
-                            default:
-                        }
-                    case EVar(name): mapVar = name;
-                    default:
-                }
-                
-                if (mapVar == null) return ast; // Can't transform without map variable
-                
-                // Extract the loop body from the function
-                var loopBody: ElixirAST = null;
-                var isCollecting = false; // Check if results are being collected
-                
-                switch(loopFunc.def) {
-                    case EFunction(args, body):
-                        // Analyze the body to extract the actual loop logic
-                        loopBody = extractMapIterationBody(body, mapVar);
-                        isCollecting = detectResultCollection(body);
-                    default:
-                }
-                
-                if (loopBody == null) return ast; // Can't transform without body
-                
-                #if debug_ast_transformer
-                trace('[XRay MapIterator] Transforming to ${isCollecting ? "Enum.map" : "Enum.each"}');
-                #end
-                
-                // Generate idiomatic Elixir based on the pattern
-                if (isCollecting) {
-                    // Transform to Enum.map
-                    // Create pattern for {key, value} tuple
-                    var tuplePattern = PTuple([
-                        PVar("key"),
-                        PVar("value")
-                    ]);
-                    
-                    return makeAST(ECall(
-                        makeAST(ERemoteCall(makeAST(EVar("Enum")), "map", [])),
-                        [
-                            makeAST(EVar(mapVar)),
-                            makeAST(EFunction(
-                                [tuplePattern],
-                                loopBody
-                            ))
-                        ]
-                    ));
-                } else {
-                    // Transform to Enum.each
-                    // Create pattern for {key, value} tuple
-                    var tuplePattern = PTuple([
-                        PVar("key"),
-                        PVar("value")
-                    ]);
-                    
-                    return makeAST(ECall(
-                        makeAST(ERemoteCall(makeAST(EVar("Enum")), "each", [])),
-                        [
-                            makeAST(EVar(mapVar)),
-                            makeAST(EFunction(
-                                [tuplePattern],
-                                loopBody
-                            ))
-                        ]
-                    ));
-                }
-                
-            default:
-                // Not a reducible pattern
-        }
-        return ast;
-    }
-    
-    /**
-     * Extract the actual loop body from the reduce_while function body
-     */
-    static function extractMapIterationBody(body: ElixirAST, mapVar: String): ElixirAST {
-        // The body typically has an if statement checking has_next()
-        // We need to extract the actual loop logic (not the iteration machinery)
-        
-        switch(body.def) {
-            case EIf(cond, thenBranch, elseBranch):
-                // The then branch contains the actual loop body
-                // Remove the iterator machinery and extract the user logic
-                return cleanupIteratorBody(thenBranch, mapVar);
-                
-            case EBlock(exprs):
-                // Look for the if statement in the block
-                for (expr in exprs) {
-                    var extracted = extractMapIterationBody(expr, mapVar);
-                    if (extracted != null) return extracted;
-                }
-                
-            default:
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Clean up the iterator body by removing infrastructure code
-     */
-    static function cleanupIteratorBody(body: ElixirAST, mapVar: String): ElixirAST {
-        // Remove lines like:
-        // key = map.key_value_iterator().next().key
-        // value = map.key_value_iterator().next().value
-        // {:cont, {map}}
-        
-        switch(body.def) {
-            case EBlock(exprs):
-                var cleaned = [];
-                for (expr in exprs) {
-                    // Skip infrastructure assignments
-                    var skip = false;
-                    switch(expr.def) {
-                        case EMatch(pattern, value):
-                            // Pattern is an EPattern enum, not an AST node
-                            switch(pattern) {
-                                case PVar(name):
-                                    // Skip key/value extraction lines
-                                    if ((name == "key" || name == "value") && isIteratorExtraction(value)) {
-                                        skip = true;
-                                    }
-                                default:
-                            }
-                        case ETuple(elements) if (elements.length == 2):
-                            // Skip continuation tuples
-                            switch(elements[0].def) {
-                                case EAtom(atom) if (atom == "cont" || atom == "halt"):
-                                    skip = true;
-                                default:
-                            }
-                        default:
-                    }
-                    
-                    if (!skip) {
-                        cleaned.push(expr);
-                    }
-                }
-                
-                // Return cleaned block or single expression
-                if (cleaned.length == 1) {
-                    return cleaned[0];
-                } else if (cleaned.length > 0) {
-                    return makeAST(EBlock(cleaned));
-                }
-                
-            default:
-                return body;
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Check if an expression is an iterator extraction (e.g., map.key_value_iterator().next().key)
-     */
-    static function isIteratorExtraction(expr: ElixirAST): Bool {
-        switch(expr.def) {
-            case EField(obj, field):
-                if (field == "key" || field == "value") {
-                    return isIteratorCall(obj);
-                }
-            default:
-        }
-        return false;
-    }
-    
-    /**
-     * Check if an expression is an iterator call
-     */
-    static function isIteratorCall(expr: ElixirAST): Bool {
-        switch(expr.def) {
-            case ECall(EField(_, "next"), _): return true;
-            case ECall(EField(_, "key_value_iterator"), _): return true;
-            case EField(obj, "next"): return isIteratorCall(obj);
-            case EField(obj, "key_value_iterator"): return true;
-            default:
-        }
-        return false;
-    }
-    
-    /**
-     * Detect if the loop is collecting results (for Enum.map vs Enum.each)
-     */
-    static function detectResultCollection(body: ElixirAST): Bool {
-        // Look for Array.push or list building patterns
-        var hasCollection = false;
-        
-        function scan(node: ElixirAST): Void {
-            if (node == null || node.def == null) return;
-            
-            switch(node.def) {
-                case ECall(func, args):
-                    // Check if it's an Array.push call
-                    switch(func.def) {
-                        case ERemoteCall(module, funcName, typeParams):
-                            switch(module.def) {
-                                case EVar(modName) if (modName == "Array" && funcName == "push"):
-                                    hasCollection = true;
-                                default:
-                            }
-                        default:
-                    }
-                    scan(func);
-                    for (arg in args) scan(arg);
-                    
-                case EBlock(exprs):
-                    for (expr in exprs) scan(expr);
-                    
-                case EIf(cond, thenBranch, elseBranch):
-                    scan(thenBranch);
-                    if (elseBranch != null) scan(elseBranch);
-                    
-                default:
-            }
-        }
-        
-        scan(body);
-        return hasCollection;
-    }
-    
-    // End of Map iterator transformation functions
-    #end
-
 }
 
-#end
+#end // (macro || reflaxe_runtime)

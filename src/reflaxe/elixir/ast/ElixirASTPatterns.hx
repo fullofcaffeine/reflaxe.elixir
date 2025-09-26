@@ -9,6 +9,56 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 using reflaxe.helpers.TypedExprHelper;
 
 /**
+ * Common AST patterns that require special transformation.
+ * Using an enum provides a clear vocabulary for pattern detection.
+ */
+enum ASTPatternType {
+	// Loop patterns
+	SimpleRangeLoop(start:Int, end:Int, variable:String);
+	ArrayIteration(array:String, itemVar:String);
+	WhileLoop(condition:ElixirAST);
+	
+	// Map iteration patterns
+	MapKeyValueIteration(mapVar:String, keyVar:String, valueVar:String);
+	MapKeysIteration(mapVar:String, keyVar:String);
+	MapValuesIteration(mapVar:String, valueVar:String);
+	
+	// List patterns
+	ListHead(list:String);
+	ListTail(list:String);
+	
+	// Comprehension patterns
+	ArrayComprehension(source:String, filter:ElixirAST, transform:ElixirAST);
+	MapComprehension(source:String, keyTransform:ElixirAST, valueTransform:ElixirAST);
+	
+	// Enum patterns
+	EnumMatch(enumVar:String, constructors:Array<String>);
+	OptionPattern(someCase:ElixirAST, noneCase:ElixirAST);
+	ResultPattern(okCase:ElixirAST, errorCase:ElixirAST);
+	
+	// String patterns
+	StringConcatenation(parts:Array<ElixirAST>);
+	StringInterpolation(template:String, values:Array<ElixirAST>);
+	
+	// Infrastructure patterns (patterns to eliminate)
+	YCombinatorLoop(iterVar:String, accumulator:String);
+	InfrastructureVariable(name:String, purpose:String);
+	
+	// Inline expansion patterns
+	InlineExpansion(tmpVar:String, init:ElixirAST, nullBranch:ElixirAST, nonNullBranch:ElixirAST);
+	NullCoalescing(tmpVar:String, leftExpr:ElixirAST, rightExpr:ElixirAST);
+}
+
+/**
+ * Data about detected patterns for transformation.
+ */
+typedef PatternData = {
+	var type:ASTPatternType;
+	var node:ElixirAST;
+	var metadata:Dynamic;
+}
+
+/**
  * ElixirASTPatterns: Pattern Detection and Transformation Helpers
  * 
  * WHY: Complex pattern matching in the main builder makes code unreadable and unmaintainable
@@ -60,6 +110,116 @@ using reflaxe.helpers.TypedExprHelper;
  * - Pattern needs debugging/tracing independently
  */
 class ElixirASTPatterns {
+    
+    /**
+     * Detects the type of pattern in an AST node.
+     * Returns null if no known pattern is detected.
+     */
+    public static function detectPattern(node:ElixirAST):Null<PatternData> {
+        // Check for Map iteration patterns
+        if (isMapIterationPattern(node)) {
+            var data = extractMapIterationData(node);
+            if (data != null) {
+                return {
+                    type: MapKeyValueIteration(data.mapVar, "key", "value"),
+                    node: node,
+                    metadata: data
+                };
+            }
+        }
+        
+        // Check for Y-combinator patterns (infrastructure to eliminate)
+        if (isYCombinatorPattern(node)) {
+            return {
+                type: YCombinatorLoop("_", "acc"),
+                node: node,
+                metadata: null
+            };
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Checks if node is a Y-combinator pattern (Enum.reduce_while with Stream.iterate).
+     */
+    static function isYCombinatorPattern(node:ElixirAST):Bool {
+        if (node == null || node.def == null) return false;
+        
+        return switch(node.def) {
+            case ERemoteCall(module, funcName, args):
+                var isReduceWhile = switch(module.def) {
+                    case EVar(modName): modName == "Enum" && funcName == "reduce_while";
+                    default: false;
+                };
+                
+                if (!isReduceWhile || args == null || args.length < 1) return false;
+                
+                // Check if first arg is Stream.iterate
+                return switch(args[0].def) {
+                    case ERemoteCall(streamModule, streamFunc, _):
+                        switch(streamModule.def) {
+                            case EVar(modName): modName == "Stream" && streamFunc == "iterate";
+                            default: false;
+                        }
+                    default: false;
+                };
+                
+            default: false;
+        };
+    }
+    
+    /**
+     * Transforms a detected pattern to idiomatic Elixir.
+     * This is the central place for pattern-based transformations.
+     */
+    public static function transformPattern(pattern:PatternData):ElixirAST {
+        return switch(pattern.type) {
+            case MapKeyValueIteration(mapVar, keyVar, valueVar):
+                // Transform to: Enum.each(map, fn {key, value} -> ... end)
+                // Extract loop body from metadata
+                var loopBody = pattern.metadata != null ? pattern.metadata.loopBody : null;
+                if (loopBody == null) {
+                    // Return a TODO string node instead of EComment which doesn't exist
+                    return makeAST(EString("# TODO: Transform Map iteration to Enum.each"), pattern.node.pos);
+                }
+                
+                // Create the idiomatic Enum.each call
+                return makeAST(ERemoteCall(
+                    makeAST(EVar("Enum")),
+                    pattern.metadata.isCollecting ? "map" : "each",
+                    [
+                        makeAST(EVar(mapVar)),
+                        makeAST(EFn([
+                            {
+                                args: [PTuple([PVar(keyVar), PVar(valueVar)])],
+                                guard: null,
+                                body: loopBody
+                            }
+                        ]))
+                    ]
+                ), pattern.node.pos);
+                
+            case YCombinatorLoop(iterVar, accumulator):
+                // Transform Y-combinator patterns to appropriate Enum functions
+                // This requires analyzing the loop body to determine the right transformation
+                return makeAST(EString("# TODO: Eliminate Y-combinator pattern"), pattern.node.pos);
+                
+            case InlineExpansion(tmpVar, init, nullBranch, nonNullBranch):
+                // Transform inline expansion to clean conditional
+                makeAST(EIf(
+                    makeAST(EBinary(Equal, 
+                        makeAST(EMatch(PVar(tmpVar), init)),
+                        makeAST(ENil)
+                    )),
+                    nullBranch,
+                    nonNullBranch
+                ), pattern.node.pos);
+                
+            default:
+                pattern.node; // Return unchanged for unhandled patterns
+        };
+    }
     
     // =========================================================================
     // Inline Expansion Patterns
@@ -355,6 +515,27 @@ class ElixirASTPatterns {
      *       - iterator.has_next()
      *       - iterator.next().key / iterator.next().value
      * 
+     * GENERATED PATTERN:
+     * ```elixir
+     * Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {map}, fn _, {map} ->
+     *   if map.key_value_iterator().has_next() do
+     *     key = map.key_value_iterator().next().key
+     *     value = map.key_value_iterator().next().value
+     *     # ... user code using key and value ...
+     *     {:cont, {map}}
+     *   else
+     *     {:halt, {map}}
+     *   end
+     * end)
+     * ```
+     * 
+     * KEY PATTERNS TO DETECT:
+     * 1. Enum.reduce_while with Stream.iterate(0, ...) as first arg
+     * 2. Conditional checking `.key_value_iterator().has_next()`
+     * 3. Assignments extracting `.next().key` and `.next().value`
+     * 4. User code in the middle
+     * 5. {:cont, {map}} and {:halt, {map}} returns
+     * 
      * @param ast The ElixirAST node to check
      * @return true if this is a Map iteration pattern
      */
@@ -397,6 +578,7 @@ class ElixirASTPatterns {
                 false;
         };
     }
+    
     
     /**
      * Checks if an AST node contains Map iterator method calls
@@ -451,12 +633,15 @@ class ElixirASTPatterns {
     }
     
     /**
-     * Extracts information from a Map iteration pattern
+     * Extracts information from a Map iteration pattern.
+     * This is the key function that needs to properly detect and extract Map iteration patterns.
      * 
      * @return null if not a Map iteration pattern, otherwise returns extracted data
      */
     public static function extractMapIterationData(ast: ElixirAST): Null<{
         mapVar: String,
+        keyVar: String,
+        valueVar: String,
         loopBody: ElixirAST,
         isCollecting: Bool
     }> {
@@ -505,8 +690,30 @@ class ElixirASTPatterns {
         
         if (loopBody == null) return null;
         
+        // Extract key and value variable names from the body
+        var keyVar = "key";  // Default names
+        var valueVar = "value";
+        
+        // Try to find actual variable names from the assignments
+        if (loopBody != null) {
+            switch(loopBody.def) {
+                case EBlock(exprs):
+                    for (expr in exprs) {
+                        switch(expr.def) {
+                            case EMatch(PVar(varName), value):
+                                if (isFieldAccess(value, "key")) keyVar = varName;
+                                if (isFieldAccess(value, "value")) valueVar = varName;
+                            default:
+                        }
+                    }
+                default:
+            }
+        }
+        
         return {
             mapVar: mapVar,
+            keyVar: keyVar,
+            valueVar: valueVar,
             loopBody: loopBody,
             isCollecting: isCollecting
         };
@@ -588,6 +795,17 @@ class ElixirASTPatterns {
         }
         
         return null;
+    }
+    
+    /**
+     * Helper to check if an expression accesses a specific field.
+     */
+    static function isFieldAccess(expr: ElixirAST, fieldName: String): Bool {
+        if (expr == null || expr.def == null) return false;
+        return switch(expr.def) {
+            case EField(_, field): field == fieldName;
+            default: false;
+        };
     }
     
     /**

@@ -3659,7 +3659,28 @@ class ElixirASTBuilder {
                 }
                 #end
                 
-                // CRITICAL: Check for desugared for loop pattern FIRST
+                // CRITICAL: Check for Map iteration pattern FIRST (before regular for loops)
+                // This detects patterns like: var iterator = map.keyValueIterator(); while(iterator.hasNext()) { var kv = iterator.next(); ... }
+                // and generates idiomatic Elixir: Enum.each(map, fn {key, value} -> ... end)
+                
+                #if debug_map_iteration
+                trace('[ElixirASTBuilder] Checking TBlock for Map iteration pattern, ${el.length} elements');
+                #end
+                
+                // Map iteration detection
+                var mapIterationPattern = detectMapIterationPattern(el);
+                if (mapIterationPattern != null) {
+                    #if debug_map_iteration
+                    trace('[ElixirASTBuilder] ✓ Detected Map iteration pattern');
+                    trace('  Map source: ${mapIterationPattern.mapExpr}');
+                    trace('  Key var: ${mapIterationPattern.keyVar}');
+                    trace('  Value var: ${mapIterationPattern.valueVar}');
+                    #end
+                    
+                    return buildMapIteration(mapIterationPattern, currentContext);
+                }
+                
+                // CRITICAL: Check for desugared for loop pattern NEXT
                 // This detects patterns like: var g=0; var g1=5; while(g<g1){...}
                 // and generates idiomatic Elixir (Enum.each or comprehensions)
                 
@@ -11761,6 +11782,226 @@ class ElixirASTBuilder {
                 return makeAST(ENil);
         }
     }
+    
+    /**
+     * MAP ITERATION PATTERN DETECTION
+     * 
+     * WHY: Haxe desugars `for (key => value in map)` into complex TBlock+TWhile patterns
+     *      with iterator method calls that don't exist in Elixir
+     * 
+     * WHAT: Detects the specific desugared pattern and extracts key/value variable names
+     * 
+     * HOW: Looks for:
+     *      1. TVar with keyValueIterator() call  
+     *      2. TWhile with hasNext() condition
+     *      3. Body containing next() call with tuple destructuring
+     * 
+     * PATTERN:
+     * ```
+     * var iterator = map.keyValueIterator();
+     * while (iterator.hasNext()) {
+     *     var kv = iterator.next();
+     *     var key = kv.key;
+     *     var value = kv.value;
+     *     // ... user code using key and value
+     * }
+     * ```
+     */
+    static function detectMapIterationPattern(expressions: Array<TypedExpr>): Null<MapIterationPattern> {
+        if (expressions.length < 2) return null;
+        
+        // Look for TVar with keyValueIterator() call
+        var iteratorVar: TVar = null;
+        var mapExpr: TypedExpr = null;
+        var whileIndex = -1;
+        
+        for (i in 0...expressions.length) {
+            switch (expressions[i].expr) {
+                case TVar(v, init) if (init != null):
+                    switch (init.expr) {
+                        case TCall({expr: TField(map, FInstance(_, _, cf))}, []) 
+                            if (cf.get().name == "keyValueIterator"):
+                            iteratorVar = v;
+                            mapExpr = map;
+                            whileIndex = i + 1;
+                            break;
+                        default:
+                    }
+                default:
+            }
+        }
+        
+        if (iteratorVar == null || whileIndex >= expressions.length) {
+            return null;
+        }
+        
+        // Check for TWhile with hasNext() condition
+        switch (expressions[whileIndex].expr) {
+            case TWhile(cond, body, _):
+                // Verify hasNext() call on iterator
+                var isHasNext = switch (cond.expr) {
+                    case TCall({expr: TField({expr: TLocal(v)}, FInstance(_, _, cf))}, [])
+                        if (v.id == iteratorVar.id && cf.get().name == "hasNext"):
+                        true;
+                    default:
+                        false;
+                };
+                
+                if (!isHasNext) return null;
+                
+                // Extract key and value variables from body
+                var keyVar: String = null;
+                var valueVar: String = null;
+                var loopBody: TypedExpr = null;
+                
+                // Look for next() call and variable extraction pattern
+                switch (body.expr) {
+                    case TBlock(stmts):
+                        var nextVarName: String = null;
+                        var foundNext = false;
+                        
+                        for (stmt in stmts) {
+                            switch (stmt.expr) {
+                                // Find: var kv = iterator.next()
+                                case TVar(v, init) if (init != null):
+                                    switch (init.expr) {
+                                        case TCall({expr: TField({expr: TLocal(iter)}, FInstance(_, _, cf))}, [])
+                                            if (iter.id == iteratorVar.id && cf.get().name == "next"):
+                                            nextVarName = v.name;
+                                            foundNext = true;
+                                        default:
+                                    }
+                                    
+                                // Find: var key = kv.key
+                                case TVar(v, init) if (init != null && nextVarName != null):
+                                    switch (init.expr) {
+                                        case TField({expr: TLocal(obj)}, FAnon(cf)) | 
+                                             TField({expr: TLocal(obj)}, FInstance(_, _, cf)):
+                                            if (obj.name == nextVarName) {
+                                                var fieldName = cf.get().name;
+                                                if (fieldName == "key") keyVar = v.name;
+                                                else if (fieldName == "value") valueVar = v.name;
+                                            }
+                                        default:
+                                    }
+                                default:
+                            }
+                        }
+                        
+                        // Extract the actual loop body (everything after key/value extraction)
+                        if (keyVar != null && valueVar != null) {
+                            // Find where the user code starts (after variable extraction)
+                            var userCodeStart = 0;
+                            for (i in 0...stmts.length) {
+                                switch (stmts[i].expr) {
+                                    case TVar(v, _):
+                                        if (v.name == keyVar || v.name == valueVar) {
+                                            userCodeStart = i + 1;
+                                        }
+                                    default:
+                                        break;
+                                }
+                            }
+                            
+                            // Create the loop body from remaining statements
+                            if (userCodeStart < stmts.length) {
+                                var bodyStmts = stmts.slice(userCodeStart);
+                                loopBody = if (bodyStmts.length == 1) {
+                                    bodyStmts[0];
+                                } else {
+                                    {expr: TBlock(bodyStmts), pos: body.pos, t: body.t};
+                                };
+                            }
+                        }
+                        
+                    default:
+                }
+                
+                if (keyVar != null && valueVar != null && loopBody != null) {
+                    return {
+                        mapExpr: mapExpr,
+                        keyVar: keyVar,
+                        valueVar: valueVar,
+                        body: loopBody
+                    };
+                }
+                
+            default:
+        }
+        
+        return null;
+    }
+    
+    /**
+     * BUILD MAP ITERATION AST
+     * 
+     * WHY: Generate idiomatic Elixir code for Map iteration instead of invalid iterator calls
+     * 
+     * WHAT: Transforms detected Map iteration pattern into Enum.each/map with tuple destructuring
+     * 
+     * HOW: Generates:
+     *      - Enum.each for side effects only
+     *      - Enum.map for collecting results
+     *      - Proper tuple destructuring: fn {key, value} -> ... end
+     */
+    static function buildMapIteration(pattern: MapIterationPattern, context: CompilationContext): ElixirASTDef {
+        var mapAst = buildFromTypedExpr(pattern.mapExpr, context);
+        var bodyAst = buildFromTypedExpr(pattern.body, context);
+        
+        // Analyze if body collects results
+        var isCollecting = analyzesAsExpression(pattern.body);
+        
+        // Create pattern for destructuring: {key, value}
+        var tuplePattern = PTuple([
+            PVar(toElixirVarName(pattern.keyVar)),
+            PVar(toElixirVarName(pattern.valueVar))
+        ]);
+        
+        // Create anonymous function clause
+        var fnClause: EFnClause = {
+            args: [tuplePattern],
+            body: bodyAst
+        };
+        
+        // Choose between Enum.each and Enum.map based on usage
+        var enumFunction = isCollecting ? "map" : "each";
+        
+        return ECall(
+            makeAST(EVar("Enum")),
+            enumFunction,
+            [mapAst, makeAST(EFn([fnClause]))]
+        );
+    }
+    
+    /**
+     * Simple analysis to determine if expression returns a value
+     */
+    static function analyzesAsExpression(expr: TypedExpr): Bool {
+        return switch (expr.expr) {
+            case TBlock(stmts):
+                if (stmts.length > 0) {
+                    analyzesAsExpression(stmts[stmts.length - 1]);
+                } else {
+                    false;
+                }
+            case TReturn(_): true;
+            case TIf(_, _, elseExpr) if (elseExpr != null): true;
+            case TSwitch(_, _, _): true;
+            case TCall(_, _): true;
+            case TBinop(_, _, _): true;
+            case TLocal(_): true;
+            case TConst(_): true;
+            default: false;
+        };
+    }
+}
+
+// Type definition for Map iteration pattern
+typedef MapIterationPattern = {
+    mapExpr: TypedExpr,
+    keyVar: String,
+    valueVar: String,
+    body: TypedExpr
 }
 
 #end
