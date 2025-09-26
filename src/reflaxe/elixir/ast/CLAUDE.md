@@ -109,6 +109,68 @@ The AST pipeline is the core of the Reflaxe.Elixir compiler, transforming Haxe's
 2. **Transformer Phase** (`ElixirASTTransformer.hx`) - Applies idiomatic transformations
 3. **Printer Phase** (`ElixirASTPrinter.hx`) - Generates final Elixir strings
 
+## 🛠️ ASTUtils: Robust AST Transformation Utilities (NEW - January 2025)
+
+### Overview
+`ASTUtils.hx` provides defensive utilities for robust AST transformation and manipulation. Created to prevent "hard-to-debug mismatchers" that were causing transformation failures.
+
+### Key Functions
+
+#### `flattenBlocks(ast: ElixirAST): Array<ElixirAST>`
+**Purpose**: Recursively flatten nested EBlock structures into a single array
+- Handles arbitrary nesting depth (EBlock inside EBlock inside EBlock...)
+- Returns empty array for null input (defensive)
+- Example: `EBlock([EBlock([expr1, expr2]), expr3])` → `[expr1, expr2, expr3]`
+
+#### `extractBlockExprs(ast: ElixirAST): Array<ElixirAST>`
+**Purpose**: Extract expressions from various block structures with fallbacks
+- Only unwraps ONE level of nesting (unlike flattenBlocks)
+- Handles single nested blocks gracefully
+- Safe for null input
+
+#### `containsIteratorPattern(ast: ElixirAST): Bool`
+**Purpose**: Exhaustively detect Map iterator patterns anywhere in AST
+- Detects: `key_value_iterator`, `has_next`, `next`, `key`, `value`
+- Uses ElixirASTTransformer.transformNode for complete traversal
+- Never misses deeply nested patterns
+
+#### `filterIteratorAssignments(exprs: Array<ElixirAST>): Array<ElixirAST>`
+**Purpose**: Remove Map iterator-related assignments from expression lists
+- Filters assignments like: `name = colors.key_value_iterator().next().key`
+- Preserves all non-iterator expressions
+- Essential for cleaning Map iteration transformations
+
+#### `extractFieldChain(ast: ElixirAST): Array<String>`
+**Purpose**: Extract field/method names from nested access chains
+- Returns names in reverse order (innermost first)
+- Example: `colors.key_value_iterator().next().key` → `["key", "next", "key_value_iterator"]`
+
+#### `makeAST(def: ElixirASTDef, ?pos: Position): ElixirAST`
+**Purpose**: Convenience wrapper for AST node creation
+- Initializes metadata properly
+- Reduces boilerplate code
+
+### Usage Example
+```haxe
+// In a transformation pass
+var allExprs = ASTUtils.flattenBlocks(thenBranch);  // Handle nested blocks
+var cleanExprs = ASTUtils.filterIteratorAssignments(allExprs);  // Remove iterator patterns
+
+// Detect patterns
+if (ASTUtils.containsIteratorPattern(rhs)) {
+    // Skip or transform this node
+}
+```
+
+### Design Principles
+- **Defensive Programming**: Never crashes on unexpected input
+- **Pure Functions**: No side effects (except debug output)
+- **Exhaustive Handling**: Handles all edge cases gracefully
+- **Reusability**: Used by multiple transformation passes
+
+### Historical Context
+Created in response to Map iterator transformation failures where pattern matching failed on unexpected AST structures (nested EBlock issues). User specifically requested "abstractions/patterns to prevent hard-to-debug mismatchers" - ASTUtils is the solution.
+
 ---
 
 **Remember**: Every line added to ElixirASTBuilder.hx makes the compiler harder to maintain, debug, and extend. The prohibition is absolute and non-negotiable.
