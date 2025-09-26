@@ -1,17 +1,18 @@
 defmodule StringBuf do
   defp get_length(struct) do
-    joined = Enum.join(struct.parts, "")
+    joined = Array.join(struct.parts, "")
     length(joined)
   end
   def add(struct, x) do
-    struct.parts ++ [(if (x == nil) do
+    str = if (x == nil) do
   "null"
 else
   Std.string(x)
-end)]
+end
+    Array.push(struct.parts, str)
   end
   def add_char(struct, c) do
-    struct.parts ++ [<<c::utf8>>]
+    Array.push(struct.parts, <<c::utf8>>)
   end
   def add_sub(struct, s, pos, len) do
     if (s == nil), do: nil
@@ -29,7 +30,7 @@ else
     String.slice(s, pos, len)
   end
 end
-    %{struct | parts: struct.parts ++ [substr]}
+    Array.push(struct.parts, substr)
   end
   def to_string(struct) do
     IO.iodata_to_binary(struct.parts)
