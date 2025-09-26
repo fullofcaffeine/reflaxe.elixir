@@ -363,8 +363,21 @@ class ElixirASTPatterns {
         
         // Look for Enum.reduce_while with iterator method calls
         return switch(ast.def) {
-            case ECall(func, _, args) if (args != null && args.length == 3):
-                // Check if it's an Enum.reduce_while call
+            case ERemoteCall(module, funcName, args):
+                // Direct ERemoteCall pattern
+                var isReduceWhile = switch(module.def) {
+                    case EVar(modName): modName == "Enum" && funcName == "reduce_while";
+                    default: false;
+                };
+                
+                if (!isReduceWhile || args == null || args.length < 3) return false;
+                
+                // Check if the loop function contains iterator patterns
+                var loopFunc = args[2];
+                return containsMapIteratorCalls(loopFunc);
+                
+            case ECall(func, _, args) if (args != null && args.length >= 3):
+                // ECall wrapper pattern
                 var isReduceWhile = switch(func.def) {
                     case ERemoteCall(module, funcName, _):
                         switch(module.def) {
@@ -449,50 +462,53 @@ class ElixirASTPatterns {
     }> {
         if (!isMapIterationPattern(ast)) return null;
         
-        return switch(ast.def) {
-            case ECall(_, _, args) if (args != null && args.length == 3):
-                var initial = args[1];
-                var loopFunc = args[2];
-                
-                // Extract map variable from initial value
-                var mapVar: String = null;
-                if (initial != null) switch(initial.def) {
-                    case ETuple(elements) if (elements.length == 1):
-                        switch(elements[0].def) {
-                            case EVar(name): mapVar = name;
-                            default:
-                        }
+        // Extract args from either ERemoteCall or ECall
+        var args: Array<ElixirAST> = switch(ast.def) {
+            case ERemoteCall(_, _, a): a;
+            case ECall(_, _, a): a;
+            default: null;
+        };
+        
+        if (args == null || args.length < 3) return null;
+        
+        var initial = args[1];
+        var loopFunc = args[2];
+        
+        // Extract map variable from initial value
+        var mapVar: String = null;
+        if (initial != null) switch(initial.def) {
+            case ETuple(elements) if (elements.length >= 1):
+                switch(elements[0].def) {
                     case EVar(name): mapVar = name;
                     default:
                 }
-                
-                if (mapVar == null) return null;
-                
-                // Extract loop body and check if collecting results
-                var loopBody: ElixirAST = null;
-                var isCollecting = false;
-                
-                switch(loopFunc.def) {
-                    case EFn(clauses) if (clauses.length > 0):
-                        // Extract the actual loop logic (removing iterator machinery)
-                        var firstClause = clauses[0];
-                        if (firstClause.body != null) {
-                            loopBody = extractCleanLoopBody(firstClause.body, mapVar);
-                            isCollecting = detectResultCollection(firstClause.body);
-                        }
-                    default:
-                }
-                
-                if (loopBody == null) return null;
-                
-                return {
-                    mapVar: mapVar,
-                    loopBody: loopBody,
-                    isCollecting: isCollecting
-                };
-                
+            case EVar(name): mapVar = name;
             default:
-                null;
+        }
+        
+        if (mapVar == null) return null;
+        
+        // Extract loop body and check if collecting results
+        var loopBody: ElixirAST = null;
+        var isCollecting = false;
+        
+        switch(loopFunc.def) {
+            case EFn(clauses) if (clauses.length > 0):
+                // Extract the actual loop logic (removing iterator machinery)
+                var firstClause = clauses[0];
+                if (firstClause.body != null) {
+                    loopBody = extractCleanLoopBody(firstClause.body, mapVar);
+                    isCollecting = detectResultCollection(firstClause.body);
+                }
+            default:
+        }
+        
+        if (loopBody == null) return null;
+        
+        return {
+            mapVar: mapVar,
+            loopBody: loopBody,
+            isCollecting: isCollecting
         };
     }
     
