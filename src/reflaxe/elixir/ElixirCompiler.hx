@@ -844,6 +844,10 @@ class ElixirCompiler extends GenericCompiler<
         // This ensures complete isolation between compilation units during parallel execution
         var context = createCompilationContext();
 
+        // CRITICAL: Preprocess TypedExpr to eliminate infrastructure variables FIRST
+        // This must happen BEFORE any other processing to ensure clean patterns
+        expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
+
         // Analyze variable usage before building AST
         // This enables context-aware naming to prevent Elixir compilation warnings
         var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);
@@ -1028,6 +1032,9 @@ class ElixirCompiler extends GenericCompiler<
                                 context.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
                             }
 
+                            // CRITICAL: Preprocess function body to eliminate infrastructure variables
+                            tfunc.expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(tfunc.expr);
+
                             // Analyze variable usage for the function
                             var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(tfunc.expr);
                             context.variableUsageMap = usageMap;
@@ -1127,10 +1134,13 @@ class ElixirCompiler extends GenericCompiler<
             // Skip constructor for now
             if (funcData.field.name == "new") continue;
 
-            // Get the function expression
+            // Get the function expression and preprocess it
             var expr = funcData.expr;
             // Skip functions without body - they might be extern or abstract
             if (expr == null) continue;
+            
+            // Preprocess the function body to eliminate infrastructure variables
+            expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
 
             #if debug_ast_builder
             trace('[ElixirCompiler] Compiling function: ${funcData.field.name}');
