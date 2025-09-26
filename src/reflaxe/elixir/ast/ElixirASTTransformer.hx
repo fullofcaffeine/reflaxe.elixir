@@ -3,6 +3,7 @@ package reflaxe.elixir.ast;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.makeAST;
 import haxe.macro.Expr.Position;
 import reflaxe.elixir.ast.ElixirASTBuilder;
 import reflaxe.elixir.ast.ElixirAST.VarOrigin;
@@ -409,6 +410,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.LoopTransforms.unrolledLoopTransformPass
         });
         
+        // Map iterator transformation pass (transforms g.next() patterns to idiomatic Elixir)
+        passes.push({
+            name: "MapIteratorTransform",
+            description: "Transform Map iterator patterns from g.next() to idiomatic Enum operations",
+            enabled: true,
+            pass: mapIteratorTransformPass
+        });
+        
         // Loop to comprehension pass
         #if !disable_comprehension_conversion
         passes.push({
@@ -458,7 +467,7 @@ class ElixirASTTransformer {
         
         // Statement context transformation pass (MUST run after immutability)
         // Map iterator transformation pass (should run before statement context)
-        // TODO: Enable after fixing forward reference issue
+        // TODO: Re-enable after fixing forward reference issue
         // passes.push({
         //     name: "MapIteratorTransform",
         //     description: "Transform Map iteration patterns to idiomatic Elixir (Enum.each/map)",
@@ -2348,6 +2357,60 @@ class ElixirASTTransformer {
                 default:
                     node;
             }
+        });
+    }
+    
+    /**
+     * Map Iterator Transformation Pass
+     * Transforms Map iterator patterns from g.next() to idiomatic Elixir
+     */
+    static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
+        if (ast == null) return null;
+        
+        #if debug_map_iterator
+        trace("[MapIteratorTransform] Starting transformation pass");
+        #end
+        
+        // Use transformNode to recursively transform all nodes
+        return transformNode(ast, function(node) {
+            // Check if this is a Map iteration pattern using ElixirASTPatterns
+            if (ElixirASTPatterns.isMapIterationPattern(node)) {
+                #if debug_map_iterator
+                trace("[MapIteratorTransform] Found Map iteration pattern!");
+                #end
+                var data = ElixirASTPatterns.extractMapIterationData(node);
+                if (data != null) {
+                    // Clean up the body to remove iterator infrastructure
+                    var cleanedBody = ElixirASTPatterns.cleanupIteratorInfrastructure(data.loopBody, data.mapVar);
+                    
+                    if (data.isCollecting) {
+                        // Transform to Enum.map
+                        return makeAST(ERemoteCall(
+                            makeAST(EVar("Enum")),
+                            "map",
+                            [makeAST(EVar(data.mapVar)), makeAST(EFn([{
+                                args: [PTuple([PVar("key"), PVar("value")])],
+                                guard: null,
+                                body: cleanedBody
+                            }]))]
+                        ));
+                    } else {
+                        // Transform to Enum.each  
+                        return makeAST(ERemoteCall(
+                            makeAST(EVar("Enum")),
+                            "each",
+                            [makeAST(EVar(data.mapVar)), makeAST(EFn([{
+                                args: [PTuple([PVar("key"), PVar("value")])],
+                                guard: null,
+                                body: cleanedBody
+                            }]))]
+                        ));
+                    }
+                }
+            }
+            
+            // Return unchanged if not a map iteration pattern
+            return node;
         });
     }
     
@@ -6486,9 +6549,9 @@ class SupervisorOptionsTransformPass {
         return analyzeAndTransform(ast);
     }
 
-    #if false // TEMPORARILY DISABLED - Map Iterator Transform needs more work
     /**
-     * Map Iterator Pattern Transformation Pass
+     * Map Iterator Transform Pass
+     * Uses ElixirASTPatterns for detection and extraction
      * 
      * WHY: Haxe desugars `for (key => value in map)` into complex while loops with
      *      infrastructure variables (g, g1, g2) and iterator method calls that generate
@@ -6517,12 +6580,57 @@ class SupervisorOptionsTransformPass {
     static function mapIteratorTransformPass(ast: ElixirAST): ElixirAST {
         if (ast == null) return null;
         
-        // Check if this node is a Map iteration pattern
-        if (isMapIterationPattern(ast)) {
+        // Use ElixirASTPatterns for detection
+        if (ElixirASTPatterns.isMapIterationPattern(ast)) {
             #if debug_ast_transformer
             trace('[XRay MapIterator] Detected Map iteration pattern');
             #end
-            return transformMapIteration(ast);
+            
+            // Extract data using ElixirASTPatterns
+            var data = ElixirASTPatterns.extractMapIterationData(ast);
+            if (data != null) {
+                #if debug_ast_transformer
+                trace('[XRay MapIterator] Extracted map var: ${data.mapVar}, collecting: ${data.isCollecting}');
+                #end
+                
+                // Clean up the loop body
+                var cleanedBody = ElixirASTPatterns.cleanupIteratorInfrastructure(data.loopBody, data.mapVar);
+                
+                // Transform to idiomatic Elixir
+                if (data.isCollecting) {
+                    // Use Enum.map for collecting results
+                    return makeAST(ERemoteCall(
+                        makeAST(EVar("Enum")),
+                        "map",
+                        [
+                            makeAST(EVar(data.mapVar)),
+                            makeAST(EFn([
+                                {
+                                    args: [PTuple([PVar("key"), PVar("value")])],
+                                    guard: null,
+                                    body: cleanedBody
+                                }
+                            ]))
+                        ]
+                    ));
+                } else {
+                    // Use Enum.each for side effects
+                    return makeAST(ERemoteCall(
+                        makeAST(EVar("Enum")),
+                        "each",
+                        [
+                            makeAST(EVar(data.mapVar)),
+                            makeAST(EFn([
+                                {
+                                    args: [PTuple([PVar("key"), PVar("value")])],
+                                    guard: null,
+                                    body: cleanedBody
+                                }
+                            ]))
+                        ]
+                    ));
+                }
+            }
         }
         
         // Recursively apply to children
@@ -6535,9 +6643,10 @@ class SupervisorOptionsTransformPass {
                     mapIteratorTransformPass(then),
                     el != null ? mapIteratorTransformPass(el) : null
                 ));
-            case ECall(func, args):
+            case ECall(target, funcName, args):
                 makeAST(ECall(
-                    mapIteratorTransformPass(func),
+                    target != null ? mapIteratorTransformPass(target) : null,
+                    funcName,
                     [for (arg in args) mapIteratorTransformPass(arg)]
                 ));
             default:
@@ -6545,6 +6654,8 @@ class SupervisorOptionsTransformPass {
         };
     }
     
+    // Old local helper functions - replaced by ElixirASTPatterns
+    #if false
     /**
      * Check if an AST node represents a Map iteration pattern
      */
