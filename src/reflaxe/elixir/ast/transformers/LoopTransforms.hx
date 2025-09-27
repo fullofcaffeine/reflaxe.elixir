@@ -725,6 +725,14 @@ class LoopTransforms {
         
         // Transform this group to Enum.each
         var transformed = transformToEnumEach(firstCall, count);
+        
+        // Check if transformation was successful
+        if (transformed == null) {
+            // Transformation was skipped due to safety check
+            trace('[XRay LoopTransforms] Transformation was skipped - keeping original unrolled statements');
+            return null;
+        }
+        
         return {transformed: transformed, count: count};
     }
     
@@ -858,6 +866,40 @@ class LoopTransforms {
     }
     
     /**
+     * Check if an AST contains invalid interpolation patterns that would cause
+     * Elixir compilation errors (like #{integer + "string"})
+     */
+    static function containsInvalidInterpolation(ast: ElixirAST): Bool {
+        switch (ast.def) {
+            case ERaw(s):
+                // Check for patterns like #{1 + "..."}  or #{2 + "..."}
+                // These are invalid in Elixir (can't add integer to string)
+                var invalidPattern = ~/#{\\s*\\d+\\s*\\+\\s*"/;
+                if (invalidPattern.match(s)) {
+                    trace('[XRay LoopTransforms] Found invalid interpolation: ' + s);
+                    return true;
+                }
+            case EBlock(stmts):
+                // Check recursively in blocks
+                for (stmt in stmts) {
+                    if (containsInvalidInterpolation(stmt)) {
+                        return true;
+                    }
+                }
+            case ERemoteCall(_, _, args) | ECall(_, _, args):
+                // Check arguments of function calls
+                for (arg in args) {
+                    if (containsInvalidInterpolation(arg)) {
+                        return true;
+                    }
+                }
+            default:
+                // For other types, no invalid patterns detected
+        }
+        return false;
+    }
+    
+    /**
      * Extract function call information from an AST node
      */
     static function extractFunctionCall(ast: ElixirAST): Null<{module: String, func: String, args: Array<ElixirAST>}> {
@@ -873,8 +915,22 @@ class LoopTransforms {
     
     /**
      * Transform an unrolled loop pattern back to Enum.each
+     * 
+     * SAFETY CHECK: Skip transformation if we detect invalid syntax patterns
+     * that would result in compilation errors (like integer + string)
      */
     static function transformToEnumEach(callInfo: {module: String, func: String, args: Array<ElixirAST>}, count: Int): ElixirAST {
+        // SAFETY: Check if any argument contains invalid interpolation patterns
+        // that would cause Elixir compilation errors
+        for (arg in callInfo.args) {
+            if (containsInvalidInterpolation(arg)) {
+                trace('[XRay LoopTransforms] ⚠️ SKIPPING TRANSFORMATION: Detected invalid interpolation pattern');
+                // Return null to indicate we can't safely transform this
+                // The caller should keep the original unrolled statements
+                return null;
+            }
+        }
+        
         // Create range: 0..(count-1)
         var range = makeAST(ERange(
             makeAST(EInteger(0)),
