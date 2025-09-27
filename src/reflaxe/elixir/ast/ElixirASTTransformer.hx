@@ -2152,9 +2152,18 @@ class ElixirASTTransformer {
      */
     static function stringInterpolationPass(ast: ElixirAST): ElixirAST {
         function transform(node: ElixirAST): ElixirAST {
+            // Handle null nodes
+            if (node == null) return null;
+            
             // First check if this is a string concatenation chain at the top level
             switch(node.def) {
-                case EBinary(StringConcat, _, _):
+                case EBinary(StringConcat, l, r):
+                    #if debug_string_interpolation
+                    var fullNodeStr = ElixirASTPrinter.printAST(node);
+                    trace('[StringInterpolation] Found concatenation pattern: ${fullNodeStr.substring(0, 200)}');
+                    trace('[StringInterpolation] Left type: ${Type.enumConstructor(l.def)}');
+                    trace('[StringInterpolation] Right type: ${Type.enumConstructor(r.def)}');
+                    #end
                     // Collect all parts of the concatenation chain
                     var parts = [];
                     
@@ -2217,6 +2226,10 @@ class ElixirASTTransformer {
                         }
                         
                         result += '"';
+                        
+                        #if debug_string_interpolation
+                        trace('[StringInterpolation] Transformed to: $result');
+                        #end
                         
                         // Return raw interpolated string
                         return makeASTWithMeta(ERaw(result), node.metadata, node.pos);
@@ -2319,6 +2332,48 @@ class ElixirASTTransformer {
                 case EList(items):
                     makeASTWithMeta(
                         EList(items.map(transform)),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                // Transform case expressions - recurse into clauses
+                case ECase(expr, clauses):
+                    #if debug_string_interpolation
+                    trace('[StringInterpolation] Found ECase, transforming ${clauses.length} clauses');
+                    #end
+                    makeASTWithMeta(
+                        ECase(
+                            transform(expr),
+                            clauses.map(clause -> {
+                                #if debug_string_interpolation
+                                var bodyStr = ElixirASTPrinter.printAST(clause.body);
+                                if (bodyStr.indexOf("rgb(") > -1 || bodyStr.indexOf("<>") > -1) {
+                                    trace('[StringInterpolation] Clause body BEFORE transformation: ${bodyStr.substring(0, 200)}');
+                                    trace('[StringInterpolation] Clause body type: ${Type.enumConstructor(clause.body.def)}');
+                                }
+                                #end
+                                var transformedBody = transform(clause.body);
+                                #if debug_string_interpolation
+                                var transformedStr = ElixirASTPrinter.printAST(transformedBody);
+                                if (bodyStr.indexOf("<>") > -1) {
+                                    trace('[StringInterpolation] Clause body AFTER transformation: ${transformedStr.substring(0, 200)}');
+                                }
+                                #end
+                                {
+                                    pattern: clause.pattern, // Don't transform pattern
+                                    guard: clause.guard != null ? transform(clause.guard) : null,
+                                    body: transformedBody
+                                }
+                            })
+                        ),
+                        node.metadata,
+                        node.pos
+                    );
+                    
+                case EParen(expr):
+                    // Handle parenthesized expressions - recurse into contents
+                    makeASTWithMeta(
+                        EParen(transform(expr)),
                         node.metadata,
                         node.pos
                     );
