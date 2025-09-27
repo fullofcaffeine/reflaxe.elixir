@@ -94,12 +94,24 @@ class BinaryOpBuilder {
 
         var def = switch(op) {
             case OpAdd:
-                // Detect string concatenation based on left operand type
-                var isStringConcat = isStringType(e1.t);
+                // Detect string concatenation based on EITHER operand being a string
+                // This handles cases like 1 + " × " where Haxe unrolls loops with concrete values
+                var leftIsString = isStringType(e1.t);
+                var rightIsString = isStringType(e2.t);
+                var isStringConcat = leftIsString || rightIsString;
 
                 if (isStringConcat) {
-                    // For string concatenation, ensure right operand is a string
-                    var rightStr = if (isStringType(e2.t)) {
+                    // For string concatenation, ensure both operands are strings
+                    // Handle left operand conversion if needed
+                    var leftStr = if (leftIsString) {
+                        leftAST;
+                    } else {
+                        // Left is not string but right is - convert left to string
+                        makeAST(ElixirASTDef.ECall(leftAST, "to_string", []));
+                    };
+                    
+                    // Handle right operand conversion if needed
+                    var rightStr = if (rightIsString) {
                         rightAST;
                     } else {
                         // Check if the expression is an ERaw node (from __elixir__() injection)
@@ -128,7 +140,7 @@ class BinaryOpBuilder {
                         }
                     };
                     // String concatenation in Elixir uses <> operator
-                    ElixirASTDef.EBinary(EBinaryOp.StringConcat, leftAST, rightStr);
+                    ElixirASTDef.EBinary(EBinaryOp.StringConcat, leftStr, rightStr);
                 } else {
                     // Regular addition
                     ElixirASTDef.EBinary(EBinaryOp.Add, leftAST, rightAST);
