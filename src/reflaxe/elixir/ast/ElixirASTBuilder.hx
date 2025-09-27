@@ -5367,6 +5367,19 @@ class ElixirASTBuilder {
                             body;
                         };
 
+                        // Compute pattern metadata for guard grouping
+                        var patternKey = computePatternKey(finalPattern);
+                        var boundVars = extractBoundVariables(finalPattern);
+                        var hasGuard = false; // TSwitch cases don't have guards directly in Haxe
+                        
+                        // Add metadata to the body for guard grouping
+                        if (patternKey != null || boundVars.length > 0 || hasGuard) {
+                            if (finalBody.metadata == null) finalBody.metadata = {};
+                            finalBody.metadata.patternKey = patternKey;
+                            finalBody.metadata.boundVars = boundVars;
+                            finalBody.metadata.hasGuard = hasGuard;
+                        }
+                        
                         clauses.push({
                             pattern: finalPattern,
                             guard: null, // Guards will be added in transformation
@@ -11814,6 +11827,106 @@ class ElixirASTBuilder {
                     type: s.type,
                     modifiers: s.modifiers
                 }]);
+        }
+    }
+
+    /**
+     * Compute a structural pattern key for guard grouping
+     * 
+     * WHY: Multiple cases with the same pattern but different guards need to be grouped into cond
+     * WHAT: Creates a unique key based on the pattern structure (not values or names)
+     * HOW: Recursively traverses pattern structure and builds a string key
+     * 
+     * Examples:
+     * - PTuple([PAtom(":rgb"), PVar(_), PVar(_), PVar(_)]) → "tuple:rgb:3"
+     * - PTuple([PAtom(":ok"), PVar(_)]) → "tuple:ok:1"
+     * - PVar(_) → "var"
+     */
+    static function computePatternKey(pattern: EPattern): String {
+        return switch(pattern) {
+            case PVar(_): "var"; // All variables have same structure
+            case PWildcard: "_";
+            case PLiteral(value):
+                // Use the literal value type, not the value itself
+                switch(value.def) {
+                    case EAtom(a): "atom:" + a;
+                    case EInteger(_): "int";
+                    case EFloat(_): "float";
+                    case EString(_): "string";
+                    case EBoolean(_): "bool";
+                    case ENil: "nil";
+                    default: "literal";
+                }
+            case PTuple(elements):
+                // Build key from tuple structure
+                var parts = ["tuple"];
+                // Add atom tag if first element is an atom (enum pattern)
+                if (elements.length > 0) {
+                    switch(elements[0]) {
+                        case PLiteral(ast):
+                            switch(ast.def) {
+                                case EAtom(atom): parts.push(atom);
+                                default:
+                            }
+                        default:
+                    }
+                }
+                // Add parameter count (excluding the atom tag)
+                var paramCount = elements.length > 0 ? elements.length - 1 : 0;
+                parts.push(Std.string(paramCount));
+                parts.join(":");
+            case PList(elements):
+                "list:" + elements.length;
+            case PCons(_, _):
+                "cons";
+            case PMap(_):
+                "map";
+            case PStruct(module, _):
+                "struct:" + module;
+            case PPin(_):
+                "pin";
+            case PAlias(_, pattern):
+                "alias:" + computePatternKey(pattern);
+            case PBinary(_):
+                "binary";
+        }
+    }
+    
+    /**
+     * Extract all bound variable names from a pattern
+     * 
+     * WHY: Variables bound in patterns need to be accessible in guard conditions and body
+     * WHAT: Collects all PVar names (except wildcards) from the pattern
+     * HOW: Recursively traverses pattern structure collecting variable names
+     */
+    static function extractBoundVariables(pattern: EPattern): Array<String> {
+        var vars = [];
+        collectBoundVarsHelper(pattern, vars);
+        return vars;
+    }
+    
+    static function collectBoundVarsHelper(p: EPattern, vars: Array<String>): Void {
+        switch(p) {
+            case PVar(name):
+                if (!name.startsWith("_")) vars.push(name);
+            case PTuple(elements) | PList(elements):
+                for (e in elements) collectBoundVarsHelper(e, vars);
+            case PCons(head, tail):
+                collectBoundVarsHelper(head, vars);
+                collectBoundVarsHelper(tail, vars);
+            case PMap(pairs):
+                for (pair in pairs) collectBoundVarsHelper(pair.value, vars);
+            case PStruct(_, fields):
+                for (field in fields) collectBoundVarsHelper(field.value, vars);
+            case PAlias(varName, subPattern):
+                if (!varName.startsWith("_")) vars.push(varName);
+                collectBoundVarsHelper(subPattern, vars);
+            case PPin(subPattern):
+                collectBoundVarsHelper(subPattern, vars);
+            case PBinary(segments):
+                for (segment in segments) collectBoundVarsHelper(segment.pattern, vars);
+            case PLiteral(_) | PWildcard:
+                // No variables to collect
         }
     }
 
