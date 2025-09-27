@@ -15,16 +15,23 @@ class NameUtils {
      * - TodoApp → todo_app
      * - HTTPServer → http_server
      * - MyHTMLParser → my_html_parser
+     * - RGB → rgb (not r_g_b)
+     * - describeRGB → describe_rgb
      */
     public static function toSnakeCase(name: String): String {
         if (name == null || name.length == 0) return name;
         
-        // Handle acronyms and consecutive capitals
+        // First, handle sequences of capitals followed by lowercase
+        // This converts "XMLParser" to "XML_Parser", "HTMLElement" to "HTML_Element"
         var result = ~/([A-Z]+)([A-Z][a-z])/g.replace(name, "$1_$2");
         
-        // Insert underscore before single capitals followed by lowercase
+        // Insert underscore between lowercase/digit and uppercase
+        // This converts "parseJSON" to "parse_JSON", "htmlElement" to "html_Element"
         result = ~/([a-z\d])([A-Z])/g.replace(result, "$1_$2");
         
+        // Now lowercase everything
+        // "XML_Parser" → "xml_parser", "parse_JSON" → "parse_json"
+        // "RGB" stays as "RGB" then becomes "rgb" (no underscores inserted)
         return result.toLowerCase();
     }
     
