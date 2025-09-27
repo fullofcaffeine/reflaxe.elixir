@@ -3088,21 +3088,28 @@ class ElixirASTBuilder {
                             var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
                             EAtom(atomName);
                         } else {
-                            // Regular enums: generate atom-based tuples
-                            // ColumnType.Integer → {:Integer}
-                            // 
-                            // CRITICAL FIX (2025-01-10): Previously generated {0}, {7} etc using ef.index
-                            // which caused invalid Elixir code in migrations. Now generates proper
-                            // symbolic atoms {:Integer}, {:Boolean}, {:String} that Elixir can understand.
-                            // This ensures enum constructors maintain their symbolic meaning in the
-                            // generated code rather than being reduced to meaningless numeric indices.
-                            // Use snake_case for idiomatic Elixir atoms
-                            // TODO: Implement automatic snake_case conversion using Atom abstract type
-                            // This would eliminate the need to manually call toSnakeCase() everywhere.
-                            // See: docs/08-roadmap/AST_AUTO_SNAKE_CASE.md for implementation plan
-                            // Future: ETuple([makeAST(EAtom(ef.name))]); // Automatic conversion!
+                            // Regular enums: check if constructor has parameters
+                            // Simple constructors (no params) → :atom
+                            // Parameterized constructors → {:atom}
+                            
+                            // Check if the enum constructor has parameters
+                            var hasParameters = switch(ef.type) {
+                                case TFun(args, _): args.length > 0;
+                                default: false;
+                            };
+                            
                             var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
-                            ETuple([makeAST(EAtom(atomName))]);
+                            
+                            if (hasParameters) {
+                                // Parameterized constructor - generate tuple
+                                // RGB(r, g, b) → {:rgb}  (parameters come later)
+                                ETuple([makeAST(EAtom(atomName))]);
+                            } else {
+                                // Simple constructor - generate plain atom
+                                // Red → :red
+                                // None → :none
+                                EAtom(atomName);
+                            }
                         }
                     case FStatic(classRef, cf):
                         // Static field access
@@ -3508,6 +3515,229 @@ class ElixirASTBuilder {
             // Control Flow (Basic)
             // ================================================================
             case TIf(econd, eif, eelse):
+                // Debug the condition to understand what's being generated
+                #if debug_ast_builder
+                trace('[TIf] Processing if statement with condition: ${Type.enumConstructor(econd.expr)}');
+                switch(econd.expr) {
+                    case TBinop(op, e1, e2):
+                        trace('[TIf]   Binary operation: $op');
+                        trace('[TIf]   Left operand: ${Type.enumConstructor(e1.expr)}');
+                        trace('[TIf]   Right operand: ${Type.enumConstructor(e2.expr)}');
+                        switch(e1.expr) {
+                            case TLocal(v):
+                                trace('[TIf]     Left is local var: ${v.name}, type: ${e1.t}');
+                            case _:
+                        }
+                        switch(e2.expr) {
+                            case TConst(c):
+                                trace('[TIf]     Right is constant: $c');
+                            case _:
+                        }
+                    case _:
+                }
+                #end
+                
+                // CRITICAL FIX: Detect if this is an optimized enum switch
+                // Haxe optimizes single-case-plus-default switches to if statements
+                // that compare enum values by integer index (e.g., status == 3)
+                // We need to transform these back to proper pattern matching
+                var isOptimizedEnumSwitch = false;
+                var enumValue: TypedExpr = null;
+                var enumIndex: Int = -1;
+                var enumTypeRef: haxe.macro.Type.Ref<haxe.macro.Type.EnumType> = null;
+                
+                // Check if condition is comparing enum index to integer
+                // Haxe generates: TBinop(OpEq, TEnumIndex(enumValue), TConst(TInt(3)))
+                // The condition might be wrapped in TParenthesis
+                var condToCheck = switch(econd.expr) {
+                    case TParenthesis(inner): inner;  // Unwrap parenthesis
+                    case _: econd;
+                };
+                
+                switch(condToCheck.expr) {
+                    case TBinop(OpEq, {expr: TEnumIndex(e)}, {expr: TConst(TInt(index))}) | 
+                         TBinop(OpEq, {expr: TConst(TInt(index))}, {expr: TEnumIndex(e)}):
+                        // TEnumIndex is extracting the index from an enum value
+                        switch(e.t) {
+                            case TEnum(eRef, _):
+                                isOptimizedEnumSwitch = true;
+                                enumValue = e;
+                                enumIndex = index;
+                                enumTypeRef = eRef;
+                                #if debug_ast_builder
+                                trace('[TIf] Detected optimized enum switch: TEnumIndex comparison to index $index');
+                                #end
+                            case _:
+                                #if debug_ast_builder
+                                trace('[TIf] TEnumIndex on non-enum type: ${e.t}');
+                                #end
+                        }
+                    case _:
+                        #if debug_ast_builder
+                        // Help debug other patterns
+                        switch(condToCheck.expr) {
+                            case TBinop(op, e1, e2):
+                                trace('[TIf] Binary op $op not matching TEnumIndex pattern');
+                                switch(e1.expr) {
+                                    case TEnumIndex(_): trace('[TIf]   Left operand IS TEnumIndex');
+                                    case _: trace('[TIf]   Left operand: ${Type.enumConstructor(e1.expr)}');
+                                }
+                                switch(e2.expr) {
+                                    case TConst(TInt(i)): trace('[TIf]   Right operand is int: $i');
+                                    case _: trace('[TIf]   Right operand: ${Type.enumConstructor(e2.expr)}');
+                                }
+                            case _:
+                                trace('[TIf] Not a binary op: ${Type.enumConstructor(condToCheck.expr)}');
+                        }
+                        #end
+                }
+                
+                if (isOptimizedEnumSwitch && enumValue != null && enumIndex >= 0 && enumTypeRef != null) {
+                    // Transform to proper case pattern matching
+                    var enumTypeInfo = enumTypeRef.get();
+                    var matchingConstructor: String = null;
+                    var constructorParams: Array<String> = [];
+                    
+                    // Find constructor by index
+                    for (name in enumTypeInfo.constructs.keys()) {
+                        var construct = enumTypeInfo.constructs.get(name);
+                        if (construct.index == enumIndex) {
+                            matchingConstructor = name;
+                            // Get constructor parameters
+                            switch(construct.type) {
+                                case TFun(args, _):
+                                    constructorParams = [for (arg in args) arg.name];
+                                default:
+                            }
+                            break;
+                        }
+                    }
+                    
+                    if (matchingConstructor != null) {
+                        #if debug_ast_builder
+                        trace('[TIf] Converting to case with constructor: $matchingConstructor');
+                        #end
+                        
+                        // Build the case expression
+                        var targetExpr = buildFromTypedExpr(enumValue, currentContext);
+                        
+                        // Create pattern for the matching constructor
+                        var pattern: EPattern;
+                        var actualParamNames: Array<String> = []; // Declare at outer scope for use in body filtering
+                        if (constructorParams.length > 0) {
+                            // Constructor with parameters - extract actual parameter names from assignments
+                            var paramPatterns = [];
+                            
+                            // Analyze the then branch to find the actual parameter names
+                            // Haxe generates: _g = elem(...), _g1 = elem(...), url = _g, permanent = _g1
+                            var tempToActualMap: Map<String, String> = new Map();
+                            
+                            switch(eif.expr) {
+                                case TBlock(exprs):
+                                    // First pass: find assignments from temp vars to actual names
+                                    for (expr in exprs) {
+                                        switch(expr.expr) {
+                                            case TVar(v, init) if (init != null):
+                                                switch(init.expr) {
+                                                    case TLocal(localVar):
+                                                        // This is an assignment like: url = _g
+                                                        if (localVar.name.indexOf("_g") == 0) {
+                                                            tempToActualMap.set(localVar.name, v.name);
+                                                        }
+                                                    case _:
+                                                }
+                                            case _:
+                                        }
+                                    }
+                                    
+                                    // Build ordered list of actual parameter names
+                                    // Look for _g, _g1, _g2, etc. in order
+                                    for (i in 0...constructorParams.length) {
+                                        var tempName = if (i == 0) "_g" else "_g" + i;
+                                        if (tempToActualMap.exists(tempName)) {
+                                            actualParamNames.push(tempToActualMap.get(tempName));
+                                        } else {
+                                            // Fallback to constructor param name if mapping not found
+                                            actualParamNames.push(constructorParams[i]);
+                                        }
+                                    }
+                                case _:
+                                    // No block, use constructor param names as fallback
+                                    actualParamNames = constructorParams.copy();
+                            }
+                            
+                            // Generate parameter patterns with the actual names
+                            for (paramName in actualParamNames) {
+                                paramPatterns.push(PVar(toElixirVarName(paramName)));
+                            }
+                            
+                            // Generate {:constructor, param1, param2, ...}
+                            var atomName = toSnakeCase(matchingConstructor);
+                            pattern = PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
+                        } else {
+                            // Constructor without parameters - generate {:constructor}
+                            var atomName = toSnakeCase(matchingConstructor);
+                            pattern = PTuple([PLiteral(makeAST(EAtom(atomName)))]);
+                        }
+                        
+                        // Build case clauses
+                        var clauses = [];
+                        
+                        // First clause: the specific constructor
+                        // Need to filter out the TVar assignments that are artifacts of the optimization
+                        var thenBody = switch(eif.expr) {
+                            case TBlock(exprs):
+                                // Skip the TVar assignments for _g, _g1, url, permanent
+                                // and just compile the actual body expression
+                                var filteredExprs = [];
+                                for (expr in exprs) {
+                                    switch(expr.expr) {
+                                        case TVar(v, _):
+                                            // Skip variable assignments that are part of the enum extraction
+                                            var isExtractionArtifact = 
+                                                v.name.indexOf("_g") == 0 || // _g, _g1, etc.
+                                                actualParamNames.indexOf(v.name) != -1; // url, permanent
+                                            if (!isExtractionArtifact) {
+                                                filteredExprs.push(expr);
+                                            }
+                                        case TBlock(_):
+                                            // This is likely the actual body - include it
+                                            filteredExprs.push(expr);
+                                        case _:
+                                            // Include any other expressions
+                                            filteredExprs.push(expr);
+                                    }
+                                }
+                                
+                                // Build the filtered block
+                                if (filteredExprs.length == 1) {
+                                    buildFromTypedExpr(filteredExprs[0], currentContext);
+                                } else if (filteredExprs.length > 0) {
+                                    var exprsAst = [for (e in filteredExprs) buildFromTypedExpr(e, currentContext)];
+                                    makeAST(EBlock(exprsAst));
+                                } else {
+                                    makeAST(ENil); // Empty body
+                                }
+                            case _:
+                                // Not a block, just compile as-is
+                                buildFromTypedExpr(eif, currentContext);
+                        };
+                        clauses.push({pattern: pattern, guard: null, body: thenBody});
+                        
+                        // Second clause: wildcard for else branch (or default)
+                        var elseBody = if (eelse != null) {
+                            buildFromTypedExpr(eelse, currentContext);
+                        } else {
+                            // No else branch - use a default that returns nil or appropriate value
+                            makeAST(ENil);
+                        };
+                        clauses.push({pattern: PWildcard, guard: null, body: elseBody});
+                        
+                        // Generate proper case statement instead of if
+                        return ECase(targetExpr, clauses);
+                    }
+                }
+                
                 #if debug_ast_builder
                 trace('[DEBUG EMBEDDED] TIf - currentContext.currentClauseContext exists: ${currentContext.currentClauseContext != null}');
                 #end
@@ -4239,7 +4469,15 @@ class ElixirASTBuilder {
                                         trace('[Infrastructure Variable Fix] Falling back to building body without substitution');
                                         #end
                                         // If we can't build the init, just build the body as-is
-                                        return buildFromTypedExpr(el[1], currentContext).def;
+                                        var result = buildFromTypedExpr(el[1], currentContext);
+                                        if (result == null) {
+                                            #if debug_ast_builder
+                                            trace('[Infrastructure Variable Fix] WARNING: buildFromTypedExpr returned null for fallback body expression');
+                                            #end
+                                            // Return a nil expression as fallback
+                                            return ENil;
+                                        }
+                                        return result.def;
                                     }
                                     
                                     #if debug_ast_builder
@@ -4249,10 +4487,26 @@ class ElixirASTBuilder {
                                     // We need to substitute all occurrences of the infrastructure variable
                                     // with the init expression in el[1]
                                     var substituted = substituteVariable(el[1], v, init);
-                                    return buildFromTypedExpr(substituted, currentContext).def;
+                                    var result = buildFromTypedExpr(substituted, currentContext);
+                                    if (result == null) {
+                                        #if debug_ast_builder
+                                        trace('[Infrastructure Variable Fix] WARNING: buildFromTypedExpr returned null for substituted expression');
+                                        #end
+                                        // Return a nil expression as fallback
+                                        return ENil;
+                                    }
+                                    return result.def;
                                 } else {
                                     // No init, just compile the body
-                                    return buildFromTypedExpr(el[1], currentContext).def;
+                                    var result = buildFromTypedExpr(el[1], currentContext);
+                                    if (result == null) {
+                                        #if debug_ast_builder
+                                        trace('[Infrastructure Variable Fix] WARNING: buildFromTypedExpr returned null for body expression');
+                                        #end
+                                        // Return a nil expression as fallback
+                                        return ENil;
+                                    }
+                                    return result.def;
                                 }
                             }
                             
@@ -5087,7 +5341,9 @@ class ElixirASTBuilder {
                     // Multiple patterns become multiple clauses
                     for (pattern in patterns) {
                         // Apply underscore prefix to unused pattern variables
-                        var finalPattern = applyUnderscorePrefixToUnusedPatternVars(pattern, currentContext.variableUsageMap, extractedParams);
+                        // Check if the case body is empty (just nil or no-op)
+                        var bodyIsEmpty = isEmptyCaseBody(body);
+                        var finalPattern = applyUnderscorePrefixToUnusedPatternVars(pattern, currentContext.variableUsageMap, extractedParams, bodyIsEmpty);
 
                         // Update the ClauseContext mapping if pattern variables were prefixed with underscore
                         // This ensures the case body can still reference the variables correctly
@@ -7770,7 +8026,9 @@ class ElixirASTBuilder {
                     #end
                 } else {
                     var canonicalName = (i < canonicalVarNames.length) ? canonicalVarNames[i] : null;
-                    if (canonicalName != null && canonicalName.length > 0 && !isTempPatternVarName(canonicalName)) {
+                    // Always prefer canonical names from the enum definition, even if they look like temp vars
+                    // This handles cases where the enum parameter is actually named "g" (e.g., RGB(r, g, b))
+                    if (canonicalName != null && canonicalName.length > 0) {
                         finalName = canonicalName;
                         #if debug_ast_builder
                         trace('[DEBUG Per-Param] Using canonical name for parameter $i: $finalName');
@@ -8102,8 +8360,9 @@ class ElixirASTBuilder {
                         }
                         PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
                     } else {
-                        // No-argument constructor
-                        PTuple([PLiteral(makeAST(EAtom(atomName)))]);
+                        // No-argument constructor - generate plain atom
+                        // Red → :red (NOT {:red})
+                        PLiteral(makeAST(EAtom(atomName)));
                     }
                 } else {
                     // Invalid index, use wildcard
@@ -8136,19 +8395,22 @@ class ElixirASTBuilder {
                     for (i in 0...paramCount) {
                         if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
                             paramPatterns.push(PVar(extractedParams[i]));
+                        } else if (i < canonicalNames.length && canonicalNames[i] != null) {
+                            // Use canonical names from the enum definition
+                            // This ensures we get {:rgb, r, g, b} not {:rgb, g, g1, g2}
+                            paramPatterns.push(PVar(canonicalNames[i]));
                         } else {
-                            // CRITICAL FIX: When extractedParams is null (like in ChangesetUtils),
-                            // use temp var names (g, g1, g2) instead of canonical names.
-                            // This ensures the pattern matches what TEnumParameter generates in the body.
-                            // Without this, we get patterns like {:ok, value} but body has value = g
-                            // where g doesn't exist because the pattern didn't create it.
+                            // Last resort: use temp var names (g, g1, g2)
+                            // Only for cases where we have no canonical names
                             var tempVarName = i == 0 ? "g" : 'g${i}';
                             paramPatterns.push(PVar(tempVarName));
                         }
                     }
                     PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
                 } else {
-                    PTuple([PLiteral(makeAST(EAtom(atomName)))]);
+                    // Simple constructor with no parameters - generate plain atom
+                    // Red → :red (NOT {:red})
+                    PLiteral(makeAST(EAtom(atomName)));
                 }
                 
             // Other patterns delegate to regular pattern conversion
@@ -8306,9 +8568,9 @@ class ElixirASTBuilder {
                         }
                         PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
                     } else {
-                        // No-argument constructor - wrap in tuple for consistency
-                        // This matches how the constructor is generated in TCall case
-                        PTuple([PLiteral(makeAST(EAtom(atomName)))]);
+                        // No-argument constructor - generate plain atom
+                        // None → :none (NOT {:none})
+                        PLiteral(makeAST(EAtom(atomName)));
                     }
                 } else {
                     // Invalid index, use wildcard
@@ -11441,13 +11703,30 @@ class ElixirASTBuilder {
     }
 
     /**
+     * Check if a case body is effectively empty (only nil or no-op)
+     */
+    static function isEmptyCaseBody(body: ElixirAST): Bool {
+        if (body == null) return true;
+        
+        return switch(body.def) {
+            case EAtom(a): a == "nil";
+            case ENil: true;
+            case EBlock(exprs): 
+                exprs.length == 0 || 
+                (exprs.length == 1 && isEmptyCaseBody(exprs[0]));
+            default: false;
+        };
+    }
+    
+    /**
      * Apply underscore prefix to unused pattern variables
      *
      * WHY: In Elixir, unused variables should be prefixed with underscore to avoid warnings
      * WHAT: Checks each pattern variable against the usage map and prefixes with _ if unused
      * HOW: Recursively traverses patterns and renames PVar nodes when the variable is unused
+     * @param isEmptyBody If true, all variables in the pattern are considered unused
      */
-    static function applyUnderscorePrefixToUnusedPatternVars(pattern: EPattern, variableUsageMap: Map<Int, Bool>, extractedParams: Array<String>): EPattern {
+    static function applyUnderscorePrefixToUnusedPatternVars(pattern: EPattern, variableUsageMap: Map<Int, Bool>, extractedParams: Array<String>, isEmptyBody: Bool = false): EPattern {
         return switch(pattern) {
             case PTuple(patterns):
                 // Process tuple patterns (like {:ok, g} or {:error, g})
@@ -11459,7 +11738,7 @@ class ElixirASTBuilder {
                             // For enum patterns, check if the extracted parameter is actually used
                             // The position in the tuple corresponds to the parameter index
                             // Pattern index 0 is the atom, index 1+ are the parameters
-                            var isUsed = false;
+                            var isUsed = !isEmptyBody; // If body is empty, all vars are unused
 
                             // If this is an enum parameter (not the first element which is the atom)
                             if (i > 0 && extractedParams != null && i - 1 < extractedParams.length) {
@@ -11467,30 +11746,28 @@ class ElixirASTBuilder {
                                 var expectedParamName = extractedParams[i - 1];
 
                                 // Check if the parameter name matches the expected parameter
-                                // Following Codex's guidance: bind directly in patterns, don't add underscore prefixes to used variables
                                 if (expectedParamName == name) {
-                                    // The pattern variable matches - assume it's used unless it's a temp var
-                                    // Temp vars (g, g1, g2) should be replaced with wildcards
-                                    if (name == "g" || (name.length > 1 && name.charAt(0) == "g" && name.charAt(1) >= '0' && name.charAt(1) <= '9')) {
-                                        // This is a temp var, should use wildcard
-                                        isUsed = false;
-                                    } else {
-                                        // Real variable name - assume it's used for now
-                                        // A proper implementation would check the case body for actual usage
-                                        isUsed = true;
+                                    // If the body is empty, the variable is definitely unused
+                                    // Otherwise, be conservative and assume it's used
+                                    isUsed = !isEmptyBody;
+                                    
+                                    // Special handling for known patterns:
+                                    // 1. Variables already starting with underscore should stay that way
+                                    if (name.startsWith("_")) {
+                                        isUsed = false; // Keep underscore prefix
                                     }
                                 }
                             }
 
-                            // If not used, prefix with underscore
+                            // Only prefix with underscore if we're certain the variable is unused
+                            // This conservative approach prevents compilation errors
                             if (!isUsed && !name.startsWith("_")) {
-                                // M0 STABILIZATION: Disable underscore prefixing
-                                updatedPatterns.push(PVar(name)); // Was: "_" + name
+                                updatedPatterns.push(PVar("_" + name));
                             } else {
                                 updatedPatterns.push(p);
                             }
                         default:
-                            updatedPatterns.push(applyUnderscorePrefixToUnusedPatternVars(p, variableUsageMap, extractedParams));
+                            updatedPatterns.push(applyUnderscorePrefixToUnusedPatternVars(p, variableUsageMap, extractedParams, isEmptyBody));
                     }
                 }
                 PTuple(updatedPatterns);
@@ -11506,32 +11783,32 @@ class ElixirASTBuilder {
 
             case PList(elements):
                 // Process list patterns
-                PList([for (e in elements) applyUnderscorePrefixToUnusedPatternVars(e, variableUsageMap, extractedParams)]);
+                PList([for (e in elements) applyUnderscorePrefixToUnusedPatternVars(e, variableUsageMap, extractedParams, isEmptyBody)]);
 
             case PCons(head, tail):
                 // Process cons pattern [head | tail]
                 PCons(
-                    applyUnderscorePrefixToUnusedPatternVars(head, variableUsageMap, extractedParams),
-                    applyUnderscorePrefixToUnusedPatternVars(tail, variableUsageMap, extractedParams)
+                    applyUnderscorePrefixToUnusedPatternVars(head, variableUsageMap, extractedParams, isEmptyBody),
+                    applyUnderscorePrefixToUnusedPatternVars(tail, variableUsageMap, extractedParams, isEmptyBody)
                 );
 
             case PMap(pairs):
                 // Process map patterns
                 PMap([for (pair in pairs) {
                     key: pair.key,
-                    value: applyUnderscorePrefixToUnusedPatternVars(pair.value, variableUsageMap, extractedParams)
+                    value: applyUnderscorePrefixToUnusedPatternVars(pair.value, variableUsageMap, extractedParams, isEmptyBody)
                 }]);
 
             case PStruct(module, fields):
                 // Process struct patterns
                 PStruct(module, [for (f in fields) {
                     key: f.key,
-                    value: applyUnderscorePrefixToUnusedPatternVars(f.value, variableUsageMap, extractedParams)
+                    value: applyUnderscorePrefixToUnusedPatternVars(f.value, variableUsageMap, extractedParams, isEmptyBody)
                 }]);
 
             case PPin(subPattern):
                 // Process pinned pattern ^var
-                PPin(applyUnderscorePrefixToUnusedPatternVars(subPattern, variableUsageMap, extractedParams));
+                PPin(applyUnderscorePrefixToUnusedPatternVars(subPattern, variableUsageMap, extractedParams, isEmptyBody));
 
             case PAlias(varName, subPattern):
                 // Process alias pattern (var = pattern)
@@ -11544,12 +11821,12 @@ class ElixirASTBuilder {
                 }
                 // M0 STABILIZATION: Disable underscore prefixing
                 var newVarName = varName; // Was: (!isUsed && !varName.startsWith("_")) ? "_" + varName : varName;
-                PAlias(newVarName, applyUnderscorePrefixToUnusedPatternVars(subPattern, variableUsageMap, extractedParams));
+                PAlias(newVarName, applyUnderscorePrefixToUnusedPatternVars(subPattern, variableUsageMap, extractedParams, isEmptyBody));
 
             case PBinary(segments):
                 // Process binary patterns
                 PBinary([for (s in segments) {
-                    pattern: applyUnderscorePrefixToUnusedPatternVars(s.pattern, variableUsageMap, extractedParams),
+                    pattern: applyUnderscorePrefixToUnusedPatternVars(s.pattern, variableUsageMap, extractedParams, isEmptyBody),
                     size: s.size,
                     type: s.type,
                     modifiers: s.modifiers
