@@ -798,7 +798,7 @@ class ElixirASTBuilder {
                                 case TLocal(localVar):
                                     // Pattern like _g = msg.type
                                     // When the switch extracts msg fields, type becomes msg_type
-                                    var extractedVarName = toElixirVarName(localVar.name) + "_" + toSnakeCase(fieldName);
+                                    var extractedVarName = toElixirVarName(localVar.name) + "_" + reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                                     
                                     // Store this mapping for later use in switch expressions
                                     // CRITICAL: Use variable NAME as key, not ID, since Haxe creates different IDs for the same variable
@@ -1911,7 +1911,7 @@ class ElixirASTBuilder {
                         var innerBinop = BinaryOpBuilder.buildBinopFromAST(
                             innerOp, leftAST, rightAST,
                             e1, e2,
-                            function(s) return toSnakeCase(s)
+                            function(s) return reflaxe.elixir.ast.NameUtils.toSnakeCase(s)
                         );
                         EMatch(pattern, innerBinop);
 
@@ -1924,7 +1924,7 @@ class ElixirASTBuilder {
                         var ast = BinaryOpBuilder.buildBinopFromAST(
                             op, leftAST, rightAST,
                             e1, e2,  // Keep original exprs for type checking
-                            function(s) return toSnakeCase(s)
+                            function(s) return reflaxe.elixir.ast.NameUtils.toSnakeCase(s)
                         );
                         ast.def;
                 };
@@ -2325,7 +2325,7 @@ class ElixirASTBuilder {
                                 
                                 if (isSameModuleCall) {
                                     // Same module - call without module prefix
-                                    var elixirMethodName = toSnakeCase(methodName);
+                                    var elixirMethodName = reflaxe.elixir.ast.NameUtils.toSnakeCase(methodName);
                                     return ECall(null, elixirMethodName, args);
                                 }
                                 
@@ -2529,7 +2529,7 @@ class ElixirASTBuilder {
                                         }
                                         
                                         // Convert method name to snake_case for Elixir
-                                        var elixirMethodName = toSnakeCase(methodName);
+                                        var elixirMethodName = reflaxe.elixir.ast.NameUtils.toSnakeCase(methodName);
                                         // Track dependency on this module
                                         #if debug_dependencies
                                         #if debug_ast_builder
@@ -2657,7 +2657,7 @@ class ElixirASTBuilder {
                         case TField(obj, fa):
                             var fieldName = extractFieldName(fa);
                             // Convert to snake_case for Elixir method names
-                            fieldName = toSnakeCase(fieldName);
+                            fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                             
                             // ARCHITECTURAL FIX: Check if obj is itself a field access
                             // This handles patterns like struct.buffer.add() where buffer is a StringBuf
@@ -2765,7 +2765,7 @@ class ElixirASTBuilder {
                                                 if (mMeta.length > 0 && mMeta[0].params != null && mMeta[0].params.length > 0) {
                                                     switch(mMeta[0].params[0].expr) {
                                                         case EConst(CString(ns, _)):
-                                                            methodName = toSnakeCase(ns);
+                                                            methodName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ns);
                                                         default:
                                                     }
                                                 }
@@ -2905,7 +2905,7 @@ class ElixirASTBuilder {
                                     }
                                 } else {
                                     // Regular module call - convert method name to snake_case for Elixir
-                                    var elixirFuncName = toSnakeCase(fieldName);
+                                    var elixirFuncName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                                     
                                     // objAst already contains the full module name (including @:native if present)
                                     // because it was built from TTypeExpr which handles @:native correctly.
@@ -3228,7 +3228,7 @@ class ElixirASTBuilder {
                                     #end
                                     #end
                                     // Not a string constant, fall back to normal field access
-                                    fieldName = toSnakeCase(fieldName);
+                                    fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                                     var target = buildFromTypedExpr(e, currentContext);
                                     EField(target, fieldName);
                             }
@@ -3240,7 +3240,7 @@ class ElixirASTBuilder {
                             #end
                             // Normal static field access
                             // Convert to snake_case for Elixir function names
-                            fieldName = toSnakeCase(fieldName);
+                            fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                             
                             // Always use full qualification for function references
                             // When a static method is passed as a function reference (not called directly),
@@ -3302,7 +3302,7 @@ class ElixirASTBuilder {
                             ECall(null, "elem", [target, makeAST(EInteger(index))]);
                         } else {
                             // Regular anonymous field access - convert to snake_case
-                            fieldName = toSnakeCase(fieldName);
+                            fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                             EField(target, fieldName);
                         }
                     default:
@@ -3313,7 +3313,7 @@ class ElixirASTBuilder {
                         // Convert to snake_case for Elixir method names
                         // This ensures struct.setLoop becomes struct.set_loop
                         var originalFieldName = fieldName;
-                        fieldName = toSnakeCase(fieldName);
+                        fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                         
                         #if debug_field_names
                         if (originalFieldName != fieldName) {
@@ -3672,11 +3672,11 @@ class ElixirASTBuilder {
                             }
                             
                             // Generate {:constructor, param1, param2, ...}
-                            var atomName = toSnakeCase(matchingConstructor);
+                            var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(matchingConstructor);
                             pattern = PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
                         } else {
                             // Constructor without parameters - generate {:constructor}
-                            var atomName = toSnakeCase(matchingConstructor);
+                            var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(matchingConstructor);
                             pattern = PTuple([PLiteral(makeAST(EAtom(atomName)))]);
                         }
                         
@@ -5890,7 +5890,7 @@ class ElixirASTBuilder {
                     var pairs = [];
                     for (field in fields) {
                         // Convert camelCase field names to snake_case for Elixir atoms
-                        var atomName = toSnakeCase(field.name);
+                        var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
                         var key = makeAST(EAtom(atomName));
                         
                         // Special handling for the start field in child specs
@@ -5963,7 +5963,7 @@ class ElixirASTBuilder {
                     var pairs = [];
                     for (field in fields) {
                         // Convert camelCase field names to snake_case for Elixir atoms
-                        var atomName = toSnakeCase(field.name);
+                        var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
                         var key = makeAST(EAtom(atomName));
                         
                         /**
@@ -9618,23 +9618,6 @@ class ElixirASTBuilder {
     /**
      * Convert camelCase to snake_case
      */
-    static function toSnakeCase(s: String): String {
-        // Handle empty string
-        if (s.length == 0) return s;
-        
-        var result = new StringBuf();
-        for (i in 0...s.length) {
-            var char = s.charAt(i);
-            if (i > 0 && char == char.toUpperCase() && char != char.toLowerCase()) {
-                // Insert underscore before uppercase letter (except at start)
-                result.add("_");
-                result.add(char.toLowerCase());
-            } else {
-                result.add(char.toLowerCase());
-            }
-        }
-        return result.toString();
-    }
     
     /**
      * Collect template content from HXX.hxx() argument
