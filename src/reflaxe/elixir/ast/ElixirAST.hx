@@ -805,7 +805,12 @@ typedef ElixirMetadata = {
 
     // Dead Code Elimination (Added January 2025)
     ?unusedPrivateFunctions: Array<String>,  // List of unused private function names in the module
-    ?unusedPrivateFunctionsWithArity: Array<{name: String, arity: Int}>  // List with arities for @compile directive
+    ?unusedPrivateFunctionsWithArity: Array<{name: String, arity: Int}>,  // List with arities for @compile directive
+    
+    // Guard Condition Grouping (Added January 2025)
+    ?patternKey: String,          // Normalized pattern signature for grouping (e.g., "tuple:rgb:3")
+    ?boundVars: Array<String>,    // Variables bound by this pattern (e.g., ["r", "g", "b"])
+    ?hasGuard: Bool               // Whether this clause has a guard condition
 }
 
 // ============================================================================
