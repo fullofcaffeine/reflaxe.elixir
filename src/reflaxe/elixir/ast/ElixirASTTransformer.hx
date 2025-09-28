@@ -10,6 +10,7 @@ import reflaxe.elixir.ast.ElixirAST.VarOrigin;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.transformers.PatternMatchingTransforms;
 import reflaxe.elixir.ast.transformers.LoopVariableRestorer;
+import reflaxe.elixir.ast.transformers.GuardConditionFlattener;
 import reflaxe.elixir.ast.ASTUtils;
 using StringTools;
 
@@ -748,17 +749,13 @@ class ElixirASTTransformer {
      */
     public static function guardGroupingPass(ast: ElixirAST): ElixirAST {
         #if debug_guard_grouping
-        trace('[XRay GuardGrouping] Starting guard grouping pass');
+        trace('[XRay GuardGrouping] Starting guard grouping pass with three-phase flattener');
         if (ast != null && ast.def != null) {
             trace('[XRay GuardGrouping] Processing node type: ' + ast.def);
         }
         #end
         
         // Handle null nodes
-        if (ast == null) return null;
-        
-        // First, clean up all nil assignments throughout the entire tree
-        ast = removeNilAssignments(ast);
         if (ast == null) return null;
         
         return switch(ast.def) {
@@ -826,10 +823,11 @@ class ElixirASTTransformer {
     
     /**
      * Transform a case clause that has guards compiled as nested if-else
+     * Uses the three-phase GuardConditionFlattener for robust transformation
      */
     static function transformClauseWithGuards(clause: ECaseClause): ECaseClause {
         #if debug_guard_grouping
-        trace("[XRay GuardGrouping] Examining clause");
+        trace("[XRay GuardGrouping] Examining clause with three-phase flattener");
         if (clause.pattern != null) {
             trace("[XRay GuardGrouping] Pattern type: " + Type.typeof(clause.pattern));
         }
@@ -838,79 +836,92 @@ class ElixirASTTransformer {
         }
         #end
         
-        // First, clean up the clause body by removing nil assignments
-        var cleanedBody = removeNilAssignments(clause.body);
+        // Phase 1: Collect all guard conditions from nested if-else chains
+        var guardBranches = GuardConditionCollector.collectAllGuardConditions(clause.body);
         
-        // Check if the body is a nested if-else chain (guards compiled by Haxe)
-        var bodyToCheck = cleanedBody;
+        #if debug_guard_grouping
+        trace('[XRay GuardGrouping] Phase 1 - Collected ${guardBranches.length} guard branches');
+        #end
         
-        // Unwrap any blocks or parentheses
-        while (bodyToCheck != null) {
-            switch(bodyToCheck.def) {
-                case EParen(inner):
-                    bodyToCheck = inner;
-                case EBlock(exprs) if (exprs.length == 1):
-                    bodyToCheck = exprs[0];
+        // If no guard conditions found, just transform recursively
+        if (guardBranches.length == 0) {
+            return {
+                pattern: clause.pattern,
+                guard: clause.guard,
+                body: transformAST(clause.body, guardGroupingPass)
+            };
+        }
+        
+        // Phase 2: Validate that conditions can be grouped
+        // Extract bound variables from the pattern for validation
+        var boundVars = extractBoundVariablesFromPattern(clause.pattern);
+        var validationResult = GuardGroupValidator.validateGuardGroup(guardBranches, boundVars);
+        
+        #if debug_guard_grouping
+        trace('[XRay GuardGrouping] Phase 2 - Validation result: canGroup=${validationResult.canGroup}, reason="${validationResult.reason}"');
+        #end
+        
+        // If validation fails, fall back to recursive transformation
+        if (!validationResult.canGroup) {
+            #if debug_guard_grouping
+            trace('[XRay GuardGrouping] Validation failed: ${validationResult.reason}');
+            #end
+            return {
+                pattern: clause.pattern,
+                guard: clause.guard,
+                body: transformAST(clause.body, guardGroupingPass)
+            };
+        }
+        
+        // Phase 3: Reconstruct as a flat cond expression
+        var flatCond = GuardConditionReconstructor.buildFlatCond(guardBranches, boundVars, clause.pattern);
+        
+        #if debug_guard_grouping
+        trace('[XRay GuardGrouping] Phase 3 - Built flat cond expression');
+        #end
+        
+        return {
+            pattern: clause.pattern,
+            guard: null,
+            body: flatCond
+        };
+    }
+    
+    /**
+     * Extract bound variable names from a pattern
+     */
+    static function extractBoundVariablesFromPattern(pattern: EPattern): Array<String> {
+        var vars = [];
+        
+        function extract(p: EPattern): Void {
+            switch(p) {
+                case PVar(name): 
+                    vars.push(name);
+                case PTuple(patterns):
+                    // Tuples can contain variables (like enum constructors)
+                    for (subPattern in patterns) {
+                        extract(subPattern);
+                    }
+                case PList(patterns):
+                    for (subPattern in patterns) {
+                        extract(subPattern);
+                    }
+                case PAlias(varName, pattern):
+                    vars.push(varName);
+                    extract(pattern);
+                case PCons(head, tail):
+                    extract(head);
+                    extract(tail);
                 default:
-                    break;
+                    // Other patterns don't bind variables
             }
         }
         
-        switch(bodyToCheck?.def) {
-            case EIf(cond, thenBranch, elseBranch):
-                #if debug_guard_grouping
-                trace("[XRay GuardGrouping] Found EIf pattern, extracting branches");
-                #end
-                
-                // Check if this looks like a guard pattern (multiple conditions on same variables)
-                // This clause has guards compiled as if-else
-                // First clean the entire if-else tree before extraction
-                var cleanedIfElse = removeNilAssignments(bodyToCheck);
-                if (cleanedIfElse == null) {
-                    return clause;
-                }
-                // Extract all conditions and branches into a cond
-                var condBranches = extractCondBranches(cleanedIfElse);
-                
-                #if debug_guard_grouping
-                trace("[XRay GuardGrouping] Extracted " + condBranches.length + " branches");
-                for (i in 0...condBranches.length) {
-                    trace("[XRay GuardGrouping] Branch " + i + " has condition and body");
-                }
-                #end
-                
-                // Only transform to cond if we have multiple branches
-                // AND they look like guard conditions (not just regular if-else)
-                if (condBranches.length > 1) {
-                    // Transform to cond
-                    var condNode = makeAST(ECond(condBranches));
-                    
-                    #if debug_guard_grouping
-                    trace("[XRay GuardGrouping] Created ECond with " + condBranches.length + " branches");
-                    #end
-                    
-                    return {
-                        pattern: clause.pattern,
-                        guard: null,
-                        body: condNode
-                    };
-                }
-                
-                // If only one branch or doesn't look like guards, return unchanged
-                return clause;
-                
-            default:
-                #if debug_guard_grouping
-                trace("[XRay GuardGrouping] No if-else pattern found, body type: " + (bodyToCheck != null ? Type.enumConstructor(bodyToCheck.def) : "null"));
-                #end
-                
-                // Not an if-else pattern, but still recursively transform the body
-                return {
-                    pattern: clause.pattern,
-                    guard: clause.guard,
-                    body: transformAST(cleanedBody, guardGroupingPass)
-                };
+        if (pattern != null) {
+            extract(pattern);
         }
+        
+        return vars;
     }
     
     /**
