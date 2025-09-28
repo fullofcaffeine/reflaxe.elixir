@@ -2047,10 +2047,48 @@ class ElixirASTBuilder {
                         // }
                     }
                     
-                    var args = [for (arg in el) buildFromTypedExpr(arg, currentContext)];
+                    // Build arguments, checking for inline expansions
+                    var needsExtraction = false;
+                    var extractedAssignments: Array<ElixirAST> = [];
+                    var processedArgs: Array<ElixirAST> = [];
+                    
+                    for (i in 0...el.length) {
+                        var builtArg = buildFromTypedExpr(el[i], currentContext);
+                        
+                        // CRITICAL FIX: Check if the built argument is an inline expansion block
+                        // This happens when optional parameters like substr(pos, ?len) are inlined
+                        var isInlineExpansion = switch(builtArg.def) {
+                            case EBlock(exprs) if (exprs.length == 2):
+                                // Check for the pattern: [len = nil, if (len == nil) ...]
+                                switch(exprs[0].def) {
+                                    case EMatch(PVar(_), {def: ENil}): true;
+                                    case EBinary(Match, _, {def: ENil}): true;
+                                    default: false;
+                                }
+                            default: false;
+                        };
+                        
+                        if (isInlineExpansion) {
+                            // Extract to a temporary variable before the tuple
+                            var tempVar = 'enum_arg_$i';
+                            var assignment = makeAST(EMatch(PVar(tempVar), builtArg));
+                            extractedAssignments.push(assignment);
+                            processedArgs.push(makeAST(EVar(tempVar)));
+                            needsExtraction = true;
+                        } else {
+                            processedArgs.push(builtArg);
+                        }
+                    }
                     
                     // Create the tuple AST definition
-                    var tupleDef = ETuple([makeAST(EAtom(tag))].concat(args));
+                    var tupleDef = ETuple([makeAST(EAtom(tag))].concat(processedArgs));
+                    
+                    // If we extracted assignments, wrap in a block
+                    if (needsExtraction) {
+                        var blockExprs = extractedAssignments.copy();
+                        blockExprs.push(makeAST(tupleDef));
+                        tupleDef = EBlock(blockExprs);
+                    }
                     
                     #if debug_ast_builder
                     if (hasIdiomaticMetadata(e)) {

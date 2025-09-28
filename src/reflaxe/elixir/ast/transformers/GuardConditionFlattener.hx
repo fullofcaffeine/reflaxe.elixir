@@ -527,6 +527,58 @@ class GuardGroupValidator {
 class GuardConditionReconstructor {
 	
 	/**
+	 * Fix inline expansions in cond branch body
+	 * 
+	 * CRITICAL FIX: When guard conditions contain enum constructors with inline function calls
+	 * (like SetPriority(str.substr(13))), the inline expansion creates invalid syntax.
+	 * This function detects and fixes these patterns specifically in cond branch bodies.
+	 */
+	static function fixInlineExpansionsInBody(body: ElixirAST): ElixirAST {
+		// Check if the body itself is a tuple with problematic inline patterns
+		switch(body.def) {
+			case ETuple(elements):
+				// Look for inline expansion patterns in tuple elements
+				var hasInlineExpansion = false;
+				var fixedElements = [];
+				
+				for (element in elements) {
+					// Check for the specific pattern: EBlock with assignment and if
+					var needsFix = switch(element.def) {
+						case EBlock(exprs) if (exprs.length >= 2):
+							// Pattern: [len = nil, if (len == nil) ...]
+							switch(exprs[0].def) {
+								case EMatch(PVar(_), {def: ENil}): true;
+								case EBinary(Match, _, {def: ENil}): true;
+								default: false;
+							}
+						default: false;
+					};
+					
+					if (needsFix) {
+						// Extract the inline expansion to a temporary variable
+						hasInlineExpansion = true;
+						// For now, just mark that we found it
+						// The actual fix would extract this to a temp variable
+						fixedElements.push(element);
+					} else {
+						fixedElements.push(element);
+					}
+				}
+				
+				if (hasInlineExpansion) {
+					// Apply the full transformation pass to fix the tuple
+					return reflaxe.elixir.ast.transformers.InlineExpansionTransforms.extractTupleInlineAssignmentsPass(body);
+				}
+				
+			default:
+				// For non-tuple bodies, still apply the transformation in case there are nested tuples
+				return reflaxe.elixir.ast.transformers.InlineExpansionTransforms.extractTupleInlineAssignmentsPass(body);
+		}
+		
+		return body;
+	}
+	
+	/**
 	 * Build a flat cond expression from validated guard branches
 	 */
 	public static function buildFlatCond(
@@ -556,6 +608,11 @@ class GuardConditionReconstructor {
 				branch.body,
 				boundVars
 			);
+			
+			// CRITICAL FIX: Check if the body itself is a tuple with inline expansion
+			// This happens when guard conditions contain enum constructors with inline substr calls
+			// Example: SetPriority(str.substr(13)) generates inline expansion in the tuple
+			fixedBody = fixInlineExpansionsInBody(fixedBody);
 			
 			condBranches.push({
 				condition: fixedCondition,
