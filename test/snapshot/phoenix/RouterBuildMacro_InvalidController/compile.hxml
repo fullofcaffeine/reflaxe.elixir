@@ -2,15 +2,15 @@
 # Should produce specific warning about missing controller
 
 # Include Reflaxe.Elixir source
--cp ../../../../src
+-cp src
 -cp ../../../../std  
 -lib reflaxe
 
 # Source files to compile
--cp .
+-cp test/snapshot/phoenix/RouterBuildMacro_InvalidController
 
 # Output directory
--D elixir_output=out
+-D elixir_output=test/snapshot/phoenix/RouterBuildMacro_InvalidController/out
 
 # Required for Reflaxe targets
 -D reflaxe_runtime

@@ -1,8 +1,8 @@
 # Compilation configuration for router test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/phoenix/router
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/phoenix/router/out
 MyAppRouter

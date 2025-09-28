@@ -1,9 +1,9 @@
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/stdlib/SimpleReflectFieldsLoop
+-cp src
+-cp std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=out
+-D elixir_output=test/snapshot/stdlib/SimpleReflectFieldsLoop/out
 -D debug_for_loop
 -D debug_array_patterns
 --macro reflaxe.elixir.CompilerInit.Start()

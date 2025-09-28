@@ -1,9 +1,9 @@
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/core/optimization_pipeline
+-cp src
+-cp std
 -lib reflaxe
 -main Main
--D elixir_output=out
+-D elixir_output=test/snapshot/core/optimization_pipeline/out
 # NOTE: -D analyzer-optimize removed - destroys functional patterns
 # Enable DCE to see its effects
 -dce full

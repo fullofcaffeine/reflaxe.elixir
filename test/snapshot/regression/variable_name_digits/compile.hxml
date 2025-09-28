@@ -1,9 +1,9 @@
 # Test for variable name truncation bug fix
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/regression/variable_name_digits
+-cp src
+-cp std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=out
+-D elixir_output=test/snapshot/regression/variable_name_digits/out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

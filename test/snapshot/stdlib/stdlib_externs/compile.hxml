@@ -1,9 +1,9 @@
 # Compilation configuration for stdlib_externs test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/stdlib/stdlib_externs
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/stdlib/stdlib_externs/out
 -D reflaxe_runtime
 Main

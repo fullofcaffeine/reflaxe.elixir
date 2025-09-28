@@ -1,10 +1,10 @@
 # Reflect.hasField Test
 # Tests that Reflect.hasField transforms to Map.has_key? with proper atom conversion
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/stdlib/ReflectHasField
+-cp src
+-cp std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=out
+-D elixir_output=test/snapshot/stdlib/ReflectHasField/out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

@@ -1,6 +1,6 @@
--cp .
--cp ../../../../std
--cp ../../../../src
+-cp test/snapshot/phoenix/PresenceMacroGenerics
+-cp std
+-cp src
 -main Main
 --no-output
 -D reflaxe_runtime

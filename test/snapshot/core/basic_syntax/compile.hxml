@@ -1,8 +1,8 @@
 # Compilation configuration for basic_syntax test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/core/basic_syntax
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/core/basic_syntax/out
 Main

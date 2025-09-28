@@ -1,8 +1,8 @@
 # Compilation configuration for nested_variable_declaration test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/loops/nested_variable_declaration
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/loops/nested_variable_declaration/out
 Main

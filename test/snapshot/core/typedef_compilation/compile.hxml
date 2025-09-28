@@ -1,9 +1,9 @@
 # Compilation configuration for typedef_compilation test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/core/typedef_compilation
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/core/typedef_compilation/out
 -D reflaxe_runtime
 Main

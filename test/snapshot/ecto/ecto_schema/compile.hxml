@@ -1,8 +1,8 @@
 # Compilation configuration for ecto_schema test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/ecto/ecto_schema
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/ecto/ecto_schema/out
 User

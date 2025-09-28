@@ -1,8 +1,8 @@
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/exunit/exunit_comprehensive
+-cp src
+-cp std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=out
+-D elixir_output=test/snapshot/exunit/exunit_comprehensive/out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

@@ -1,9 +1,9 @@
 # Compilation configuration for example 04 ecto migrations
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/core/example_04_ecto
 -lib reflaxe
 -D reflaxe_runtime
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/core/example_04_ecto/out
 example_migrations.CreateUsers

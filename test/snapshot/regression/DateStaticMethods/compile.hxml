@@ -1,6 +1,6 @@
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/regression/DateStaticMethods
+-cp src
+-cp std
 -lib reflaxe
 -D reflaxe_runtime
 -D elixir_output=lib

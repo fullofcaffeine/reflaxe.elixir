@@ -1,8 +1,8 @@
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/regression/elixir_injection_with_proper_architecture
+-cp src
+-cp std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=out
+-D elixir_output=test/snapshot/regression/elixir_injection_with_proper_architecture/out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main
