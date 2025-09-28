@@ -1,10 +1,8 @@
-# Compilation configuration for desugared for detection test
 -cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--lib reflaxe.elixir
---no-output
--main Main
+-D reflaxe_runtime
 -D elixir_output=out
-
-# Enable the desugared for loop detection feature
--D elixir.feature.loop_builder_enabled=true
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

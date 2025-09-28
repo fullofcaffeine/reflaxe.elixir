@@ -1,9 +1,8 @@
--cp test/snapshot/regression/InlineExpansion
--cp src
--cp std
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=test/snapshot/regression/InlineExpansion/out
--D debug_inline_expansion
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

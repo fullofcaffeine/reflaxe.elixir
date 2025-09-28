@@ -1,19 +1,8 @@
-# Repository Pattern Integration Test Compilation
-# Tests Repo.all/insert/update/delete compilation with type safety
-
-# Include source directly instead of using broken lib reference
--cp ../../../../src/
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--main Main
-
-# Enable runtime flag for macro compilation
 -D reflaxe_runtime
-
-# Output to test directory
--D elixir_output=test/snapshot/ecto/repository/out
-
-# Enable debug info
--D debug
-
-# Initialize the Elixir compiler
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
+Main

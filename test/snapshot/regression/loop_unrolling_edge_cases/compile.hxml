@@ -1,9 +1,8 @@
--cp test/snapshot/regression/loop_unrolling_edge_cases
--main Main
---no-output
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--lib reflaxe.elixir
--D elixir_output=test/snapshot/regression/loop_unrolling_edge_cases/out
-# NOTE: # NOTE: -D analyzer-optimize removed - destroys functional patterns removed to preserve loop structures
-# However, arithmetic expressions are still evaluated at compile time
-# by Haxe's constant folding that occurs before our transpiler runs
+-D reflaxe_runtime
+-D elixir_output=out
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

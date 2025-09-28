@@ -1,8 +1,8 @@
-# Regression test for enum pattern variable names
--cp std
--cp src
--cp test/snapshot/regression/enum_pattern_names
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=test/snapshot/regression/enum_pattern_names/out
 Main

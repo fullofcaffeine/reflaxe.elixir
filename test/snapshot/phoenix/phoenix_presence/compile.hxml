@@ -1,6 +1,8 @@
--cp src
--cp std
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--D elixir_output=test/snapshot/phoenix/phoenix_presence/out--macro reflaxe.ReflaxeInit.init()
--main Main
---no-output
+-D reflaxe_runtime
+-D elixir_output=out
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

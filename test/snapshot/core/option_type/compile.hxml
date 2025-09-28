@@ -1,10 +1,8 @@
-# Compile Option<T> type test
--cp src
--cp std
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
-
--D elixir_output=test/snapshot/core/option_type/out
 -D reflaxe_runtime
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
-
 Main

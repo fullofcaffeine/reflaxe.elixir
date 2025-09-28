@@ -1,6 +1,8 @@
-# Compilation configuration for arrays test
 -cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--lib reflaxe.elixir
--main Main
+-D reflaxe_runtime
 -D elixir_output=out
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

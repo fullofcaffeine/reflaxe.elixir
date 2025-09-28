@@ -1,7 +1,8 @@
--cp test/snapshot/regression/loop_unrolling
--main Main
---no-output
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--lib reflaxe.elixir
--D elixir_output=test/snapshot/regression/loop_unrolling/out
-# NOTE: -D analyzer-optimize removed - destroys functional patterns
+-D reflaxe_runtime
+-D elixir_output=out
+--macro reflaxe.elixir.CompilerInit.Start()
+Main
