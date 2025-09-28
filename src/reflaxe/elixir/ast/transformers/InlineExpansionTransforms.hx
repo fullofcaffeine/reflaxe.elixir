@@ -657,6 +657,249 @@ class InlineExpansionTransforms {
                 null;
         };
     }
+    
+    /**
+     * Tuple Constructor Inline Assignment Extraction Pass
+     * 
+     * THE PROBLEM:
+     * When Haxe inlines functions with optional parameters (like String.substr(pos, ?len)),
+     * it generates inline if-else expressions for the optional parameter handling.
+     * When these are used in tuple constructors, we get invalid syntax:
+     * 
+     *   {:set_priority, len = nil
+     *   if (len == nil) do
+     *     String.slice(str, 13..-1)
+     *   else
+     *     String.slice(str, 13, len)
+     *   end}
+     * 
+     * This is invalid because:
+     * 1. Variable assignments cannot appear directly in tuple constructors
+     * 2. The if-else block becomes orphaned from the assignment
+     * 
+     * THE SOLUTION:
+     * Extract inline assignments from tuple constructors and hoist them before the tuple:
+     * 
+     *   value = if (len == nil) do
+     *     String.slice(str, 13..-1)
+     *   else
+     *     String.slice(str, 13, len)
+     *   end
+     *   {:set_priority, value}
+     * 
+     * PATTERN DETECTION:
+     * We look for ETuple nodes containing:
+     * - Inline variable assignments (len = nil)
+     * - Inline if-else expressions that use those variables
+     * 
+     * REAL-WORLD EXAMPLES:
+     * - String.substr with optional length parameter
+     * - Array slice operations with optional end index
+     * - Any function with optional parameters that's inlined in a tuple
+     * 
+     * @param ast The AST to transform
+     * @return Transformed AST with extracted inline assignments
+     */
+    public static function extractTupleInlineAssignmentsPass(ast: ElixirAST): ElixirAST {
+        trace('[XRay InlineTupleExtraction] Starting tuple inline assignment extraction pass');
+        
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case ETuple(elements):
+                    trace('[XRay InlineTupleExtraction] Found tuple with ${elements.length} elements');
+                    
+                    // Check if any element contains inline assignments that need extraction
+                    var needsExtraction = false;
+                    var extractedAssignments: Array<ElixirAST> = [];
+                    var newElements: Array<ElixirAST> = [];
+                    
+                    for (i in 0...elements.length) {
+                        var element = elements[i];
+                        
+                        // Always trace element types for debugging
+                        trace('[XRay InlineTupleExtraction] Element $i: ${element.def}');
+                        
+                        // Special check for EBlock patterns that come from inline expansion
+                        // These have the pattern: EBlock([EMatch(PVar(len), ENil), EIf(...)])
+                        var isProblematicBlock = switch(element.def) {
+                            case EBlock(exprs) if (exprs.length >= 2):
+                                #if debug_inline_tuple_extraction
+                                trace('[XRay InlineTupleExtraction] Checking EBlock with ${exprs.length} exprs');
+                                trace('[XRay InlineTupleExtraction]   First expr: ${exprs[0].def}');
+                                if (exprs.length > 1) {
+                                    trace('[XRay InlineTupleExtraction]   Second expr: ${exprs[1].def}');
+                                }
+                                #end
+                                
+                                // Check if first is an assignment to nil (from optional parameter)
+                                var hasNilAssignment = switch(exprs[0].def) {
+                                    case EMatch(PVar(name), {def: ENil}): 
+                                        #if debug_inline_tuple_extraction
+                                        trace('[XRay InlineTupleExtraction]   Found nil assignment to: $name');
+                                        #end
+                                        true;
+                                    default: false;
+                                };
+                                // Check if second is an if statement
+                                var hasIfStatement = exprs.length > 1 && switch(exprs[1].def) {
+                                    case EIf(_, _, _): 
+                                        #if debug_inline_tuple_extraction
+                                        trace('[XRay InlineTupleExtraction]   Found if statement');
+                                        #end
+                                        true;
+                                    default: false;
+                                };
+                                
+                                var result = hasNilAssignment && hasIfStatement;
+                                #if debug_inline_tuple_extraction
+                                if (result) {
+                                    trace('[XRay InlineTupleExtraction]   ✓ DETECTED problematic block pattern!');
+                                }
+                                #end
+                                result;
+                            default:
+                                false;
+                        };
+                        
+                        // Check for problematic inline patterns
+                        if (isProblematicBlock || containsInlineAssignment(element)) {
+                            #if debug_inline_tuple_extraction
+                            trace('[XRay InlineTupleExtraction] Element $i contains inline assignment: ${element.def}');
+                            #end
+                            
+                            // Extract the inline assignment to a temporary variable
+                            var tempVar = 'tuple_elem_$i';
+                            
+                            // Create the assignment: tuple_elem_i = <extracted expression>
+                            var extractedExpr = extractInlineExpression(element);
+                            var assignment = ElixirASTHelpers.make(
+                                EMatch(PVar(tempVar), extractedExpr)
+                            );
+                            extractedAssignments.push(assignment);
+                            
+                            // Replace the element with the temporary variable
+                            newElements.push(ElixirASTHelpers.make(EVar(tempVar)));
+                            needsExtraction = true;
+                        } else {
+                            // Keep element as-is
+                            newElements.push(element);
+                        }
+                    }
+                    
+                    if (needsExtraction) {
+                        #if debug_inline_tuple_extraction
+                        trace('[XRay InlineTupleExtraction] ✓ Extracting ${extractedAssignments.length} assignments from tuple');
+                        #end
+                        
+                        // Create a block with assignments followed by the tuple
+                        var newTuple = ElixirASTHelpers.make(ETuple(newElements));
+                        var blockExprs = extractedAssignments.copy();
+                        blockExprs.push(newTuple);
+                        
+                        return ElixirASTHelpers.make(EBlock(blockExprs));
+                    }
+                    
+                default:
+                    // Not a tuple, continue traversal
+            }
+            return node;
+        });
+    }
+    
+    /**
+     * Checks if an expression contains an inline assignment pattern
+     * that would be invalid inside a tuple constructor
+     * 
+     * @param expr The expression to check
+     * @return True if it contains problematic inline assignments
+     */
+    static function containsInlineAssignment(expr: ElixirAST): Bool {
+        #if debug_inline_tuple_extraction_verbose
+        // Log what we're checking
+        switch(expr.def) {
+            case EBlock(_): trace('[XRay InlineTupleExtraction] Checking EBlock for assignments');
+            case EIf(_, _, _): trace('[XRay InlineTupleExtraction] Checking EIf for assignments');
+            case EMatch(_, _): trace('[XRay InlineTupleExtraction] Found EMatch!');
+            case EBinary(Match, _, _): trace('[XRay InlineTupleExtraction] Found EBinary(Match)!');
+            default:
+        }
+        #end
+        
+        return switch(expr.def) {
+            // Direct assignment patterns
+            case EMatch(_, _): true;
+            case EBinary(Match, _, _): true;
+            
+            // Blocks with assignments (from inline expansion)
+            case EBlock(exprs):
+                if (exprs.length > 0) {
+                    for (e in exprs) {
+                        if (containsInlineAssignment(e)) return true;
+                    }
+                }
+                false;
+                
+            // Check nested expressions
+            case EIf(cond, then, els):
+                containsInlineAssignment(cond) || 
+                containsInlineAssignment(then) || 
+                (els != null && containsInlineAssignment(els));
+                
+            default:
+                false;
+        };
+    }
+    
+    /**
+     * Extracts the actual expression from inline assignment patterns
+     * 
+     * For patterns like "len = nil\nif (len == nil) do...", 
+     * this extracts the complete if-else expression
+     * 
+     * @param expr The expression containing inline assignments
+     * @return The extracted expression without inline assignments
+     */
+    static function extractInlineExpression(expr: ElixirAST): ElixirAST {
+        return switch(expr.def) {
+            // For blocks from inline expansion, extract the conditional logic
+            case EBlock(exprs) if (exprs.length >= 2):
+                // Special pattern: [EMatch(PVar(len), ENil), EIf(...)]
+                // This comes from inline expansion of optional parameters
+                var isOptionalParamPattern = switch(exprs[0].def) {
+                    case EMatch(PVar(_), {def: ENil}): true;
+                    default: false;
+                };
+                
+                if (isOptionalParamPattern && exprs.length == 2) {
+                    // Return just the if-else expression, which contains the actual logic
+                    exprs[1];
+                } else if (exprs.length == 2) {
+                    // General pattern: [assignment, expression using the assigned variable]
+                    var firstIsAssignment = switch(exprs[0].def) {
+                        case EMatch(_, _) | EBinary(Match, _, _): true;
+                        default: false;
+                    };
+                    
+                    if (firstIsAssignment) {
+                        // The second expression is what we actually want
+                        exprs[1];
+                    } else {
+                        // Keep as block if pattern doesn't match
+                        expr;
+                    }
+                } else {
+                    // Keep as block if there are multiple expressions
+                    expr;
+                }
+                
+            // For simple assignments, extract the right-hand side
+            case EMatch(_, right): right;
+            case EBinary(Match, _, right): right;
+            
+            default:
+                expr;
+        };
+    }
 }
 
 #end
