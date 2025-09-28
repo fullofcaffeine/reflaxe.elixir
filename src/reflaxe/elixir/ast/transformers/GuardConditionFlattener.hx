@@ -247,7 +247,7 @@ class GuardConditionCollector {
 		// len = nil (or similar variable)
 		// if (len == nil) do ... else ...
 		return switch(node.def) {
-			case EBlock(exprs) if (exprs.length >= 2):
+			case EBlock(exprs) if (exprs.length >= 2 && exprs[0] != null):
 				// Check first expression for variable = nil assignment
 				var hasNilAssignment = switch(exprs[0].def) {
 					case EMatch(PVar(_), value):
@@ -257,7 +257,7 @@ class GuardConditionCollector {
 				};
 				
 				// Check second expression for if (var == nil) pattern
-				var hasNilCheck = if (exprs.length > 1) {
+				var hasNilCheck = if (exprs.length > 1 && exprs[1] != null) {
 					switch(exprs[1].def) {
 						case EIf(condition, _, _):
 							switch(condition.def) {
