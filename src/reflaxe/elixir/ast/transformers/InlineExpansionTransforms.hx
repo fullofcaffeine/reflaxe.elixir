@@ -701,12 +701,16 @@ class InlineExpansionTransforms {
      * @return Transformed AST with extracted inline assignments
      */
     public static function extractTupleInlineAssignmentsPass(ast: ElixirAST): ElixirAST {
+        #if debug_inline_tuple_extraction
         trace('[XRay InlineTupleExtraction] Starting tuple inline assignment extraction pass');
+        #end
         
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case ETuple(elements):
+                    #if debug_inline_tuple_extraction
                     trace('[XRay InlineTupleExtraction] Found tuple with ${elements.length} elements');
+                    #end
                     
                     // Check if any element contains inline assignments that need extraction
                     var needsExtraction = false;
@@ -716,8 +720,9 @@ class InlineExpansionTransforms {
                     for (i in 0...elements.length) {
                         var element = elements[i];
                         
-                        // Always trace element types for debugging
+                        #if debug_inline_tuple_extraction_verbose
                         trace('[XRay InlineTupleExtraction] Element $i: ${element.def}');
+                        #end
                         
                         // Special check for EBlock patterns that come from inline expansion
                         // These have the pattern: EBlock([EMatch(PVar(len), ENil), EIf(...)])
@@ -871,8 +876,10 @@ class InlineExpansionTransforms {
                 };
                 
                 if (isOptionalParamPattern && exprs.length == 2) {
-                    // Return just the if-else expression, which contains the actual logic
-                    exprs[1];
+                    // CRITICAL FIX: Keep the entire block including the assignment
+                    // The "len = nil" assignment is necessary for the if condition to work
+                    // We need to preserve the semantic meaning of the optional parameter
+                    expr; // Return the whole block, not just exprs[1]
                 } else if (exprs.length == 2) {
                     // General pattern: [assignment, expression using the assigned variable]
                     var firstIsAssignment = switch(exprs[0].def) {
@@ -881,7 +888,7 @@ class InlineExpansionTransforms {
                     };
                     
                     if (firstIsAssignment) {
-                        // The second expression is what we actually want
+                        // For non-optional parameter patterns, we can extract just the expression
                         exprs[1];
                     } else {
                         // Keep as block if pattern doesn't match
