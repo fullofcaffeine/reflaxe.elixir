@@ -84,12 +84,10 @@ class GuardConditionCollector {
 				case EIf(condition, thenBranch, elseBranch):
 					// Found a guard condition
 					branches.push({
-						condition: condition,
+						pattern: null, // Will be set from the case clause pattern
+						guard: condition,
 						body: thenBranch,
-						depth: depth,
-						metadata: {
-							usedVars: extractUsedVariables(condition)
-						}
+						depth: depth
 					});
 					
 					#if debug_guard_flattening
@@ -128,7 +126,7 @@ class GuardConditionCollector {
 					if (depth > 0 && !isNilAssignmentBlock(unwrapped)) {
 						branches.push({
 							pattern: null,
-							guard: makeAST(EAtom(ElixirAtom.mk("true"))),
+							guard: makeAST(EAtom(new ElixirAtom("true"))),
 							body: unwrapped,
 							depth: depth
 						});
@@ -218,40 +216,39 @@ class GuardConditionCollector {
 	/**
 	 * Convert a pattern to a string representation for grouping
 	 */
-	static function patternToString(pattern: EPattern): String {
+	public static function patternToString(pattern: EPattern): String {
 		return switch(pattern) {
-			case PConstructor(name, patterns):
-				var patternStrs = patterns.map(p -> patternToString(p));
-				'$name(${patternStrs.join(", ")})';
 			case PVar(name):
 				name;
-			case PUnderscore:
-				"_";
-			case PAtom(atom):
-				':${atom}';
 			case PLiteral(value):
 				Std.string(value);
-			case PTuple(patterns):
-				var patternStrs = patterns.map(p -> patternToString(p));
-				'{${patternStrs.join(", ")}}';
-			case PList(patterns):
-				var patternStrs = patterns.map(p -> patternToString(p));
-				'[${patternStrs.join(", ")}]';
-			case PBinary(segments):
-				"<<binary>>";
+			case PTuple(elements):
+				var elementStrs = elements.map(p -> patternToString(p));
+				'{${elementStrs.join(", ")}}';
+			case PList(elements):
+				var elementStrs = elements.map(p -> patternToString(p));
+				'[${elementStrs.join(", ")}]';
+			case PCons(head, tail):
+				'[${patternToString(head)} | ${patternToString(tail)}]';
 			case PMap(pairs):
 				"%{map}";
+			case PStruct(module, fields):
+				'%$module{}';
 			case PPin(pattern):
 				'^${patternToString(pattern)}';
-			case PAlias(pattern, name):
-				'${patternToString(pattern)} = $name';
+			case PWildcard:
+				"_";
+			case PAlias(varName, pattern):
+				'$varName = ${patternToString(pattern)}';
+			case PBinary(segments):
+				"<<binary>>";
 		};
 	}
 	
 	/**
 	 * Extract variables used in an expression
 	 */
-	static function extractUsedVariables(expr: ElixirAST): Array<String> {
+	public static function extractUsedVariables(expr: ElixirAST): Array<String> {
 		var vars = [];
 		
 		function collect(node: ElixirAST): Void {
@@ -286,7 +283,7 @@ class GuardConditionCollector {
 	 * Helper to create AST nodes
 	 */
 	static function makeAST(def: ElixirASTDef, ?pos: haxe.macro.Expr.Position): ElixirAST {
-		return {def: def, pos: pos != null ? pos : haxe.macro.Context.currentPos()};
+		return {def: def, pos: pos != null ? pos : haxe.macro.Context.currentPos(), metadata: null};
 	}
 }
 
@@ -335,14 +332,14 @@ class GuardGroupValidator {
 		for (branch in branches) {
 			// Collect pattern info
 			if (branch.pattern != null) {
-				var patternStr = patternToString(branch.pattern);
+				var patternStr = GuardConditionCollector.patternToString(branch.pattern);
 				if (patternsFound.indexOf(patternStr) == -1) {
 					patternsFound.push(patternStr);
 				}
 			}
 			
 			// Check for external variable usage
-			var usedVars = extractUsedVariables(branch.guard);
+			var usedVars = GuardConditionCollector.extractUsedVariables(branch.guard);
 			for (v in usedVars) {
 				if (!boundVarSet.exists(v)) {
 					// Check if it's a modified version of a bound var (r2 -> r)
@@ -436,8 +433,8 @@ class GuardConditionReconstructor {
 		if (!hasDefault) {
 			// Add explicit true branch with nil
 			condBranches.push({
-				condition: makeAST(EAtom(ElixirAtom.mk("true"))),
-				body: makeAST(EAtom(ElixirAtom.mk("nil")))
+				condition: makeAST(EAtom(new ElixirAtom("true"))),
+				body: makeAST(EAtom(new ElixirAtom("nil")))
 			});
 			
 			#if debug_guard_flattening
@@ -550,6 +547,6 @@ class GuardConditionReconstructor {
 	 * Helper to create AST nodes
 	 */
 	static function makeAST(def: ElixirASTDef, ?pos: haxe.macro.Expr.Position): ElixirAST {
-		return {def: def, pos: pos != null ? pos : haxe.macro.Context.currentPos()};
+		return {def: def, pos: pos != null ? pos : haxe.macro.Context.currentPos(), metadata: null};
 	}
 }
