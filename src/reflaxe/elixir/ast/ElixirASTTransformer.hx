@@ -159,6 +159,14 @@ class ElixirASTTransformer {
             pass: reflaxe.elixir.ast.transformers.InlineExpansionTransforms.inlineMethodCallCombinerPass
         });
         
+        // Extract inline assignments from tuple constructors (must run early)
+        passes.push({
+            name: "ExtractTupleInlineAssignments",
+            description: "Extract inline assignments from tuple constructors to fix syntax errors",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InlineExpansionTransforms.extractTupleInlineAssignmentsPass
+        });
+        
         // Function reference transformation (must run early to add capture operators)
         passes.push({
             name: "FunctionReferenceTransform",
