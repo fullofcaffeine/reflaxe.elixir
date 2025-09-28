@@ -1,5 +1,5 @@
 -cp .
 -main Main
 -lib reflaxe
--lib reflaxe.elixir
+-D elixir_output=test/snapshot/core/enums/test/snapshot/regression/enum_pattern_names/out-lib reflaxe.elixir
 --no-output

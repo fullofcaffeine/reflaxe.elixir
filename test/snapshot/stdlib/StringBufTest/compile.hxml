@@ -1,4 +1,4 @@
 --class-path ../../../std
 --library reflaxe
 --library reflaxe.elixir
---main Main
+--main Main-D elixir_output=test/snapshot/stdlib/StringBufTest/out

@@ -3,4 +3,4 @@
 -cp src
 -main Main
 --no-output
--D reflaxe_runtime
+-D reflaxe_runtime-D elixir_output=test/snapshot/phoenix/PresenceMacroGenerics/out

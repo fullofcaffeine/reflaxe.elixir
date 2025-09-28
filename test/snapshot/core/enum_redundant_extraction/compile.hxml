@@ -1,5 +1,5 @@
 -cp .
 -main Main
 -lib reflaxe
--lib reflaxe.elixir
+-D elixir_output=test/snapshot/core/enum_redundant_extraction/out-lib reflaxe.elixir
 --no-output

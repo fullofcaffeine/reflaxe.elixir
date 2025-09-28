@@ -1,6 +1,6 @@
 -cp src
 -cp std
 -lib reflaxe
---macro reflaxe.ReflaxeInit.init()
+-D elixir_output=test/snapshot/phoenix/phoenix_presence/out--macro reflaxe.ReflaxeInit.init()
 -main Main
 --no-output

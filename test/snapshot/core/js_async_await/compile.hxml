@@ -2,5 +2,5 @@
 -cp src
 -main Main
 -lib reflaxe
--lib genes
+-D elixir_output=test/snapshot/core/js_async_await/out-lib genes
 --js out/app.js

@@ -1,4 +1,4 @@
 -cp .
 -main Main
 -dce no
---interp
+--interp-D elixir_output=test/snapshot/core/switch_variable_extraction/out

@@ -1,4 +1,4 @@
 -cp .
 -main Main
 --no-output
-# This test expects compilation to FAIL with type errors
+# This test expects compilation to FAIL with type errors-D elixir_output=test/snapshot/phoenix/HXXTypeSafetyErrors/out

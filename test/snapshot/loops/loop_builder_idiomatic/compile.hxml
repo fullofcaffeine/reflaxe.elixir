@@ -1,4 +1,4 @@
 -cp .
 -lib reflaxe
--lib reflaxe.elixir
+-D elixir_output=test/snapshot/loops/loop_builder_idiomatic/out-lib reflaxe.elixir
 Main
