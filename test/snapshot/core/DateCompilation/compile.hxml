@@ -4,6 +4,7 @@
 -cp src
 --macro reflaxe.elixir.CompilerInit.Start()
 -D reflaxe-elixir
+-D elixir_output=test/snapshot/core/DateCompilation/out
 # NOTE: -D analyzer-optimize removed - destroys functional patterns
 --dce full
 --main Main
