@@ -547,10 +547,17 @@ class AnnotationTransforms {
      * HOW: Detects isSchema metadata and transforms module body
      */
     public static function schemaTransformPass(ast: ElixirAST): ElixirAST {
+        #if debug_annotation_transforms
+        if (ast.metadata != null && ast.metadata.isSchema == true) {
+            trace('[XRay Schema Transform] Found schema module with isSchema metadata');
+        }
+        #end
+        
         // Check the top-level node first for Schema modules
         switch(ast.def) {
             case EDefmodule(name, body) if (ast.metadata?.isSchema == true):
                 #if debug_annotation_transforms
+                trace('[XRay Schema Transform] Processing schema EDefmodule: ${name}');
                 #end
                 
                 var tableName = ast.metadata.tableName ?? "items";
@@ -562,11 +569,89 @@ class AnnotationTransforms {
                     ast.metadata,
                     ast.pos
                 );
+            
+            case EModule(name, attrs, exprs) if (ast.metadata?.isSchema == true):
+                #if debug_annotation_transforms
+                trace('[XRay Schema Transform] Processing schema EModule: ${name}');
+                #end
+                
+                var tableName = ast.metadata.tableName ?? "items";
+                var lookupName = ast.metadata?.haxeFqcn != null ? ast.metadata.haxeFqcn : name;
+                
+                // Build the schema body with existing expressions
+                var bodyStatements = [];
+                
+                // Add use Ecto.Schema and import Ecto.Changeset
+                bodyStatements.push(makeAST(EUse("Ecto.Schema", [])));
+                bodyStatements.push(makeAST(EImport("Ecto.Changeset", null, null)));
+                
+                // Build and add the schema block
+                var schemaFieldStatements = [];
+                if (ast.metadata != null && ast.metadata.schemaFields != null) {
+                    for (f in ast.metadata.schemaFields) {
+                        // Skip primary key id (Ecto adds by default)
+                        if (f.name == "id") continue;
+                        var elixirFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(f.name);
+                        var atomFieldName = makeAST(EAtom(elixirFieldName));
+                        var fieldTypeAST = mapHaxeTypeToEctoFieldType(f.type);
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [
+                            atomFieldName,
+                            fieldTypeAST
+                        ])));
+                    }
+                }
+                
+                // Add timestamps if specified
+                if (ast.metadata?.hasTimestamps == true) {
+                    schemaFieldStatements.push(makeAST(ECall(null, "timestamps", [])));
+                }
+                
+                var schemaFields = makeAST(EBlock(schemaFieldStatements));
+                var schemaBlock = makeAST(EMacroCall(
+                    "schema",
+                    [makeAST(EString(tableName))],
+                    schemaFields
+                ));
+                bodyStatements.push(schemaBlock);
+                
+                // Add the existing functions
+                for (expr in exprs) {
+                    bodyStatements.push(expr);
+                }
+                
+                // Return the transformed module
+                return makeASTWithMeta(
+                    EModule(name, attrs, bodyStatements),
+                    ast.metadata,
+                    ast.pos
+                );
                 
             default:
                 // Not a Schema module, just pass through
                 return ast;
         }
+    }
+    
+    /**
+     * Map Haxe types to Ecto field types
+     * Returns an ElixirAST node for the field type (atom or tuple for complex types)
+     */
+    static function mapHaxeTypeToEctoFieldType(haxeType: String): ElixirAST {
+        return switch(haxeType) {
+            case "String": makeAST(EAtom("string"));
+            case "Int": makeAST(EAtom("integer")); 
+            case "Float": makeAST(EAtom("float"));
+            case "Bool": makeAST(EAtom("boolean"));
+            case "Date": makeAST(EAtom("naive_datetime"));
+            case "Array": 
+                // Arrays in Ecto need {:array, element_type}
+                // Default to string for now (could be enhanced to detect element type)
+                makeAST(ETuple([
+                    makeAST(EAtom("array")),
+                    makeAST(EAtom("string"))
+                ]));
+            case _: makeAST(EAtom("string")); // Default to string
+        };
     }
     
     /**

@@ -754,11 +754,47 @@ class ElixirASTPrinter {
             // Literals
             // ================================================================
             case EAtom(value):
-                // Atoms with dots MUST be quoted in Elixir - this is a syntax requirement
-                // Examples: :"TodoApp.PubSub", :"Postgrex.TypeManager"
-                // Without dots, atoms don't need quoting: :duplicate, :ok
+                // Atoms need quotes only if they contain special characters or don't follow
+                // the simple identifier pattern (letters, numbers, underscore, optionally ending with ! or ?)
+                // Examples needing quotes: :"TodoApp.PubSub", :"my-atom", :"123start"
+                // Examples NOT needing quotes: :title, :ok, :valid?, :save!
                 var atomStr: String = value; // ElixirAtom has implicit to String conversion
-                if (atomStr.indexOf('.') != -1) {
+                
+                // Check if atom needs quotes using Elixir's rules:
+                // Valid without quotes: starts with letter or underscore, contains only
+                // alphanumeric and underscore, optionally ends with ! or ?
+                var needsQuotes = false;
+                
+                // Special case: empty string always needs quotes
+                if (atomStr.length == 0) {
+                    needsQuotes = true;
+                } else {
+                    // Check first character: must be letter or underscore
+                    var firstChar = atomStr.charAt(0);
+                    if (!isLetter(firstChar) && firstChar != '_') {
+                        needsQuotes = true;
+                    } else {
+                        // Check rest of characters (except possibly last)
+                        var i = 1;
+                        var len = atomStr.length;
+                        
+                        // Check if ends with ! or ?
+                        var lastChar = atomStr.charAt(len - 1);
+                        var endsWithBangOrQuestion = (lastChar == '!' || lastChar == '?');
+                        var checkUntil = endsWithBangOrQuestion ? len - 1 : len;
+                        
+                        // Check middle characters
+                        while (i < checkUntil && !needsQuotes) {
+                            var c = atomStr.charAt(i);
+                            if (!isLetter(c) && !isDigit(c) && c != '_') {
+                                needsQuotes = true;
+                            }
+                            i++;
+                        }
+                    }
+                }
+                
+                if (needsQuotes) {
                     ':"' + atomStr + '"';
                 } else {
                     ':' + atomStr;
@@ -1445,6 +1481,25 @@ class ElixirASTPrinter {
                s.endsWith(".Supervisor") ||
                s.endsWith(".Application") ||
                s.endsWith("Web");
+    }
+    
+    /**
+     * Helper to check if a character is a letter (a-z or A-Z)
+     */
+    static function isLetter(c: String): Bool {
+        if (c.length != 1) return false;
+        var code = c.charCodeAt(0);
+        return (code >= 65 && code <= 90) || // A-Z
+               (code >= 97 && code <= 122);   // a-z
+    }
+    
+    /**
+     * Helper to check if a character is a digit (0-9)
+     */
+    static function isDigit(c: String): Bool {
+        if (c.length != 1) return false;
+        var code = c.charCodeAt(0);
+        return code >= 48 && code <= 57; // 0-9
     }
 }
 
