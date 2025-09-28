@@ -5188,8 +5188,9 @@ class ElixirASTTransformer {
                         i++;
                     }
                     
-                    // Second pass: filter out redundant nil assignments
+                    // Second pass: filter out redundant nil assignments and useless variable references
                     i = 0;
+                    var varsToClean = new Map<String, Bool>(); // Track variables that need their standalone refs removed
                     while (i < expressions.length) {
                         var expr = expressions[i];
                         // Null safety check
@@ -5197,6 +5198,20 @@ class ElixirASTTransformer {
                             i++;
                             continue;
                         }
+                        
+                        // Check if this is a useless standalone variable reference
+                        switch(expr.def) {
+                            case EVar(v) if (varsToClean.exists(v)):
+                                // This is a standalone variable reference after an assignment, skip it
+                                #if debug_ast_transformer
+                                trace('[XRay RemoveRedundantNilInit] Removing standalone variable reference: $v');
+                                #end
+                                varsToClean.remove(v);
+                                i++;
+                                continue;
+                            default:
+                        }
+                        
                         var shouldSkip = false;
 
                         // Check if this is a nil assignment that should be removed
@@ -5224,12 +5239,30 @@ class ElixirASTTransformer {
                                                         trace('[XRay RemoveRedundantNilInit] Next assignment is also nil, not skipping');
                                                         #end
                                                     } else {
-                                                        // Non-nil reassignment - skip the initial nil
-                                                                #if debug_ast_transformer
-                                                                trace('[XRay RemoveRedundantNilInit] REMOVING redundant nil init for abstract constructor var: $varName');
-                                                                #end
-                                                                shouldSkip = true;
+                                                        // Non-nil reassignment - skip the initial nil AND check if there's a useless variable reference after
+                                                        #if debug_ast_transformer
+                                                        trace('[XRay RemoveRedundantNilInit] REMOVING redundant nil init for abstract constructor var: $varName');
+                                                        #end
+                                                        shouldSkip = true;
+                                                        
+                                                        // CRITICAL FIX: Also check if next+1 is just a variable reference
+                                                        // Pattern: this1 = nil; this1 = value; this1
+                                                        if (i + 2 < expressions.length) {
+                                                            var afterNext = expressions[i + 2];
+                                                            if (afterNext != null && afterNext.def != null) {
+                                                                switch(afterNext.def) {
+                                                                    case EVar(v) if (v == varName):
+                                                                        // This is the standalone variable reference that causes the warning
+                                                                        #if debug_ast_transformer
+                                                                        trace('[XRay RemoveRedundantNilInit] Found standalone variable reference after assignment, marking for removal');
+                                                                        #end
+                                                                        // Mark this variable for cleanup
+                                                                        varsToClean.set(varName, true);
+                                                                    default:
+                                                                }
+                                                            }
                                                         }
+                                                    }
                                                     default:
                                                         #if debug_ast_transformer
                                                         trace('[XRay RemoveRedundantNilInit] Next expr is not a match for $varName');

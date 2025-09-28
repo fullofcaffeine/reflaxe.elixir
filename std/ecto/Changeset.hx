@@ -110,29 +110,29 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
         // Build the options list directly with __elixir__ based on what's provided
         // We need to handle all combinations since __elixir__ requires compile-time constants
         if (opts.min != null && opts.max != null && opts.is != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [min: {2}, max: {3}, is: {4}])', 
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, max: {3}, is: {4}])', 
                 this, field, opts.min, opts.max, opts.is);
         } else if (opts.min != null && opts.max != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [min: {2}, max: {3}])', 
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, max: {3}])', 
                 this, field, opts.min, opts.max);
         } else if (opts.min != null && opts.is != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [min: {2}, is: {3}])', 
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, is: {3}])', 
                 this, field, opts.min, opts.is);
         } else if (opts.max != null && opts.is != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [max: {2}, is: {3}])', 
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [max: {2}, is: {3}])', 
                 this, field, opts.max, opts.is);
         } else if (opts.min != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [min: {2}])', 
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}])', 
                 this, field, opts.min);
         } else if (opts.max != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [max: {2}])', 
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [max: {2}])', 
                 this, field, opts.max);
         } else if (opts.is != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [is: {2}])', 
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [is: {2}])', 
                 this, field, opts.is);
         } else {
             // No options provided, just call with empty options
-            return untyped __elixir__('Ecto.Changeset.validate_length({0}, :{1}, [])', 
+            return untyped __elixir__('Ecto.Changeset.validate_length({0}, String.to_atom({1}), [])', 
                 this, field);
         }
     }
@@ -147,10 +147,10 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      */
     extern inline public function validateFormat(field: String, pattern: EReg, ?message: String): Changeset<T, P> {
         if (message != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_format({0}, :{1}, {2}, message: {3})', 
+            return untyped __elixir__('Ecto.Changeset.validate_format({0}, String.to_atom({1}), {2}, message: {3})', 
                 this, field, pattern, message);
         } else {
-            return untyped __elixir__('Ecto.Changeset.validate_format({0}, :{1}, {2})', 
+            return untyped __elixir__('Ecto.Changeset.validate_format({0}, String.to_atom({1}), {2})', 
                 this, field, pattern);
         }
     }

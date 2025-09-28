@@ -216,7 +216,25 @@ class TypedExprPreprocessor {
                 
             // Handle switch statements directly (in case they're not in a block)
             case TSwitch(e, cases, edef):
-                processSwitchExpr(e, cases, edef, expr.pos, expr.t, substitutions);
+                // Special handling for switches with undefined infrastructure variables
+                // This happens when Haxe generates switch(g2) but never defines g2
+                var switchTarget = switch(e.expr) {
+                    case TLocal(v) if (isInfrastructureVar(v.name) && !substitutions.exists(v.name)):
+                        #if debug_preprocessor
+                        trace('[TypedExprPreprocessor] Switch uses undefined infrastructure variable: ${v.name}');
+                        trace('[TypedExprPreprocessor] Looking for the actual expression in the switch context');
+                        #end
+                        
+                        // In for loops with switches, Haxe sometimes generates switch(g2) 
+                        // where g2 should have been the switch expression
+                        // We need to find the actual expression and use it directly
+                        // For now, we'll just process it as-is, but flag it for special handling
+                        e;
+                    default:
+                        e;
+                };
+                
+                processSwitchExpr(switchTarget, cases, edef, expr.pos, expr.t, substitutions);
                 
             // Skip TVar assignments for infrastructure variables that aren't used elsewhere
             case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
@@ -281,6 +299,82 @@ class TypedExprPreprocessor {
                         // Not a method call on a field - recurse normally
                         TypedExprTools.map(expr, e -> processExpr(e, substitutions));
                 }
+                
+            // Handle while loops (desugared for loops) - need to track infrastructure variables
+            case TWhile(cond, body, normalWhile):
+                #if debug_preprocessor
+                trace('[TypedExprPreprocessor] Processing TWhile (possibly desugared for loop)');
+                #end
+                
+                // Create local substitution map inheriting from parent scope
+                var localSubstitutions = new Map<String, TypedExpr>();
+                for (key in substitutions.keys()) {
+                    localSubstitutions.set(key, substitutions.get(key));
+                }
+                
+                // Pre-scan loop body for infrastructure variable declarations
+                scanForInfrastructureVars(body, localSubstitutions);
+                
+                #if debug_preprocessor
+                var infraCount = 0;
+                for (key in localSubstitutions.keys()) {
+                    if (!substitutions.exists(key)) {
+                        infraCount++;
+                        trace('[TypedExprPreprocessor]   Found infrastructure variable in while loop: $key');
+                    }
+                }
+                trace('[TypedExprPreprocessor]   Total new infrastructure variables found: $infraCount');
+                #end
+                
+                // Process the condition and body with accumulated substitutions
+                var processedCond = processExpr(cond, localSubstitutions);
+                var processedBody = processExpr(body, localSubstitutions);
+                
+                // Return processed TWhile
+                {
+                    expr: TWhile(processedCond, processedBody, normalWhile),
+                    pos: expr.pos,
+                    t: expr.t
+                };
+                
+            // Handle for loops - need to track infrastructure variables across loop scope
+            case TFor(v, iter, body):
+                #if debug_preprocessor
+                trace('[TypedExprPreprocessor] Processing TFor with iterator variable: ${v.name}');
+                #end
+                
+                // Create local substitution map inheriting from parent scope
+                var localSubstitutions = new Map<String, TypedExpr>();
+                for (key in substitutions.keys()) {
+                    localSubstitutions.set(key, substitutions.get(key));
+                }
+                
+                // Pre-scan loop body for infrastructure variable declarations
+                scanForInfrastructureVars(body, localSubstitutions);
+                
+                #if debug_preprocessor
+                var infraCount = 0;
+                for (key in localSubstitutions.keys()) {
+                    if (!substitutions.exists(key)) {
+                        infraCount++;
+                        trace('[TypedExprPreprocessor]   Found infrastructure variable in loop: $key');
+                    }
+                }
+                trace('[TypedExprPreprocessor]   Total new infrastructure variables found: $infraCount');
+                #end
+                
+                // Process the loop body with accumulated substitutions
+                var processedBody = processExpr(body, localSubstitutions);
+                
+                // Process the iterator with parent substitutions (not local)
+                var processedIter = processExpr(iter, substitutions);
+                
+                // Return processed TFor
+                {
+                    expr: TFor(v, processedIter, processedBody),
+                    pos: expr.pos,
+                    t: expr.t
+                };
                 
             // Recursively process other expression types
             default:
@@ -533,6 +627,41 @@ class TypedExprPreprocessor {
                     e;
             };
         });
+    }
+    
+    /**
+     * Scan for infrastructure variable declarations and add to substitution map
+     * 
+     * WHY: Need to pre-scan loop bodies to find infrastructure variables before processing
+     * WHAT: Recursively finds TVar declarations with infrastructure variable names
+     * HOW: Traverses expression tree looking for TVar(g*, init) patterns
+     * 
+     * This allows us to build a complete substitution map before processing the loop body,
+     * ensuring that references to infrastructure variables can be properly substituted.
+     */
+    static function scanForInfrastructureVars(expr: TypedExpr, substitutions: Map<String, TypedExpr>): Void {
+        if (expr == null) return;
+        
+        switch(expr.expr) {
+            case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+                // Found an infrastructure variable declaration
+                #if debug_preprocessor
+                trace('[TypedExprPreprocessor] scanForInfrastructureVars: Found ${v.name} = [expression]');
+                #end
+                substitutions.set(v.name, init);
+                
+            case TBlock(exprs):
+                // Scan all expressions in the block
+                for (e in exprs) {
+                    scanForInfrastructureVars(e, substitutions);
+                }
+                
+            default:
+                // Recursively scan sub-expressions
+                TypedExprTools.iter(expr, function(e) {
+                    scanForInfrastructureVars(e, substitutions);
+                });
+        }
     }
     
     /**

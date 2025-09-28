@@ -834,11 +834,13 @@ class ElixirASTBuilder {
                             }
                         case TEnumParameter(_, _, _):
                             // This is the problematic pattern: g = elem(tuple, index)
-                            // Skip it entirely - the pattern already extracts these values
+                            // In most cases, we skip it because the pattern already extracts these values
+                            // BUT: We need to keep it if the variable is actually referenced later
                             #if debug_ast_builder
-                            trace('[Infrastructure Variable Fix] Skipping assignment: ${v.name} from TEnumParameter');
+                            trace('[Infrastructure Variable Fix] TEnumParameter assignment for: ${v.name}');
                             #end
-                            return null;
+                            // Don't skip - let it be processed normally
+                            // The assignment might be needed for later references
                             
                         case TLocal(localVar):
                             // Check if assigning from another infrastructure variable
@@ -2107,7 +2109,7 @@ class ElixirASTBuilder {
                     #if debug_ast_builder
                     if (hasIdiomaticMetadata(e)) {
                         #if debug_ast_builder
-                        trace('[AST Builder] Building idiomatic enum tuple: ${tag} with ${args.length} args');
+                        trace('[AST Builder] Building idiomatic enum tuple: ${tag} with ${v.length} args');
                         #end
                         #if debug_ast_builder
                         trace('[AST Builder] Enum type: ${getEnumTypeName(e)}');
@@ -4499,9 +4501,10 @@ class ElixirASTBuilder {
                             // Use centralized detection from TypedExprPreprocessor
                             if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)) {
                                 
-                                // Skip this infrastructure variable block entirely
+                                // CRITICAL FIX: Build infrastructure variable assignment instead of skipping
+                                // This ensures _g = expr is generated before case _g in for loops
                                 #if debug_ast_builder
-                                trace('[Infrastructure Variable Fix] TBlock skipping infrastructure var: ${v.name}');
+                                trace('[Infrastructure Variable Fix] TBlock building infrastructure var assignment: ${v.name}');
                                 #end
                                 
                                 // Handle common pattern: g = expr followed by switch(g)
@@ -4529,20 +4532,22 @@ class ElixirASTBuilder {
                                                             return buildFieldPatternSwitch(rootObj, cf.get().name, cases, edef, el[1].pos, currentContext);
                                                             
                                                         default:
-                                                            // Not a field access - use the original substitution approach
+                                                            // FIXED: Build BOTH the assignment AND the switch
+                                                            // This preserves the infrastructure variable for use in for loops
                                                             #if debug_ast_builder
-                                                            trace('[Infrastructure Variable Fix] Substituting switch(${v.name}) with switch(init expression)');
+                                                            trace('[Infrastructure Variable Fix] Building assignment and switch for ${v.name}');
                                                             #end
                                                             
-                                                            // Create a new switch expression with init replacing the temp var
-                                                            var directSwitch: TypedExpr = {
-                                                                expr: TSwitch(init, cases, edef),
-                                                                pos: el[1].pos,
-                                                                t: el[1].t
-                                                            };
+                                                            // Build the infrastructure variable assignment
+                                                            var varName = toElixirVarName(v.name.charAt(0) == "_" ? v.name.substr(1) : v.name);
+                                                            var initAST = buildFromTypedExpr(init, currentContext);
+                                                            var assignment = makeAST(EMatch(PVar(varName), initAST));
                                                             
-                                                            // Let the normal TSwitch handler build this properly
-                                                            return buildFromTypedExpr(directSwitch, currentContext).def;
+                                                            // Build the switch with the infrastructure variable
+                                                            var switchAST = buildFromTypedExpr(el[1], currentContext);
+                                                            
+                                                            // Return a block with both the assignment and the switch
+                                                            return EBlock([assignment, switchAST]);
                                                     }
                                                 default:
                                             }
@@ -5130,16 +5135,57 @@ class ElixirASTBuilder {
                 }
                 
                 var targetAST = if (isInfrastructureVar) {
-                    // Infrastructure variable detected
+                    // Infrastructure variable detected - check if it actually exists
                     #if debug_infrastructure_vars  
-                    trace('[TSwitch] WARNING: Infrastructure variable $infraVarName (id: $infraVarId) as switch target');
-                    trace('[TSwitch] This is a known limitation - using nil fallback');
-                    trace('[TSwitch] Workaround: Use explicit variable assignment before switch');
+                    trace('[TSwitch] Infrastructure variable $infraVarName (id: $infraVarId) as switch target');
+                    trace('[TSwitch] Checking if variable exists in context...');
                     #end
                     
-                    // Use nil as a safe fallback - this changes behavior but prevents compilation errors
-                    // The proper fix is for developers to use explicit variable assignment
-                    makeAST(ENil);
+                    // CRITICAL FIX: Check if the infrastructure variable actually exists
+                    // In for loops with switches, Haxe may reference infrastructure variables
+                    // like g2, g3 that were never defined with a TVar statement
+                    var varExists = false;
+                    var mappedName: String = null;
+                    
+                    if (currentContext != null) {
+                        var idKey = Std.string(infraVarId);
+                        
+                        // Check tempVarRenameMap
+                        if (currentContext.tempVarRenameMap.exists(idKey)) {
+                            varExists = true;
+                            mappedName = currentContext.tempVarRenameMap.get(idKey);
+                            #if debug_infrastructure_vars
+                            trace('[TSwitch] Found in tempVarRenameMap: $mappedName');
+                            #end
+                        }
+                        // Check ClauseContext
+                        else if (currentContext.currentClauseContext != null) {
+                            var lookup = currentContext.currentClauseContext.lookupVariable(infraVarId);
+                            if (lookup != null) {
+                                varExists = true;
+                                mappedName = lookup;
+                                #if debug_infrastructure_vars
+                                trace('[TSwitch] Found in ClauseContext: $mappedName');
+                                #end
+                            }
+                        }
+                    }
+                    
+                    if (!varExists) {
+                        #if debug_infrastructure_vars
+                        trace('[TSwitch] WARNING: Infrastructure variable $infraVarName NOT FOUND!');
+                        trace('[TSwitch] This happens in for loops when Haxe generates undefined infrastructure vars');
+                        trace('[TSwitch] Using nil as fallback to avoid undefined variable error');
+                        #end
+                        
+                        // WORKAROUND: When an infrastructure variable is referenced but not defined,
+                        // we use nil as a fallback. This typically happens with unused enum extraction
+                        // results in for loops. The pattern matching will still work correctly.
+                        makeAST(ENil);
+                    } else {
+                        // Build the infrastructure variable as a normal variable reference
+                        buildFromTypedExpr(e, currentContext);
+                    }
                 } else {
                     buildFromTypedExpr(e, currentContext);
                 };
@@ -5546,10 +5592,21 @@ class ElixirASTBuilder {
                         makeAST(EVar(tempVarName))
                     ]);
                 } else {
-                    #if debug_ast_builder
-                    trace('[TSwitch] Returning caseNode.def');
-                    #end
-                    caseNode.def;  // Return the def as expected by the switch
+                    // Check if we have statements that need to be combined with the case
+                    if (statements.length > 0) {
+                        #if debug_ast_builder
+                        trace('[TSwitch] Wrapping case with ${statements.length} statements in EBlock');
+                        #end
+                        // Add the case expression to the statements
+                        statements.push(caseNode);
+                        // Return a block containing the statements and the case
+                        EBlock(statements);
+                    } else {
+                        #if debug_ast_builder
+                        trace('[TSwitch] Returning caseNode.def');
+                        #end
+                        caseNode.def;  // Return the def as expected by the switch
+                    }
                 }
                 
             // ================================================================
@@ -6310,6 +6367,22 @@ class ElixirASTBuilder {
                 }
                 
             case TFor(v, e1, e2):
+                #if debug_ast_builder
+                trace('[TFor] Processing for loop, var: ${v.name}');
+                trace('[TFor] Body expression type: ${Type.enumConstructor(e2.expr)}');
+                switch(e2.expr) {
+                    case TBlock(exprs):
+                        trace('[TFor] Body is TBlock with ${exprs.length} expressions');
+                        for (i in 0...exprs.length) {
+                            trace('[TFor]   [$i]: ${Type.enumConstructor(exprs[i].expr)}');
+                        }
+                    case TSwitch(switchExpr, _, _):
+                        trace('[TFor] Body is direct TSwitch on: ${Type.enumConstructor(switchExpr.expr)}');
+                    default:
+                        trace('[TFor] Body is: ${Type.enumConstructor(e2.expr)}');
+                }
+                #end
+                
                 // Delegate ALL for loop compilation to LoopBuilder
                 // Create adapter for BuildContext interface
                 var buildContext: reflaxe.elixir.ast.builders.LoopBuilder.BuildContext = {

@@ -1,0 +1,12 @@
+# Test build file for switch undefined var issue
+-cp .
+-main Main
+-lib reflaxe
+-cp ../../../../src
+-cp ../../../../std
+--macro reflaxe.elixir.CompilerInit.Start()
+--no-output
+-D elixir_output=out
+-D debug_ast_builder
+-D debug_compilation_hang
+-dce full

@@ -1535,6 +1535,56 @@ class ElixirCompiler extends GenericCompiler<
             #end
         }
         
+        // Enable Schema transformation pass for @:schema modules
+        if (classType.meta.has(":schema")) {
+            metadata.isSchema = true;
+            
+            // Extract table name from @:schema annotation if provided
+            var schemaMeta = classType.meta.extract(":schema");
+            if (schemaMeta.length > 0 && schemaMeta[0].params != null && schemaMeta[0].params.length > 0) {
+                switch(schemaMeta[0].params[0].expr) {
+                    case EConst(CString(tableName, _)):
+                        metadata.tableName = tableName;
+                    default:
+                }
+            }
+            
+            // Check for @:timestamps annotation
+            if (classType.meta.has(":timestamps")) {
+                metadata.hasTimestamps = true;
+            }
+            
+            // Collect schema fields from varFields for the transformation pass
+            var schemaFields = [];
+            for (varData in varFields) {
+                // Skip if it's a static field or not a regular field
+                if (!varData.isStatic && varData.field.kind.match(FVar(_, _))) {
+                    var fieldName = varData.field.name;
+                    var fieldType = switch(varData.field.type) {
+                        case TInst(t, _): t.get().name;
+                        case TAbstract(t, _): t.get().name;
+                        default: "String"; // Default type
+                    };
+                    schemaFields.push({
+                        name: fieldName,
+                        type: fieldType
+                    });
+                }
+            }
+            metadata.schemaFields = schemaFields;
+            
+            // Store the fully qualified class name for lookups
+            metadata.haxeFqcn = classType.pack.length > 0 
+                ? classType.pack.join(".") + "." + classType.name 
+                : classType.name;
+            
+            #if debug_annotation_transforms
+            trace('[ElixirCompiler] Set isSchema=true metadata for ${classType.name}');
+            trace('[ElixirCompiler] Table name: ${metadata.tableName}, hasTimestamps: ${metadata.hasTimestamps}');
+            trace('[ElixirCompiler] Schema fields: ${schemaFields.length} fields collected');
+            #end
+        }
+        
         // Enable Supervisor transformation pass for @:supervisor modules
         if (classType.meta.has(":supervisor")) {
             metadata.isSupervisor = true;
