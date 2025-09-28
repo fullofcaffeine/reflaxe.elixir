@@ -6653,7 +6653,13 @@ class ElixirASTBuilder {
                 // Get enum tag index - always use the enum value directly for atom-based matching
                 // We don't use elem() because we're matching on atom tuples like {:TodoUpdates}
                 // The switch will generate patterns like: {:TodoUpdates} -> ... {:UserActivity} -> ...
-                buildFromTypedExpr(e, currentContext).def;
+                var enumExpr = buildFromTypedExpr(e, currentContext);
+                if (enumExpr != null) {
+                    enumExpr.def;
+                } else {
+                    // Fallback if the expression couldn't be built
+                    EVar("nil");
+                }
                 
             case TThrow(e):
                 // Generate Elixir throw
