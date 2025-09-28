@@ -1,8 +1,8 @@
 # Compilation configuration for migration test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/ecto/migration
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/ecto/migration/out
 CreateUsers

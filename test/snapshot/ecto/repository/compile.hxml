@@ -10,7 +10,7 @@
 -D reflaxe_runtime
 
 # Output to test directory
--D elixir_output=out
+-D elixir_output=test/snapshot/ecto/repository/out
 
 # Enable debug info
 -D debug

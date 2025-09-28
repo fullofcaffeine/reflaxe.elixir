@@ -2,10 +2,10 @@
 # Tests advanced pattern matching features including exhaustive checking,
 # nested patterns, complex guards, with statements, and binary patterns
 
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/core/enhanced_pattern_matching
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/core/enhanced_pattern_matching/out
 Main

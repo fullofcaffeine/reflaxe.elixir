@@ -1,8 +1,8 @@
 # Compilation configuration for example 06 user management
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/core/example_06_user_mgmt
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/core/example_06_user_mgmt/out
 contexts.Users

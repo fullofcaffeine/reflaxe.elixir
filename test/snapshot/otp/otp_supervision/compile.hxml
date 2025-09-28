@@ -1,9 +1,9 @@
 # Compilation configuration for otp_supervision test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/otp/otp_supervision
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/otp/otp_supervision/out
 -D reflaxe_runtime
 Main

@@ -1,7 +1,7 @@
--cp ../../../../std
+-cp std
 -cp ../../../../src  
--cp .
+-cp test/snapshot/ecto/ecto_error_test
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/ecto/ecto_error_test/out
 Main

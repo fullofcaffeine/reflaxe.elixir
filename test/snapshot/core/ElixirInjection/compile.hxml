@@ -1,8 +1,8 @@
 # Test for __elixir__() injection functionality
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/core/ElixirInjection
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/core/ElixirInjection/out
 Main
