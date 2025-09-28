@@ -700,12 +700,24 @@ class ElixirASTBuilder {
                     case TThis:
                         // Handle 'this' references - use the receiver parameter name from context
                         // In instance methods, this refers to the first parameter (struct)
+                        #if debug_exunit
+                        trace('[AST Builder] TThis: isInClassMethodContext=${currentContext?.isInClassMethodContext}, isInExUnitTest=${currentContext?.isInExUnitTest}, receiverParam=${currentContext?.currentReceiverParamName}, context exists=${currentContext != null}');
+                        #end
                         if (currentContext.isInClassMethodContext && currentContext.currentReceiverParamName != null) {
                             EVar(currentContext.currentReceiverParamName);
+                        } else if (currentContext.isInExUnitTest) {
+                            // In ExUnit tests, 'this' should refer to the test context
+                            // This will be used for instance field access patterns
+                            #if debug_exunit
+                            trace('[AST Builder] Using "context" for ExUnit test');
+                            #end
+                            EVar("context");
                         } else {
                             // For now, generate a placeholder that will cause a compile error
                             // This helps identify where instance variables are being used inappropriately
-                            // TODO: Transform to proper ExUnit patterns (context, module attributes, or local vars)
+                            #if debug_exunit
+                            trace('[AST Builder] No context available - using placeholder');
+                            #end
                             EVar("__instance_variable_not_available_in_this_context__");
                         }
                     default:
@@ -3374,18 +3386,63 @@ class ElixirASTBuilder {
                         }
                         #end
                         
-                        // Special handling for tuple.elem(N) field access
-                        // This occurs when switch statements on Result enums generate field access
-                        // We need to prepare for transformation to elem(tuple, N) function calls
-                        if (fieldName == "elem") {
-                            // Mark this as a tuple element access for later transformation
-                            // The transformer will convert this to proper elem() calls
-                            EField(target, fieldName);
-                        } else if (isMapAccess(e.t)) {
-                            // Detect map/struct access patterns
-                            EAccess(target, makeAST(EAtom(fieldName)));
+                        // Special handling for ExUnit test instance variable access
+                        // In ExUnit tests, instance variables are accessed via the context map
+                        // Transform: this.test_data -> context[:test_data]
+                        if (currentContext.isInExUnitTest) {
+                            #if debug_exunit
+                            trace('[AST Builder] TField in ExUnit test - field: ${fieldName}, e.expr: ${Type.enumConstructor(e.expr)}');
+                            switch(e.expr) {
+                                case TLocal(v): trace('[AST Builder]   TLocal var: ${v.name}');
+                                default:
+                            }
+                            #end
+                            switch(e.expr) {
+                                case TConst(TThis):
+                                    // This is an instance variable access in an ExUnit test
+                                    // Generate context[:field_name] pattern
+                                    #if debug_exunit
+                                    trace('[AST Builder] ExUnit instance field access via this: context[:${fieldName}]');
+                                    #end
+                                    // Convert field name to snake_case for Elixir
+                                    var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+                                    // Return context[:field_name] pattern
+                                    EAccess(makeAST(EVar("context")), makeAST(EAtom(snakeFieldName)));
+                                case TLocal(v) if (v.name == "struct"):
+                                    // Sometimes the compiler generates a local variable named "struct"
+                                    // In ExUnit tests, this should also map to context
+                                    #if debug_exunit
+                                    trace('[AST Builder] ExUnit field access via struct var: context[:${fieldName}]');
+                                    #end
+                                    var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+                                    EAccess(makeAST(EVar("context")), makeAST(EAtom(snakeFieldName)));
+                                default:
+                                    // Not a 'this' reference, handle normally
+                                    if (fieldName == "elem") {
+                                        // Mark this as a tuple element access for later transformation
+                                        // The transformer will convert this to proper elem() calls
+                                        EField(target, fieldName);
+                                    } else if (isMapAccess(e.t)) {
+                                        // Detect map/struct access patterns
+                                        EAccess(target, makeAST(EAtom(fieldName)));
+                                    } else {
+                                        EField(target, fieldName);
+                                    }
+                            }
                         } else {
-                            EField(target, fieldName);
+                            // Special handling for tuple.elem(N) field access
+                            // This occurs when switch statements on Result enums generate field access
+                            // We need to prepare for transformation to elem(tuple, N) function calls
+                            if (fieldName == "elem") {
+                                // Mark this as a tuple element access for later transformation
+                                // The transformer will convert this to proper elem() calls
+                                EField(target, fieldName);
+                            } else if (isMapAccess(e.t)) {
+                                // Detect map/struct access patterns
+                                EAccess(target, makeAST(EAtom(fieldName)));
+                            } else {
+                                EField(target, fieldName);
+                            }
                         }
                 }
                 
