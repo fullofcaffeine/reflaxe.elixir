@@ -12,6 +12,44 @@ This file contains compiler-specific development guidance for agents working on 
 - **ElixirTyper.hx** - Type mapping between Haxe and Elixir systems
 - **schema/** directory - Schema introspection and metadata processing
 
+## ⚠️ CRITICAL: Haxe Metadata Storage Behavior
+
+**FUNDAMENTAL RULE: Haxe ALWAYS strips the colon prefix from metadata when storing internally.**
+
+### How Haxe Handles Metadata
+When you write `@:test` in Haxe source code:
+1. **Parser sees**: `@:test` (with colon)
+2. **Storage**: Haxe strips the colon and stores as `"test"` 
+3. **Access**: Use `field.meta.has("test")` NOT `field.meta.has(":test")`
+
+### Correct Metadata Checking
+```haxe
+// ✅ CORRECT: Check without colon prefix
+if (field.meta.has("test")) { ... }
+if (field.meta.has("liveview")) { ... }
+if (classType.meta.has("exunit")) { ... }
+
+// ❌ WRONG: Checking with colon - will NEVER match
+if (field.meta.has(":test")) { ... }      // This will always be false!
+if (field.meta.has(":liveview")) { ... }  // Colon already stripped!
+```
+
+### Common Metadata Annotations and Their Storage
+| Written in Haxe | Stored Internally | Check With |
+|-----------------|------------------|------------|
+| `@:test` | `"test"` | `meta.has("test")` |
+| `@:liveview` | `"liveview"` | `meta.has("liveview")` |
+| `@:exunit` | `"exunit"` | `meta.has("exunit")` |
+| `@:native("Name")` | `"native"` | `meta.has("native")` |
+| `@:schema` | `"schema"` | `meta.has("schema")` |
+| `@:endpoint` | `"endpoint"` | `meta.has("endpoint")` |
+
+### Why This Matters
+- **No defensive programming needed**: Don't check both with and without colon
+- **Consistent behavior**: This applies to ALL metadata in Haxe
+- **Clean code**: Single check is sufficient and correct
+- **Performance**: Avoid redundant string comparisons
+
 ### 📁 Complete Compiler File Structure
 
 **⚠️ CRITICAL RULE: When adding new helper compilers, ALWAYS update this tree**

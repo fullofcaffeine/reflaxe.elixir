@@ -4,911 +4,695 @@
 
 Running all tests (use -j N to control parallelism)...
 # Respect jobserver: do not force -j here; top-level -j will propagate
-Running array_map_idiomatic...
 Running bootstrap_external/basic...
-Running ast/pipeline_test...
-Running bootstrap/multiple_dependencies...
 Running bootstrap_inline/basic...
 Running bootstrap/no_dependencies...
 Running bootstrap/log_dependency...
+Running bootstrap/multiple_dependencies...
 Running bootstrap/std_dependency...
-✅ bootstrap/no_dependencies (1s)
-Running constructor_patterns...
-✅ bootstrap/std_dependency (1s)
-✅ array_map_idiomatic (1s)
 Running core/abstract_types...
 Running core/advanced_patterns...
-❌ bootstrap/multiple_dependencies - Output mismatch (2s)
-❌ bootstrap_external/basic - Output mismatch (2s)
+❌ bootstrap/no_dependencies - Output mismatch (syntax OK) (1s)
+❌ bootstrap/std_dependency - Output mismatch (syntax OK) (1s)
 Running core/array_comprehension_nested...
-❌ ast/pipeline_test - Output mismatch (2s)
 Running core/array_map_idiomatic...
+❌ bootstrap_external/basic - Output mismatch (syntax OK) (1s)
+❌ bootstrap_inline/basic - Output mismatch (syntax OK) (1s)
 Running core/arrays...
-❌ bootstrap_inline/basic - Output mismatch (2s)
+Running core/ArrayComprehensionTest...
+❌ core/abstract_types - Output mismatch (syntax OK) (1s)
+Running core/ast/pipeline_test...
+❌ bootstrap/log_dependency - Output mismatch (syntax OK) (1s)
 Running core/basic_syntax...
-❌ bootstrap/log_dependency - Output mismatch (2s)
+❌ bootstrap/multiple_dependencies - Output mismatch (syntax OK) (2s)
+Running core/CaseClauseVariableDeclarations...
+❌ core/advanced_patterns - Output mismatch (syntax OK) (2s)
 Running core/classes...
-✅ core/array_map_idiomatic (1s)
+❌ core/array_map_idiomatic - Output mismatch (syntax OK) (1s)
+Running core/constructor_patterns...
+❌ core/ArrayComprehensionTest - Output mismatch (syntax OK) (1s)
+Running core/DateCompilation...
+❌ core/array_comprehension_nested - Output mismatch (syntax OK) (1s)
 Running core/domain_abstractions...
-❌ constructor_patterns - Output mismatch (2s)
+❌ core/arrays - Output mismatch (syntax OK) (1s)
 Running core/domain_abstractions_exunit...
-❌ core/abstract_types - Output mismatch (2s)
+❌ core/basic_syntax - Output mismatch (syntax OK) (1s)
 Running core/dynamic...
-❌ core/advanced_patterns - Output mismatch (2s)
+❌ core/ast/pipeline_test - Output mismatch (syntax OK) (1s)
 Running core/elixir_idiomatic...
-❌ core/basic_syntax - Output mismatch (1s)
+❌ core/CaseClauseVariableDeclarations - Output mismatch (syntax OK) (1s)
+Running core/elixir_injection...
+❌ core/classes - Output mismatch (syntax OK) (1s)
 Running core/elixir_injection_test...
-❌ core/classes - Output mismatch (1s)
+✅ core/DateCompilation (1s)
 Running core/ElixirInjection...
-❌ core/arrays - Output mismatch (1s)
+❌ core/constructor_patterns - Output mismatch (syntax OK) (1s)
 Running core/enhanced_pattern_matching...
-❌ core/array_comprehension_nested - Output mismatch (1s)
+❌ core/elixir_idiomatic - Output mismatch (syntax OK) (2s)
+❌ core/dynamic - Output mismatch (syntax OK) (2s)
 Running core/enhanced_patterns...
-✅ core/enhanced_patterns (1s)
+Running core/enum_pattern_rebinding...
+❌ core/elixir_injection - Output mismatch (syntax OK) (1s)
+Running core/enum_redundant_extraction...
+❌ core/domain_abstractions - Output mismatch (syntax OK) (2s)
 Running core/enum_with_index_optimization...
-✅ core/ElixirInjection (1s)
+❌ core/elixir_injection_test - Output mismatch (syntax OK) (1s)
 Running core/enums...
-❌ core/dynamic - Output mismatch (2s)
-❌ core/domain_abstractions_exunit - Output mismatch (2s)
-Running core/example_02_mix...
+❌ core/domain_abstractions_exunit - Output mismatch (syntax OK) (2s)
+Running core/enums/test/snapshot/regression/enum_pattern_names...
+❌ core/ElixirInjection - Output mismatch (syntax OK) (1s)
 Running core/example_01_simple...
-❌ core/elixir_idiomatic - Output mismatch (2s)
+❌ core/enhanced_pattern_matching - Output mismatch (syntax OK) (1s)
+Running core/example_02_mix...
+❌ core/enums - Compilation failed (1s)
 Running core/example_04_ecto...
-❌ core/elixir_injection_test - Output mismatch (2s)
+✅ core/enums/test/snapshot/regression/enum_pattern_names (1s)
 Running core/example_06_user_mgmt...
-❌ core/enhanced_pattern_matching - Output mismatch (2s)
+❌ core/enum_redundant_extraction - Output mismatch (syntax OK) (1s)
+❌ core/enum_pattern_rebinding - Output mismatch (syntax OK) (1s)
 Running core/exunit_simple...
-❌ core/domain_abstractions - Output mismatch (2s)
+Running core/idiomatic_enum_patterns...
+❌ core/enum_with_index_optimization - Output mismatch (syntax OK) (1s)
 Running core/idiomatic_loops...
-✅ core/example_04_ecto (0s)
+❌ core/example_02_mix - Compilation failed (1s)
 Running core/ImportOptimizer_SimpleTest...
-❌ core/enum_with_index_optimization - Output mismatch (2s)
+❌ core/example_04_ecto - Compilation failed (1s)
+Running core/inheritance_delegation...
+❌ core/enhanced_patterns - Output mismatch (syntax OK) (2s)
 Running core/InjectionDebug...
-❌ core/enums - Output mismatch (2s)
+❌ core/example_01_simple - Output mismatch (syntax OK) (1s)
 Running core/inline_if_function_args...
-❌ core/example_01_simple - Output mismatch (1s)
-❌ core/example_02_mix - Output mismatch (1s)
-✅ core/exunit_simple (1s)
+❌ core/example_06_user_mgmt - Compilation failed (1s)
 Running core/js_async_await...
+❌ core/exunit_simple - Output mismatch (syntax OK) (1s)
 Running core/LambdaVariableScope...
+❌ core/idiomatic_enum_patterns - Output mismatch (syntax OK) (1s)
 Running core/loop_patterns...
-❌ core/example_06_user_mgmt - Output mismatch (1s)
+❌ core/idiomatic_loops - Output mismatch (syntax OK) (1s)
 Running core/loop_variable_assignment...
-✅ core/InjectionDebug (1s)
+❌ core/js_async_await - Compilation failed (1s)
 Running core/loop_variable_mapping...
-✅ core/js_async_await (1s)
-❌ core/idiomatic_loops - Output mismatch (2s)
-Running core/maps...
+❌ core/InjectionDebug - Output mismatch (syntax OK) (1s)
 Running core/MapIdiomatic...
-❌ core/ImportOptimizer_SimpleTest - Output mismatch (1s)
+❌ core/ImportOptimizer_SimpleTest - Output mismatch (syntax OK) (1s)
+Running core/maps...
+❌ core/inheritance_delegation - Output mismatch (syntax OK) (1s)
 Running core/maps_functional...
-✅ core/LambdaVariableScope (1s)
+❌ core/inline_if_function_args - Output mismatch (syntax OK) (1s)
+Running core/MapSetImmutability...
+❌ core/LambdaVariableScope - Output mismatch (syntax OK) (1s)
 Running core/metadata_test...
-✅ core/inline_if_function_args (1s)
+❌ core/loop_patterns - Output mismatch (syntax OK) (1s)
 Running core/module_syntax...
-❌ core/loop_patterns - Output mismatch (1s)
+❌ core/loop_variable_assignment - Output mismatch (syntax OK) (1s)
 Running core/mutable_ops...
-❌ core/loop_variable_assignment - Output mismatch (1s)
+❌ core/loop_variable_mapping - Output mismatch (syntax OK) (1s)
 Running core/native_annotation_test...
-✅ core/module_syntax (1s)
+❌ core/MapIdiomatic - Output mismatch (syntax OK) (1s)
+Running core/NegationMapExists...
+❌ core/maps - Output mismatch (syntax OK) (1s)
+❌ core/MapSetImmutability - Output mismatch (syntax OK) (1s)
+Running core/null_coalescing_operator...
 Running core/optimization_pipeline...
-❌ core/MapIdiomatic - Output mismatch (1s)
+❌ core/maps_functional - Output mismatch (syntax OK) (1s)
 Running core/option_type...
-❌ core/metadata_test - Output mismatch (1s)
+❌ core/metadata_test - Output mismatch (syntax OK) (1s)
 Running core/parameter_naming...
-❌ core/maps_functional - Output mismatch (1s)
+❌ core/module_syntax - Output mismatch (syntax OK) (1s)
 Running core/pattern_matching...
-❌ core/maps - Output mismatch (1s)
+❌ core/mutable_ops - Output mismatch (syntax OK) (1s)
 Running core/PatternMatching_Enhanced...
-❌ core/mutable_ops - Output mismatch (1s)
+❌ core/native_annotation_test - Output mismatch (syntax OK) (1s)
 Running core/protocol...
-❌ core/loop_variable_mapping - Output mismatch (2s)
-❌ core/native_annotation_test - Output mismatch (2s)
+✅ core/NegationMapExists (1s)
 Running core/result_type...
+❌ core/null_coalescing_operator - Output mismatch (syntax OK) (1s)
 Running core/simple_for_loop...
-✅ core/optimization_pipeline (1s)
+❌ core/optimization_pipeline - Output mismatch (syntax OK) (2s)
 Running core/source_map_basic...
-✅ core/parameter_naming (1s)
+❌ core/option_type - Output mismatch (syntax OK) (2s)
 Running core/source_map_validation...
-❌ core/option_type - Output mismatch (1s)
+❌ core/parameter_naming - Output mismatch (syntax OK) (1s)
 Running core/SourceMapGeneration...
-❌ core/pattern_matching - Output mismatch (1s)
-❌ core/PatternMatching_Enhanced - Output mismatch (1s)
+❌ core/pattern_matching - Output mismatch (syntax OK) (1s)
 Running core/SourceMapTracking...
-❌ core/protocol - Output mismatch (1s)
+❌ core/PatternMatching_Enhanced - Output mismatch (syntax OK) (2s)
+Running core/StringInterpolationInThrow...
+❌ core/protocol - Output mismatch (syntax OK) (2s)
 Running core/strings...
+❌ core/result_type - Output mismatch (syntax OK) (2s)
 Running core/struct_field_assignment...
-❌ core/simple_for_loop - Output mismatch (1s)
-❌ core/result_type - Output mismatch (1s)
+❌ core/simple_for_loop - Output mismatch (syntax OK) (1s)
+Running core/supervisor_transformation...
+❌ core/source_map_basic - Output mismatch (syntax OK) (1s)
+Running core/switch_variable_extraction...
+❌ core/source_map_validation - Output mismatch (syntax OK) (1s)
+Running core/SyntheticBindingsInCase...
+❌ core/SourceMapGeneration - Output mismatch (syntax OK) (1s)
 Running core/try_catch...
+❌ core/SourceMapTracking - Output mismatch (syntax OK) (1s)
+Running core/TupleElemTest...
+❌ core/StringInterpolationInThrow - Output mismatch (syntax OK) (1s)
 Running core/typedef_compilation...
-❌ core/source_map_basic - Output mismatch (1s)
+❌ core/struct_field_assignment - Output mismatch (syntax OK) (1s)
+✅ core/switch_variable_extraction (1s)
+❌ core/strings - Output mismatch (syntax OK) (1s)
 Running core/while_loops...
-❌ core/source_map_validation - Output mismatch (1s)
-Running date/conversion_roundtrip...
-✅ core/struct_field_assignment (1s)
-Running date/elixir_extensions...
-❌ core/SourceMapGeneration - Output mismatch (2s)
-❌ core/SourceMapTracking - Output mismatch (2s)
-Running date/instance_access...
-Running date/now_gettime_in_map...
-❌ core/strings - Output mismatch (2s)
-Running date/presence_metadata...
-❌ core/try_catch - Output mismatch (1s)
-Running date/standard_api_comprehensive...
-❌ core/typedef_compilation - Output mismatch (1s)
-Running date/unix_units...
-❌ core/while_loops - Output mismatch (2s)
+Running debug/loop_desugaring...
 Running ecto/advanced_ecto...
-❌ date/conversion_roundtrip - Output mismatch (2s)
+✅ core/SyntheticBindingsInCase (1s)
 Running ecto/changeset...
-❌ date/elixir_extensions - Output mismatch (2s)
+❌ core/supervisor_transformation - Output mismatch (syntax OK) (1s)
 Running ecto/db_types...
-✅ date/now_gettime_in_map (1s)
+✅ core/TupleElemTest (1s)
 Running ecto/db_types_extensions...
-❌ date/instance_access - Output mismatch (1s)
+❌ core/try_catch - Output mismatch (syntax OK) (1s)
 Running ecto/db_types_sugar...
-❌ date/presence_metadata - Output mismatch (2s)
+❌ ecto/advanced_ecto - Compilation failed (2s)
 Running ecto/ecto_error_test...
-✅ ecto/changeset (1s)
+✅ debug/loop_desugaring (2s)
 Running ecto/ecto_integration...
-❌ date/unix_units - Output mismatch (1s)
+❌ core/typedef_compilation - Output mismatch (syntax OK) (2s)
 Running ecto/ecto_schema...
-❌ date/standard_api_comprehensive - Output mismatch (2s)
+❌ core/while_loops - Output mismatch (syntax OK) (2s)
+❌ ecto/changeset - Output mismatch (syntax OK) (1s)
 Running ecto/migration...
-❌ ecto/advanced_ecto - Output mismatch (1s)
 Running ecto/migration_create_table...
-✅ ecto/db_types (1s)
+❌ ecto/db_types - Output mismatch (syntax OK) (1s)
 Running ecto/migration_validation...
-✅ ecto/db_types_extensions (1s)
+❌ ecto/db_types_extensions - Output mismatch (syntax OK) (1s)
 Running ecto/query...
-✅ ecto/db_types_sugar (1s)
+❌ ecto/db_types_sugar - Output mismatch (syntax OK) (1s)
 Running ecto/repository...
-✅ ecto/migration (1s)
-✅ ecto/ecto_schema (1s)
-Running ecto/typed_string_literals...
+❌ ecto/ecto_error_test - Output mismatch (syntax OK) (1s)
 Running ecto/typed_query...
-❌ ecto/ecto_error_test - Output mismatch (1s)
-Running ElixirInjection...
-❌ ecto/ecto_integration - Output mismatch (1s)
-Running HygieneTransformUsageDetection...
-✅ ecto/query (1s)
-Running loops/nested_variable_declaration...
-❌ ecto/migration_create_table - Output mismatch (1s)
-Running NullCoalescingOperator...
-✅ ecto/repository (1s)
-Running otp/behavior...
-✅ ecto/migration_validation (2s)
-Running otp/otp_genserver...
+❌ ecto/ecto_integration - Output mismatch (syntax OK) (1s)
+Running ecto/typed_string_literals...
+❌ ecto/ecto_schema - Output mismatch (syntax OK) (1s)
+Running ecto/TypedQueryTest...
+❌ ecto/migration - Output mismatch (syntax OK) (1s)
+Running exunit/exunit_comprehensive...
+❌ ecto/migration_create_table - Output mismatch (syntax OK) (1s)
+Running exunit/ExunitComprehensive...
+❌ ecto/query - Output mismatch (syntax OK) (1s)
+Running exunit/ExunitComprehensiveShowcase...
+❌ ecto/migration_validation - Output mismatch (syntax OK) (1s)
+Running exunit/ExunitDescribeBlocks...
+❌ ecto/repository - Output mismatch (syntax OK) (1s)
+Running exunit/ExunitEdgeCases...
 ❌ ecto/typed_query - Compilation failed (1s)
-Running otp/otp_supervision...
+Running exunit/ExunitSetupTeardown...
 ❌ ecto/typed_string_literals - Compilation failed (1s)
+Running loop_desugaring...
+❌ ecto/TypedQueryTest - Compilation failed (1s)
+Running loop_desugaring/simple_for_loop...
+❌ exunit/exunit_comprehensive - Compilation failed (1s)
+Running loops/ForLoopMapNegation...
+✅ exunit/ExunitDescribeBlocks (1s)
+Running loops/loop_builder_idiomatic...
+❌ exunit/ExunitComprehensive - Invalid Elixir syntax (2s)
+Running loops/LoopNestedVariableDeclaration...
+❌ exunit/ExunitComprehensiveShowcase - Output mismatch (syntax OK) (1s)
+Running loops/nested_variable_declaration...
+❌ exunit/ExunitEdgeCases - Output mismatch (syntax OK) (1s)
+Running loops/SimpleNestedVar...
+❌ exunit/ExunitSetupTeardown - Output mismatch (syntax OK) (1s)
+Running otp/behavior...
+✅ loops/ForLoopMapNegation (2s)
+Running otp/otp_genserver...
+❌ loop_desugaring - Output mismatch (syntax OK) (1s)
+Running otp/otp_supervision...
+❌ loop_desugaring/simple_for_loop - Output mismatch (syntax OK) (1s)
 Running otp/type_safe_child_specs...
-✅ HygieneTransformUsageDetection (1s)
-❌ ElixirInjection - Output mismatch (1s)
+✅ loops/loop_builder_idiomatic (1s)
 Running phoenix/hxx_template...
+✅ loops/LoopNestedVariableDeclaration (1s)
+Running phoenix/HXXTypeSafety...
+✅ loops/SimpleNestedVar (2s)
+Running phoenix/HXXTypeSafetyErrors...
+❌ loops/nested_variable_declaration - Output mismatch (syntax OK) (1s)
 Running phoenix/liveview_basic...
-❌ NullCoalescingOperator - Output mismatch (1s)
+❌ otp/otp_genserver - Output mismatch (syntax OK) (1s)
+Running phoenix/phoenix_presence...
+❌ otp/behavior - Output mismatch (syntax OK) (1s)
+Running phoenix/PhoenixPresenceBehavior...
+❌ otp/type_safe_child_specs - Output mismatch (syntax OK) (1s)
 Running phoenix/presence...
-✅ loops/nested_variable_declaration (2s)
+❌ otp/otp_supervision - Output mismatch (syntax OK) (1s)
 Running phoenix/presence_edge_cases...
-❌ otp/behavior - Output mismatch (1s)
+❌ phoenix/hxx_template - Output mismatch (syntax OK) (1s)
+Running phoenix/PresenceMacro...
+❌ phoenix/HXXTypeSafetyErrors - Compilation failed (0s)
+Running phoenix/PresenceMacroGenerics...
+✅ phoenix/phoenix_presence (1s)
+Running phoenix/PresenceNativeRegression...
+✅ phoenix/PhoenixPresenceBehavior (1s)
 Running phoenix/router...
-❌ otp/otp_genserver - Output mismatch (1s)
+❌ phoenix/liveview_basic - Output mismatch (syntax OK) (1s)
 Running phoenix/RouterBuildMacro...
-❌ phoenix/liveview_basic - Output mismatch (1s)
-Running phoenix/RouterBuildMacro_InvalidAction...
-❌ otp/type_safe_child_specs - Output mismatch (1s)
-Running phoenix/RouterBuildMacro_InvalidController...
-❌ otp/otp_supervision - Output mismatch (2s)
-Running phoenix/RouterBuildMacro_MultipleInvalid...
-❌ phoenix/hxx_template - Output mismatch (2s)
-Running phoenix/RouterBuildMacro_ValidController...
 ❌ phoenix/presence_edge_cases - Compilation failed (1s)
+Running phoenix/RouterBuildMacro_InvalidAction...
+❌ phoenix/PresenceMacro - Compilation failed (1s)
+Running phoenix/RouterBuildMacro_InvalidController...
+❌ phoenix/PresenceMacroGenerics - Compilation failed (1s)
+Running phoenix/RouterBuildMacro_MultipleInvalid...
+❌ phoenix/presence - Output mismatch (syntax OK) (1s)
+Running phoenix/RouterBuildMacro_ValidController...
+❌ phoenix/PresenceNativeRegression - Output mismatch (syntax OK) (1s)
 Running phoenix/template...
-✅ phoenix/presence (1s)
+❌ phoenix/RouterBuildMacro - Output mismatch (syntax OK) (1s)
 Running regression/array_push_if_expression...
-✅ phoenix/RouterBuildMacro (1s)
+❌ phoenix/router - Output mismatch (syntax OK) (1s)
+Running regression/binary_op_instance_method...
+❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (syntax OK) (2s)
 Running regression/class_instance_methods...
-✅ phoenix/router (1s)
+❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (syntax OK) (2s)
 Running regression/collision_renamed_vars...
-❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (2s)
+❌ phoenix/RouterBuildMacro_MultipleInvalid - Output mismatch (syntax OK) (1s)
 Running regression/complex_binary_expression...
-❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (2s)
+❌ phoenix/RouterBuildMacro_ValidController - Output mismatch (syntax OK) (1s)
 Running regression/conditional_array_comprehension...
-✅ phoenix/template (1s)
+✅ phoenix/HXXTypeSafety (5s)
+Running regression/DateStaticMethods...
+❌ phoenix/template - Output mismatch (syntax OK) (2s)
+Running regression/desugared_for_detection...
+❌ regression/array_push_if_expression - Output mismatch (syntax OK) (1s)
+Running regression/econd_printing_test...
+❌ regression/binary_op_instance_method - Output mismatch (syntax OK) (1s)
 Running regression/elixir_injection_with_proper_architecture...
-❌ phoenix/RouterBuildMacro_MultipleInvalid - Output mismatch (1s)
+❌ regression/class_instance_methods - Output mismatch (syntax OK) (1s)
+Running regression/EmbeddedSwitchPattern...
+❌ regression/collision_renamed_vars - Output mismatch (syntax OK) (1s)
+Running regression/enum_extraction_usage...
+❌ regression/complex_binary_expression - Output mismatch (syntax OK) (1s)
+Running regression/enum_index_usage...
+❌ regression/conditional_array_comprehension - Output mismatch (syntax OK) (1s)
+Running regression/enum_parameter_return...
+✅ regression/DateStaticMethods (1s)
 Running regression/enum_pattern_names...
-❌ phoenix/RouterBuildMacro_ValidController - Output mismatch (1s)
+✅ regression/econd_printing_test (1s)
+Running regression/enum_pattern_rebinding...
+❌ regression/desugared_for_detection - Output mismatch (syntax OK) (1s)
 Running regression/enum_snake_case_patterns...
-❌ regression/array_push_if_expression - Output mismatch (1s)
+✅ regression/enum_extraction_usage (1s)
 Running regression/enum_switch_parameter...
-❌ regression/class_instance_methods - Output mismatch (2s)
+❌ regression/elixir_injection_with_proper_architecture - Output mismatch (syntax OK) (1s)
+Running regression/enum_temp_var_fix...
+❌ regression/EmbeddedSwitchPattern - Output mismatch (syntax OK) (1s)
+Running regression/enum_variable_extraction...
+❌ regression/enum_index_usage - Output mismatch (syntax OK) (2s)
+Running regression/enum_variable_rebinding...
+❌ regression/enum_parameter_return - Output mismatch (syntax OK) (1s)
+Running regression/EnumIgnoredParameter...
+❌ regression/enum_pattern_names - Output mismatch (syntax OK) (1s)
+Running regression/EnumUnderscorePattern...
+❌ regression/enum_temp_var_fix - Compilation failed (1s)
 Running regression/function_parameter_underscore...
-❌ regression/collision_renamed_vars - Output mismatch (2s)
+❌ regression/enum_pattern_rebinding - Output mismatch (syntax OK) (1s)
+Running regression/guard_condition_grouping...
+❌ regression/enum_snake_case_patterns - Output mismatch (syntax OK) (1s)
+Running regression/guard_condition_grouping/test/snapshot/regression/guard_condition_grouping/test/snapshot/regression/guard_condition_grouping...
+❌ regression/enum_switch_parameter - Output mismatch (syntax OK) (2s)
+Running regression/guard_flattener_validation...
+❌ regression/EnumIgnoredParameter - Compilation failed (1s)
+Running regression/hygiene_transform_usage_detection...
+❌ regression/enum_variable_extraction - Output mismatch (syntax OK) (1s)
 Running regression/ImplicitImports...
-❌ regression/complex_binary_expression - Output mismatch (1s)
-❌ regression/conditional_array_comprehension - Output mismatch (1s)
+❌ regression/enum_variable_rebinding - Output mismatch (syntax OK) (1s)
 Running regression/IncrementDecrementPattern...
+❌ regression/EnumUnderscorePattern - Output mismatch (syntax OK) (1s)
+Running regression/infrastructure_var_naming...
+✅ regression/guard_condition_grouping/test/snapshot/regression/guard_condition_grouping/test/snapshot/regression/guard_condition_grouping (1s)
+Running regression/infrastructure_variable_substitution...
+❌ regression/function_parameter_underscore - Output mismatch (syntax OK) (1s)
+Running regression/infrastructure_variables_complete...
+✅ regression/guard_flattener_validation (1s)
 Running regression/InlineExpansion...
-✅ regression/enum_pattern_names (1s)
-❌ regression/elixir_injection_with_proper_architecture - Output mismatch (1s)
+❌ regression/guard_condition_grouping - Output mismatch (syntax OK) (1s)
+Running regression/json_printer_loop...
+❌ regression/hygiene_transform_usage_detection - Output mismatch (syntax OK) (1s)
 Running regression/json_printer_temp_vars...
+❌ regression/ImplicitImports - Output mismatch (syntax OK) (1s)
+Running regression/loop_array_iteration...
+❌ regression/IncrementDecrementPattern - Output mismatch (syntax OK) (1s)
+Running regression/loop_bracket_notation...
+❌ regression/infrastructure_var_naming - Output mismatch (syntax OK) (1s)
+Running regression/loop_complex_expressions...
+❌ regression/infrastructure_variable_substitution - Output mismatch (syntax OK) (1s)
+Running regression/loop_comprehensive...
+❌ regression/InlineExpansion - Output mismatch (syntax OK) (2s)
+Running regression/loop_expression_metadata...
+❌ regression/infrastructure_variables_complete - Output mismatch (syntax OK) (2s)
+Running regression/loop_string_building...
+❌ regression/json_printer_loop - Output mismatch (syntax OK) (2s)
+Running regression/loop_unrolling...
+❌ regression/json_printer_temp_vars - Output mismatch (syntax OK) (1s)
+Running regression/loop_unrolling_detection...
+❌ regression/loop_array_iteration - Output mismatch (syntax OK) (1s)
+Running regression/loop_unrolling_edge_cases...
+❌ regression/loop_bracket_notation - Output mismatch (syntax OK) (1s)
+Running regression/loop_unrolling_nested...
+✅ regression/loop_expression_metadata (1s)
+Running regression/loop_without_optimization...
+❌ regression/loop_complex_expressions - Output mismatch (syntax OK) (1s)
+Running regression/map_iteration_debug...
+❌ regression/loop_comprehensive - Output mismatch (syntax OK) (1s)
+Running regression/MapIteration...
+❌ regression/loop_string_building - Output mismatch (syntax OK) (1s)
+❌ regression/loop_unrolling - Output mismatch (syntax OK) (1s)
+Running regression/nested_loop_detection...
+Running regression/nested_loop_infrastructure...
+✅ regression/loop_unrolling_detection (1s)
+Running regression/nested_loop_simple...
+✅ regression/loop_unrolling_edge_cases (1s)
+Running regression/nested_loop_variable_substitution...
+✅ regression/loop_unrolling_nested (1s)
 Running regression/nested_switch_variable_consistency...
-❌ regression/enum_snake_case_patterns - Output mismatch (2s)
+✅ regression/map_iteration_debug (1s)
 Running regression/OrphanedEnumParameters...
-❌ regression/function_parameter_underscore - Output mismatch (1s)
+✅ regression/nested_loop_infrastructure (2s)
+Running regression/pattern_matching_transform...
+✅ regression/nested_loop_simple (1s)
 Running regression/PhoenixWebAnnotation...
-❌ regression/ImplicitImports - Output mismatch (1s)
+❌ regression/loop_without_optimization - Output mismatch (syntax OK) (1s)
 Running regression/property_setters...
-❌ regression/IncrementDecrementPattern - Output mismatch (2s)
+❌ regression/MapIteration - Output mismatch (syntax OK) (2s)
 Running regression/ReflectOperations...
-❌ regression/InlineExpansion - Output mismatch (2s)
-Running regression/StatementSeparation...
-❌ regression/enum_switch_parameter - Output mismatch (3s)
-Running regression/StdFunctions...
-❌ regression/json_printer_temp_vars - Output mismatch (1s)
-Running regression/StructFieldUpdate...
-❌ regression/nested_switch_variable_consistency - Output mismatch (1s)
-Running regression/temp_result_switch_fix...
-✅ regression/PhoenixWebAnnotation (1s)
-❌ regression/OrphanedEnumParameters - Output mismatch (1s)
-Running regression/temp_variable_optimization...
-Running regression/troubleshooting_patterns...
+❌ regression/nested_loop_detection - Output mismatch (syntax OK) (2s)
+Running regression/ReflectOperations2...
+❌ regression/nested_loop_variable_substitution - Output mismatch (syntax OK) (1s)
+Running regression/reserved_keyword_params...
+❌ regression/nested_switch_variable_consistency - Output mismatch (syntax OK) (1s)
+Running regression/single_loop_unrolling...
 ❌ regression/ReflectOperations - Compilation failed (1s)
+Running regression/StatementSeparation...
+❌ regression/OrphanedEnumParameters - Output mismatch (syntax OK) (1s)
+Running regression/StdFunctions...
+❌ regression/PhoenixWebAnnotation - Output mismatch (syntax OK) (1s)
+Running regression/string_interpolation_blocks...
+❌ regression/pattern_matching_transform - Output mismatch (syntax OK) (1s)
+Running regression/struct_field_concatenation...
+❌ regression/property_setters - Output mismatch (syntax OK) (1s)
+Running regression/StructFieldUpdate...
+❌ regression/ReflectOperations2 - Output mismatch (syntax OK) (1s)
+Running regression/switch_return_sanitizer...
+❌ regression/reserved_keyword_params - Output mismatch (syntax OK) (2s)
+Running regression/temp_result_switch_fix...
+❌ regression/single_loop_unrolling - Output mismatch (syntax OK) (1s)
+Running regression/temp_variable_optimization...
+❌ regression/StatementSeparation - Output mismatch (syntax OK) (1s)
+Running regression/troubleshooting_patterns...
+❌ regression/struct_field_concatenation - Output mismatch (syntax OK) (2s)
+❌ regression/StdFunctions - Output mismatch (syntax OK) (1s)
 Running regression/tuple_elem_access...
-❌ regression/property_setters - Output mismatch (2s)
 Running regression/underscore_for_loop...
-✅ regression/troubleshooting_patterns (1s)
+❌ regression/StructFieldUpdate - Output mismatch (syntax OK) (2s)
 Running regression/underscore_prefix_consistency...
-❌ regression/StatementSeparation - Output mismatch (1s)
+❌ regression/string_interpolation_blocks - Output mismatch (syntax OK) (2s)
+Running regression/UnderscorePrefixRegression...
+❌ regression/switch_return_sanitizer - Output mismatch (syntax OK) (1s)
+Running regression/UnderscorePrefixTest...
+❌ regression/temp_result_switch_fix - Output mismatch (syntax OK) (1s)
 Running regression/unused_parameters...
-❌ regression/temp_result_switch_fix - Output mismatch (1s)
+❌ regression/temp_variable_optimization - Output mismatch (syntax OK) (2s)
+Running regression/unused_variable_detection...
+❌ regression/troubleshooting_patterns - Output mismatch (syntax OK) (1s)
 Running regression/variable_name_digits...
-❌ regression/StructFieldUpdate - Output mismatch (1s)
+❌ regression/tuple_elem_access - Output mismatch (syntax OK) (1s)
+Running regression/variable_renaming_in_objects...
+❌ regression/underscore_prefix_consistency - Output mismatch (syntax OK) (1s)
+Running regression/variable_shadowing_comprehensive...
+✅ regression/UnderscorePrefixTest (2s)
 Running stdlib/array_cross_operations...
-❌ regression/StdFunctions - Output mismatch (1s)
+❌ regression/underscore_for_loop - Output mismatch (syntax OK) (1s)
+❌ regression/UnderscorePrefixRegression - Output mismatch (syntax OK) (1s)
 Running stdlib/array_idiomatic...
-❌ regression/temp_variable_optimization - Output mismatch (1s)
+Running stdlib/date/conversion_roundtrip...
+❌ regression/unused_parameters - Output mismatch (syntax OK) (1s)
+Running stdlib/date/elixir_extensions...
+❌ regression/unused_variable_detection - Output mismatch (syntax OK) (1s)
+Running stdlib/date/instance_access...
+✅ regression/variable_renaming_in_objects (1s)
+Running stdlib/date/now_gettime_in_map...
+❌ regression/variable_name_digits - Output mismatch (syntax OK) (1s)
+Running stdlib/date/presence_metadata...
+❌ regression/variable_shadowing_comprehensive - Output mismatch (syntax OK) (1s)
+Running stdlib/date/standard_api_comprehensive...
+❌ stdlib/array_cross_operations - Output mismatch (syntax OK) (1s)
+Running stdlib/date/unix_units...
+❌ stdlib/date/conversion_roundtrip - Output mismatch (syntax OK) (1s)
+Running stdlib/ReflectAPI...
+❌ stdlib/array_idiomatic - Output mismatch (syntax OK) (1s)
 Running stdlib/ReflectFieldsLoop...
-❌ regression/underscore_for_loop - Output mismatch (1s)
-❌ regression/tuple_elem_access - Output mismatch (1s)
+❌ stdlib/date/elixir_extensions - Output mismatch (syntax OK) (2s)
+Running stdlib/ReflectFieldsLoopVar...
+❌ stdlib/date/instance_access - Output mismatch (syntax OK) (1s)
+Running stdlib/ReflectHasField...
+❌ stdlib/date/now_gettime_in_map - Output mismatch (syntax OK) (1s)
+Running stdlib/SimpleReflectFieldsLoop...
+❌ stdlib/ReflectAPI - Compilation failed (1s)
+Running stdlib/StdFunctions...
+❌ stdlib/date/presence_metadata - Output mismatch (syntax OK) (1s)
 Running stdlib/stdlib_externs...
-✅ regression/unused_parameters (1s)
-❌ regression/underscore_prefix_consistency - Output mismatch (1s)
-❌ regression/variable_name_digits - Output mismatch (2s)
-❌ stdlib/array_cross_operations - Output mismatch (2s)
-❌ stdlib/array_idiomatic - Output mismatch (2s)
-❌ stdlib/ReflectFieldsLoop - Output mismatch (1s)
-❌ stdlib/stdlib_externs - Output mismatch (1s)
+❌ stdlib/date/standard_api_comprehensive - Output mismatch (syntax OK) (1s)
+Running stdlib/string_cross_validation...
+❌ stdlib/date/unix_units - Output mismatch (syntax OK) (1s)
+Running stdlib/StringBufTest...
+❌ stdlib/ReflectFieldsLoop - Output mismatch (syntax OK) (1s)
+Running stdlib/table_builder...
+✅ stdlib/ReflectFieldsLoopVar (1s)
+❌ stdlib/ReflectHasField - Compilation failed (1s)
+✅ stdlib/StdFunctions (1s)
+❌ stdlib/SimpleReflectFieldsLoop - Output mismatch (syntax OK) (1s)
+✅ stdlib/StringBufTest (1s)
+❌ stdlib/table_builder - Compilation failed (1s)
+❌ stdlib/string_cross_validation - Output mismatch (syntax OK) (1s)
+❌ stdlib/stdlib_externs - Output mismatch (syntax OK) (2s)
 
 ========================================
-Test Results (AST Pipeline): 36/139 passed
-\033[0;31mFAILED: 103 test(s)\033[0m
-  ❌ bootstrap/multiple_dependencies - Output mismatch (2s)
-  ❌ bootstrap_external/basic - Output mismatch (2s)
-  ❌ ast/pipeline_test - Output mismatch (2s)
-  ❌ bootstrap_inline/basic - Output mismatch (2s)
-  ❌ bootstrap/log_dependency - Output mismatch (2s)
-  ❌ constructor_patterns - Output mismatch (2s)
-  ❌ core/abstract_types - Output mismatch (2s)
-  ❌ core/advanced_patterns - Output mismatch (2s)
-  ❌ core/basic_syntax - Output mismatch (1s)
-  ❌ core/classes - Output mismatch (1s)
-  ❌ core/arrays - Output mismatch (1s)
-  ❌ core/array_comprehension_nested - Output mismatch (1s)
-  ❌ core/dynamic - Output mismatch (2s)
-  ❌ core/domain_abstractions_exunit - Output mismatch (2s)
-  ❌ core/elixir_idiomatic - Output mismatch (2s)
-  ❌ core/elixir_injection_test - Output mismatch (2s)
-  ❌ core/enhanced_pattern_matching - Output mismatch (2s)
-  ❌ core/domain_abstractions - Output mismatch (2s)
-  ❌ core/enum_with_index_optimization - Output mismatch (2s)
-  ❌ core/enums - Output mismatch (2s)
-  ❌ core/example_01_simple - Output mismatch (1s)
-  ❌ core/example_02_mix - Output mismatch (1s)
-  ❌ core/example_06_user_mgmt - Output mismatch (1s)
-  ❌ core/idiomatic_loops - Output mismatch (2s)
-  ❌ core/ImportOptimizer_SimpleTest - Output mismatch (1s)
-  ❌ core/loop_patterns - Output mismatch (1s)
-  ❌ core/loop_variable_assignment - Output mismatch (1s)
-  ❌ core/MapIdiomatic - Output mismatch (1s)
-  ❌ core/metadata_test - Output mismatch (1s)
-  ❌ core/maps_functional - Output mismatch (1s)
-  ❌ core/maps - Output mismatch (1s)
-  ❌ core/mutable_ops - Output mismatch (1s)
-  ❌ core/loop_variable_mapping - Output mismatch (2s)
-  ❌ core/native_annotation_test - Output mismatch (2s)
-  ❌ core/option_type - Output mismatch (1s)
-  ❌ core/pattern_matching - Output mismatch (1s)
-  ❌ core/PatternMatching_Enhanced - Output mismatch (1s)
-  ❌ core/protocol - Output mismatch (1s)
-  ❌ core/simple_for_loop - Output mismatch (1s)
-  ❌ core/result_type - Output mismatch (1s)
-  ❌ core/source_map_basic - Output mismatch (1s)
-  ❌ core/source_map_validation - Output mismatch (1s)
-  ❌ core/SourceMapGeneration - Output mismatch (2s)
-  ❌ core/SourceMapTracking - Output mismatch (2s)
-  ❌ core/strings - Output mismatch (2s)
-  ❌ core/try_catch - Output mismatch (1s)
-  ❌ core/typedef_compilation - Output mismatch (1s)
-  ❌ core/while_loops - Output mismatch (2s)
-  ❌ date/conversion_roundtrip - Output mismatch (2s)
-  ❌ date/elixir_extensions - Output mismatch (2s)
-  ❌ date/instance_access - Output mismatch (1s)
-  ❌ date/presence_metadata - Output mismatch (2s)
-  ❌ date/unix_units - Output mismatch (1s)
-  ❌ date/standard_api_comprehensive - Output mismatch (2s)
-  ❌ ecto/advanced_ecto - Output mismatch (1s)
-  ❌ ecto/ecto_error_test - Output mismatch (1s)
-  ❌ ecto/ecto_integration - Output mismatch (1s)
-  ❌ ecto/migration_create_table - Output mismatch (1s)
+Test Results (AST Pipeline): 32/232 passed
+\033[0;31mFAILED: 200 test(s)\033[0m
+  ❌ bootstrap/no_dependencies - Output mismatch (syntax OK) (1s)
+  ❌ bootstrap/std_dependency - Output mismatch (syntax OK) (1s)
+  ❌ bootstrap_external/basic - Output mismatch (syntax OK) (1s)
+  ❌ bootstrap_inline/basic - Output mismatch (syntax OK) (1s)
+  ❌ core/abstract_types - Output mismatch (syntax OK) (1s)
+  ❌ bootstrap/log_dependency - Output mismatch (syntax OK) (1s)
+  ❌ bootstrap/multiple_dependencies - Output mismatch (syntax OK) (2s)
+  ❌ core/advanced_patterns - Output mismatch (syntax OK) (2s)
+  ❌ core/array_map_idiomatic - Output mismatch (syntax OK) (1s)
+  ❌ core/ArrayComprehensionTest - Output mismatch (syntax OK) (1s)
+  ❌ core/array_comprehension_nested - Output mismatch (syntax OK) (1s)
+  ❌ core/arrays - Output mismatch (syntax OK) (1s)
+  ❌ core/basic_syntax - Output mismatch (syntax OK) (1s)
+  ❌ core/ast/pipeline_test - Output mismatch (syntax OK) (1s)
+  ❌ core/CaseClauseVariableDeclarations - Output mismatch (syntax OK) (1s)
+  ❌ core/classes - Output mismatch (syntax OK) (1s)
+  ❌ core/constructor_patterns - Output mismatch (syntax OK) (1s)
+  ❌ core/elixir_idiomatic - Output mismatch (syntax OK) (2s)
+  ❌ core/dynamic - Output mismatch (syntax OK) (2s)
+  ❌ core/elixir_injection - Output mismatch (syntax OK) (1s)
+  ❌ core/domain_abstractions - Output mismatch (syntax OK) (2s)
+  ❌ core/elixir_injection_test - Output mismatch (syntax OK) (1s)
+  ❌ core/domain_abstractions_exunit - Output mismatch (syntax OK) (2s)
+  ❌ core/ElixirInjection - Output mismatch (syntax OK) (1s)
+  ❌ core/enhanced_pattern_matching - Output mismatch (syntax OK) (1s)
+  ❌ core/enums - Compilation failed (1s)
+  ❌ core/enum_redundant_extraction - Output mismatch (syntax OK) (1s)
+  ❌ core/enum_pattern_rebinding - Output mismatch (syntax OK) (1s)
+  ❌ core/enum_with_index_optimization - Output mismatch (syntax OK) (1s)
+  ❌ core/example_02_mix - Compilation failed (1s)
+  ❌ core/example_04_ecto - Compilation failed (1s)
+  ❌ core/enhanced_patterns - Output mismatch (syntax OK) (2s)
+  ❌ core/example_01_simple - Output mismatch (syntax OK) (1s)
+  ❌ core/example_06_user_mgmt - Compilation failed (1s)
+  ❌ core/exunit_simple - Output mismatch (syntax OK) (1s)
+  ❌ core/idiomatic_enum_patterns - Output mismatch (syntax OK) (1s)
+  ❌ core/idiomatic_loops - Output mismatch (syntax OK) (1s)
+  ❌ core/js_async_await - Compilation failed (1s)
+  ❌ core/InjectionDebug - Output mismatch (syntax OK) (1s)
+  ❌ core/ImportOptimizer_SimpleTest - Output mismatch (syntax OK) (1s)
+  ❌ core/inheritance_delegation - Output mismatch (syntax OK) (1s)
+  ❌ core/inline_if_function_args - Output mismatch (syntax OK) (1s)
+  ❌ core/LambdaVariableScope - Output mismatch (syntax OK) (1s)
+  ❌ core/loop_patterns - Output mismatch (syntax OK) (1s)
+  ❌ core/loop_variable_assignment - Output mismatch (syntax OK) (1s)
+  ❌ core/loop_variable_mapping - Output mismatch (syntax OK) (1s)
+  ❌ core/MapIdiomatic - Output mismatch (syntax OK) (1s)
+  ❌ core/maps - Output mismatch (syntax OK) (1s)
+  ❌ core/MapSetImmutability - Output mismatch (syntax OK) (1s)
+  ❌ core/maps_functional - Output mismatch (syntax OK) (1s)
+  ❌ core/metadata_test - Output mismatch (syntax OK) (1s)
+  ❌ core/module_syntax - Output mismatch (syntax OK) (1s)
+  ❌ core/mutable_ops - Output mismatch (syntax OK) (1s)
+  ❌ core/native_annotation_test - Output mismatch (syntax OK) (1s)
+  ❌ core/null_coalescing_operator - Output mismatch (syntax OK) (1s)
+  ❌ core/optimization_pipeline - Output mismatch (syntax OK) (2s)
+  ❌ core/option_type - Output mismatch (syntax OK) (2s)
+  ❌ core/parameter_naming - Output mismatch (syntax OK) (1s)
+  ❌ core/pattern_matching - Output mismatch (syntax OK) (1s)
+  ❌ core/PatternMatching_Enhanced - Output mismatch (syntax OK) (2s)
+  ❌ core/protocol - Output mismatch (syntax OK) (2s)
+  ❌ core/result_type - Output mismatch (syntax OK) (2s)
+  ❌ core/simple_for_loop - Output mismatch (syntax OK) (1s)
+  ❌ core/source_map_basic - Output mismatch (syntax OK) (1s)
+  ❌ core/source_map_validation - Output mismatch (syntax OK) (1s)
+  ❌ core/SourceMapGeneration - Output mismatch (syntax OK) (1s)
+  ❌ core/SourceMapTracking - Output mismatch (syntax OK) (1s)
+  ❌ core/StringInterpolationInThrow - Output mismatch (syntax OK) (1s)
+  ❌ core/struct_field_assignment - Output mismatch (syntax OK) (1s)
+  ❌ core/strings - Output mismatch (syntax OK) (1s)
+  ❌ core/supervisor_transformation - Output mismatch (syntax OK) (1s)
+  ❌ core/try_catch - Output mismatch (syntax OK) (1s)
+  ❌ ecto/advanced_ecto - Compilation failed (2s)
+  ❌ core/typedef_compilation - Output mismatch (syntax OK) (2s)
+  ❌ core/while_loops - Output mismatch (syntax OK) (2s)
+  ❌ ecto/changeset - Output mismatch (syntax OK) (1s)
+  ❌ ecto/db_types - Output mismatch (syntax OK) (1s)
+  ❌ ecto/db_types_extensions - Output mismatch (syntax OK) (1s)
+  ❌ ecto/db_types_sugar - Output mismatch (syntax OK) (1s)
+  ❌ ecto/ecto_error_test - Output mismatch (syntax OK) (1s)
+  ❌ ecto/ecto_integration - Output mismatch (syntax OK) (1s)
+  ❌ ecto/ecto_schema - Output mismatch (syntax OK) (1s)
+  ❌ ecto/migration - Output mismatch (syntax OK) (1s)
+  ❌ ecto/migration_create_table - Output mismatch (syntax OK) (1s)
+  ❌ ecto/query - Output mismatch (syntax OK) (1s)
+  ❌ ecto/migration_validation - Output mismatch (syntax OK) (1s)
+  ❌ ecto/repository - Output mismatch (syntax OK) (1s)
   ❌ ecto/typed_query - Compilation failed (1s)
   ❌ ecto/typed_string_literals - Compilation failed (1s)
-  ❌ ElixirInjection - Output mismatch (1s)
-  ❌ NullCoalescingOperator - Output mismatch (1s)
-  ❌ otp/behavior - Output mismatch (1s)
-  ❌ otp/otp_genserver - Output mismatch (1s)
-  ❌ phoenix/liveview_basic - Output mismatch (1s)
-  ❌ otp/type_safe_child_specs - Output mismatch (1s)
-  ❌ otp/otp_supervision - Output mismatch (2s)
-  ❌ phoenix/hxx_template - Output mismatch (2s)
+  ❌ ecto/TypedQueryTest - Compilation failed (1s)
+  ❌ exunit/exunit_comprehensive - Compilation failed (1s)
+  ❌ exunit/ExunitComprehensive - Invalid Elixir syntax (2s)
+  ❌ exunit/ExunitComprehensiveShowcase - Output mismatch (syntax OK) (1s)
+  ❌ exunit/ExunitEdgeCases - Output mismatch (syntax OK) (1s)
+  ❌ exunit/ExunitSetupTeardown - Output mismatch (syntax OK) (1s)
+  ❌ loop_desugaring - Output mismatch (syntax OK) (1s)
+  ❌ loop_desugaring/simple_for_loop - Output mismatch (syntax OK) (1s)
+  ❌ loops/nested_variable_declaration - Output mismatch (syntax OK) (1s)
+  ❌ otp/otp_genserver - Output mismatch (syntax OK) (1s)
+  ❌ otp/behavior - Output mismatch (syntax OK) (1s)
+  ❌ otp/type_safe_child_specs - Output mismatch (syntax OK) (1s)
+  ❌ otp/otp_supervision - Output mismatch (syntax OK) (1s)
+  ❌ phoenix/hxx_template - Output mismatch (syntax OK) (1s)
+  ❌ phoenix/HXXTypeSafetyErrors - Compilation failed (0s)
+  ❌ phoenix/liveview_basic - Output mismatch (syntax OK) (1s)
   ❌ phoenix/presence_edge_cases - Compilation failed (1s)
-  ❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (2s)
-  ❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (2s)
-  ❌ phoenix/RouterBuildMacro_MultipleInvalid - Output mismatch (1s)
-  ❌ phoenix/RouterBuildMacro_ValidController - Output mismatch (1s)
-  ❌ regression/array_push_if_expression - Output mismatch (1s)
-  ❌ regression/class_instance_methods - Output mismatch (2s)
-  ❌ regression/collision_renamed_vars - Output mismatch (2s)
-  ❌ regression/complex_binary_expression - Output mismatch (1s)
-  ❌ regression/conditional_array_comprehension - Output mismatch (1s)
-  ❌ regression/elixir_injection_with_proper_architecture - Output mismatch (1s)
-  ❌ regression/enum_snake_case_patterns - Output mismatch (2s)
-  ❌ regression/function_parameter_underscore - Output mismatch (1s)
-  ❌ regression/ImplicitImports - Output mismatch (1s)
-  ❌ regression/IncrementDecrementPattern - Output mismatch (2s)
-  ❌ regression/InlineExpansion - Output mismatch (2s)
-  ❌ regression/enum_switch_parameter - Output mismatch (3s)
-  ❌ regression/json_printer_temp_vars - Output mismatch (1s)
-  ❌ regression/nested_switch_variable_consistency - Output mismatch (1s)
-  ❌ regression/OrphanedEnumParameters - Output mismatch (1s)
+  ❌ phoenix/PresenceMacro - Compilation failed (1s)
+  ❌ phoenix/PresenceMacroGenerics - Compilation failed (1s)
+  ❌ phoenix/presence - Output mismatch (syntax OK) (1s)
+  ❌ phoenix/PresenceNativeRegression - Output mismatch (syntax OK) (1s)
+  ❌ phoenix/RouterBuildMacro - Output mismatch (syntax OK) (1s)
+  ❌ phoenix/router - Output mismatch (syntax OK) (1s)
+  ❌ phoenix/RouterBuildMacro_InvalidAction - Output mismatch (syntax OK) (2s)
+  ❌ phoenix/RouterBuildMacro_InvalidController - Output mismatch (syntax OK) (2s)
+  ❌ phoenix/RouterBuildMacro_MultipleInvalid - Output mismatch (syntax OK) (1s)
+  ❌ phoenix/RouterBuildMacro_ValidController - Output mismatch (syntax OK) (1s)
+  ❌ phoenix/template - Output mismatch (syntax OK) (2s)
+  ❌ regression/array_push_if_expression - Output mismatch (syntax OK) (1s)
+  ❌ regression/binary_op_instance_method - Output mismatch (syntax OK) (1s)
+  ❌ regression/class_instance_methods - Output mismatch (syntax OK) (1s)
+  ❌ regression/collision_renamed_vars - Output mismatch (syntax OK) (1s)
+  ❌ regression/complex_binary_expression - Output mismatch (syntax OK) (1s)
+  ❌ regression/conditional_array_comprehension - Output mismatch (syntax OK) (1s)
+  ❌ regression/desugared_for_detection - Output mismatch (syntax OK) (1s)
+  ❌ regression/elixir_injection_with_proper_architecture - Output mismatch (syntax OK) (1s)
+  ❌ regression/EmbeddedSwitchPattern - Output mismatch (syntax OK) (1s)
+  ❌ regression/enum_index_usage - Output mismatch (syntax OK) (2s)
+  ❌ regression/enum_parameter_return - Output mismatch (syntax OK) (1s)
+  ❌ regression/enum_pattern_names - Output mismatch (syntax OK) (1s)
+  ❌ regression/enum_temp_var_fix - Compilation failed (1s)
+  ❌ regression/enum_pattern_rebinding - Output mismatch (syntax OK) (1s)
+  ❌ regression/enum_snake_case_patterns - Output mismatch (syntax OK) (1s)
+  ❌ regression/enum_switch_parameter - Output mismatch (syntax OK) (2s)
+  ❌ regression/EnumIgnoredParameter - Compilation failed (1s)
+  ❌ regression/enum_variable_extraction - Output mismatch (syntax OK) (1s)
+  ❌ regression/enum_variable_rebinding - Output mismatch (syntax OK) (1s)
+  ❌ regression/EnumUnderscorePattern - Output mismatch (syntax OK) (1s)
+  ❌ regression/function_parameter_underscore - Output mismatch (syntax OK) (1s)
+  ❌ regression/guard_condition_grouping - Output mismatch (syntax OK) (1s)
+  ❌ regression/hygiene_transform_usage_detection - Output mismatch (syntax OK) (1s)
+  ❌ regression/ImplicitImports - Output mismatch (syntax OK) (1s)
+  ❌ regression/IncrementDecrementPattern - Output mismatch (syntax OK) (1s)
+  ❌ regression/infrastructure_var_naming - Output mismatch (syntax OK) (1s)
+  ❌ regression/infrastructure_variable_substitution - Output mismatch (syntax OK) (1s)
+  ❌ regression/InlineExpansion - Output mismatch (syntax OK) (2s)
+  ❌ regression/infrastructure_variables_complete - Output mismatch (syntax OK) (2s)
+  ❌ regression/json_printer_loop - Output mismatch (syntax OK) (2s)
+  ❌ regression/json_printer_temp_vars - Output mismatch (syntax OK) (1s)
+  ❌ regression/loop_array_iteration - Output mismatch (syntax OK) (1s)
+  ❌ regression/loop_bracket_notation - Output mismatch (syntax OK) (1s)
+  ❌ regression/loop_complex_expressions - Output mismatch (syntax OK) (1s)
+  ❌ regression/loop_comprehensive - Output mismatch (syntax OK) (1s)
+  ❌ regression/loop_string_building - Output mismatch (syntax OK) (1s)
+  ❌ regression/loop_unrolling - Output mismatch (syntax OK) (1s)
+  ❌ regression/loop_without_optimization - Output mismatch (syntax OK) (1s)
+  ❌ regression/MapIteration - Output mismatch (syntax OK) (2s)
+  ❌ regression/nested_loop_detection - Output mismatch (syntax OK) (2s)
+  ❌ regression/nested_loop_variable_substitution - Output mismatch (syntax OK) (1s)
+  ❌ regression/nested_switch_variable_consistency - Output mismatch (syntax OK) (1s)
   ❌ regression/ReflectOperations - Compilation failed (1s)
-  ❌ regression/property_setters - Output mismatch (2s)
-  ❌ regression/StatementSeparation - Output mismatch (1s)
-  ❌ regression/temp_result_switch_fix - Output mismatch (1s)
-  ❌ regression/StructFieldUpdate - Output mismatch (1s)
-  ❌ regression/StdFunctions - Output mismatch (1s)
-  ❌ regression/temp_variable_optimization - Output mismatch (1s)
-  ❌ regression/underscore_for_loop - Output mismatch (1s)
-  ❌ regression/tuple_elem_access - Output mismatch (1s)
-  ❌ regression/underscore_prefix_consistency - Output mismatch (1s)
-  ❌ regression/variable_name_digits - Output mismatch (2s)
-  ❌ stdlib/array_cross_operations - Output mismatch (2s)
-  ❌ stdlib/array_idiomatic - Output mismatch (2s)
-  ❌ stdlib/ReflectFieldsLoop - Output mismatch (1s)
-  ❌ stdlib/stdlib_externs - Output mismatch (1s)
+  ❌ regression/OrphanedEnumParameters - Output mismatch (syntax OK) (1s)
+  ❌ regression/PhoenixWebAnnotation - Output mismatch (syntax OK) (1s)
+  ❌ regression/pattern_matching_transform - Output mismatch (syntax OK) (1s)
+  ❌ regression/property_setters - Output mismatch (syntax OK) (1s)
+  ❌ regression/ReflectOperations2 - Output mismatch (syntax OK) (1s)
+  ❌ regression/reserved_keyword_params - Output mismatch (syntax OK) (2s)
+  ❌ regression/single_loop_unrolling - Output mismatch (syntax OK) (1s)
+  ❌ regression/StatementSeparation - Output mismatch (syntax OK) (1s)
+  ❌ regression/struct_field_concatenation - Output mismatch (syntax OK) (2s)
+  ❌ regression/StdFunctions - Output mismatch (syntax OK) (1s)
+  ❌ regression/StructFieldUpdate - Output mismatch (syntax OK) (2s)
+  ❌ regression/string_interpolation_blocks - Output mismatch (syntax OK) (2s)
+  ❌ regression/switch_return_sanitizer - Output mismatch (syntax OK) (1s)
+  ❌ regression/temp_result_switch_fix - Output mismatch (syntax OK) (1s)
+  ❌ regression/temp_variable_optimization - Output mismatch (syntax OK) (2s)
+  ❌ regression/troubleshooting_patterns - Output mismatch (syntax OK) (1s)
+  ❌ regression/tuple_elem_access - Output mismatch (syntax OK) (1s)
+  ❌ regression/underscore_prefix_consistency - Output mismatch (syntax OK) (1s)
+  ❌ regression/underscore_for_loop - Output mismatch (syntax OK) (1s)
+  ❌ regression/UnderscorePrefixRegression - Output mismatch (syntax OK) (1s)
+  ❌ regression/unused_parameters - Output mismatch (syntax OK) (1s)
+  ❌ regression/unused_variable_detection - Output mismatch (syntax OK) (1s)
+  ❌ regression/variable_name_digits - Output mismatch (syntax OK) (1s)
+  ❌ regression/variable_shadowing_comprehensive - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/array_cross_operations - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/date/conversion_roundtrip - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/array_idiomatic - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/date/elixir_extensions - Output mismatch (syntax OK) (2s)
+  ❌ stdlib/date/instance_access - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/date/now_gettime_in_map - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/ReflectAPI - Compilation failed (1s)
+  ❌ stdlib/date/presence_metadata - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/date/standard_api_comprehensive - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/date/unix_units - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/ReflectFieldsLoop - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/ReflectHasField - Compilation failed (1s)
+  ❌ stdlib/SimpleReflectFieldsLoop - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/table_builder - Compilation failed (1s)
+  ❌ stdlib/string_cross_validation - Output mismatch (syntax OK) (1s)
+  ❌ stdlib/stdlib_externs - Output mismatch (syntax OK) (2s)
+node:internal/modules/cjs/loader:1215
+  throw err;
+  ^
 
-> reflaxe-elixir@0.1.0 test:elixir-validate
-> make -C test validate-elixir
+Error: Cannot find module '../lib/cli.js'
+Require stack:
+- /Users/fullofcaffeine/workspace/code/haxe.elixir/node_modules/.bin/npm
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1212:15)
+    at Module._load (node:internal/modules/cjs/loader:1043:27)
+    at Module.require (node:internal/modules/cjs/loader:1298:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/Users/fullofcaffeine/workspace/code/haxe.elixir/node_modules/.bin/npm:2:1)
+    at Module._compile (node:internal/modules/cjs/loader:1529:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1613:10)
+    at Module.load (node:internal/modules/cjs/loader:1275:32)
+    at Module._load (node:internal/modules/cjs/loader:1096:12)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/fullofcaffeine/workspace/code/haxe.elixir/node_modules/.bin/npm'
+  ]
+}
 
-Running Elixir syntax validation...
-=== Elixir Syntax Validation ===
-Validating generated Elixir code in /Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot
-
-
-=== Validation Summary ===
-Total tests validated: 133
-[0;32mPassed: 133[0m
-[0;31mFailed: 0[0m
-
-[0;32mAll Elixir syntax validation passed![0m
-
-> reflaxe-elixir@0.1.0 test:mix
-> MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --max-cases 1 --timeout 120000
-
-==> file_system
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
-    │           ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:71:11
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
-    │                 ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:71:17
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
-    │                           ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:71:27
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
-    │                                 ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:71:33
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
-    │                                                ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:71:48
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
-    │                                                      ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:71:54
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
-    │                                                                  ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:71:66
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 71 │           '-e', 'modify', '-e', 'close_write', '-e', 'moved_to', '-e', 'moved_from',
-    │                                                                        ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:71:72
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │           ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:11
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │                 ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:17
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │                           ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:27
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │                                 ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:33
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │                                           ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:43
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │                                                 ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:49
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │                                                           ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:59
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │                                                                               ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:79
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │                                                                                          ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:90
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 72 │           '-e', 'create', '-e', 'delete', '-e', 'attrib', '--format', format, '--quiet', '-m', '-r'
-    │                                                                                                ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:72:96
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 84 │     parse_options(t, result -- ['-r'])
-    │                                 ~
-    │
-    └─ lib/file_system/backends/fs_inotify.ex:84:33
-
-     warning: using single-quoted strings to represent charlists is deprecated.
-     Use ~c"" if you indeed want a charlist or use "" instead.
-     You may run "mix format --migrate" to change all single-quoted
-     strings to use the ~c sigil and fix this warning.
-     │
- 104 │         bash_args = ['-c', '#{executable_path()} "$0" "$@" & PID=$!; read a; kill -KILL $PID']
-     │                      ~
-     │
-     └─ lib/file_system/backends/fs_inotify.ex:104:22
-
-     warning: using single-quoted strings to represent charlists is deprecated.
-     Use ~c"" if you indeed want a charlist or use "" instead.
-     You may run "mix format --migrate" to change all single-quoted
-     strings to use the ~c sigil and fix this warning.
-     │
- 104 │         bash_args = ['-c', '#{executable_path()} "$0" "$@" & PID=$!; read a; kill -KILL $PID']
-     │                            ~
-     │
-     └─ lib/file_system/backends/fs_inotify.ex:104:28
-
-     warning: using single-quoted strings to represent charlists is deprecated.
-     Use ~c"" if you indeed want a charlist or use "" instead.
-     You may run "mix format --migrate" to change all single-quoted
-     strings to use the ~c sigil and fix this warning.
-     │
- 109 │               bash_args ++ ['--'] ++ port_args
-     │                             ~
-     │
-     └─ lib/file_system/backends/fs_inotify.ex:109:29
-
-     warning: using single-quoted strings to represent charlists is deprecated.
-     Use ~c"" if you indeed want a charlist or use "" instead.
-     You may run "mix format --migrate" to change all single-quoted
-     strings to use the ~c sigil and fix this warning.
-     │
- 116 │           {:spawn_executable, '/bin/sh'},
-     │                               ~
-     │
-     └─ lib/file_system/backends/fs_inotify.ex:116:31
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 94 │         args = ['-F' | dirs |> Enum.map(&Path.absname/1) |> Enum.map(&to_charlist/1)]
-    │                 ~
-    │
-    └─ lib/file_system/backends/fs_mac.ex:94:17
-
-     warning: using single-quoted strings to represent charlists is deprecated.
-     Use ~c"" if you indeed want a charlist or use "" instead.
-     You may run "mix format --migrate" to change all single-quoted
-     strings to use the ~c sigil and fix this warning.
-     │
- 103 │         ['--latency=#{latency / 1}' | result]
-     │          ~
-     │
-     └─ lib/file_system/backends/fs_mac.ex:103:10
-
-     warning: using single-quoted strings to represent charlists is deprecated.
-     Use ~c"" if you indeed want a charlist or use "" instead.
-     You may run "mix format --migrate" to change all single-quoted
-     strings to use the ~c sigil and fix this warning.
-     │
- 111 │     parse_options(t, ['--no-defer' | result])
-     │                       ~
-     │
-     └─ lib/file_system/backends/fs_mac.ex:111:23
-
-     warning: using single-quoted strings to represent charlists is deprecated.
-     Use ~c"" if you indeed want a charlist or use "" instead.
-     You may run "mix format --migrate" to change all single-quoted
-     strings to use the ~c sigil and fix this warning.
-     │
- 121 │     parse_options(t, ['--with-root' | result])
-     │                       ~
-     │
-     └─ lib/file_system/backends/fs_mac.ex:121:23
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 83 │           '--format', format, '--quiet', '-m', '-r'
-    │           ~
-    │
-    └─ lib/file_system/backends/fs_windows.ex:83:11
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 83 │           '--format', format, '--quiet', '-m', '-r'
-    │                               ~
-    │
-    └─ lib/file_system/backends/fs_windows.ex:83:31
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 83 │           '--format', format, '--quiet', '-m', '-r'
-    │                                          ~
-    │
-    └─ lib/file_system/backends/fs_windows.ex:83:42
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 83 │           '--format', format, '--quiet', '-m', '-r'
-    │                                                ~
-    │
-    └─ lib/file_system/backends/fs_windows.ex:83:48
-
-    warning: using single-quoted strings to represent charlists is deprecated.
-    Use ~c"" if you indeed want a charlist or use "" instead.
-    You may run "mix format --migrate" to change all single-quoted
-    strings to use the ~c sigil and fix this warning.
-    │
- 95 │     parse_options(t, result -- ['-r'])
-    │                                 ~
-    │
-    └─ lib/file_system/backends/fs_windows.ex:95:33
-
-     warning: using single-quoted strings to represent charlists is deprecated.
-     Use ~c"" if you indeed want a charlist or use "" instead.
-     You may run "mix format --migrate" to change all single-quoted
-     strings to use the ~c sigil and fix this warning.
-     │
- 247 │       {'HAXESHIM_SERVER_PORT', to_charlist(haxeshim_port)},
-     │        ~
-     │
-     └─ lib/haxe_server.ex:247:8
-
-     warning: using single-quoted strings to represent charlists is deprecated.
-     Use ~c"" if you indeed want a charlist or use "" instead.
-     You may run "mix format --migrate" to change all single-quoted
-     strings to use the ~c sigil and fix this warning.
-     │
- 248 │       {'HAXE_SERVER_PORT', to_charlist(state.port)}
-     │        ~
-     │
-     └─ lib/haxe_server.ex:248:8
-
-    warning: variable "include_changeset" is unused (if the variable is not meant to be used, prefix it with an underscore)
-    │
- 76 │     include_changeset = Keyword.get(opts, :changeset, true)
-    │     ~~~~~~~~~~~~~~~~~
-    │
-    └─ lib/mix/tasks/haxe.gen.context.ex:76:5: Mix.Tasks.Haxe.Gen.Context.generate_context/4
-
-    warning: variable "repo_module" is unused (if the variable is not meant to be used, prefix it with an underscore)
-    │
- 77 │     repo_module = Keyword.get(opts, :repo, "Repo")
-    │     ~~~~~~~~~~~
-    │
-    └─ lib/mix/tasks/haxe.gen.context.ex:77:5: Mix.Tasks.Haxe.Gen.Context.generate_context/4
-
-     warning: variable "context_attrs" is unused (if the variable is not meant to be used, prefix it with an underscore)
-     │
- 128 │   defp generate_haxe_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
-     │                                                                                           ~~~~~~~~~~~~~
-     │
-     └─ lib/mix/tasks/haxe.gen.context.ex:128:91: Mix.Tasks.Haxe.Gen.Context.generate_haxe_context_content/9
-
-     warning: variable "context_name" is unused (if the variable is not meant to be used, prefix it with an underscore)
-     │
- 332 │   defp generate_context_business_methods(context_name, schema_name, belongs_to, has_many, has_one) do
-     │                                          ~~~~~~~~~~~~
-     │
-     └─ lib/mix/tasks/haxe.gen.context.ex:332:42: Mix.Tasks.Haxe.Gen.Context.generate_context_business_methods/5
-
-     warning: variable "field" is unused (if the variable is not meant to be used, prefix it with an underscore)
-     │
- 397 │     Enum.map_join(belongs_to, "", fn {parent_schema, field} ->
-     │                                                      ~
-     │
-     └─ lib/mix/tasks/haxe.gen.context.ex:397:54: Mix.Tasks.Haxe.Gen.Context.generate_filter_methods/2
-
-     warning: variable "context_attrs" is unused (if the variable is not meant to be used, prefix it with an underscore)
-     │
- 433 │   defp generate_elixir_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
-     │                                                                                             ~~~~~~~~~~~~~
-     │
-     └─ lib/mix/tasks/haxe.gen.context.ex:433:93: Mix.Tasks.Haxe.Gen.Context.generate_elixir_context_content/9
-
-     warning: variable "schema_attrs" is unused (if the variable is not meant to be used, prefix it with an underscore)
-     │
- 433 │   defp generate_elixir_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
-     │                                                                               ~~~~~~~~~~~~
-     │
-     └─ lib/mix/tasks/haxe.gen.context.ex:433:79: Mix.Tasks.Haxe.Gen.Context.generate_elixir_context_content/9
-
-     warning: variable "table_name" is unused (if the variable is not meant to be used, prefix it with an underscore)
-     │
- 433 │   defp generate_elixir_context_content(context_name, schema_name, table_name, schema_attrs, context_attrs, opts, belongs_to, has_many, has_one) do
-     │                                                                   ~~~~~~~~~~
-     │
-     └─ lib/mix/tasks/haxe.gen.context.ex:433:67: Mix.Tasks.Haxe.Gen.Context.generate_elixir_context_content/9
-
-     warning: variable "app_module" is unused (if the variable is not meant to be used, prefix it with an underscore)
-     │
- 571 │   defp generate_elixir_business_methods(schema_name, belongs_to, has_many, has_one, app_module, repo_module) do
-     │                                                                                     ~~~~~~~~~~
-     │
-     └─ lib/mix/tasks/haxe.gen.context.ex:571:85: Mix.Tasks.Haxe.Gen.Context.generate_elixir_business_methods/6
-
-     warning: variable "config" is unused (if the variable is not meant to be used, prefix it with an underscore)
-     │
- 815 │   defp generate_function_components(config) do
-     │                                     ~~~~~~
-     │
-     └─ lib/mix/tasks/haxe.gen.live.ex:815:37: Mix.Tasks.Haxe.Gen.Live.generate_function_components/1
-
-warning: test/snapshot/constructor_patterns/intended/data_structure_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/constructor_patterns/intended/out/data_structure_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/constructor_patterns/out/data_structure_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/core/enhanced_pattern_matching/intended/enhanced_pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/core/enhanced_pattern_matching/out/enhanced_pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/core/pattern_matching/intended/pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/core/pattern_matching/out/pattern_matching_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/core/source_map_basic/intended/source_map_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/core/source_map_basic/out/source_map_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/core/source_map_validation/intended/source_map_validation_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/core/source_map_validation/out/source_map_validation_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/RouterBuildMacro_InvalidAction/intended/invalid_action_router_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/RouterBuildMacro_InvalidAction/out/invalid_action_router_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/RouterBuildMacro_InvalidController/intended/invalid_controller_router_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/RouterBuildMacro_InvalidController/out/invalid_controller_router_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/RouterBuildMacro_MultipleInvalid/intended/multiple_invalid_router_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/RouterBuildMacro_MultipleInvalid/out/multiple_invalid_router_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/RouterBuildMacro_ValidController/intended/valid_router_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/RouterBuildMacro_ValidController/out/valid_router_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/presence/intended/reflect_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/phoenix/presence/out/reflect_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/regression/property_setters/intended/property_setter_test.ex does not match "*_test.exs" and won't be loaded
-warning: test/snapshot/regression/property_setters/out/property_setter_test.ex does not match "*_test.exs" and won't be loaded
-Running ExUnit with seed: 275824, max_cases: 1
-
-✅ Error handling works gracefully
-.✅ Performance test completed - detection: 0ms, check: 0ms
-.
-00:08:30.930 [info] Haxe server started on port 8582
-
-00:08:30.935 [info] HaxeServer terminating: :normal
-✅ HaxeServer started successfully
-✅ File watching components initialized successfully
-.Compiling Haxe files from /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/file_watching_integration_6044/src_haxe to /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/file_watching_integration_6044/lib
-Using build file: /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/file_watching_integration_6044/build.hxml
-Using direct Haxe compilation
-Running: /Users/fullofcaffeine/workspace/code/haxe.elixir/node_modules/.bin/haxe /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/file_watching_integration_6044/build.hxml
-⚠️  Compilation failed as expected (likely no Haxe available): Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.
-
-✅ Core compilation workflow test completed successfully
-.Compiling Haxe files...
-Compiling Haxe files from src_haxe to lib
-Using build file: build.hxml
-Using direct Haxe compilation
-Running: /Users/fullofcaffeine/workspace/code/haxe.elixir/node_modules/.bin/haxe build.hxml
-
-== Compilation error in Haxe files ==
- error: Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.
-
-
-Hint: Run 'mix haxe.errors' for detailed error analysis
-      Run 'mix haxe.errors --json' for LLM-friendly format
-✅ Mix task returned: {:error, [%Mix.Task.Compiler.Diagnostic{file: nil, source: nil, severity: :error, message: "Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.\n", position: {0, 0}, compiler_name: "haxe", span: nil, details: %{line: nil, message: "Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.\n", type: :compilation_error, file: nil, column_start: nil, column_end: nil, raw_line: "Haxe compilation failed (exit 1): Error: : unknown option '--elixir'.\n"}, stacktrace: []}]}
-✅ Mix integration test completed
-...Compiling Haxe files from /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/haxe_compiler_test_8421/src_haxe to /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/haxe_compiler_test_8421/lib
-Using build file: /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/haxe_compiler_test_8421/build.hxml
-..............Compiling Haxe files from /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/haxe_compiler_test_5214/src_haxe to /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/haxe_compiler_test_5214/lib
-Using build file: /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/haxe_compiler_test_5214/build.hxml
-
-00:08:31.852 [info] Haxe server started on port 7308
-Using direct Haxe compilation
-Running: /Users/fullofcaffeine/workspace/code/haxe.elixir/node_modules/.bin/haxe /var/folders/ck/wfszdd3n4_11h578th_vdkd80000gn/T/haxe_compiler_test_5214/build.hxml
-
-00:08:31.941 [info] HaxeServer terminating: :normal
-..
-00:08:32.447 [info] Haxe server started on port 7435
-..
-00:08:32.949 [info] Haxe server started on port 7456
-...
-00:08:33.451 [info] Haxe server started on port 7707
-.
-00:08:34.225 [info] Haxe server started on port 7835
-.
-00:08:34.989 [info] Haxe server started on port 7975
-...
-00:08:35.740 [info] Haxe server started on port 8219
-.
-00:08:36.527 [info] Haxe server started on port 8347
-.
-00:08:37.280 [info] Haxe server started on port 8475
-
-00:08:37.280 [info] HaxeServer terminating: :normal
-.
-00:08:37.882 [info] Haxe server started on port 8603
-.
-00:08:38.383 [error] Failed to start Haxe server: Haxe server process exited immediately
-.
-00:08:38.397 [error] Failed to start Haxe server: Failed to start Haxe server: Erlang error: :enoent
-.
-00:08:39.087 [info] Haxe server started on port 8923
-.........................................
-Finished in 8.9 seconds (0.00s async, 8.9s sync)
-80 tests, 0 failures
+Node.js v20.19.3
