@@ -104,7 +104,8 @@ class GuardConditionCollector {
 					for (branch in condBranches) {
 						// Check if this is a true -> branch that might contain more conditions
 						var isTrueBranch = switch(branch.condition.def) {
-							case EAtom(a): (a:String) == "true";
+							case EBoolean(true): true;
+							case EAtom(a): (a:String) == "true";  // Legacy support
 							default: false;
 						};
 						
@@ -126,7 +127,7 @@ class GuardConditionCollector {
 					if (depth > 0 && !isNilAssignmentBlock(unwrapped)) {
 						branches.push({
 							pattern: null,
-							guard: makeAST(EAtom(new ElixirAtom("true"))),
+							guard: makeAST(EBoolean(true)),
 							body: unwrapped,
 							depth: depth
 						});
@@ -425,7 +426,8 @@ class GuardConditionReconstructor {
 		if (condBranches.length > 0) {
 			var lastBranch = condBranches[condBranches.length - 1];
 			hasDefault = switch(lastBranch.condition.def) {
-				case EAtom(a): (a:String) == "true";
+				case EBoolean(true): true;
+				case EAtom(a): (a:String) == "true";  // Legacy support
 				default: false;
 			};
 		}
@@ -433,8 +435,8 @@ class GuardConditionReconstructor {
 		if (!hasDefault) {
 			// Add explicit true branch with nil
 			condBranches.push({
-				condition: makeAST(EAtom(new ElixirAtom("true"))),
-				body: makeAST(EAtom(new ElixirAtom("nil")))
+				condition: makeAST(EBoolean(true)),
+				body: makeAST(ENil)
 			});
 			
 			#if debug_guard_flattening
