@@ -1169,16 +1169,34 @@ class ElixirCompiler extends GenericCompiler<
             }
             #end
 
+            // Check if this is an ExUnit test method FIRST
+            // ExUnit test methods are special - they're NOT instance methods
+            // even if they appear to be in the Haxe class structure
+            var isExUnitTestMethod = funcData.field.meta.has(":test") || 
+                                     funcData.field.meta.has(":setup") ||
+                                     funcData.field.meta.has(":setupAll") ||
+                                     funcData.field.meta.has(":teardown") ||
+                                     funcData.field.meta.has(":teardownAll");
+            
             // Set method context for instance methods
             // Instance methods need a struct parameter in Elixir
             var isStaticMethod = funcData.isStatic;
-            context.isInClassMethodContext = !isStaticMethod;
-
-            // For instance methods, set the receiver parameter name to "struct"
-            if (!isStaticMethod) {
-                context.currentReceiverParamName = "struct";
-            } else {
+            
+            if (isExUnitTestMethod) {
+                // ExUnit test functions are standalone, not methods on a struct
+                // They don't have access to instance variables via 'this'
+                context.isInClassMethodContext = false;
                 context.currentReceiverParamName = null;
+            } else {
+                // Regular method handling
+                context.isInClassMethodContext = !isStaticMethod;
+                
+                // For instance methods, set the receiver parameter name to "struct"
+                if (!isStaticMethod) {
+                    context.currentReceiverParamName = "struct";
+                } else {
+                    context.currentReceiverParamName = null;
+                }
             }
 
             // Populate tempVarRenameMap for function parameters BEFORE building the body
@@ -1303,7 +1321,8 @@ class ElixirCompiler extends GenericCompiler<
             var params: Array<EPattern> = [];
 
             // For instance methods, add struct as first parameter
-            if (!isStaticMethod) {
+            // BUT NOT for ExUnit test methods - they don't get struct parameters
+            if (!isStaticMethod && !isExUnitTestMethod) {
                 params.push(PVar("struct"));
             }
 
