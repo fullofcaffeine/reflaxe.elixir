@@ -23,6 +23,7 @@ import reflaxe.elixir.ast.intent.LoopIntent;
 import reflaxe.elixir.ast.intent.LoopIntent.*;  // Import all enum constructors
 import reflaxe.elixir.ast.transformers.DesugarredForDetector;
 import reflaxe.elixir.CompilationContext;
+import reflaxe.elixir.helpers.PatternDetector;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -588,7 +589,7 @@ class ElixirASTBuilder {
         // ONLY mark metadata - NO transformation in builder!
         // Check both direct enum constructor calls AND function calls that return idiomatic enums
         switch(expr.expr) {
-            case TCall(e, _) if (e != null && isEnumConstructor(e) && hasIdiomaticMetadata(e)):
+            case TCall(e, _) if (e != null && PatternDetector.isEnumConstructor(e) && hasIdiomaticMetadata(e)):
                 // Direct enum constructor call (e.g., ModuleRef("MyModule"))
                 metadata.requiresIdiomaticTransform = true;
                 metadata.idiomaticEnumType = getEnumTypeName(e);
@@ -1608,8 +1609,8 @@ class ElixirASTBuilder {
                                         }
 
                                         if (!shouldSkipAssignment && info.finalName != null && info.finalName.length > 0) {
-                                            var planIsTemp = isTempPatternVarName(info.finalName);
-                                            var lhsIsTemp = isTempPatternVarName(finalVarName);
+                                            var planIsTemp = PatternDetector.isTempPatternVarName(info.finalName);
+                                            var lhsIsTemp = PatternDetector.isTempPatternVarName(finalVarName);
                                             if (lhsIsTemp && !planIsTemp) {
                                                 shouldSkipAssignment = true;
                                             }
@@ -1689,7 +1690,7 @@ class ElixirASTBuilder {
                                 }
 
                                 #if debug_ast_builder
-                                trace('[DEBUG EMBEDDED] Temp analysis -> tempVar? $isTempVar, lhsTemp? ${isTempPatternVarName(finalVarName)}');
+                                trace('[DEBUG EMBEDDED] Temp analysis -> tempVar? $isTempVar, lhsTemp? ${PatternDetector.isTempPatternVarName(finalVarName)}');
                                 #end
 
                                 #if debug_enum_extraction
@@ -1894,9 +1895,9 @@ class ElixirASTBuilder {
                                     default: null;
                                 };
 
-                                if (isTempPatternVarName(name)) {
+                                if (PatternDetector.isTempPatternVarName(name)) {
                                     shouldSkipAssign = switch(rightAST != null ? rightAST.def : null) {
-                                        case EVar(varName) if (varName == name || isTempPatternVarName(varName)):
+                                        case EVar(varName) if (varName == name || PatternDetector.isTempPatternVarName(varName)):
                                             true;
                                         default:
                                             false;
@@ -1904,7 +1905,7 @@ class ElixirASTBuilder {
                                 } else if (valueName != null) {
                                     if (valueName == name) {
                                         shouldSkipAssign = true;
-                                    } else if (isTempPatternVarName(valueName)) {
+                                    } else if (PatternDetector.isTempPatternVarName(valueName)) {
                                         shouldSkipAssign = true;
                                     }
                                 }
@@ -2042,7 +2043,7 @@ class ElixirASTBuilder {
                 var presenceHandled = false;
                 
                 // Check if this is an enum constructor call first
-                if (e != null && isEnumConstructor(e)) {
+                if (e != null && PatternDetector.isEnumConstructor(e)) {
                     // ONLY BUILD - NO TRANSFORMATION!
                     var tag = extractEnumTag(e);
                     
@@ -2887,7 +2888,7 @@ class ElixirASTBuilder {
                                 return ECall(null, assertFunc, assertArgs);
                             }
                             // Check for HXX.hxx() template calls
-                            else if (fieldName == "hxx" && isHXXModule(obj)) {
+                            else if (fieldName == "hxx" && PatternDetector.isHXXModule(obj)) {
                                 #if debug_hxx_transformation
                                 #if debug_ast_builder
                                 trace('[HXX] Detected HXX.hxx() call - transforming to ~H sigil');
@@ -2993,7 +2994,7 @@ class ElixirASTBuilder {
                                 if (methodHasElixirInjection && expandedElixir != null) {
                                     // Method contains __elixir__(), use the expanded version
                                     return expandedElixir.def;
-                                } else if (isArrayType(obj.t)) {
+                                } else if (PatternDetector.isArrayType(obj.t)) {
                                     // Check for array/list operations that come from loop desugaring
                                     // These need special handling because Haxe desugars loops into array operations
                                     switch(fieldName) {
@@ -3036,7 +3037,7 @@ class ElixirASTBuilder {
                                     }
                                 }
                                 // Check for Map operations that need transformation
-                                else if (isMapType(obj.t)) {
+                                else if (PatternDetector.isMapType(obj.t)) {
                                     // Transform Map methods to Elixir Map module functions
                                     switch(fieldName) {
                                         case "set" if (args.length == 2):
@@ -3504,7 +3505,7 @@ class ElixirASTBuilder {
                     var hasIdiomaticEnums = false;
                     for (e in el) {
                         switch(e.expr) {
-                            case TCall(callTarget, _) if (callTarget != null && isEnumConstructor(callTarget) && hasIdiomaticMetadata(callTarget)):
+                            case TCall(callTarget, _) if (callTarget != null && PatternDetector.isEnumConstructor(callTarget) && hasIdiomaticMetadata(callTarget)):
                                 hasIdiomaticEnums = true;
                                 break;
                             case TCall(_, _):
@@ -4783,7 +4784,7 @@ class ElixirASTBuilder {
                                 var lhsName = toElixirVarName(lhs.name);
                                 var rhsName = toElixirVarName(rhs.name);
 
-                                if (isTempPatternVarName(lhsName) || lhsName == rhsName || isTempPatternVarName(rhsName)) {
+                                if (PatternDetector.isTempPatternVarName(lhsName) || lhsName == rhsName || PatternDetector.isTempPatternVarName(rhsName)) {
                                     shouldSkip = true;
                                     #if debug_redundant_extraction
                                     #if debug_ast_builder
@@ -4801,7 +4802,7 @@ class ElixirASTBuilder {
                                 var lhsName = toElixirVarName(lhs.name);
                                 var rhsName = toElixirVarName(rhs.name);
 
-                                if (isTempPatternVarName(lhsName) || lhsName == rhsName || isTempPatternVarName(rhsName)) {
+                                if (PatternDetector.isTempPatternVarName(lhsName) || lhsName == rhsName || PatternDetector.isTempPatternVarName(rhsName)) {
                                     shouldSkip = true;
                                     #if debug_redundant_extraction
                                     #if debug_ast_builder
@@ -5702,7 +5703,7 @@ class ElixirASTBuilder {
                 #end
                 
                 // Detect fluent API patterns
-                var fluentPattern = detectFluentAPIPattern(f);
+                var fluentPattern = PatternDetector.detectFluentAPIPattern(f);
                 
                 var args = [];
                 var paramRenaming = new Map<String, String>();
@@ -7325,7 +7326,7 @@ class ElixirASTBuilder {
             sourceFile: expr.pos != null ? Context.getPosInfos(expr.pos).file : null,
             type: expr.t,
             elixirType: typeToElixir(expr.t),
-            purity: isPure(expr),
+            purity: PatternDetector.isPure(expr),
             tailPosition: false, // Will be set by transformer
             async: false, // Will be detected by transformer
             requiresReturn: false, // Will be set by context
@@ -7334,7 +7335,7 @@ class ElixirASTBuilder {
             inComprehension: false, // Will be set by context
             inGuard: false, // Will be set by context
             canInline: canBeInlined(expr),
-            isConstant: isConstant(expr),
+            isConstant: PatternDetector.isConstant(expr),
             sideEffects: hasSideEffects(expr)
         };
     }
@@ -7379,7 +7380,7 @@ class ElixirASTBuilder {
                 PList([for (e in el) convertPattern(e)]);
                 
             // Tuple patterns (for enum matching)
-            case TCall(e, el) if (isEnumConstructor(e)):
+            case TCall(e, el) if (PatternDetector.isEnumConstructor(e)):
                 // Enum constructor pattern
                 var tag = extractEnumTag(e);
                 
@@ -7440,7 +7441,7 @@ class ElixirASTBuilder {
                 convertPattern(value);
                 
             // Enum constructors - the main difference
-            case TCall(e, el) if (isEnumConstructor(e)):
+            case TCall(e, el) if (PatternDetector.isEnumConstructor(e)):
                 // Enum constructor pattern with extracted parameter names
                 var tag = extractEnumTag(e);
                 
@@ -8146,14 +8147,14 @@ class ElixirASTBuilder {
             }
 
             function recordMeaningfulName(index: Int, candidate: String): Void {
-                if (candidate == null || candidate.length == 0 || isTempPatternVarName(candidate)) {
+                if (candidate == null || candidate.length == 0 || PatternDetector.isTempPatternVarName(candidate)) {
                     return;
                 }
 
                 if (extractedParams != null) {
                     ensureExtractedParamsSize(index);
                     var existing = extractedParams[index];
-                    if (existing == null || isTempPatternVarName(existing)) {
+                    if (existing == null || PatternDetector.isTempPatternVarName(existing)) {
                         var elixirName = toElixirVarName(candidate);
                         extractedParams[index] = elixirName;
                         #if debug_ast_builder
@@ -8202,7 +8203,7 @@ class ElixirASTBuilder {
                 var finalName: String = null;
                 var extractedName = if (extractedParams != null && i < extractedParams.length) extractedParams[i] else null;
 
-                if (extractedName != null && extractedName.length > 0 && !isTempPatternVarName(extractedName)) {
+                if (extractedName != null && extractedName.length > 0 && !PatternDetector.isTempPatternVarName(extractedName)) {
                     finalName = extractedName;
                     #if debug_ast_builder
                     trace('[DEBUG Per-Param] Using extracted name for parameter $i: $finalName');
