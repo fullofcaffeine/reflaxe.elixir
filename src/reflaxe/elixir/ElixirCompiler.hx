@@ -707,6 +707,15 @@ class ElixirCompiler extends GenericCompiler<
         var context = new CompilationContext();
         context.compiler = this;
 
+        // Check if we're compiling within an ExUnit test class
+        // This enables proper handling of instance variables in test methods
+        if (currentClassType != null && currentClassType.meta.has(":exunit")) {
+            context.isInExUnitTest = true;
+            #if debug_exunit
+            trace('[ElixirCompiler] Setting isInExUnitTest=true for context (class: ${currentClassType.name})');
+            #end
+        }
+
         // Initialize behavior transformer
         if (context.behaviorTransformer == null) {
             context.behaviorTransformer = new reflaxe.elixir.behaviors.BehaviorTransformer();
@@ -1172,11 +1181,30 @@ class ElixirCompiler extends GenericCompiler<
             // Check if this is an ExUnit test method FIRST
             // ExUnit test methods are special - they're NOT instance methods
             // even if they appear to be in the Haxe class structure
-            var isExUnitTestMethod = funcData.field.meta.has(":test") || 
+            // Note: In some cases, metadata is stored with the colon prefix (":test")
+            // Check both with and without colon to be safe
+            var isExUnitTestMethod = funcData.field.meta.has("test") || 
+                                     funcData.field.meta.has("setup") ||
+                                     funcData.field.meta.has("setupAll") ||
+                                     funcData.field.meta.has("teardown") ||
+                                     funcData.field.meta.has("teardownAll") ||
+                                     funcData.field.meta.has(":test") ||
                                      funcData.field.meta.has(":setup") ||
                                      funcData.field.meta.has(":setupAll") ||
                                      funcData.field.meta.has(":teardown") ||
                                      funcData.field.meta.has(":teardownAll");
+            
+            #if debug_exunit
+            trace('[ElixirCompiler] Checking ${funcData.field.name}: has("test")=${funcData.field.meta.has("test")}, isExUnitTestMethod=$isExUnitTestMethod');
+            // Let's see what metadata IS present
+            if (funcData.field.name.indexOf("test") == 0) {
+                var metaList = [];
+                for (m in funcData.field.meta.get()) {
+                    metaList.push(m.name);
+                }
+                trace('[ElixirCompiler]   Metadata present on ${funcData.field.name}: [${metaList.join(", ")}]');
+            }
+            #end
             
             // Set method context for instance methods
             // Instance methods need a struct parameter in Elixir
@@ -1187,9 +1215,15 @@ class ElixirCompiler extends GenericCompiler<
                 // They don't have access to instance variables via 'this'
                 context.isInClassMethodContext = false;
                 context.currentReceiverParamName = null;
+                context.isInExUnitTest = true;
+                #if debug_exunit
+                trace('[ElixirCompiler] Set isInExUnitTest=true for function ${funcData.field.name}');
+                trace('[ElixirCompiler] Context check immediately after setting: isInExUnitTest=${context.isInExUnitTest}');
+                #end
             } else {
                 // Regular method handling
                 context.isInClassMethodContext = !isStaticMethod;
+                context.isInExUnitTest = false;
                 
                 // For instance methods, set the receiver parameter name to "struct"
                 if (!isStaticMethod) {
@@ -1261,6 +1295,10 @@ class ElixirCompiler extends GenericCompiler<
             }
             #end
 
+            #if debug_exunit
+            trace('[ElixirCompiler] About to build funcBody for ${funcData.field.name}, context.isInExUnitTest=${context.isInExUnitTest}');
+            #end
+            
             var funcBody = switch(expr.expr) {
                 case TReturn(e) if (e != null):
                     #if debug_switch_return

@@ -84,6 +84,12 @@ class CompilationContext implements BuildContext {
      */
     public var currentReceiverParamName: Null<String>;
 
+    /**
+     * Flag indicating if we're currently compiling an ExUnit test method
+     * Affects how instance variables are transformed (to context parameters)
+     */
+    public var isInExUnitTest: Bool;
+
     // ========================================================================
     // Pattern Matching and Clause Context
     // ========================================================================
@@ -212,6 +218,7 @@ class CompilationContext implements BuildContext {
         // Set default flags
         isInClassMethodContext = false;
         currentReceiverParamName = null;
+        isInExUnitTest = false;
         currentModule = null;
         currentModuleHasPresence = false;
 
