@@ -495,6 +495,29 @@ typedef EImportOption = {
 }
 
 /**
+ * Guard branch for guard condition flattening
+ * Represents a single guard condition with its associated body
+ */
+typedef GuardBranch = {
+    pattern: EPattern,          // The pattern being matched (e.g., RGB(r, g, b))
+    guard: ElixirAST,           // The guard condition (e.g., r > 200)
+    body: ElixirAST,            // The expression body when guard matches
+    ?originalIfElse: ElixirAST, // Optional: Original if-else for debugging
+    ?depth: Int                 // Optional: Nesting depth for debugging
+}
+
+/**
+ * Validation result for guard condition grouping
+ * Used by GuardGroupValidator to report groupability status
+ */
+typedef ValidationResult = {
+    canGroup: Bool,             // Whether conditions can be grouped in a cond
+    reason: String,             // Explanation of decision
+    groupKey: String,           // Pattern signature for grouping (e.g., "RGB(r,g,b)")
+    patterns: Array<String>     // All patterns found in this group
+}
+
+/**
  * Binary operators
  */
 enum EBinaryOp {
