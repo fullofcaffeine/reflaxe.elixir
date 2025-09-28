@@ -1,5 +1,5 @@
--cp .
--cp ../../../../src
+-cp test/snapshot/core/js_async_await
+-cp src
 -main Main
 -lib reflaxe
 -lib genes

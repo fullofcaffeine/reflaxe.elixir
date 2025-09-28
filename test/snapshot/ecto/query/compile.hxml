@@ -1,8 +1,8 @@
 # Compilation configuration for query test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/ecto/query
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/ecto/query/out
 UserQueries

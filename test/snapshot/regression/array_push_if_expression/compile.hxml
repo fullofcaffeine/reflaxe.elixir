@@ -1,8 +1,8 @@
 # Array push in if expressions test
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/regression/array_push_if_expression
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/regression/array_push_if_expression/out
 Main

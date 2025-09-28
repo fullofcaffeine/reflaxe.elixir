@@ -1,9 +1,9 @@
 # Enhanced Pattern Matching Test Configuration
 # Tests binary patterns, pin operators, guards, and exhaustive pattern checking
 
--cp ../../../../src
+-cp src
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=out
+-D elixir_output=test/snapshot/core/enhanced_patterns/out
 
 --main Main

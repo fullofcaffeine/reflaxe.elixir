@@ -1,8 +1,8 @@
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/regression/PhoenixWebAnnotation
+-cp src
+-cp std
 -lib reflaxe
--D elixir_output=out
+-D elixir_output=test/snapshot/regression/PhoenixWebAnnotation/out
 -D reflaxe_runtime
 -D no-utf16
 --macro reflaxe.elixir.CompilerInit.Start()

@@ -1,8 +1,8 @@
--cp ../../../../src
--cp ../../../../std
+-cp src
+-cp std
 -lib reflaxe
--cp .
--D elixir_output=out
+-cp test/snapshot/ecto/migration_create_table
+-D elixir_output=test/snapshot/ecto/migration_create_table/out
 -D reflaxe_runtime
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

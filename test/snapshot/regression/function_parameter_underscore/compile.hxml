@@ -1,9 +1,9 @@
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/regression/function_parameter_underscore
+-cp src
+-cp std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=out
+-D elixir_output=test/snapshot/regression/function_parameter_underscore/out
 -D reflaxe.dont_output_metadata_id
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

@@ -1,10 +1,10 @@
 # Test position tracking helper methods
--cp ../../../../std
--cp ../../../../src
--cp .
+-cp std
+-cp src
+-cp test/snapshot/core/SourceMapTracking
 -lib reflaxe
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=out
+-D elixir_output=test/snapshot/core/SourceMapTracking/out
 -D source_map_enabled
 -D debug_source_mapping
 -D reflaxe_runtime

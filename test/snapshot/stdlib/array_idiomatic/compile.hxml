@@ -1,8 +1,8 @@
--cp .
--cp ../../../../src
--cp ../../../../std
+-cp test/snapshot/stdlib/array_idiomatic
+-cp src
+-cp std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=out
+-D elixir_output=test/snapshot/stdlib/array_idiomatic/out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main
