@@ -76,12 +76,73 @@ class GuardConditionCollector {
 			trace('[GuardCollector] Depth $depth, examining: ${Type.enumConstructor(node.def)}');
 			#end
 			
+			// Check for inline function expansion pattern BEFORE unwrapping
+			// This prevents breaking inline function logic
+			if (isInlineFunctionExpansion(node)) {
+				#if debug_guard_flattening
+				trace('[GuardCollector] Detected inline function expansion, treating as terminal node');
+				#end
+				// Treat the entire inline expansion as a terminal body
+				if (depth > 0) {
+					branches.push({
+						pattern: null,
+						guard: makeAST(EBoolean(true)),
+						body: node,
+						depth: depth
+					});
+				}
+				return; // Don't recurse into inline expansions
+			}
+			
 			// Unwrap all wrapper nodes first
 			var unwrapped = unwrapNode(node);
 			if (unwrapped == null) return;
 			
 			switch(unwrapped.def) {
 				case EIf(condition, thenBranch, elseBranch):
+					// Check if this is part of an inline function expansion
+					// by looking for the pattern: if (var == nil) in the condition
+					var isInlineCheck = switch(condition.def) {
+						case EParen(inner):
+							switch(inner.def) {
+								case EBinary(Equal, left, right):
+									// Check if comparing a variable to nil
+									var leftIsVar = switch(left.def) {
+										case EVar(_): true;
+										default: false;
+									};
+									var rightIsNil = isNilValue(right);
+									leftIsVar && rightIsNil;
+								default:
+									false;
+							}
+						case EBinary(Equal, left, right):
+							var leftIsVar = switch(left.def) {
+								case EVar(_): true;
+								default: false;
+							};
+							var rightIsNil = isNilValue(right);
+							leftIsVar && rightIsNil;
+						default:
+							false;
+					};
+					
+					if (isInlineCheck) {
+						// This is likely an inline function's nil check, not a guard
+						#if debug_guard_flattening
+						trace('[GuardCollector] Detected inline function nil check, treating as expression not guard');
+						#end
+						if (depth > 0) {
+							branches.push({
+								pattern: null,
+								guard: makeAST(EBoolean(true)),
+								body: unwrapped,
+								depth: depth
+							});
+						}
+						return; // Don't recurse
+					}
+					
 					// Found a guard condition
 					branches.push({
 						pattern: null, // Will be set from the case clause pattern
@@ -172,6 +233,92 @@ class GuardConditionCollector {
 			default:
 				node;
 		};
+	}
+	
+	/**
+	 * Check if a node represents an inline function expansion pattern
+	 * These are created when Haxe expands inline functions with optional parameters
+	 * Pattern: variable assignment followed by if (var == nil) checks
+	 */
+	static function isInlineFunctionExpansion(node: ElixirAST): Bool {
+		if (node == null) return false;
+		
+		// Look for the pattern of inline expansion:
+		// len = nil (or similar variable)
+		// if (len == nil) do ... else ...
+		return switch(node.def) {
+			case EBlock(exprs) if (exprs.length >= 2):
+				// Check first expression for variable = nil assignment
+				var hasNilAssignment = switch(exprs[0].def) {
+					case EMatch(PVar(_), value):
+						isNilValue(value);
+					default:
+						false;
+				};
+				
+				// Check second expression for if (var == nil) pattern
+				var hasNilCheck = if (exprs.length > 1) {
+					switch(exprs[1].def) {
+						case EIf(condition, _, _):
+							switch(condition.def) {
+								case EParen(inner):
+									switch(inner.def) {
+										case EBinary(Equal, left, right):
+											switch(left.def) {
+												case EVar(_): isNilValue(right);
+												default: false;
+											}
+										default:
+											false;
+									}
+								case EBinary(Equal, left, right):
+									switch(left.def) {
+										case EVar(_): isNilValue(right);
+										default: false;
+									}
+								default:
+									false;
+							}
+						default:
+							false;
+					}
+				} else {
+					false;
+				};
+				
+				hasNilAssignment && hasNilCheck;
+				
+			// Also check for the direct if pattern without block wrapper
+			case EIf(condition, _, _):
+				switch(condition.def) {
+					case EParen(inner):
+						switch(inner.def) {
+							case EBinary(Equal, left, right):
+								switch(left.def) {
+									case EVar(name):
+										// Check if it's checking a variable that might be from inline expansion
+										// Common pattern: len, pos, start, end, etc.
+										isNilValue(right) && (name == "len" || name == "pos" || name == "start" || name == "end");
+									default:
+										false;
+								}
+							default:
+								false;
+						}
+					case EBinary(Equal, left, right):
+						switch(left.def) {
+							case EVar(name):
+								isNilValue(right) && (name == "len" || name == "pos" || name == "start" || name == "end");
+							default:
+								false;
+						}
+					default:
+						false;
+				}
+				
+			default:
+				false;
+		}
 	}
 	
 	/**
