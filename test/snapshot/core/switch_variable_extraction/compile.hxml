@@ -1,4 +1,8 @@
 -cp .
--main Main
--dce no
---interp-D elixir_output=test/snapshot/core/switch_variable_extraction/out
+-cp ../../../../src
+-cp ../../../../std
+-lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

@@ -1,10 +1,8 @@
--cp test/snapshot/core/DateCompilation
--cp std
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--cp src
+-D reflaxe_runtime
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
--D reflaxe-elixir
--D elixir_output=test/snapshot/core/DateCompilation/out
-# NOTE: -D analyzer-optimize removed - destroys functional patterns
---dce full
---main Main
+Main

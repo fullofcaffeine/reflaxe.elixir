@@ -1,8 +1,8 @@
-# Compilation configuration for behavior test
--cp std
--cp src
--cp test/snapshot/otp/behavior
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=test/snapshot/otp/behavior/out
-Storage
+Main

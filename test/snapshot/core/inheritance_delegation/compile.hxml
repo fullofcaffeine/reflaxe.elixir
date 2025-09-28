@@ -1,9 +1,8 @@
 -cp .
--main Main
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--lib reflaxe.elixir
---no-output
-
+-D reflaxe_runtime
 -D elixir_output=out
--D debug_inheritance
--D debug_super_handling
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

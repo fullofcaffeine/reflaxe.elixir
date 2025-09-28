@@ -1,10 +1,8 @@
-# Date conversion roundtrip test
--cp test/snapshot/stdlib/date/conversion_roundtrip
--cp src
--cp std
+-cp .
+-cp ../../../../../src
+-cp ../../../../../std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=test/snapshot/stdlib/date/conversion_roundtrip/out
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main
-
