@@ -5,7 +5,9 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.ECaseClause;
-import reflaxe.elixir.ast.ElixirAST.ECondBranch;
+import reflaxe.elixir.ast.ElixirAST.ECondClause;
+import reflaxe.elixir.ast.ElixirAST.GuardBranch;       // Use from ElixirAST
+import reflaxe.elixir.ast.ElixirAST.ValidationResult;  // Use from ElixirAST
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import haxe.ds.StringMap;
@@ -42,31 +44,6 @@ import haxe.ds.StringMap;
 @:nullSafety(Off)
 class GuardConditionFlattener {
 	// Empty class to hold the three phase classes
-}
-
-/**
- * GuardBranch: Represents a single guard condition with its body
- */
-typedef GuardBranch = {
-	condition: ElixirAST,
-	body: ElixirAST,
-	depth: Int,
-	?metadata: GuardBranchMetadata
-}
-
-typedef GuardBranchMetadata = {
-	?isDefault: Bool,
-	?usedVars: Array<String>,
-	?isLastInGroup: Bool
-}
-
-/**
- * ValidationResult: Result of guard group validation
- */
-typedef ValidationResult = {
-	canGroup: Bool,
-	groups: Array<Array<GuardBranch>>,
-	issues: Array<String>
 }
 
 /**
@@ -138,12 +115,10 @@ class GuardConditionCollector {
 							collectRecursive(branch.body, depth + 1);
 						} else {
 							branches.push({
-								condition: branch.condition,
+								pattern: null, // ECond branches don't have patterns
+								guard: branch.condition,
 								body: branch.body,
-								depth: depth,
-								metadata: {
-									usedVars: extractUsedVariables(branch.condition)
-								}
+								depth: depth
 							});
 						}
 					}
@@ -152,10 +127,10 @@ class GuardConditionCollector {
 					// Terminal node - this might be the default case
 					if (depth > 0 && !isNilAssignmentBlock(unwrapped)) {
 						branches.push({
-							condition: makeAST(EAtom(ElixirAtom.mk("true"))),
+							pattern: null,
+							guard: makeAST(EAtom(ElixirAtom.mk("true"))),
 							body: unwrapped,
-							depth: depth,
-							metadata: {isDefault: true}
+							depth: depth
 						});
 						
 						#if debug_guard_flattening
@@ -241,6 +216,39 @@ class GuardConditionCollector {
 	}
 	
 	/**
+	 * Convert a pattern to a string representation for grouping
+	 */
+	static function patternToString(pattern: EPattern): String {
+		return switch(pattern) {
+			case PConstructor(name, patterns):
+				var patternStrs = patterns.map(p -> patternToString(p));
+				'$name(${patternStrs.join(", ")})';
+			case PVar(name):
+				name;
+			case PUnderscore:
+				"_";
+			case PAtom(atom):
+				':${atom}';
+			case PLiteral(value):
+				Std.string(value);
+			case PTuple(patterns):
+				var patternStrs = patterns.map(p -> patternToString(p));
+				'{${patternStrs.join(", ")}}';
+			case PList(patterns):
+				var patternStrs = patterns.map(p -> patternToString(p));
+				'[${patternStrs.join(", ")}]';
+			case PBinary(segments):
+				"<<binary>>";
+			case PMap(pairs):
+				"%{map}";
+			case PPin(pattern):
+				'^${patternToString(pattern)}';
+			case PAlias(pattern, name):
+				'${patternToString(pattern)} = $name';
+		};
+	}
+	
+	/**
 	 * Extract variables used in an expression
 	 */
 	static function extractUsedVariables(expr: ElixirAST): Array<String> {
@@ -302,13 +310,14 @@ class GuardGroupValidator {
 		
 		var result: ValidationResult = {
 			canGroup: true,
-			groups: [],
-			issues: []
+			reason: "Valid for grouping",
+			groupKey: "",
+			patterns: []
 		};
 		
 		if (branches.length == 0) {
 			result.canGroup = false;
-			result.issues.push("No branches to group");
+			result.reason = "No branches to group";
 			return result;
 		}
 		
@@ -316,65 +325,47 @@ class GuardGroupValidator {
 		trace('[GuardValidator] Validating ${branches.length} branches with bound vars: $boundVars');
 		#end
 		
-		// Group branches by their variable usage pattern
-		var currentGroup: Array<GuardBranch> = [];
+		// Analyze branches for groupability
 		var boundVarSet = new StringMap<Bool>();
 		for (v in boundVars) boundVarSet.set(v, true);
 		
+		// Track patterns found
+		var patternsFound: Array<String> = [];
+		
 		for (branch in branches) {
-			// Skip default branches - they always go at the end
-			if (branch.metadata != null && branch.metadata.isDefault) {
-				currentGroup.push(branch);
-				continue;
+			// Collect pattern info
+			if (branch.pattern != null) {
+				var patternStr = patternToString(branch.pattern);
+				if (patternsFound.indexOf(patternStr) == -1) {
+					patternsFound.push(patternStr);
+				}
 			}
 			
-			var usedVars = branch.metadata != null ? branch.metadata.usedVars : [];
-			var usesOnlyBoundVars = true;
-			var hasExternalVars = false;
-			
+			// Check for external variable usage
+			var usedVars = extractUsedVariables(branch.guard);
 			for (v in usedVars) {
 				if (!boundVarSet.exists(v)) {
 					// Check if it's a modified version of a bound var (r2 -> r)
 					var baseName = ~/^([a-z]+)\d+$/.replace(v, "$1");
 					if (!boundVarSet.exists(baseName)) {
-						usesOnlyBoundVars = false;
-						hasExternalVars = true;
+						result.canGroup = false;
+						result.reason = 'Branch uses external variable: $v';
 						break;
 					}
 				}
 			}
-			
-			if (usesOnlyBoundVars) {
-				currentGroup.push(branch);
-			} else {
-				// Start new group if current has items
-				if (currentGroup.length > 0) {
-					result.groups.push(currentGroup);
-					currentGroup = [];
-				}
-				// This branch uses external variables - can't group
-				result.issues.push('Branch uses external variables: ${usedVars}');
-				result.canGroup = false;
-			}
 		}
 		
-		// Add final group
-		if (currentGroup.length > 0) {
-			result.groups.push(currentGroup);
+		// Update result with collected patterns
+		result.patterns = patternsFound;
+		if (patternsFound.length > 0) {
+			result.groupKey = patternsFound[0]; // Use first pattern as key
 		}
 		
 		#if debug_guard_flattening
-		trace('[GuardValidator] Created ${result.groups.length} groups, canGroup: ${result.canGroup}');
-		if (result.issues.length > 0) {
-			trace('[GuardValidator] Issues: ${result.issues}');
-		}
+		trace('[GuardValidator] Can group: ${result.canGroup}, reason: ${result.reason}');
+		trace('[GuardValidator] Patterns found: ${patternsFound}');
 		#end
-		
-		// If we have exactly one group with all branches, we can group
-		if (result.groups.length == 1 && result.groups[0].length == branches.length) {
-			result.canGroup = true;
-			result.issues = [];
-		}
 		
 		return result;
 	}
@@ -406,12 +397,12 @@ class GuardConditionReconstructor {
 		#end
 		
 		// Build cond branches with variable fixing
-		var condBranches: Array<ECondBranch> = [];
+		var condBranches: Array<ECondClause> = [];
 		
 		for (branch in branches) {
-			// Fix variable references in condition
+			// Fix variable references in guard condition
 			var fixedCondition = fixVariableReferences(
-				branch.condition, 
+				branch.guard, 
 				boundVars
 			);
 			
