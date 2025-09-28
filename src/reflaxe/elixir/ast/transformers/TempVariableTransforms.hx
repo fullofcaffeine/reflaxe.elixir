@@ -399,6 +399,127 @@ class TempVariableTransforms {
         });
     }
     
+    /**
+     * Inline if temp assignment cleanup pass
+     * 
+     * WHY: Switch expressions on non-enum types generate temp vars (g, g1, etc.)
+     *      that appear as embedded assignments in inline if conditions
+     * WHAT: Transforms inline if with embedded temp assignment to direct comparison
+     * HOW: Detects if expressions where condition contains temp var assignment and inlines the value
+     * 
+     * PATTERN:
+     * Before: `result = g = msg_type; if (g == "test"), do: a, else: b`
+     * After: `result = if (msg_type == "test"), do: a, else: b`
+     * 
+     * EDGE CASES:
+     * - Handles both parenthesized and non-parenthesized assignments
+     * - Only transforms genuine temp vars (g, g1, g2, etc.)
+     * - Preserves semantics by direct substitution
+     */
+    public static function inlineIfTempAssignmentPass(ast: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                // Pattern 1: Block with temp assignment followed by if statement
+                case EBlock(exprs) if (exprs.length == 2):
+                    switch(exprs[0].def) {
+                        case EMatch(PVar(tempVar), value) if (isTempVar(tempVar)):
+                            switch(exprs[1].def) {
+                                case EIf(condition, thenBranch, elseBranch):
+                                    // Check if condition uses the temp var
+                                    if (containsTempVar(condition, tempVar)) {
+                                        // Replace temp var with value in condition
+                                        var newCondition = replaceTempVar(condition, tempVar, value);
+                                        #if debug_temp_variable_transforms
+                                        trace('[InlineIfTempAssignment] Transforming block with temp assignment');
+                                        trace('  Temp var: $tempVar');
+                                        trace('  Value: ${ElixirASTPrinter.print(value, 0)}');
+                                        trace('  Old condition: ${ElixirASTPrinter.print(condition, 0)}');
+                                        trace('  New condition: ${ElixirASTPrinter.print(newCondition, 0)}');
+                                        #end
+                                        return makeAST(EIf(newCondition, thenBranch, elseBranch), node.pos);
+                                    }
+                                default:
+                            }
+                        default:
+                    }
+                
+                // Pattern 2: Inline if with assignment directly in condition
+                case EIf(condition, thenBranch, elseBranch):
+                    switch(condition.def) {
+                        // Pattern: (g = value) == something
+                        case EBinary(op, left, right):
+                            var transformedLeft = switch(left.def) {
+                                case EParen(inner):
+                                    switch(inner.def) {
+                                        case EMatch(PVar(tempVar), value) if (isTempVar(tempVar)):
+                                            #if debug_temp_variable_transforms
+                                            trace('[InlineIfTempAssignment] Found parenthesized temp assignment in if condition');
+                                            trace('  Temp var: $tempVar');
+                                            trace('  Value: ${ElixirASTPrinter.print(value, 0)}');
+                                            #end
+                                            value; // Use the value directly
+                                        default:
+                                            left;
+                                    }
+                                case EMatch(PVar(tempVar), value) if (isTempVar(tempVar)):
+                                    #if debug_temp_variable_transforms
+                                    trace('[InlineIfTempAssignment] Found temp assignment in if condition');
+                                    trace('  Temp var: $tempVar');
+                                    trace('  Value: ${ElixirASTPrinter.print(value, 0)}');
+                                    #end
+                                    value; // Use the value directly
+                                default:
+                                    left;
+                            };
+                            
+                            if (transformedLeft != left) {
+                                var newCondition = makeAST(EBinary(op, transformedLeft, right), condition.pos);
+                                #if debug_temp_variable_transforms
+                                trace('  New condition: ${ElixirASTPrinter.print(newCondition, 0)}');
+                                #end
+                                return makeAST(EIf(newCondition, thenBranch, elseBranch), node.pos);
+                            }
+                        default:
+                    }
+                    
+                default:
+            }
+            return node;
+        });
+    }
+    
+    // Helper to detect temp variables generated by Haxe
+    private static function isTempVar(name: String): Bool {
+        // Detect g, g1, g2, g_1, etc. patterns
+        return ~/^g(_?\d*)?$/.match(name);
+    }
+    
+    // Helper to check if an AST contains a specific temp var
+    private static function containsTempVar(ast: ElixirAST, varName: String): Bool {
+        var found = false;
+        iterateAST(ast, function(n) {
+            switch(n.def) {
+                case EVar(v) if (v == varName):
+                    found = true;
+                default:
+            }
+        });
+        return found;
+    }
+    
+    // Helper to replace temp var with value in AST
+    private static function replaceTempVar(ast: ElixirAST, varName: String, replacement: ElixirAST): ElixirAST {
+        return ElixirASTTransformer.transformNode(ast, function(n) {
+            return switch(n.def) {
+                case EVar(v) if (v == varName):
+                    // Wrap in parentheses to preserve precedence
+                    makeAST(EParen(replacement), n.pos);
+                default:
+                    n;
+            };
+        });
+    }
+    
     // Helper function to iterate over AST nodes
     private static function iterateAST(node: ElixirAST, visitor: ElixirAST -> Void): Void {
         if (node == null) return;
