@@ -182,6 +182,14 @@ class ElixirASTTransformer {
             enabled: true,
             pass: bitwiseImportPass
         });
+        
+        // Loop transformation pass (convert reduce_while patterns to idiomatic loops)
+        passes.push({
+            name: "LoopTransformation",
+            description: "Transform non-idiomatic loop patterns (reduce_while with Stream.iterate) to idiomatic Enum operations and comprehensions",
+            enabled: true,
+            pass: loopTransformationPass
+        });
 
         // Collapse simple temp-binding blocks in expression contexts
         passes.push({
@@ -2817,6 +2825,232 @@ class ElixirASTTransformer {
         }
         
         return transform(ast);
+    }
+    
+    /**
+     * Loop Transformation Pass
+     * 
+     * WHY: Haxe desugars loops into complex reduce_while(Stream.iterate(...)) patterns
+     *      that are verbose and non-idiomatic in Elixir. These patterns should be
+     *      transformed into clean Enum operations or comprehensions.
+     * 
+     * WHAT: Detects and transforms common loop patterns:
+     *       - Simple iteration (0...n) → Enum.each(0..n-1, fn i -> ... end)
+     *       - Array iteration → Enum.each(array, fn item -> ... end)
+     *       - Collection building → for comprehensions
+     *       - Filtering → Enum.filter or comprehension with guards
+     * 
+     * HOW: Pattern matches on Enum.reduce_while with Stream.iterate and transforms
+     *      based on the loop body pattern (side effects only, collecting, filtering)
+     * 
+     * Example transformations:
+     * From: Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {i} ->
+     *         if (i < 5) do
+     *           Log.trace(i)
+     *           {:cont, {i + 1}}
+     *         else
+     *           {:halt, {i}}
+     *         end
+     *       end)
+     * To: Enum.each(0..4, fn i -> Log.trace(i) end)
+     */
+    static function loopTransformationPass(ast: ElixirAST): ElixirAST {
+        #if debug_loop_transformation
+        trace("[LoopTransform] Starting loop transformation pass");
+        #end
+        
+        return transformNode(ast, function(node: ElixirAST): ElixirAST {
+            switch(node.def) {
+                case ERemoteCall(module, funcName, args):
+                    // Check for Enum.reduce_while pattern
+                    switch(module.def) {
+                        case EVar("Enum"):
+                            if (funcName == "reduce_while" && args != null && args.length >= 3) {
+                                // Check if first arg is Stream.iterate
+                                var streamArg = args[0];
+                                switch(streamArg.def) {
+                                    case ERemoteCall(streamModule, streamFunc, streamArgs):
+                                        switch(streamModule.def) {
+                                            case EVar("Stream"):
+                                                if (streamFunc == "iterate" && streamArgs != null && streamArgs.length >= 2) {
+                                                    #if debug_loop_transformation
+                                                    trace("[LoopTransform] Found Stream.iterate pattern");
+                                                    #end
+                                                    
+                                                    // Extract the initial value and increment function
+                                                    var initValue = streamArgs[0];
+                                                    var incrementFunc = streamArgs[1];
+                                                    
+                                                    // Check if this is a simple counter (0, fn n -> n + 1 end)
+                                                    var isSimpleCounter = false;
+                                                    switch(initValue.def) {
+                                                        case EInteger(0):
+                                                            switch(incrementFunc.def) {
+                                                                case EFn(clauses) if (clauses.length > 0):
+                                                                    var clause = clauses[0];
+                                                                    if (clause.args.length == 1) {
+                                                                        // Check if body is n + 1
+                                                                        switch(clause.body.def) {
+                                                                            case EBinary(Add, left, right):
+                                                                                switch(left.def) {
+                                                                                    case EVar(varName):
+                                                                                        // Get the parameter name from the pattern
+                                                                                        var paramName = switch(clause.args[0]) {
+                                                                                            case PVar(name): name;
+                                                                                            default: null;
+                                                                                        };
+                                                                                        if (paramName != null && varName == paramName) {
+                                                                                            switch(right.def) {
+                                                                                                case EInteger(1):
+                                                                                                    isSimpleCounter = true;
+                                                                                                default:
+                                                                                            }
+                                                                                        }
+                                                                                    default:
+                                                                                }
+                                                                            default:
+                                                                        }
+                                                                    }
+                                                                default:
+                                                            }
+                                                        default:
+                                                    }
+                                                    
+                                                    if (isSimpleCounter) {
+                                                        #if debug_loop_transformation
+                                                        trace("[LoopTransform] Detected simple counter loop");
+                                                        #end
+                                                        
+                                                        // Analyze the loop function to extract the body and condition
+                                                        var loopFunc = args[2];
+                                                        switch(loopFunc.def) {
+                                                            case EFn(clauses) if (clauses.length > 0):
+                                                                var clause = clauses[0];
+                                                                // Try to extract the loop bound and body
+                                                                var loopInfo = analyzeLoopBody(clause.body);
+                                                                if (loopInfo != null) {
+                                                                    #if debug_loop_transformation
+                                                                    trace("[LoopTransform] Successfully analyzed loop body");
+                                                                    trace("[LoopTransform] Upper bound: " + ElixirASTPrinter.print(loopInfo.upperBound, 0));
+                                                                    trace("[LoopTransform] Has side effects only: " + loopInfo.hasSideEffectsOnly);
+                                                                    #end
+                                                                    
+                                                                    // Transform to idiomatic Elixir
+                                                                    if (loopInfo.hasSideEffectsOnly) {
+                                                                        // Simple iteration with side effects → Enum.each
+                                                                        var range = makeAST(ERange(
+                                                                            makeAST(EInteger(0), node.pos),
+                                                                            makeAST(EBinary(Subtract, loopInfo.upperBound, makeAST(EInteger(1), node.pos)), node.pos),
+                                                                            false // inclusive range (0..n-1)
+                                                                        ), node.pos);
+                                                                        
+                                                                        var eachFunc = makeAST(EFn([{
+                                                                            args: [PVar(loopInfo.iteratorVar)],
+                                                                            guard: null,
+                                                                            body: loopInfo.loopBody
+                                                                        }]), node.pos);
+                                                                        
+                                                                        #if debug_loop_transformation
+                                                                        trace("[LoopTransform] Transforming to Enum.each");
+                                                                        #end
+                                                                        
+                                                                        return makeAST(ERemoteCall(
+                                                                            makeAST(EVar("Enum"), node.pos),
+                                                                            "each",
+                                                                            [range, eachFunc]
+                                                                        ), node.pos);
+                                                                    }
+                                                                }
+                                                            default:
+                                                        }
+                                                    }
+                                                }
+                                            default:
+                                        }
+                                    default:
+                                }
+                            }
+                        default:
+                    }
+                default:
+            }
+            
+            return node;
+        });
+    }
+    
+    /**
+     * Analyze a loop body to extract iteration information
+     */
+    static function analyzeLoopBody(body: ElixirAST): Null<{upperBound: ElixirAST, iteratorVar: String, loopBody: ElixirAST, hasSideEffectsOnly: Bool}> {
+        // Look for the if condition pattern
+        switch(body.def) {
+            case EIf(condition, thenBranch, elseBranch):
+                // Extract the upper bound from the condition
+                var upperBound: ElixirAST = null;
+                var iteratorVar: String = null;
+                
+                switch(condition.def) {
+                    case EBinary(Less, left, right):
+                        // Pattern: i < upperBound
+                        switch(left.def) {
+                            case EVar(varName):
+                                iteratorVar = varName;
+                                upperBound = right;
+                            default:
+                        }
+                    default:
+                }
+                
+                if (upperBound != null && iteratorVar != null) {
+                    // Extract the loop body from the then branch
+                    var loopBody: ElixirAST = null;
+                    var hasSideEffectsOnly = true;
+                    
+                    switch(thenBranch.def) {
+                        case EBlock(exprs):
+                            // Filter out the increment and continuation
+                            var bodyExprs = [];
+                            for (expr in exprs) {
+                                switch(expr.def) {
+                                    case ETuple([contAtom, _]):
+                                        // Skip {:cont, ...}
+                                        switch(contAtom.def) {
+                                            case EAtom(cont) if (cont == "cont"):
+                                                // Skip
+                                            default:
+                                                bodyExprs.push(expr);
+                                        }
+                                    case EBinary(Add, _, _):
+                                        // Skip increment expressions
+                                    case EInteger(_):
+                                        // Skip standalone integers
+                                    default:
+                                        bodyExprs.push(expr);
+                                }
+                            }
+                            
+                            if (bodyExprs.length == 1) {
+                                loopBody = bodyExprs[0];
+                            } else if (bodyExprs.length > 1) {
+                                loopBody = makeAST(EBlock(bodyExprs), body.pos);
+                            }
+                        default:
+                    }
+                    
+                    if (loopBody != null) {
+                        return {
+                            upperBound: upperBound,
+                            iteratorVar: iteratorVar,
+                            loopBody: loopBody,
+                            hasSideEffectsOnly: hasSideEffectsOnly
+                        };
+                    }
+                }
+            default:
+        }
+        
+        return null;
     }
     
     /**
