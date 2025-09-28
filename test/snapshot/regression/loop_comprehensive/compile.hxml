@@ -1,8 +1,8 @@
 -cp .
--main Main
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--lib reflaxe.elixir
---no-output
+-D reflaxe_runtime
 -D elixir_output=out
--D loop_unroll_max_cost=10
--D elixir.feature.loop_builder_enabled=true
+--macro reflaxe.elixir.CompilerInit.Start()
+Main

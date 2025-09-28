@@ -1,8 +1,8 @@
--cp src
--cp std
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--cp test/snapshot/regression/nested_switch_variable_consistency
--D elixir_output=test/snapshot/regression/nested_switch_variable_consistency/out
 -D reflaxe_runtime
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

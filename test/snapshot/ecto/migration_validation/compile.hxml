@@ -1,8 +1,8 @@
--cp test/snapshot/ecto/migration_validation
--cp src
--cp std
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
 -D reflaxe_runtime
--D elixir_output=test/snapshot/ecto/migration_validation/out
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
 Main

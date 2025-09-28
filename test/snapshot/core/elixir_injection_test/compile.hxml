@@ -1,7 +1,8 @@
--cp test/snapshot/core/elixir_injection_test
--cp ../../../../std/
--cp ../../../../src/
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
--main Main
--D elixir_output=test/snapshot/core/elixir_injection_test/out
+-D reflaxe_runtime
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
+Main

@@ -1,8 +1,8 @@
-# Compilation configuration for maps test
--cp std
--cp src
--cp test/snapshot/core/maps
+-cp .
+-cp ../../../../src
+-cp ../../../../std
 -lib reflaxe
+-D reflaxe_runtime
+-D elixir_output=out
 --macro reflaxe.elixir.CompilerInit.Start()
--D elixir_output=test/snapshot/core/maps/out
 Main
