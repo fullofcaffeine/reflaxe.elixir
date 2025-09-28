@@ -703,8 +703,10 @@ class ElixirASTBuilder {
                         if (currentContext.isInClassMethodContext && currentContext.currentReceiverParamName != null) {
                             EVar(currentContext.currentReceiverParamName);
                         } else {
-                            // Fallback to 'self' for non-instance contexts
-                            EVar("self");
+                            // For now, generate a placeholder that will cause a compile error
+                            // This helps identify where instance variables are being used inappropriately
+                            // TODO: Transform to proper ExUnit patterns (context, module attributes, or local vars)
+                            EVar("__instance_variable_not_available_in_this_context__");
                         }
                     default:
                         // Delegate to CoreExprBuilder for other constants
