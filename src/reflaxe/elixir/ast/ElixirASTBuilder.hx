@@ -34,6 +34,10 @@ import reflaxe.elixir.ast.builders.ReturnBuilder;
 import reflaxe.elixir.ast.builders.BlockBuilder;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.optimizers.LoopOptimizer;
+// Helper modules for extracted functions
+import reflaxe.elixir.ast.ElixirASTHelpers;
+import reflaxe.elixir.ast.TemplateHelpers;
+import reflaxe.elixir.ast.LoopHelpers;
 import reflaxe.elixir.ast.intent.LoopIntent;
 import reflaxe.elixir.ast.intent.LoopIntent.*;  // Import all enum constructors
 import reflaxe.elixir.ast.transformers.DesugarredForDetector;
@@ -3445,16 +3449,9 @@ class ElixirASTBuilder {
     /**
      * Check if type is an array type
      */
-    static function isArrayType(t: Type): Bool {
-        return switch(t) {
-            case TInst(c, _):
-                var cl = c.get();
-                cl.name == "Array";
-            case TAbstract(a, _):
-                var abs = a.get();
-                abs.name == "Array";
-            default: false;
-        }
+    // Delegate to ElixirASTHelpers
+    static inline function isArrayType(t: Type): Bool {
+        return ElixirASTHelpers.isArrayType(t);
     }
     
     /**
@@ -3654,17 +3651,9 @@ class ElixirASTBuilder {
     /**
      * Check if type is a Map type
      */
-    static function isMapType(t: Type): Bool {
-        return switch(t) {
-            case TInst(c, _):
-                var cl = c.get();
-                cl.name == "StringMap" || cl.name == "IntMap" || cl.name == "ObjectMap" || 
-                cl.name == "Map" || cl.name.endsWith("Map");
-            case TAbstract(a, params):
-                var abs = a.get();
-                abs.name == "Map" || abs.name.endsWith("Map");
-            default: false;
-        }
+    // Delegate to ElixirASTHelpers (note: simplified implementation there)
+    static inline function isMapType(t: Type): Bool {
+        return ElixirASTHelpers.isMapType(t);
     }
     
     
@@ -4107,74 +4096,14 @@ class ElixirASTBuilder {
      * 
      * Example: HXX.hxx('Hello ${name}') becomes concatenation that we collect into one template
      */
-    static function collectTemplateContent(ast: ElixirAST): String {
-        return switch(ast.def) {
-            case EString(s): 
-                // Simple string - return as-is
-                s;
-                
-            case EBinary(StringConcat, left, right):
-                // String concatenation - collect both sides
-                collectTemplateContent(left) + collectTemplateContent(right);
-                
-            case EVar(name):
-                // Variable reference - convert to EEx interpolation
-                '<%= ' + name + ' %>';
-                
-            case ECall(module, func, args):
-                // Function call - convert to EEx interpolation
-                var callStr = if (module != null) {
-                    switch(module.def) {
-                        case EVar(m): m + "." + func;
-                        default: func;
-                    }
-                } else {
-                    func;
-                }
-                
-                // Build the function call with arguments
-                if (args.length > 0) {
-                    var argStrs = [];
-                    for (arg in args) {
-                        argStrs.push(collectTemplateArgument(arg));
-                    }
-                    callStr += "(" + argStrs.join(", ") + ")";
-                } else {
-                    callStr += "()";
-                }
-                '<%= ' + callStr + ' %>';
-                
-            default:
-                // For other expressions, try to convert to a string representation
-                // This is a fallback - ideally all cases should be handled explicitly
-                #if debug_hxx_transformation
-                #if debug_ast_builder
-                trace('[HXX] Unhandled AST type in template collection: ${ast.def}');
-                #end
-                #end
-                '<%= [unhandled expression] %>';
-        }
+    // Delegate to TemplateHelpers
+    static inline function collectTemplateContent(ast: ElixirAST): String {
+        return TemplateHelpers.collectTemplateContent(ast);
     }
     
-    /**
-     * Collect template argument for function calls within templates
-     */
-    static function collectTemplateArgument(ast: ElixirAST): String {
-        return switch(ast.def) {
-            case EString(s): '"' + s + '"';
-            case EVar(name): name;
-            case EAtom(a): ":" + a;
-            case EInteger(i): Std.string(i);
-            case EFloat(f): Std.string(f);
-            case EBoolean(b): b ? "true" : "false";
-            case ENil: "nil";
-            case EField(obj, field):
-                switch(obj.def) {
-                    case EVar(v): v + "." + field;
-                    default: "[complex]." + field;
-                }
-            default: "[complex arg]";
-        }
+    // Delegate to TemplateHelpers
+    static inline function collectTemplateArgument(ast: ElixirAST): String {
+        return TemplateHelpers.collectTemplateArgument(ast);
     }
     
     /**
@@ -4191,25 +4120,9 @@ class ElixirASTBuilder {
      * 
      * Example: HXX.hxx("<div>Hello <%= @name %></div>") → ~H"""<div>Hello <%= @name %></div>"""
      */
-    static function isHXXModule(expr: TypedExpr): Bool {
-        return switch(expr.expr) {
-            case TTypeExpr(m):
-                // Check if this is the HXX module
-                var moduleName = moduleTypeToString(m);
-                #if debug_hxx_transformation
-                #if debug_ast_builder
-                trace('[HXX] Checking module: $moduleName against "HXX"');
-                #end
-                #end
-                moduleName == "HXX";
-            default: 
-                #if debug_hxx_transformation
-                #if debug_ast_builder
-                trace('[HXX] Not a TTypeExpr, expr type: ${expr.expr}');
-                #end
-                #end
-                false;
-        }
+    // Delegate to TemplateHelpers
+    static inline function isHXXModule(expr: TypedExpr): Bool {
+        return TemplateHelpers.isHXXModule(expr);
     }
     
     /**
@@ -4240,12 +4153,9 @@ class ElixirASTBuilder {
     /**
      * Check if type represents a map/struct
      */
-    static function isMapAccess(t: Type): Bool {
-        return switch(t) {
-            case TAnonymous(_): true;
-            case TInst(_.get() => ct, _): ct.isInterface || ct.name.endsWith("Map");
-            default: false;
-        }
+    // Delegate to ElixirASTHelpers (simplified implementation)
+    static inline function isMapAccess(t: Type): Bool {
+        return ElixirASTHelpers.isMapAccess(t);
     }
 
     /**
@@ -4334,32 +4244,17 @@ class ElixirASTBuilder {
     /**
      * Count occurrences of a variable name in an ElixirAST tree.
      */
-    static function countVarOccurrencesInAST(ast: ElixirAST, name: String): Int {
-        var count = 0;
-        var _ = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node) {
-            switch(node.def) {
-                case EVar(v) if (v == name):
-                    count++;
-                    return node;
-                default:
-                    return node;
-            }
-        });
-        return count;
+    // Delegate to ElixirASTHelpers
+    static inline function countVarOccurrencesInAST(ast: ElixirAST, name: String): Int {
+        return ElixirASTHelpers.countVarOccurrencesInAST(ast, name);
     }
 
     /**
      * Replace all occurrences of a variable name with a replacement AST (wrapped in parentheses).
      */
-    static function replaceVarInAST(ast: ElixirAST, name: String, replacement: ElixirAST): ElixirAST {
-        return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node) {
-            switch(node.def) {
-                case EVar(v) if (v == name):
-                    return makeAST(EParen(replacement));
-                default:
-                    return node;
-            }
-        });
+    // Delegate to ElixirASTHelpers
+    static inline function replaceVarInAST(ast: ElixirAST, name: String, replacement: ElixirAST): ElixirAST {
+        return ElixirASTHelpers.replaceVarInAST(ast, name, replacement);
     }
     
     /**
@@ -4817,9 +4712,9 @@ class ElixirASTBuilder {
      * @param context The current compilation context
      * @return The generated ElixirAST node
      */
-    static function processLoopIntent(intent: LoopIntent, metadata: LoopIntentMetadata, context: CompilationContext): ElixirAST {
-        // Delegate to LoopOptimizer
-        return LoopOptimizer.processLoopIntent(intent, metadata, context);
+    // Delegate to LoopHelpers
+    static inline function processLoopIntent(intent: LoopIntent, metadata: LoopIntentMetadata, context: CompilationContext): ElixirAST {
+        return LoopHelpers.processLoopIntent(intent, metadata, context);
     }
     
     /**
@@ -4860,64 +4755,17 @@ class ElixirASTBuilder {
      *      - Enum.map for collecting results
      *      - Proper tuple destructuring: fn {key, value} -> ... end
      */
-    static function buildMapIteration(pattern: MapIterationPattern, context: CompilationContext): ElixirAST {
-        var mapAst = buildFromTypedExpr(pattern.mapExpr, context);
-        var bodyAst = buildFromTypedExpr(pattern.body, context);
-        
-        // Analyze if body collects results
-        var isCollecting = analyzesAsExpression(pattern.body);
-        
-        // Create pattern for destructuring: {key, value}
-        var tuplePattern = PTuple([
-            PVar(VariableAnalyzer.toElixirVarName(pattern.keyVar)),
-            PVar(VariableAnalyzer.toElixirVarName(pattern.valueVar))
-        ]);
-        
-        // Create anonymous function clause
-        var fnClause: EFnClause = {
-            args: [tuplePattern],
-            body: bodyAst
-        };
-        
-        // Choose between Enum.each and Enum.map based on usage
-        var enumFunction = isCollecting ? "map" : "each";
-        
-        return makeAST(ECall(
-            makeAST(EVar("Enum")),
-            enumFunction,
-            [mapAst, makeAST(EFn([fnClause]))]
-        ));
+    // Delegate to LoopHelpers (uses optimizers.LoopOptimizer.MapIterationPattern)
+    static inline function buildMapIteration(pattern: reflaxe.elixir.ast.optimizers.LoopOptimizer.MapIterationPattern, context: CompilationContext): ElixirAST {
+        return LoopHelpers.buildMapIteration(pattern, context);
     }
     
-    /**
-     * Simple analysis to determine if expression returns a value
-     */
-    static function analyzesAsExpression(expr: TypedExpr): Bool {
-        return switch (expr.expr) {
-            case TBlock(stmts):
-                if (stmts.length > 0) {
-                    analyzesAsExpression(stmts[stmts.length - 1]);
-                } else {
-                    false;
-                }
-            case TReturn(_): true;
-            case TIf(_, _, elseExpr) if (elseExpr != null): true;
-            case TSwitch(_, _, _): true;
-            case TCall(_, _): true;
-            case TBinop(_, _, _): true;
-            case TLocal(_): true;
-            case TConst(_): true;
-            default: false;
-        };
+    // Delegate to LoopHelpers
+    static inline function analyzesAsExpression(expr: TypedExpr): Bool {
+        return LoopHelpers.analyzesAsExpression(expr);
     }
 }
 
-// Type definition for Map iteration pattern
-typedef MapIterationPattern = {
-    mapExpr: TypedExpr,
-    keyVar: String,
-    valueVar: String,
-    body: TypedExpr
-}
+// MapIterationPattern typedef is now in LoopOptimizer.hx
 
 #end
