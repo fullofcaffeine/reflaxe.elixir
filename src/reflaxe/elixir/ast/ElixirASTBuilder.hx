@@ -26,6 +26,7 @@ import reflaxe.elixir.ast.builders.ComprehensionBuilder;
 import reflaxe.elixir.ast.builders.LiteralBuilder;
 import reflaxe.elixir.ast.builders.ControlFlowBuilder;
 import reflaxe.elixir.ast.builders.CallExprBuilder;
+import reflaxe.elixir.ast.builders.VariableBuilder;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.optimizers.LoopOptimizer;
 import reflaxe.elixir.ast.intent.LoopIntent;
@@ -682,6 +683,15 @@ class ElixirASTBuilder {
                 EVar(varName);
                 
             case TVar(v, init):
+                // Delegate simple variable declarations to VariableBuilder
+                // Complex patterns (blocks, comprehensions) are handled below
+                if (init == null || isSimpleInit(init)) {
+                    var result = VariableBuilder.buildVariableDeclaration(v, init, currentContext);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+                
                 // COMPLETE FIX: Eliminate ALL infrastructure variable assignments at source
                 // Use centralized detection from TypedExprPreprocessor
                 var isInfrastructureVar = reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name);
@@ -6758,6 +6768,41 @@ class ElixirASTBuilder {
             case TThrow(_): true;
             default: false;
         }
+    }
+    
+    /**
+     * Check if an initialization expression is simple enough for VariableBuilder
+     * 
+     * WHY: Complex initializations (blocks, comprehensions) need special handling
+     * WHAT: Identifies simple init patterns that VariableBuilder can handle
+     * HOW: Checks expression type against simple patterns
+     */
+    static function isSimpleInit(init: TypedExpr): Bool {
+        if (init == null) return true;
+        
+        return switch(init.expr) {
+            case TConst(_): true;
+            case TLocal(_): true;
+            case TField(_, _): true;
+            case TCall(_, _): true;
+            case TNew(_, _, _): true;
+            case TObjectDecl(_): true;
+            case TArrayDecl(_): true;
+            case TBinop(_, _, _): true;
+            case TUnop(_, _, _): true;
+            case TParenthesis(e): isSimpleInit(e);
+            case TCast(e, _): isSimpleInit(e);
+            case TMeta(_, e): isSimpleInit(e);
+            // Complex patterns that need special handling
+            case TBlock(_): false;
+            case TIf(_, _, _): false;
+            case TSwitch(_, _, _): false;
+            case TWhile(_, _, _): false;
+            case TFor(_, _, _): false;
+            case TTry(_, _): false;
+            case TFunction(_): false;
+            default: true;
+        };
     }
     
     /**
