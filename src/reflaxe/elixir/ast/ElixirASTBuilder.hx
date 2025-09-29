@@ -16,6 +16,7 @@ import reflaxe.elixir.ast.naming.ElixirNaming;
 import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.ast.ReentrancyGuard;
 // Import builder modules
+import reflaxe.elixir.ast.builders.ArrayBuilder;
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
 import reflaxe.elixir.ast.builders.BinaryOpBuilder;
 import reflaxe.elixir.ast.builders.LoopBuilder;
@@ -661,8 +662,22 @@ class ElixirASTBuilder {
             // Variables and Binding
             // ================================================================
             case TLocal(v):
-                // Delegate to VariableBuilder for all local variable handling
-                VariableBuilder.buildLocal(v, expr, currentContext);
+                // TLocal represents a local variable reference (reading/using a variable)
+                // 
+                // DIFFERENCE FROM TVar:
+                // - TLocal: Variable usage/reference - when you READ a variable (x in "x + 1")
+                // - TVar: Variable declaration/assignment - when you WRITE to a variable (var x = 5)
+                //
+                // EXAMPLES:
+                // var x = 5;        // TVar(x, TConst(5)) - declaration with init
+                // x = 10;           // TVar(x, TConst(10)) - assignment (reassignment in Elixir)
+                // return x + 1;     // TLocal(x) in the expression - reading the variable
+                // if (x > 0) ...    // TLocal(x) in the condition - reading the variable
+                //
+                // In Elixir both compile to the variable name, but the distinction helps
+                // the compiler track declarations vs references for analysis purposes.
+                var varName = VariableAnalyzer.toElixirVarName(v.name);
+                EVar(varName);
                 
             case TVar(v, init):
                 // COMPLETE FIX: Eliminate ALL infrastructure variable assignments at source
@@ -3345,166 +3360,13 @@ class ElixirASTBuilder {
                 }
                 
             // ================================================================
-            // Array Operations
+            // Array Operations (Delegated to ArrayBuilder)
             // ================================================================
             case TArrayDecl(el):
-                // CRITICAL: Detect array comprehensions and treat them as EFor, not EList
-                // This prevents the malformed list-append patterns that get torn apart by assignment extraction
-                
-                #if debug_ast_builder
-                trace('[AST Builder] TArrayDecl with ${el.length} elements');
-                if (el.length > 0) {
-                    #if debug_ast_builder
-                    trace('[AST Builder] First element type: ${Type.enumConstructor(el[0].expr)}');
-                    #end
-                }
-                #end
-                
-                // Check for single-element array with TFor (direct comprehension)
-                if (el.length == 1 && el[0].expr.match(TFor(_))) {
-                    // This is a comprehension like [for (i in 0...3) expr]
-                    // Return the TFor directly as EFor, not wrapped in EList
-                    #if debug_ast_builder
-                    // trace('[AST Builder] Detected array comprehension, treating as EFor instead of EList');
-                    #end
-                    buildFromTypedExpr(el[0], currentContext).def;
-                } 
-                // NEW: Check for single-element array with TBlock (desugared nested comprehension)
-                else if (el.length == 1) {
-                    switch(el[0].expr) {
-                        case TBlock(stmts):
-                            // Try to reconstruct comprehension from desugared block
-                            var comprehension = ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(stmts, currentContext);
-                            if (comprehension != null) {
-                                switch(comprehension.def) {
-                                    case EFor(_, _, _, _, _):
-                                        #if debug_ast_builder
-                                        trace('[AST Builder] Detected desugared comprehension in single-element array, treating as EFor');
-                                        #end
-                                        comprehension.def;
-                                    default:
-                                        // Not a comprehension, proceed with normal list
-                                        EList([buildFromTypedExpr(el[0], currentContext)]);
-                                }
-                            } else {
-                                // Normal single-element array
-                                EList([buildFromTypedExpr(el[0], currentContext)]);
-                            }
-                        default:
-                            // Normal single-element array
-                            EList([buildFromTypedExpr(el[0], currentContext)]);
-                    }
-                } else {
-                    // Normal array processing with multiple elements
-                    // Check if this array contains idiomatic enum constructors or function calls returning them
-                    var hasIdiomaticEnums = false;
-                    for (e in el) {
-                        switch(e.expr) {
-                            case TCall(callTarget, _) if (callTarget != null && PatternDetector.isEnumConstructor(callTarget) && hasIdiomaticMetadata(callTarget)):
-                                hasIdiomaticEnums = true;
-                                break;
-                            case TCall(_, _):
-                                // Check if function call returns idiomatic enum
-                                switch(e.t) {
-                                    case TEnum(enumRef, _) if (enumRef.get().meta.has(":elixirIdiomatic")):
-                                        hasIdiomaticEnums = true;
-                                        break;
-                                    default:
-                                }
-                            default:
-                        }
-                    }
-                    
-                    #if debug_ast_builder
-                    if (hasIdiomaticEnums) {
-                        #if debug_ast_builder
-                        trace('[AST Builder] Building array with idiomatic enum elements');
-                        #end
-                    }
-                    #end
-                    
-                    // Process each element, with expression recovery for blocks
-                    var elements = [];
-                    for (e in el) {
-                        switch(e.expr) {
-                            case TBlock(stmts):
-                                // Try comprehension reconstruction first
-                                var comprehension = ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(stmts, currentContext);
-                                if (comprehension != null) {
-                                    elements.push(comprehension);
-                                } 
-                                // Check if this block builds a list through bare concatenations
-                                else if (ComprehensionBuilder.looksLikeListBuildingBlock(stmts)) {
-                                    #if debug_array_comprehension
-                                    #if debug_ast_builder
-                                    trace('[Array Comprehension] Found unrolled comprehension in TArrayDecl element');
-                                    #end
-                                    #end
-                                    #if debug_ast_builder
-                                    trace('[AST Builder] Found list-building block in array element, marking with metadata');
-                                    #end
-                                    
-                                    // Extract just the values being concatenated, not the entire block
-                                    var extractedElements = ComprehensionBuilder.extractListElements(stmts);
-                                    if (extractedElements != null && extractedElements.length > 0) {
-                                        #if debug_array_comprehension
-                                        #if debug_ast_builder
-                                        trace('[Array Comprehension] Successfully extracted ${extractedElements.length} values from unrolled pattern');
-                                        #end
-                                        #end
-                                        // Build AST for each extracted value and return as a proper list
-                                        var valueASTs = [for (elem in extractedElements) buildFromTypedExpr(elem, currentContext)];
-                                        elements.push(makeAST(EList(valueASTs)));
-                                    } else {
-                                        // Fallback: if extraction failed, try building the block normally
-                                        #if debug_ast_builder
-                                        trace('[AST Builder] List element extraction failed, using block fallback');
-                                        #end
-                                        var blockStmts = [for (s in stmts) buildFromTypedExpr(s, currentContext)];
-                                        var blockAST = makeAST(EBlock(blockStmts));
-                                        
-                                        // Mark with metadata for potential transformer handling
-                                        if (blockAST.metadata == null) blockAST.metadata = {};
-                                        blockAST.metadata.isUnrolledComprehension = true;
-                                        
-                                        // Wrap in immediately-invoked function to ensure valid Elixir
-                                        var fnClause:EFnClause = {
-                                            args: [],
-                                            guard: null,
-                                            body: blockAST
-                                        };
-                                        var anonymousFn = makeAST(EFn([fnClause]));
-                                        var wrappedBlock = makeAST(ECall(makeAST(EParen(anonymousFn)), "", []));
-                                        elements.push(wrappedBlock);
-                                    }
-                                } else {
-                                    // Fallback: wrap block in immediately-invoked function to ensure valid expression
-                                    #if debug_ast_builder
-                                    trace('[AST Builder] Wrapping TBlock in array element as immediately-invoked function');
-                                    #end
-                                    var blockAst = buildFromTypedExpr(e, currentContext);
-                                    // Create (fn -> ...block... end).()
-                                    var fnClause:EFnClause = {
-                                        args: [],
-                                        guard: null,
-                                        body: blockAst
-                                    };
-                                    var anonymousFn = makeAST(EFn([fnClause]));
-                                    // Wrap in parentheses and call with empty funcName to trigger .() syntax
-                                    var wrappedBlock = makeAST(ECall(makeAST(EParen(anonymousFn)), "", []));
-                                    elements.push(wrappedBlock);
-                                }
-                            default:
-                                elements.push(buildFromTypedExpr(e, currentContext));
-                        }
-                    }
-                    EList(elements);
-                }
+                ArrayBuilder.buildArrayDecl(el, currentContext);
                 
             case TArray(e, index):
-                var target = buildFromTypedExpr(e, currentContext);
-                var key = buildFromTypedExpr(index, currentContext);
-                EAccess(target, key);
+                ArrayBuilder.buildArrayAccess(e, index, currentContext);
                 
             // ================================================================
             // Control Flow (Basic)
