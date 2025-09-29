@@ -31,6 +31,7 @@ import reflaxe.elixir.ast.builders.FieldAccessBuilder;
 import reflaxe.elixir.ast.builders.SwitchBuilder;
 import reflaxe.elixir.ast.builders.ExceptionBuilder;
 import reflaxe.elixir.ast.builders.ReturnBuilder;
+import reflaxe.elixir.ast.builders.BlockBuilder;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.optimizers.LoopOptimizer;
 import reflaxe.elixir.ast.intent.LoopIntent;
@@ -2314,6 +2315,13 @@ class ElixirASTBuilder {
                 ControlFlowBuilder.buildIf(econd, eif, eelse, currentContext);
                 
             case TBlock(el):
+                // Delegate to BlockBuilder for modular handling
+                var result = BlockBuilder.build(el, currentContext);
+                if (result != null) {
+                    return result;
+                }
+                
+                // Fallback to legacy implementation (will be removed after testing)
                 // Debug: Log ALL blocks to understand Haxe's desugaring patterns
                 #if debug_ast_pipeline
                 if (el.length > 0) {
@@ -4679,6 +4687,11 @@ class ElixirASTBuilder {
              * @return Either EKeywordList for supervisor options or EMap for regular objects
              */
             case TObjectDecl(fields):
+                // Delegate to ObjectBuilder for modular handling
+                var result = reflaxe.elixir.ast.builders.ObjectBuilder.build(fields, currentContext);
+                if (result != null) return result;
+                
+                // Fallback to legacy implementation for safety
                 #if debug_variable_renaming
                 #if debug_ast_builder
                 trace('[RENAME DEBUG] TObjectDecl: Processing ${fields.length} fields');
@@ -5033,7 +5046,12 @@ class ElixirASTBuilder {
             // ================================================================
             // Special Cases
             // ================================================================
-            case TNew(c, _, el):
+            case TNew(c, params, el):
+                // Delegate to ConstructorBuilder for modular handling
+                var result = reflaxe.elixir.ast.builders.ConstructorBuilder.build(c, params, el, currentContext);
+                if (result != null) return result;
+                
+                // Fallback to legacy implementation for safety
                 // Constructor call - should call ModuleName.new() for classes with instance methods
                 var classType = c.get();
                 var className = classType.name;
