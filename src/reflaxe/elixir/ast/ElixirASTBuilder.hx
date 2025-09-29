@@ -548,6 +548,11 @@ class ElixirASTBuilder {
         enterNode(exprType, exprId);
         #end
 
+        // Ensure compiler reference is set in context
+        if (context.compiler == null && compiler != null) {
+            context.compiler = compiler;
+        }
+        
         // Store context for recursive calls
         var previousContext = currentContext;
         currentContext = context;
