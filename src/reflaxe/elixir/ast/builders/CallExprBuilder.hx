@@ -7,7 +7,7 @@ import haxe.macro.Type.TypedExpr;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.CompilationContext;
-import reflaxe.elixir.ast.PatternDetector;
+import reflaxe.elixir.helpers.PatternDetector;
 
 /**
  * CallExprBuilder: Handles function/method call expression building
