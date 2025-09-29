@@ -19,6 +19,7 @@ import reflaxe.elixir.ast.ReentrancyGuard;
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
 import reflaxe.elixir.ast.builders.BinaryOpBuilder;
 import reflaxe.elixir.ast.builders.LoopBuilder;
+import reflaxe.elixir.ast.builders.PatternBuilder;
 import reflaxe.elixir.ast.intent.LoopIntent;
 import reflaxe.elixir.ast.intent.LoopIntent.*;  // Import all enum constructors
 import reflaxe.elixir.ast.transformers.DesugarredForDetector;
@@ -1043,7 +1044,7 @@ class ElixirASTBuilder {
                 var isEnumExtraction = false;
                 var extractedFromTemp = "";
                 var shouldSkipRedundantExtraction = false;
-                var varOrigin: VarOrigin = UserDefined;  // Default to user-defined
+                var varOrigin: ElixirAST.VarOrigin = UserDefined;  // Default to user-defined
                 var tempToBinderMap: Map<Int, Int> = null;
 
                 if (init != null) {
@@ -7351,86 +7352,10 @@ class ElixirASTBuilder {
      * 
      * WHY: Switch case values need to be converted to Elixir patterns
      * WHAT: Handles literals, enum constructors, variables, and complex patterns
-     * HOW: Analyzes the TypedExpr structure and generates appropriate pattern
+     * HOW: Delegates to PatternBuilder for centralized pattern handling
      */
     static function convertPattern(value: TypedExpr): EPattern {
-        return switch(value.expr) {
-            // Literals
-            case TConst(TInt(i)): 
-                PLiteral(makeAST(EInteger(i)));
-            case TConst(TFloat(f)): 
-                PLiteral(makeAST(EFloat(Std.parseFloat(f))));
-            case TConst(TString(s)): 
-                PLiteral(makeAST(EString(s)));
-            case TConst(TBool(b)): 
-                PLiteral(makeAST(EBoolean(b)));
-            case TConst(TNull): 
-                PLiteral(makeAST(ENil));
-                
-            // Variables (for pattern matching)
-            case TLocal(v):
-                PVar(toElixirVarName(v.name));
-                
-            // Enum constructors
-            case TEnumParameter(e, ef, index):
-                // This represents matching against enum constructor arguments
-                // We'll need to handle this in the context of the full pattern
-                PVar("_enum_param_" + index);
-                
-            case TEnumIndex(e):
-                // Matching against enum index (for switch on elem(tuple, 0))
-                PLiteral(makeAST(EInteger(0))); // Will be refined based on actual enum
-                
-            // Array patterns
-            case TArrayDecl(el):
-                PList([for (e in el) convertPattern(e)]);
-                
-            // Tuple patterns (for enum matching)
-            case TCall(e, el) if (PatternDetector.isEnumConstructor(e)):
-                // Enum constructor pattern
-                var tag = extractEnumTag(e);
-                
-                // For idiomatic enums, convert to snake_case
-                if (hasIdiomaticMetadata(e)) {
-                    tag = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
-                }
-                
-                var args = [for (arg in el) convertPattern(arg)];
-                // Create tuple pattern {:tag, arg1, arg2, ...}
-                PTuple([PLiteral(makeAST(EAtom(tag)))].concat(args));
-                
-            // Field access (for enum constructors)
-            case TField(e, FEnum(enumRef, ef)):
-                // Direct enum constructor reference
-                // Always use snake_case for enum atoms (idiomatic Elixir)
-                var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
-                
-                // Check if the enum is idiomatic (now all enums are treated as idiomatic)
-                var isIdiomatic = enumRef.get().meta.has(":elixirIdiomatic") || true; // All enums are idiomatic now
-                
-                // Extract parameter count from the enum field's type
-                var paramCount = 0;
-                switch(ef.type) {
-                    case TFun(args, _):
-                        paramCount = args.length;
-                    default:
-                        // No parameters
-                }
-                
-                if (paramCount == 0) {
-                    // No-argument constructor
-                    PLiteral(makeAST(EAtom(atomName)));
-                } else {
-                    // Constructor with arguments - needs to be a tuple pattern
-                    // This will be {:Constructor, _, _, ...} with wildcards for args
-                    var wildcards = [for (i in 0...paramCount) PWildcard];
-                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(wildcards));
-                }
-                
-            // Default/wildcard
-            default: 
-                PWildcard;
-        }
+        return PatternBuilder.convertPattern(value, currentContext);
     }
     
     /**
@@ -7438,73 +7363,10 @@ class ElixirASTBuilder {
      * 
      * WHY: Regular enums need access to user-specified variable names from switch cases
      * WHAT: Like convertPattern but uses extractedParams for enum constructor arguments
-     * HOW: When encountering enum constructors, uses extractedParams instead of wildcards
+     * HOW: Delegates to PatternBuilder for centralized pattern handling
      */
     static function convertPatternWithExtraction(value: TypedExpr, extractedParams: Array<String>): EPattern {
-        return switch(value.expr) {
-            // Most cases delegate to regular convertPattern
-            case TConst(_) | TLocal(_) | TArrayDecl(_) | TEnumIndex(_):
-                convertPattern(value);
-                
-            // Enum constructors - the main difference
-            case TCall(e, el) if (PatternDetector.isEnumConstructor(e)):
-                // Enum constructor pattern with extracted parameter names
-                var tag = extractEnumTag(e);
-                
-                // For idiomatic enums, convert to snake_case
-                if (hasIdiomaticMetadata(e)) {
-                    tag = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
-                }
-                
-                // Use extracted parameter names instead of wildcards or generic names
-                var args = [];
-                for (i in 0...el.length) {
-                    if (i < extractedParams.length && extractedParams[i] != null) {
-                        // Use the user-specified variable name
-                        args.push(PVar(extractedParams[i]));
-                    } else {
-                        // Fall back to wildcard if no name provided
-                        args.push(PWildcard);
-                    }
-                }
-                
-                // Create tuple pattern {:tag, param1, param2, ...}
-                PTuple([PLiteral(makeAST(EAtom(tag)))].concat(args));
-                
-            // Field access (for enum constructors without arguments)
-            case TField(e, FEnum(enumRef, ef)):
-                // Direct enum constructor reference
-                var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
-                
-                // Extract parameter count from the enum field's type
-                var paramCount = 0;
-                switch(ef.type) {
-                    case TFun(args, _):
-                        paramCount = args.length;
-                    default:
-                        // No parameters
-                }
-                
-                if (paramCount == 0) {
-                    // No-argument constructor
-                    PLiteral(makeAST(EAtom(atomName)));
-                } else {
-                    // Constructor with arguments - use extracted param names
-                    var patterns = [];
-                    for (i in 0...paramCount) {
-                        if (i < extractedParams.length && extractedParams[i] != null) {
-                            patterns.push(PVar(extractedParams[i]));
-                        } else {
-                            patterns.push(PWildcard);
-                        }
-                    }
-                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(patterns));
-                }
-                
-            default:
-                // Fall back to regular pattern conversion
-                convertPattern(value);
-        }
+        return PatternBuilder.convertPatternWithExtraction(value, extractedParams, currentContext);
     }
     
     /**
@@ -7513,43 +7375,10 @@ class ElixirASTBuilder {
      * WHY: When we have `case Ok(email):`, the pattern variable "email" is in the case values,
      *      not in the case body. We need to extract these names to generate correct patterns.
      * WHAT: Extracts variable names from enum constructor patterns in case values
-     * HOW: Analyzes TCall expressions in case values to find pattern variable arguments
+     * HOW: Delegates to PatternBuilder for centralized pattern handling
      */
     static function extractPatternVariableNamesFromValues(values: Array<TypedExpr>): Array<String> {
-        var patternVars = [];
-        
-        for (value in values) {
-            switch(value.expr) {
-                case TCall(e, args):
-                    // This is an enum constructor pattern like Ok(email) or Error(reason)
-                    // Extract the variable names from the arguments
-                    for (i in 0...args.length) {
-                        var arg = args[i];
-                        switch(arg.expr) {
-                            case TLocal(v):
-                                // Pattern variable like "email" in Ok(email)
-                                var varName = toElixirVarName(v.name);
-                                #if debug_ast_builder
-                                trace('[extractPatternVariableNamesFromValues] Found TLocal variable: "${v.name}" -> "$varName"');
-                                #end
-                                // Ensure array is large enough
-                                while (patternVars.length <= i) {
-                                    patternVars.push(null);
-                                }
-                                patternVars[i] = varName;
-                            default:
-                                // Could be a constant or wildcard
-                                #if debug_ast_builder
-                                trace('[extractPatternVariableNamesFromValues] Arg $i is not TLocal: ${arg.expr}');
-                                #end
-                        }
-                    }
-                default:
-                    // Not a constructor pattern
-            }
-        }
-        
-        return patternVars;
+        return PatternBuilder.extractPatternVariableNamesFromValues(values);
     }
     
     /**
@@ -11663,126 +11492,7 @@ class ElixirASTBuilder {
      * - return code          // Usage (might be optimized to 'return g')
      */
     static function isPatternVariableUsed(varName: String, caseBody: TypedExpr): Bool {
-        // Build alias sets to track temp variable relationships
-        var aliasMap: Map<String, Array<String>> = new Map();
-        var tempsByIndex: Map<Int, String> = new Map();
-        var isUsed = false;
-
-        // First pass: collect aliases and temp variable relationships
-        function collectAliases(expr: TypedExpr): Void {
-            switch(expr.expr) {
-                case TVar(v, init) if (init != null):
-                    var vName = toElixirVarName(v.name);
-
-                    switch(init.expr) {
-                        case TEnumParameter(_, _, index):
-                            // This is: tempVar = elem(enum, index)
-                            // Record that this temp variable extracts from this index
-                            tempsByIndex.set(index, vName);
-
-                            // Initialize alias set for this temp
-                            if (!aliasMap.exists(vName)) {
-                                aliasMap.set(vName, [vName]);
-                            }
-
-                        case TLocal(sourceVar):
-                            // This is: destVar = sourceVar (simple assignment)
-                            var sourceName = toElixirVarName(sourceVar.name);
-
-                            // If source has an alias set, add dest to it
-                            if (aliasMap.exists(sourceName)) {
-                                var aliases = aliasMap.get(sourceName);
-                                if (aliases.indexOf(vName) == -1) {
-                                    aliases.push(vName);
-                                }
-                                // Also give dest its own entry pointing to same array
-                                aliasMap.set(vName, aliases);
-                            } else {
-                                // Create new alias set for both
-                                var aliases = [sourceName, vName];
-                                aliasMap.set(sourceName, aliases);
-                                aliasMap.set(vName, aliases);
-                            }
-
-                        default:
-                            // Other init types don't create aliases
-                    }
-
-                default:
-                    // Recursively collect from sub-expressions
-                    haxe.macro.TypedExprTools.iter(expr, collectAliases);
-            }
-        }
-
-        // Collect all aliases in the case body
-        if (caseBody != null) {
-            collectAliases(caseBody);
-        }
-
-        // Build complete alias set for our pattern variable
-        var aliasesToCheck = [varName];
-
-        // Add any directly mapped aliases
-        if (aliasMap.exists(varName)) {
-            aliasesToCheck = aliasMap.get(varName).copy();
-        }
-
-        // Also check temp variables that might represent this pattern variable
-        // Pattern variables like "code", "msg" often become "g", "g1", etc.
-        // If varName matches pattern like g, g1, g2, include it
-        if (varName == "g" || (varName.length > 1 && varName.charAt(0) == "g" &&
-            varName.charAt(1) >= '0' && varName.charAt(1) <= '9')) {
-            // This IS a temp variable, check if pattern var maps to it
-            for (alias in aliasMap.keys()) {
-                var aliases = aliasMap.get(alias);
-                if (aliases.indexOf(varName) != -1 && aliasesToCheck.indexOf(alias) == -1) {
-                    aliasesToCheck.push(alias);
-                }
-            }
-        } else {
-            // This is a pattern variable, check if any temps map to it
-            for (tempName in tempsByIndex) {
-                if (aliasMap.exists(tempName)) {
-                    var aliases = aliasMap.get(tempName);
-                    if (aliases.indexOf(varName) != -1) {
-                        // This temp is an alias of our pattern var
-                        for (a in aliases) {
-                            if (aliasesToCheck.indexOf(a) == -1) {
-                                aliasesToCheck.push(a);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Second pass: check if any alias is actually used (not just declared)
-        function checkUsage(expr: TypedExpr): Void {
-            if (isUsed) return; // Early exit if already found
-
-            switch(expr.expr) {
-                case TLocal(v):
-                    var vName = toElixirVarName(v.name);
-                    // Check if this local reference is any of our aliases
-                    if (aliasesToCheck.indexOf(vName) != -1) {
-                        isUsed = true;
-                    }
-
-                case TVar(v, _):
-                    // Variable declaration is NOT usage
-                    // But still recurse into the init expression if present
-
-                default:
-                    // Recursively check sub-expressions
-                    haxe.macro.TypedExprTools.iter(expr, checkUsage);
-            }
-        }
-
-        if (caseBody != null) {
-            checkUsage(caseBody);
-        }
-
-        return isUsed;
+        return PatternBuilder.isPatternVariableUsed(varName, caseBody);
     }
 
     /**
@@ -11797,36 +11507,8 @@ class ElixirASTBuilder {
      * @param varOriginMap Optional map of variable IDs to their VarOrigin
      * @return True if the variable is used in the case body
      */
-    static function isPatternVariableUsedById(varId: Int, caseBody: TypedExpr, ?varOriginMap: Map<Int, VarOrigin>): Bool {
-        // Build set of used variable IDs in case body
-        var usedVarIds = new Map<Int, Bool>();
-
-        function collectUsedVarIds(expr: TypedExpr): Void {
-            switch(expr.expr) {
-                case TLocal(v):
-                    // This is a usage of a variable
-                    usedVarIds.set(v.id, true);
-
-                case TVar(v, _):
-                    // Variable declaration is NOT usage
-                    // The variable ID v.id is being declared, not used
-                    // But recurse into init expression if present
-
-                default:
-                    // Recursively check sub-expressions
-            }
-
-            // Always recurse into sub-expressions
-            haxe.macro.TypedExprTools.iter(expr, collectUsedVarIds);
-        }
-
-        // Collect all used variable IDs
-        if (caseBody != null) {
-            collectUsedVarIds(caseBody);
-        }
-
-        // Check if our variable ID is in the used set
-        return usedVarIds.exists(varId);
+    static function isPatternVariableUsedById(varId: Int, caseBody: TypedExpr, ?varOriginMap: Map<Int, ElixirAST.VarOrigin>): Bool {
+        return PatternBuilder.isPatternVariableUsedById(varId, caseBody, varOriginMap);
     }
 
     /**
@@ -11836,59 +11518,17 @@ class ElixirASTBuilder {
      *      the ClauseContext mapping needs to be updated so the case body can still
      *      reference the correct variable
      * WHAT: Scans the pattern for underscore-prefixed variables and updates the mapping
-     * HOW: Walks through the pattern and updates mappings for any PVar with underscore prefix
+     * HOW: Delegates to PatternBuilder for centralized pattern handling
      */
     static function updateMappingForUnderscorePrefixes(pattern: EPattern, originalMapping: Map<Int, String>, extractedParams: Array<String>): Map<Int, String> {
-        var needsUpdate = false;
-        var newMapping = new Map<Int, String>();
-
-        // First, copy the original mapping
-        for (id => name in originalMapping) {
-            newMapping.set(id, name);
-        }
-
-        // Check if any pattern variables have underscore prefixes
-        function checkPattern(p: EPattern, index: Int = 0): Void {
-            switch(p) {
-                case PTuple(patterns):
-                    for (i in 0...patterns.length) {
-                        checkPattern(patterns[i], i);
-                    }
-                case PVar(name) if (name.startsWith("_") && name.length > 1):
-                    // This variable has an underscore prefix
-                    // Update any mapping that pointed to the non-prefixed version
-                    var originalName = name.substring(1); // Remove underscore
-                    for (id => mappedName in originalMapping) {
-                        if (mappedName == originalName) {
-                            // Update this mapping to use the prefixed name
-                            newMapping.set(id, name);
-                            needsUpdate = true;
-                        }
-                    }
-                default:
-                    // Other patterns don't need updates
-            }
-        }
-
-        checkPattern(pattern);
-
-        return needsUpdate ? newMapping : originalMapping;
+        return PatternBuilder.updateMappingForUnderscorePrefixes(pattern, originalMapping, extractedParams);
     }
 
     /**
      * Check if a case body is effectively empty (only nil or no-op)
      */
     static function isEmptyCaseBody(body: ElixirAST): Bool {
-        if (body == null) return true;
-        
-        return switch(body.def) {
-            case EAtom(a): a == "nil";
-            case ENil: true;
-            case EBlock(exprs): 
-                exprs.length == 0 || 
-                (exprs.length == 1 && isEmptyCaseBody(exprs[0]));
-            default: false;
-        };
+        return PatternBuilder.isEmptyCaseBody(body);
     }
     
     /**
@@ -11900,111 +11540,7 @@ class ElixirASTBuilder {
      * @param isEmptyBody If true, all variables in the pattern are considered unused
      */
     static function applyUnderscorePrefixToUnusedPatternVars(pattern: EPattern, variableUsageMap: Map<Int, Bool>, extractedParams: Array<String>, isEmptyBody: Bool = false): EPattern {
-        return switch(pattern) {
-            case PTuple(patterns):
-                // Process tuple patterns (like {:ok, g} or {:error, g})
-                var updatedPatterns = [];
-                for (i in 0...patterns.length) {
-                    var p = patterns[i];
-                    switch(p) {
-                        case PVar(name):
-                            // For enum patterns, check if the extracted parameter is actually used
-                            // The position in the tuple corresponds to the parameter index
-                            // Pattern index 0 is the atom, index 1+ are the parameters
-                            var isUsed = !isEmptyBody; // If body is empty, all vars are unused
-
-                            // If this is an enum parameter (not the first element which is the atom)
-                            if (i > 0 && extractedParams != null && i - 1 < extractedParams.length) {
-                                // The extracted param name at this position
-                                var expectedParamName = extractedParams[i - 1];
-
-                                // Check if the parameter name matches the expected parameter
-                                if (expectedParamName == name) {
-                                    // If the body is empty, the variable is definitely unused
-                                    // Otherwise, be conservative and assume it's used
-                                    isUsed = !isEmptyBody;
-                                    
-                                    // Special handling for known patterns:
-                                    // 1. Variables already starting with underscore should stay that way
-                                    if (name.startsWith("_")) {
-                                        isUsed = false; // Keep underscore prefix
-                                    }
-                                }
-                            }
-
-                            // Only prefix with underscore if we're certain the variable is unused
-                            // This conservative approach prevents compilation errors
-                            if (!isUsed && !name.startsWith("_")) {
-                                updatedPatterns.push(PVar("_" + name));
-                            } else {
-                                updatedPatterns.push(p);
-                            }
-                        default:
-                            updatedPatterns.push(applyUnderscorePrefixToUnusedPatternVars(p, variableUsageMap, extractedParams, isEmptyBody));
-                    }
-                }
-                PTuple(updatedPatterns);
-
-            case PVar(name):
-                // Single variable pattern - check usage
-                // This is a simplified implementation - in practice we'd need better tracking
-                PVar(name); // Keep as-is for now
-
-            case PLiteral(_) | PWildcard:
-                // Literals and wildcards don't need modification
-                pattern;
-
-            case PList(elements):
-                // Process list patterns
-                PList([for (e in elements) applyUnderscorePrefixToUnusedPatternVars(e, variableUsageMap, extractedParams, isEmptyBody)]);
-
-            case PCons(head, tail):
-                // Process cons pattern [head | tail]
-                PCons(
-                    applyUnderscorePrefixToUnusedPatternVars(head, variableUsageMap, extractedParams, isEmptyBody),
-                    applyUnderscorePrefixToUnusedPatternVars(tail, variableUsageMap, extractedParams, isEmptyBody)
-                );
-
-            case PMap(pairs):
-                // Process map patterns
-                PMap([for (pair in pairs) {
-                    key: pair.key,
-                    value: applyUnderscorePrefixToUnusedPatternVars(pair.value, variableUsageMap, extractedParams, isEmptyBody)
-                }]);
-
-            case PStruct(module, fields):
-                // Process struct patterns
-                PStruct(module, [for (f in fields) {
-                    key: f.key,
-                    value: applyUnderscorePrefixToUnusedPatternVars(f.value, variableUsageMap, extractedParams, isEmptyBody)
-                }]);
-
-            case PPin(subPattern):
-                // Process pinned pattern ^var
-                PPin(applyUnderscorePrefixToUnusedPatternVars(subPattern, variableUsageMap, extractedParams, isEmptyBody));
-
-            case PAlias(varName, subPattern):
-                // Process alias pattern (var = pattern)
-                var isUsed = false;
-                for (param in extractedParams) {
-                    if (param == varName) {
-                        isUsed = true;
-                        break;
-                    }
-                }
-                // M0 STABILIZATION: Disable underscore prefixing
-                var newVarName = varName; // Was: (!isUsed && !varName.startsWith("_")) ? "_" + varName : varName;
-                PAlias(newVarName, applyUnderscorePrefixToUnusedPatternVars(subPattern, variableUsageMap, extractedParams, isEmptyBody));
-
-            case PBinary(segments):
-                // Process binary patterns
-                PBinary([for (s in segments) {
-                    pattern: applyUnderscorePrefixToUnusedPatternVars(s.pattern, variableUsageMap, extractedParams, isEmptyBody),
-                    size: s.size,
-                    type: s.type,
-                    modifiers: s.modifiers
-                }]);
-        }
+        return PatternBuilder.applyUnderscorePrefixToUnusedPatternVars(pattern, variableUsageMap, extractedParams, isEmptyBody);
     }
 
     /**
@@ -12504,7 +12040,7 @@ class ElixirASTBuilder {
      *      - Enum.map for collecting results
      *      - Proper tuple destructuring: fn {key, value} -> ... end
      */
-    static function buildMapIteration(pattern: MapIterationPattern, context: CompilationContext): ElixirASTDef {
+    static function buildMapIteration(pattern: MapIterationPattern, context: CompilationContext): ElixirAST {
         var mapAst = buildFromTypedExpr(pattern.mapExpr, context);
         var bodyAst = buildFromTypedExpr(pattern.body, context);
         
@@ -12526,11 +12062,11 @@ class ElixirASTBuilder {
         // Choose between Enum.each and Enum.map based on usage
         var enumFunction = isCollecting ? "map" : "each";
         
-        return ECall(
+        return makeAST(ECall(
             makeAST(EVar("Enum")),
             enumFunction,
             [mapAst, makeAST(EFn([fnClause]))]
-        );
+        ));
     }
     
     /**
