@@ -22,6 +22,7 @@ import reflaxe.elixir.ast.builders.LoopBuilder;
 import reflaxe.elixir.ast.builders.PatternBuilder;
 import reflaxe.elixir.ast.builders.EnumHandler;
 import reflaxe.elixir.ast.builders.ComprehensionBuilder;
+import reflaxe.elixir.ast.builders.LiteralBuilder;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.optimizers.LoopOptimizer;
 import reflaxe.elixir.ast.intent.LoopIntent;
@@ -653,88 +654,8 @@ class ElixirASTBuilder {
             // Literals and Constants
             // ================================================================
             case TConst(c):
-                // Special handling for strings to check if they should be atoms
-                switch(c) {
-                    case TString(s):
-                        // Check if this string has the Atom type
-                        var isAtom = false;
-                        #if debug_atom_generation
-                        #if debug_ast_builder
-                        trace('[Atom Debug TConst] String "${s}" with type: ${expr.t}');
-                        #end
-                        #end
-                        switch(expr.t) {
-                            case TAbstract(ref, _):
-                                var abstractType = ref.get();
-                                #if debug_atom_generation
-                                #if debug_ast_builder
-                                trace('[Atom Debug TConst] Abstract type: ${abstractType.pack.join(".")}.${abstractType.name}');
-                                #end
-                                #end
-                                // Check if this is the Atom abstract type
-                                if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Atom") {
-                                    isAtom = true;
-                                    #if debug_atom_generation
-                                    #if debug_ast_builder
-                                    trace('[Atom Debug TConst] DETECTED: String is Atom type!');
-                                    #end
-                                    #end
-                                }
-                            case _:
-                                #if debug_atom_generation
-                                #if debug_ast_builder
-                                trace('[Atom Debug TConst] Not an abstract type: ${expr.t}');
-                                #end
-                                #end
-                                // Not an abstract type
-                        }
-
-                        if (isAtom) {
-                            #if debug_atom_generation
-                            #if debug_ast_builder
-                            trace('[Atom Debug TConst] Generating atom :${s}');
-                            #end
-                            #end
-                            // Generate atom for Atom-typed strings
-                            EAtom(s);
-                        } else {
-                            #if debug_atom_generation
-                            #if debug_ast_builder
-                            trace('[Atom Debug TConst] Generating string "${s}"');
-                            #end
-                            #end
-                            // Regular string
-                            EString(s);
-                        }
-                    case TThis:
-                        // Handle 'this' references - use the receiver parameter name from context
-                        // In instance methods, this refers to the first parameter (struct)
-                        #if debug_exunit
-                        trace('[AST Builder] TThis: isInClassMethodContext=${currentContext?.isInClassMethodContext}, isInExUnitTest=${currentContext?.isInExUnitTest}, receiverParam=${currentContext?.currentReceiverParamName}, context exists=${currentContext != null}');
-                        #end
-                        if (currentContext.isInClassMethodContext && currentContext.currentReceiverParamName != null) {
-                            EVar(currentContext.currentReceiverParamName);
-                        } else if (currentContext.isInExUnitTest) {
-                            // In ExUnit tests, 'this' should refer to the test context
-                            // This will be used for instance field access patterns
-                            #if debug_exunit
-                            trace('[AST Builder] Using "context" for ExUnit test');
-                            #end
-                            EVar("context");
-                        } else {
-                            // For now, generate a placeholder that will cause a compile error
-                            // This helps identify where instance variables are being used inappropriately
-                            #if debug_exunit
-                            trace('[AST Builder] No context available - using placeholder');
-                            #end
-                            EVar("__instance_variable_not_available_in_this_context__");
-                        }
-                    default:
-                        // Delegate to CoreExprBuilder for other constants
-                        // Returns ElixirAST, but we need ElixirASTDef
-                        var ast = CoreExprBuilder.buildConst(c);
-                        ast.def;
-                }
+                // Delegate to LiteralBuilder for all constant handling
+                LiteralBuilder.buildConst(c, expr, currentContext);
                 
             // ================================================================
             // Variables and Binding
