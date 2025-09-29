@@ -124,7 +124,7 @@ class EnumHandler {
      */
     public static function generateEnumMap(arrayExpr: ElixirAST, itemVar: String, transformation: ElixirAST, context: BuildContext): ElixirAST {
         var lambda = makeAST(EFn([{
-            patterns: [PVar(itemVar)],
+            args: [PVar(itemVar)],
             guard: null,
             body: transformation
         }]));
@@ -141,7 +141,7 @@ class EnumHandler {
      */
     public static function generateEnumFilter(arrayExpr: ElixirAST, itemVar: String, condition: ElixirAST, context: BuildContext): ElixirAST {
         var lambda = makeAST(EFn([{
-            patterns: [PVar(itemVar)],
+            args: [PVar(itemVar)],
             guard: null,
             body: condition
         }]));
@@ -159,7 +159,7 @@ class EnumHandler {
     public static function generateEnumReduce(arrayExpr: ElixirAST, itemVar: String, accVar: String, 
                                              initialValue: ElixirAST, body: ElixirAST, context: BuildContext): ElixirAST {
         var lambda = makeAST(EFn([{
-            patterns: [PVar(itemVar), PVar(accVar)],
+            args: [PVar(itemVar), PVar(accVar)],
             guard: null,
             body: body
         }]));
@@ -296,10 +296,10 @@ class EnumHandler {
         
         // Build tuple pattern
         if (params.length > 0) {
-            var tupleElements = [PAtom(atomName)].concat(params);
+            var tupleElements = [PLiteral(makeAST(EAtom(atomName)))].concat(params);
             return PTuple(tupleElements);
         } else {
-            return PAtom(atomName);
+            return PLiteral(makeAST(EAtom(atomName)));
         }
     }
     
@@ -337,7 +337,14 @@ class EnumHandler {
         }
         
         // Build module-qualified pattern
-        return PEnum(typeName, tag, params);
+        // For now, use tuple pattern with atom tag
+        // TODO: Implement proper module-qualified patterns
+        var atomPattern = PLiteral(makeAST(EAtom(tag.toSnakeCase())));
+        if (params.length > 0) {
+            return PTuple([atomPattern].concat(params));
+        } else {
+            return atomPattern;
+        }
     }
     
     // ================================================================

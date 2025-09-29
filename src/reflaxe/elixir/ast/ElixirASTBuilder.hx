@@ -1888,7 +1888,7 @@ class ElixirASTBuilder {
                 var result = switch(op) {
                     case OpAssign:
                         // Assignment needs pattern extraction for the left side
-                        var pattern = extractPattern(e1);
+                        var pattern = PatternBuilder.extractPattern(e1);
                         var rightAST = buildFromTypedExpr(e2, currentContext);
                         var shouldSkipAssign = false;
                         switch(pattern) {
@@ -1923,7 +1923,7 @@ class ElixirASTBuilder {
 
                     case OpAssignOp(innerOp):
                         // Compound assignment: x += 1 becomes x = x + 1
-                        var pattern = extractPattern(e1);
+                        var pattern = PatternBuilder.extractPattern(e1);
                         var leftAST = buildFromTypedExpr(e1, currentContext);
                         var rightAST = buildFromTypedExpr(e2, currentContext);
 
@@ -5442,7 +5442,7 @@ class ElixirASTBuilder {
                         }
                     } else {
                         // Non-enum patterns or unknown enum types
-                        [for (v in c.values) convertPatternWithExtraction(v, patternParamNames)];
+                        [for (v in c.values) PatternBuilder.convertPatternWithExtraction(v, patternParamNames, currentContext)];
                     }
                     
                     // Set up ClauseContext for alpha-renaming before building the case body
@@ -5490,11 +5490,11 @@ class ElixirASTBuilder {
                         // Apply underscore prefix to unused pattern variables
                         // Check if the case body is empty (just nil or no-op)
                         var bodyIsEmpty = isEmptyCaseBody(body);
-                        var finalPattern = applyUnderscorePrefixToUnusedPatternVars(pattern, currentContext.variableUsageMap, extractedParams, bodyIsEmpty);
+                        var finalPattern = PatternBuilder.applyUnderscorePrefixToUnusedPatternVars(pattern, currentContext.variableUsageMap, extractedParams, bodyIsEmpty);
 
                         // Update the ClauseContext mapping if pattern variables were prefixed with underscore
                         // This ensures the case body can still reference the variables correctly
-                        var updatedMapping = updateMappingForUnderscorePrefixes(finalPattern, varMapping, extractedParams);
+                        var updatedMapping = PatternBuilder.updateMappingForUnderscorePrefixes(finalPattern, varMapping, extractedParams);
 
                         // If mapping was updated, rebuild the body with the new mapping
                         var finalBody = if (updatedMapping != varMapping) {
@@ -7350,39 +7350,12 @@ class ElixirASTBuilder {
     }
     
     /**
-     * Convert Haxe values to patterns
-     * 
-     * WHY: Switch case values need to be converted to Elixir patterns
-     * WHAT: Handles literals, enum constructors, variables, and complex patterns
-     * HOW: Delegates to PatternBuilder for centralized pattern handling
-     */
-    static function convertPattern(value: TypedExpr): EPattern {
-        return PatternBuilder.convertPattern(value, currentContext);
-    }
-    
-    /**
      * Convert Haxe values to patterns with extracted parameter names
      * 
      * WHY: Regular enums need access to user-specified variable names from switch cases
      * WHAT: Like convertPattern but uses extractedParams for enum constructor arguments
      * HOW: Delegates to PatternBuilder for centralized pattern handling
      */
-    static function convertPatternWithExtraction(value: TypedExpr, extractedParams: Array<String>): EPattern {
-        return PatternBuilder.convertPatternWithExtraction(value, extractedParams, currentContext);
-    }
-    
-    /**
-     * Extract pattern variable names from case values
-     * 
-     * WHY: When we have `case Ok(email):`, the pattern variable "email" is in the case values,
-     *      not in the case body. We need to extract these names to generate correct patterns.
-     * WHAT: Extracts variable names from enum constructor patterns in case values
-     * HOW: Delegates to PatternBuilder for centralized pattern handling
-     */
-    static function extractPatternVariableNamesFromValues(values: Array<TypedExpr>): Array<String> {
-        return PatternBuilder.extractPatternVariableNamesFromValues(values);
-    }
-    
     /**
      * Analyze case body to detect enum parameter extraction patterns
      * 
@@ -7509,7 +7482,7 @@ class ElixirASTBuilder {
             }
             #end
 
-            var patternVars = extractPatternVariableNamesFromValues(caseValues);
+            var patternVars = PatternBuilder.extractPatternVariableNamesFromValues(caseValues);
             if (patternVars.length > 0 && patternVars.filter(v -> v != null).length > 0) {
                 // We found pattern variables, use them
                 #if debug_ast_pipeline
@@ -8113,10 +8086,10 @@ class ElixirASTBuilder {
                         if (paramIndexToVarId.exists(index)) {
                             // Use ID-based checking to avoid false positives
                             var varId = paramIndexToVarId.get(index);
-                            isUsed = isPatternVariableUsedById(varId, caseExpr);
+                            isUsed = PatternBuilder.isPatternVariableUsedById(varId, caseExpr, null);
                         } else {
                             // Fall back to name-based checking using the finalName from plan
-                            isUsed = isPatternVariableUsed(entry.finalName, caseExpr);
+                            isUsed = PatternBuilder.isPatternVariableUsed(entry.finalName, caseExpr);
 
                             #if debug_enum_extraction
                             #if debug_ast_builder
@@ -8156,9 +8129,9 @@ class ElixirASTBuilder {
                         var isUsed = false;
                         if (paramIndexToVarId.exists(index)) {
                             var varId = paramIndexToVarId.get(index);
-                            isUsed = isPatternVariableUsedById(varId, caseExpr);
+                            isUsed = PatternBuilder.isPatternVariableUsedById(varId, caseExpr, null);
                         } else {
-                            isUsed = isPatternVariableUsed(finalName, caseExpr);
+                            isUsed = PatternBuilder.isPatternVariableUsed(finalName, caseExpr);
                         }
 
                         plan.set(index, {finalName: finalName, isUsed: isUsed});
@@ -8231,7 +8204,21 @@ class ElixirASTBuilder {
      *      to determine which parameters need named patterns vs wildcards
      */
     static function convertIdiomaticEnumPatternWithExtraction(value: TypedExpr, enumType: EnumType, extractedParams: Array<String>, variableUsageMap: Map<Int, Bool> = null): EPattern {
-        return convertIdiomaticEnumPatternWithTypeImpl(value, enumType, extractedParams, variableUsageMap);
+        // Extract EnumField from the value if it's an enum constructor
+        var ef: EnumField = null;
+        switch(value.expr) {
+            case TConst(TInt(index)):
+                // Get the enum field by index
+                var idx = index;
+                for (field in enumType.constructs) {
+                    if (field.index == idx) {
+                        ef = field;
+                        break;
+                    }
+                }
+            default:
+        }
+        return PatternBuilder.convertIdiomaticEnumPatternWithExtraction(value, enumType, ef, extractedParams, currentContext);
     }
     
     /**
@@ -8242,7 +8229,21 @@ class ElixirASTBuilder {
      * HOW: Uses the provided enum type to map indices to constructor names
      */
     static function convertIdiomaticEnumPatternWithType(value: TypedExpr, enumType: EnumType): EPattern {
-        return convertIdiomaticEnumPatternWithTypeImpl(value, enumType, null);
+        // Extract EnumField from the value if it's an enum constructor
+        var ef: EnumField = null;
+        switch(value.expr) {
+            case TConst(TInt(index)):
+                // Get the enum field by index
+                var idx = index;
+                for (field in enumType.constructs) {
+                    if (field.index == idx) {
+                        ef = field;
+                        break;
+                    }
+                }
+            default:
+        }
+        return PatternBuilder.convertIdiomaticEnumPatternWithExtraction(value, enumType, ef, null, currentContext);
     }
     
     /**
@@ -8255,398 +8256,21 @@ class ElixirASTBuilder {
      *      instead of the generic extraction logic
      */
     static function convertRegularEnumPatternWithExtraction(value: TypedExpr, enumType: EnumType, extractedParams: Array<String>, variableUsageMap: Map<Int, Bool> = null): EPattern {
-        return switch(value.expr) {
-            // Haxe internally converts enum constructors to integers for switch
+        // Extract EnumField from the value if it's an enum constructor
+        var ef: EnumField = null;
+        switch(value.expr) {
             case TConst(TInt(index)):
-                // Get the constructor at this index
-                var constructors = enumType.constructs;
-                
-                // Build array of constructors in definition order (by index)
-                var constructorArray = [];
-                for (name in constructors.keys()) {
-                    var constructor = constructors.get(name);
-                    constructorArray[constructor.index] = constructor;
-                }
-                
-                if (index >= 0 && index < constructorArray.length && constructorArray[index] != null) {
-                    var constructor = constructorArray[index];
-                    
-                    // Use ElixirAtom for automatic snake_case conversion
-                    var atomName: reflaxe.elixir.ast.naming.ElixirAtom = constructor.name;
-                    
-                    // Extract parameter count from the constructor's type
-                    var paramCount = 0;
-                    switch(constructor.type) {
-                        case TFun(args, _):
-                            paramCount = args.length;
-                        default:
-                            // No parameters
+                // Get the enum field by index
+                var idx = index;
+                for (field in enumType.constructs) {
+                    if (field.index == idx) {
+                        ef = field;
+                        break;
                     }
-                    
-                    if (paramCount > 0) {
-                        // Constructor with arguments - create tuple pattern
-                        // For regular enums, try to use pattern variable names from case values
-                        // Fall back to canonical names if extraction failed
-                        var paramPatterns = [];
-                        
-                        // Get canonical parameter names from constructor definition
-                        var canonicalNames = switch(constructor.type) {
-                            case TFun(args, _):
-                                [for (arg in args) arg.name];
-                            default:
-                                [];
-                        };
-                        
-                        /**
-                         * CRITICAL PATTERN VARIABLE NAME RESOLUTION
-                         * 
-                         * Two types of variable names are available here:
-                         * 
-                         * 1. CANONICAL NAMES (from enum constructor definition):
-                         *    - These are the parameter names defined in the enum constructor
-                         *    - Example: enum Color { RGB(r:Int, g:Int, b:Int); }
-                         *    - Canonical names: ["r", "g", "b"]
-                         *    - These represent what the USER wrote when defining the enum
-                         *    - IDIOMATIC and READABLE for generated Elixir patterns
-                         * 
-                         * 2. TEMP NAMES (from Haxe's TypedExpr extraction):
-                         *    - These are generated by Haxe when compiling switch cases
-                         *    - Haxe converts: case RGB(red, green, blue): 
-                         *    - Into: g = elem(color, 1); g1 = elem(color, 2); g2 = elem(color, 3);
-                         *    - Then: red = g; green = g1; blue = g2;
-                         *    - Temp names: ["g", "g1", "g2"]
-                         *    - These are INTERNAL compiler variables, not user-facing
-                         * 
-                         * WHEN TO USE EACH:
-                         * 
-                         * USE CANONICAL NAMES when:
-                         * - We have access to the enum constructor definition
-                         * - We're generating patterns for regular enums
-                         * - We want idiomatic, readable Elixir output
-                         * - Example: {:rgb, r, g, b} instead of {:rgb, g, g1, g2}
-                         * 
-                         * USE TEMP NAMES when:
-                         * - We DON'T have access to enum constructor (e.g., abstract types)
-                         * - The pattern variables in the case were DIFFERENT from canonical
-                         *   (e.g., case RGB(red, green, blue): instead of RGB(r, g, b):)
-                         * - We need to match what Haxe generates in the case body
-                         * 
-                         * THE PROBLEM:
-                         * When user writes: case RGB(red, green, blue):
-                         * - Canonical names are ["r", "g", "b"] (from enum definition)
-                         * - Pattern vars are ["red", "green", "blue"] (from case pattern)
-                         * - Temp vars are ["g", "g1", "g2"] (from Haxe extraction)
-                         * - We can't access pattern vars directly from TypedExpr!
-                         *
-                         * CURRENT SOLUTION:
-                         * - Prefer canonical names for readability
-                         * - Fall back to temp names when canonical not available
-                         * - Accept that pattern var names (red, green, blue) are lost
-                         * - The case body will handle remapping via assignments
-                         */
-
-                        for (i in 0...paramCount) {
-                            if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null) {
-                                // Use the extracted param name directly
-                                // This will be either:
-                                // - The canonical name from the enum definition (e.g., "value", "message")
-                                // - A temp var name if pattern extraction failed ("g", "g1", etc.)
-                                paramPatterns.push(PVar(extractedParams[i]));
-
-                                #if debug_ast_pipeline
-                                #if debug_ast_builder
-                                trace('[M0.3] Using binding plan name for param ${i}: ${extractedParams[i]}');
-                                #end
-                                #end
-                            } else if (i < canonicalNames.length && canonicalNames[i] != null) {
-                                // Fallback to canonical name if no binding plan entry
-                                // (shouldn't happen after M0.1, but keep as safety net)
-                                paramPatterns.push(PVar(canonicalNames[i]));
-
-                                #if debug_ast_pipeline
-                                #if debug_ast_builder
-                                trace('[M0.3 WARNING] No binding plan for param ${i}, using canonical: ${canonicalNames[i]}');
-                                #end
-                                #end
-                            } else {
-                                // Last resort: use wildcard
-                                paramPatterns.push(PWildcard);
-
-                                #if debug_ast_pipeline
-                                #if debug_ast_builder
-                                trace('[M0.3 WARNING] No name available for param ${i}, using wildcard');
-                                #end
-                                #end
-                            }
-                        }
-                        PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
-                    } else {
-                        // No-argument constructor - generate plain atom
-                        // Red → :red (NOT {:red})
-                        PLiteral(makeAST(EAtom(atomName)));
-                    }
-                } else {
-                    // Invalid index, use wildcard
-                    PWildcard;
                 }
-                
-            // For actual enum constructor patterns (shouldn't happen in regular switch)
-            case TField(_, FEnum(_, ef)):
-                // Use ElixirAtom which automatically converts from EnumField to snake_case
-                var atomName: reflaxe.elixir.ast.naming.ElixirAtom = ef;
-                
-                // Extract parameter count
-                var paramCount = 0;
-                switch(ef.type) {
-                    case TFun(args, _):
-                        paramCount = args.length;
-                    default:
-                }
-                
-                if (paramCount > 0) {
-                    // Use extracted parameters or canonical names
-                    var canonicalNames = switch(ef.type) {
-                        case TFun(args, _):
-                            [for (arg in args) arg.name];
-                        default:
-                            [];
-                    };
-                    
-                    var paramPatterns = [];
-                    for (i in 0...paramCount) {
-                        if (extractedParams != null && i < extractedParams.length && extractedParams[i] != null && !extractedParams[i].startsWith("g")) {
-                            paramPatterns.push(PVar(extractedParams[i]));
-                        } else if (i < canonicalNames.length && canonicalNames[i] != null) {
-                            // Use canonical names from the enum definition
-                            // This ensures we get {:rgb, r, g, b} not {:rgb, g, g1, g2}
-                            paramPatterns.push(PVar(canonicalNames[i]));
-                        } else {
-                            // Last resort: use temp var names (g, g1, g2)
-                            // Only for cases where we have no canonical names
-                            var tempVarName = i == 0 ? "g" : 'g${i}';
-                            paramPatterns.push(PVar(tempVarName));
-                        }
-                    }
-                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
-                } else {
-                    // Simple constructor with no parameters - generate plain atom
-                    // Red → :red (NOT {:red})
-                    PLiteral(makeAST(EAtom(atomName)));
-                }
-                
-            // Other patterns delegate to regular pattern conversion
             default:
-                convertPatternWithExtraction(value, extractedParams);
         }
-    }
-    
-    /**
-     * Internal implementation for idiomatic enum pattern conversion
-     */
-    static function convertIdiomaticEnumPatternWithTypeImpl(value: TypedExpr, enumType: EnumType, extractedParams: Null<Array<String>>, variableUsageMap: Map<Int, Bool> = null): EPattern {
-        return switch(value.expr) {
-            // Haxe internally converts enum constructors to integers for switch
-            case TConst(TInt(index)):
-                // Get the constructor at this index
-                // IMPORTANT: Haxe preserves definition order for enum constructor indices
-                // The first defined constructor is index 0, second is 1, etc.
-                // We need to get constructors in their definition order, NOT alphabetical
-                var constructors = enumType.constructs;
-                
-                // Build array of constructors in definition order (by index)
-                var constructorArray = [];
-                for (name in constructors.keys()) {
-                    var constructor = constructors.get(name);
-                    constructorArray[constructor.index] = constructor;
-                }
-                
-                if (index >= 0 && index < constructorArray.length && constructorArray[index] != null) {
-                    var constructor = constructorArray[index];
-                    
-                    // Convert to snake_case for idiomatic Elixir
-                    var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(constructor.name);
-                    
-                    #if debug_idiomatic_enum
-                    #if debug_ast_builder
-                    trace('[DEBUG IDIOMATIC] Constructor ${constructor.name}: type=${constructor.type}, params=${constructor.params}');
-                    #end
-                    #end
-                    
-                    // Create proper tuple pattern based on constructor parameters
-                    // For idiomatic enums, check if the constructor actually has parameters
-                    // constructor.type represents the function type of the constructor
-                    
-                    // Extract parameter count from the constructor's type field
-                    var paramCount = 0;
-                    switch(constructor.type) {
-                        case TFun(args, _):
-                            paramCount = args.length;
-                            #if debug_idiomatic_enum
-                            #if debug_ast_builder
-                            trace('[DEBUG IDIOMATIC] Found ${paramCount} parameters in TFun for ${constructor.name}');
-                            #end
-                            #end
-                        default:
-                            // No parameters
-                            #if debug_idiomatic_enum
-                            #if debug_ast_builder
-                            trace('[DEBUG IDIOMATIC] No TFun type, assuming no parameters for ${constructor.name}');
-                            #end
-                            #end
-                    }
-                    
-                    #if debug_idiomatic_enum
-                    #if debug_ast_builder
-                    trace('[DEBUG IDIOMATIC] Generating pattern for ${constructor.name} with ${paramCount} parameters');
-                    #end
-                    #end
-                    
-                    if (paramCount > 0) {
-                        // Constructor with arguments - create tuple pattern
-                        // Get canonical parameter names from the constructor definition
-                        var canonicalNames = switch(constructor.type) {
-                            case TFun(args, _):
-                                [for (arg in args) arg.name];
-                            default:
-                                [];
-                        };
-                        
-                        // Use canonical names for pattern variables
-                        var paramPatterns = [];
-
-                        // Debug output to understand the issue
-                        #if debug_idiomatic_enum
-                        #if debug_ast_builder
-                        trace('[DEBUG IDIOMATIC] extractedParams: ${extractedParams}');
-                        #end
-                        #if debug_ast_builder
-                        trace('[DEBUG IDIOMATIC] canonicalNames: ${canonicalNames}');
-                        #end
-                        #end
-
-                        // Additional debug to understand what we're getting
-                        #if debug_ast_builder
-                        trace('[DEBUG Pattern Fix] extractedParams received: ${extractedParams}');
-                        #end
-                        #if debug_ast_builder
-                        trace('[DEBUG Pattern Fix] paramCount: ${paramCount}');
-                        #end
-                        if (extractedParams != null) {
-                            for (i in 0...extractedParams.length) {
-                                #if debug_ast_builder
-                                trace('[DEBUG Pattern Fix]   Param $i: "${extractedParams[i]}" (is temp var: ${extractedParams[i] == "g" || (extractedParams[i] != null && extractedParams[i].startsWith("g") && extractedParams[i].length > 1 && extractedParams[i].charAt(1) >= "0" && extractedParams[i].charAt(1) <= "9")})');
-                                #end
-                            }
-                        }
-
-                        // FIXED: Use binding plan names directly in patterns
-                        // Based on Codex's architectural guidance:
-                        // The binding plan already has the correct variable names (like debug_track_content).
-                        // We should use those names directly in patterns instead of forcing temp vars.
-                        // This prevents the pattern/body mismatch that causes g = g self-assignments.
-
-                        for (i in 0...paramCount) {
-                            // Check if this parameter is actually used in the case body
-                            var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
-
-                            if (isUsed && extractedParams[i] != null) {
-                                // Use the actual variable name from the binding plan
-                                // This makes the pattern match what the body expects
-                                var varName = extractedParams[i];
-
-                                // Only use temp vars if the extracted name is already a temp var
-                                // or if we couldn't extract a proper name
-                                if (varName == null || varName == "" ||
-                                    (varName == "g" || varName.startsWith("g") && varName.length > 1 &&
-                                     varName.charAt(1) >= '0' && varName.charAt(1) <= '9')) {
-                                    // Fallback to temp var only when necessary
-                                    var tempVarName = i == 0 ? "g" : 'g${i}';
-                                    paramPatterns.push(PVar(tempVarName));
-
-                                    #if debug_idiomatic_enum
-                                    #if debug_ast_builder
-                                    trace('[Pattern Generation] Using temp var $tempVarName for parameter $i (no proper name extracted)');
-                                    #end
-                                    #end
-                                } else {
-                                    // Use the actual extracted name
-                                    paramPatterns.push(PVar(varName));
-
-                                    #if debug_idiomatic_enum
-                                    #if debug_ast_builder
-                                    trace('[Pattern Generation] Using extracted name $varName for parameter $i');
-                                    #end
-                                    #end
-                                }
-                            } else if (isUsed && i < canonicalNames.length) {
-                                // No extracted param, fallback to temp var
-                                var tempVarName = i == 0 ? "g" : 'g${i}';
-                                paramPatterns.push(PVar(tempVarName));
-                            } else {
-                                // Use wildcard for unused parameter
-                                paramPatterns.push(PWildcard);
-                            }
-                        }
-                        PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
-                    } else {
-                        // No-argument constructor - generate plain atom
-                        // None → :none (NOT {:none})
-                        PLiteral(makeAST(EAtom(atomName)));
-                    }
-                } else {
-                    // Invalid index, use wildcard
-                    PWildcard;
-                }
-                
-            // For actual enum constructor patterns (shouldn't happen in idiomatic switch)
-            case TField(_, FEnum(_, ef)):
-                var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
-                
-                // Extract parameter count from the enum field's type
-                var paramCount = 0;
-                switch(ef.type) {
-                    case TFun(args, _):
-                        paramCount = args.length;
-                    default:
-                        // No parameters
-                }
-                
-                if (paramCount == 0) {
-                    PLiteral(makeAST(EAtom(atomName)));
-                } else {
-                    // Get canonical parameter names from the enum field
-                    var canonicalNames = switch(ef.type) {
-                        case TFun(args, _):
-                            [for (arg in args) arg.name];
-                        default:
-                            [];
-                    };
-                    
-                    // Use canonical names for pattern variables
-                    var paramPatterns = [];
-                    for (i in 0...paramCount) {
-                        // Check if this parameter is actually used in the case body
-                        var isUsed = extractedParams != null && i < extractedParams.length && extractedParams[i] != null;
-                        
-                        // M0.3 FIX: Trust extractedParams from EnumBindingPlan
-                        if (isUsed && extractedParams[i] != null) {
-                            // Use the binding plan's decision (via extractedParams)
-                            paramPatterns.push(PVar(extractedParams[i]));
-                        } else if (isUsed && i < canonicalNames.length) {
-                            // Fallback to canonical names if no extracted param
-                            // (shouldn't happen after binding plan update)
-                            paramPatterns.push(PVar(canonicalNames[i]));
-                        } else {
-                            paramPatterns.push(PWildcard);
-                        }
-                    }
-                    PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
-                }
-                
-            default:
-                // Fallback to regular pattern conversion
-                convertPattern(value);
-        }
+        return PatternBuilder.convertRegularEnumPatternWithExtraction(value, enumType, ef, extractedParams, currentContext);
     }
     
     /**
@@ -8675,45 +8299,14 @@ class ElixirASTBuilder {
         // Get the enum type from the switch target
         var enumType = switch(switchTarget.t) {
             case TEnum(enumRef, _): enumRef.get();
-            default: return convertPattern(value); // Fallback to regular pattern
+            default: return PatternBuilder.convertPattern(value, currentContext); // Fallback to regular pattern
         };
         
-        // Old implementation - just delegate to the new one without extraction info
-        return convertIdiomaticEnumPatternWithTypeImpl(value, enumType, null);
+        // Delegate to PatternBuilder
+        return PatternBuilder.convertIdiomaticEnumPatternWithExtraction(value, enumType, null, null, currentContext);
     }
     
     /**
-     * Check if an expression is an enum constructor call
-     * 
-     * Handles both:
-     * - TField access: ChildSpecFormat.ModuleWithConfig
-     * - Direct constructors: ModuleWithConfig (when imported/in scope)
-     * - TTypeExpr references to enum constructors
-     */
-    static function isEnumConstructor(expr: TypedExpr): Bool {
-        return switch(expr.expr) {
-            case TField(_, FEnum(_, _)): true;  // Actual enum constructor field
-            case TTypeExpr(TEnumDecl(_)): true;  // Direct enum type reference
-            
-            // DO NOT treat static methods that return enums as enum constructors!
-            // Email.parse() returns Result but parse is NOT an enum constructor
-            case TField(_, FStatic(_, _)): false;
-            
-            case TConst(TString(s)) if (s.charAt(0) >= 'A' && s.charAt(0) <= 'Z'): 
-                // Heuristic: capitalized identifiers might be enum constructors
-                // This is a fallback for cases where Haxe doesn't provide clear type info
-                true;
-            default: 
-                // Only check for enum types that aren't function types
-                // This avoids treating regular functions that return enums as constructors
-                switch(expr.t) {
-                    case TEnum(_, _): true;  // Direct enum value
-                    case TFun(_, _): false;  // Functions are NOT enum constructors
-                    default: false;
-                }
-        }
-    }
-    
     /**
      * Check if an enum has @:elixirIdiomatic metadata
      */
@@ -9186,19 +8779,6 @@ class ElixirASTBuilder {
             default: 
                 // For unknown cases, generate a placeholder that will be transformed
                 "ModuleRef";
-        }
-    }
-    
-    /**
-     * Extract pattern from left-hand side expression
-     */
-    static function extractPattern(expr: TypedExpr): EPattern {
-        return switch(expr.expr) {
-            case TLocal(v): PVar(toElixirVarName(v.name));
-            case TField(e, fa): 
-                // Map/struct field pattern
-                PVar(extractFieldName(fa));
-            default: PWildcard;
         }
     }
     
@@ -11438,7 +11018,7 @@ class ElixirASTBuilder {
                             // This variable is assigned from our enum parameter
                             // Now check if this variable is used
                             var assignedVar = toElixirVarName(v.name);
-                            isUsed = isPatternVariableUsed(assignedVar, caseBody);
+                            isUsed = PatternBuilder.isPatternVariableUsed(assignedVar, caseBody);
                         default:
                     }
 
@@ -11463,46 +11043,6 @@ class ElixirASTBuilder {
      * ALIAS TRACKING:
      * - First pass: Build alias sets by finding TEnumParameter extractions and assignments
      * - Second pass: Check if any alias of the pattern variable is used
-     *
-     * EXAMPLE:
-     * case Custom(code): return code;
-     * May compile to:
-     * - g = elem(status, 1)  // TEnumParameter extraction to temp
-     * - code = g             // Assignment from temp to pattern var
-     * - return code          // Usage (might be optimized to 'return g')
-     */
-    static function isPatternVariableUsed(varName: String, caseBody: TypedExpr): Bool {
-        return PatternBuilder.isPatternVariableUsed(varName, caseBody);
-    }
-
-    /**
-     * Check if a pattern variable is used in the case body using variable IDs
-     *
-     * WHY: ID-based tracking avoids false positives when users have variables named "g"
-     * WHAT: Builds a usage set of variable IDs and checks if the given ID is used
-     * HOW: Traverses the case body collecting TLocal variable IDs, then checks membership
-     *
-     * @param varId The unique variable ID to check
-     * @param caseBody The case body expression to search
-     * @param varOriginMap Optional map of variable IDs to their VarOrigin
-     * @return True if the variable is used in the case body
-     */
-    static function isPatternVariableUsedById(varId: Int, caseBody: TypedExpr, ?varOriginMap: Map<Int, ElixirAST.VarOrigin>): Bool {
-        return PatternBuilder.isPatternVariableUsedById(varId, caseBody, varOriginMap);
-    }
-
-    /**
-     * Update ClauseContext mapping to account for underscore-prefixed variables
-     *
-     * WHY: When a pattern variable gets prefixed with underscore (e.g., code -> _code),
-     *      the ClauseContext mapping needs to be updated so the case body can still
-     *      reference the correct variable
-     * WHAT: Scans the pattern for underscore-prefixed variables and updates the mapping
-     * HOW: Delegates to PatternBuilder for centralized pattern handling
-     */
-    static function updateMappingForUnderscorePrefixes(pattern: EPattern, originalMapping: Map<Int, String>, extractedParams: Array<String>): Map<Int, String> {
-        return PatternBuilder.updateMappingForUnderscorePrefixes(pattern, originalMapping, extractedParams);
-    }
 
     /**
      * Check if a case body is effectively empty (only nil or no-op)
@@ -11511,18 +11051,6 @@ class ElixirASTBuilder {
         return PatternBuilder.isEmptyCaseBody(body);
     }
     
-    /**
-     * Apply underscore prefix to unused pattern variables
-     *
-     * WHY: In Elixir, unused variables should be prefixed with underscore to avoid warnings
-     * WHAT: Checks each pattern variable against the usage map and prefixes with _ if unused
-     * HOW: Recursively traverses patterns and renames PVar nodes when the variable is unused
-     * @param isEmptyBody If true, all variables in the pattern are considered unused
-     */
-    static function applyUnderscorePrefixToUnusedPatternVars(pattern: EPattern, variableUsageMap: Map<Int, Bool>, extractedParams: Array<String>, isEmptyBody: Bool = false): EPattern {
-        return PatternBuilder.applyUnderscorePrefixToUnusedPatternVars(pattern, variableUsageMap, extractedParams, isEmptyBody);
-    }
-
     /**
      * Compute a structural pattern key for guard grouping
      * 
@@ -11536,53 +11064,7 @@ class ElixirASTBuilder {
      * - PVar(_) → "var"
      */
     static function computePatternKey(pattern: EPattern): String {
-        return switch(pattern) {
-            case PVar(_): "var"; // All variables have same structure
-            case PWildcard: "_";
-            case PLiteral(value):
-                // Use the literal value type, not the value itself
-                switch(value.def) {
-                    case EAtom(a): "atom:" + a;
-                    case EInteger(_): "int";
-                    case EFloat(_): "float";
-                    case EString(_): "string";
-                    case EBoolean(_): "bool";
-                    case ENil: "nil";
-                    default: "literal";
-                }
-            case PTuple(elements):
-                // Build key from tuple structure
-                var parts = ["tuple"];
-                // Add atom tag if first element is an atom (enum pattern)
-                if (elements.length > 0) {
-                    switch(elements[0]) {
-                        case PLiteral(ast):
-                            switch(ast.def) {
-                                case EAtom(atom): parts.push(atom);
-                                default:
-                            }
-                        default:
-                    }
-                }
-                // Add parameter count (excluding the atom tag)
-                var paramCount = elements.length > 0 ? elements.length - 1 : 0;
-                parts.push(Std.string(paramCount));
-                parts.join(":");
-            case PList(elements):
-                "list:" + elements.length;
-            case PCons(_, _):
-                "cons";
-            case PMap(_):
-                "map";
-            case PStruct(module, _):
-                "struct:" + module;
-            case PPin(_):
-                "pin";
-            case PAlias(_, pattern):
-                "alias:" + computePatternKey(pattern);
-            case PBinary(_):
-                "binary";
-        }
+        return PatternBuilder.computePatternKey(pattern);
     }
     
     /**
@@ -11593,35 +11075,10 @@ class ElixirASTBuilder {
      * HOW: Recursively traverses pattern structure collecting variable names
      */
     static function extractBoundVariables(pattern: EPattern): Array<String> {
-        var vars = [];
-        collectBoundVarsHelper(pattern, vars);
-        return vars;
+        return PatternBuilder.extractBoundVariables(pattern);
     }
     
-    static function collectBoundVarsHelper(p: EPattern, vars: Array<String>): Void {
-        switch(p) {
-            case PVar(name):
-                if (!name.startsWith("_")) vars.push(name);
-            case PTuple(elements) | PList(elements):
-                for (e in elements) collectBoundVarsHelper(e, vars);
-            case PCons(head, tail):
-                collectBoundVarsHelper(head, vars);
-                collectBoundVarsHelper(tail, vars);
-            case PMap(pairs):
-                for (pair in pairs) collectBoundVarsHelper(pair.value, vars);
-            case PStruct(_, fields):
-                for (field in fields) collectBoundVarsHelper(field.value, vars);
-            case PAlias(varName, subPattern):
-                if (!varName.startsWith("_")) vars.push(varName);
-                collectBoundVarsHelper(subPattern, vars);
-            case PPin(subPattern):
-                collectBoundVarsHelper(subPattern, vars);
-            case PBinary(segments):
-                for (segment in segments) collectBoundVarsHelper(segment.pattern, vars);
-            case PLiteral(_) | PWildcard:
-                // No variables to collect
-        }
-    }
+    // collectBoundVarsHelper has been moved to PatternBuilder
 
     /**
      * Extract list elements from a list-building block
