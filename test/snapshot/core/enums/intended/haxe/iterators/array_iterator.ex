@@ -1,10 +1,8 @@
 defmodule ArrayIterator do
-  @array nil
-  @current nil
   def has_next(struct) do
-    struct.current < length(struct.array)
+    __instance_variable_not_available_in_this_context__.current < length(__instance_variable_not_available_in_this_context__.array)
   end
   def next(struct) do
-    struct.array[struct.current + 1]
+    __instance_variable_not_available_in_this_context__.array[__instance_variable_not_available_in_this_context__.current + 1]
   end
 end
