@@ -4013,7 +4013,7 @@ class ElixirASTBuilder {
                         trace('  Key var: ${mapPattern.keyVar}');
                         trace('  Value var: ${mapPattern.valueVar}');
                         #end
-                        return buildMapIteration(mapPattern, currentContext);
+                        return buildMapIteration(mapPattern, currentContext).def;
                     } else {
                         #if debug_map_iteration
                         trace('[ElixirASTBuilder] No Map iteration pattern detected in this block');
