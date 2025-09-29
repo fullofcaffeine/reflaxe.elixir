@@ -28,6 +28,9 @@ import reflaxe.elixir.ast.builders.ControlFlowBuilder;
 import reflaxe.elixir.ast.builders.CallExprBuilder;
 import reflaxe.elixir.ast.builders.VariableBuilder;
 import reflaxe.elixir.ast.builders.FieldAccessBuilder;
+import reflaxe.elixir.ast.builders.SwitchBuilder;
+import reflaxe.elixir.ast.builders.ExceptionBuilder;
+import reflaxe.elixir.ast.builders.ReturnBuilder;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.optimizers.LoopOptimizer;
 import reflaxe.elixir.ast.intent.LoopIntent;
@@ -1113,32 +1116,23 @@ class ElixirASTBuilder {
                             }
 
                         case TSwitch(switchExpr, cases, edef):
-                #if debug_ast_builder
-                trace('[TSwitch] Building switch expression');
-                #if debug_ast_builder
-                trace('[TSwitch]   Switch has ${cases.length} cases');
-                #end
-                #if debug_ast_builder
-                trace('[TSwitch]   Has default: ${edef != null}');
-                #end
-                #end
+                            #if debug_ast_builder
+                            trace('[TSwitch] Switch expression detected in TVar init - delegating to SwitchBuilder');
+                            trace('[TSwitch]   Switch has ${cases.length} cases');
+                            trace('[TSwitch]   Has default: ${edef != null}');
+                            #end
+                            
                             // EverythingIsExprSanitizer lifts switch expressions to temp vars
                             // We need to properly build the switch expression here
                             varOrigin = UserDefined;
 
                             #if debug_everythingisexpr
-                            #if debug_ast_builder
                             trace('[TVar] Switch expression lifted by EverythingIsExprSanitizer detected');
-                            #end
-                            #if debug_ast_builder
                             trace('[TVar] Variable: ${v.name} will hold switch result');
-                            #end
-                            #if debug_ast_builder
-                            trace('[TVar] Building proper case expression instead of losing it');
-                            #end
+                            trace('[TVar] Building proper case expression using SwitchBuilder');
                             #end
 
-                            // CRITICAL FIX: Build the switch expression properly
+                            // CRITICAL FIX: Delegate to SwitchBuilder for proper handling
                             // Without this, the switch body is lost and only "value" appears
                             // This handles cases like unwrapOr where EverythingIsExprSanitizer lifts the switch
 
@@ -3605,70 +3599,47 @@ class ElixirASTBuilder {
                 }
                 
             case TReturn(e):
+                // Delegate to ReturnBuilder for proper return handling
+                var result = ReturnBuilder.build(e, currentContext);
+                if (result != null) {
+                    return result;
+                }
+                
+                // Fallback to legacy implementation if builder returns null
                 // In Elixir, everything is an expression, including returns
                 // We don't need a special return statement, just the expression itself
                 if (e != null) {
                     #if debug_ast_builder
-                    trace('[TReturn] Processing return expression');
-                    #if debug_ast_builder
-                    trace('[TReturn] Expression type: ${Type.enumConstructor(e.expr)}');
+                    trace('[TReturn] Fallback to legacy implementation');
                     #end
-
-                    // Check if it's a switch, potentially wrapped in metadata
-                    var innerExpr = e;
-                    switch(e.expr) {
-                        case TMeta(_, inner):
-                            #if debug_ast_builder
-                            trace('[TReturn] Found TMeta wrapper, checking inner expression');
-                            #end
-                            innerExpr = inner;
-                        case _:
-                    }
-
-                    switch(innerExpr.expr) {
-                        case TLocal(v):
-                            #if debug_ast_builder
-                            trace('[TReturn] Returning TLocal variable: ${v.name}');
-                            #end
-                        case TSwitch(_, cases, _):
-                            #if debug_ast_builder
-                            trace('[TReturn] Found TSwitch in return! Cases: ${cases.length}');
-                            #end
-                            #if debug_ast_builder
-                            trace('[TReturn] Building full case structure to preserve extraction');
-                            #end
-                        case _:
-                            #if debug_ast_builder
-                            trace('[TReturn] Other type: ${innerExpr.expr}');
-                            #end
-                    }
-                    #end
-
-                    // Build the expression - this will properly handle switches and preserve their structure
                     var returnExpr = buildFromTypedExpr(e, currentContext);
-
-                    #if debug_ast_builder
-                    trace('[TReturn] Built return expression type: ${returnExpr.def}');
-                    #end
-
-                    // Return the def - the AST builder will have built the complete structure
                     returnExpr.def;
                 } else {
                     ENil; // Explicit nil return
                 }
                 
             case TBreak:
-                EThrow(makeAST(EAtom(ElixirAtom.raw("break")))); // Will be transformed
+                // Delegate to ExceptionBuilder for break control flow
+                ExceptionBuilder.buildBreak();
                 
             case TContinue:
-                EThrow(makeAST(EAtom(ElixirAtom.raw("continue")))); // Will be transformed
+                // Delegate to ExceptionBuilder for continue control flow
+                ExceptionBuilder.buildContinue();
                 
             // ================================================================
             // Pattern Matching (Switch/Case)
             // ================================================================
             case TSwitch(e, cases, edef):
+                // Delegate to SwitchBuilder for proper handling
+                var result = SwitchBuilder.build(e, cases, edef, currentContext);
+                if (result != null) {
+                    return result;
+                }
+                
+                // Fallback to legacy implementation if SwitchBuilder returns null
                 switchNestingLevel++;
                 #if debug_ast_builder
+                trace('[DEBUG EMBEDDED] TSwitch - falling back to legacy implementation');
                 trace('[DEBUG EMBEDDED] TSwitch - nesting level: ${switchNestingLevel}, currentContext.currentClauseContext exists: ${currentContext.currentClauseContext != null}');
                 #end
                 
@@ -4368,6 +4339,13 @@ class ElixirASTBuilder {
             // Try/Catch
             // ================================================================
             case TTry(e, catches):
+                // Delegate to ExceptionBuilder for proper exception handling
+                var result = ExceptionBuilder.buildTry(e, catches, currentContext);
+                if (result != null) {
+                    return result;
+                }
+                
+                // Fallback to legacy implementation if builder returns null
                 var body = buildFromTypedExpr(e, currentContext);
                 var rescueClauses = [];
                 
@@ -5416,7 +5394,12 @@ class ElixirASTBuilder {
                 }
                 
             case TThrow(e):
-                // Generate Elixir throw
+                // Delegate to ExceptionBuilder for throw expressions
+                var result = ExceptionBuilder.buildThrow(e, currentContext);
+                if (result != null) {
+                    return result;
+                }
+                // Fallback to legacy implementation
                 EThrow(buildFromTypedExpr(e, currentContext));
                 
             case TIdent(s):
