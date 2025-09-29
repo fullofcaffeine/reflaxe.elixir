@@ -20,6 +20,7 @@ import reflaxe.elixir.ast.builders.CoreExprBuilder;
 import reflaxe.elixir.ast.builders.BinaryOpBuilder;
 import reflaxe.elixir.ast.builders.LoopBuilder;
 import reflaxe.elixir.ast.builders.PatternBuilder;
+import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.intent.LoopIntent;
 import reflaxe.elixir.ast.intent.LoopIntent.*;  // Import all enum constructors
 import reflaxe.elixir.ast.transformers.DesugarredForDetector;
@@ -9311,19 +9312,9 @@ class ElixirASTBuilder {
         return false;
     }
     
+    // Delegation to VariableAnalyzer for variable name transformation
     static function toElixirVarName(name: String, ?preserveUnderscore: Bool = false): String {
-        // Use the centralized ElixirNaming module for DRY principle
-        // This delegates all snake_case conversion to NameUtils and handles
-        // Elixir-specific rules in one place
-
-        // Special handling for preserveUnderscore flag (for unused variables)
-        if (preserveUnderscore && (name.length == 0 || name.charAt(0) != "_")) {
-            // Add underscore prefix to indicate unused variable
-            // M0 STABILIZATION: Disable underscore prefixing
-            return ElixirNaming.toVarName(name); // Was: "_" + ElixirNaming.toVarName(name)
-        }
-
-        return ElixirNaming.toVarName(name);
+        return VariableAnalyzer.toElixirVarName(name, !preserveUnderscore);
     }
 
     /**
@@ -10208,29 +10199,17 @@ class ElixirASTBuilder {
     /**
      * Check if an array of AST nodes uses a specific variable
      */
+    // Delegation to VariableAnalyzer for variable usage detection
     static function usesVariable(nodes: Array<ElixirAST>, varName: String): Bool {
-        for (node in nodes) {
-            if (usesVariableInNode(node, varName)) {
-                return true;
-            }
-        }
-        return false;
+        return VariableAnalyzer.usesVariable(nodes, varName);
     }
     
     /**
      * Check if an AST node uses a specific variable
+     * Delegates to VariableAnalyzer for comprehensive checking
      */
     static function usesVariableInNode(node: ElixirAST, varName: String): Bool {
-        return switch(node.def) {
-            case EVar(name): name == varName;
-            case ECall(target, _, args): 
-                (target != null && usesVariableInNode(target, varName)) || 
-                usesVariable(args, varName);
-            case EMatch(_, expr): usesVariableInNode(expr, varName);
-            case EBinary(_, left, right): 
-                usesVariableInNode(left, varName) || usesVariableInNode(right, varName);
-            case _: false;
-        };
+        return VariableAnalyzer.usesVariableInNode(node, varName);
     }
     
     /**
