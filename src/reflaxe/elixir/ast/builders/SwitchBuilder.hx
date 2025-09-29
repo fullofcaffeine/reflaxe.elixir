@@ -71,25 +71,26 @@ class SwitchBuilder {
      * @return ElixirASTDef for the case expression
      */
     public static function build(e: TypedExpr, cases: Array<{values:Array<TypedExpr>, expr:TypedExpr}>, edef: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
-        #if debug_ast_builder
+        // Always trace to debug the issue
         trace('[SwitchBuilder] Building switch expression');
         trace('[SwitchBuilder]   Target expression type: ${Type.enumConstructor(e.expr)}');
         trace('[SwitchBuilder]   Switch has ${cases.length} cases');
         trace('[SwitchBuilder]   Has default: ${edef != null}');
-        #end
         
         // Track switch target for infrastructure variable management
         var targetVarName = extractTargetVarName(e);
         if (targetVarName != null && isInfrastructureVar(targetVarName)) {
-            #if debug_ast_builder
             trace('[SwitchBuilder] Switch target is infrastructure variable: $targetVarName');
-            #end
         }
         
         // Build the switch target expression
         var targetAST = if (context.compiler != null) {
-            context.compiler.compileExpressionImpl(e, false);
+            trace('[SwitchBuilder] Compiler is available, compiling target expression');
+            var result = context.compiler.compileExpressionImpl(e, false);
+            trace('[SwitchBuilder] Target AST compiled: ${result != null}');
+            result;
         } else {
+            trace('[SwitchBuilder] ERROR: context.compiler is null, cannot proceed');
             return null;  // Can't proceed without compiler
         }
         
@@ -110,10 +111,15 @@ class SwitchBuilder {
         // Build case clauses
         var caseClauses: Array<ECaseClause> = [];
         
-        for (switchCase in cases) {
+        for (i in 0...cases.length) {
+            var switchCase = cases[i];
+            trace('[SwitchBuilder] Building case ${i + 1}/${cases.length}');
             var clause = buildCaseClause(switchCase, targetVarName, context);
             if (clause != null) {
+                trace('[SwitchBuilder]   Case clause built successfully');
                 caseClauses.push(clause);
+            } else {
+                trace('[SwitchBuilder]   Case clause build returned null!');
             }
         }
         
@@ -200,11 +206,15 @@ class SwitchBuilder {
      * HOW: Analyzes value type, generates appropriate pattern
      */
     static function buildPattern(value: TypedExpr, targetVarName: String, context: CompilationContext): Null<EPattern> {
+        trace('[SwitchBuilder] Building pattern for: ${Type.enumConstructor(value.expr)}');
         switch(value.expr) {
             case TConst(c):
                 // Constant patterns
+                trace('[SwitchBuilder]   Found constant pattern');
                 switch(c) {
-                    case TInt(i): return PLiteral(makeAST(EInteger(i)));
+                    case TInt(i): 
+                        trace('[SwitchBuilder]     Integer constant: $i');
+                        return PLiteral(makeAST(EInteger(i)));
                     case TFloat(f): return PLiteral(makeAST(EFloat(Std.parseFloat(Std.string(f)))));
                     case TString(s): return PLiteral(makeAST(EString(s)));
                     case TBool(true): return PLiteral(makeAST(EAtom("true")));
@@ -215,9 +225,12 @@ class SwitchBuilder {
                 
             case TCall(e, args):
                 // Enum constructor patterns
+                trace('[SwitchBuilder]   Found TCall, checking if enum constructor');
                 if (isEnumConstructor(e)) {
+                    trace('[SwitchBuilder]     Confirmed enum constructor, building enum pattern');
                     return buildEnumPattern(e, args, context);
                 }
+                trace('[SwitchBuilder]     Not an enum constructor');
                 return null;
                 
             case TLocal(v):

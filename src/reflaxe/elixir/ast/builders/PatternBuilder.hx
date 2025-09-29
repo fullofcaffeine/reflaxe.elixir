@@ -238,12 +238,14 @@ class PatternBuilder {
     }
     
     /**
-     * Convert regular enum pattern (uses integer indices)
+     * Convert regular enum pattern (uses atom tags, not integer indices)
      */
     private static function convertRegularEnumPattern(ef: EnumField, args: Array<TypedExpr>, 
                                                      context: BuildContext): EPattern {
-        // Regular enums use tuple with integer index
-        var patterns = [PLiteral(makeAST(EInteger(ef.index)))];
+        // Regular enums should use tuple with atom tag, not integer index
+        // Convert enum constructor name to snake_case atom
+        var atomName = NameUtils.toSnakeCase(ef.name);
+        var patterns = [PLiteral(makeAST(EAtom(atomName)))];
         for (arg in args) {
             patterns.push(convertPattern(arg, context));
         }
