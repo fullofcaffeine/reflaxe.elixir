@@ -20,6 +20,7 @@ import reflaxe.elixir.ast.builders.CoreExprBuilder;
 import reflaxe.elixir.ast.builders.BinaryOpBuilder;
 import reflaxe.elixir.ast.builders.LoopBuilder;
 import reflaxe.elixir.ast.builders.PatternBuilder;
+import reflaxe.elixir.ast.builders.EnumHandler;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.intent.LoopIntent;
 import reflaxe.elixir.ast.intent.LoopIntent.*;  // Import all enum constructors
@@ -594,9 +595,9 @@ class ElixirASTBuilder {
             case TCall(e, _) if (e != null && PatternDetector.isEnumConstructor(e) && hasIdiomaticMetadata(e)):
                 // Direct enum constructor call (e.g., ModuleRef("MyModule"))
                 metadata.requiresIdiomaticTransform = true;
-                metadata.idiomaticEnumType = getEnumTypeName(e);
+                metadata.idiomaticEnumType = EnumHandler.getEnumTypeName(e);
                 #if debug_ast_builder
-                trace('[AST Builder] Marked direct enum constructor for transformer: ${getEnumTypeName(e)}');
+                trace('[AST Builder] Marked direct enum constructor for transformer: ${EnumHandler.getEnumTypeName(e)}');
                 #end
             case TCall(_, _):
                 // Function call - check if it returns an idiomatic enum
@@ -2047,7 +2048,7 @@ class ElixirASTBuilder {
                 // Check if this is an enum constructor call first
                 if (e != null && PatternDetector.isEnumConstructor(e)) {
                     // ONLY BUILD - NO TRANSFORMATION!
-                    var tag = extractEnumTag(e);
+                    var tag = EnumHandler.extractEnumTag(e);
                     
                     // For idiomatic enums, convert constructor names to snake_case
                     // This ensures Result.Ok becomes :ok and Result.Error becomes :error
@@ -2115,7 +2116,7 @@ class ElixirASTBuilder {
                         trace('[AST Builder] Building idiomatic enum tuple: ${tag} with ${v.length} args');
                         #end
                         #if debug_ast_builder
-                        trace('[AST Builder] Enum type: ${getEnumTypeName(e)}');
+                        trace('[AST Builder] Enum type: ${EnumHandler.getEnumTypeName(e)}');
                         #end
                     }
                     #end
@@ -5352,7 +5353,7 @@ class ElixirASTBuilder {
                     // Analyze the case body FIRST to detect enum parameter extraction
                     // This is critical for determining whether to use wildcards or named patterns
                     // Pass case values to extract pattern variable names like "email" from case Ok(email):
-                    var extractedParams = analyzeEnumParameterExtraction(c.expr, c.values);
+                    var extractedParams = EnumHandler.analyzeEnumParameterExtraction(c.expr, c.values);
 
                     #if debug_pattern_usage
                     #if debug_ast_builder
@@ -5364,7 +5365,7 @@ class ElixirASTBuilder {
                     #end
 
                     // Create EnumBindingPlan for consistent variable naming
-                    var bindingResult = createEnumBindingPlan(c.expr, extractedParams, enumType);
+                    var bindingResult = EnumHandler.createEnumBindingPlan(c.expr, extractedParams, enumType, currentContext);
                     var enumBindingPlan = bindingResult.plan;
                     var paramIndexToVarId = bindingResult.paramIndexToVarId;
 
@@ -7814,7 +7815,7 @@ class ElixirASTBuilder {
                 #end
 
                 // Recursively analyze the then branch
-                var thenParams = analyzeEnumParameterExtraction(thenExpr, caseValues);
+                var thenParams = EnumHandler.analyzeEnumParameterExtraction(thenExpr, caseValues);
 
                 #if debug_embedded_switch
                 #if debug_ast_builder
@@ -7825,7 +7826,7 @@ class ElixirASTBuilder {
                 // Recursively analyze the else branch if it exists
                 var elseParams = [];
                 if (elseExpr != null) {
-                    elseParams = analyzeEnumParameterExtraction(elseExpr, caseValues);
+                    elseParams = EnumHandler.analyzeEnumParameterExtraction(elseExpr, caseValues);
                     #if debug_embedded_switch
                     #if debug_ast_builder
                     trace('[analyzeEnumParameterExtraction] Else branch extracted: ${elseParams}');
