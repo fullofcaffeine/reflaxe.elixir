@@ -661,53 +661,8 @@ class ElixirASTBuilder {
             // Variables and Binding
             // ================================================================
             case TLocal(v):
-                var idKey = Std.string(v.id);
-
-                // First check tempVarRenameMap (as per Codex recommendation)
-                // This contains parameter name mappings set during TFunction processing
-                if (currentContext != null && currentContext.tempVarRenameMap.exists(idKey)) {
-                    var mappedName = currentContext.tempVarRenameMap.get(idKey);
-                    #if debug_variable_renaming
-                    #if debug_ast_builder
-                    trace('[RENAME DEBUG] TLocal: Using tempVarRenameMap for "${v.name}" (id: ${v.id}) -> "${mappedName}"');
-                    #end
-                    #end
-                    EVar(mappedName);
-                }
-                // CRITICAL FIX: Use ClauseContext's lookupVariable which checks pattern bindings first
-                else if (currentContext.currentClauseContext != null) {
-                    var mappedName = currentContext.currentClauseContext.lookupVariable(v.id);
-                    if (mappedName != null) {
-                        #if debug_clause_context
-                        #if debug_ast_builder
-                        trace('[ClauseContext] TLocal: Using mapped name from ClauseContext: ${v.name} (id=${v.id}) -> ${mappedName}');
-                        #end
-                        #end
-                        EVar(mappedName);
-                    } else {
-                        // No mapping found in ClauseContext, use default
-                        var ast = CoreExprBuilder.buildLocal(v);
-                        ast.def;
-                    }
-                } 
-                // LOOP VARIABLE PRESERVATION: Check if we're in a loop context
-                // This prevents premature substitution of loop variables with literals
-                else if (currentContext != null && currentContext.astContext != null && 
-                         currentContext.astContext.loopContextStack != null &&
-                         currentContext.astContext.loopContextStack.length > 0) {
-                    // We're within a loop - preserve the variable name
-                    #if debug_loop_variable_restore
-                    trace('[LoopPreservation] Preserving loop variable: ${v.name} (within loop context)');
-                    #end
-                    var ast = CoreExprBuilder.buildLocal(v);
-                    // Attach loop context metadata if available
-                    ast.metadata = {loopContextStack: currentContext.astContext.loopContextStack};
-                    ast.def;
-                } else {
-                    // No context available, use CoreExprBuilder
-                    var ast = CoreExprBuilder.buildLocal(v);
-                    ast.def;
-                }
+                // Delegate to VariableBuilder for all local variable handling
+                VariableBuilder.buildLocal(v, expr, currentContext);
                 
             case TVar(v, init):
                 // COMPLETE FIX: Eliminate ALL infrastructure variable assignments at source
