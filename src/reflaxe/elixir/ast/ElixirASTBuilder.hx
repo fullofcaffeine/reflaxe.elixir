@@ -4378,6 +4378,14 @@ class ElixirASTBuilder {
             // Lambda/Anonymous Functions
             // ================================================================
             case TFunction(f):
+                // TODO: FunctionBuilder delegation is temporarily disabled due to variable naming issues
+                // The extraction broke the variable renaming map integration
+                // var result = reflaxe.elixir.ast.builders.FunctionBuilder.build(f, currentContext);
+                // if (result != null) {
+                //     return result;
+                // }
+                
+                // Use legacy implementation until FunctionBuilder is fixed
                 // Debug: Check for abstract method "this" parameter issue
                 #if debug_ast_pipeline
                 for (arg in f.args) {
