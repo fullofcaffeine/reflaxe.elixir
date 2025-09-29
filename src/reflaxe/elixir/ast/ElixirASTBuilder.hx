@@ -24,6 +24,7 @@ import reflaxe.elixir.ast.builders.PatternBuilder;
 import reflaxe.elixir.ast.builders.EnumHandler;
 import reflaxe.elixir.ast.builders.ComprehensionBuilder;
 import reflaxe.elixir.ast.builders.LiteralBuilder;
+import reflaxe.elixir.ast.builders.ControlFlowBuilder;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.optimizers.LoopOptimizer;
 import reflaxe.elixir.ast.intent.LoopIntent;
@@ -3372,228 +3373,270 @@ class ElixirASTBuilder {
             // Control Flow (Basic)
             // ================================================================
             case TIf(econd, eif, eelse):
-                // Debug the condition to understand what's being generated
-                #if debug_ast_builder
-                trace('[TIf] Processing if statement with condition: ${Type.enumConstructor(econd.expr)}');
-                switch(econd.expr) {
-                    case TBinop(op, e1, e2):
-                        trace('[TIf]   Binary operation: $op');
-                        trace('[TIf]   Left operand: ${Type.enumConstructor(e1.expr)}');
-                        trace('[TIf]   Right operand: ${Type.enumConstructor(e2.expr)}');
-                        switch(e1.expr) {
-                            case TLocal(v):
-                                trace('[TIf]     Left is local var: ${v.name}, type: ${e1.t}');
-                            case _:
-                        }
-                        switch(e2.expr) {
-                            case TConst(c):
-                                trace('[TIf]     Right is constant: $c');
-                            case _:
-                        }
-                    case _:
-                }
-                #end
+                // Delegated to ControlFlowBuilder for modularization
+                ControlFlowBuilder.buildIf(econd, eif, eelse, currentContext);
                 
-                // CRITICAL FIX: Detect if this is an optimized enum switch
-                // Haxe optimizes single-case-plus-default switches to if statements
-                // that compare enum values by integer index (e.g., status == 3)
-                // We need to transform these back to proper pattern matching
-                var isOptimizedEnumSwitch = false;
-                var enumValue: TypedExpr = null;
-                var enumIndex: Int = -1;
-                var enumTypeRef: haxe.macro.Type.Ref<haxe.macro.Type.EnumType> = null;
-                
-                // Check if condition is comparing enum index to integer
-                // Haxe generates: TBinop(OpEq, TEnumIndex(enumValue), TConst(TInt(3)))
-                // The condition might be wrapped in TParenthesis
-                var condToCheck = switch(econd.expr) {
-                    case TParenthesis(inner): inner;  // Unwrap parenthesis
-                    case _: econd;
-                };
-                
-                switch(condToCheck.expr) {
-                    case TBinop(OpEq, {expr: TEnumIndex(e)}, {expr: TConst(TInt(index))}) | 
-                         TBinop(OpEq, {expr: TConst(TInt(index))}, {expr: TEnumIndex(e)}):
-                        // TEnumIndex is extracting the index from an enum value
-                        switch(e.t) {
-                            case TEnum(eRef, _):
-                                isOptimizedEnumSwitch = true;
-                                enumValue = e;
-                                enumIndex = index;
-                                enumTypeRef = eRef;
-                                #if debug_ast_builder
-                                trace('[TIf] Detected optimized enum switch: TEnumIndex comparison to index $index');
-                                #end
-                            case _:
-                                #if debug_ast_builder
-                                trace('[TIf] TEnumIndex on non-enum type: ${e.t}');
-                                #end
-                        }
-                    case _:
-                        #if debug_ast_builder
-                        // Help debug other patterns
-                        switch(condToCheck.expr) {
-                            case TBinop(op, e1, e2):
-                                trace('[TIf] Binary op $op not matching TEnumIndex pattern');
-                                switch(e1.expr) {
-                                    case TEnumIndex(_): trace('[TIf]   Left operand IS TEnumIndex');
-                                    case _: trace('[TIf]   Left operand: ${Type.enumConstructor(e1.expr)}');
-                                }
-                                switch(e2.expr) {
-                                    case TConst(TInt(i)): trace('[TIf]   Right operand is int: $i');
-                                    case _: trace('[TIf]   Right operand: ${Type.enumConstructor(e2.expr)}');
-                                }
-                            case _:
-                                trace('[TIf] Not a binary op: ${Type.enumConstructor(condToCheck.expr)}');
-                        }
-                        #end
-                }
-                
-                if (isOptimizedEnumSwitch && enumValue != null && enumIndex >= 0 && enumTypeRef != null) {
-                    // Transform to proper case pattern matching
-                    var enumTypeInfo = enumTypeRef.get();
-                    var matchingConstructor: String = null;
-                    var constructorParams: Array<String> = [];
+            case TBlock(el):
+                // Debug: Log ALL blocks to understand Haxe's desugaring patterns
+                #if debug_ast_pipeline
+                if (el.length > 0) {
+                    trace('[XRay TBlock] ======= BLOCK START (${el.length} elements) =======');
+                    for (i in 0...el.length) {
+                        var exprStr = switch(el[i].expr) {
+                            case TVar(v, init): 'TVar(${v.name}, init=${init != null ? "present" : "null"})';
+                            case TSwitch(e, _, _): 
+                                var switchOn = switch(e.expr) {
+                                    case TLocal(v): 'TLocal(${v.name})';
+                                    case TField(obj, FAnon(cf)) | TField(obj, FInstance(_, _, cf)): 
+                                        var objStr = switch(obj.expr) {
+                                            case TLocal(v): 'var:${v.name}';
+                                            case TConst(TThis): 'this';
+                                            default: 'obj';
+                                        };
+                                        'TField($objStr.${cf.get().name})';
+                                    default: Std.string(e.expr).split("(")[0];
+                                };
+                                'TSwitch($switchOn, ...)';
+                            case TLocal(v): 'TLocal(${v.name})';
+                            case TField(e, FAnon(cf)) | TField(e, FInstance(_, _, cf)): 'TField(...${cf.get().name})';
+                            default: Std.string(el[i].expr).split("(")[0];
+                        };
+                        trace('[XRay TBlock]   [$i]: $exprStr');
+                    }
                     
-                    // Find constructor by index
-                    for (name in enumTypeInfo.constructs.keys()) {
-                        var construct = enumTypeInfo.constructs.get(name);
-                        if (construct.index == enumIndex) {
-                            matchingConstructor = name;
-                            // Get constructor parameters
-                            switch(construct.type) {
-                                case TFun(args, _):
-                                    constructorParams = [for (arg in args) arg.name];
-                                default:
-                            }
+                    // Check for infrastructure variable patterns regardless of block size
+                    if (el.length >= 2) {
+                        // Check last two elements for switch pattern
+                        var checkIndex = el.length - 2;
+                        switch([el[checkIndex].expr, el[checkIndex + 1].expr]) {
+                            case [TVar(v, init), TSwitch(e, _, _)] if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)):
+                                trace('[XRay TBlock] FOUND infrastructure var pattern: ${v.name} = ... ; switch(${v.name})');
+                            default:
+                        }
+                    }
+                    
+                    // Check if we have a direct switch on field
+                    if (el.length > 0) {
+                        switch(el[el.length - 1].expr) {
+                            case TSwitch(e, _, _):
+                                switch(e.expr) {
+                                    case TField(obj, FAnon(cf)) | TField(obj, FInstance(_, _, cf)):
+                                        trace('[XRay TBlock] WARNING: FOUND direct switch on field: switch(obj.${cf.get().name})');
+                                        trace('[XRay TBlock]   This should have been desugared but wasn\'t!');
+                                    default:
+                                }
+                            default:
                             break;
                         }
                     }
+                    #end
                     
-                    if (matchingConstructor != null) {
-                        #if debug_ast_builder
-                        trace('[TIf] Converting to case with constructor: $matchingConstructor');
-                        #end
-                        
-                        // Build the case expression
-                        var targetExpr = buildFromTypedExpr(enumValue, currentContext);
-                        
-                        // Create pattern for the matching constructor
-                        var pattern: EPattern;
-                        var actualParamNames: Array<String> = []; // Declare at outer scope for use in body filtering
-                        if (constructorParams.length > 0) {
-                            // Constructor with parameters - extract actual parameter names from assignments
-                            var paramPatterns = [];
-                            
-                            // Analyze the then branch to find the actual parameter names
-                            // Haxe generates: _g = elem(...), _g1 = elem(...), url = _g, permanent = _g1
-                            var tempToActualMap: Map<String, String> = new Map();
-                            
-                            switch(eif.expr) {
-                                case TBlock(exprs):
-                                    // First pass: find assignments from temp vars to actual names
-                                    for (expr in exprs) {
-                                        switch(expr.expr) {
-                                            case TVar(v, init) if (init != null):
-                                                switch(init.expr) {
-                                                    case TLocal(localVar):
-                                                        // This is an assignment like: url = _g
-                                                        if (localVar.name.indexOf("_g") == 0) {
-                                                            tempToActualMap.set(localVar.name, v.name);
-                                                        }
-                                                    case _:
-                                                }
-                                            case _:
-                                        }
-                                    }
-                                    
-                                    // Build ordered list of actual parameter names
-                                    // Look for _g, _g1, _g2, etc. in order
-                                    for (i in 0...constructorParams.length) {
-                                        var tempName = if (i == 0) "_g" else "_g" + i;
-                                        if (tempToActualMap.exists(tempName)) {
-                                            actualParamNames.push(tempToActualMap.get(tempName));
-                                        } else {
-                                            // Fallback to constructor param name if mapping not found
-                                            actualParamNames.push(constructorParams[i]);
-                                        }
-                                    }
-                                case _:
-                                    // No block, use constructor param names as fallback
-                                    actualParamNames = constructorParams.copy();
-                            }
-                            
-                            // Generate parameter patterns with the actual names
-                            for (paramName in actualParamNames) {
-                                paramPatterns.push(PVar(VariableAnalyzer.toElixirVarName(paramName)));
-                            }
-                            
-                            // Generate {:constructor, param1, param2, ...}
-                            var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(matchingConstructor);
-                            pattern = PTuple([PLiteral(makeAST(EAtom(atomName)))].concat(paramPatterns));
-                        } else {
-                            // Constructor without parameters - generate {:constructor}
-                            var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(matchingConstructor);
-                            pattern = PTuple([PLiteral(makeAST(EAtom(atomName)))]);
+                    // Debug: Log ALL blocks to understand Haxe's desugaring patterns
+                    #if debug_ast_pipeline
+                    if (el.length > 0) {
+                        trace('[XRay TBlock] ======= BLOCK START (${el.length} elements) =======');
+                        for (i in 0...el.length) {
+                            var exprStr = switch(el[i].expr) {
+                                case TVar(v, init): 'TVar(${v.name}, init=${init != null ? "present" : "null"})';
+                                case TSwitch(e, _, _): 
+                                    var switchOn = switch(e.expr) {
+                                        case TLocal(v): 'TLocal(${v.name})';
+                                        case TField(obj, FAnon(cf)) | TField(obj, FInstance(_, _, cf)): 
+                                            var objStr = switch(obj.expr) {
+                                                case TLocal(v): 'var:${v.name}';
+                                                case TConst(TThis): 'this';
+                                                default: 'obj';
+                                            };
+                                            'TField($objStr.${cf.get().name})';
+                                        default: Std.string(e.expr).split("(")[0];
+                                    };
+                                    'TSwitch($switchOn, ...)';
+                                case TLocal(v): 'TLocal(${v.name})';
+                                case TField(e, FAnon(cf)) | TField(e, FInstance(_, _, cf)): 'TField(...${cf.get().name})';
+                                default: Std.string(el[i].expr).split("(")[0];
+                            };
+                            trace('[XRay TBlock]   [$i]: $exprStr');
                         }
                         
-                        // Build case clauses
-                        var clauses = [];
+                        // Check for infrastructure variable patterns regardless of block size
+                        if (el.length >= 2) {
+                            // Check last two elements for switch pattern
+                            var checkIndex = el.length - 2;
+                            switch([el[checkIndex].expr, el[checkIndex + 1].expr]) {
+                                case [TVar(v, init), TSwitch(e, _, _)] if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)):
+                                    trace('[XRay TBlock] FOUND infrastructure var pattern: ${v.name} = ... ; switch(${v.name})');
+                                default:
+                            }
+                        }
                         
-                        // First clause: the specific constructor
-                        // Need to filter out the TVar assignments that are artifacts of the optimization
-                        var thenBody = switch(eif.expr) {
-                            case TBlock(exprs):
-                                // Skip the TVar assignments for _g, _g1, url, permanent
-                                // and just compile the actual body expression
-                                var filteredExprs = [];
-                                for (expr in exprs) {
-                                    switch(expr.expr) {
-                                        case TVar(v, _):
-                                            // Skip variable assignments that are part of the enum extraction
-                                            var isExtractionArtifact = 
-                                                v.name.indexOf("_g") == 0 || // _g, _g1, etc.
-                                                actualParamNames.indexOf(v.name) != -1; // url, permanent
-                                            if (!isExtractionArtifact) {
-                                                filteredExprs.push(expr);
-                                            }
-                                        case TBlock(_):
-                                            // This is likely the actual body - include it
-                                            filteredExprs.push(expr);
-                                        case _:
-                                            // Include any other expressions
-                                            filteredExprs.push(expr);
+                        // Check if we have a direct switch on field
+                        if (el.length > 0) {
+                            switch(el[el.length - 1].expr) {
+                                case TSwitch(e, _, _):
+                                    switch(e.expr) {
+                                        case TField(obj, FAnon(cf)) | TField(obj, FInstance(_, _, cf)):
+                                            trace('[XRay TBlock] WARNING: FOUND direct switch on field: switch(obj.${cf.get().name})');
+                                            trace('[XRay TBlock]   This should have been desugared but wasn\'t!');
+                                        default:
                                     }
-                                }
-                                
-                                // Build the filtered block
-                                if (filteredExprs.length == 1) {
-                                    buildFromTypedExpr(filteredExprs[0], currentContext);
-                                } else if (filteredExprs.length > 0) {
-                                    var exprsAst = [for (e in filteredExprs) buildFromTypedExpr(e, currentContext)];
-                                    makeAST(EBlock(exprsAst));
-                                } else {
-                                    makeAST(ENil); // Empty body
-                                }
-                            case _:
-                                // Not a block, just compile as-is
-                                buildFromTypedExpr(eif, currentContext);
-                        };
-                        clauses.push({pattern: pattern, guard: null, body: thenBody});
-                        
-                        // Second clause: wildcard for else branch (or default)
-                        var elseBody = if (eelse != null) {
-                            buildFromTypedExpr(eelse, currentContext);
-                        } else {
-                            // No else branch - use a default that returns nil or appropriate value
-                            makeAST(ENil);
-                        };
-                        clauses.push({pattern: PWildcard, guard: null, body: elseBody});
-                        
-                        // Generate proper case statement instead of if
-                        return ECase(targetExpr, clauses);
+                                default:
+                            }
+                        }
+                        trace('[XRay TBlock] ======= BLOCK END =======');
                     }
-                }
+                    #end
+                    
+                    #if debug_null_coalescing
+                    #if debug_ast_builder
+                    trace('[AST Builder] TBlock with ${el.length} expressions');
+                    #end
+                    for (i in 0...el.length) {
+                        #if debug_ast_builder
+                        trace('[AST Builder]   Block[$i]: ${Type.enumConstructor(el[i].expr)}');
+                        #end
+                    }
+                    #end
+                    
+                    // CRITICAL: Check for Map iteration pattern FIRST (before regular for loops)
+                    // This detects patterns like: var iterator = map.keyValueIterator(); while(iterator.hasNext()) { var kv = iterator.next(); ... }
+                    // and generates idiomatic Elixir: Enum.each(map, fn {key, value} -> ... end)
+                    
+                    // Actually check for Map iteration pattern as the comment says we should
+                    if (el.length >= 2) {
+                        // Add debug to see what expressions we're checking
+                        #if debug_map_iteration
+                        trace('[ElixirASTBuilder] Checking TBlock for Map iteration pattern...');
+                        trace('  Block has ${el.length} expressions');
+                        for (i in 0...Math.ceil(Math.min(3, el.length))) {
+                            trace('  Expr[$i]: ${el[i].expr}');
+                        }
+                        #end
+                        
+                        // Delegate to LoopOptimizer for Map iteration detection
+                        var mapPattern = LoopOptimizer.detectMapIterationPattern(el);
+                        if (mapPattern != null) {
+                            #if debug_map_iteration
+                            trace('[ElixirASTBuilder] ✓ Detected Map iteration pattern, generating idiomatic Elixir');
+                            trace('  Map expr: ${mapPattern.mapExpr}');
+                            trace('  Key var: ${mapPattern.keyVar}');
+                            trace('  Value var: ${mapPattern.valueVar}');
+                            #end
+                            return buildMapIteration(mapPattern, currentContext).def;
+                        } else {
+                            #if debug_map_iteration
+                            trace('[ElixirASTBuilder] No Map iteration pattern detected in this block');
+                            #end
+                        }
+                    }
+                    
+                    // CRITICAL: Check for desugared for loop pattern NEXT
+                    // This detects patterns like: var g=0; var g1=5; while(g<g1){...}
+                    // and generates idiomatic Elixir (Enum.each or comprehensions)
+                    
+                    #if debug_loop_detection
+                    var featureEnabled = currentContext != null ? currentContext.isFeatureEnabled("loop_builder_enabled") : false;
+                    trace('[ElixirASTBuilder] TBlock loop detection check: context=${currentContext != null}, elements=${el.length}, loop_builder=${featureEnabled}');
+                    #end
+                    
+                    if (currentContext != null && currentContext.isFeatureEnabled("loop_builder_enabled")) {
+                        #if debug_loop_detection
+                        trace('[DesugarredForDetector] Attempting detection on TBlock with ${el.length} elements');
+                        #end
+                        var forPattern = DesugarredForDetector.detectAndEliminate(el);
+                        if (forPattern != null) {
+                            #if debug_loop_detection
+                            trace('[ElixirASTBuilder] Detected desugared for loop at TBlock level with elimination data');
+                            trace('  Counter: ${forPattern.counterVar} maps to user var: ${forPattern.userVar}');
+                            trace('  Limit: ${forPattern.limitVar} to ${forPattern.endValue.expr}');
+                            trace('  Is simple range: ${forPattern.eliminationData.isSimpleRange}');
+                            trace('  Is array iteration: ${forPattern.eliminationData.isArrayIteration}');
+                            #end
+                            
+                            // Create LoopIntent to capture the semantic intent of the loop
+                            var loopIntent: LoopIntent = null;
+                            var metadata: LoopIntentMetadata = {
+                                wasDesugared: true,
+                                infrastructureVars: [forPattern.counterVar, forPattern.limitVar],
+                                sourcePos: expr.pos
+                            };
+                            
+                            // Extract the while loop body using enhanced data
+                            switch(forPattern.whileExpr.expr) {
+                                case TWhile(cond, body, _):
+                                    // Use the enhanced userVar from detectAndEliminate
+                                    var userVarName: String = forPattern.userVar;
+                                    #if debug_loop_intent
+                                    trace('[LoopIntent] Using enhanced userVar from detectAndEliminate: ${userVarName}');
+                                    #end
+                                    if (userVarName == null) {
+                                        // Fallback: check if it's array iteration or use default
+                                        userVarName = forPattern.eliminationData.isArrayIteration ? "item" : "i";
+                                        #if debug_loop_intent
+                                        trace('[LoopIntent] No userVar found, using fallback: ${userVarName}');
+                                        #end
+                                    }
+                                    
+                                    // Determine loop type based on elimination data
+                                    if (forPattern.eliminationData.isArrayIteration && forPattern.arrayVar != null) {
+                                        // Array iteration pattern - use CollectionLoop
+                                        var arrayExpr: TypedExpr = {
+                                            expr: TLocal({
+                                                id: 0, 
+                                                name: forPattern.arrayVar, 
+                                                t: null, 
+                                                capture: false, 
+                                                extra: null,
+                                                meta: null,
+                                                isStatic: false
+                                            }), 
+                                            pos: expr.pos, 
+                                            t: null
+                                        };
+                                        
+                                        loopIntent = CollectionLoop(userVarName, arrayExpr, body);
+                                        #if debug_loop_intent
+                                        trace('[LoopIntent] Created CollectionLoop for array iteration');
+                                        #end
+                                    } else if (forPattern.eliminationData.isSimpleRange) {
+                                        // Simple range iteration
+                                        loopIntent = RangeLoop(
+                                            userVarName,
+                                            forPattern.startValue,
+                                            forPattern.endValue,
+                                            body,
+                                            false  // exclusive range (start...end)
+                                        );
+                                        #if debug_loop_intent
+                                        trace('[LoopIntent] Created RangeLoop for simple range');
+                                        #end
+                                    } else {
+                                        // Complex loop - keep as while
+                                        #if debug_loop_intent
+                                        trace('[LoopIntent] Complex pattern, keeping as while loop');
+                                        #end
+                                        return buildFromTypedExpr(forPattern.whileExpr, currentContext).def;
+                                    }
+                                default:
+                                    #if debug_loop_intent
+                                    trace('[LoopIntent] Unexpected while structure, fallback to default compilation');
+                                    #end
+                                    return buildFromTypedExpr(forPattern.whileExpr, currentContext).def;
+                            }
+                            
+                            // TODO: Connect LoopIntent to LoopBuilder
+                            // The LoopBuilder doesn't have a build method that takes LoopIntent yet
+                            // This would need to be implemented to complete the loop optimization
+                            /*
+                            if (loopIntent != null) {
+                                #if debug_loop_intent
+                                trace('[LoopIntent] Using LoopBuilder to generate idiomatic Elixir');
+                                #end
+                                var result = LoopBuilder.build(loopIntent, currentContext);
+                                return result;
+                            }
+                            */
+                        }
+                    }
                 
                 #if debug_ast_builder
                 trace('[DEBUG EMBEDDED] TIf - currentContext.currentClauseContext exists: ${currentContext.currentClauseContext != null}');
@@ -3659,27 +3702,7 @@ class ElixirASTBuilder {
                 }
                 #end
                 
-                // Check if the condition is an inline expansion block
-                var condition = switch(econd.expr) {
-                    case TBlock(el) if (ElixirASTPatterns.isInlineExpansionBlock(el)):
-                        #if debug_inline_expansion
-                        #if debug_ast_builder
-                        trace('[XRay InlineExpansion] Detected inline expansion in if condition');
-                        #end
-                        #end
-                        makeAST(ElixirASTPatterns.transformInlineExpansion(el, function(e) return buildFromTypedExpr(e, currentContext), function(name) return VariableAnalyzer.toElixirVarName(name)));
-                    case _:
-                        buildFromTypedExpr(econd, currentContext);
-                };
-
-                // CRITICAL FIX: Propagate ClauseContext through if branches
-                // This ensures embedded switches have access to the EnumBindingPlan
-                // Without this, nested switches can't resolve pattern variable names correctly
-                var thenBranch = buildFromTypedExpr(eif, currentContext);
-                var elseBranch = eelse != null ? buildFromTypedExpr(eelse, currentContext) : null;
-                EIf(condition, thenBranch, elseBranch);
-                
-            case TBlock(el):
+                // Continue with the real TBlock implementation
                 // Debug: Log ALL blocks to understand Haxe's desugaring patterns
                 #if debug_ast_pipeline
                 if (el.length > 0) {
