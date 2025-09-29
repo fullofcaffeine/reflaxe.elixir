@@ -816,7 +816,7 @@ class ElixirASTBuilder {
                                 case TLocal(localVar):
                                     // Pattern like _g = msg.type
                                     // When the switch extracts msg fields, type becomes msg_type
-                                    var extractedVarName = toElixirVarName(localVar.name) + "_" + reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+                                    var extractedVarName = VariableAnalyzer.toElixirVarName(localVar.name) + "_" + reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                                     
                                     // Store this mapping for later use in switch expressions
                                     // CRITICAL: Use variable NAME as key, not ID, since Haxe creates different IDs for the same variable
@@ -981,7 +981,7 @@ class ElixirASTBuilder {
 #end
                             var mapLiteral = tryBuildMapLiteralFromBlock(blockStmts, currentContext);
                             if (mapLiteral != null) {
-                                return EMatch(PVar(toElixirVarName(v.name)), mapLiteral);
+                                return EMatch(PVar(VariableAnalyzer.toElixirVarName(v.name)), mapLiteral);
                             }
                             // Check if this is a conditional comprehension pattern
                             var isConditionalComp = false;
@@ -1031,7 +1031,7 @@ class ElixirASTBuilder {
                                 var reconstructed = tryReconstructConditionalComprehension(blockStmts, tempVarName, currentContext.variableUsageMap);
                                 if (reconstructed != null) {
                                     // trace('[DEBUG] Successfully reconstructed as for comprehension');
-                                    return EMatch(PVar(toElixirVarName(v.name)), reconstructed);
+                                    return EMatch(PVar(VariableAnalyzer.toElixirVarName(v.name)), reconstructed);
                                 }
                             }
                         default:
@@ -1058,7 +1058,7 @@ class ElixirASTBuilder {
 
                             // Check if this is extracting from a pattern variable in a switch case
                             // Temp vars follow the pattern: g, g1, g2, etc.
-                            var tempVarName = toElixirVarName(v.name);
+                            var tempVarName = VariableAnalyzer.toElixirVarName(v.name);
 
                             #if debug_variable_origin
                             #if debug_ast_builder
@@ -1135,7 +1135,7 @@ class ElixirASTBuilder {
                                 // After this point, references should use 'value' not 'g'
                                 if (currentContext.currentClauseContext != null) {
                                     // Override the temp var binding with the user variable name
-                                    var userVarName = toElixirVarName(v.name);
+                                    var userVarName = VariableAnalyzer.toElixirVarName(v.name);
                                     currentContext.currentClauseContext.pushPatternBindings([{varId: v.id, binderName: userVarName}]);
 
                                     #if debug_clause_context
@@ -1281,10 +1281,10 @@ class ElixirASTBuilder {
                     // This keeps the names consistent between declaration and reference
                     if (varName.charAt(0) == "_" && varName.charAt(1) == "g") {
                         // Always strip underscore from _g variables for consistency
-                        toElixirVarName(varName, false); // false = strip underscore
+                        VariableAnalyzer.toElixirVarName(varName, false); // false = strip underscore
                     } else {
                         // For non-_g variables, normal conversion
-                        toElixirVarName(varName, false);
+                        VariableAnalyzer.toElixirVarName(varName, false);
                     }
                 };
                 
@@ -1385,7 +1385,7 @@ class ElixirASTBuilder {
                         case TBlock([{expr: TVar(tmpVar, tmpInit)}, {expr: TBinop(OpNullCoal, {expr: TLocal(localVar)}, defaultExpr)}])
                             if (localVar.id == tmpVar.id && tmpInit != null):
                             // This is null coalescing pattern: generate inline if expression
-                            var tmpVarName = toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
+                            var tmpVarName = VariableAnalyzer.toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
                             var initAst = buildFromTypedExpr(tmpInit, currentContext);
                             var defaultAst = buildFromTypedExpr(defaultExpr, currentContext);
                             
@@ -1705,7 +1705,7 @@ class ElixirASTBuilder {
                                 if (isTempVar) {
                                     // This is trying to assign from a temp var (g, g1, g2, _g, _g1, _g2, etc.)
                                     // Check if we're assigning to a variable that was already bound by the pattern
-                                    var elixirTempName = toElixirVarName(tempVarName);
+                                    var elixirTempName = VariableAnalyzer.toElixirVarName(tempVarName);
 
                                     // EMBEDDED SWITCH FIX: Skip assignments where pattern already extracted the value
                                     // Pattern {:some, action} already binds "action", so "action = g" is invalid
@@ -3107,10 +3107,10 @@ class ElixirASTBuilder {
                             if (isFunctionVar) {
                                 // Function variable call - needs special handling for .() syntax
                                 // We'll create a special marker that the printer will recognize
-                                ECall(makeAST(EVar(toElixirVarName(v.name))), "", args);
+                                ECall(makeAST(EVar(VariableAnalyzer.toElixirVarName(v.name))), "", args);
                             } else {
                                 // Regular local function call
-                                ECall(null, toElixirVarName(v.name), args);
+                                ECall(null, VariableAnalyzer.toElixirVarName(v.name), args);
                             }
                         default:
                             if (target != null) {
@@ -3771,7 +3771,7 @@ class ElixirASTBuilder {
                             
                             // Generate parameter patterns with the actual names
                             for (paramName in actualParamNames) {
-                                paramPatterns.push(PVar(toElixirVarName(paramName)));
+                                paramPatterns.push(PVar(VariableAnalyzer.toElixirVarName(paramName)));
                             }
                             
                             // Generate {:constructor, param1, param2, ...}
@@ -3913,7 +3913,7 @@ class ElixirASTBuilder {
                         trace('[XRay InlineExpansion] Detected inline expansion in if condition');
                         #end
                         #end
-                        makeAST(ElixirASTPatterns.transformInlineExpansion(el, function(e) return buildFromTypedExpr(e, currentContext), function(name) return toElixirVarName(name)));
+                        makeAST(ElixirASTPatterns.transformInlineExpansion(el, function(e) return buildFromTypedExpr(e, currentContext), function(name) return VariableAnalyzer.toElixirVarName(name)));
                     case _:
                         buildFromTypedExpr(econd, currentContext);
                 };
@@ -4272,7 +4272,7 @@ class ElixirASTBuilder {
                             // Don't generate a block - generate inline if expression
                             var initAst = buildFromTypedExpr(init, currentContext);
                             var defaultAst = buildFromTypedExpr(defaultExpr, currentContext);
-                            var tmpVarName = toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
+                            var tmpVarName = VariableAnalyzer.toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
                             
                             // Generate: if (tmp = init) != nil, do: tmp, else: default
                             var ifExpr = makeAST(EIf(
@@ -4294,7 +4294,7 @@ class ElixirASTBuilder {
                 
                 // Check for inline expansion pattern at TypedExpr level
                 if (ElixirASTPatterns.isInlineExpansionBlock(el)) {
-                    return ElixirASTPatterns.transformInlineExpansion(el, function(e) return buildFromTypedExpr(e, currentContext), function(name) return toElixirVarName(name));
+                    return ElixirASTPatterns.transformInlineExpansion(el, function(e) return buildFromTypedExpr(e, currentContext), function(name) return VariableAnalyzer.toElixirVarName(name));
                 }
                 
                 // Check if this block is building a list through concatenations
@@ -4543,7 +4543,7 @@ class ElixirASTBuilder {
                                                             #end
                                                             
                                                             // Build the infrastructure variable assignment
-                                                            var varName = toElixirVarName(v.name.charAt(0) == "_" ? v.name.substr(1) : v.name);
+                                                            var varName = VariableAnalyzer.toElixirVarName(v.name.charAt(0) == "_" ? v.name.substr(1) : v.name);
                                                             var initAST = buildFromTypedExpr(init, currentContext);
                                                             var assignment = makeAST(EMatch(PVar(varName), initAST));
                                                             
@@ -4641,7 +4641,7 @@ class ElixirASTBuilder {
                             };
                             
                             // Build the assignment
-                            var baseName = toElixirVarName(v.name);
+                            var baseName = VariableAnalyzer.toElixirVarName(v.name);
                             var varName = if (!isUsed) {
                                 #if debug_variable_usage
                                 #if debug_ast_builder
@@ -4756,7 +4756,7 @@ class ElixirASTBuilder {
                                         // Check if this is a redundant extraction (temp var like _g, g, g1, g2)
                                         // Check both the original name and the Elixir-converted name
                                         var originalName = v.name;
-                                        var tempVarName = toElixirVarName(v.name);
+                                        var tempVarName = VariableAnalyzer.toElixirVarName(v.name);
                                         #if debug_redundant_extraction
                                         #if debug_ast_builder
                                         trace('[TBlock] TEnumParameter found - originalName: $originalName, tempVarName: $tempVarName');
@@ -4784,8 +4784,8 @@ class ElixirASTBuilder {
                                     case _:
                                 }
                             case TBinop(OpAssign, {expr: TLocal(lhs)}, {expr: TLocal(rhs)}):
-                                var lhsName = toElixirVarName(lhs.name);
-                                var rhsName = toElixirVarName(rhs.name);
+                                var lhsName = VariableAnalyzer.toElixirVarName(lhs.name);
+                                var rhsName = VariableAnalyzer.toElixirVarName(rhs.name);
 
                                 if (PatternDetector.isTempPatternVarName(lhsName) || lhsName == rhsName || PatternDetector.isTempPatternVarName(rhsName)) {
                                     shouldSkip = true;
@@ -4802,8 +4802,8 @@ class ElixirASTBuilder {
                     if (!shouldSkip) {
                         switch(e.expr) {
                             case TBinop(OpAssign, {expr: TLocal(lhs)}, {expr: TLocal(rhs)}):
-                                var lhsName = toElixirVarName(lhs.name);
-                                var rhsName = toElixirVarName(rhs.name);
+                                var lhsName = VariableAnalyzer.toElixirVarName(lhs.name);
+                                var rhsName = VariableAnalyzer.toElixirVarName(rhs.name);
 
                                 if (PatternDetector.isTempPatternVarName(lhsName) || lhsName == rhsName || PatternDetector.isTempPatternVarName(rhsName)) {
                                     shouldSkip = true;
@@ -5621,7 +5621,7 @@ class ElixirASTBuilder {
                 var rescueClauses = [];
                 
                 for (c in catches) {
-                    var pattern = PVar(toElixirVarName(c.v.name));
+                    var pattern = PVar(VariableAnalyzer.toElixirVarName(c.v.name));
                     var catchBody = buildFromTypedExpr(c.expr, currentContext);
                     
                     rescueClauses.push({
@@ -5779,7 +5779,7 @@ class ElixirASTBuilder {
                     // Prefix with underscore if unused (using TypedExpr-based detection which is more accurate)
                     // This is done here rather than in a transformer because we have full semantic information
                     // Re-enable underscore prefixing for 1.0 quality
-                    var finalName = if (isActuallyUnused && !baseName.startsWith("_")) {
+                    var finalName = if (isActuallyUnused && !StringTools.startsWith(baseName, "_")) {
                         "_" + baseName;
                     } else {
                         baseName;
@@ -6153,7 +6153,7 @@ class ElixirASTBuilder {
                             // Transform null coalescing pattern to idiomatic Elixir
                             var initAst = buildFromTypedExpr(init, currentContext);
                             var defaultAst = buildFromTypedExpr(defaultExpr, currentContext);
-                            var tmpVarName = toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
+                            var tmpVarName = VariableAnalyzer.toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
                             
                             var ifExpr = makeAST(EIf(
                                 makeAST(EBinary(NotEqual, 
@@ -6271,7 +6271,7 @@ class ElixirASTBuilder {
                                     
                                     if (isNullCheck) {
                                         // This is null coalescing! Generate inline if expression
-                                        var tmpVarName = toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
+                                        var tmpVarName = VariableAnalyzer.toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
                                         var initAst = buildFromTypedExpr(init, currentContext);
                                         var elseAst = buildFromTypedExpr(elseBranch, currentContext);
                                         
@@ -6394,7 +6394,7 @@ class ElixirASTBuilder {
                     buildFromTypedExpr: function(e, ?ctx) return buildFromTypedExpr(e, currentContext),
                     whileLoopCounter: currentContext.whileLoopCounter
                 };
-                return LoopBuilder.buildFor(v, e1, e2, expr, buildContext, name -> toElixirVarName(name));
+                return LoopBuilder.buildFor(v, e1, e2, expr, buildContext, name -> VariableAnalyzer.toElixirVarName(name));
                 
             case TWhile(econd, e, normalWhile):
                 // Delegate ALL while loop compilation to LoopBuilder
@@ -6404,7 +6404,7 @@ class ElixirASTBuilder {
                     buildFromTypedExpr: function(e, ?ctx) return buildFromTypedExpr(e, currentContext),
                     whileLoopCounter: currentContext.whileLoopCounter
                 };
-                return LoopBuilder.buildWhileComplete(econd, e, normalWhile, expr, buildContext, name -> toElixirVarName(name)); 
+                return LoopBuilder.buildWhileComplete(econd, e, normalWhile, expr, buildContext, name -> VariableAnalyzer.toElixirVarName(name)); 
                 
             case TEnumParameter(e, ef, index):
                 /**
@@ -6468,7 +6468,7 @@ class ElixirASTBuilder {
                 var sourceVarName: String = null;
                 switch(e.expr) {
                     case TLocal(v):
-                        sourceVarName = toElixirVarName(v.name);
+                        sourceVarName = VariableAnalyzer.toElixirVarName(v.name);
                         #if debug_enum_extraction
                         #if debug_ast_builder
                         trace('[TEnumParameter] Extracting from variable: $sourceVarName');
@@ -6563,7 +6563,7 @@ class ElixirASTBuilder {
                     if (!skipExtraction) {
                         switch(e.expr) {
                             case TLocal(v):
-                                var varName = toElixirVarName(v.name);
+                                var varName = VariableAnalyzer.toElixirVarName(v.name);
 
                                 #if debug_enum_extraction
                                 #if debug_ast_builder
@@ -6670,7 +6670,7 @@ class ElixirASTBuilder {
                 
             case TIdent(s):
                 // Identifier reference
-                EVar(toElixirVarName(s));
+                EVar(VariableAnalyzer.toElixirVarName(s));
         }
     }
     
@@ -6771,7 +6771,7 @@ class ElixirASTBuilder {
                             default: "obj";
                         };
                         
-                        var varName = toElixirVarName(rootName + "_" + otherField);
+                        var varName = VariableAnalyzer.toElixirVarName(rootName + "_" + otherField);
                         #if debug_ast_builder
                         trace('[buildFieldPatternSwitch] Extracting field ${otherField} as ${varName}');
                         #end
@@ -6887,7 +6887,7 @@ class ElixirASTBuilder {
         
         // For _g2 pattern, we need to generate a reference to the actual array variable
         // The actual array should be available as a local variable named _g2
-        var arrayExpr = makeAST(EVar(toElixirVarName(arrayVarName.length > 0 ? arrayVarName : "_g2")));
+        var arrayExpr = makeAST(EVar(VariableAnalyzer.toElixirVarName(arrayVarName.length > 0 ? arrayVarName : "_g2")));
         
         // Generate appropriate Enum call based on pattern
         if (bodyAnalysis.hasMapPattern) {
@@ -7054,7 +7054,7 @@ class ElixirASTBuilder {
      */
     static function generateEnumMapSimple(arrayExpr: ElixirAST, analysis: Dynamic, ebody: TypedExpr): ElixirAST {
         // Find the loop variable and transformation
-        var loopVar = analysis.loopVar != null ? toElixirVarName(analysis.loopVar.name) : "item";
+        var loopVar = analysis.loopVar != null ? VariableAnalyzer.toElixirVarName(analysis.loopVar.name) : "item";
         
         // Extract the transformation expression from the push call
         var transformation = extractMapTransformation(ebody, analysis.loopVar);
@@ -7074,7 +7074,7 @@ class ElixirASTBuilder {
      * Generate Enum.filter call (simplified version)
      */
     static function generateEnumFilterSimple(arrayExpr: ElixirAST, analysis: Dynamic, ebody: TypedExpr): ElixirAST {
-        var loopVar = analysis.loopVar != null ? toElixirVarName(analysis.loopVar.name) : "item";
+        var loopVar = analysis.loopVar != null ? VariableAnalyzer.toElixirVarName(analysis.loopVar.name) : "item";
         
         // Extract the filter condition
         var condition = extractFilterCondition(ebody);
@@ -7098,7 +7098,7 @@ class ElixirASTBuilder {
         var arrayAST = buildFromTypedExpr(arrayExpr, currentContext);
         
         // Find the loop variable and transformation
-        var loopVar = analysis.loopVar != null ? toElixirVarName(analysis.loopVar.name) : "item";
+        var loopVar = analysis.loopVar != null ? VariableAnalyzer.toElixirVarName(analysis.loopVar.name) : "item";
         
         // Extract the transformation expression from the push call
         var transformation = extractMapTransformation(ebody, analysis.loopVar);
@@ -7119,7 +7119,7 @@ class ElixirASTBuilder {
      */
     static function generateEnumFilter(arrayExpr: TypedExpr, analysis: Dynamic, ebody: TypedExpr): ElixirAST {
         var arrayAST = buildFromTypedExpr(arrayExpr, currentContext);
-        var loopVar = analysis.loopVar != null ? toElixirVarName(analysis.loopVar.name) : "item";
+        var loopVar = analysis.loopVar != null ? VariableAnalyzer.toElixirVarName(analysis.loopVar.name) : "item";
         
         // Extract the filter condition
         var condition = extractFilterCondition(ebody);
@@ -7520,7 +7520,7 @@ class ElixirASTBuilder {
                                 var param = params[i];
                                 switch(param.expr) {
                                     case TLocal(v):
-                                        var varName = toElixirVarName(v.name);
+                                        var varName = VariableAnalyzer.toElixirVarName(v.name);
                                         while (extractedParams.length <= i) {
                                             extractedParams.push(null);
                                         }
@@ -7556,7 +7556,7 @@ class ElixirASTBuilder {
                             switch(init.expr) {
                                 case TEnumParameter(_, ef, index):
                                     // Found enum parameter extraction to temp var
-                                    var tempName = toElixirVarName(v.name);
+                                    var tempName = VariableAnalyzer.toElixirVarName(v.name);
                                     if (tempName.startsWith("_")) {
                                         tempName = tempName.substr(1); // Strip underscore
                                     }
@@ -7586,7 +7586,7 @@ class ElixirASTBuilder {
                         case TVar(v, init) if (init != null):
                             switch(init.expr) {
                                 case TLocal(localVar):
-                                    var tempName = toElixirVarName(localVar.name);
+                                    var tempName = VariableAnalyzer.toElixirVarName(localVar.name);
                                     if (tempName.startsWith("_")) {
                                         tempName = tempName.substr(1);
                                     }
@@ -7602,7 +7602,7 @@ class ElixirASTBuilder {
 
                                     // Check if this is assigning from a known temp var
                                     if (tempVarMapping.exists(tempName)) {
-                                        var patternName = toElixirVarName(v.name);
+                                        var patternName = VariableAnalyzer.toElixirVarName(v.name);
                                         var info = tempVarMapping.get(tempName);
 
                                         // Update the extracted param with the pattern variable name
@@ -7647,7 +7647,7 @@ class ElixirASTBuilder {
                 function scanForUsedVariables(expr: TypedExpr): Void {
                     switch(expr.expr) {
                         case TLocal(v):
-                            var name = toElixirVarName(v.name);
+                            var name = VariableAnalyzer.toElixirVarName(v.name);
                             usedVariables.set(name, true);
                             
                         // Look for the first assignment from TEnumParameter
@@ -7655,7 +7655,7 @@ class ElixirASTBuilder {
                             switch(init.expr) {
                                 case TEnumParameter(_, _, index):
                                     // This is extracting an enum parameter
-                                    var varName = toElixirVarName(v.name);
+                                    var varName = VariableAnalyzer.toElixirVarName(v.name);
                                     
                                     // Ensure array is large enough
                                     while (firstUsedVariables.length <= index) {
@@ -7680,7 +7680,7 @@ class ElixirASTBuilder {
                                 case TField(obj, _):
                                     switch(obj.expr) {
                                         case TLocal(v):
-                                            var name = toElixirVarName(v.name);
+                                            var name = VariableAnalyzer.toElixirVarName(v.name);
                                             if (!name.startsWith("_g") && !name.startsWith("g") && name != "g") {
                                                 // This is a real variable name used in the body
                                                 // Try to infer which parameter position this should be
@@ -7746,7 +7746,7 @@ class ElixirASTBuilder {
                     switch(param.expr) {
                         case TLocal(v):
                             // This is a local variable reference - likely our pattern variable
-                            var varName = toElixirVarName(v.name);
+                            var varName = VariableAnalyzer.toElixirVarName(v.name);
 
                             // Ensure array is large enough
                             while (extractedParams.length <= i) {
@@ -7965,7 +7965,7 @@ class ElixirASTBuilder {
                     ensureExtractedParamsSize(index);
                     var existing = extractedParams[index];
                     if (existing == null || PatternDetector.isTempPatternVarName(existing)) {
-                        var elixirName = toElixirVarName(candidate);
+                        var elixirName = VariableAnalyzer.toElixirVarName(candidate);
                         extractedParams[index] = elixirName;
                         #if debug_ast_builder
                         trace('[DEBUG Per-Param] Recorded meaningful name for param $index: $elixirName');
@@ -7979,7 +7979,7 @@ class ElixirASTBuilder {
                     case TVar(v, init) if (init != null):
                         switch (init.expr) {
                             case TEnumParameter(_, _, index):
-                                var varName = toElixirVarName(v.name);
+                                var varName = VariableAnalyzer.toElixirVarName(v.name);
                                 recordMeaningfulName(index, varName);
                             default:
                         }
@@ -8003,7 +8003,7 @@ class ElixirASTBuilder {
             var canonicalVarNames: Array<String> = [];
             for (name in canonicalNames) {
                 if (name != null) {
-                    canonicalVarNames.push(toElixirVarName(name));
+                    canonicalVarNames.push(VariableAnalyzer.toElixirVarName(name));
                 } else {
                     canonicalVarNames.push(null);
                 }
@@ -8893,10 +8893,6 @@ class ElixirASTBuilder {
         return false;
     }
     
-    // Delegation to VariableAnalyzer for variable name transformation
-    static function toElixirVarName(name: String, ?preserveUnderscore: Bool = false): String {
-        return VariableAnalyzer.toElixirVarName(name, !preserveUnderscore);
-    }
 
     /**
      * Checks if a variable name is a Haxe compiler-generated temporary variable.
@@ -9115,7 +9111,7 @@ class ElixirASTBuilder {
                                                 #end
                                             } else {
                                                 // Fallback if no binding plan (shouldn't happen after M0.1)
-                                                var varName = toElixirVarName(v.name);
+                                                var varName = VariableAnalyzer.toElixirVarName(v.name);
                                                 if (varName.startsWith("_g")) {
                                                     varName = varName.substr(1); // _g -> g
                                                 }
@@ -9142,8 +9138,8 @@ class ElixirASTBuilder {
                                             
                                         case TLocal(tempVar):
                                             // This is assignment from temp var to pattern var
-                                            var tempVarName = toElixirVarName(tempVar.name);
-                                            var patternVarName = toElixirVarName(v.name);
+                                            var tempVarName = VariableAnalyzer.toElixirVarName(tempVar.name);
+                                            var patternVarName = VariableAnalyzer.toElixirVarName(v.name);
                                             
                                             // Check if the temp var is from enum extraction
                                             // ONLY apply special mapping for enum-related temp vars
@@ -9780,18 +9776,6 @@ class ElixirASTBuilder {
     /**
      * Check if an array of AST nodes uses a specific variable
      */
-    // Delegation to VariableAnalyzer for variable usage detection
-    static function usesVariable(nodes: Array<ElixirAST>, varName: String): Bool {
-        return VariableAnalyzer.usesVariable(nodes, varName);
-    }
-    
-    /**
-     * Check if an AST node uses a specific variable
-     * Delegates to VariableAnalyzer for comprehensive checking
-     */
-    static function usesVariableInNode(node: ElixirAST, varName: String): Bool {
-        return VariableAnalyzer.usesVariableInNode(node, varName);
-    }
     
     /**
      * Transform variable references in an AST node
@@ -10834,7 +10818,7 @@ class ElixirASTBuilder {
                 var iteratorAst = buildIteratorAST(data.iterator, variableUsageMap);
                 
                 // Build generator
-                var pattern = PVar(toElixirVarName(data.loopVar));
+                var pattern = PVar(VariableAnalyzer.toElixirVarName(data.loopVar));
                 var generator: EGenerator = {
                     pattern: pattern,
                     expr: iteratorAst
@@ -11017,7 +11001,7 @@ class ElixirASTBuilder {
                         case TEnumParameter(_, _, paramIndex) if (paramIndex == index):
                             // This variable is assigned from our enum parameter
                             // Now check if this variable is used
-                            var assignedVar = toElixirVarName(v.name);
+                            var assignedVar = VariableAnalyzer.toElixirVarName(v.name);
                             isUsed = PatternBuilder.isPatternVariableUsed(assignedVar, caseBody);
                         default:
                     }
@@ -11274,7 +11258,7 @@ class ElixirASTBuilder {
                     body,
                     varName,  // Use the extracted user variable name, not infrastructure var
                     e -> buildFromTypedExpr(e, context),
-                    s -> toElixirVarName(s)
+                    s -> VariableAnalyzer.toElixirVarName(s)
                 );
                 
                 
@@ -11282,7 +11266,7 @@ class ElixirASTBuilder {
                 
             case CollectionLoop(varName, collection, body):
                 // Generate Enum.each for collection loops
-                var varPattern = PVar(toElixirVarName(varName));
+                var varPattern = PVar(VariableAnalyzer.toElixirVarName(varName));
                 var collectionAst = buildFromTypedExpr(collection, context);
                 var bodyAst = buildFromTypedExpr(body, context);
                 
@@ -11486,8 +11470,8 @@ class ElixirASTBuilder {
         
         // Create pattern for destructuring: {key, value}
         var tuplePattern = PTuple([
-            PVar(toElixirVarName(pattern.keyVar)),
-            PVar(toElixirVarName(pattern.valueVar))
+            PVar(VariableAnalyzer.toElixirVarName(pattern.keyVar)),
+            PVar(VariableAnalyzer.toElixirVarName(pattern.valueVar))
         ]);
         
         // Create anonymous function clause
