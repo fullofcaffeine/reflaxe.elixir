@@ -162,7 +162,7 @@ class ConstructorBuilder {
         return className == "StringMap" || 
                className == "Map" || 
                className == "IntMap" ||
-               className.endsWith("Map");
+               StringTools.endsWith(className, "Map");
     }
     
     /**
