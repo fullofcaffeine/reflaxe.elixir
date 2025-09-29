@@ -8,29 +8,240 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.CompilationContext;
 
+using StringTools;
+
 /**
- * VariableBuilder: Handles variable and local reference building
+ * VariableBuilder: Handles variable declarations and references
  * 
- * WHY: Separates complex variable resolution logic from ElixirASTBuilder
- * - Reduces ElixirASTBuilder complexity significantly
- * - Centralizes variable name resolution and mapping
- * - Handles special infrastructure variables (g_, rec_, etc.)
+ * WHY: Separates complex variable logic from ElixirASTBuilder
+ * - Reduces ElixirASTBuilder complexity significantly (300+ lines)
+ * - Centralizes variable declarations, initialization, and references
+ * - Handles special infrastructure variables (g, _g, g1, etc.)
  * 
- * WHAT: Builds ElixirAST nodes for variable references
- * - TVar expressions (23+ different cases)
- * - TLocal expressions
- * - Infrastructure variable detection
+ * WHAT: Builds ElixirAST nodes for variable operations
+ * - TVar declarations with optional initialization
+ * - TLocal variable references
+ * - Infrastructure variable detection and skipping
  * - Pattern extraction variable handling
  * - Loop and clause context variable resolution
  * 
- * HOW: Complex priority-based variable resolution
+ * HOW: Complex priority-based variable handling
+ * - Detects and handles infrastructure variables
+ * - Manages variable initialization patterns
  * - Checks pattern registry for enum extraction vars
  * - Checks clause context for case-local variables
- * - Checks global variable mappings
  * - Handles special infrastructure patterns
  */
 @:nullSafety(Off)
 class VariableBuilder {
+    
+    /**
+     * Build variable declaration with optional initialization
+     * 
+     * WHY: TVar with init represents variable declarations in Haxe
+     * WHAT: Generates ElixirAST for variable assignment or skips infrastructure vars
+     * HOW: Analyzes variable patterns and handles special cases
+     * 
+     * @param v The variable being declared
+     * @param init Optional initialization expression
+     * @param context Build context with compilation state
+     * @return ElixirASTDef for the declaration, or null to skip
+     */
+    public static function buildVariableDeclaration(v: TVar, init: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
+        var buildExpression = context.getExpressionBuilder();
+        
+        #if debug_ast_builder
+        trace('[VarBuilder] Processing declaration: ${v.name} (id: ${v.id})');
+        if (init != null) {
+            trace('[VarBuilder] Init type: ${Type.enumConstructor(init.expr)}');
+        }
+        #end
+        
+        // Check if this is an infrastructure variable that should be skipped
+        if (isInfrastructureVariableToSkip(v.name)) {
+            return handleInfrastructureDeclaration(v, init, context);
+        }
+        
+        // Get the proper variable name
+        var varName = resolveDeclarationName(v, context);
+        
+        if (init == null) {
+            // Variable declaration without initialization
+            // In Elixir, we typically use nil
+            return EMatch(PVar(varName), makeAST(ENil));
+        }
+        
+        // Build the initialization expression
+        var initAST = buildExpression(init);
+        
+        if (initAST == null) {
+            #if debug_ast_builder
+            trace('[VarBuilder] Init expression returned null for ${v.name}');
+            #end
+            return null;
+        }
+        
+        // Create the match expression (variable = value)
+        return EMatch(PVar(varName), initAST);
+    }
+    
+    /**
+     * Check if a variable should be skipped (infrastructure variables)
+     * 
+     * WHY: Haxe generates temporary variables for internal operations
+     * WHAT: Identifies g, _g, g1, _g1, etc. patterns
+     * HOW: Pattern matching on variable name
+     */
+    static function isInfrastructureVariableToSkip(name: String): Bool {
+        // Infrastructure variables: g, _g, g followed by numbers, _g followed by numbers
+        if (name == "g" || name == "_g") return true;
+        
+        // Check for g1, g2, etc.
+        if (name.length > 1 && name.charAt(0) == 'g') {
+            var rest = name.substr(1);
+            if (isAllDigits(rest)) return true;
+        }
+        
+        // Check for _g1, _g2, etc.
+        if (name.length > 2 && name.substr(0, 2) == "_g") {
+            var rest = name.substr(2);
+            if (isAllDigits(rest)) return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if a string contains only digits
+     */
+    static function isAllDigits(s: String): Bool {
+        if (s.length == 0) return false;
+        for (i in 0...s.length) {
+            var c = s.charCodeAt(i);
+            if (c < 48 || c > 57) return false; // Not 0-9
+        }
+        return true;
+    }
+    
+    /**
+     * Handle infrastructure variable declarations
+     * 
+     * WHY: Infrastructure variables often need special tracking or skipping
+     * WHAT: Maps infrastructure vars for switch patterns or skips them
+     * HOW: Analyzes init patterns and stores mappings
+     */
+    static function handleInfrastructureDeclaration(v: TVar, init: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
+        if (init == null) {
+            // Infrastructure variable without init - skip
+            return null;
+        }
+        
+        #if debug_infrastructure_vars
+        trace('[Infrastructure Variable] Declaration: ${v.name} = ${Type.enumConstructor(init.expr)}');
+        #end
+        
+        // Track infrastructure variable mappings for switch targets
+        switch(init.expr) {
+            case TField(obj, fa):
+                // Pattern: _g = something.field
+                var fieldName = extractFieldName(fa);
+                switch(obj.expr) {
+                    case TLocal(localVar):
+                        // Pattern: _g = msg.type
+                        // In switch patterns, this becomes msg_type
+                        // Use static methods from VariableAnalyzer
+                        var extractedVarName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(localVar.name) 
+                                              + "_" 
+                                              + reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+                        
+                        // Store mapping for later use
+                        if (context.tempVarRenameMap == null) {
+                            context.tempVarRenameMap = new Map<String, String>();
+                        }
+                        context.tempVarRenameMap.set(v.name, extractedVarName);
+                        
+                        #if debug_infrastructure_vars
+                        trace('[Infrastructure Variable] Mapping ${v.name} -> $extractedVarName');
+                        #end
+                        
+                        // Skip the assignment
+                        return null;
+                        
+                    default:
+                        // Field access on non-local
+                }
+                
+            case TLocal(localVar):
+                // Check if assigning from another infrastructure variable
+                if (isInfrastructureVariableToSkip(localVar.name)) {
+                    // Skip infrastructure variable chains: g1 = g
+                    #if debug_infrastructure_vars
+                    trace('[Infrastructure Variable] Skipping chain: ${v.name} = ${localVar.name}');
+                    #end
+                    return null;
+                }
+                
+            case TEnumParameter(_, _, _):
+                // Pattern: g = elem(tuple, index)
+                // Usually handled by pattern matching
+                #if debug_infrastructure_vars
+                trace('[Infrastructure Variable] TEnumParameter assignment: ${v.name}');
+                #end
+                // Let it be processed normally for now
+                
+            default:
+                // Other infrastructure variable uses
+        }
+        
+        // For unhandled cases, skip the infrastructure variable
+        return null;
+    }
+    
+    /**
+     * Extract field name from field access
+     */
+    static function extractFieldName(fa: FieldAccess): String {
+        return switch(fa) {
+            case FInstance(_, _, cf): cf.get().name;
+            case FStatic(_, cf): cf.get().name;
+            case FAnon(cf): cf.get().name;
+            case FClosure(_, cf): cf.get().name;
+            case FEnum(_, ef): ef.name;
+            case FDynamic(s): s;
+        };
+    }
+    
+    /**
+     * Resolve the variable name for a declaration
+     * 
+     * WHY: Variables might need underscore prefix or special naming
+     * WHAT: Determines the proper name for the declared variable
+     * HOW: Checks usage and applies naming conventions
+     */
+    static function resolveDeclarationName(v: TVar, context: CompilationContext): String {
+        // Use static method from VariableAnalyzer
+        var varName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(v.name);
+        
+        // Check if the variable needs underscore prefix (unused)
+        if (context.variableUsageMap != null) {
+            var isUsed = context.variableUsageMap.get(v.id) == true;
+            if (!isUsed && varName.length > 0 && varName.charAt(0) != "_") {
+                varName = "_" + varName;
+                #if debug_ast_builder
+                trace('[VarBuilder] Variable ${v.name} is unused, prefixing: $varName');
+                #end
+            }
+        }
+        
+        return varName;
+    }
+    
+    /**
+     * Helper to create AST nodes
+     */
+    static inline function makeAST(def: ElixirASTDef, ?pos: haxe.macro.Expr.Position): ElixirAST {
+        return {def: def, metadata: {}, pos: pos};
+    }
     
     /**
      * Build variable reference expressions
@@ -96,7 +307,7 @@ class VariableBuilder {
         
         // Priority 2: Check clause context for case-local variables
         if (context.currentClauseContext != null) {
-            var clauseMapping = context.currentClauseContext.getVariableMapping(tvarId);
+            var clauseMapping = context.currentClauseContext.lookupVariable(tvarId);
             if (clauseMapping != null) {
                 #if debug_clause_context
                 trace('[Clause Context] Found mapping for ${tvar.name} (id: $tvarId) -> $clauseMapping');
@@ -106,6 +317,8 @@ class VariableBuilder {
         }
         
         // Priority 3: Check global variable mappings
+        // TODO: Add variableMappings to context when available
+        /*
         if (context.variableMappings != null && context.variableMappings.exists(tvarId)) {
             var mapping = context.variableMappings.get(tvarId);
             #if debug_variable_mappings
@@ -113,6 +326,7 @@ class VariableBuilder {
             #end
             return mapping;
         }
+        */
         
         // Priority 4: Check for infrastructure variables
         if (isInfrastructureVariable(defaultName)) {
@@ -123,6 +337,8 @@ class VariableBuilder {
         }
         
         // Priority 5: Check loop preservation
+        // TODO: Add preservedLoopVariables to context when available
+        /*
         if (context.preservedLoopVariables != null && context.preservedLoopVariables.exists(tvarId)) {
             var preserved = context.preservedLoopVariables.get(tvarId);
             #if debug_loop_variables
@@ -130,6 +346,7 @@ class VariableBuilder {
             #end
             return preserved;
         }
+        */
         
         // Default: Use the variable's original name
         return defaultName;
@@ -163,16 +380,22 @@ class VariableBuilder {
         // Handle g_ variables (generated temporaries)
         if (name.startsWith("g_")) {
             // Check if this g_ variable has a specific mapping
+            // TODO: Add generatedVariableMappings when available
+            /*
             if (context.generatedVariableMappings != null && 
                 context.generatedVariableMappings.exists(tvar.id)) {
                 return context.generatedVariableMappings.get(tvar.id);
             }
+            */
             
             // For switch expressions, g_ variables often need special handling
+            // TODO: Add isInSwitchExpression when available
+            /*
             if (context.isInSwitchExpression) {
                 // The g_ variable might be the switch expression result variable
                 return name; // Keep as-is for now
             }
+            */
         }
         
         // Handle rec_ variables (recursive function helpers)
@@ -240,11 +463,14 @@ class VariableBuilder {
      * @param context The compilation context
      */
     public static function registerGlobalVariable(tvarId: Int, newName: String, context: CompilationContext): Void {
+        // TODO: Add variableMappings when available
+        /*
         if (context.variableMappings == null) {
             context.variableMappings = new Map<Int, String>();
         }
         
         context.variableMappings.set(tvarId, newName);
+        */
         
         #if debug_variable_mappings
         trace('[Variable Mapping] Registered global: var $tvarId -> $newName');
@@ -280,11 +506,14 @@ class VariableBuilder {
      * @param context The compilation context
      */
     public static function preserveLoopVariable(tvarId: Int, name: String, context: CompilationContext): Void {
+        // TODO: Add preservedLoopVariables to context when available
+        /*
         if (context.preservedLoopVariables == null) {
             context.preservedLoopVariables = new Map<Int, String>();
         }
         
         context.preservedLoopVariables.set(tvarId, name);
+        */
         
         #if debug_loop_variables
         trace('[Loop Variable] Preserved: var $tvarId -> $name');
