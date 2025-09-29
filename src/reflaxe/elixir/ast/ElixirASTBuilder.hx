@@ -27,6 +27,7 @@ import reflaxe.elixir.ast.builders.LiteralBuilder;
 import reflaxe.elixir.ast.builders.ControlFlowBuilder;
 import reflaxe.elixir.ast.builders.CallExprBuilder;
 import reflaxe.elixir.ast.builders.VariableBuilder;
+import reflaxe.elixir.ast.builders.FieldAccessBuilder;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.optimizers.LoopOptimizer;
 import reflaxe.elixir.ast.intent.LoopIntent;
@@ -1940,38 +1941,81 @@ class ElixirASTBuilder {
             // Field Access
             // ================================================================
             case TField(e, fa):
-                // Check for enum constructor references
-                switch(fa) {
+                // Delegate simple field access to FieldAccessBuilder
+                // But keep complex cases (ExUnit test context) here for now
+                
+                // Check if this is a simple case we can delegate
+                var isSimpleCase = switch(fa) {
+                    case FEnum(_, _): true;  // Enum constructors - delegate
+                    case FStatic(_, _): !currentContext.isInExUnitTest;  // Static fields - delegate unless in test
+                    case FAnon(_): !currentContext.isInExUnitTest;  // Anonymous fields - delegate unless in test  
+                    case FInstance(_, _, _): !currentContext.isInExUnitTest;  // Instance fields - delegate unless in test
+                    case FDynamic(_): true;  // Dynamic fields - delegate
+                    case FClosure(_, _): true;  // Closures - delegate
+                };
+                
+                if (isSimpleCase) {
+                    var result = FieldAccessBuilder.build(e, fa, currentContext);
+                    if (result != null) {
+                        result;  // Return delegated result
+                    } else {
+                        // Fallback to original implementation if builder returns null
+                        switch(fa) {
+                            case FEnum(enumType, ef):
+                                // Enum constructor reference (no arguments)
+                                // Check if this enum is marked as @:elixirIdiomatic
+                                var enumT = enumType.get();
+                                if (enumT.meta.has(":elixirIdiomatic")) {
+                                    // For idiomatic enums, generate atoms instead of tuples
+                                    // OneForOne → :one_for_one
+                                    var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+                                    EAtom(atomName);
+                                } else {
+                                    // Regular enums: check if constructor has parameters
+                                    // Simple constructors (no params) → :atom
+                                    // Parameterized constructors → {:atom}
+                                    
+                                    // Check if the enum constructor has parameters
+                                    var hasParameters = switch(ef.type) {
+                                        case TFun(args, _): args.length > 0;
+                                        default: false;
+                                    };
+                                    
+                                    var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
+                                    
+                                    if (hasParameters) {
+                                        // Parameterized constructor - generate tuple
+                                        // RGB(r, g, b) → {:rgb}  (parameters come later)
+                                        ETuple([makeAST(EAtom(atomName))]);
+                                    } else {
+                                        // Simple constructor - generate plain atom
+                                        // Red → :red
+                                        // None → :none
+                                        EAtom(atomName);
+                                    }
+                                }
+                            default:
+                                null;  // Other cases will fall through to original implementation
+                        }
+                    }
+                } else {
+                    // Complex cases (ExUnit test context) - keep original implementation
+                    switch(fa) {
                     case FEnum(enumType, ef):
-                        // Enum constructor reference (no arguments)
-                        // Check if this enum is marked as @:elixirIdiomatic
+                        // This shouldn't happen since enum cases are simple, but keep as fallback
                         var enumT = enumType.get();
                         if (enumT.meta.has(":elixirIdiomatic")) {
-                            // For idiomatic enums, generate atoms instead of tuples
-                            // OneForOne → :one_for_one
                             var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
                             EAtom(atomName);
                         } else {
-                            // Regular enums: check if constructor has parameters
-                            // Simple constructors (no params) → :atom
-                            // Parameterized constructors → {:atom}
-                            
-                            // Check if the enum constructor has parameters
                             var hasParameters = switch(ef.type) {
                                 case TFun(args, _): args.length > 0;
                                 default: false;
                             };
-                            
                             var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(ef.name);
-                            
                             if (hasParameters) {
-                                // Parameterized constructor - generate tuple
-                                // RGB(r, g, b) → {:rgb}  (parameters come later)
                                 ETuple([makeAST(EAtom(atomName))]);
                             } else {
-                                // Simple constructor - generate plain atom
-                                // Red → :red
-                                // None → :none
                                 EAtom(atomName);
                             }
                         }
@@ -2256,6 +2300,7 @@ class ElixirASTBuilder {
                                 EField(target, fieldName);
                             }
                         }
+                    }  // Close switch(fa) for complex cases
                 }
                 
             // ================================================================
