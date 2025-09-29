@@ -1922,62 +1922,13 @@ class ElixirASTBuilder {
             // Function Calls
             // ================================================================
             case TCall(e, el):
-                // TODO: Delegate to CallExprBuilder once compilation issues fixed
-                // CallExprBuilder.buildCall(e, el, currentContext, expr -> buildFromTypedExpr(expr)).def;
-                #if debug_function_reference
-                #if debug_ast_builder
-                trace('[FunctionRef] Processing TCall with ${el.length} args');
-                #end
-                for (i in 0...el.length) {
-                    switch(el[i].expr) {
-                        case TField(_, FStatic(classRef, cf)):
-                            #if debug_ast_builder
-                            trace('[FunctionRef] Arg $i is static field: ${classRef.get().name}.${cf.get().name}');
-                            #end
-                        default:
-                    }
-                }
-                #end
+                // Delegated to CallExprBuilder for modularization
+                CallExprBuilder.buildCall(e, el, currentContext);
                 
-                // Early detection flag for Phoenix.Presence special handling
-                var presenceHandled = false;
-                
-                // Check if this is an enum constructor call first
-                if (e != null && PatternDetector.isEnumConstructor(e)) {
-                    // ONLY BUILD - NO TRANSFORMATION!
-                    var tag = switch(e.expr) {
-                        case TField(_, FEnum(_, ef)): ef.name;
-                        case TField(_, FStatic(_, cf)): {
-                            var methodName = cf.get().name;
-                            methodName.charAt(0).toUpperCase() + methodName.substr(1);
-                        }
-                        default: "ModuleRef";
-                    };
-                    
-                    // For idiomatic enums, convert constructor names to snake_case
-                    // This ensures Result.Ok becomes :ok and Result.Error becomes :error
-                    if (hasIdiomaticMetadata(e)) {
-                        tag = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
-                        
-                        // TODO: Add special handling for Option<T> to map Some→ok and None→error
-                        // Currently just lowercases to :some/:none which isn't fully idiomatic.
-                        // Should check if the enum type is haxe.ds.Option and apply mapping:
-                        // if (isOptionType(e)) {
-                        //     tag = switch(tag) {
-                        //         case "some": "ok";
-                        //         case "none": "error";
-                        //         case _: tag;
-                        //     }
-                        // }
-                    }
-                    
-                    // Build arguments, checking for inline expansions
-                    var needsExtraction = false;
-                    var extractedAssignments: Array<ElixirAST> = [];
-                    var processedArgs: Array<ElixirAST> = [];
-                    
-                    for (i in 0...el.length) {
-                        var builtArg = buildFromTypedExpr(el[i], currentContext);
+            // ================================================================
+            // Field Access
+            // ================================================================
+            case TField(e, fa):
                         
                         // CRITICAL FIX: Check if the built argument is an inline expansion block
                         // This happens when optional parameters like substr(pos, ?len) are inlined
