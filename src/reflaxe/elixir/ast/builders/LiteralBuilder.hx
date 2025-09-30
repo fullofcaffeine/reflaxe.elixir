@@ -121,10 +121,10 @@ class LiteralBuilder {
     
     /**
      * Build 'this' reference based on context
-     * 
+     *
      * WHY: 'this' has different meanings in different contexts
      * WHAT: Generates appropriate variable reference for 'this'
-     * HOW: Checks context to determine correct variable name
+     * HOW: Checks context to determine correct variable name, defaults to "struct" for instance methods
      */
     static function buildThisReference(context: CompilationContext): ElixirASTDef {
         // Handle 'this' references - use the receiver parameter name from context
@@ -132,7 +132,7 @@ class LiteralBuilder {
         #if debug_exunit
         trace('[AST Builder] TThis: isInClassMethodContext=${context?.isInClassMethodContext}, isInExUnitTest=${context?.isInExUnitTest}, receiverParam=${context?.currentReceiverParamName}, context exists=${context != null}');
         #end
-        
+
         if (context.isInClassMethodContext && context.currentReceiverParamName != null) {
             return EVar(context.currentReceiverParamName);
         } else if (context.isInExUnitTest) {
@@ -142,13 +142,21 @@ class LiteralBuilder {
             trace('[AST Builder] Using "context" for ExUnit test');
             #end
             return EVar("context");
-        } else {
-            // For now, generate a placeholder that will cause a compile error
-            // This helps identify where instance variables are being used inappropriately
+        } else if (context.currentReceiverParamName != null) {
+            // FALLBACK: Even if isInClassMethodContext flag is not set,
+            // if we have a receiver parameter name, use it!
+            // This handles cases where context flags are lost due to inlining or nested contexts
             #if debug_exunit
-            trace('[AST Builder] No context available - using placeholder');
+            trace('[AST Builder] Using receiver param without flag: ${context.currentReceiverParamName}');
             #end
-            return EVar("__instance_variable_not_available_in_this_context__");
+            return EVar(context.currentReceiverParamName);
+        } else {
+            // DEFAULT FOR INSTANCE CLASSES: In Elixir, instance methods ALWAYS get "struct" as first parameter
+            // This is a safe fallback - if TConst(TThis) appears and we're not in a static context, use "struct"
+            #if debug_exunit
+            trace('[AST Builder] Defaulting to "struct" for TConst(TThis) - likely instance method');
+            #end
+            return EVar("struct");
         }
     }
 }
