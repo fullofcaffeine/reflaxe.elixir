@@ -660,12 +660,27 @@ class ElixirCompiler extends GenericCompiler<
             case TCall(e, args):
                 // Use Reflaxe's TargetCodeInjection system like C# compiler does
                 if (options.targetCodeInjectionName != null) {
+                    #if debug_injection
+                    trace('[ElixirCompiler] Checking injection for: ${options.targetCodeInjectionName}');
+                    trace('[ElixirCompiler] Expression type: ${expr.expr}');
+                    trace('[ElixirCompiler] Call target: ${e.expr}');
+                    #end
+
                     final result = TargetCodeInjection.checkTargetCodeInjectionGeneric(
                         options.targetCodeInjectionName,
                         expr,
                         this
                     );
-                    
+
+                    #if debug_injection
+                    if (result == null) {
+                        trace('[ElixirCompiler] ❌ checkTargetCodeInjectionGeneric returned NULL');
+                        trace('[ElixirCompiler] Trying manual TField detection...');
+                    } else {
+                        trace('[ElixirCompiler] ✓ checkTargetCodeInjectionGeneric returned result with ${result.length} entries');
+                    }
+                    #end
+
                     if (result != null) {
                         // Process the injection result
                         var finalCode = "";
@@ -679,16 +694,77 @@ class ElixirCompiler extends GenericCompiler<
                                     finalCode += reflaxe.elixir.ast.ElixirASTPrinter.printAST(ast);
                             }
                         }
-                        
+
+                        #if debug_injection
+                        trace('[ElixirCompiler] Generated injection code: ${finalCode.substr(0, 100)}...');
+                        #end
+
                         // Return as raw Elixir code
                         return reflaxe.elixir.ast.ElixirAST.makeAST(
                             reflaxe.elixir.ast.ElixirASTDef.ERaw(finalCode)
                         );
                     }
+
+                    // WORKAROUND: Reflaxe's checkTargetCodeInjectionGeneric only detects TIdent,
+                    // but Haxe sometimes types untyped __elixir__() as TField or other patterns.
+                    // Manually check for __elixir__ in TField, TLocal, etc.
+                    var isInjectionCall = switch(e.expr) {
+                        case TIdent(id): id == options.targetCodeInjectionName;
+                        case TField(_, fa):
+                            switch(fa) {
+                                case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                                    cf.get().name == options.targetCodeInjectionName;
+                                case FEnum(_, ef):
+                                    ef.name == options.targetCodeInjectionName;
+                                case FDynamic(s):
+                                    s == options.targetCodeInjectionName;
+                            }
+                        case TLocal(v): v.name == options.targetCodeInjectionName;
+                        case _: false;
+                    };
+
+                    #if debug_injection
+                    if (isInjectionCall) {
+                        trace('[ElixirCompiler] ✓ Manual detection: Found ${options.targetCodeInjectionName} call');
+                    }
+                    #end
+
+                    if (isInjectionCall && args.length > 0) {
+                        // Manual injection processing (same as Reflaxe's algorithm)
+                        final injectionString: String = switch(args[0].expr) {
+                            case TConst(TString(s)): s;
+                            case _: "";
+                        };
+
+                        if (injectionString != "") {
+                            // Process parameter substitution
+                            var finalCode = injectionString;
+
+                            // Replace {N} placeholders with compiled arguments
+                            finalCode = ~/{(\d+)}/g.map(finalCode, function(ereg) {
+                                final num = Std.parseInt(ereg.matched(1));
+                                if (num != null && num + 1 < args.length) {
+                                    var argAst = compileExpression(args[num + 1]);
+                                    if (argAst != null) {
+                                        return reflaxe.elixir.ast.ElixirASTPrinter.printAST(argAst);
+                                    }
+                                }
+                                return ereg.matched(0);
+                            });
+
+                            #if debug_injection
+                            trace('[ElixirCompiler] Manual injection generated: ${finalCode.substr(0, 100)}...');
+                            #end
+
+                            return reflaxe.elixir.ast.ElixirAST.makeAST(
+                                reflaxe.elixir.ast.ElixirASTDef.ERaw(finalCode)
+                            );
+                        }
+                    }
                 }
             case _:
         }
-        
+
         // Not an injection, use normal compilation
         return super.compileExpression(expr, topLevel);
     }

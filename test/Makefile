@@ -40,7 +40,7 @@ TEST_TARGETS := $(shell echo "$(TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|
 # Default target runs all tests with default parallelism
 .PHONY: all
 all:
-	@rm -f test-results.tmp
+	@rm -f test-results*.tmp
 	@echo "Running all tests (use -j N to control parallelism)..."
 	# Respect jobserver: do not force -j here; top-level -j will propagate
 	@$(MAKE) -f $(MAKEFILE_LIST) summary
@@ -50,17 +50,17 @@ all:
 summary: $(TEST_TARGETS)
 	@echo ""
 	@echo "========================================"
-	@passed=$$(grep -c "✅" test-results.tmp 2>/dev/null) || passed=0; \
-	failed=$$(grep -c "❌" test-results.tmp 2>/dev/null) || failed=0; \
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
 	total=$$((passed + failed)); \
 	echo "Test Results $(PIPELINE_MODE): $$passed/$$total passed"; \
 	if [ $$failed -gt 0 ]; then \
 		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
-		grep "❌" test-results.tmp | sed 's/^/  /'; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
 	else \
 		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
 	fi; \
-	rm -f test-results.tmp
+	rm -f test-results*.tmp
 
 # Pattern rule for running individual tests
 # Converts double underscores back to slashes for nested directories
@@ -69,7 +69,7 @@ test-%:
 	@testname=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ ! -f $$testdir/compile.hxml ]; then \
-		echo "❌ $$testname - Test directory not found" | tee -a test-results.tmp; \
+		echo "❌ $$testname - Test directory not found" | tee -a test-results-$$$$.tmp; \
 		exit 1; \
 	fi; \
 	echo "Running $$testname..."; \
@@ -79,11 +79,11 @@ test-%:
 		if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" 2>&1 | tail -n 1 > /dev/null; then \
 			end=$$(date +%s); \
 			duration=$$((end - start)); \
-			echo "✅ $$testname (special handling) ($${duration}s)" | tee -a test-results.tmp; \
+			echo "✅ $$testname (special handling) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		else \
 			end=$$(date +%s); \
 			duration=$$((end - start)); \
-			echo "❌ $$testname - Compilation failed (special handling) ($${duration}s)" | tee -a test-results.tmp; \
+			echo "❌ $$testname - Compilation failed (special handling) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		fi; \
 	elif timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 		end=$$(date +%s); \
@@ -98,23 +98,23 @@ test-%:
 				fi; \
 			fi; \
 			if [ "$$syntax_valid" = false ]; then \
-				echo "❌ $$testname - Invalid Elixir syntax ($${duration}s)" | tee -a test-results.tmp; \
+				echo "❌ $$testname - Invalid Elixir syntax ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 			elif diff -r --exclude="_GeneratedFiles.json" --exclude="erl_crash.dump" --exclude="bootstrap_*.ex" --exclude="*.exs.ex" $$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
-				echo "✅ $$testname ($${duration}s)" | tee -a test-results.tmp; \
+				echo "✅ $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 			else \
-				echo "❌ $$testname - Output mismatch (syntax OK) ($${duration}s)" | tee -a test-results.tmp; \
+				echo "❌ $$testname - Output mismatch (syntax OK) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 			fi; \
 		else \
-			echo "✅ $$testname ($${duration}s)" | tee -a test-results.tmp; \
+			echo "✅ $$testname ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		fi; \
 	else \
 		code=$$?; \
 		end=$$(date +%s); \
 		duration=$$((end - start)); \
 		if [ $$code -eq 124 ]; then \
-			echo "❌ $$testname - Timeout after $(TIMEOUT) ($${duration}s)" | tee -a test-results.tmp; \
+			echo "❌ $$testname - Timeout after $(TIMEOUT) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		else \
-			echo "❌ $$testname - Compilation failed ($${duration}s)" | tee -a test-results.tmp; \
+			echo "❌ $$testname - Compilation failed ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		fi; \
 	fi
 
@@ -240,7 +240,7 @@ test-with-validation: all validate-elixir
 # Clean target
 .PHONY: clean
 clean:
-	@rm -f test-results.tmp
+	@rm -f test-results*.tmp
 	@rm -f elixir_validation.log
 	@find $(TEST_DIR) -name $(OUTPUT_DIR) -type d -exec rm -rf {} + 2>/dev/null || true
 
@@ -280,7 +280,7 @@ runtime: all
 .PHONY: test-with-runtime
 test-with-runtime:
 	@echo "Running full test suite with runtime execution validation..."
-	@rm -f test-results.tmp runtime-results.tmp
+	@rm -f test-results*.tmp runtime-results.tmp
 	@echo "========================================" 
 	@echo "Phase 1: Compilation and Output Validation"
 	@echo "========================================"
@@ -398,8 +398,8 @@ test-pattern:
 # Run only failed tests from last run
 .PHONY: test-failed
 test-failed:
-	@if [ -f test-results.tmp ]; then \
-		failed=$$(grep "❌" test-results.tmp | sed 's/❌ //' | sed 's/ -.*//' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' '); \
+	@if ls test-results*.tmp >/dev/null 2>&1; then \
+		failed=$$(cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/❌ //' | sed 's/ -.*//' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' '); \
 		if [ -n "$$failed" ]; then \
 			echo "Re-running failed tests..."; \
 			$(MAKE) -f $(MAKEFILE_LIST) $$failed; \
