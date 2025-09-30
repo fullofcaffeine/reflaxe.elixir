@@ -44,6 +44,11 @@ class ClauseContext {
     // Maps enum parameter index to {finalName: String, isUsed: Bool}
     public var enumBindingPlan: Map<Int, {finalName: String, isUsed: Bool}> = new Map();
 
+    // CRITICAL: Store enum type for TEnumIndex optimization recovery
+    // When Haxe optimizes enum switches to integer indices, we need the original enum type
+    // to map indices back to constructor names and parameters
+    public var enumType: Null<haxe.macro.Type.EnumType> = null;
+
     // Synthetic bindings for variables that only exist in Elixir
     public var syntheticBindings: Array<{name: String, init: ElixirAST}> = [];
 

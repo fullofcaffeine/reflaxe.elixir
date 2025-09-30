@@ -71,38 +71,73 @@ class SwitchBuilder {
      * @return ElixirASTDef for the case expression
      */
     public static function build(e: TypedExpr, cases: Array<{values:Array<TypedExpr>, expr:TypedExpr}>, edef: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
-        // Always trace to debug the issue
-        trace('[SwitchBuilder] Building switch expression');
-        trace('[SwitchBuilder]   Target expression type: ${Type.enumConstructor(e.expr)}');
-        trace('[SwitchBuilder]   Switch has ${cases.length} cases');
-        trace('[SwitchBuilder]   Has default: ${edef != null}');
-        
-        // Track switch target for infrastructure variable management
-        var targetVarName = extractTargetVarName(e);
-        if (targetVarName != null && isInfrastructureVar(targetVarName)) {
-            trace('[SwitchBuilder] Switch target is infrastructure variable: $targetVarName');
+
+        // CRITICAL: Detect TEnumIndex optimization and recover enum type
+        // This is the KEY to eliminating integer-based switch cases!
+        var enumType: Null<EnumType> = null;
+        var isEnumIndexSwitch = false;
+        var actualSwitchExpr = e;
+
+        // Look inside TParenthesis and TMeta wrappers to find actual expression
+        var innerExpr = e;
+        switch(e.expr) {
+            case TParenthesis(innerE):
+                innerExpr = innerE;
+                // Check for TMeta inside
+                switch(innerExpr.expr) {
+                    case TMeta(_, metaE):
+                        innerExpr = metaE;
+                    default:
+                }
+            default:
         }
-        
-        // Build the switch target expression
+
+        switch(innerExpr.expr) {
+            case TEnumIndex(enumExpr):
+                // Haxe optimizer converted enum pattern matching to integer index comparison
+
+                isEnumIndexSwitch = true;
+                actualSwitchExpr = enumExpr;  // Switch on actual enum value, not index
+
+                // Extract enum type from the expression
+                enumType = getEnumTypeFromExpression(enumExpr);
+                if (enumType != null) {
+                } else {
+                }
+            default:
+
+                // ALTERNATIVE: Check if integer case patterns with enum target type
+                enumType = getEnumTypeFromExpression(innerExpr);
+                if (enumType != null) {
+                    isEnumIndexSwitch = true;
+                    actualSwitchExpr = innerExpr;
+                }
+        }
+
+        // Track switch target for infrastructure variable management
+        var targetVarName = extractTargetVarName(actualSwitchExpr);
+        if (targetVarName != null && isInfrastructureVar(targetVarName)) {
+        }
+
+        // Build the switch target expression (use actual enum, not index)
         var targetAST = if (context.compiler != null) {
-            trace('[SwitchBuilder] Compiler is available, compiling target expression');
-            var result = context.compiler.compileExpressionImpl(e, false);
-            trace('[SwitchBuilder] Target AST compiled: ${result != null}');
+            var result = context.compiler.compileExpressionImpl(actualSwitchExpr, false);
             result;
         } else {
-            trace('[SwitchBuilder] ERROR: context.compiler is null, cannot proceed');
             return null;  // Can't proceed without compiler
         }
-        
+
         if (targetAST == null) {
-            #if debug_ast_builder
-            trace('[SwitchBuilder] Failed to build switch target expression');
-            #end
             return null;
         }
-        
+
         // Create clause context for pattern variable scoping
         var clauseContext = new ClauseContext();
+
+        // Store enum type for use in pattern building
+        if (isEnumIndexSwitch && enumType != null) {
+            clauseContext.enumType = enumType;
+        }
         
         // Store the old context and set new one
         var oldClauseContext = context.currentClauseContext;
@@ -200,10 +235,10 @@ class SwitchBuilder {
     
     /**
      * Build pattern from case value expression
-     * 
+     *
      * WHY: Patterns need to match Elixir's pattern matching semantics
-     * WHAT: Converts Haxe case values to Elixir patterns
-     * HOW: Analyzes value type, generates appropriate pattern
+     * WHAT: Converts Haxe case values to Elixir patterns, handling TEnumIndex optimization
+     * HOW: Analyzes value type, generates appropriate pattern, maps integers to enum constructors
      */
     static function buildPattern(value: TypedExpr, targetVarName: String, context: CompilationContext): Null<EPattern> {
         trace('[SwitchBuilder] Building pattern for: ${Type.enumConstructor(value.expr)}');
@@ -212,8 +247,24 @@ class SwitchBuilder {
                 // Constant patterns
                 trace('[SwitchBuilder]   Found constant pattern');
                 switch(c) {
-                    case TInt(i): 
+                    case TInt(i):
                         trace('[SwitchBuilder]     Integer constant: $i');
+
+                        // CRITICAL: Check if this is a TEnumIndex case
+                        if (context.currentClauseContext != null && context.currentClauseContext.enumType != null) {
+                            var enumType = context.currentClauseContext.enumType;
+                            trace('[SwitchBuilder]     *** Mapping integer $i to enum constructor ***');
+
+                            var constructor = getEnumConstructorByIndex(enumType, i);
+                            if (constructor != null) {
+                                trace('[SwitchBuilder]     *** Found constructor: ${constructor.name} ***');
+                                return generateIdiomaticEnumPattern(constructor, context);
+                            } else {
+                                trace('[SwitchBuilder]     WARNING: No constructor found for index $i');
+                            }
+                        }
+
+                        // Fallback: regular integer pattern
                         return PLiteral(makeAST(EInteger(i)));
                     case TFloat(f): return PLiteral(makeAST(EFloat(Std.parseFloat(Std.string(f)))));
                     case TString(s): return PLiteral(makeAST(EString(s)));
@@ -222,7 +273,7 @@ class SwitchBuilder {
                     case TNull: return PLiteral(makeAST(ENil));
                     default: return null;
                 }
-                
+
             case TCall(e, args):
                 // Enum constructor patterns
                 trace('[SwitchBuilder]   Found TCall, checking if enum constructor');
@@ -232,12 +283,12 @@ class SwitchBuilder {
                 }
                 trace('[SwitchBuilder]     Not an enum constructor');
                 return null;
-                
+
             case TLocal(v):
                 // Variable pattern (binds the value)
                 var varName = VariableAnalyzer.toElixirVarName(v.name);
                 return PVar(varName);
-                
+
             default:
                 #if debug_ast_builder
                 trace('[SwitchBuilder] Unhandled pattern type: ${Type.enumConstructor(value.expr)}');
@@ -245,40 +296,124 @@ class SwitchBuilder {
                 return null;
         }
     }
+
+    /**
+     * Generate idiomatic Elixir pattern for enum constructor
+     *
+     * WHY: Convert recovered enum constructors to idiomatic {:atom, params} patterns
+     * WHAT: Creates tuple patterns with actual parameter names
+     * HOW: Extracts parameter names from EnumField.type
+     */
+    static function generateIdiomaticEnumPattern(ef: EnumField, context: CompilationContext): EPattern {
+        var atomName = NameUtils.toSnakeCase(ef.name);
+
+        // Extract parameter names from EnumField.type
+        var parameterNames: Array<String> = [];
+        switch(ef.type) {
+            case TFun(args, _):
+                for (arg in args) {
+                    parameterNames.push(arg.name);
+                }
+            default:
+                // No parameters
+        }
+
+        if (parameterNames.length == 0) {
+            // Simple atom pattern: :none
+            trace('[SwitchBuilder]     Generated pattern: {:${atomName}}');
+            return PLiteral(makeAST(EAtom(atomName)));
+        } else {
+            // Tuple pattern: {:some, value}
+            var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
+
+            for (i in 0...parameterNames.length) {
+                var paramName = VariableAnalyzer.toElixirVarName(parameterNames[i]);
+                trace('[SwitchBuilder]     Parameter $i: ${paramName}');
+                patterns.push(PVar(paramName));
+            }
+
+            trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${parameterNames.join(", ")}}');
+            return PTuple(patterns);
+        }
+    }
     
     /**
      * Build enum constructor pattern
-     * 
+     *
      * WHY: Enum patterns need special handling for parameter extraction
-     * WHAT: Creates tuple patterns for enum constructors
-     * HOW: Generates {:constructor, param1, param2, ...} patterns
+     * WHAT: Creates tuple patterns for enum constructors with ACTUAL parameter names
+     * HOW: Extracts parameter names from EnumField.type (TFun args) instead of using Haxe's generated "g" variables
+     *
+     * CRITICAL FIX: This eliminates generated "g" variables by using the actual parameter
+     * names defined in the enum constructor (e.g., "value" for Some(value: T))
      */
     static function buildEnumPattern(constructorExpr: TypedExpr, args: Array<TypedExpr>, context: CompilationContext): Null<EPattern> {
-        // Extract constructor name
+        // Extract constructor name and EnumField
+        var ef: EnumField = null;
         var constructorName = switch(constructorExpr.expr) {
-            case TField(_, FEnum(_, ef)): ef.name;
+            case TField(_, FEnum(_, enumField)):
+                ef = enumField;
+                enumField.name;
             default: return null;
         };
-        
+
         // Convert to snake_case atom
         var atomName = NameUtils.toSnakeCase(constructorName);
-        
+
+        // CRITICAL: Extract actual parameter names from EnumField.type
+        // This is the KEY to eliminating "g" variables!
+        var parameterNames: Array<String> = [];
+        if (ef != null) {
+            switch(ef.type) {
+                case TFun(tfunArgs, _):
+                    // Extract actual parameter names from function arguments
+                    for (arg in tfunArgs) {
+                        parameterNames.push(arg.name);
+                    }
+
+                    #if debug_ast_builder
+                    trace('[SwitchBuilder] Extracted parameter names from ${ef.name}: ${parameterNames}');
+                    #end
+                default:
+                    // No parameters or non-function type
+                    #if debug_ast_builder
+                    trace('[SwitchBuilder] EnumField ${ef.name} has no function type, no parameters');
+                    #end
+            }
+        }
+
         // Build parameter patterns - first element is the atom
         var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
-        
-        for (arg in args) {
-            // For now, create variable patterns for parameters
-            // TODO: Handle complex nested patterns
+
+        // Use actual parameter names from EnumField instead of Haxe's generated names
+        for (i in 0...args.length) {
+            var arg = args[i];
+
+            // Get the actual parameter name from EnumField if available
+            var actualParamName = i < parameterNames.length ? parameterNames[i] : null;
+
             switch(arg.expr) {
                 case TLocal(v):
-                    var varName = VariableAnalyzer.toElixirVarName(v.name);
+                    // Use actual parameter name instead of Haxe's generated "g" variable
+                    var varName = if (actualParamName != null) {
+                        // Convert to Elixir naming convention
+                        VariableAnalyzer.toElixirVarName(actualParamName);
+                    } else {
+                        // Fallback to Haxe's name (for compatibility)
+                        VariableAnalyzer.toElixirVarName(v.name);
+                    };
+
+                    #if debug_ast_builder
+                    trace('[SwitchBuilder] Parameter $i: Haxe=${v.name}, Actual=${actualParamName}, Using=${varName}');
+                    #end
+
                     patterns.push(PVar(varName));
                 default:
                     // Use underscore for non-variable patterns
                     patterns.push(PWildcard);
             }
         }
-        
+
         // Return tuple pattern for enum constructor
         return PTuple(patterns);
     }
@@ -299,8 +434,48 @@ class SwitchBuilder {
     }
     
     /**
+     * Extract enum type from a typed expression
+     *
+     * WHY: Need to recover enum type info after Haxe's TEnumIndex optimization
+     * WHAT: Extracts EnumType from expression's type annotation
+     * HOW: Pattern matches on Type structure
+     */
+    static function getEnumTypeFromExpression(expr: TypedExpr): Null<EnumType> {
+        return switch(expr.t) {
+            case TEnum(ref, _):
+                ref.get();
+            case TAbstract(ref, _):
+                // Check if abstract wraps an enum
+                var abs = ref.get();
+                switch(abs.type) {
+                    case TEnum(enumRef, _): enumRef.get();
+                    default: null;
+                }
+            default:
+                null;
+        };
+    }
+
+    /**
+     * Get enum constructor by index
+     *
+     * WHY: Map integer indices back to enum constructors
+     * WHAT: Retrieves EnumField for a given index
+     * HOW: Uses constructor's index field
+     */
+    static function getEnumConstructorByIndex(enumType: EnumType, index: Int): Null<EnumField> {
+        for (name in enumType.constructs.keys()) {
+            var constructor = enumType.constructs.get(name);
+            if (constructor.index == index) {
+                return constructor;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Check if variable is an infrastructure variable
-     * 
+     *
      * WHY: Haxe generates _g, g, g1 etc. for desugared expressions
      * WHAT: Identifies compiler-generated temporary variables
      * HOW: Checks naming patterns
