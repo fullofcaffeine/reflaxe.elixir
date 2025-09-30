@@ -2846,6 +2846,27 @@ class ElixirASTBuilder {
                 // Fallback to legacy implementation
                 EThrow(buildFromTypedExpr(e, currentContext));
                 
+            case TMeta(_, e):
+                // Metadata is compile-time only, transparent at runtime
+                // Just process the inner expression
+                convertExpression(e);
+
+            case TParenthesis(e):
+                // Parentheses are for grouping, just process inner expression
+                // No EParens node in ElixirAST - Elixir handles precedence naturally
+                convertExpression(e);
+
+            case TCast(e, _):
+                // Elixir has no explicit casts - uses pattern matching instead
+                // Just process the expression, ignoring the module type hint
+                convertExpression(e);
+
+            case TTypeExpr(m):
+                // Type expressions become module references (atoms)
+                // Reuse existing moduleTypeToString utility function
+                var moduleName = moduleTypeToString(m);
+                EAtom(moduleName);
+
             case TIdent(s):
                 // Identifier reference
                 EVar(VariableAnalyzer.toElixirVarName(s));
