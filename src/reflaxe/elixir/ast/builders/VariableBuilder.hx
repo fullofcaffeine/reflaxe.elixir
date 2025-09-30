@@ -219,20 +219,29 @@ class VariableBuilder {
      * HOW: Checks usage and applies naming conventions
      */
     static function resolveDeclarationName(v: TVar, context: CompilationContext): String {
-        // Use static method from VariableAnalyzer
-        var varName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(v.name);
-        
+        // Convert variable name to snake_case
+        var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(v.name);
+
         // Check if the variable needs underscore prefix (unused)
-        if (context.variableUsageMap != null) {
+        // CRITICAL: Only prefix if we POSITIVELY KNOW it's unused
+        // Default assumption: variable IS used (don't prefix unless proven otherwise)
+        if (context.variableUsageMap != null && context.variableUsageMap.exists(v.id)) {
             var isUsed = context.variableUsageMap.get(v.id) == true;
             if (!isUsed && varName.length > 0 && varName.charAt(0) != "_") {
                 varName = "_" + varName;
+
+                // CRITICAL: Record that we added underscore prefix so references can match
+                if (context.underscorePrefixedVars == null) {
+                    context.underscorePrefixedVars = new Map<Int, Bool>();
+                }
+                context.underscorePrefixedVars.set(v.id, true);
+
                 #if debug_ast_builder
-                trace('[VarBuilder] Variable ${v.name} is unused, prefixing: $varName');
+                trace('[VarBuilder] Variable ${v.name} (id: ${v.id}) is unused, prefixing: $varName');
                 #end
             }
         }
-        
+
         return varName;
     }
     
@@ -295,7 +304,7 @@ class VariableBuilder {
     static function resolveVariableName(tvar: TVar, context: CompilationContext): String {
         var tvarId = tvar.id;
         var defaultName = tvar.name;
-        
+
         // Priority 1: Check pattern registry for enum pattern extraction
         if (context.patternVariableRegistry != null && context.patternVariableRegistry.exists(tvarId)) {
             var patternName = context.patternVariableRegistry.get(tvarId);
@@ -304,7 +313,7 @@ class VariableBuilder {
             #end
             return patternName;
         }
-        
+
         // Priority 2: Check clause context for case-local variables
         if (context.currentClauseContext != null) {
             var clauseMapping = context.currentClauseContext.lookupVariable(tvarId);
@@ -315,7 +324,7 @@ class VariableBuilder {
                 return clauseMapping;
             }
         }
-        
+
         // Priority 3: Check global variable mappings
         // TODO: Add variableMappings to context when available
         /*
@@ -327,7 +336,7 @@ class VariableBuilder {
             return mapping;
         }
         */
-        
+
         // Priority 4: Check for infrastructure variables
         if (isInfrastructureVariable(defaultName)) {
             var infraName = handleInfrastructureVariable(tvar, context);
@@ -335,7 +344,7 @@ class VariableBuilder {
                 return infraName;
             }
         }
-        
+
         // Priority 5: Check loop preservation
         // TODO: Add preservedLoopVariables to context when available
         /*
@@ -347,9 +356,22 @@ class VariableBuilder {
             return preserved;
         }
         */
-        
-        // Default: Use the variable's original name
-        return defaultName;
+
+        // Priority 6: Check if the declaration had underscore prefix
+        // CRITICAL: References must match the declaration name exactly
+        var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(defaultName);
+        if (context.underscorePrefixedVars != null && context.underscorePrefixedVars.exists(tvarId)) {
+            var hasUnderscorePrefix = context.underscorePrefixedVars.get(tvarId) == true;
+            if (hasUnderscorePrefix && varName.length > 0 && varName.charAt(0) != "_") {
+                varName = "_" + varName;
+                #if debug_ast_builder
+                trace('[VarBuilder] Variable reference ${tvar.name} (id: $tvarId) uses underscore: $varName');
+                #end
+            }
+        }
+
+        // Default: Use the converted variable name
+        return varName;
     }
     
     /**
