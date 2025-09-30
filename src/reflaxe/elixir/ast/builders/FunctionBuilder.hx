@@ -102,6 +102,9 @@ class FunctionBuilder {
             // Handle abstract "this" parameters
             if (processedParam.originalName == "this1") {
                 paramRenaming.set("this", processedParam.finalName);
+                // CRITICAL FIX: Set currentReceiverParamName so VariableBuilder can resolve "this" references
+                // Pattern reuse from existing infrastructure - VariableBuilder.hx:434 checks this field
+                context.currentReceiverParamName = processedParam.finalName;
             }
             
             isFirstParam = false;
@@ -116,6 +119,7 @@ class FunctionBuilder {
         
         // Restore original rename map and clean up
         context.tempVarRenameMap = oldTempVarRenameMap;
+        context.currentReceiverParamName = null; // Clear abstract "this" context after function
         for (arg in f.args) {
             context.functionParameterIds.remove(Std.string(arg.v.id));
         }

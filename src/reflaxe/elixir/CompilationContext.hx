@@ -330,6 +330,12 @@ class CompilationContext implements BuildContext {
         child.currentModule = this.currentModule;
         child.currentModuleHasPresence = this.currentModuleHasPresence;
 
+        // CRITICAL FIX: Copy method context flags for proper "this" resolution
+        // These flags determine how TConst(TThis) is compiled in function bodies
+        child.isInClassMethodContext = this.isInClassMethodContext;
+        child.currentReceiverParamName = this.currentReceiverParamName;
+        child.isInExUnitTest = this.isInExUnitTest;
+
         return child;
     }
 
