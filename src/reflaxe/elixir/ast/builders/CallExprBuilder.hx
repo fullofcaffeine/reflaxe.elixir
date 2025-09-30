@@ -51,14 +51,110 @@ class CallExprBuilder {
      */
     public static function buildCall(e: TypedExpr, args: Array<TypedExpr>, context: CompilationContext): ElixirASTDef {
         var buildExpression = context.getExpressionBuilder();
-        
+
         #if debug_ast_builder
         trace('[CallExpr] Processing TCall with ${args.length} args');
         if (e != null) {
             trace('[CallExpr] Call target: ${Type.enumConstructor(e.expr)}');
         }
         #end
-        
+
+        // CRITICAL: Check for __elixir__() injection FIRST, before any other processing
+        // This ensures code injection works regardless of other transformations
+        if (context.compiler.options.targetCodeInjectionName != null && e != null && args.length > 0) {
+            var isInjectionCall = switch(e.expr) {
+                case TIdent(id): id == context.compiler.options.targetCodeInjectionName;
+                case TField(_, fa):
+                    switch(fa) {
+                        case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf):
+                            cf.get().name == context.compiler.options.targetCodeInjectionName;
+                        case FEnum(_, ef):
+                            ef.name == context.compiler.options.targetCodeInjectionName;
+                        case FDynamic(s):
+                            s == context.compiler.options.targetCodeInjectionName;
+                    }
+                case TLocal(v): v.name == context.compiler.options.targetCodeInjectionName;
+                case _: false;
+            };
+
+            if (isInjectionCall) {
+                // Extract the injection string from first argument
+                final injectionString: String = switch(args[0].expr) {
+                    case TConst(TString(s)): s;
+                    case _: "";
+                };
+
+                if (injectionString != "") {
+                    #if debug_ast_builder
+                    trace('[CallExpr] ✓ Detected __elixir__() injection: ${injectionString.substr(0, 50)}...');
+                    #end
+
+                    // Process parameter substitution with proper string interpolation handling
+                    var finalCode = "";
+                    var insideString = false;
+                    var i = 0;
+
+                    // Process character by character to detect quote state
+                    while (i < injectionString.length) {
+                        var char = injectionString.charAt(i);
+
+                        // Track string state
+                        if (char == '"' && (i == 0 || injectionString.charAt(i-1) != '\\')) {
+                            insideString = !insideString;
+                            finalCode += char;
+                            i++;
+                            continue;
+                        }
+
+                        // Check for {N} placeholder
+                        if (char == '{' && i + 1 < injectionString.length) {
+                            var j = i + 1;
+                            var numStr = "";
+
+                            // Collect digits
+                            while (j < injectionString.length && injectionString.charAt(j) >= '0' && injectionString.charAt(j) <= '9') {
+                                numStr += injectionString.charAt(j);
+                                j++;
+                            }
+
+                            // Check if we found a valid placeholder like {0}, {1}, etc.
+                            if (numStr != "" && j < injectionString.length && injectionString.charAt(j) == '}') {
+                                final num = Std.parseInt(numStr);
+                                if (num != null && num + 1 < args.length) {
+                                    // Compile the argument
+                                    var argAst = buildExpression(args[num + 1]);
+                                    var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(argAst);
+
+                                    if (insideString) {
+                                        // Inside string: wrap in #{...} for interpolation
+                                        finalCode += '#{$argStr}';
+                                    } else {
+                                        // Outside string: direct substitution
+                                        finalCode += argStr;
+                                    }
+
+                                    // Skip past the placeholder
+                                    i = j + 1;
+                                    continue;
+                                }
+                            }
+                        }
+
+                        // Regular character - just append
+                        finalCode += char;
+                        i++;
+                    }
+
+                    #if debug_ast_builder
+                    trace('[CallExpr] Generated injection code: $finalCode');
+                    #end
+
+                    // Return raw Elixir code directly
+                    return ERaw(finalCode);
+                }
+            }
+        }
+
         // Check if this is an enum constructor call first
         if (e != null && PatternDetector.isEnumConstructor(e)) {
             return buildEnumConstructor(e, args, context);

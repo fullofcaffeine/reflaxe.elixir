@@ -684,19 +684,67 @@ class ElixirCompiler extends GenericCompiler<
                     if (result != null) {
                         // Process the injection result
                         var finalCode = "";
-                        for (entry in result) {
+                        var insideString = false;  // Track if we're currently inside a string literal
+
+                        #if debug_injection
+                        trace('[ElixirCompiler] Processing ${result.length} injection entries');
+                        #end
+
+                        for (i in 0...result.length) {
+                            var entry = result[i];
                             switch(entry) {
                                 case Left(code):
-                                    // Direct string code
+                                    // Direct string code - check for string delimiters
+                                    #if debug_injection
+                                    trace('[ElixirCompiler] Entry $i - Left: "$code"');
+                                    trace('[ElixirCompiler] insideString BEFORE: $insideString');
+                                    #end
+
                                     finalCode += code;
+
+                                    // Update insideString state by counting unescaped quotes
+                                    var j = 0;
+                                    while (j < code.length) {
+                                        if (code.charAt(j) == '"' && (j == 0 || code.charAt(j-1) != '\\')) {
+                                            insideString = !insideString;
+                                            #if debug_injection
+                                            trace('[ElixirCompiler] Quote at position $j, insideString now: $insideString');
+                                            #end
+                                        }
+                                        j++;
+                                    }
+
+                                    #if debug_injection
+                                    trace('[ElixirCompiler] insideString AFTER: $insideString');
+                                    #end
+
                                 case Right(ast):
                                     // Compiled AST - convert to string
-                                    finalCode += reflaxe.elixir.ast.ElixirASTPrinter.printAST(ast);
+                                    var astStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(ast);
+
+                                    #if debug_injection
+                                    trace('[ElixirCompiler] Entry $i - Right: AST → "$astStr"');
+                                    trace('[ElixirCompiler] insideString: $insideString');
+                                    #end
+
+                                    if (insideString) {
+                                        // Inside string literal: wrap in #{...} for interpolation
+                                        #if debug_injection
+                                        trace('[ElixirCompiler] WRAPPING in #{}');
+                                        #end
+                                        finalCode += '#{$astStr}';
+                                    } else {
+                                        // Outside string: direct substitution
+                                        #if debug_injection
+                                        trace('[ElixirCompiler] Direct substitution (not in string)');
+                                        #end
+                                        finalCode += astStr;
+                                    }
                             }
                         }
 
                         #if debug_injection
-                        trace('[ElixirCompiler] Generated injection code: ${finalCode.substr(0, 100)}...');
+                        trace('[ElixirCompiler] Final injection code: "$finalCode"');
                         #end
 
                         // Return as raw Elixir code
@@ -737,23 +785,74 @@ class ElixirCompiler extends GenericCompiler<
                         };
 
                         if (injectionString != "") {
-                            // Process parameter substitution
-                            var finalCode = injectionString;
+                            #if debug_injection
+                            trace('[ElixirCompiler] Manual injection processing: "${injectionString.substr(0, 50)}..."');
+                            trace('[ElixirCompiler] Number of parameter arguments: ${args.length - 1}');
+                            #end
 
-                            // Replace {N} placeholders with compiled arguments
-                            finalCode = ~/{(\d+)}/g.map(finalCode, function(ereg) {
-                                final num = Std.parseInt(ereg.matched(1));
-                                if (num != null && num + 1 < args.length) {
-                                    var argAst = compileExpression(args[num + 1]);
-                                    if (argAst != null) {
-                                        return reflaxe.elixir.ast.ElixirASTPrinter.printAST(argAst);
+                            // Build finalCode by processing character by character
+                            var finalCode = "";
+                            var insideString = false;
+                            var i = 0;
+
+                            while (i < injectionString.length) {
+                                var char = injectionString.charAt(i);
+
+                                // Track string state
+                                if (char == '"' && (i == 0 || injectionString.charAt(i-1) != '\\')) {
+                                    insideString = !insideString;
+                                    finalCode += char;
+                                    i++;
+                                    continue;
+                                }
+
+                                // Check for {N} placeholder
+                                if (char == '{' && i + 1 < injectionString.length) {
+                                    var j = i + 1;
+                                    var numStr = "";
+
+                                    // Collect digits
+                                    while (j < injectionString.length && injectionString.charAt(j) >= '0' && injectionString.charAt(j) <= '9') {
+                                        numStr += injectionString.charAt(j);
+                                        j++;
+                                    }
+
+                                    // Check if we found a valid placeholder like {0}, {1}, etc.
+                                    if (numStr != "" && j < injectionString.length && injectionString.charAt(j) == '}') {
+                                        final num = Std.parseInt(numStr);
+                                        if (num != null && num + 1 < args.length) {
+                                            // Compile the argument
+                                            var argAst = compileExpression(args[num + 1]);
+                                            if (argAst != null) {
+                                                var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(argAst);
+
+                                                #if debug_injection
+                                                trace('[ElixirCompiler] Substituting {$num} with "$argStr" (insideString: $insideString)');
+                                                #end
+
+                                                if (insideString) {
+                                                    // Inside string: wrap in #{...} for interpolation
+                                                    finalCode += '#{$argStr}';
+                                                } else {
+                                                    // Outside string: direct substitution
+                                                    finalCode += argStr;
+                                                }
+
+                                                // Skip past the placeholder
+                                                i = j + 1;
+                                                continue;
+                                            }
+                                        }
                                     }
                                 }
-                                return ereg.matched(0);
-                            });
+
+                                // Regular character - just append
+                                finalCode += char;
+                                i++;
+                            }
 
                             #if debug_injection
-                            trace('[ElixirCompiler] Manual injection generated: ${finalCode.substr(0, 100)}...');
+                            trace('[ElixirCompiler] Manual injection final code: "$finalCode"');
                             #end
 
                             return reflaxe.elixir.ast.ElixirAST.makeAST(

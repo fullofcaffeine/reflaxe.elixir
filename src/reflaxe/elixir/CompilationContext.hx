@@ -459,7 +459,7 @@ class CompilationContext implements BuildContext {
      */
     public function getModuleName(originalName: String): String {
         // Apply snake_case transformation
-        return toSnakeCase(originalName);
+        return reflaxe.elixir.ast.NameUtils.toSnakeCase(originalName);
     }
 
     /**
@@ -467,7 +467,7 @@ class CompilationContext implements BuildContext {
      */
     public function getFunctionName(originalName: String): String {
         // Apply snake_case transformation
-        return toSnakeCase(originalName);
+        return reflaxe.elixir.ast.NameUtils.toSnakeCase(originalName);
     }
 
     /**
@@ -565,21 +565,7 @@ class CompilationContext implements BuildContext {
         astContext.setFeatureFlag(flag, enabled);
     }
 
-    /**
-     * Helper function to convert to snake_case
-     */
-    private static function toSnakeCase(name: String): String {
-        var result = "";
-        for (i in 0...name.length) {
-            var char = name.charAt(i);
-            if (char == char.toUpperCase() && i > 0) {
-                result += "_" + char.toLowerCase();
-            } else {
-                result += char.toLowerCase();
-            }
-        }
-        return result;
-    }
+    // Removed duplicate toSnakeCase - use reflaxe.elixir.ast.NameUtils.toSnakeCase instead
 
     // ========================================================================
     // Debug Support

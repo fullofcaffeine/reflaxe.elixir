@@ -388,10 +388,10 @@ class HygieneTransforms {
      */
     static function traverseWithContext(node: ElixirAST, state: HygieneState, allBindings: Array<Binding>): Void {
         if (node == null) return;
-        
+
         // Get container ID from metadata
         var containerId = node.metadata != null ? Reflect.field(node.metadata, "astId") : 0;
-        
+
         switch(node.def) {
             case EDef(name, params, guards, body) | EDefp(name, params, guards, body):
                 // Enter function scope
@@ -468,6 +468,16 @@ class HygieneTransforms {
                     traverseWithContext(target, state, allBindings);
                 }
                 for (arg in args) {
+                    #if debug_hygiene
+                    // Debug: Check what type of argument we're traversing
+                    var argType = switch(arg.def) {
+                        case ERaw(_): "ERaw (STRING INTERPOLATION!)";
+                        case EString(_): "EString";
+                        case EVar(_): "EVar";
+                        default: Type.enumConstructor(arg.def);
+                    };
+                    trace('[XRay Hygiene] ECall arg type: $argType');
+                    #end
                     // Each argument needs to be properly traversed to mark variables as used
                     traverseWithContext(arg, state, allBindings);
                 }
@@ -501,7 +511,37 @@ class HygieneTransforms {
                 if (elseBranch != null) {
                     traverseWithContext(elseBranch, state, allBindings);
                 }
-                
+
+            case ERaw(code):
+                // Raw Elixir code from __elixir__() injection
+                // Parse string interpolations #{variable} to detect variable usage
+                #if debug_hygiene
+                trace('[XRay Hygiene] Traversing ERaw node with code: ${code.substr(0, 100)}...');
+                trace('[XRay Hygiene] Checking for #{...} patterns in code');
+                #end
+
+                // Use regex to find all #{variable_name} patterns (including camelCase)
+                var interpolationPattern = ~/\\#\\{([a-zA-Z_][a-zA-Z0-9_\.]*)\\}/g;
+                var pos = 0;
+                var matchCount = 0;
+                while (interpolationPattern.matchSub(code, pos)) {
+                    matchCount++;
+                    var varName = interpolationPattern.matched(1);
+                    #if debug_hygiene
+                    trace('[XRay Hygiene] MATCH #$matchCount - Found interpolated variable: $varName');
+                    #end
+
+                    // Mark variable as used by resolving it in expression context
+                    state.currentContext = Expr;
+                    resolveVariable(state, varName);
+
+                    pos = interpolationPattern.matchedPos().pos + interpolationPattern.matchedPos().len;
+                }
+
+                #if debug_hygiene
+                trace('[XRay Hygiene] Total matches found: $matchCount');
+                #end
+
             default:
                 // For other node types, traverse children if they exist
                 // This is a simplified catch-all

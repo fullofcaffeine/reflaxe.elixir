@@ -582,6 +582,36 @@ The genes integration transforms Reflaxe.Elixir into a **complete full-stack dev
 
 This is not just about convenience - it's about **eliminating entire categories of bugs** (API drift, type mismatches, validation inconsistencies) through compile-time guarantees across the full stack.
 
+## 📦 Vendor Modification Policy
+
+**⚠️ CRITICAL DIRECTIVE: Reflaxe source CAN be modified IF NEEDED, but as a LAST RESORT**
+
+You have permission to modify vendored dependencies (Reflaxe, genes) when necessary, but follow these guidelines:
+
+### When to Modify Vendor Source
+- ✅ **Bug fixes** that block functionality with no workaround
+- ✅ **Critical features** for Elixir idioms that can't be achieved via extension
+- ✅ **Integration problems** where vendor architecture doesn't fit Elixir's needs
+- ❌ **Avoid** when you can extend via inheritance or AST transformations
+- ❌ **Avoid** when you can work around with metadata flags
+
+### Documentation Requirements
+**MANDATORY** for every vendor modification:
+1. **File header comment** explaining the modification with WHY/WHAT/DATE
+2. **Inline comments** marking modification boundaries
+3. **Changelog entry** in `vendor/CHANGELOG.md`
+
+### The Decision Flow
+```
+Issue with vendor code → Can I fix in compiler? → YES → Fix in compiler
+                      ↓ NO
+                      Can I fix in AST pipeline? → YES → Fix in transformer
+                      ↓ NO
+                      Is this fundamental? → YES → Modify vendor (document WHY)
+```
+
+**See**: [`vendor/CLAUDE.md`](vendor/CLAUDE.md) - Complete vendor modification policy and guidelines
+
 ## 🚀 Essential Commands
 
 ### Development Workflow
