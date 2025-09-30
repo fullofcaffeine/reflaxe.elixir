@@ -1018,12 +1018,25 @@ class ElixirCompiler extends GenericCompiler<
      *
      * WHY: Reflaxe's GenericCompiler calls this to compile individual expressions.
      * This is the correct integration point for our AST pipeline.
+     * Function boundary detection enables persistent context for variable naming consistency.
      *
-     * WHAT: Builds AST for individual expressions
+     * WHAT: Builds AST for individual expressions, with function boundary detection
      *
-     * HOW: Delegates to ElixirASTBuilder for AST generation
+     * HOW: Detects TFunction boundaries and delegates to compileFunctionWithPersistentContext()
+     *      for function-scoped transformation contexts. Other expressions use standard flow.
      */
     public function compileExpressionImpl(expr: TypedExpr, topLevel: Bool): Null<reflaxe.elixir.ast.ElixirAST> {
+        // CRITICAL: Function boundary detection for persistent context
+        // WHY: Functions need persistent nameMapping across all statements in their body
+        // WHAT: TFunction indicates function definition with parameters and body
+        // HOW: Delegate to specialized method that maintains context across statements
+        switch(expr.expr) {
+            case TFunction(f):
+                return compileFunctionWithPersistentContext(expr, f, topLevel);
+            default:
+                // Standard compilation flow for non-function expressions
+        }
+
         // Create a fresh compilation context for this expression
         // This ensures complete isolation between compilation units during parallel execution
         var context = createCompilationContext();
@@ -1064,6 +1077,51 @@ class ElixirCompiler extends GenericCompiler<
         }
 
         trace('[AST Pipeline] Returning AST to caller');
+        return ast;
+    }
+
+    /**
+     * Compile function with persistent transformation context
+     *
+     * WHY: Variable renames must be consistent across all statements in a function body.
+     *      Previous approach created fresh context per expression, losing nameMapping.
+     *
+     * WHAT: Compiles function with single parent context shared across all body statements
+     *
+     * HOW:
+     * 1. Create function-scoped parent context
+     * 2. Process function body by preprocessing and analyzing usage
+     * 3. Build AST using the persistent context
+     * 4. Apply transformations with the same context
+     * 5. Return completed function AST
+     *
+     * @param expr The complete TFunction expression
+     * @param f The TFunc structure containing parameters and body
+     * @param topLevel Whether this is a top-level function
+     * @return ElixirAST node for the function
+     */
+    function compileFunctionWithPersistentContext(expr: TypedExpr, f: haxe.macro.Type.TFunc, topLevel: Bool): Null<reflaxe.elixir.ast.ElixirAST> {
+        // Create function-scoped parent context that persists across all statements
+        var functionContext = createCompilationContext();
+
+        // Preprocess the entire function expression
+        var preprocessedExpr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
+
+        // Analyze variable usage for the entire function
+        var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(preprocessedExpr);
+        functionContext.variableUsageMap = usageMap;
+
+        // Build AST using the function-scoped context
+        // The builder will process parameters and create the function structure
+        var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(preprocessedExpr, functionContext);
+
+        // Apply transformations with the persistent context
+        // This ensures nameMapping from parameters flows into body
+        if (ast != null) {
+            var transformedAst = reflaxe.elixir.ast.ElixirASTTransformer.transform(ast, functionContext);
+            ast = transformedAst;
+        }
+
         return ast;
     }
     

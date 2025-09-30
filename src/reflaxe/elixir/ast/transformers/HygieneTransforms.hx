@@ -348,21 +348,30 @@ class HygieneTransforms {
      *      1. Collect all bindings and track usage with scope awareness
      *      2. Rename unused bindings to underscore prefix using precise locators
      */
+    /**
+     * Usage analysis pass (stateless variant)
+     *
+     * WHY: Maintains backward compatibility for non-contextual transform() calls
+     * WHAT: Creates local nameMapping, does not integrate with compiler context
+     * HOW: Standalone analysis and renaming using internal state
+     *
+     * NOTE: This is the fallback variant. Prefer usageAnalysisPassWithContext when context available.
+     */
     public static function usageAnalysisPass(ast: ElixirAST): ElixirAST {
         #if debug_hygiene
-        trace('[XRay Hygiene] Starting enhanced usage analysis pass with scope tracking');
+        trace('[XRay Hygiene] Starting enhanced usage analysis pass with scope tracking (STATELESS)');
         #end
-        
+
         // Phase 0: Assign unique IDs to all AST nodes
         var astWithIds = assignAstIds(ast);
-        
+
         // Phase 1: Collect bindings and track usage
         var state = createInitialState();
         var allBindings: Array<Binding> = [];
-        
+
         // First pass: collect all bindings and mark usage
         collectBindingsAndUsage(astWithIds, state, allBindings);
-        
+
         #if debug_hygiene
         trace('[XRay Hygiene] Collected ${allBindings.length} bindings');
         var unusedCount = 0;
@@ -371,9 +380,64 @@ class HygieneTransforms {
         }
         trace('[XRay Hygiene] Found $unusedCount unused bindings to rename');
         #end
-        
-        // Phase 2: Apply renaming transformations using collected bindings
+
+        // Phase 2: Apply renaming transformations using collected bindings (local mapping)
         return renameUnusedBindings(astWithIds, allBindings);
+    }
+
+    /**
+     * Usage analysis pass (contextual variant)
+     *
+     * WHY: Enables consistent variable naming across compilation phases
+     * WHAT: Uses context.tempVarRenameMap instead of local nameMapping
+     * HOW: Registers renames in shared context, applies from authoritative source
+     *
+     * ARCHITECTURE:
+     * - Reads existing renames from context.tempVarRenameMap (builder phase decisions)
+     * - Adds new renames for unused variables discovered in this pass
+     * - Applies renames from the single source of truth (context)
+     * - Ensures declarations and references use consistent names
+     *
+     * BENEFITS:
+     * - Fixes variable naming consistency bugs (e.g., _changeset vs changeset)
+     * - Coordinates with builder phase variable decisions
+     * - Eliminates duplicate mapping systems
+     * - Single authoritative source for all variable renames
+     *
+     * @param ast The AST to analyze
+     * @param context Compilation context with shared tempVarRenameMap
+     * @return Transformed AST with consistent variable naming
+     */
+    public static function usageAnalysisPassWithContext(ast: ElixirAST, context: reflaxe.elixir.CompilationContext): ElixirAST {
+        #if debug_hygiene
+        trace('[XRay Hygiene] Starting enhanced usage analysis pass with scope tracking (CONTEXTUAL)');
+        trace('[XRay Hygiene] Context provided: ${context != null}');
+        if (context != null) {
+            trace('[XRay Hygiene] Existing renames in context: ${[for (k in context.tempVarRenameMap.keys()) k + " -> " + context.tempVarRenameMap.get(k)].join(", ")}');
+        }
+        #end
+
+        // Phase 0: Assign unique IDs to all AST nodes
+        var astWithIds = assignAstIds(ast);
+
+        // Phase 1: Collect bindings and track usage
+        var state = createInitialState();
+        var allBindings: Array<Binding> = [];
+
+        // First pass: collect all bindings and mark usage
+        collectBindingsAndUsage(astWithIds, state, allBindings);
+
+        #if debug_hygiene
+        trace('[XRay Hygiene] Collected ${allBindings.length} bindings');
+        var unusedCount = 0;
+        for (binding in allBindings) {
+            if (!binding.used) unusedCount++;
+        }
+        trace('[XRay Hygiene] Found $unusedCount unused bindings to rename');
+        #end
+
+        // Phase 2: Apply renaming transformations using context's shared mapping
+        return renameUnusedBindingsWithContext(astWithIds, allBindings, context);
     }
     
     /**
@@ -706,7 +770,137 @@ class HygieneTransforms {
             }
         });
     }
-    
+
+    /**
+     * Apply renaming to unused bindings using context's shared mapping
+     *
+     * WHY: Use single source of truth for variable renames across all phases
+     * WHAT: Registers renames in context.tempVarRenameMap, applies from that map
+     * HOW: Same algorithm as renameUnusedBindings but uses context instead of local map
+     *
+     * KEY DIFFERENCE:
+     * - Original: Creates local nameMapping = new Map()
+     * - This: Uses context.tempVarRenameMap
+     * - Result: Builder and transformer phases coordinate on variable names
+     */
+    static function renameUnusedBindingsWithContext(ast: ElixirAST, allBindings: Array<Binding>,
+                                                    context: reflaxe.elixir.CompilationContext): ElixirAST {
+        // Build index: Map<(containerId, context, slotIndex), Array<{path, oldName, newName}>>
+        var renameIndex = new Map<String, Array<{path: Array<Int>, oldName: String, newName: String}>>();
+
+        // USE CONTEXT'S SHARED NAME MAPPING instead of creating local one
+        // This is the KEY architectural fix
+        var nameMapping = context.tempVarRenameMap;
+
+        for (binding in allBindings) {
+            if (!binding.used && !binding.name.startsWith("_")) {
+                var key = '${binding.containerId}:${binding.context}:${binding.slotIndex}';
+                if (!renameIndex.exists(key)) {
+                    renameIndex.set(key, []);
+                }
+                renameIndex.get(key).push({
+                    path: binding.path,
+                    oldName: binding.name,
+                    newName: "_" + binding.name
+                });
+
+                // Register rename in SHARED context mapping (not local)
+                nameMapping.set(binding.name, "_" + binding.name);
+
+                #if debug_hygiene
+                trace('[XRay Hygiene Context] Registered rename in context: ${binding.name} -> _${binding.name}');
+                #end
+            }
+        }
+
+        #if debug_hygiene
+        trace('[XRay Hygiene Context] Built rename index with ${Lambda.count(renameIndex)} containers to process');
+        trace('[XRay Hygiene Context] Using context name mapping with ${Lambda.count(nameMapping)} entries');
+        for (oldName in nameMapping.keys()) {
+            trace('[XRay Hygiene Context]   $oldName -> ${nameMapping.get(oldName)}');
+        }
+        #end
+
+        // Apply renaming using the shared context mapping
+        return ElixirASTTransformer.transformNode(ast, function(node) {
+            if (node.metadata == null) return node;
+
+            var containerId = Reflect.field(node.metadata, "astId");
+            if (containerId == null) return node;
+
+            switch(node.def) {
+                case EDef(name, params, guards, body) | EDefp(name, params, guards, body):
+                    // Check if we have renames for this container's parameters
+                    var hasRenames = false;
+                    var newParams = [];
+
+                    for (i in 0...params.length) {
+                        var key = '$containerId:DefParam:$i';
+                        var renames = renameIndex.get(key);
+
+                        if (renames != null && renames.length > 0) {
+                            hasRenames = true;
+                            newParams.push(renamePatternWithLocators(params[i], renames, []));
+                        } else {
+                            newParams.push(params[i]);
+                        }
+                    }
+
+                    if (hasRenames) {
+                        var newDef = switch(node.def) {
+                            case EDef(n, _, g, b): EDef(n, newParams, g, b);
+                            case EDefp(n, _, g, b): EDefp(n, newParams, g, b);
+                            default: node.def;
+                        };
+                        return make(newDef, node.metadata);
+                    }
+                    return node;
+
+                case ECase(expr, clauses):
+                    // Handle case clause patterns
+                    var hasRenames = false;
+                    var newClauses = [];
+
+                    for (i in 0...clauses.length) {
+                        var key = '$containerId:CaseClause:$i';
+                        var renames = renameIndex.get(key);
+
+                        if (renames != null && renames.length > 0) {
+                            hasRenames = true;
+                            var newPattern = renamePatternWithLocators(clauses[i].pattern, renames, []);
+                            newClauses.push({
+                                pattern: newPattern,
+                                guard: clauses[i].guard,
+                                body: clauses[i].body
+                            });
+                        } else {
+                            newClauses.push(clauses[i]);
+                        }
+                    }
+
+                    if (hasRenames) {
+                        return make(ECase(expr, newClauses), node.metadata);
+                    }
+                    return node;
+
+                case EVar(name):
+                    // Rename variable references to match renamed bindings
+                    // Reading from SHARED context mapping ensures consistency
+                    if (nameMapping.exists(name)) {
+                        var newName = nameMapping.get(name);
+                        #if debug_hygiene
+                        trace('[XRay Hygiene Context] Renaming EVar "$name" to "$newName" (from context)');
+                        #end
+                        return make(EVar(newName), node.metadata);
+                    }
+                    return node;
+
+                default:
+                    return node;
+            }
+        });
+    }
+
     /**
      * Rename variables in a pattern using locators
      */

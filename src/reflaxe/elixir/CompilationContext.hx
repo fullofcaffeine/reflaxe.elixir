@@ -40,12 +40,31 @@ import haxe.macro.Expr.Position;
  */
 class CompilationContext implements BuildContext {
     // ========================================================================
+    // Context Inheritance (Function-Scoped State)
+    // ========================================================================
+
+    /**
+     * Parent context for inheritance hierarchy
+     *
+     * WHY: Function-scoped transformation state must persist across all statements
+     *      in the function body to ensure variable renames are consistent
+     * WHAT: Points to the parent context (null for top-level contexts)
+     * HOW: Child contexts inherit nameMapping from parent, enabling consistent
+     *      variable renaming across multiple statements
+     *
+     * @see compileFunctionWithPersistentContext in ElixirCompiler
+     */
+    public var parentContext: Null<CompilationContext>;
+
+    // ========================================================================
     // Variable Tracking Maps (Primary cause of shadowing bugs)
     // ========================================================================
 
     /**
      * Maps temporary variable names to their renamed versions
      * Used for avoiding naming conflicts and maintaining consistency
+     *
+     * INHERITANCE: When parentContext exists, lookups check parent if not found locally
      */
     public var tempVarRenameMap: Map<String, String>;
 
@@ -204,6 +223,9 @@ class CompilationContext implements BuildContext {
      * All maps are initialized empty, flags set to defaults
      */
     public function new() {
+        // Initialize context inheritance
+        parentContext = null;
+
         // Initialize all maps
         tempVarRenameMap = new Map();
         underscorePrefixedVars = new Map();
@@ -281,6 +303,85 @@ class CompilationContext implements BuildContext {
      */
     public function getCurrentClauseContext(): Null<ClauseContext> {
         return currentClauseContext;
+    }
+
+    // ========================================================================
+    // Context Inheritance Methods
+    // ========================================================================
+
+    /**
+     * Create a child context that inherits from this context
+     *
+     * WHY: Function statements need isolated contexts while sharing variable renames
+     * WHAT: Creates new context with this as parent
+     * HOW: Child contexts can look up inherited state from parent
+     *
+     * @return New child context with this as parent
+     */
+    public function createChild(): CompilationContext {
+        var child = new CompilationContext();
+        child.parentContext = this;
+
+        // Copy compiler references
+        child.compiler = this.compiler;
+        child.behaviorTransformer = this.behaviorTransformer;
+
+        // Copy module context
+        child.currentModule = this.currentModule;
+        child.currentModuleHasPresence = this.currentModuleHasPresence;
+
+        return child;
+    }
+
+    /**
+     * Merge nameMapping from child context back to parent
+     *
+     * WHY: Variable renames discovered in child must persist to parent
+     * WHAT: Copies all tempVarRenameMap entries from child to this
+     * HOW: Iterates child map and adds entries to parent map
+     *
+     * @param child The child context to merge from
+     */
+    public function mergeNameMappings(child: CompilationContext): Void {
+        if (child == null) return;
+
+        // Merge variable rename mappings
+        for (key in child.tempVarRenameMap.keys()) {
+            var value = child.tempVarRenameMap.get(key);
+            tempVarRenameMap.set(key, value);
+        }
+
+        // Merge underscore prefix tracking
+        for (key in child.underscorePrefixedVars.keys()) {
+            var value = child.underscorePrefixedVars.get(key);
+            if (value) {
+                underscorePrefixedVars.set(key, value);
+            }
+        }
+    }
+
+    /**
+     * Get variable rename with inheritance lookup
+     *
+     * WHY: Child contexts must see parent's variable renames
+     * WHAT: Checks local map first, then parent recursively
+     * HOW: Recursive lookup up the context chain
+     *
+     * @param varName The variable name to look up
+     * @return The renamed version or null if no mapping exists
+     */
+    public function getInheritedVarRename(varName: String): Null<String> {
+        // Check local map first
+        if (tempVarRenameMap.exists(varName)) {
+            return tempVarRenameMap.get(varName);
+        }
+
+        // Check parent if exists
+        if (parentContext != null) {
+            return parentContext.getInheritedVarRename(varName);
+        }
+
+        return null;
     }
 
     // ========================================================================
