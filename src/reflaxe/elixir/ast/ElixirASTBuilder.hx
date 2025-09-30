@@ -3426,24 +3426,70 @@ class ElixirASTBuilder {
                                     trace('[XRay] Expanding __elixir__ with code: $code');
                                     #end
                                     #end
-                                    // Process the injection with parameter substitution
-                                    var processedCode = code;
-                                    
-                                    // Substitute {0} with 'this' (the array)
-                                    var thisAst = buildFromTypedExpr(thisExpr, context);
-                                    var thisStr = ElixirASTPrinter.printAST(thisAst);
-                                    processedCode = StringTools.replace(processedCode, "{0}", thisStr);
+                                    // Process the injection with proper string interpolation handling
+                                    var processedCode = "";
+                                    var insideString = false;
+                                    var i = 0;
 
-                                    // Substitute other parameters
-                                    for (i in 1...callArgs.length) {
-                                        // Map callArgs[i] to the appropriate method argument
-                                        // Usually callArgs[1] refers to the first method parameter
-                                        if (i - 1 < methodArgs.length) {
-                                            var argAst = buildFromTypedExpr(methodArgs[i - 1], context);
-                                            var argStr = ElixirASTPrinter.printAST(argAst);
-                                            var placeholder = '{$i}';
-                                            processedCode = StringTools.replace(processedCode, placeholder, argStr);
+                                    // Process character by character to detect quote state
+                                    while (i < code.length) {
+                                        var char = code.charAt(i);
+
+                                        // Track string state
+                                        if (char == '"' && (i == 0 || code.charAt(i-1) != '\\')) {
+                                            insideString = !insideString;
+                                            processedCode += char;
+                                            i++;
+                                            continue;
                                         }
+
+                                        // Check for {N} placeholder
+                                        if (char == '{' && i + 1 < code.length) {
+                                            var j = i + 1;
+                                            var numStr = "";
+
+                                            // Collect digits
+                                            while (j < code.length && code.charAt(j) >= '0' && code.charAt(j) <= '9') {
+                                                numStr += code.charAt(j);
+                                                j++;
+                                            }
+
+                                            // Check if we found a valid placeholder
+                                            if (numStr != "" && j < code.length && code.charAt(j) == '}') {
+                                                final num = Std.parseInt(numStr);
+                                                var argStr:String = null;
+
+                                                // Special case: {0} refers to 'this' (the array/object)
+                                                if (num == 0) {
+                                                    var thisAst = buildFromTypedExpr(thisExpr, context);
+                                                    argStr = ElixirASTPrinter.printAST(thisAst);
+                                                }
+                                                // Other numbers refer to method arguments
+                                                else if (num != null && num - 1 < methodArgs.length) {
+                                                    var argAst = buildFromTypedExpr(methodArgs[num - 1], context);
+                                                    argStr = ElixirASTPrinter.printAST(argAst);
+                                                }
+
+                                                // If we got an argument string, substitute it
+                                                if (argStr != null) {
+                                                    if (insideString) {
+                                                        // Inside string: wrap in #{...} for interpolation
+                                                        processedCode += '#{$argStr}';
+                                                    } else {
+                                                        // Outside string: direct substitution
+                                                        processedCode += argStr;
+                                                    }
+
+                                                    // Skip past the placeholder
+                                                    i = j + 1;
+                                                    continue;
+                                                }
+                                            }
+                                        }
+
+                                        // Regular character - just append
+                                        processedCode += char;
+                                        i++;
                                     }
                                     
                                     #if debug_elixir_injection
