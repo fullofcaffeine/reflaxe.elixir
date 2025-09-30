@@ -17,17 +17,52 @@ using StringTools;
 /**
  * Transformation pass function type
  * Takes an AST node and returns a transformed node
+ *
+ * WHY: Stateless transformations that don't need compilation context
+ * WHEN: Use for passes that only need AST structure (pattern matching, syntax cleanup)
  */
 typedef TransformPass = (ast: ElixirAST) -> ElixirAST;
 
 /**
+ * Contextual transformation pass function type
+ * Takes an AST node and compilation context, returns a transformed node
+ *
+ * WHY: Enable passes to access shared compilation state (variable mappings, metadata)
+ * WHEN: Use for passes that need:
+ *   - Variable rename information (tempVarRenameMap)
+ *   - Cross-expression state tracking
+ *   - Coordination with builder phase decisions
+ *
+ * ARCHITECTURE:
+ * - Context provides authoritative source of truth for variable naming
+ * - Passes read from and write to context.tempVarRenameMap
+ * - Ensures consistency between builder and transformer phases
+ *
+ * EXAMPLE: HygieneTransforms.usageAnalysisPass uses context to:
+ *   - Read variable renames from builder phase
+ *   - Apply consistent underscore prefixes
+ *   - Ensure declarations match references
+ */
+typedef ContextualTransformPass = (ast: ElixirAST, context: reflaxe.elixir.CompilationContext) -> ElixirAST;
+
+/**
  * Pass configuration
+ *
+ * WHY: Hybrid pattern supporting both stateless and contextual passes
+ * WHAT: Each pass can provide either or both variants
+ * HOW: transform() checks for contextualPass first, falls back to pass
+ *
+ * BACKWARD COMPATIBILITY:
+ * - Existing passes continue to work with only 'pass' field
+ * - New passes can use 'contextualPass' when context needed
+ * - Migration is gradual, pass by pass
  */
 typedef PassConfig = {
     name: String,
     description: String,
     enabled: Bool,
-    pass: TransformPass
+    pass: TransformPass,
+    ?contextualPass: ContextualTransformPass
 };
 
 /**
@@ -64,10 +99,20 @@ class ElixirASTTransformer {
     
     /**
      * Main entry point: Apply all transformation passes
-     * 
-     * WHY: Single interface for all AST transformations
-     * WHAT: Applies enabled passes in order to transform AST
-     * HOW: Iterates through pass list, applying each to the AST
+     *
+     * WHY: Single interface for all AST transformations with optional context support
+     * WHAT: Applies enabled passes in order, using contextual variant when available
+     * HOW: Iterates through pass list, selecting appropriate variant for each pass
+     *
+     * CONTEXTUAL PASS SUPPORT:
+     * - If pass has contextualPass AND context provided → Use contextual variant
+     * - Otherwise → Use stateless pass (backward compatible)
+     * - Enables passes to access compilation state (variable mappings, metadata)
+     * - Ensures consistency between builder and transformer phases
+     *
+     * @param ast The AST to transform
+     * @param context Optional compilation context for contextual passes
+     * @return Transformed AST
      */
     public static function transform(ast: ElixirAST, ?context: reflaxe.elixir.CompilationContext): ElixirAST {
         #if sys
@@ -102,8 +147,37 @@ class ElixirASTTransformer {
             #else
             trace('[XRay AST Transformer] Applying pass: ${passConfig.name}');
             #end
-            
-            result = passConfig.pass(result);
+
+            // CONTEXTUAL PASS SELECTION LOGIC
+            // WHY: Enable passes to access compilation context when needed
+            // WHAT: Check for contextualPass variant first, fall back to regular pass
+            // HOW: Conditional logic based on contextualPass availability and context presence
+            //
+            // ARCHITECTURE:
+            // 1. If contextualPass exists AND context provided → Use contextual variant
+            // 2. Otherwise → Use stateless pass variant (backward compatible)
+            //
+            // This ensures:
+            // - Contextual passes get access to tempVarRenameMap for consistency
+            // - Non-contextual passes continue working unchanged
+            // - No null pointer errors when context not provided
+            if (passConfig.contextualPass != null && context != null) {
+                #if debug_contextual_passes
+                trace('[XRay Contextual Pass] Using contextual variant for: ${passConfig.name}');
+                trace('[XRay Contextual Pass] Context available: ${context != null}');
+                trace('[XRay Contextual Pass] Variable mappings: ${context.tempVarRenameMap.keys()}');
+                #end
+
+                result = passConfig.contextualPass(result, context);
+            } else {
+                #if debug_contextual_passes
+                trace('[XRay Contextual Pass] Using stateless variant for: ${passConfig.name}');
+                trace('[XRay Contextual Pass] Contextual variant available: ${passConfig.contextualPass != null}');
+                trace('[XRay Contextual Pass] Context provided: ${context != null}');
+                #end
+
+                result = passConfig.pass(result);
+            }
         }
         
         #if debug_ast_transformer
@@ -687,11 +761,13 @@ class ElixirASTTransformer {
         });
         
         // Usage analysis pass (detect unused variables)
+        // NOW USING CONTEXTUAL VARIANT for consistent variable naming
         passes.push({
             name: "UsageAnalysis",
-            description: "Detect and mark unused variables with underscore prefix",
-            enabled: true, // RE-ENABLED: Implementing proper binding-to-renaming connection
-            pass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPass
+            description: "Detect and mark unused variables with underscore prefix (context-aware)",
+            enabled: true, // RE-ENABLED: Now using contextual pass for consistency
+            pass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPass,
+            contextualPass: reflaxe.elixir.ast.transformers.HygieneTransforms.usageAnalysisPassWithContext
         });
         
         // Atom normalization pass (remove unnecessary quotes)
@@ -5041,7 +5117,19 @@ class ElixirASTTransformer {
                     ast.metadata,
                     ast.pos
                 );
-                
+
+            case EMatch(pattern, expr):
+                // CRITICAL FIX: Transform the RHS expression
+                // WHY: EMatch bindings in HygieneTransforms mark LHS as declaration
+                //      but RHS may reference variables that need renaming
+                // WHAT: Recursively transform expr to rename any EVar nodes
+                // HOW: Pattern stays unchanged (creates new binding), expr transforms
+                makeASTWithMeta(
+                    EMatch(pattern, transformNode(expr, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
             case EFor(generators, filters, body, into, uniq):
                 makeASTWithMeta(
                     EFor(generators.map(g -> {
