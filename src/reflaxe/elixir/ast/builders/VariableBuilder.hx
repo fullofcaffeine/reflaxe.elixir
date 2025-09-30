@@ -222,25 +222,20 @@ class VariableBuilder {
         // Convert variable name to snake_case
         var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(v.name);
 
-        // Check if the variable needs underscore prefix (unused)
-        // CRITICAL: Only prefix if we POSITIVELY KNOW it's unused
-        // Default assumption: variable IS used (don't prefix unless proven otherwise)
-        if (context.variableUsageMap != null && context.variableUsageMap.exists(v.id)) {
-            var isUsed = context.variableUsageMap.get(v.id) == true;
-            if (!isUsed && varName.length > 0 && varName.charAt(0) != "_") {
-                varName = "_" + varName;
-
-                // CRITICAL: Record that we added underscore prefix so references can match
-                if (context.underscorePrefixedVars == null) {
-                    context.underscorePrefixedVars = new Map<Int, Bool>();
-                }
-                context.underscorePrefixedVars.set(v.id, true);
-
-                #if debug_ast_builder
-                trace('[VarBuilder] Variable ${v.name} (id: ${v.id}) is unused, prefixing: $varName');
-                #end
-            }
-        }
+        // DISABLED: Underscore prefixing logic removed
+        // WHY: We don't have complete usage information during AST building
+        // The UsageAnalysis pass (HygieneTransforms) will handle this properly
+        // with the complete AST, ensuring consistent naming between declarations
+        // and references.
+        //
+        // PREVIOUS ISSUE: Adding underscores during building caused inconsistency:
+        // - Declaration: _changeset = ...  (underscore added here)
+        // - Reference: changeset           (no underscore in EVar)
+        //
+        // The UsageAnalysis pass will:
+        // 1. Build complete binding usage map
+        // 2. Rename BOTH PVar and EVar nodes consistently
+        // 3. Only add underscores to truly unused variables
 
         return varName;
     }

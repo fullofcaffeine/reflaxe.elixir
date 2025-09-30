@@ -599,7 +599,10 @@ class HygieneTransforms {
     static function renameUnusedBindings(ast: ElixirAST, allBindings: Array<Binding>): ElixirAST {
         // Build index: Map<(containerId, context, slotIndex), Array<{path, oldName, newName}>>
         var renameIndex = new Map<String, Array<{path: Array<Int>, oldName: String, newName: String}>>();
-        
+
+        // ALSO build a simple name mapping for EVar renaming
+        var nameMapping = new Map<String, String>();
+
         for (binding in allBindings) {
             if (!binding.used && !binding.name.startsWith("_")) {
                 var key = '${binding.containerId}:${binding.context}:${binding.slotIndex}';
@@ -611,13 +614,20 @@ class HygieneTransforms {
                     oldName: binding.name,
                     newName: "_" + binding.name
                 });
+
+                // Add to name mapping (oldName -> newName)
+                nameMapping.set(binding.name, "_" + binding.name);
             }
         }
-        
+
         #if debug_hygiene
         trace('[XRay Hygiene] Built rename index with ${Lambda.count(renameIndex)} containers to process');
+        trace('[XRay Hygiene] Built name mapping with ${Lambda.count(nameMapping)} entries');
+        for (oldName in nameMapping.keys()) {
+            trace('[XRay Hygiene]   $oldName -> ${nameMapping.get(oldName)}');
+        }
         #end
-        
+
         // Apply renaming using the index
         return ElixirASTTransformer.transformNode(ast, function(node) {
             if (node.metadata == null) return node;
@@ -679,7 +689,18 @@ class HygieneTransforms {
                         return make(ECase(expr, newClauses), node.metadata);
                     }
                     return node;
-                    
+
+                case EVar(name):
+                    // Rename variable references to match renamed bindings
+                    if (nameMapping.exists(name)) {
+                        var newName = nameMapping.get(name);
+                        #if debug_hygiene
+                        trace('[XRay Hygiene] Renaming EVar "$name" to "$newName"');
+                        #end
+                        return make(EVar(newName), node.metadata);
+                    }
+                    return node;
+
                 default:
                     return node;
             }
