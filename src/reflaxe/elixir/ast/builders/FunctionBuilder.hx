@@ -185,9 +185,15 @@ class FunctionBuilder {
             baseName;
         };
         
-        // Register mapping in context
+        // Register mapping in context with dual-key storage
         if (!context.tempVarRenameMap.exists(idKey)) {
-            context.tempVarRenameMap.set(idKey, finalName);
+            // Dual-key storage: ID for pattern positions, name for EVar references
+            context.tempVarRenameMap.set(idKey, finalName);           // ID-based (pattern matching)
+            context.tempVarRenameMap.set(originalName, finalName);    // NAME-based (EVar renaming)
+
+            #if debug_hygiene
+            trace('[Hygiene] Dual-key registered: id=$idKey name=$originalName -> $finalName');
+            #end
         }
         
         // Register renamed variable if suffix was stripped
