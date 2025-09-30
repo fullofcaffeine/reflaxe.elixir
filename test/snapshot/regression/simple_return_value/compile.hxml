@@ -1,0 +1,6 @@
+-cp /Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot/regression/simple_return_value
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-D elixir_output=/Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot/regression/simple_return_value/out

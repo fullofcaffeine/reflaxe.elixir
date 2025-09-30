@@ -491,7 +491,7 @@ class ElixirASTBuilder {
             // ================================================================
             case TLocal(v):
                 // TLocal represents a local variable reference (reading/using a variable)
-                // 
+                //
                 // DIFFERENCE FROM TVar:
                 // - TLocal: Variable usage/reference - when you READ a variable (x in "x + 1")
                 // - TVar: Variable declaration/assignment - when you WRITE to a variable (var x = 5)
@@ -502,9 +502,38 @@ class ElixirASTBuilder {
                 // return x + 1;     // TLocal(x) in the expression - reading the variable
                 // if (x > 0) ...    // TLocal(x) in the condition - reading the variable
                 //
-                // In Elixir both compile to the variable name, but the distinction helps
-                // the compiler track declarations vs references for analysis purposes.
-                var varName = VariableAnalyzer.toElixirVarName(v.name);
+                // CRITICAL FIX: TLocal must check context for renamed variables
+                // This ensures references match declarations (e.g., _changeset references use _changeset)
+                // Without this check, we get "undefined variable" errors when TVar adds underscore prefix
+                // but TLocal uses the original name.
+
+                // Dual-key lookup: Try ID first (pattern matching), then name (EVar reference)
+                var idKey = Std.string(v.id);
+                var nameKey = v.name;
+
+                var varName = if (currentContext.tempVarRenameMap.exists(idKey)) {
+                    // ID-based lookup succeeds (builder phase registered this variable)
+                    var renamed = currentContext.tempVarRenameMap.get(idKey);
+                    #if debug_hygiene
+                    trace('[TLocal] Variable ${v.name} (id=${v.id}) found in context via ID: $renamed');
+                    #end
+                    renamed;
+                } else if (currentContext.tempVarRenameMap.exists(nameKey)) {
+                    // Name-based lookup succeeds (transformer phase or builder phase)
+                    var renamed = currentContext.tempVarRenameMap.get(nameKey);
+                    #if debug_hygiene
+                    trace('[TLocal] Variable ${v.name} (id=${v.id}) found in context via NAME: $renamed');
+                    #end
+                    renamed;
+                } else {
+                    // Not in context - use standard snake_case conversion
+                    var converted = VariableAnalyzer.toElixirVarName(v.name);
+                    #if debug_hygiene
+                    trace('[TLocal] Variable ${v.name} (id=${v.id}) NOT in context, using converted: $converted');
+                    #end
+                    converted;
+                };
+
                 EVar(varName);
                 
             case TVar(v, init):
@@ -1012,55 +1041,28 @@ class ElixirASTBuilder {
                     }
                 };
                 
-                // Check if variable is used
-                var isActuallyUsed = if (currentContext.variableUsageMap != null && currentContext.variableUsageMap.exists(v.id)) {
-                    currentContext.variableUsageMap.get(v.id);
-                } else {
-                    true; // Conservative: assume used if not in map
-                };
-                
-                // Special handling for enum parameter extraction patterns
-                // Even if marked as unused, these variables might be needed for pattern consistency
-                var isEnumParameterExtraction = false;
-                if (init != null) {
-                    switch(init.expr) {
-                        case TLocal(tempVar) if (tempVar.name.startsWith("_g") || tempVar.name == "g" || 
-                                                 ~/^g\d*$/.match(tempVar.name)):
-                            // This is assignment from temp: changeset = g 
-                            // This is critical for enum pattern matching - we need this variable
-                            // even if it appears unused, because it establishes the pattern variable name
-                            isEnumParameterExtraction = true;
-                            #if debug_variable_usage
-                            #if debug_ast_builder
-                            trace('[TVar] Variable ${v.name} is enum parameter extraction from ${tempVar.name}');
-                            #end
-                            #end
-                        case _:
-                    }
-                }
-                
-                // If this variable is unused, prefix it with underscore to prevent Elixir warnings
-                // EXCEPTION: Don't skip enum parameter extractions even if marked unused
-                // This applies to:
-                // 1. Variables extracted from enum parameters (changeset = g) - ALWAYS GENERATE
-                // 2. Direct enum parameter extractions (g = result.elem(1))
-                // 3. Any other unused variables detected by the analyzer
-                var finalVarName = if (!isActuallyUsed && !isEnumParameterExtraction) {
-                    #if debug_variable_usage
-                    #if debug_ast_builder
-                    trace('[TVar] Variable ${v.name} (id=${v.id}) is UNUSED, adding underscore prefix');
-                    #end
-                    #end
-                    // Re-enable underscore prefixing for 1.0 quality
-                    var underscoreName = "_" + baseName;
-                    currentContext.tempVarRenameMap.set(Std.string(v.id), underscoreName);
-                    underscoreName;
-                } else {
-                    // For used variables, also register to ensure consistency
-                    // This prevents TLocal from applying different transformations
-                    currentContext.tempVarRenameMap.set(Std.string(v.id), baseName);
-                    baseName;
-                };
+                // ARCHITECTURAL FIX (January 2025): Remove premature underscore prefixing
+                //
+                // PROBLEM: The builder was making renaming decisions BEFORE usage analysis ran.
+                // This caused:
+                // 1. TVar registers "changeset -> _changeset" prematurely
+                // 2. TLocal can't find "changeset" (stored as "_changeset")
+                // 3. HygieneTransforms sees "_changeset" and marks IT as unused
+                // 4. Result: "_changeset = user" then "changeset" (undefined variable!)
+                //
+                // SOLUTION: Builder phase should ONLY build AST nodes, NOT transform them.
+                // Let HygieneTransforms (transformer phase) handle ALL renaming decisions.
+                //
+                // The builder's job: Convert TypedExpr → ElixirAST faithfully
+                // The transformer's job: Analyze usage and apply underscore prefixes
+                //
+                // See: /docs/03-compiler-development/HYGIENE_TRANSFORM_TLOCAL_BUG.md
+
+                var finalVarName = baseName;  // Just use the snake_case converted name
+
+                #if debug_hygiene
+                trace('[Hygiene] TVar built faithfully: id=${v.id} name=${v.name} -> $finalVarName (no premature underscore)');
+                #end
 
 
                 // Handle variable initialization
@@ -2358,9 +2360,15 @@ class ElixirASTBuilder {
                         baseName;
                     };
                     
-                    // Register the mapping for TLocal references in the body
+                    // Register the mapping for TLocal references in the body with dual-key storage
                     if (!currentContext.tempVarRenameMap.exists(idKey)) {
-                        currentContext.tempVarRenameMap.set(idKey, finalName);
+                        // Dual-key storage: ID for pattern positions, name for EVar references
+                        currentContext.tempVarRenameMap.set(idKey, finalName);           // ID-based (pattern matching)
+                        currentContext.tempVarRenameMap.set(originalName, finalName);    // NAME-based (EVar renaming)
+
+                        #if debug_hygiene
+                        trace('[Hygiene] Dual-key registered (TFunction param): id=$idKey name=$originalName -> $finalName');
+                        #end
 
                         #if debug_variable_renaming
                         #if debug_ast_builder
