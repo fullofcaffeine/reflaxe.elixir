@@ -58,10 +58,9 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 		
-		// Generate Phoenix.Component.assign call with atom key
-		// Build the complete code string as a constant
-		var codeStr = 'Phoenix.Component.assign({0}, :$snakeCaseName, {1})';
-		return macro untyped __elixir__($v{codeStr}, $socketExpr, $value);
+		// Generate Phoenix.Component.assign call using proper extern
+		// This ensures variables can be transformed by HygieneTransforms
+		return macro phoenix.Component.assign($socketExpr, $v{snakeCaseName}, $value);
 	}
 	
 	/**
@@ -79,11 +78,11 @@ class AssignMacro {
 			case EObjectDecl(fields):
 				var assignsType = extractAssignsType(socketExpr);
 				var transformedFields = [];
-				
+
 				for (field in fields) {
 					// Validate field exists
 					validateFieldExists(assignsType, field.field, field.expr.pos);
-					
+
 					// Convert to snake_case
 					var snakeCaseName = camelToSnake(field.field);
 					transformedFields.push({
@@ -91,25 +90,18 @@ class AssignMacro {
 						expr: field.expr
 					});
 				}
-				
-				// Generate map for assign_multiple with atom keys
-				// Build the map string with atom keys
-				var mapPairs = [];
-				var values = [];
-				var i = 1; // Start from 1 since socket is {0}
+
+				// Generate map literal with atom keys
+				// This creates proper AST that HygieneTransforms can process
+				var mapFields = [];
 				for (field in transformedFields) {
-					mapPairs.push(':${field.field} => {${i}}');
-					values.push(field.expr);
-					i++;
+					mapFields.push({field: field.field, expr: field.expr});
 				}
-				var mapString = '%{' + mapPairs.join(', ') + '}';
-				
-				// Build complete code string as a constant
-				var codeStr = 'Phoenix.Component.assign({0}, $mapString)';
-				// Generate the call with all arguments
-				var args = [socketExpr].concat(values);
-				return macro untyped __elixir__($v{codeStr}, $a{args});
-				
+				var mapExpr = {expr: EObjectDecl(mapFields), pos: updates.pos};
+
+				// Generate assign call with map - using proper extern
+				return macro phoenix.Component.assign($socketExpr, $mapExpr);
+
 			case _:
 				Context.error("Expected object literal with fields to merge", updates.pos);
 				return null;
@@ -132,16 +124,17 @@ class AssignMacro {
 		if (fieldName == null) {
 			Context.error("Expected field access expression like _.fieldName", fieldExpr.pos);
 		}
-		
+
 		// Validate field exists in assigns type
 		var assignsType = extractAssignsType(socketExpr);
 		validateFieldExists(assignsType, fieldName, fieldExpr.pos);
-		
+
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
-		
-		// Generate Phoenix.Component.assign_new call with atom key
-		// Build complete code string as a constant
+
+		// Generate Phoenix.Component.assign_new call
+		// Use proper __elixir__() with {N} placeholders for variables
+		// The atom :field is part of the constant string
 		var codeStr = 'Phoenix.Component.assign_new({0}, :$snakeCaseName, {1})';
 		return macro untyped __elixir__($v{codeStr}, $socketExpr, $defaultFn);
 	}
@@ -162,16 +155,17 @@ class AssignMacro {
 		if (fieldName == null) {
 			Context.error("Expected field access expression like _.fieldName", fieldExpr.pos);
 		}
-		
+
 		// Validate field exists in assigns type
 		var assignsType = extractAssignsType(socketExpr);
 		validateFieldExists(assignsType, fieldName, fieldExpr.pos);
-		
+
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
-		
-		// Generate Phoenix.Component.update call with atom key
-		// Build complete code string as a constant
+
+		// Generate Phoenix.Component.update call
+		// Use proper __elixir__() with {N} placeholders for variables
+		// The atom :field is part of the constant string
 		var codeStr = 'Phoenix.Component.update({0}, :$snakeCaseName, {1})';
 		return macro untyped __elixir__($v{codeStr}, $socketExpr, $updater);
 	}
