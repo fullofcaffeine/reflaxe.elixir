@@ -450,74 +450,22 @@ class PatternBuilder {
      * Apply underscore prefix to unused pattern variables
      *
      * WHY: In Elixir, unused variables should be prefixed with underscore to avoid warnings
-     * WHAT: Checks each pattern variable against the usage map and prefixes with _ if unused
-     * HOW: Recursively traverses patterns and renames PVar nodes when the variable is unused
-     * @param isEmptyBody If true, all variables in the pattern are considered unused
+     * WHAT: DISABLED - This logic is now handled by UsageAnalysis pass in HygieneTransforms
+     * HOW: Returns pattern unchanged; UsageAnalysis determines actual usage with complete AST
+     *
+     * HISTORICAL NOTE: Previously tried to add underscore prefixes during AST building,
+     * but this was premature - we don't have enough information at build time to know
+     * if a variable is truly unused. The UsageAnalysis pass has the complete AST and
+     * can accurately determine usage.
+     *
+     * @param isEmptyBody IGNORED - kept for API compatibility
      */
     public static function applyUnderscorePrefixToUnusedPatternVars(pattern: EPattern, variableUsageMap: Map<Int, Bool>,
-                                                                   extractedParams: Array<String>, 
+                                                                   extractedParams: Array<String>,
                                                                    isEmptyBody: Bool = false): EPattern {
-        return switch(pattern) {
-            case PTuple(patterns):
-                // Process tuple patterns (like {:ok, g} or {:error, g})
-                var updatedPatterns = [];
-                for (i in 0...patterns.length) {
-                    var p = patterns[i];
-                    switch(p) {
-                        case PVar(name):
-                            // For enum patterns, check if the extracted parameter is actually used
-                            // The position in the tuple corresponds to the parameter index
-                            // Pattern index 0 is the atom, index 1+ are the parameters
-                            var isUsed = !isEmptyBody; // If body is empty, all vars are unused
-
-                            // If this is an enum parameter (not the first element which is the atom)
-                            if (i > 0 && extractedParams != null && i - 1 < extractedParams.length) {
-                                // The extracted param name at this position
-                                var expectedParamName = extractedParams[i - 1];
-
-                                // Check if the parameter name matches the expected parameter
-                                if (expectedParamName == name) {
-                                    // If the body is empty, the variable is definitely unused
-                                    // Otherwise, be conservative and assume it's used
-                                    isUsed = !isEmptyBody;
-                                    
-                                    // Special handling for known patterns:
-                                    // 1. Variables already starting with underscore should stay that way
-                                    if (name.charAt(0) == "_") {
-                                        isUsed = false; // Keep underscore prefix
-                                    }
-                                }
-                            }
-
-                            // Only prefix with underscore if we're certain the variable is unused
-                            // This conservative approach prevents compilation errors
-                            if (!isUsed && name.charAt(0) != "_") {
-                                updatedPatterns.push(PVar("_" + name));
-                            } else {
-                                updatedPatterns.push(p);
-                            }
-                        default:
-                            updatedPatterns.push(applyUnderscorePrefixToUnusedPatternVars(p, variableUsageMap, extractedParams, isEmptyBody));
-                    }
-                }
-                PTuple(updatedPatterns);
-
-            case PVar(name):
-                // Single variable pattern - check usage
-                // This is a simplified implementation - in practice we'd need better tracking
-                PVar(name); // Keep as-is for now
-
-            case PLiteral(_) | PWildcard:
-                // Literals and wildcards don't need modification
-                pattern;
-
-            case PList(elements):
-                // Process list patterns
-                PList([for (e in elements) applyUnderscorePrefixToUnusedPatternVars(e, variableUsageMap, extractedParams, isEmptyBody)]);
-                
-            default:
-                pattern;
-        };
+        // NO-OP: Return pattern unchanged
+        // UsageAnalysis pass will handle underscore prefixing with proper usage information
+        return pattern;
     }
     
     /**
