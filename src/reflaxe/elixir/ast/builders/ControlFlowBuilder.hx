@@ -69,35 +69,20 @@ class ControlFlowBuilder {
             return buildCondStatement(econd, eif, eelse, context);
         }
         
-        // Simple if-else or inline conditional
-        if (elseBranch != null) {
-            // Check if this is an inline expression
-            if (isInlineExpression(eif) && isInlineExpression(eelse)) {
-                // Inline conditional: if(cond, do: then, else: else)
-                return ECall(makeAST(EVar("if")), "", [
-                    condition,
-                    makeAST(ETuple([
-                        makeAST(EAtom("do")),
-                        thenBranch
-                    ])),
-                    makeAST(ETuple([
-                        makeAST(EAtom("else")),
-                        elseBranch
-                    ]))
-                ]);
-            }
-        }
-        
-        // Regular if-else block
-        // For simple if-else, we need to generate a simple conditional
-        // In Elixir AST, this is typically an EIf or inline conditional
-        if (elseBranch != null) {
-            // With else branch
-            return EIf(condition, thenBranch, elseBranch);
-        } else {
-            // Without else branch
-            return EIf(condition, thenBranch, null);
-        }
+        // CRITICAL FIX: Always use EIf, never ECall
+        // WHY: 'if' is a keyword/macro in Elixir, not a function
+        // WHAT: EIf generates proper 'if cond, do: then, else: else' syntax
+        // HOW: ElixirASTPrinter handles inline vs block formatting automatically
+        //
+        // The printer (ElixirASTPrinter.hx:338-372) automatically detects:
+        // - Simple expressions → inline format: if cond, do: val1, else: val2
+        // - Complex expressions → block format: if cond do\n  val1\nelse\n  val2\nend
+        //
+        // OLD BUGGY CODE (generated invalid if.() lambda calls):
+        //   return ECall(makeAST(EVar("if")), "", [condition, {:do, then}, {:else, else}]);
+        //
+        // NEW CORRECT CODE (generates proper if expressions):
+        return EIf(condition, thenBranch, elseBranch);
     }
     
     /**

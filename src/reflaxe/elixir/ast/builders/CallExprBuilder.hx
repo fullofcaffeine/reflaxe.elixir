@@ -8,6 +8,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.helpers.PatternDetector;
+import reflaxe.elixir.ast.builders.VariableBuilder;
 
 /**
  * CallExprBuilder: Handles function/method call expression building
@@ -212,7 +213,11 @@ class CallExprBuilder {
                 
             case TLocal(v):
                 // Local variable call (lambda/function reference)
-                return ECall(makeAST(EVar(v.name)), "", argASTs);
+                // CRITICAL FIX: Must resolve variable name to check tempVarRenameMap
+                // This ensures lambda function parameters use their snake_case names
+                // (e.g., topicConverter -> topic_converter)
+                var resolvedName = VariableBuilder.resolveVariableName(v, context);
+                return ECall(makeAST(EVar(resolvedName)), "", argASTs);
                 
             default:
                 // Generic call
@@ -353,10 +358,14 @@ class CallExprBuilder {
                         }
                         
                     case "string":
-                        // Std.string(value) → to_string(value) or interpolation
+                        // Std.string(value) → inspect(value)
+                        // WHY: inspect/1 provides complete string representation for all Elixir types
+                        // WHAT: Converts lists, maps, tuples, structs correctly (unlike to_string/1)
+                        // HOW: Direct function call without module prefix (target=null, funcName="inspect")
                         if (args.length == 1) {
                             var value = buildExpression(args[0]);
-                            return ECall(makeAST(EVar("to_string")), "", [value]);
+                            // Use null target with funcName to generate plain function call
+                            return ECall(null, "inspect", [value]);
                         }
                         
                     case "parseInt":
@@ -477,7 +486,7 @@ class CallExprBuilder {
                     
                     // Check if we're in a LiveView context (would need context metadata)
                     // For now, always inject self() for PubSub operations
-                    var selfCall = makeAST(ECall(makeAST(EVar("self")), "", []));
+                    var selfCall = makeAST(ECall(null, "self", []));
                     argASTs.unshift(selfCall);
                     
                     return ERemoteCall(moduleRef, methodName, argASTs);
@@ -497,8 +506,8 @@ class CallExprBuilder {
                     // Presence operations need self() as first argument
                     var moduleRef = makeAST(EVar(className));
                     var argASTs = [for (arg in args) buildExpression(arg)];
-                    
-                    var selfCall = makeAST(ECall(makeAST(EVar("self")), "", []));
+
+                    var selfCall = makeAST(ECall(null, "self", []));
                     argASTs.unshift(selfCall);
                     
                     return ERemoteCall(moduleRef, methodName, argASTs);

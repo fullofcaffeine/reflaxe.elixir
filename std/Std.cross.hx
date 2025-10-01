@@ -18,17 +18,22 @@ package;
 class Std {
     /**
      * Convert any value to its string representation.
-     * 
+     *
      * WHY: Universal string conversion is needed for debugging, logging, and display.
-     * WHAT: Converts any Elixir value to its string representation.
-     * HOW: The compiler will optimize this to proper Elixir string conversion.
-     * 
+     * WHAT: Converts any Elixir value to its string representation using inspect/1.
+     * HOW: CallExprBuilder.handleSpecialCall() intercepts Std.string() calls.
+     *
+     * IMPLEMENTATION: The body is not used during compilation. CallExprBuilder
+     * detects Std.string(value) calls and generates inspect(value) directly.
+     * This approach is cleaner than @:native because the compiler handles it
+     * explicitly in handleSpecialCall() where other Std methods are processed.
+     *
      * @param value The value to convert to string (any type)
      * @return String representation of the value
      */
     public static function string<T>(value: T): String {
-        // Use inspect for proper string representation of all data types
-        // inspect() handles lists, maps, tuples correctly unlike to_string()
+        // This body is never compiled - CallExprBuilder intercepts the call
+        // But we provide a proper implementation for clarity
         return untyped __elixir__('inspect({0})', value);
     }
     
