@@ -511,6 +511,10 @@ class ElixirASTBuilder {
                 var idKey = Std.string(v.id);
                 var nameKey = v.name;
 
+                // CRITICAL FIX: Strip Haxe's numeric shadowing suffix in constructor arguments
+                // WHY: Haxe renames parameters when they shadow class fields (replacer -> replacer2)
+                // WHAT: In constructor contexts, strip the suffix to get original parameter name
+                // HOW: Check flag, detect pattern (name + digits), strip suffix
                 var varName = if (currentContext.tempVarRenameMap.exists(idKey)) {
                     // ID-based lookup succeeds (builder phase registered this variable)
                     var renamed = currentContext.tempVarRenameMap.get(idKey);
@@ -525,6 +529,22 @@ class ElixirASTBuilder {
                     trace('[TLocal] Variable ${v.name} (id=${v.id}) found in context via NAME: $renamed');
                     #end
                     renamed;
+                } else if (currentContext.isInConstructorArgContext) {
+                    // Constructor argument context - strip Haxe's numeric shadowing suffix
+                    // Pattern: replacer2 -> replacer, space3 -> space
+                    var pattern = ~/^(.+?)(\d+)$/;
+                    var baseName = if (pattern.match(v.name)) {
+                        var base = pattern.matched(1);
+                        var suffix = pattern.matched(2);
+                        #if debug_constructor_args
+                        trace('[TLocal Constructor] Stripping shadow suffix: ${v.name} -> $base (removed: $suffix)');
+                        #end
+                        base;
+                    } else {
+                        v.name;
+                    };
+                    // Convert to Elixir variable name
+                    VariableAnalyzer.toElixirVarName(baseName);
                 } else {
                     // Not in context - use standard snake_case conversion
                     var converted = VariableAnalyzer.toElixirVarName(v.name);
