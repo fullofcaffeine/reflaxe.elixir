@@ -640,21 +640,46 @@ class ElixirASTPrinter {
                             // Function variable call - use .() syntax
                             print(target, indent) + '.(' + argStr + ')';
                         } else {
-                            // Method call on object
-                            // Check if target is a block expression that needs parentheses
-                            var targetStr = switch(target.def) {
-                                case ECase(_, _) | ECond(_) | EWith(_, _, _):
-                                    // Block expressions need parentheses when used as method call targets
-                                    // Generate: (case...end) |> Module.function()
-                                    '(' + print(target, indent) + ') |> Kernel.' + funcName;
-                                case EIf(_, _, elseBranch) if (elseBranch != null):
-                                    // If expressions with else branches need parentheses too
-                                    '(' + print(target, indent) + ') |> Kernel.' + funcName;
+                            // Transform method call syntax to proper Elixir module calls
+                            // Elixir doesn't support obj.method() - use Module.function(obj, args)
+
+                            // Check if this is an Enum method (map, filter, reduce, etc.)
+                            var isEnumMethod = switch(funcName) {
+                                case "map" | "filter" | "reduce" | "each" | "find" |
+                                     "reject" | "take" | "drop" | "any" | "all" |
+                                     "count" | "member" | "sort" | "reverse" | "zip" |
+                                     "concat" | "flat_map" | "group_by" | "split" |
+                                     "join" | "at" | "fetch" | "empty" | "sum" |
+                                     "min" | "max" | "uniq" | "with_index":
+                                    true;
                                 default:
-                                    // Regular expressions can be method call targets directly
-                                    print(target, indent) + '.' + funcName;
+                                    false;
                             };
-                            targetStr + '(' + argStr + ')';
+
+                            if (isEnumMethod) {
+                                // Transform: list.map(fn) → Enum.map(list, fn)
+                                var enumCall = 'Enum.' + funcName + '(' + print(target, indent);
+                                if (argStr.length > 0) {
+                                    enumCall + ', ' + argStr + ')';
+                                } else {
+                                    enumCall + ')';
+                                }
+                            } else {
+                                // Check if target is a block expression that needs parentheses
+                                var targetStr = switch(target.def) {
+                                    case ECase(_, _) | ECond(_) | EWith(_, _, _):
+                                        // Block expressions need parentheses when used as method call targets
+                                        // Generate: (case...end) |> Module.function()
+                                        '(' + print(target, indent) + ') |> Kernel.' + funcName;
+                                    case EIf(_, _, elseBranch) if (elseBranch != null):
+                                        // If expressions with else branches need parentheses too
+                                        '(' + print(target, indent) + ') |> Kernel.' + funcName;
+                                    default:
+                                        // Regular expressions can be method call targets directly
+                                        print(target, indent) + '.' + funcName;
+                                };
+                                targetStr + '(' + argStr + ')';
+                            }
                         }
                     } else {
                         funcName + '(' + argStr + ')';
