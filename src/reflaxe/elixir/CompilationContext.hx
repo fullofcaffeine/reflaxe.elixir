@@ -109,6 +109,14 @@ class CompilationContext implements BuildContext {
      */
     public var isInExUnitTest: Bool;
 
+    /**
+     * Flag indicating if we're currently compiling constructor arguments
+     * WHY: Prevents parameter renaming in constructor calls (e.g., JsonPrinter.new(replacer, space))
+     * WHAT: When true, VariableBuilder preserves original parameter names
+     * HOW: Set by ConstructorBuilder before compiling args, checked as Priority 0 in VariableBuilder
+     */
+    public var isInConstructorArgContext: Bool;
+
     // ========================================================================
     // Pattern Matching and Clause Context
     // ========================================================================
@@ -241,6 +249,7 @@ class CompilationContext implements BuildContext {
         isInClassMethodContext = false;
         currentReceiverParamName = null;
         isInExUnitTest = false;
+        isInConstructorArgContext = false;
         currentModule = null;
         currentModuleHasPresence = false;
 
@@ -335,6 +344,7 @@ class CompilationContext implements BuildContext {
         child.isInClassMethodContext = this.isInClassMethodContext;
         child.currentReceiverParamName = this.currentReceiverParamName;
         child.isInExUnitTest = this.isInExUnitTest;
+        child.isInConstructorArgContext = this.isInConstructorArgContext;
 
         return child;
     }

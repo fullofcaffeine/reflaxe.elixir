@@ -70,10 +70,20 @@ class ConstructorBuilder {
         trace('[ConstructorBuilder]   Arguments: ${el.length}');
         trace('[ConstructorBuilder]   Has @:schema: ${classType.meta.has("schema")}');
         #end
-        
-        // Compile arguments
-        var args = [for (e in el) context.compiler.compileExpressionImpl(e, false)];
-        
+
+        // CRITICAL FIX: Bypass compileExpressionImpl to preserve context
+        // WHY: compileExpressionImpl creates a FRESH context, losing our flag
+        // WHAT: Call ElixirASTBuilder directly with our context to preserve flags
+        // HOW: Use buildFromTypedExpr with current context instead of compiler method
+        trace('[ConstructorBuilder] SETTING FLAG isInConstructorArgContext = true');
+        context.isInConstructorArgContext = true;
+
+        // Compile arguments directly with our context (not through compiler which creates fresh context)
+        var args = [for (e in el) reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context)];
+
+        context.isInConstructorArgContext = false;
+        trace('[ConstructorBuilder] RESET FLAG isInConstructorArgContext = false');
+
         // ====================================================================
         // PATTERN 1: Ecto Schemas
         // ====================================================================

@@ -275,6 +275,7 @@ class VariableBuilder {
      */
     public static function buildLocal(tvar: TVar, expr: TypedExpr, context: CompilationContext): ElixirASTDef {
         // TLocal is similar to TVar but represents a local variable in the current scope
+        trace('[buildLocal] TLocal: ${tvar.name}, constructorArgCtx: ${context.isInConstructorArgContext}');
         var variableName = resolveVariableName(tvar, context);
         
         #if debug_ast_builder
@@ -286,19 +287,44 @@ class VariableBuilder {
     
     /**
      * Resolve the actual variable name to use in generated code
-     * 
+     *
      * WHY: Variables can be renamed/mapped during compilation
      * WHAT: Priority-based resolution system
-     * HOW: 
+     * HOW:
      * 1. Check pattern registry (highest priority - enum extraction)
      * 2. Check clause context (case-local variables)
-     * 3. Check global mappings (function params, etc.)
-     * 4. Check infrastructure patterns (g_, rec_, etc.)
-     * 5. Use default name
+     * 3. Check tempVarRenameMap (DUAL-KEY STORAGE - function params, etc.)
+     * 4. Check global mappings (future use)
+     * 5. Check infrastructure patterns (g_, rec_, etc.)
+     * 6. Use default name
+     *
+     * VISIBILITY: Public to allow other builders (like CallExprBuilder) to resolve
+     * variable names consistently when building lambda calls
      */
-    static function resolveVariableName(tvar: TVar, context: CompilationContext): String {
+    public static function resolveVariableName(tvar: TVar, context: CompilationContext): String {
         var tvarId = tvar.id;
         var defaultName = tvar.name;
+
+        // Priority 0: In constructor contexts, check tempVarRenameMap for parameter name mapping
+        // WHY: Prevents "replacer2/space2" bug where shadowed parameters are passed to constructors
+        // CONTEXT: When a class has fields "replacer" and "space", and a method has parameters
+        //          with the same names, Haxe renames the parameters to "replacer2" and "space2"
+        //          to avoid shadowing. FunctionBuilder stores the mapping "replacer2" → "replacer"
+        //          in tempVarRenameMap. We must check this mapping FIRST before falling back.
+        // RESULT: JsonPrinter.new(replacer, space) instead of JsonPrinter.new(replacer2, space2)
+        if (context.isInConstructorArgContext) {
+            // Check tempVarRenameMap for the mapping (e.g., "replacer2" → "replacer")
+            if (context.tempVarRenameMap != null && context.tempVarRenameMap.exists(defaultName)) {
+                var mappedName = context.tempVarRenameMap.get(defaultName);
+                trace('[Constructor Args] Found mapping: ${defaultName} -> $mappedName');
+                return mappedName;
+            }
+
+            // If not in map, strip numeric suffix as fallback
+            var strippedName = stripNumericShadowSuffix(defaultName);
+            trace('[Constructor Args] No mapping, stripping suffix: ${defaultName} -> $strippedName');
+            return strippedName;
+        }
 
         // Priority 1: Check pattern registry for enum pattern extraction
         if (context.patternVariableRegistry != null && context.patternVariableRegistry.exists(tvarId)) {
@@ -320,7 +346,34 @@ class VariableBuilder {
             }
         }
 
-        // Priority 3: Check global variable mappings
+        // Priority 3: Check tempVarRenameMap for function parameters (DUAL-KEY STORAGE)
+        // CRITICAL FIX: This is the same pattern that fixed HygieneTransforms
+        // FunctionBuilder stores function parameters with BOTH ID and name keys:
+        // - context.tempVarRenameMap.set(idKey, finalName);        // ID-based lookup
+        // - context.tempVarRenameMap.set(originalName, finalName); // NAME-based lookup
+        // This ensures consistency between parameter declarations and references
+        if (context.tempVarRenameMap != null) {
+            // Try ID-based lookup first (most reliable)
+            var idKey = Std.string(tvarId);
+            if (context.tempVarRenameMap.exists(idKey)) {
+                var mappedName = context.tempVarRenameMap.get(idKey);
+                #if debug_hygiene
+                trace('[Dual-Key Storage] Found ID mapping: ${tvar.name} (id: $tvarId) -> $mappedName');
+                #end
+                return mappedName;
+            }
+
+            // Try name-based lookup as fallback
+            if (context.tempVarRenameMap.exists(defaultName)) {
+                var mappedName = context.tempVarRenameMap.get(defaultName);
+                #if debug_hygiene
+                trace('[Dual-Key Storage] Found NAME mapping: ${tvar.name} -> $mappedName');
+                #end
+                return mappedName;
+            }
+        }
+
+        // Priority 4: Check global variable mappings
         // TODO: Add variableMappings to context when available
         /*
         if (context.variableMappings != null && context.variableMappings.exists(tvarId)) {
@@ -332,7 +385,7 @@ class VariableBuilder {
         }
         */
 
-        // Priority 4: Check for infrastructure variables
+        // Priority 5: Check for infrastructure variables
         if (isInfrastructureVariable(defaultName)) {
             var infraName = handleInfrastructureVariable(tvar, context);
             if (infraName != null) {
@@ -340,7 +393,7 @@ class VariableBuilder {
             }
         }
 
-        // Priority 5: Check loop preservation
+        // Priority 6: Check loop preservation
         // TODO: Add preservedLoopVariables to context when available
         /*
         if (context.preservedLoopVariables != null && context.preservedLoopVariables.exists(tvarId)) {
@@ -352,7 +405,7 @@ class VariableBuilder {
         }
         */
 
-        // Priority 6: Check if the declaration had underscore prefix
+        // Priority 7: Check if the declaration had underscore prefix
         // CRITICAL: References must match the declaration name exactly
         var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(defaultName);
         if (context.underscorePrefixedVars != null && context.underscorePrefixedVars.exists(tvarId)) {
@@ -535,6 +588,32 @@ class VariableBuilder {
         #if debug_loop_variables
         trace('[Loop Variable] Preserved: var $tvarId -> $name');
         #end
+    }
+
+    /**
+     * Strip numeric shadow suffix from parameter names
+     *
+     * WHY: Haxe adds numeric suffixes (2, 3, etc.) when parameters shadow class fields
+     * WHAT: Removes the numeric suffix to get the original parameter name
+     * HOW: Pattern matches "name + digits" and strips the digits
+     *
+     * EXAMPLE:
+     * - "replacer2" → "replacer" (shadowed parameter)
+     * - "space3" → "space" (shadowed parameter)
+     * - "counter" → "counter" (no shadow, unchanged)
+     * - "value2extra" → "value2extra" (not pure numeric suffix, unchanged)
+     */
+    static function stripNumericShadowSuffix(name: String): String {
+        var pattern = ~/^(.+?)(\d+)$/;
+        if (pattern.match(name)) {
+            var base = pattern.matched(1);
+            var suffix = pattern.matched(2);
+            #if debug_constructor_args
+            trace('[Shadow Strip] $name -> $base (removed suffix: $suffix)');
+            #end
+            return base;
+        }
+        return name;
     }
 }
 

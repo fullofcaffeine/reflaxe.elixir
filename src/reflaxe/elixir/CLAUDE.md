@@ -104,6 +104,102 @@ src/reflaxe/elixir/
 4. Document with WHY/WHAT/HOW pattern
 5. Update this CLAUDE.md file
 
+## ⚠️ CRITICAL: CallExprBuilder Duplication and self() Bug (January 2025)
+
+**INVESTIGATION RESULT**: Two CallExprBuilder files exist, but only ONE is actively used.
+
+### File Status
+- **✅ ACTIVE**: `src/reflaxe/elixir/ast/builders/CallExprBuilder.hx` (569 lines)
+  - Package: `reflaxe.elixir.ast.builders`
+  - Imported by: `ElixirASTBuilder.hx:28`
+  - Has `static buildCall()` method
+  - Contains Phoenix self() injection logic (lines 462-542)
+  - **Contains the self() bug** (lines 489, 510)
+
+- **❌ LEGACY/UNUSED**: `src/reflaxe/elixir/helpers/CallExprBuilder.hx` (250 lines)
+  - Package: `reflaxe.elixir.helpers`
+  - NOT imported anywhere
+  - Has instance `buildCall()` method (requires `new`)
+  - NO self() handling
+  - Leftover from failed modularization attempt (commit ecf50d9d)
+
+### The self() Bug in Active CallExprBuilder
+
+**Location**: Lines 489 and 510 in `ast/builders/CallExprBuilder.hx`
+
+**Buggy Code**:
+```haxe
+// Line 489 (PubSub) and 510 (Presence)
+var selfCall = makeAST(ECall(makeAST(EVar("self")), "", []));
+```
+
+**What This Creates**:
+- `target` = `EVar("self")` (variable "self" as target)
+- `funcName` = `""` (empty function name)
+- `args` = `[]`
+
+**How Printer Interprets It** (`ElixirASTPrinter.hx:639-641`):
+```haxe
+if (funcName == "") {
+    // Function variable call - use .() syntax
+    print(target, indent) + '.(' + argStr + ')';  // Generates: self.()
+}
+```
+
+**Result**: Generates `self.()` which is:
+1. Invalid syntax (`self.()` vs `self()`)
+2. Wrong semantics (function variable invocation vs kernel function call)
+3. Causes compilation error: "undefined variable 'self'"
+
+### The Fix
+
+**Correct Pattern for Kernel Functions**:
+```haxe
+// For kernel functions like self(), spawn(), node(), etc.
+var selfCall = makeAST(ECall(null, "self", []));
+```
+
+**Why This Works**:
+- `target` = `null` (no module, no variable)
+- `funcName` = `"self"` (the function name)
+- `args` = `[]`
+
+**Printer Handles It** (`ElixirASTPrinter.hx:659-661`):
+```haxe
+} else {
+    funcName + '(' + argStr + ')';  // Generates: self()
+}
+```
+
+**Result**: Generates correct `self()` kernel function call.
+
+### ECall AST Pattern Reference
+
+From `ElixirAST.hx:161`:
+```haxe
+/** Function call */
+ECall(target: Null<ElixirAST>, funcName: String, args: Array<ElixirAST>);
+```
+
+**Three ECall Patterns**:
+1. **Kernel/module function**: `ECall(null, "function_name", [args])` → `function_name(args)`
+2. **Function variable**: `ECall(EVar("var"), "", [args])` → `var.(args)`
+3. **Method call**: `ECall(target, "method", [args])` → `target.method(args)`
+
+### Cleanup Action Needed
+
+The legacy `helpers/CallExprBuilder.hx` should be deleted:
+- Not imported anywhere
+- Confusing to have two versions
+- Part of abandoned refactoring (commit ecf50d9d)
+- All functionality is in the active `ast/builders` version
+
+### Git History Context
+
+- `fc489696` - Extract CallExprBuilder from ElixirASTBuilder (active version)
+- `f2acaa11` - Add CallExprBuilder helper (legacy version)
+- `ecf50d9d` - Failed modularization attempt that created duplication
+
 ## ⚠️ CRITICAL: Understanding @:native Metadata in Reflaxe.Elixir
 
 **FUNDAMENTAL LESSON (January 2025): @:native in Reflaxe compilers works differently than standard Haxe.**
@@ -575,11 +671,101 @@ context.setFeatureFlag("idiomatic_comprehensions", true);
 4. **User Control**: Users can opt into experimental features when ready
 5. **Development Velocity**: Can merge partial improvements behind flags
 
+## 🎯 Critical Compiler Patterns (September 2025)
+
+### Constructor Context Pattern - Surgical Variable Resolution
+
+**Problem**: Function parameters were incorrectly renamed when passed as constructor arguments due to stale parameter mapping contexts.
+
+**Solution**: Context flags for surgical precision in variable resolution.
+
+```haxe
+// VariableBuilder.hx - Context flag pattern
+public static function resolveVariableName(
+    name: String,
+    context: BuildContext,
+    ?isConstructorArg: Bool = false  // Explicit context flag
+): String {
+    // HIGHEST PRIORITY: Preserve names in specific contexts
+    if (isConstructorArg == true) {
+        return toElixirVarName(name);  // No renaming in constructor args
+    }
+
+    // Continue with general resolution logic...
+}
+```
+
+**Integration Pattern**:
+```haxe
+// ConstructorBuilder.hx - Pass context flag
+for (arg in args) {
+    var argName = extractArgumentName(arg);
+    var resolvedName = VariableBuilder.resolveVariableName(
+        argName,
+        context,
+        true  // Mark as constructor argument context
+    );
+    compiledArgs.push(resolvedName);
+}
+```
+
+**Why This Works**:
+- **Surgical precision**: Only affects constructor argument contexts
+- **No heuristics**: Explicit intent via boolean flag
+- **Self-documenting**: Flag name explains purpose
+- **Easy testing**: Can toggle flag independently
+- **Preserves architecture**: Doesn't break other variable resolution paths
+
+**Architectural Benefits**:
+1. **Context Awareness**: Resolution knows WHERE it's being used
+2. **Priority-Based**: Specific contexts override general rules
+3. **Maintainable**: Clear separation between context-specific and general logic
+4. **Extensible**: Easy to add new context flags (isPatternBinding, isLoopVariable, etc.)
+
+**See**: [`/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md`](/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md) - Complete fix documentation
+
+### Elixir Rebinding Semantics in Hygiene Transforms
+
+**Critical Understanding**: Elixir's `=` operator is pattern matching/rebinding, NOT variable declaration.
+
+```elixir
+# Elixir semantics
+v = 1          # First binding
+v = v + 1      # REBINDING same variable (not creating v_2!)
+
+# vs Imperative semantics (what hygiene initially assumed)
+let v = 1;         # Binding 1
+let v_2 = v + 1;   # Binding 2 (new variable)
+```
+
+**Implication for HygieneTransforms**:
+
+```haxe
+// HygieneTransforms.hx - EMatch handling
+case EMatch(pattern, expr):
+    // Process RHS first to mark usage
+    state.currentContext = Expr;
+    traverseWithContext(expr, state, allBindings);
+
+    // SKIP LHS pattern processing for EMatch
+    // In Elixir, 'v = replacer(key, v)' is rebinding, not new binding
+    // The RHS 'v' correctly uses existing parameter
+    // Creating second binding would mark parameter as unused
+```
+
+**Why This Matters**:
+- **Language semantics alignment**: Compiler respects target language behavior
+- **Prevents false positives**: Variables aren't marked unused when they're being rebound
+- **Idiomatic output**: Generates natural Elixir rebinding patterns
+
+**See**: [`/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md`](/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md#problem-4-parameter-shadowing-in-replacer-callback)
+
 ## 📚 Related Documentation
 - [`/documentation/COMPILER_BEST_PRACTICES.md`](/documentation/COMPILER_BEST_PRACTICES.md) - Complete development practices
 - [`/documentation/COMPILER_PATTERNS.md`](/documentation/COMPILER_PATTERNS.md) - Implementation patterns
 - [`/documentation/ARCHITECTURE.md`](/documentation/ARCHITECTURE.md) - Overall architecture
 - [`/documentation/HAXE_MACRO_APIS.md`](/documentation/HAXE_MACRO_APIS.md) - Correct macro API usage
+- [`/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md`](/docs/03-compiler-development/JSONPRINTER_COMPILATION_FIX.md) - JsonPrinter fix documentation
 
 ## 🏆 Quality Standards
 
