@@ -162,6 +162,26 @@ class CompilationContext implements BuildContext {
      */
     public var infrastructureVarInitValues: Map<String, ElixirAST>;
 
+    /**
+     * Infrastructure variable substitutions from TypedExprPreprocessor
+     * Maps TVar.id to the TypedExpr that should be substituted
+     *
+     * WHY: TypedExprPreprocessor successfully eliminates infrastructure variables
+     *      at TypedExpr level, but builders re-compile sub-expressions and lose
+     *      the substitutions. This map preserves preprocessing results.
+     *
+     * WHAT: Band-aid fix to pass substitution context through AST building.
+     *       TODO: Phase 2 proper fix - refactor builders to accept pre-built AST
+     *
+     * HOW: Populated by ElixirCompiler after preprocessor runs. Builders check
+     *      this map before re-compiling TLocal(_g) references.
+     *
+     * @see TypedExprPreprocessor.preprocess() - Creates the substitutions
+     * @see SwitchBuilder.build() - Checks before re-compiling switch target
+     * @see VariableBuilder.buildVariableReference() - Checks before creating EVar
+     */
+    public var infraVarSubstitutions: Map<Int, TypedExpr>;
+
     // ========================================================================
     // Module Context
     // ========================================================================
@@ -257,6 +277,10 @@ class CompilationContext implements BuildContext {
         loopCounter = 0;
         whileLoopCounter = 0;
         infrastructureVarInitValues = new Map();
+
+        // Initialize infrastructure variable substitutions
+        // Band-aid fix: Preserve preprocessor substitutions that builders lose
+        infraVarSubstitutions = new Map();
 
         // Compiler references will be set by ElixirCompiler
         compiler = null;
@@ -683,6 +707,44 @@ class CompilationContext implements BuildContext {
     }
 
     // Removed duplicate toSnakeCase - use reflaxe.elixir.ast.NameUtils.toSnakeCase instead
+
+    // ========================================================================
+    // Infrastructure Variable Substitution (Band-aid Fix Phase 1)
+    // ========================================================================
+
+    /**
+     * Check if an expression should be substituted based on preprocessor results
+     *
+     * WHY: Band-aid fix - Builders re-compile TypedExpr sub-expressions, losing
+     *      preprocessor substitutions. This preserves them until Phase 2 refactor.
+     * WHAT: If expr is TLocal referring to infrastructure variable that was
+     *       substituted, return the substituted expression instead.
+     * HOW: Check infraVarSubstitutions map using TVar.id as key
+     *
+     * @param expr The TypedExpr to potentially substitute
+     * @return Original expr or substituted expr if found in map
+     */
+    public function substituteIfNeeded(expr: TypedExpr): TypedExpr {
+        if (expr == null || infraVarSubstitutions == null) {
+            return expr;
+        }
+
+        return switch(expr.expr) {
+            case TLocal(tvar):
+                // Check if this TLocal references a substituted infrastructure variable
+                var substituted = infraVarSubstitutions.get(tvar.id);
+                if (substituted != null) {
+                    #if debug_preprocessor
+                    trace('[CompilationContext.substituteIfNeeded] Found substitution for ${tvar.name} (ID: ${tvar.id})');
+                    #end
+                    substituted;
+                } else {
+                    expr;
+                }
+            default:
+                expr;
+        };
+    }
 
     // ========================================================================
     // Debug Support
