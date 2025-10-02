@@ -156,23 +156,44 @@ class ReduceWhileAccumulatorTransform {
      */
     static function transformClauseBody(body: ElixirAST, accVarNames: Array<String>): ElixirAST {
         // Deep transform to handle nested structures
-        return transformBodyRecursive(body, accVarNames, new Map<String, ElixirAST>());
+        return transformBodyRecursive(body, accVarNames, new Map<String, ElixirAST>(), false);
     }
-    
-    static function transformBodyRecursive(body: ElixirAST, accVarNames: Array<String>, accUpdates: Map<String, ElixirAST>): ElixirAST {
+
+    static function transformBodyRecursive(body: ElixirAST, accVarNames: Array<String>, accUpdates: Map<String, ElixirAST>, preserveAssignments: Bool = false): ElixirAST {
         if (body == null) return null;
         
         switch(body.def) {
             case EIf(condition, thenBranch, elseBranch):
+                // ⚠️ FIX: Don't remove if-expressions that contain return tuples
+                // These are the lambda's main control flow (do-while pattern)
+                var hasReturnTuple = containsReturnTuple(thenBranch) ||
+                                     (elseBranch != null && containsReturnTuple(elseBranch));
+
+                trace('[DEBUG] EIf processing - hasReturnTuple: $hasReturnTuple');
+                trace('[DEBUG] thenBranch containsReturnTuple: ${containsReturnTuple(thenBranch)}');
+                if (elseBranch != null) {
+                    trace('[DEBUG] elseBranch containsReturnTuple: ${containsReturnTuple(elseBranch)}');
+                }
+
+                if (hasReturnTuple) {
+                    // This if-expression is the lambda's main control flow
+                    // Preserve it and recursively transform branches WITHOUT removing assignments
+                    trace('[XRay ReduceWhile] Preserving if-expression with return tuples (main control flow)');
+
+                    var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy(), true);
+                    var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy(), true) : null;
+                    return makeAST(EIf(condition, transformedThen, transformedElse));
+                }
+
                 // Check if this if statement contains accumulator assignments
-                var hasAccAssignments = checkForAccumulatorAssignments(thenBranch, accVarNames) || 
+                var hasAccAssignments = checkForAccumulatorAssignments(thenBranch, accVarNames) ||
                                         (elseBranch != null && checkForAccumulatorAssignments(elseBranch, accVarNames));
-                
+
                 if (hasAccAssignments) {
                     // This if contains accumulator assignments, we need to capture the result
                     // Generate a new variable name for the result
                     var resultVarName = findAccumulatorVarInIf(thenBranch, elseBranch, accVarNames);
-                    
+
                     if (resultVarName != null) {
                         // Transform to capture the assignment result
                         var transformedIf = makeAST(EIf(
@@ -180,14 +201,14 @@ class ReduceWhileAccumulatorTransform {
                             extractValueFromAssignment(thenBranch, resultVarName),
                             elseBranch != null ? extractValueFromAssignment(elseBranch, resultVarName) : null
                         ));
-                        
+
                         // Store the update for later use
                         accUpdates.set(resultVarName, transformedIf);
-                        
+
                         #if debug_reduce_while_transform
                         trace('[XRay ReduceWhile] Found accumulator update in if: $resultVarName');
                         #end
-                        
+
                         // Return empty block (the assignment is captured in accUpdates)
                         // We can't return null as it breaks subsequent transformations
                         return makeAST(EBlock([]));
@@ -267,11 +288,17 @@ class ReduceWhileAccumulatorTransform {
                         case EMatch(PVar(varName), value) if (accVarNames.indexOf(varName) >= 0):
                             // Store the update - we'll use it when we see the return tuple
                             localUpdates.set(varName, value);
-                            
+
                             #if debug_reduce_while_transform
-                            trace('[XRay ReduceWhile] Found accumulator update: $varName');
+                            trace('[XRay ReduceWhile] Found accumulator update: $varName, preserveAssignments: $preserveAssignments');
                             #end
-                            // Don't add the assignment to the output
+
+                            // ⚠️ FIX: If we're preserving assignments (inside main control flow), keep them
+                            if (preserveAssignments) {
+                                trace('[XRay ReduceWhile] Preserving assignment: $varName = ...');
+                                transformedExprs.push(makeAST(EMatch(PVar(varName), value)));
+                            }
+                            // Otherwise, don't add the assignment to the output (will be merged into return tuple)
                             
                         case ETuple([atom, accTuple]):
                             // This is a return statement {:cont, acc} or {:halt, acc}
@@ -288,7 +315,7 @@ class ReduceWhileAccumulatorTransform {
                             
                         default:
                             // Recursively transform other expressions
-                            var transformed = transformBodyRecursive(expr, accVarNames, localUpdates);
+                            var transformed = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments);
                             // Only add non-null results
                             if (transformed != null) {
                                 transformedExprs.push(transformed);
@@ -378,6 +405,41 @@ class ReduceWhileAccumulatorTransform {
         return makeAST(ETuple(accValues));
     }
     
+    /**
+     * Check if an AST node contains return tuples {:cont/:halt, accumulator}
+     * These indicate the node is part of the lambda's main control flow
+     */
+    static function containsReturnTuple(node: ElixirAST): Bool {
+        if (node == null) return false;
+
+        switch(node.def) {
+            case ETuple([atom, _]):
+                // Check if this is a {:cont/:halt, acc} tuple
+                switch(atom.def) {
+                    case EAtom(a) if (a == "cont" || a == "halt"):
+                        return true;
+                    default:
+                }
+
+            case EBlock(exprs):
+                // Check if any expression in the block is a return tuple
+                for (expr in exprs) {
+                    if (containsReturnTuple(expr)) {
+                        return true;
+                    }
+                }
+
+            case EIf(_, thenBranch, elseBranch):
+                // Recursively check branches
+                if (containsReturnTuple(thenBranch)) return true;
+                if (elseBranch != null && containsReturnTuple(elseBranch)) return true;
+
+            default:
+        }
+
+        return false;
+    }
+
     /**
      * Check if an AST node represents the Enum module
      */

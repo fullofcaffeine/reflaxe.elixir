@@ -1,0 +1,7 @@
+# Regression test for do-while loop compound assignment bug
+-cp .
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-D elixir_output=out
