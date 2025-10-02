@@ -8,9 +8,10 @@ This file contains AST-specific development guidance for agents working on the R
 
 ### ⚠️ RULE: MODIFY BUT EXTRACT - Keep ElixirASTBuilder.hx Maintainable
 
-**CURRENT SIZE**: 11,137 lines (as of January 2025)
-**VIOLATION LEVEL**: 10x larger than recommended maximum (1,000 lines)
-**STATUS**: EMERGENCY - Needs aggressive refactoring while fixing issues
+**CURRENT SIZE**: 4,778 lines (as of October 2025)
+**PREVIOUS SIZE**: 11,137 lines (January 2025) - **57% reduction achieved!**
+**VIOLATION LEVEL**: Still 2.4x larger than recommended maximum (2,000 lines)
+**STATUS**: IMPROVED but ongoing refactoring needed
 
 ### The Directive
 
