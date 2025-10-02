@@ -1045,6 +1045,11 @@ class ElixirCompiler extends GenericCompiler<
         // This must happen BEFORE any other processing to ensure clean patterns
         expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
 
+        // Capture infrastructure variable substitutions for builder reference
+        // Band-aid fix: Builders re-compile sub-expressions and lose preprocessor work
+        // TODO Phase 2: Refactor builders to accept pre-built AST instead
+        context.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
+
         // Analyze variable usage before building AST
         // This enables context-aware naming to prevent Elixir compilation warnings
         var usageMap = reflaxe.elixir.helpers.VariableUsageAnalyzer.analyzeUsage(expr);

@@ -85,12 +85,36 @@ using Lambda;
  * - Infrastructure variables in loop constructs are handled by LoopBuilder
  */
 class TypedExprPreprocessor {
-    
+
     /**
      * Infrastructure variable pattern matching g, g1, g2, _g, _g1, _g2, etc.
      */
     static final INFRASTRUCTURE_VAR_PATTERN = ~/^_?g[0-9]*$/;
-    
+
+    /**
+     * Last substitution map from preprocessing
+     * Used to pass substitution context to builders that re-compile sub-expressions
+     *
+     * WHY: Band-aid fix - Builders re-compile original TypedExpr nodes,
+     *      losing preprocessor substitutions. This preserves them.
+     * WHAT: Maps TVar.id to the substituted TypedExpr
+     * HOW: Updated by preprocess(), read by getLastSubstitutions()
+     */
+    static var lastSubstitutions: Map<Int, TypedExpr> = new Map();
+
+    /**
+     * Get the substitution map from the last preprocessing run
+     *
+     * WHY: Allow ElixirCompiler to capture substitutions for context
+     * WHAT: Returns the substitution map created during last preprocess() call
+     * HOW: Simply returns the static field set by preprocess()
+     *
+     * @return Map of TVar.id → substituted TypedExpr
+     */
+    public static function getLastSubstitutions(): Map<Int, TypedExpr> {
+        return lastSubstitutions;
+    }
+
     /**
      * Main entry point for preprocessing TypedExpr trees
      * 
@@ -133,15 +157,18 @@ class TypedExprPreprocessor {
         
         // Create initial substitution map (ID-based to prevent shadowing)
         var substitutions = new Map<Int, TypedExpr>();
-        
+
         // Process the expression
         var result = processExpr(expr, substitutions);
-        
+
+        // Store substitutions for later retrieval by compiler
+        lastSubstitutions = substitutions;
+
         #if debug_preprocessor
         trace('[TypedExprPreprocessor] Preprocessing complete');
         trace('[TypedExprPreprocessor] Substitutions made: ${[for (k in substitutions.keys()) k]}');
         #end
-        
+
         return result;
     }
     
