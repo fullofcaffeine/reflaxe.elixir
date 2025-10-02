@@ -104,61 +104,183 @@ class ReturnBuilder {
     }
     
     /**
-     * Check if expression is a switch (possibly wrapped in metadata)
-     * 
+     * Check if expression is a switch (possibly wrapped in metadata or infrastructure variable pattern)
+     *
      * WHY: Switch expressions in returns need special handling
-     * WHAT: Detects TSwitch, including when wrapped in TMeta
-     * HOW: Recursively checks through metadata wrappers
-     * 
+     * WHAT: Detects TSwitch, including when wrapped in TMeta or desugared with infrastructure variables
+     * HOW: Recursively checks through metadata wrappers and detects TBlock([TVar(_g), TSwitch(_g)])
+     *
+     * CRITICAL FIX: Handles Haxe's desugaring of `return switch(expr)` to:
+     *   TReturn(TBlock([TVar(_g, expr), TSwitch(TLocal(_g), ...)]))
+     *
      * @param e Expression to check
      * @return true if this is or contains a switch
      */
     static function isSwitchExpression(e: TypedExpr): Bool {
         if (e == null) return false;
-        
+
         return switch(e.expr) {
             case TSwitch(_, _, _): true;
-            case TMeta(_, innerExpr): isSwitchExpression(innerExpr);
+
+            // CRITICAL: Unwrap TMeta and check inside
+            case TMeta(_, innerExpr):
+                // Check if inner is infrastructure pattern or recursively check for switch
+                switch(innerExpr.expr) {
+                    case TBlock(exprs) if (exprs.length >= 2):
+                        // Check for infrastructure pattern inside TMeta
+                        checkInfrastructurePattern(exprs);
+                    default:
+                        isSwitchExpression(innerExpr);
+                }
+
             case TParenthesis(innerExpr): isSwitchExpression(innerExpr);
+
+            // CRITICAL FIX: Detect infrastructure variable pattern at top level
+            // Pattern: TBlock([TVar(_g, init), TSwitch(TLocal(_g), ...)])
+            case TBlock(exprs) if (exprs.length >= 2):
+                checkInfrastructurePattern(exprs);
+
             default: false;
+        };
+    }
+
+    /**
+     * Check if expressions match infrastructure variable pattern
+     */
+    static function checkInfrastructurePattern(exprs: Array<TypedExpr>): Bool {
+        // Check last expression is switch
+        var lastExpr = exprs[exprs.length - 1];
+        return switch(lastExpr.expr) {
+            case TSwitch(target, _, _):
+                // CRITICAL: Unwrap TParenthesis from target (Haxe wraps TLocal(_g) in parentheses)
+                var unwrappedTarget = switch(target.expr) {
+                    case TParenthesis(inner): inner;
+                    default: target;
+                };
+
+                // Check if switch target is TLocal
+                switch(unwrappedTarget.expr) {
+                    case TLocal(v):
+                        // Check if there's a preceding TVar with same variable
+                        for (i in 0...exprs.length - 1) {
+                            switch(exprs[i].expr) {
+                                case TVar(tvar, init) if (init != null && tvar.id == v.id):
+                                    // Found infrastructure variable pattern!
+                                    #if debug_ast_builder
+                                    trace('[ReturnBuilder] Detected infrastructure variable pattern: ${tvar.name}');
+                                    #end
+                                    return true;
+                                default:
+                            }
+                        }
+                        false;
+                    default:
+                        false;
+                }
+            default:
+                false;
         };
     }
     
     /**
      * Process a switch expression in a return statement
-     * 
-     * WHY: Switch returns may need special metadata preservation
-     * WHAT: Handles switch with proper context
-     * HOW: Delegates to compiler with metadata handling
-     * 
+     *
+     * WHY: Switch returns may need special metadata preservation and infrastructure variable elimination
+     * WHAT: Handles switch with proper context, including desugared patterns
+     * HOW: Delegates to compiler with metadata handling and variable substitution
+     *
+     * CRITICAL FIX: When the switch uses an infrastructure variable (_g), we:
+     * 1. Detect the TBlock([TVar(_g, init), TSwitch(TLocal(_g), ...)]) pattern
+     * 2. Replace TLocal(_g) with the original init expression
+     * 3. Compile the switch with the correct target expression
+     *
      * @param e The switch expression
      * @param context Compilation context
      * @return ElixirASTDef for the switch
      */
     static function processReturnSwitch(e: TypedExpr, context: CompilationContext): Null<ElixirASTDef> {
+        // CRITICAL FIX: Unwrap TMeta first (infrastructure pattern often wrapped in :ast metadata)
+        var unwrappedExpr = switch(e.expr) {
+            case TMeta(_, innerExpr): innerExpr;
+            default: e;
+        };
+
+        // CRITICAL FIX: Check for infrastructure variable pattern
+        var processedExpr = switch(unwrappedExpr.expr) {
+            case TBlock(exprs) if (exprs.length >= 2):
+                var lastExpr = exprs[exprs.length - 1];
+                switch(lastExpr.expr) {
+                    case TSwitch(target, cases, edef):
+                        // CRITICAL: Unwrap TParenthesis from target
+                        var unwrappedTarget = switch(target.expr) {
+                            case TParenthesis(inner): inner;
+                            default: target;
+                        };
+
+                        switch(unwrappedTarget.expr) {
+                            case TLocal(v):
+                                // Find the TVar that initialized this variable
+                                var originalExpr: Null<TypedExpr> = null;
+                                for (i in 0...exprs.length - 1) {
+                                    switch(exprs[i].expr) {
+                                        case TVar(tvar, init) if (init != null && tvar.id == v.id):
+                                            #if debug_ast_builder
+                                            trace('[ReturnBuilder] Found infrastructure variable ${tvar.name}, replacing with original expression');
+                                            trace('[ReturnBuilder]   Original expression type: ${Type.enumConstructor(init.expr)}');
+                                            #end
+                                            originalExpr = init;
+                                            break;
+                                        default:
+                                    }
+                                }
+
+                                if (originalExpr != null) {
+                                    // Create new TSwitch with original expression instead of TLocal(_g)
+                                    var newSwitch: TypedExpr = {
+                                        expr: TSwitch(originalExpr, cases, edef),
+                                        pos: lastExpr.pos,
+                                        t: lastExpr.t
+                                    };
+                                    #if debug_ast_builder
+                                    trace('[ReturnBuilder] Replaced infrastructure variable with original expression');
+                                    #end
+                                    newSwitch;
+                                } else {
+                                    lastExpr;
+                                }
+                            default:
+                                lastExpr;
+                        }
+                    default:
+                        unwrappedExpr;
+                }
+            default:
+                unwrappedExpr;
+        };
+
         // Extract switch from potential metadata wrapper
-        var switchExpr = extractSwitch(e);
+        var switchExpr = extractSwitch(processedExpr);
         if (switchExpr == null) {
             // Not actually a switch after all
             return if (context.compiler != null) {
-                var result = context.compiler.compileExpressionImpl(e, false);
+                var result = context.compiler.compileExpressionImpl(processedExpr, false);
                 result != null ? result.def : null;
             } else {
                 null;
             };
         }
-        
+
         // Compile the switch expression
         var result = if (context.compiler != null) {
             context.compiler.compileExpressionImpl(switchExpr, false);
         } else {
             return null;
         };
-        
+
         if (result == null) {
             return null;
         }
-        
+
         // Check if we need to preserve metadata
         switch(e.expr) {
             case TMeta(meta, _):
@@ -172,7 +294,7 @@ class ReturnBuilder {
                 #end
             default:
         }
-        
+
         return result.def;
     }
     
