@@ -1,0 +1,1 @@
+typedef server.types.SocketAssigns = { totalTodos : Int, todos : Array<TodoApp.Todo>, sortBy : String, showForm : Bool, selectedTags : Array<String>, searchQuery : String, pendingTodos : Int, flash : server.types.FlashMessages, filter : String, editingTodo : Null<TodoApp.Todo>, currentUser : server.types.User, completedTodos : Int }

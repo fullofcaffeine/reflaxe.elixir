@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.macros.IndexMetadata = { unique : Bool, name : String, columns : Array<String> }

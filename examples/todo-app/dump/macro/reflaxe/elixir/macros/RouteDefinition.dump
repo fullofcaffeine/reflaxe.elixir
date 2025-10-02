@@ -1,0 +1,17 @@
+@:structInit
+class reflaxe.elixir.macros.RouteDefinition {
+
+	public function new() {}
+
+	public var name:String;
+
+	public var method:String;
+
+	public var path:String;
+
+	public var controller:String;
+
+	public var action:String;
+
+	public var pipeline:String;
+}

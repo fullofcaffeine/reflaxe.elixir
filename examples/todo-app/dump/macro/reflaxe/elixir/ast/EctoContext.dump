@@ -1,0 +1,9 @@
+@:flatEnum
+enum reflaxe.elixir.ast.EctoContext {
+	Schema;
+	Query;
+	Changeset;
+	Repo;
+	Migration;
+	None;
+}

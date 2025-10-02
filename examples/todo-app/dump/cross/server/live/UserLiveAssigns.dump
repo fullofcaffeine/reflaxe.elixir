@@ -1,0 +1,1 @@
+typedef server.live.UserLiveAssigns = { users : Array<contexts.User>, showForm : Bool, selectedUser : Null<contexts.User>, searchTerm : String, changeset : ecto.Changeset<contexts.User, Dynamic> }

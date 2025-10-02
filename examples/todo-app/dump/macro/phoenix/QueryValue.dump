@@ -1,0 +1,11 @@
+enum phoenix.QueryValue {
+	String(value:String);
+	Integer(value:Int);
+	Float(value:Float);
+	Boolean(value:Bool);
+	Date(value:Dynamic);
+	Binary(value:Dynamic);
+	Array(values:Array<phoenix.QueryValue>);
+	Field(field:String);
+	Fragment(sql:String, params:Array<phoenix.QueryValue>);
+}

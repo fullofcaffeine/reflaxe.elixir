@@ -1,0 +1,5 @@
+@:directlyUsed @:used
+enum phoenix.HandleInfoResult<TAssigns> {
+	NoReply(socket:Phoenix.LiveView.Socket<phoenix.HandleInfoResult.TAssigns>);
+	Error(reason:String, socket:Phoenix.LiveView.Socket<phoenix.HandleInfoResult.TAssigns>);
+}

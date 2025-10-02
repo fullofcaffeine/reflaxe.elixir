@@ -1,0 +1,31 @@
+@:coreApi
+class sys.io.File {
+
+	public static function getContent
+
+	public static function saveContent
+
+	public static function getBytes
+
+	public static function saveBytes
+
+	@:value({ binary : true })
+	public static function read
+
+	@:value({ binary : true })
+	public static function write
+
+	@:value({ binary : true })
+	public static function append
+
+	@:value({ binary : true })
+	public static function update
+
+	public static function copy(srcPath:String, dstPath:String) {
+		var s = sys.io.File.read(srcPath, true);
+		var d = sys.io.File.write(dstPath, true);
+		d.writeInput(s, null);
+		s.close();
+		d.close();
+	}
+}

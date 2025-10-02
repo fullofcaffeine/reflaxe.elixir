@@ -1,0 +1,1 @@
+typedef phoenix.HavingClause = { params : Array<phoenix.QueryValue>, condition : phoenix.QueryConditions }

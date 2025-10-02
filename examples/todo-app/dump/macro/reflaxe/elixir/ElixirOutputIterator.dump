@@ -1,0 +1,348 @@
+@:access(reflaxe.elixir.ElixirCompiler)
+class reflaxe.elixir.ElixirOutputIterator {
+
+	public function new(compiler:reflaxe.elixir.ElixirCompiler) {
+		this.extraIndex = 0;
+		this.extraOutputs = [];
+		this.compiler = compiler;
+		this.context = compiler.createCompilationContext();
+		this.index = 0;
+		this.maxIndex = compiler.classes.length + compiler.enums.length + compiler.typedefs.length + compiler.abstracts.length;
+		this.prepareExternalBootstraps();
+	}
+
+	var compiler:reflaxe.elixir.ElixirCompiler;
+
+	var context:reflaxe.elixir.CompilationContext;
+
+	var index:Int;
+
+	var maxIndex:Int;
+
+	@:value([])
+	var extraOutputs:Array<reflaxe.output.DataAndFileInfo<reflaxe.output.StringOrBytes>>;
+
+	@:value(0)
+	var extraIndex:Int;
+
+	@:maybeUsed
+	public function hasNext() {
+		return this.index < this.maxIndex || this.extraIndex < this.extraOutputs.length;
+	}
+
+	@:maybeUsed
+	public function next() {
+		if (this.index >= this.maxIndex) {
+			if (this.extraIndex < this.extraOutputs.length) {
+				return this.extraOutputs[this.extraIndex ++];
+			};
+			return new reflaxe.output.DataAndFileInfo(reflaxe.output._StringOrBytes.StringOrBytes_Impl_.fromString(""), null, "", null);
+		};
+		var astData = if (this.index < this.compiler.classes.length) {
+			this.compiler.classes[this.index];
+		} else {
+			if (this.index < this.compiler.classes.length + this.compiler.enums.length) {
+				this.compiler.enums[this.index - this.compiler.classes.length];
+			} else {
+				if (this.index < this.compiler.classes.length + this.compiler.enums.length + this.compiler.typedefs.length) {
+					this.compiler.typedefs[this.index - this.compiler.classes.length - this.compiler.enums.length];
+				} else {
+					this.compiler.abstracts[this.index - this.compiler.classes.length - this.compiler.enums.length - this.compiler.typedefs.length];
+				};
+			};
+		};
+		this.index ++;
+		var transformedAST = reflaxe.elixir.ast.ElixirASTTransformer.transform(astData.data, this.context);
+		var output = reflaxe.elixir.ast.ElixirASTPrinter.print(transformedAST, 0);
+		if (output == null || output.length == 0) {
+			haxe.Log.trace("[ElixirOutputIterator ERROR] Empty output for module!", {fileName : "../../src/reflaxe/elixir/ElixirOutputIterator.hx", lineNumber : 162, className : "reflaxe.elixir.ElixirOutputIterator", methodName : "next"});
+			haxe.Log.trace("[ElixirOutputIterator] AST def: " + Std.string(transformedAST.def), {fileName : "../../src/reflaxe/elixir/ElixirOutputIterator.hx", lineNumber : 163, className : "reflaxe.elixir.ElixirOutputIterator", methodName : "next"});
+		};
+		if (reflaxe.elixir.ast.builders.ModuleBuilder.getBootstrapStrategy() == reflaxe.elixir.ast.builders.BootstrapStrategy.InlineDeterministic) {
+			var moduleName = null;
+			for (name in {
+				var this = this.compiler.moduleBaseTypes;
+				cast this.keys();
+			}) {
+				if ({
+					var this = this.compiler.moduleBaseTypes;
+					cast this.get(name);
+				} == astData.baseType) {
+					moduleName = name;
+					break;
+				};
+			};
+			if (moduleName != null && this.compiler.modulesWithBootstrap.indexOf(moduleName, null) >= 0) {
+				var closure = {
+					var result = {
+						{};
+						new haxe.ds.StringMap();
+					};
+					var graph = this.compiler.moduleDependencies;
+					var stack = [];
+					var direct = cast graph.get(moduleName);
+					if (direct != null) {
+						for (k in direct.keys()) {
+							stack.push(k);
+						};
+					};
+					while (stack.length > 0) {
+						var m = stack.pop();
+						if (m == null) {
+							break;
+						};
+						if (m == moduleName) {
+							continue;
+						};
+						if (result.exists(m)) {
+							continue;
+						};
+						{
+							result.set(m, true);
+						};
+						var next = cast graph.get(m);
+						if (next != null) {
+							for (n in next.keys()) {
+								if (! result.exists(n)) {
+									stack.push(n);
+								};
+							};
+						};
+					};
+					result;
+				};
+				var topo = this.compiler.getSortedModules();
+				var ordered = [];
+				{
+					var ` = 0;
+					while (` < topo.length) {
+						var m = topo[`];
+						++ `;
+						if (closure.exists(m)) {
+							ordered.push(m);
+						};
+					};
+				};
+				if (ordered.length < Lambda.count(cast closure, null)) {
+					var allKeys = {
+						var ` = [];
+						for (k in closure.keys()) {
+							`.push(k);
+						};
+						`;
+					};
+					allKeys.sort(function(a:String, b:String) return Reflect.compare(a, b));
+					ordered = allKeys;
+				};
+				var lines = [];
+				{
+					var ` = 0;
+					while (` < ordered.length) {
+						var dep = ordered[`];
+						++ `;
+						if (dep == moduleName) {
+							continue;
+						};
+						var p = {
+							var this = this.compiler.moduleOutputPaths;
+							cast this.get(dep);
+						};
+						if (p == null) {
+							var pack = {
+								var this = this.compiler.modulePackages;
+								cast this.get(dep);
+							};
+							p = this.compiler.getModuleOutputPath(dep, pack);
+						};
+						if (p != null) {
+							lines.push("Code.require_file(\"" + p + "\", __DIR__)");
+						};
+					};
+				};
+				var injected = (if (lines.length > 0) {
+					lines.join("\n") + "\n";
+				} else {
+					"";
+				}) + output + "\n" + moduleName + ".main()";
+				output = injected + "\n";
+			};
+		};
+		return astData.withOutput(@:implicitCast reflaxe.output._StringOrBytes.StringOrBytes_Impl_.fromString(output));
+	}
+
+	function prepareExternalBootstraps() {
+		if (reflaxe.elixir.ast.builders.ModuleBuilder.getBootstrapStrategy() != reflaxe.elixir.ast.builders.BootstrapStrategy.External) {
+			return;
+		};
+		if (! haxe.macro.Context.defined("emit_bootstrap_scripts")) {
+			return;
+		};
+		if (this.compiler.modulesWithBootstrap.length == 0) {
+			return;
+		};
+		var topo = this.compiler.getSortedModules();
+		var generatedFor = [];
+		{
+			var ` = 0;
+			var ` = this.compiler.modulesWithBootstrap;
+			while (` < `.length) {
+				var moduleName = `[`];
+				++ `;
+				var closure = {
+					var result = {
+						{};
+						new haxe.ds.StringMap();
+					};
+					var graph = this.compiler.moduleDependencies;
+					var stack = [];
+					var direct = cast graph.get(moduleName);
+					if (direct != null) {
+						for (k in direct.keys()) {
+							stack.push(k);
+						};
+					};
+					while (stack.length > 0) {
+						var m = stack.pop();
+						if (m == null) {
+							break;
+						};
+						if (m == moduleName) {
+							continue;
+						};
+						if (result.exists(m)) {
+							continue;
+						};
+						{
+							result.set(m, true);
+						};
+						var next = cast graph.get(m);
+						if (next != null) {
+							for (n in next.keys()) {
+								if (! result.exists(n)) {
+									stack.push(n);
+								};
+							};
+						};
+					};
+					result;
+				};
+				var ordered = [];
+				{
+					var ` = 0;
+					while (` < topo.length) {
+						var m = topo[`];
+						++ `;
+						if (closure.exists(m)) {
+							ordered.push(m);
+						};
+					};
+				};
+				if (ordered.length < Lambda.count(cast closure, null)) {
+					var allKeys = {
+						var ` = [];
+						for (k in closure.keys()) {
+							`.push(k);
+						};
+						`;
+					};
+					allKeys.sort(function(a:String, b:String) return Reflect.compare(a, b));
+					ordered = allKeys;
+				};
+				var lines = [];
+				{
+					var ` = 0;
+					while (` < ordered.length) {
+						var dep = ordered[`];
+						++ `;
+						var filePath = {
+							var this = this.compiler.moduleOutputPaths;
+							cast this.get(dep);
+						};
+						if (filePath == null) {
+							var pack = {
+								var this = this.compiler.modulePackages;
+								cast this.get(dep);
+							};
+							filePath = this.compiler.getModuleOutputPath(dep, pack);
+						};
+						if (filePath != null) {
+							lines.push("Code.require_file(\"" + filePath + "\", __DIR__)");
+						};
+					};
+				};
+				var mainPath = {
+					var this = this.compiler.moduleOutputPaths;
+					cast this.get(moduleName);
+				};
+				if (mainPath == null) {
+					var pack = {
+						var this = this.compiler.modulePackages;
+						cast this.get(moduleName);
+					};
+					mainPath = this.compiler.getModuleOutputPath(moduleName, pack);
+				};
+				if (mainPath != null) {
+					lines.push("Code.require_file(\"" + mainPath + "\", __DIR__)");
+				};
+				lines.push(moduleName + ".main()");
+				var content = lines.join("\n");
+				var fileBase = "bootstrap_" + reflaxe.elixir.ast.NameUtils.toSnakeCase(moduleName);
+				var baseType = if ({
+					var this = this.compiler.moduleBaseTypes;
+					cast this.exists(moduleName);
+				}) {
+					{
+						var this = this.compiler.moduleBaseTypes;
+						cast this.get(moduleName);
+					};
+				} else {
+					null;
+				};
+				if (baseType != null) {
+					var data = new reflaxe.output.DataAndFileInfo(reflaxe.output._StringOrBytes.StringOrBytes_Impl_.fromString(content), baseType, fileBase, null);
+					this.extraOutputs.push(data);
+				};
+				generatedFor.push(moduleName);
+			};
+		};
+	}
+
+	inline function computeTransitiveDependencies(root:String) {
+		var result = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var graph = this.compiler.moduleDependencies;
+		var stack = [];
+		var direct = cast graph.get(root);
+		if (direct != null) {
+			for (k in direct.keys()) {
+				stack.push(k);
+			};
+		};
+		while (stack.length > 0) {
+			var m = stack.pop();
+			if (m == null) {
+				break;
+			};
+			if (m == root) {
+				continue;
+			};
+			if (result.exists(m)) {
+				continue;
+			};
+			{
+				result.set(m, true);
+			};
+			var next = cast graph.get(m);
+			if (next != null) {
+				for (n in next.keys()) {
+					if (! result.exists(n)) {
+						stack.push(n);
+					};
+				};
+			};
+		};
+		return result;
+	}
+}

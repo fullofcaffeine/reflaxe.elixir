@@ -1,0 +1,1 @@
+private typedef ecto._Migration.IndexDefinition = { options : Null<ecto.IndexOptions>, columns : Array<String> }

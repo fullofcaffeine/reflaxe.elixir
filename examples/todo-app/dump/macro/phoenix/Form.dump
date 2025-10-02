@@ -1,0 +1,1 @@
+typedef phoenix.Form<T> = { source : phoenix.Changeset<phoenix.Form.T>, params : Map<String, String>, options : phoenix.FormOptions, name : String, impl : String, id : String, hidden : Array<phoenix.FormField>, data : phoenix.Form.T }

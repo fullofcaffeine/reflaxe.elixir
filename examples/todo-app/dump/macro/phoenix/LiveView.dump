@@ -1,0 +1,46 @@
+@:realPath("Phoenix.LiveView") @:realPath("phoenix.LiveView") @:native("Phoenix.LiveView")
+extern class Phoenix.LiveView {
+
+	static function mount<TAssigns>(params:phoenix.MountParams, session:phoenix.Session, socket:Phoenix.LiveView.Socket<mount.TAssigns>):phoenix.MountResult<mount.TAssigns>;
+
+	static function handleEvent<TAssigns>(event:String, params:phoenix.EventParams, socket:Phoenix.LiveView.Socket<handleEvent.TAssigns>):phoenix.HandleEventResult<handleEvent.TAssigns>;
+
+	static function handleInfo<TAssigns>(info:phoenix.PubSubMessage, socket:Phoenix.LiveView.Socket<handleInfo.TAssigns>):phoenix.HandleInfoResult<handleInfo.TAssigns>;
+
+	static function render<T>(assigns:render.T):String;
+
+	static function assign<TAssigns>(socket:Phoenix.LiveView.Socket<assign.TAssigns>, key:String, value:Dynamic):Phoenix.LiveView.Socket<assign.TAssigns>;
+
+	@:has_untyped
+	static inline function assignMultiple<TAssigns>(socket:Phoenix.LiveView.Socket<assignMultiple.TAssigns>, assigns:Dynamic):Phoenix.LiveView.Socket<assignMultiple.TAssigns>;
+
+	@:realPath("assign_new") @:realPath("assignNew") @:native("assign_new")
+	static function assign_new<TAssigns, TValue>(socket:Phoenix.LiveView.Socket<assignNew.TAssigns>, key:String, func:() -> assignNew.TValue):Phoenix.LiveView.Socket<assignNew.TAssigns>;
+
+	static function update<TAssigns, TValue>(socket:Phoenix.LiveView.Socket<update.TAssigns>, key:String, updater:update.TValue -> update.TValue):Phoenix.LiveView.Socket<update.TAssigns>;
+
+	@:realPath("push_patch") @:realPath("pushPatch") @:native("push_patch")
+	static function push_patch<TAssigns>(socket:Phoenix.LiveView.Socket<pushPatch.TAssigns>, options:phoenix.PatchOptions):Phoenix.LiveView.Socket<pushPatch.TAssigns>;
+
+	@:realPath("push_redirect") @:realPath("pushRedirect") @:native("push_redirect")
+	static function push_redirect<TAssigns>(socket:Phoenix.LiveView.Socket<pushRedirect.TAssigns>, options:phoenix.RedirectOptions):Phoenix.LiveView.Socket<pushRedirect.TAssigns>;
+
+	@:realPath("push_event") @:realPath("pushEvent") @:native("push_event")
+	static function push_event<TAssigns, TPayload>(socket:Phoenix.LiveView.Socket<pushEvent.TAssigns>, event:String, payload:pushEvent.TPayload):Phoenix.LiveView.Socket<pushEvent.TAssigns>;
+
+	@:realPath("put_flash") @:realPath("putFlash") @:native("put_flash")
+	static function put_flash<TAssigns>(socket:Phoenix.LiveView.Socket<putFlash.TAssigns>, type:phoenix.FlashType, message:String):Phoenix.LiveView.Socket<putFlash.TAssigns>;
+
+	@:realPath("put_temp_flash") @:realPath("putTempFlash") @:native("put_temp_flash")
+	static function put_temp_flash<TAssigns>(socket:Phoenix.LiveView.Socket<putTempFlash.TAssigns>, type:phoenix.FlashType, message:String):Phoenix.LiveView.Socket<putTempFlash.TAssigns>;
+
+	@:realPath("clear_flash") @:realPath("clearFlash") @:native("clear_flash")
+	static function clear_flash<TAssigns>(socket:Phoenix.LiveView.Socket<clearFlash.TAssigns>, type:phoenix.FlashType):Phoenix.LiveView.Socket<clearFlash.TAssigns>;
+
+	@:native("clear_flash")
+	static function clear_flash<TAssigns>(socket:Phoenix.LiveView.Socket<clearFlash.TAssigns>):Phoenix.LiveView.Socket<clearFlash.TAssigns>;
+
+	static function connected<TAssigns>(socket:Phoenix.LiveView.Socket<connected.TAssigns>):Bool;
+
+	static function getAssign<TAssigns, TValue>(socket:Phoenix.LiveView.Socket<getAssign.TAssigns>, key:String):haxe.ds.Option<getAssign.TValue>;
+}

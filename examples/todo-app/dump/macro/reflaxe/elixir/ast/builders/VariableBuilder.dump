@@ -1,0 +1,403 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.builders.VariableBuilder {
+
+	public static function buildVariableDeclaration(v:haxe.macro.TVar, init:Null<haxe.macro.TypedExpr>, context:reflaxe.elixir.CompilationContext) {
+		var buildExpression = context.getExpressionBuilder();
+		if (reflaxe.elixir.ast.builders.VariableBuilder.isInfrastructureVariableToSkip(v.name)) {
+			return reflaxe.elixir.ast.builders.VariableBuilder.handleInfrastructureDeclaration(v, init, context);
+		};
+		var varName = reflaxe.elixir.ast.builders.VariableBuilder.resolveDeclarationName(v, context);
+		if (init == null) {
+			return reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(varName), {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+			});
+		};
+		var initAST = buildExpression(init);
+		if (initAST == null) {
+			return null;
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(varName), initAST);
+	}
+
+	static function isInfrastructureVariableToSkip(name:String) {
+		if (name == "g" || name == "_g") {
+			return true;
+		};
+		if (name.length > 1 && name.charAt(0) == "g") {
+			var rest = name.substr(1, null);
+			if (reflaxe.elixir.ast.builders.VariableBuilder.isAllDigits(rest)) {
+				return true;
+			};
+		};
+		if (name.length > 2 && name.substr(0, 2) == "_g") {
+			var rest = name.substr(2, null);
+			if (reflaxe.elixir.ast.builders.VariableBuilder.isAllDigits(rest)) {
+				return true;
+			};
+		};
+		return false;
+	}
+
+	static function isAllDigits(s:String) {
+		if (s.length == 0) {
+			return false;
+		};
+		{
+			var ` = 0;
+			var ` = s.length;
+			while (` < `) {
+				var i = ` ++;
+				var c = s.charCodeAt(i);
+				if (c < 48 || c > 57) {
+					return false;
+				};
+			};
+		};
+		return true;
+	}
+
+	static function handleInfrastructureDeclaration(v:haxe.macro.TVar, init:Null<haxe.macro.TypedExpr>, context:reflaxe.elixir.CompilationContext) {
+		if (init == null) {
+			return null;
+		};
+		@:ast(switch (init.expr) {
+	case TField(obj, fa):
+		var fieldName = extractFieldName(fa);
+		switch (obj.expr) {
+			case TLocal(localVar):
+				var extractedVarName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(localVar.name) + "_" + reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+				if (context.tempVarRenameMap == null) {
+					context.tempVarRenameMap = new Map<String,String>();
+				};
+				context.tempVarRenameMap.set(v.name, extractedVarName);
+				var buildExpression = context.getExpressionBuilder();
+				var initAST = buildExpression(init);
+				if (initAST != null) {
+					var varName = resolveDeclarationName(v, context);
+					return EMatch(PVar(varName), initAST);
+				};
+				return null;			
+			default:
+		};	
+	case TLocal(localVar):
+		if (isInfrastructureVariableToSkip(localVar.name)) {
+			return null;
+		};	
+	case TEnumParameter(_, _, _):
+	default:
+}) {
+			var ` = init.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var localVar = `;
+						{
+							if (reflaxe.elixir.ast.builders.VariableBuilder.isInfrastructureVariableToSkip(localVar.name)) {
+								return null;
+							};
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var obj = `;
+						var fa = `;
+						{
+							var fieldName = reflaxe.elixir.ast.builders.VariableBuilder.extractFieldName(fa);
+							@:ast(switch (obj.expr) {
+	case TLocal(localVar):
+		var extractedVarName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(localVar.name) + "_" + reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+		if (context.tempVarRenameMap == null) {
+			context.tempVarRenameMap = new Map<String,String>();
+		};
+		context.tempVarRenameMap.set(v.name, extractedVarName);
+		var buildExpression = context.getExpressionBuilder();
+		var initAST = buildExpression(init);
+		if (initAST != null) {
+			var varName = resolveDeclarationName(v, context);
+			return EMatch(PVar(varName), initAST);
+		};
+		return null;	
+	default:
+}) {
+								var ` = obj.expr;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									{
+										var localVar = `;
+										{
+											var extractedVarName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(localVar.name, null) + "_" + reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+											if (context.tempVarRenameMap == null) {
+												context.tempVarRenameMap = {
+													{};
+													new haxe.ds.StringMap();
+												};
+											};
+											{
+												var this = context.tempVarRenameMap;
+												var key = v.name;
+												cast this.set(key, extractedVarName);
+											};
+											var buildExpression = context.getExpressionBuilder();
+											var initAST = buildExpression(init);
+											if (initAST != null) {
+												var varName = reflaxe.elixir.ast.builders.VariableBuilder.resolveDeclarationName(v, context);
+												return reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(varName), initAST);
+											};
+											return null;
+										};
+									};
+								} else {};
+							};
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{};
+				};
+				default: {}
+			};
+		};
+		return null;
+	}
+
+	static function extractFieldName(fa:haxe.macro.FieldAccess) {
+		return @:ast(switch (fa) {
+	case FInstance(_, _, cf):
+		cf.get().name;	
+	case FStatic(_, cf):
+		cf.get().name;	
+	case FAnon(cf):
+		cf.get().name;	
+	case FClosure(_, cf):
+		cf.get().name;	
+	case FEnum(_, ef):
+		ef.name;	
+	case FDynamic(s):
+		s;	
+}) switch (@:exhaustive enumIndex fa) {
+			case 0: {
+				var ` = fa[0];
+				var ` = fa[1];
+				var ` = fa[2];
+				{
+					var cf = `;
+					{
+						cf.get().name;
+					};
+				};
+			};
+			case 1: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var cf = `;
+					{
+						cf.get().name;
+					};
+				};
+			};
+			case 2: {
+				var ` = fa[0];
+				{
+					var cf = `;
+					{
+						cf.get().name;
+					};
+				};
+			};
+			case 3: {
+				var ` = fa[0];
+				{
+					var s = `;
+					{
+						s;
+					};
+				};
+			};
+			case 4: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var cf = `;
+					{
+						cf.get().name;
+					};
+				};
+			};
+			case 5: {
+				var ` = fa[0];
+				var ` = fa[1];
+				{
+					var ef = `;
+					{
+						ef.name;
+					};
+				};
+			};
+		};
+	}
+
+	static function resolveDeclarationName(v:haxe.macro.TVar, context:reflaxe.elixir.CompilationContext) {
+		var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(v.name);
+		return varName;
+	}
+
+	static inline function makeAST(def:reflaxe.elixir.ast.ElixirASTDef, pos:Null<haxe.macro.Position> = null) {
+		return {def : def, metadata : {}, pos : pos};
+	}
+
+	public static function buildVar(tvar:haxe.macro.TVar, expr:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		var variableName = reflaxe.elixir.ast.builders.VariableBuilder.resolveVariableName(tvar, context);
+		return reflaxe.elixir.ast.ElixirASTDef.EVar(variableName);
+	}
+
+	public static function buildLocal(tvar:haxe.macro.TVar, expr:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		haxe.Log.trace("[buildLocal] TLocal: " + tvar.name + ", constructorArgCtx: " + Std.string(context.isInConstructorArgContext), {fileName : "../../src/reflaxe/elixir/ast/builders/VariableBuilder.hx", lineNumber : 298, className : "reflaxe.elixir.ast.builders.VariableBuilder", methodName : "buildLocal"});
+		var variableName = reflaxe.elixir.ast.builders.VariableBuilder.resolveVariableName(tvar, context);
+		return reflaxe.elixir.ast.ElixirASTDef.EVar(variableName);
+	}
+
+	public static function resolveVariableName(tvar:haxe.macro.TVar, context:reflaxe.elixir.CompilationContext) {
+		var tvarId = tvar.id;
+		var defaultName = tvar.name;
+		if (context.isInConstructorArgContext) {
+			if (context.tempVarRenameMap != null && {
+				var this = context.tempVarRenameMap;
+				cast this.exists(defaultName);
+			}) {
+				var mappedName = {
+					var this = context.tempVarRenameMap;
+					cast this.get(defaultName);
+				};
+				haxe.Log.trace("[Constructor Args] Found mapping: " + defaultName + " -> " + mappedName, {fileName : "../../src/reflaxe/elixir/ast/builders/VariableBuilder.hx", lineNumber : 339, className : "reflaxe.elixir.ast.builders.VariableBuilder", methodName : "resolveVariableName"});
+				return mappedName;
+			};
+			var strippedName = reflaxe.elixir.ast.builders.VariableBuilder.stripNumericShadowSuffix(defaultName);
+			haxe.Log.trace("[Constructor Args] No mapping, stripping suffix: " + defaultName + " -> " + strippedName, {fileName : "../../src/reflaxe/elixir/ast/builders/VariableBuilder.hx", lineNumber : 345, className : "reflaxe.elixir.ast.builders.VariableBuilder", methodName : "resolveVariableName"});
+			return strippedName;
+		};
+		if (context.patternVariableRegistry != null && {
+			var this = context.patternVariableRegistry;
+			cast this.exists(tvarId);
+		}) {
+			var patternName = {
+				var this = context.patternVariableRegistry;
+				cast this.get(tvarId);
+			};
+			return patternName;
+		};
+		if (context.currentClauseContext != null) {
+			var clauseMapping = context.currentClauseContext.lookupVariable(tvarId);
+			if (clauseMapping != null) {
+				return clauseMapping;
+			};
+		};
+		if (context.tempVarRenameMap != null) {
+			var idKey = Std.string(tvarId);
+			if ({
+				var this = context.tempVarRenameMap;
+				cast this.exists(idKey);
+			}) {
+				var mappedName = {
+					var this = context.tempVarRenameMap;
+					cast this.get(idKey);
+				};
+				return mappedName;
+			};
+			if ({
+				var this = context.tempVarRenameMap;
+				cast this.exists(defaultName);
+			}) {
+				var mappedName = {
+					var this = context.tempVarRenameMap;
+					cast this.get(defaultName);
+				};
+				return mappedName;
+			};
+		};
+		if (reflaxe.elixir.ast.builders.VariableBuilder.isInfrastructureVariable(defaultName)) {
+			var infraName = reflaxe.elixir.ast.builders.VariableBuilder.handleInfrastructureVariable(tvar, context);
+			if (infraName != null) {
+				return infraName;
+			};
+		};
+		var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(defaultName);
+		if (context.underscorePrefixedVars != null && {
+			var this = context.underscorePrefixedVars;
+			cast this.exists(tvarId);
+		}) {
+			var hasUnderscorePrefix = {
+				var this = context.underscorePrefixedVars;
+				cast this.get(tvarId);
+			} == true;
+			if (hasUnderscorePrefix && varName.length > 0 && varName.charAt(0) != "_") {
+				varName = "_" + varName;
+			};
+		};
+		return varName;
+	}
+
+	static function isInfrastructureVariable(name:String) {
+		return StringTools.startsWith(name, "g_") || StringTools.startsWith(name, "rec_") || StringTools.startsWith(name, "__") || name == "this" || name == "self";
+	}
+
+	static function handleInfrastructureVariable(tvar:haxe.macro.TVar, context:reflaxe.elixir.CompilationContext) {
+		var name = tvar.name;
+		if (StringTools.startsWith(name, "g_")) {};
+		if (StringTools.startsWith(name, "rec_")) {
+			return name;
+		};
+		if (StringTools.startsWith(name, "__")) {
+			return name;
+		};
+		if (name == "this" || name == "self") {
+			if (context.currentReceiverParamName != null) {
+				return context.currentReceiverParamName;
+			};
+			if (context.isInExUnitTest) {
+				return "context";
+			};
+			return "__instance_variable_not_available_in_this_context__";
+		};
+		return null;
+	}
+
+	public static function registerPatternVariable(tvarId:Int, patternName:String, context:reflaxe.elixir.CompilationContext) {
+		if (context.patternVariableRegistry == null) {
+			context.patternVariableRegistry = {
+				{};
+				new haxe.ds.IntMap();
+			};
+		};
+		{
+			var this = context.patternVariableRegistry;
+			cast this.set(tvarId, patternName);
+		};
+	}
+
+	public static function registerGlobalVariable(tvarId:Int, newName:String, context:reflaxe.elixir.CompilationContext) {}
+
+	public static function clearPatternVariables(context:reflaxe.elixir.CompilationContext) {
+		context.patternVariableRegistry = null;
+	}
+
+	public static function preserveLoopVariable(tvarId:Int, name:String, context:reflaxe.elixir.CompilationContext) {}
+
+	static function stripNumericShadowSuffix(name:String) {
+		var pattern = new EReg("^(.+?)(\\d+)$", "");
+		if (pattern.match(name)) {
+			var base = pattern.matched(1);
+			var suffix = pattern.matched(2);
+			return base;
+		};
+		return name;
+	}
+}

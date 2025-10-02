@@ -1,0 +1,184 @@
+class reflaxe.elixir.ast.builders.BuilderFacade {
+
+	public function new(legacyBuilder:Dynamic, context:reflaxe.elixir.ast.context.BuildContext) {
+		this.legacyBuilder = legacyBuilder;
+		this.context = context;
+		this.specializedBuilders = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		this.routingMetrics = {
+			{};
+			new haxe.ds.StringMap();
+		};
+	}
+
+	var context:reflaxe.elixir.ast.context.BuildContext;
+
+	var legacyBuilder:Dynamic;
+
+	var specializedBuilders:Map<String, reflaxe.elixir.ast.builders.IBuilder>;
+
+	var routingMetrics:Map<String, Int>;
+
+	public function registerBuilder(builderType:String, builder:Dynamic) {
+		{
+			var this = this.specializedBuilders;
+			cast this.set(builderType, cast builder);
+		};
+		this.context.registerBuilder(builderType, builder);
+	}
+
+	public function routeSwitch(expr:haxe.macro.TypedExpr, cases:Array<reflaxe.elixir.ast.builders.Case>, defaultExpr:Null<haxe.macro.TypedExpr>) {
+		if (this.context.isFeatureEnabled("use_new_pattern_builder")) {
+			this.recordRouting("pattern.new");
+			var patternBuilder = {
+				var this = this.specializedBuilders;
+				cast this.get("pattern");
+			};
+			if (patternBuilder != null) {
+				try {
+					throw "PatternMatchBuilder disabled";
+				} catch (`:Dynamic) {
+					{};
+					{};
+					if (true) {
+						{};
+						{};
+					} else throw `;
+				};
+			};
+		};
+		this.recordRouting("pattern.legacy");
+		return this.legacyBuilder.compileSwitch(expr, cases, defaultExpr);
+	}
+
+	public function routeLoop(condition:haxe.macro.TypedExpr, body:haxe.macro.TypedExpr) {
+		this.recordRouting("loop.legacy");
+		return this.legacyBuilder.compileWhile(condition, body);
+	}
+
+	public function routeFunction(field:haxe.macro.ClassField, expr:haxe.macro.TypedExpr) {
+		this.recordRouting("function.legacy");
+		return this.legacyBuilder.compileFunction(field, expr);
+	}
+
+	public function routeComprehension(generator:haxe.macro.TypedExpr, mapper:haxe.macro.TypedExpr, filter:Null<haxe.macro.TypedExpr>) {
+		this.recordRouting("comprehension.legacy");
+		return this.legacyBuilder.compileComprehension(generator, mapper, filter);
+	}
+
+	public function enableGradualMigration(builderType:String, percentage:Int) {
+		if (percentage < 0 || percentage > 100) {
+			throw "Invalid percentage: " + percentage + ". Must be 0-100.";
+		};
+		var flagName = "use_new_" + builderType + "_builder";
+		var random = Std.random(100);
+		var shouldEnable = random < percentage;
+		this.context.setFeatureFlag(flagName, shouldEnable);
+	}
+
+	function recordRouting(route:String) {
+		if (! {
+			var this = this.routingMetrics;
+			cast this.exists(route);
+		}) {
+			{
+				var this = this.routingMetrics;
+				cast this.set(route, 0);
+			};
+		};
+		{
+			var this = this.routingMetrics;
+			var value = {
+				var this = this.routingMetrics;
+				cast this.get(route);
+			} + 1;
+			cast this.set(route, value);
+		};
+	}
+
+	public function getMetricsReport() {
+		var report = ["BuilderFacade Routing Metrics:"];
+		for (route in {
+			var this = this.routingMetrics;
+			cast this.keys();
+		}) {
+			var count = {
+				var this = this.routingMetrics;
+				cast this.get(route);
+			};
+			report.push("  " + route + ": " + count + " calls");
+		};
+		var totalByType = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		for (route in {
+			var this = this.routingMetrics;
+			cast this.keys();
+		}) {
+			var parts = route.split(".");
+			var type = parts[0];
+			var impl = parts[1];
+			if (! totalByType.exists(type)) {
+				{
+					totalByType.set(type, 0);
+				};
+			};
+			{
+				var value = totalByType.get(type) + {
+					var this = this.routingMetrics;
+					cast this.get(route);
+				};
+				totalByType.set(type, value);
+			};
+		};
+		report.push("\nMigration Progress:");
+		for (type in totalByType.keys()) {
+			var total = cast totalByType.get(type);
+			var newCount = if ({
+				var this = this.routingMetrics;
+				cast this.exists("" + type + ".new");
+			}) {
+				{
+					var this = this.routingMetrics;
+					cast this.get("" + type + ".new");
+				};
+			} else {
+				0;
+			};
+			var percentage = if (total > 0) {
+				Math.round((newCount / total) * 100);
+			} else {
+				0;
+			};
+			report.push("  " + type + ": " + percentage + "% migrated (" + newCount + "/" + total + ")");
+		};
+		return report.join("\n");
+	}
+
+	public function rollbackAll() {
+		var flags = ["use_new_pattern_builder", "use_new_loop_builder", "use_new_function_builder", "use_new_comprehension_builder"];
+		{
+			var ` = 0;
+			while (` < flags.length) {
+				var flag = flags[`];
+				++ `;
+				this.context.setFeatureFlag(flag, false);
+			};
+		};
+	}
+
+	public function enableAll() {
+		var flags = ["use_new_pattern_builder", "use_new_loop_builder", "use_new_function_builder", "use_new_comprehension_builder"];
+		{
+			var ` = 0;
+			while (` < flags.length) {
+				var flag = flags[`];
+				++ `;
+				this.context.setFeatureFlag(flag, true);
+			};
+		};
+	}
+}

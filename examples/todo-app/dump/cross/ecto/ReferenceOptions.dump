@@ -1,0 +1,1 @@
+typedef ecto.ReferenceOptions = { ?onUpdate : Null<ecto.OnUpdateAction>, ?onDelete : Null<ecto.OnDeleteAction>, ?column : Null<String> }

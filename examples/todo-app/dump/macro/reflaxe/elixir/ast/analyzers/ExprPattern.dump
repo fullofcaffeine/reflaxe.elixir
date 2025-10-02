@@ -1,0 +1,11 @@
+enum reflaxe.elixir.ast.analyzers.ExprPattern {
+	IntLiteral(value:Int);
+	LocalVar(name:String);
+	BinaryOp(op:haxe.macro.Binop);
+	FunctionCall;
+	FieldAccess;
+	BlockExpr;
+	Conditional;
+	WhileLoop;
+	ForLoop;
+}

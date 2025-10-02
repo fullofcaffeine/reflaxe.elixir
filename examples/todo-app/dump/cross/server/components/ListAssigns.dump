@@ -1,0 +1,1 @@
+typedef server.components.ListAssigns = { items : Array<String> }

@@ -1,0 +1,1 @@
+typedef server.types.Session = { ?userId : Null<Int>, ?userAgent : Null<String>, ?token : Null<String>, ?timezone : Null<String>, ?loginAt : Null<Dynamic>, ?locale : Null<String>, ?ipAddress : Null<String>, ?csrfToken : Null<String> }

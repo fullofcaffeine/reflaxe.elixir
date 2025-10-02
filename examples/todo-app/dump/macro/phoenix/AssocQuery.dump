@@ -1,0 +1,1 @@
+typedef phoenix.AssocQuery = { query : phoenix.Query<Any>, assoc : String }

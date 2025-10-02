@@ -1,0 +1,1 @@
+typedef phoenix.ValidationOptions = { ?message : Null<String>, ?allow_nil : Null<Bool>, ?allow_blank : Null<Bool> }

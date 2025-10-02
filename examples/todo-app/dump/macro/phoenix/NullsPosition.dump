@@ -1,0 +1,6 @@
+@:flatEnum
+enum phoenix.NullsPosition {
+	First;
+	Last;
+	Default;
+}

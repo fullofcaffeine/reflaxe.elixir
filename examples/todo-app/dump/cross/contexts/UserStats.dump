@@ -1,0 +1,1 @@
+typedef contexts.UserStats = { total : Int, inactive : Int, active : Int }

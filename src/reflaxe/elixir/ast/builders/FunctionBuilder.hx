@@ -173,6 +173,12 @@ class FunctionBuilder {
         // Check for numeric suffix (parameter shadowing)
         var strippedName = stripNumericSuffix(originalName);
         var hasNumericSuffix = (strippedName != originalName);
+
+        #if debug_variable_renaming
+        if (hasNumericSuffix) {
+            trace('[FunctionBuilder] Stripped suffix: "$originalName" -> "$strippedName"');
+        }
+        #end
         
         // Convert to snake_case
         var baseName = ElixirASTHelpers.toElixirVarName(strippedName);
@@ -236,8 +242,8 @@ class FunctionBuilder {
         var suffix = pattern.matched(2);
         
         // Common field names that get shadowed
-        var commonFieldNames = ["options", "columns", "name", "value", 
-                               "type", "data", "fields", "items"];
+        var commonFieldNames = ["options", "columns", "name", "value",
+                               "type", "data", "fields", "items", "priority"];
         
         // Only strip if it looks like shadowing
         if ((suffix == "2" || suffix == "3") && commonFieldNames.indexOf(base) >= 0) {

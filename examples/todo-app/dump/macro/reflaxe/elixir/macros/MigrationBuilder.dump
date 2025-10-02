@@ -1,0 +1,385 @@
+class reflaxe.elixir.macros.MigrationBuilder {
+
+	@:has_untyped
+	public static macro function build() {
+		var fields = haxe.macro.Context.getBuildFields();
+		var localClass = haxe.macro.Context.getLocalClass().get();
+		if (! localClass.meta.has(":migration")) {
+			return fields;
+		};
+		var migrationMeta = localClass.meta.extract(":migration")[0];
+		var migrationName = reflaxe.elixir.macros.MigrationBuilder.extractMigrationName(localClass, migrationMeta);
+		{
+			var ` = 0;
+			while (` < fields.length) {
+				var field = fields[`];
+				++ `;
+				@:ast(switch (field.name) {
+	case "up":
+		processUpMethod(field, migrationName);	
+	case "down":
+		processDownMethod(field, migrationName);	
+}) {
+					var ` = field.name;
+					switch (`) {
+						case "down": {
+							{
+								reflaxe.elixir.macros.MigrationBuilder.processDownMethod(field, migrationName);
+							};
+						};
+						case "up": {
+							{
+								reflaxe.elixir.macros.MigrationBuilder.processUpMethod(field, migrationName);
+							};
+						};
+					};
+				};
+			};
+		};
+		localClass.meta.add(":migrationName", [cast haxe.macro.Context.makeExpr(migrationName, $__mk_pos__("../../src/reflaxe/elixir/macros/MigrationBuilder.hx", 2200, 2213))], localClass.pos);
+		if (! localClass.meta.has(":migrationTimestamp")) {
+			var timestamp = reflaxe.elixir.macros.MigrationBuilder.generateTimestamp();
+			localClass.meta.add(":migrationTimestamp", [cast haxe.macro.Context.makeExpr(timestamp, $__mk_pos__("../../src/reflaxe/elixir/macros/MigrationBuilder.hx", 2456, 2465))], localClass.pos);
+		};
+		return fields;
+	}
+
+	static function extractMigrationName(cls:haxe.macro.ClassType, meta:haxe.macro.MetadataEntry) {
+		if (meta != null && meta.params != null && meta.params.length > 0) {
+			@:ast(switch (meta.params[0].expr) {
+	case EConst(CString(name)):
+		return name;	
+	default:
+}) {
+				var ` = meta.params[0].expr;
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					if (enumIndex ` == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							{
+								return name;
+							};
+						};
+					} else {};
+				} else {};
+			};
+		};
+		return reflaxe.elixir.macros.MigrationBuilder.toSnakeCase(cls.name);
+	}
+
+	static function processUpMethod(field:haxe.macro.Field, migrationName:String) {
+		@:ast(switch (field.kind) {
+	case FFun(func):
+		if (func.expr != null) {
+			analyzeExpression(func.expr, true, migrationName);
+		};	
+	default:
+}) {
+			var ` = field.kind;
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var func = `;
+					{
+						if (func.expr != null) {
+							reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(func.expr, true, migrationName);
+						};
+					};
+				};
+			} else {};
+		};
+	}
+
+	static function processDownMethod(field:haxe.macro.Field, migrationName:String) {
+		@:ast(switch (field.kind) {
+	case FFun(func):
+		if (func.expr != null) {
+			analyzeExpression(func.expr, false, migrationName);
+		};	
+	default:
+}) {
+			var ` = field.kind;
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var func = `;
+					{
+						if (func.expr != null) {
+							reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(func.expr, false, migrationName);
+						};
+					};
+				};
+			} else {};
+		};
+	}
+
+	static function analyzeExpression(expr:haxe.macro.Expr, isUp:Bool, migrationName:String) {
+		@:ast(switch (expr.expr) {
+	case ECall({ expr : EField(_, "createTable") }, args):
+		handleCreateTable(args, migrationName);	
+	case ECall({ expr : EField(_, "dropTable") }, args):
+		handleDropTable(args, migrationName);	
+	case ECall({ expr : EField(_, "alterTable") }, args):
+		handleAlterTable(args, migrationName);	
+	case ECall({ expr : EField(_, "createIndex") }, args):
+		handleCreateIndex(args, migrationName);	
+	case EBlock(exprs):
+		for (e  in  exprs) {
+			analyzeExpression(e, isUp, migrationName);
+		};	
+	default:
+		ExprTools.iter(expr, function(e) ->  @:implicitReturn return analyzeExpression(e, isUp, migrationName));	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 7: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ` = `.expr;
+						var ` = `.pos;
+						if (enumIndex ` == 3) {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							switch (`) {
+								case "alterTable": {
+									{
+										var args = `;
+										{
+											reflaxe.elixir.macros.MigrationBuilder.handleAlterTable(args, migrationName);
+										};
+									};
+								};
+								case "createIndex": {
+									{
+										var args = `;
+										{
+											reflaxe.elixir.macros.MigrationBuilder.handleCreateIndex(args, migrationName);
+										};
+									};
+								};
+								case "createTable": {
+									{
+										var args = `;
+										{
+											reflaxe.elixir.macros.MigrationBuilder.handleCreateTable(args, migrationName);
+										};
+									};
+								};
+								case "dropTable": {
+									{
+										var args = `;
+										{
+											reflaxe.elixir.macros.MigrationBuilder.handleDropTable(args, migrationName);
+										};
+									};
+								};
+								default: {
+									haxe.macro.ExprTools.iter(expr, function(e:haxe.macro.Expr) reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(e, isUp, migrationName));
+								}
+							};
+						} else {
+							haxe.macro.ExprTools.iter(expr, function(e:haxe.macro.Expr) reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(e, isUp, migrationName));
+						};
+					};
+				};
+				case 12: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var e = exprs[`];
+									++ `;
+									reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(e, isUp, migrationName);
+								};
+							};
+						};
+					};
+				};
+				default: {
+					haxe.macro.ExprTools.iter(expr, function(e:haxe.macro.Expr) reflaxe.elixir.macros.MigrationBuilder.analyzeExpression(e, isUp, migrationName));
+				}
+			};
+		};
+	}
+
+	static function handleCreateTable(args:Array<haxe.macro.Expr>, migrationName:String) {
+		if (args.length > 0) {
+			@:ast(switch (args[0].expr) {
+	case EConst(CString(tableName)):
+		MigrationRegistry.registerTable(tableName, args[0].pos);
+		trace("[Migration] Table \"$tableName\" registered in $migrationName");	
+	default:
+}) {
+				var ` = args[0].expr;
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					if (enumIndex ` == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var tableName = `;
+							{
+								reflaxe.elixir.macros.MigrationRegistry.registerTable(tableName, args[0].pos);
+								haxe.Log.trace("[Migration] Table \"" + tableName + "\" registered in " + migrationName, {fileName : "../../src/reflaxe/elixir/macros/MigrationBuilder.hx", lineNumber : 154, className : "reflaxe.elixir.macros.MigrationBuilder", methodName : "handleCreateTable"});
+							};
+						};
+					} else {};
+				} else {};
+			};
+		};
+	}
+
+	static function handleDropTable(args:Array<haxe.macro.Expr>, migrationName:String) {
+		if (args.length > 0) {
+			@:ast(switch (args[0].expr) {
+	case EConst(CString(tableName)):
+		MigrationRegistry.unregisterTable(tableName);
+		trace("[Migration] Table \"$tableName\" marked for deletion in $migrationName");	
+	default:
+}) {
+				var ` = args[0].expr;
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					if (enumIndex ` == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var tableName = `;
+							{
+								reflaxe.elixir.macros.MigrationRegistry.unregisterTable(tableName);
+								haxe.Log.trace("[Migration] Table \"" + tableName + "\" marked for deletion in " + migrationName, {fileName : "../../src/reflaxe/elixir/macros/MigrationBuilder.hx", lineNumber : 168, className : "reflaxe.elixir.macros.MigrationBuilder", methodName : "handleDropTable"});
+							};
+						};
+					} else {};
+				} else {};
+			};
+		};
+	}
+
+	static function handleAlterTable(args:Array<haxe.macro.Expr>, migrationName:String) {
+		if (args.length > 0) {
+			@:ast(switch (args[0].expr) {
+	case EConst(CString(tableName)):
+		MigrationRegistry.validateTableExists(tableName, args[0].pos);	
+	default:
+}) {
+				var ` = args[0].expr;
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					if (enumIndex ` == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var tableName = `;
+							{
+								reflaxe.elixir.macros.MigrationRegistry.validateTableExists(tableName, args[0].pos);
+							};
+						};
+					} else {};
+				} else {};
+			};
+		};
+	}
+
+	static function handleCreateIndex(args:Array<haxe.macro.Expr>, migrationName:String) {
+		if (args.length >= 2) {
+			var tableName = null;
+			var columns = [];
+			@:ast(switch (args[0].expr) {
+	case EConst(CString(name)):
+		tableName = name;	
+	default:
+}) {
+				var ` = args[0].expr;
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					if (enumIndex ` == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var name = `;
+							{
+								tableName = name;
+							};
+						};
+					} else {};
+				} else {};
+			};
+			@:ast(switch (args[1].expr) {
+	case EArrayDecl(values):
+		for (v  in  values) {
+			switch (v.expr) {
+				case EConst(CString(col)):
+					columns.push(col);				
+				default:
+			};
+		};	
+	default:
+}) {
+				var ` = args[1].expr;
+				if (enumIndex ` == 6) {
+					var ` = `[0];
+					{
+						var values = `;
+						{
+							{
+								var ` = 0;
+								while (` < values.length) {
+									var v = values[`];
+									++ `;
+									@:ast(switch (v.expr) {
+	case EConst(CString(col)):
+		columns.push(col);	
+	default:
+}) {
+										var ` = v.expr;
+										if (enumIndex ` == 0) {
+											var ` = `[0];
+											if (enumIndex ` == 2) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var col = `;
+													{
+														columns.push(col);
+													};
+												};
+											} else {};
+										} else {};
+									};
+								};
+							};
+						};
+					};
+				} else {};
+			};
+			if (tableName != null && columns.length > 0) {
+				reflaxe.elixir.macros.MigrationRegistry.validateTableExists(tableName, args[0].pos);
+				reflaxe.elixir.macros.MigrationRegistry.validateColumnsExist(tableName, columns, args[1].pos);
+			};
+		};
+	}
+
+	static function generateTimestamp() {
+		var now = Date.now();
+		var year = now.getFullYear();
+		var month = StringTools.lpad(Std.string(now.getMonth() + 1), "0", 2);
+		var day = StringTools.lpad(Std.string(now.getDate()), "0", 2);
+		var hour = StringTools.lpad(Std.string(now.getHours()), "0", 2);
+		var min = StringTools.lpad(Std.string(now.getMinutes()), "0", 2);
+		var sec = StringTools.lpad(Std.string(now.getSeconds()), "0", 2);
+		return "" + year + month + day + hour + min + sec;
+	}
+
+	static function toSnakeCase(name:String) {
+		return new EReg("([a-z])([A-Z])", "g").replace(name, "$1_$2").toLowerCase();
+	}
+}

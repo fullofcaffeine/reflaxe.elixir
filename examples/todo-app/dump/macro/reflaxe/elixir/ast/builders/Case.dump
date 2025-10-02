@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.builders.Case = { values : Array<haxe.macro.TypedExpr>, ?guard : Null<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }

@@ -1,0 +1,158 @@
+class reflaxe.elixir.ast.ReentrancyGuard {
+
+	public function new() {
+		this.cache = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		this.uniqueIdCounter = 0;
+	}
+
+	var cache:Map<String, reflaxe.elixir.ast.ProcessingState>;
+
+	var uniqueIdCounter:Int;
+
+	public function process(expr:haxe.macro.TypedExpr, builder:() -> reflaxe.elixir.ast.ElixirAST) {
+		var key = this.getExpressionKey(expr);
+		@:ast(switch (cache.get(key)) {
+	case null | NotStarted:
+		cache.set(key, InProgress);
+		var result = builder();
+		cache.set(key, Completed(result));
+		return result;	
+	case InProgress:
+		return makeAST(ENil);	
+	case Completed(result):
+		return result;	
+}) {
+			var ` = {
+				var this = this.cache;
+				cast this.get(key);
+			};
+			if (` == null) {
+				{
+					var this = this.cache;
+					cast this.set(key, reflaxe.elixir.ast.ProcessingState.InProgress);
+				};
+				var result = builder();
+				{
+					var this = this.cache;
+					var value = reflaxe.elixir.ast.ProcessingState.Completed(result);
+					cast this.set(key, value);
+				};
+				return result;
+			} else switch (@:exhaustive enumIndex `) {
+				case 0: {
+					{
+						{
+							var this = this.cache;
+							cast this.set(key, reflaxe.elixir.ast.ProcessingState.InProgress);
+						};
+						var result = builder();
+						{
+							var this = this.cache;
+							var value = reflaxe.elixir.ast.ProcessingState.Completed(result);
+							cast this.set(key, value);
+						};
+						return result;
+					};
+				};
+				case 1: {
+					{
+						return {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+						};
+					};
+				};
+				case 2: {
+					var ` = `[0];
+					{
+						var result = `;
+						{
+							return result;
+						};
+					};
+				};
+			};
+		};
+	}
+
+	public function isInProgress(expr:haxe.macro.TypedExpr) {
+		var key = this.getExpressionKey(expr);
+		return @:ast(switch (cache.get(key)) {
+	case InProgress:
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = {
+				var this = this.cache;
+				cast this.get(key);
+			};
+			if (` == null) {
+				false;
+			} else if (enumIndex ` == 1) {
+				{
+					true;
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	public function clear() {
+		{
+			var this = this.cache;
+			cast this.clear();
+		};
+		this.uniqueIdCounter = 0;
+	}
+
+	function getExpressionKey(expr:haxe.macro.TypedExpr) {
+		if (expr.pos != null) {
+			var pos = expr.pos;
+			return "expr_" + this.positionToString(pos);
+		};
+		var id = this.uniqueIdCounter ++;
+		return "expr_generated_" + id;
+	}
+
+	function positionToString(pos:haxe.macro.Position) {
+		return Std.string(pos);
+	}
+
+	public function getStats() {
+		var stats = {total : 0, inProgress : 0, completed : 0};
+		for (state in {
+			var this = this.cache;
+			cast this.iterator();
+		}) {
+			stats.total ++;
+			@:ast(switch (state) {
+	case InProgress:
+		stats.inProgress++;	
+	case Completed(_):
+		stats.completed++;	
+	case NotStarted:
+}) switch (@:exhaustive enumIndex state) {
+				case 0: {
+					{};
+				};
+				case 1: {
+					{
+						stats.inProgress ++;
+					};
+				};
+				case 2: {
+					var ` = state[0];
+					{
+						stats.completed ++;
+					};
+				};
+			};
+		};
+		return stats;
+	}
+}

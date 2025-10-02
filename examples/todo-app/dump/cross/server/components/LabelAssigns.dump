@@ -1,0 +1,1 @@
+typedef server.components.LabelAssigns = { inner_content : String, ?htmlFor : Null<String>, ?className : Null<String> }

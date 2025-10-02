@@ -1,0 +1,13 @@
+@:keep @:directlyUsed @:used
+private class _Date.Date_Impl_ {
+
+	@:has_untyped
+	public static function fromString(s:String) {
+		return __elixir__("\n            case DateTime.from_iso8601({0}) do\n                {:ok, dt, _} -> dt\n                _ -> DateTime.utc_now()\n            end", s);
+	}
+
+	@:has_untyped
+	public static function getTime(this1:DateTime) {
+		return __elixir__("DateTime.to_unix({0}, :millisecond)", this1);
+	}
+}

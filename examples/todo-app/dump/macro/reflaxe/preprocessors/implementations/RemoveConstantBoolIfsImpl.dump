@@ -1,0 +1,105 @@
+class reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl {
+
+	public static function process(el:Array<haxe.macro.TypedExpr>) {
+		var result = [];
+		{
+			var ` = 0;
+			while (` < el.length) {
+				var e = el[`];
+				++ `;
+				result.push(reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.removeIfs(e));
+			};
+		};
+		return result;
+	}
+
+	static function removeIfs(e:haxe.macro.TypedExpr) {
+		@:ast(switch (e.expr) {
+	case TIf(econd, eif, eelse):
+		{
+			switch (econd.unwrapParenthesis().expr) {
+				case TConst(TBool(true)):
+					{
+						return removeIfs(eif);
+					};				
+				case TConst(TBool(false)):
+					{
+						if (eelse != null) {
+							return removeIfs(eelse);
+						} else {
+							return { expr : TBlock([]), pos : e.pos, t : e.t };
+						};
+					};				
+				case _:
+					{ };				
+			};
+		};	
+	case _:
+		{ };	
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 16) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var econd = `;
+					var eif = `;
+					var eelse = `;
+					{
+						{
+							@:ast(switch (econd.unwrapParenthesis().expr) {
+	case TConst(TBool(true)):
+		{
+			return removeIfs(eif);
+		};	
+	case TConst(TBool(false)):
+		{
+			if (eelse != null) {
+				return removeIfs(eelse);
+			} else {
+				return { expr : TBlock([]), pos : e.pos, t : e.t };
+			};
+		};	
+	case _:
+		{ };	
+}) {
+								var ` = reflaxe.helpers.TypedExprHelper.unwrapParenthesis(econd).expr;
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									if (enumIndex ` == 3) {
+										var ` = `[0];
+										if (`) {
+											{
+												{
+													return reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.removeIfs(eif);
+												};
+											};
+										} else {
+											{
+												{
+													if (eelse != null) {
+														return reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.removeIfs(eelse);
+													} else {
+														return {expr : haxe.macro.TypedExprDef.TBlock([]), pos : e.pos, t : e.t};
+													};
+												};
+											};
+										};
+									} else {
+										{};
+									};
+								} else {
+									{};
+								};
+							};
+						};
+					};
+				};
+			} else {
+				{};
+			};
+		};
+		return haxe.macro.TypedExprTools.map(e, reflaxe.preprocessors.implementations.RemoveConstantBoolIfsImpl.removeIfs);
+	}
+}

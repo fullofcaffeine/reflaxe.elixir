@@ -1,0 +1,1 @@
+typedef phoenix.LinkOptions = { to : String, ?target : Null<String>, ?method : Null<phoenix.HttpMethod>, ?id : Null<String>, ?data : Null<Map<String, String>>, ?confirm : Null<String>, ?className : Null<String> }

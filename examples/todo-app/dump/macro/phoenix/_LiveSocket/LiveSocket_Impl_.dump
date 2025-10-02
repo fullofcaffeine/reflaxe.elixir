@@ -1,0 +1,45 @@
+private class phoenix._LiveSocket.LiveSocket_Impl_ {
+
+	@:noCompletion
+	public static inline function _new(socket:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>) {
+		var this;
+		this = socket;
+		return cast this;
+	}
+
+	@:op(A | B)
+	public static inline function pipe<T>(socket:phoenix.LiveSocket<pipe.T>, func:phoenix.LiveSocket<pipe.T> -> phoenix.LiveSocket<pipe.T>) {
+		return func(socket);
+	}
+
+	public static macro function assign<T>(ethis:haxe.macro.Expr, fieldExpr:haxe.macro.Expr, value:haxe.macro.Expr) {
+		return phoenix.macros.AssignMacro.processAssign(ethis, fieldExpr, value);
+	}
+
+	public static macro function merge<T>(ethis:haxe.macro.Expr, updates:haxe.macro.Expr) {
+		return phoenix.macros.AssignMacro.processMerge(ethis, updates);
+	}
+
+	public static macro function assignNew<T, V>(ethis:haxe.macro.Expr, fieldExpr:haxe.macro.Expr, defaultFn:haxe.macro.Expr) {
+		return phoenix.macros.AssignMacro.processAssignNew(ethis, fieldExpr, defaultFn);
+	}
+
+	public static macro function update<T, V>(ethis:haxe.macro.Expr, fieldExpr:haxe.macro.Expr, updater:haxe.macro.Expr) {
+		return phoenix.macros.AssignMacro.processUpdate(ethis, fieldExpr, updater);
+	}
+
+	@:has_untyped
+	public static inline function clearFlash(this:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>) {
+		return __elixir__("Phoenix.LiveView.clear_flash({0})", this);
+	}
+
+	@:has_untyped
+	public static inline function putFlash(this:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>, type:phoenix.FlashType, message:String) {
+		return __elixir__("Phoenix.LiveView.put_flash({0}, {1}, {2})", this, type, message);
+	}
+
+	@:has_untyped
+	public static inline function pushEvent<P>(this:Phoenix.LiveView.Socket<phoenix.LiveSocket.T>, event:String, payload:pushEvent.P) {
+		return __elixir__("Phoenix.LiveView.push_event({0}, {1}, {2})", this, event, payload);
+	}
+}

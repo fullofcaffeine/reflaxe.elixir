@@ -1,0 +1,3 @@
+@:keep @:directlyUsed @:used @:schema("users")
+class contexts.User {
+}

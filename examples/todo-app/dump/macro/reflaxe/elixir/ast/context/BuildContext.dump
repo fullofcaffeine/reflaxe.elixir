@@ -1,0 +1,54 @@
+interface reflaxe.elixir.ast.context.BuildContext {
+
+	function getASTContext():reflaxe.elixir.ast.context.ElixirASTContext;
+
+	function resolveVariable(tvarId:Int, defaultName:String):String;
+
+	function registerPatternVariable(tvarId:Int, patternName:String):Void;
+
+	function getCurrentPosition():haxe.macro.Position;
+
+	function setCurrentPosition(pos:haxe.macro.Position):Void;
+
+	function getCurrentModule():Null<haxe.macro.ModuleType>;
+
+	function getCurrentClass():Null<haxe.macro.ClassType>;
+
+	function setNodeMetadata(nodeId:String, metadata:Dynamic):Void;
+
+	function generateNodeId():String;
+
+	function isIdiomaticEnum(enumType:haxe.macro.EnumType):Bool;
+
+	function getClauseContext(caseIndex:Int):reflaxe.elixir.ast.context.ClauseContext;
+
+	function pushClauseContext(context:reflaxe.elixir.ast.context.ClauseContext):Void;
+
+	function popClauseContext():reflaxe.elixir.ast.context.ClauseContext;
+
+	function getModuleName(originalName:String):String;
+
+	function getFunctionName(originalName:String):String;
+
+	function isInPattern():Bool;
+
+	function setInPattern(inPattern:Bool):Void;
+
+	function getCurrentFunction():Null<haxe.macro.ClassField>;
+
+	function warning(message:String, pos:Null<haxe.macro.Position>):Void;
+
+	function error(message:String, pos:Null<haxe.macro.Position>):Void;
+
+	function getExpressionBuilder():haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST;
+
+	function getTypeBuilder():haxe.macro.Type -> reflaxe.elixir.ast.ElixirAST;
+
+	function getPatternBuilder(clauseContext:reflaxe.elixir.ast.context.ClauseContext):haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST;
+
+	function registerBuilder(builderType:String, builder:reflaxe.elixir.ast.builders.IBuilder):Void;
+
+	function isFeatureEnabled(flag:String):Bool;
+
+	function setFeatureFlag(flag:String, enabled:Bool):Void;
+}

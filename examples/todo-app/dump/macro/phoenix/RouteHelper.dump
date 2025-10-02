@@ -1,0 +1,4 @@
+enum phoenix.RouteHelper {
+	Named(name:String);
+	Path(path:String);
+}

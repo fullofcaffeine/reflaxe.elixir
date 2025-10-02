@@ -1,0 +1,1 @@
+typedef phoenix.FieldOptions = { ?virtual : Null<Bool>, ?source : Null<String>, ?size : Null<Int>, ?scale : Null<Int>, ?redact : Null<Bool>, ?read_after_writes : Null<Bool>, ?primary_key : Null<Bool>, ?precision : Null<Int>, ?nullable : Null<Bool>, ?defaultValue : Null<Any>, ?autogenerate : Null<Bool> }

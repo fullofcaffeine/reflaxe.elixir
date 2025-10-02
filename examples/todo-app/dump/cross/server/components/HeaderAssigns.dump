@@ -1,0 +1,1 @@
+typedef server.components.HeaderAssigns = { title : String, ?actions : Null<String> }

@@ -1,0 +1,76 @@
+@:keep @:directlyUsed @:used
+class contexts.Users {
+
+	public static function listUsers(filter:Null<contexts.UserFilter> = null) {
+		if ((filter != null)) {
+			var query = {
+				var query = cast __elixir__("Ecto.Queryable.to_query({0})", contexts.User);
+				var this1;
+				this1 = query;
+				cast this1;
+			};
+			if ((filter.name != null)) query = {
+				var value = "%" + filter.name + "%";
+				var newQuery = __elixir__("(require Ecto.Query; Ecto.Query.where({0}, [q], field(q, ^String.to_existing_atom(Macro.underscore({1}))) == ^{2}))", cast query, "name", value);
+				{
+					var this1;
+					this1 = cast newQuery;
+					cast this1;
+				};
+			};
+			if ((filter.email != null)) query = {
+				var value = "%" + filter.email + "%";
+				var newQuery = __elixir__("(require Ecto.Query; Ecto.Query.where({0}, [q], field(q, ^String.to_existing_atom(Macro.underscore({1}))) == ^{2}))", cast query, "email", value);
+				{
+					var this1;
+					this1 = cast newQuery;
+					cast this1;
+				};
+			};
+			if ((filter.isActive != null)) query = {
+				var value = filter.isActive;
+				var newQuery = __elixir__("(require Ecto.Query; Ecto.Query.where({0}, [q], field(q, ^String.to_existing_atom(Macro.underscore({1}))) == ^{2}))", cast query, "active", value);
+				{
+					var this1;
+					this1 = cast newQuery;
+					cast this1;
+				};
+			};
+			return TodoApp.Repo.all(query);
+		};
+		return TodoApp.Repo.all(contexts.User);
+	}
+
+	public static function changeUser(user:Null<contexts.User> = null) {
+		var emptyParams = {};
+		return {
+			var this1;
+			this1 = __elixir__("Ecto.Changeset.change({0}, {1})", user, emptyParams);
+			cast this1;
+		};
+	}
+
+	public static function getUser(id:Int) {
+		var user = TodoApp.Repo.get(contexts.User, id);
+		if ((user == null)) throw "User not found with id: " + id;
+		return user;
+	}
+
+	public static function getUserSafe(id:Int) {
+		return TodoApp.Repo.get(contexts.User, id);
+	}
+
+	public static function createUser(attrs:contexts.UserParams) {
+		var changeset = contexts.UserChangeset.changeset(null, attrs);
+		return TodoApp.Repo.insert(changeset);
+	}
+
+	public static function updateUser(user:contexts.User, attrs:contexts.UserParams) {
+		var changeset = contexts.UserChangeset.changeset(user, attrs);
+		return TodoApp.Repo.update(changeset);
+	}
+
+	public static function deleteUser(user:contexts.User) {
+		return TodoApp.Repo.delete(user);
+	}
+}

@@ -1,0 +1,1 @@
+typedef phoenix.LengthValidationOptions = { ?min : Null<Int>, ?message : Null<String>, ?max : Null<Int>, ?is : Null<Int> }

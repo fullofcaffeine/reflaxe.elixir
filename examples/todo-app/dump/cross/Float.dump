@@ -1,0 +1,2 @@
+@:valueUsed @:used @:coreType @:notNull @:runtimeValue
+abstract Float {}

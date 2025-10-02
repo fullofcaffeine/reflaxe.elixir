@@ -1,0 +1,1 @@
+typedef phoenix.AssociationOptions = { ?where : Null<phoenix.QueryConditions>, ?references : Null<String>, ?preload_order : Null<Array<phoenix.OrderByClause>>, ?on_replace : Null<phoenix.OnReplaceAction>, ?on_delete : Null<phoenix.OnDeleteAction>, ?foreign_key : Null<String>, ?defaults : Null<phoenix.ChangesetParams> }

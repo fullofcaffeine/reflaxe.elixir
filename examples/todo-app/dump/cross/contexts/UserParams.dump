@@ -1,0 +1,1 @@
+typedef contexts.UserParams = { ?name : Null<String>, ?email : Null<String>, ?age : Null<Int>, ?active : Null<Bool> }

@@ -1,0 +1,5 @@
+@:directlyUsed @:used
+extern class String {
+
+	var length(default,null):Int;
+}

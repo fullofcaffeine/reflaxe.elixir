@@ -1,0 +1,1 @@
+typedef server.schemas.TodoParams = { ?userId : Null<Int>, ?title : Null<String>, ?tags : Null<Array<String>>, ?priority : Null<String>, ?dueDate : Null<Date>, ?description : Null<String>, ?completed : Null<Bool> }

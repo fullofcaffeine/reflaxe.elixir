@@ -1,0 +1,1 @@
+typedef controllers.UpdateParams = { ?name : Null<String>, id : String, ?email : Null<String>, ?age : Null<Int>, ?active : Null<Bool> }

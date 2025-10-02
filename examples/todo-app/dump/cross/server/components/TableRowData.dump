@@ -1,0 +1,1 @@
+typedef server.components.TableRowData = Map<String, String>

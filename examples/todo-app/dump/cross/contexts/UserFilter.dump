@@ -1,0 +1,1 @@
+typedef contexts.UserFilter = { ?name : Null<String>, ?isActive : Null<Bool>, ?email : Null<String> }

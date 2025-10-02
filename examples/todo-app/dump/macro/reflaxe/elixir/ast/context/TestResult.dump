@@ -1,0 +1,6 @@
+@:flatEnum
+enum reflaxe.elixir.ast.context.TestResult {
+	InProgress;
+	Success;
+	Failure;
+}

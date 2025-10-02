@@ -1,0 +1,10 @@
+@:flatEnum
+enum phoenix.HttpMethod {
+	GET;
+	POST;
+	PUT;
+	PATCH;
+	DELETE;
+	HEAD;
+	OPTIONS;
+}

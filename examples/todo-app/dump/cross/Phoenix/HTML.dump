@@ -1,0 +1,33 @@
+@:realPath("phoenix.HTML") @:native("Phoenix.HTML")
+extern class Phoenix.HTML {
+
+	static function link(text:String, options:phoenix.LinkOptions):String;
+
+	static function formFor<T>(changeset:phoenix.Changeset<formFor.T>, action:String, options:phoenix.FormOptions, content:phoenix.Form<formFor.T> -> String):String;
+
+	static function textInput<T>(form:phoenix.Form<textInput.T>, field:String, options:phoenix.InputOptions):String;
+
+	static function emailInput<T>(form:phoenix.Form<emailInput.T>, field:String, options:phoenix.InputOptions):String;
+
+	static function passwordInput<T>(form:phoenix.Form<passwordInput.T>, field:String, options:phoenix.InputOptions):String;
+
+	static function textarea<T>(form:phoenix.Form<textarea.T>, field:String, options:phoenix.TextareaOptions):String;
+
+	static function select<T>(form:phoenix.Form<select.T>, field:String, options:Array<phoenix.SelectOption>, inputOptions:phoenix.InputOptions):String;
+
+	static function checkbox<T>(form:phoenix.Form<checkbox.T>, field:String, options:phoenix.CheckboxOptions):String;
+
+	static function hiddenInput<T>(form:phoenix.Form<hiddenInput.T>, field:String, options:phoenix.InputOptions):String;
+
+	static function label<T>(form:phoenix.Form<label.T>, field:String, options:phoenix.LabelOptions):String;
+
+	static function errorTag<T>(form:phoenix.Form<errorTag.T>, field:String):String;
+
+	static function submit(text:String, options:phoenix.SubmitOptions):String;
+
+	static function raw(html:String):phoenix.SafeHTML;
+
+	static function htmlEscape(text:String):String;
+
+	static function csrfMetaTag():String;
+}

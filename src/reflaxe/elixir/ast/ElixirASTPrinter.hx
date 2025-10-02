@@ -852,6 +852,13 @@ class ElixirASTPrinter {
                     trace('[AST Printer] Printing EVar: ${name}');
                 }
                 #end
+
+                #if debug_infrastructure_vars
+                if (name == "g" || name == "_g" || ~/^_?g\d+$/.match(name)) {
+                    trace('[AST Printer EVar] Printing infrastructure variable: $name');
+                }
+                #end
+
                 name;
                 
             case EPin(expr):
@@ -906,14 +913,35 @@ class ElixirASTPrinter {
              * throughout the entire AST printing process.
              */
             case EFn(clauses):
+                #if debug_loop_builder
+                if (clauses.length > 0) {
+                    trace('[XRay Printer] Printing EFn with ${clauses.length} clauses');
+                    var clause = clauses[0];
+                    trace('[XRay Printer]   Clause body type: ${Type.enumConstructor(clause.body.def)}');
+                    switch(clause.body.def) {
+                        case EIf(cond, thenBranch, elseBranch):
+                            trace('[XRay Printer]   Body is EIf - condition type: ${Type.enumConstructor(cond.def)}');
+                            trace('[XRay Printer]   Then branch type: ${Type.enumConstructor(thenBranch.def)}');
+                        case EBlock(exprs):
+                            trace('[XRay Printer]   Body is EBlock with ${exprs.length} expressions');
+                        default:
+                            trace('[XRay Printer]   Body is: ${Type.enumConstructor(clause.body.def)}');
+                    }
+                }
+                #end
+
                 if (clauses.length == 1 && clauses[0].guard == null) {
                     var clause = clauses[0];
                     var argStr = printPatterns(clause.args);
                     // Handle empty parameter list properly (no extra space)
                     var paramPart = clause.args.length == 0 ? '' : ' ' + argStr;
-                    
+
                     // Check if body is complex and needs multi-line formatting
                     var bodyStr = print(clause.body, indent + 1);
+
+                    #if debug_loop_builder
+                    trace('[XRay Printer]   Printed body string (first 200 chars): ${bodyStr.substring(0, bodyStr.length > 200 ? 200 : bodyStr.length)}');
+                    #end
                     var isMultiLine = switch(clause.body.def) {
                         case EIf(_, _, _): true;
                         case ECase(_, _): true;
@@ -1044,7 +1072,10 @@ class ElixirASTPrinter {
             // ================================================================
             case EBlock(expressions):
                 if (expressions.length == 0) {
-                    'nil';
+                    // Empty blocks generate empty string (no code)
+                    // This aligns with TypedExprPreprocessor's semantics where TBlock([])
+                    // represents "generate nothing" (e.g., eliminated infrastructure variables)
+                    '';
                 } else if (expressions.length == 1) {
                     print(expressions[0], indent);
                 } else {
@@ -1347,6 +1378,12 @@ class ElixirASTPrinter {
                 // Assignments cannot be used in inline if-statements
                 false;
             case EBlock(expressions):
+                // Empty blocks MUST use block syntax (not inline)
+                // This prevents invalid syntax: if c == nil, do: , else:
+                if (expressions.length == 0) {
+                    return false;  // Force block syntax for empty branches
+                }
+
                 // A block is not simple if it contains any assignments
                 // This prevents inline if with blocks containing assignments
                 for (expr in expressions) {
@@ -1355,7 +1392,7 @@ class ElixirASTPrinter {
                     }
                 }
                 // Even without assignments, blocks with multiple statements aren't simple
-                expressions.length <= 1 && (expressions.length == 0 || isSimpleExpression(expressions[0]));
+                expressions.length == 1 && isSimpleExpression(expressions[0]);
             case _:
                 false;
         };

@@ -1,0 +1,117 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.builders.ArrayBuilder {
+
+	public static function buildArrayDecl(elements:Array<haxe.macro.TypedExpr>, context:reflaxe.elixir.CompilationContext) {
+		var buildExpression = context.getExpressionBuilder();
+		if (elements.length == 1 && {
+			var ` = elements[0].expr;
+			if (enumIndex ` == 15) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				true;
+			} else false;
+		}) {
+			return buildExpression(elements[0]).def;
+		};
+		if (elements.length == 1) {
+			@:ast(switch (elements[0].expr) {
+	case TBlock(stmts):
+		var comprehension = ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(stmts, context);
+		if (comprehension != null) {
+			switch (comprehension.def) {
+				case EFor(_, _, _, _, _):
+					return comprehension.def;				
+				default:
+			};
+		};	
+	default:
+}) {
+				var ` = elements[0].expr;
+				if (enumIndex ` == 14) {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							var comprehension = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(stmts, context);
+							if (comprehension != null) {
+								@:ast(switch (comprehension.def) {
+	case EFor(_, _, _, _, _):
+		return comprehension.def;	
+	default:
+}) {
+									var ` = comprehension.def;
+									if (enumIndex ` == 41) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										var ` = `[3];
+										var ` = `[4];
+										{
+											return comprehension.def;
+										};
+									} else {};
+								};
+							};
+						};
+					};
+				} else {};
+			};
+		};
+		var builtElements = [];
+		{
+			var ` = 0;
+			while (` < elements.length) {
+				var element = elements[`];
+				++ `;
+				builtElements.push(buildExpression(element));
+			};
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.EList(builtElements);
+	}
+
+	public static function buildArrayAccess(array:haxe.macro.TypedExpr, index:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		var buildExpression = context.getExpressionBuilder();
+		var target = buildExpression(array);
+		var key = buildExpression(index);
+		return reflaxe.elixir.ast.ElixirASTDef.EAccess(target, key);
+	}
+
+	public static function isComprehension(elements:Array<haxe.macro.TypedExpr>) {
+		if (elements.length != 1) {
+			return false;
+		};
+		return @:ast(switch (elements[0].expr) {
+	case TFor(_):
+		true;	
+	case TBlock(stmts):
+		false;	
+	default:
+		false;	
+}) {
+			var ` = elements[0].expr;
+			switch (enumIndex `) {
+				case 14: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							false;
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+}

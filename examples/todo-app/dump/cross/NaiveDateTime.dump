@@ -1,0 +1,37 @@
+@:realPath("elixir.NaiveDateTime") @:native("NaiveDateTime")
+extern class NaiveDateTime {
+
+	var year:Int;
+
+	var month:Int;
+
+	var day:Int;
+
+	var hour:Int;
+
+	var minute:Int;
+
+	var second:Int;
+
+	var microsecond:{ value : Int, precision : Int };
+
+	function to_string():String;
+
+	function to_iso8601():String;
+
+	static function utc_now():NaiveDateTime;
+
+	static function local_now():NaiveDateTime;
+
+	static function new_datetime(year:Int, month:Int, day:Int, hour:Int, minute:Int, second:Int, microsecond:Null<{ value : Int, precision : Int }>):haxe.functional.Result<NaiveDateTime, String>;
+
+	static function from_iso8601(string:String):haxe.functional.Result<NaiveDateTime, String>;
+
+	static function compare(datetime1:NaiveDateTime, datetime2:NaiveDateTime):elixir.ComparisonResult;
+
+	static function add(datetime:NaiveDateTime, amount:Int, unit:elixir.TimeUnit):NaiveDateTime;
+
+	static function diff(datetime1:NaiveDateTime, datetime2:NaiveDateTime, unit:elixir.TimeUnit):Int;
+
+	static function truncate(datetime:NaiveDateTime, precision:elixir.TimePrecision):NaiveDateTime;
+}

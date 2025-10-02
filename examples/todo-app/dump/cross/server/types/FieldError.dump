@@ -1,0 +1,1 @@
+typedef server.types.FieldError = { validation : String, message : String, field : String }

@@ -1,0 +1,1 @@
+private typedef ecto._Migration.ColumnDefinition = { type : ecto.ColumnType<Dynamic>, options : Null<ecto.ColumnOptions<Dynamic>>, name : String }

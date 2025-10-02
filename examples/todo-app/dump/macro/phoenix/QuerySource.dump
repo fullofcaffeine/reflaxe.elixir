@@ -1,0 +1,1 @@
+typedef phoenix.QuerySource = { source : String, schema : Class<Dynamic>, prefix : Null<String> }

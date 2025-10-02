@@ -1,0 +1,2 @@
+@:used
+abstract ecto.EctoQuery<T> {}

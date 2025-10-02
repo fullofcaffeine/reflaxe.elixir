@@ -1,0 +1,7 @@
+@:flatEnum
+enum reflaxe.elixir.helpers.LoopType {
+	ForLoop;
+	WhileLoop;
+	DoWhileLoop;
+	NotALoop;
+}

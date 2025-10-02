@@ -1,0 +1,8 @@
+@:flatEnum
+enum phoenix.OnReplaceAction {
+	Raise;
+	Mark_as_invalid;
+	Nilify;
+	Delete;
+	Update;
+}

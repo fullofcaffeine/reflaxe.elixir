@@ -1,0 +1,591 @@
+class reflaxe.elixir.ast.transformers.DesugarredForDetector {
+
+	@:value(~/^_?g[0-9]*$/)
+	static var INFRASTRUCTURE_VAR_PATTERN(default,never):EReg = new EReg("^_?g[0-9]*$", "");
+
+	public static function detectDesugarredFor(exprs:Array<haxe.macro.TypedExpr>) {
+		if (exprs.length < 3) {
+			return null;
+		};
+		var counterVar = null;
+		var counterInit = null;
+		var limitVar = null;
+		var limitInit = null;
+		var whileIndex = -1;
+		var whileExpr = null;
+		var foundCounter = false;
+		var foundLimit = false;
+		{
+			var ` = 0;
+			var ` = exprs.length;
+			while (` < `) {
+				var i = ` ++;
+				@:ast(switch (exprs[i].expr) {
+	case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+		if (!foundCounter) {
+			counterVar = v.name;
+			counterInit = init;
+			foundCounter = true;
+		} else if (!foundLimit) {
+			limitVar = v.name;
+			limitInit = init;
+			foundLimit = true;
+		};	
+	case TWhile(cond, body, _) if (foundCounter && foundLimit):
+		if (usesInfrastructureVars(cond, counterVar, limitVar)) {
+			whileIndex = i;
+			whileExpr = exprs[i];
+			break;
+		};	
+	default:
+}) {
+					var ` = exprs[i].expr;
+					switch (enumIndex `) {
+						case 13: {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var v = `;
+								var init = `;
+								if (init != null && reflaxe.elixir.ast.transformers.DesugarredForDetector.isInfrastructureVar(v.name)) {
+									if (! foundCounter) {
+										counterVar = v.name;
+										counterInit = init;
+										foundCounter = true;
+									} else {
+										if (! foundLimit) {
+											limitVar = v.name;
+											limitInit = init;
+											foundLimit = true;
+										};
+									};
+								} else {};
+							};
+						};
+						case 17: {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							{
+								var cond = `;
+								var body = `;
+								if (foundCounter && foundLimit) {
+									if (reflaxe.elixir.ast.transformers.DesugarredForDetector.usesInfrastructureVars(cond, counterVar, limitVar)) {
+										whileIndex = i;
+										whileExpr = exprs[i];
+										break;
+									};
+								} else {};
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		if (counterVar != null && limitVar != null && whileExpr != null) {
+			return {counterVar : counterVar, limitVar : limitVar, startValue : counterInit, endValue : limitInit, whileExpr : whileExpr, whileIndex : whileIndex};
+		};
+		return null;
+	}
+
+	static function isInfrastructureVar(name:String) {
+		return reflaxe.elixir.ast.transformers.DesugarredForDetector.INFRASTRUCTURE_VAR_PATTERN.match(name);
+	}
+
+	static function usesInfrastructureVars(expr:haxe.macro.TypedExpr, counterVar:String, limitVar:String) {
+		var uses = [false];
+		var checkExpr = [null];
+		checkExpr[0] = function(e:haxe.macro.TypedExpr) {
+			@:ast(switch (e.expr) {
+	case TLocal(v):
+		if (v.name == counterVar || v.name == limitVar) {
+			uses = true;
+		};	
+	case TBinop(_, e1, e2):
+		checkExpr(e1);
+		checkExpr(e2);	
+	case TUnop(_, _, e):
+		checkExpr(e);	
+	case TParenthesis(e):
+		checkExpr(e);	
+	case TBlock(exprs):
+		for (expr  in  exprs) checkExpr(expr);	
+	case TIf(econd, eif, eelse):
+		checkExpr(econd);
+		checkExpr(eif);
+		if (eelse != null) checkExpr(eelse);	
+	default:
+}) {
+				var ` = e.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								if (v.name == counterVar || v.name == limitVar) {
+									uses[0] = true;
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e1 = `;
+							var e2 = `;
+							{
+								checkExpr[0](e1);
+								checkExpr[0](e2);
+							};
+						};
+					};
+					case 6: {
+						var ` = `[0];
+						{
+							var e = `;
+							{
+								checkExpr[0](e);
+							};
+						};
+					};
+					case 11: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var e = `;
+							{
+								checkExpr[0](e);
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var expr = exprs[`];
+										++ `;
+										checkExpr[0](expr);
+									};
+								};
+							};
+						};
+					};
+					case 16: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						{
+							var econd = `;
+							var eif = `;
+							var eelse = `;
+							{
+								checkExpr[0](econd);
+								checkExpr[0](eif);
+								if (eelse != null) {
+									checkExpr[0](eelse);
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		checkExpr[0](expr);
+		return uses[0];
+	}
+
+	public static function extractUserVariable(whileBody:haxe.macro.TypedExpr, counterVar:String) {
+		@:ast(switch (whileBody.expr) {
+	case TBlock(exprs) if (exprs.length > 0):
+		switch (exprs[0].expr) {
+			case TVar(v, init) if (init != null):
+				switch (init.expr) {
+					case TLocal(localVar) if (localVar.name == counterVar):
+						return v.name;					
+					default:
+				};			
+			default:
+		};	
+	default:
+}) {
+			var ` = whileBody.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					if (exprs.length > 0) {
+						@:ast(switch (exprs[0].expr) {
+	case TVar(v, init) if (init != null):
+		switch (init.expr) {
+			case TLocal(localVar) if (localVar.name == counterVar):
+				return v.name;			
+			default:
+		};	
+	default:
+}) {
+							var ` = exprs[0].expr;
+							if (enumIndex ` == 13) {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var v = `;
+									var init = `;
+									if (init != null) {
+										@:ast(switch (init.expr) {
+	case TLocal(localVar) if (localVar.name == counterVar):
+		return v.name;	
+	default:
+}) {
+											var ` = init.expr;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var localVar = `;
+													if (localVar.name == counterVar) {
+														return v.name;
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								};
+							} else {};
+						};
+					} else {};
+				};
+			} else {};
+		};
+		return null;
+	}
+
+	public static function detectAndEliminate(exprs:Array<haxe.macro.TypedExpr>) {
+		var basic = reflaxe.elixir.ast.transformers.DesugarredForDetector.detectDesugarredFor(exprs);
+		if (basic == null) {
+			return null;
+		};
+		var userVar = null;
+		@:ast(switch (basic.whileExpr.expr) {
+	case TWhile(_, body, _):
+		userVar = extractUserVariable(body, basic.counterVar);	
+	default:
+}) {
+			var ` = basic.whileExpr.expr;
+			if (enumIndex ` == 17) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var body = `;
+					{
+						userVar = reflaxe.elixir.ast.transformers.DesugarredForDetector.extractUserVariable(body, basic.counterVar);
+					};
+				};
+			} else {};
+		};
+		var mapping = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		if (userVar != null) {
+			{
+				var key = basic.counterVar;
+				mapping.set(key, userVar);
+			};
+		};
+		{
+			var key = basic.limitVar;
+			mapping.set(key, "_end");
+		};
+		var isSimpleRange = false;
+		var startLiteral = null;
+		var endLiteral = null;
+		@:ast(switch (basic.startValue.expr) {
+	case TConst(TInt(n)):
+		startLiteral = n;
+		isSimpleRange = true;	
+	default:
+}) {
+			var ` = basic.startValue.expr;
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					{
+						var n = `;
+						{
+							startLiteral = n;
+							isSimpleRange = true;
+						};
+					};
+				} else {};
+			} else {};
+		};
+		@:ast(switch (basic.endValue.expr) {
+	case TConst(TInt(n)):
+		endLiteral = n;	
+	default:
+		isSimpleRange = false;	
+}) {
+			var ` = basic.endValue.expr;
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					{
+						var n = `;
+						{
+							endLiteral = n;
+						};
+					};
+				} else {
+					isSimpleRange = false;
+				};
+			} else {
+				isSimpleRange = false;
+			};
+		};
+		var isArrayIteration = false;
+		var arrayVar = null;
+		@:ast(switch (basic.whileExpr.expr) {
+	case TWhile(_, body, _):
+		if (detectArrayAccess(body)) {
+			isArrayIteration = true;
+			arrayVar = extractArrayVariable(body);
+		};	
+	default:
+}) {
+			var ` = basic.whileExpr.expr;
+			if (enumIndex ` == 17) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var body = `;
+					{
+						if (reflaxe.elixir.ast.transformers.DesugarredForDetector.detectArrayAccess(body)) {
+							isArrayIteration = true;
+							arrayVar = reflaxe.elixir.ast.transformers.DesugarredForDetector.extractArrayVariable(body);
+						};
+					};
+				};
+			} else {};
+		};
+		return {counterVar : basic.counterVar, limitVar : basic.limitVar, startValue : basic.startValue, endValue : basic.endValue, whileExpr : basic.whileExpr, whileIndex : basic.whileIndex, userVar : userVar, arrayVar : arrayVar, variableMapping : mapping, eliminationData : {isSimpleRange : isSimpleRange, isArrayIteration : isArrayIteration, needsIndexCounter : userVar == null, startLiteral : startLiteral, endLiteral : endLiteral}};
+	}
+
+	static function detectArrayAccess(expr:haxe.macro.TypedExpr) {
+		var found = [false];
+		var search = [null];
+		search[0] = function(e:haxe.macro.TypedExpr) {
+			@:ast(switch (e.expr) {
+	case TArray(arr, index):
+		switch (index.expr) {
+			case TLocal(v) if (isInfrastructureVar(v.name)):
+				found = true;			
+			default:
+		};	
+	case TBlock(exprs):
+		for (expr  in  exprs) search(expr);	
+	case TVar(_, init) if (init != null):
+		search(init);	
+	default:
+}) {
+				var ` = e.expr;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var arr = `;
+							var index = `;
+							{
+								@:ast(switch (index.expr) {
+	case TLocal(v) if (isInfrastructureVar(v.name)):
+		found = true;	
+	default:
+}) {
+									var ` = index.expr;
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var v = `;
+											if (reflaxe.elixir.ast.transformers.DesugarredForDetector.isInfrastructureVar(v.name)) {
+												found[0] = true;
+											} else {};
+										};
+									} else {};
+								};
+							};
+						};
+					};
+					case 13: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var init = `;
+							if (init != null) {
+								search[0](init);
+							} else {};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var expr = exprs[`];
+										++ `;
+										search[0](expr);
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		search[0](expr);
+		return found[0];
+	}
+
+	static function extractArrayVariable(expr:haxe.macro.TypedExpr) {
+		var arrayName = [null];
+		var search = [null];
+		search[0] = function(e:haxe.macro.TypedExpr) {
+			@:ast(switch (e.expr) {
+	case TArray(arr, index):
+		switch (arr.expr) {
+			case TLocal(v):
+				arrayName = v.name;			
+			default:
+		};	
+	case TBlock(exprs):
+		for (expr  in  exprs) if (arrayName == null) search(expr);	
+	case TVar(_, init) if (init != null):
+		search(init);	
+	default:
+}) {
+				var ` = e.expr;
+				switch (enumIndex `) {
+					case 2: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var arr = `;
+							var index = `;
+							{
+								@:ast(switch (arr.expr) {
+	case TLocal(v):
+		arrayName = v.name;	
+	default:
+}) {
+									var ` = arr.expr;
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var v = `;
+											{
+												arrayName[0] = v.name;
+											};
+										};
+									} else {};
+								};
+							};
+						};
+					};
+					case 13: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var init = `;
+							if (init != null) {
+								search[0](init);
+							} else {};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var expr = exprs[`];
+										++ `;
+										if (arrayName[0] == null) {
+											search[0](expr);
+										};
+									};
+								};
+							};
+						};
+					};
+					default: {}
+				};
+			};
+		};
+		search[0](expr);
+		return arrayName[0];
+	}
+
+	public static function createSubstitutionMap(data:Dynamic) {
+		var map = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		if (data.userVar != null) {
+			{
+				var key = cast data.counterVar;
+				var value = cast data.userVar;
+				map.set(key, value);
+			};
+		} else {
+			var eliminationData = Reflect.field(data, "eliminationData");
+			var isArrayIteration = if (eliminationData != null) {
+				Reflect.field(eliminationData, "isArrayIteration");
+			} else {
+				false;
+			};
+			var generatedName = if (isArrayIteration) {
+				"item";
+			} else {
+				"i";
+			};
+			{
+				var key = cast data.counterVar;
+				map.set(key, generatedName);
+			};
+		};
+		{
+			var key = cast data.limitVar;
+			map.set(key, "_limit");
+		};
+		var variableMapping = Reflect.field(data, "variableMapping");
+		if (variableMapping != null) {
+			for (key in variableMapping.keys()) {
+				var value = cast variableMapping.get(key);
+				if (value != null && ! map.exists(key)) {
+					{
+						map.set(key, value);
+					};
+				};
+			};
+		};
+		return map;
+	}
+}

@@ -1,0 +1,1 @@
+typedef phoenix.EmbedOptions = { ?strategy : Null<phoenix.EmbedStrategy>, ?on_replace : Null<phoenix.OnReplaceAction> }

@@ -1,0 +1,394 @@
+class reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl {
+
+	@:value({ varUsageCount : null })
+	public function new(mode:reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode, expr:haxe.macro.TypedExpr, varUsageCount:Null<Map<Int, Int>> = null) {
+		this.tvarMap = new haxe.ds.IntMap();
+		this.mode = mode;
+		this.expr = expr;
+		this.varUsageCount = varUsageCount;
+		var _g = expr.expr;
+		var tmp;
+		if ((enumIndex _g == 14)) {
+			var exprs = _g[0];
+			var _g = [];
+			{
+				var _g1 = 0;
+				var _g2 = exprs;
+				while ((_g1 < _g2.length)) {
+					var v = _g2[_g1];
+					++ _g1;
+					_g.push((function(e:haxe.macro.TypedExpr) {
+						return reflaxe.helpers.TypedExprHelper.copy(e, null);
+					})(v));
+				};
+			};
+			tmp = _g;
+		} else tmp = [reflaxe.helpers.TypedExprHelper.copy(expr, null)];
+		this.exprList = tmp;
+	}
+
+	public var mode(default,null):reflaxe.preprocessors.implementations.RemoveTemporaryVariablesMode;
+
+	var expr:haxe.macro.TypedExpr;
+
+	var exprList:Array<haxe.macro.TypedExpr>;
+
+	var parent:Null<reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl>;
+
+	@:value([])
+	var tvarMap:Map<Int, haxe.macro.TypedExpr>;
+
+	var varUsageCount:Null<Map<Int, Int>>;
+
+	public function fixTemporaries() {
+		var `this = this;
+		var mapTypedExpr = [null];
+		mapTypedExpr[0] = function(mappedExpr:haxe.macro.TypedExpr, noReplacements:Bool) {
+			@:ast(switch (mappedExpr.expr) {
+	case TLocal(v) if (!noReplacements):
+		{
+			var e = findReplacement(v.id);
+			if (e != null) return e.wrapParenthesisIfOrderSensitive();
+		};	
+	case TBlock(_):
+		{
+			var tvr = new RemoveTemporaryVariablesImpl(mode, mappedExpr, varUsageCount);
+			tvr.parent = this;
+			return tvr.fixTemporaries();
+		};	
+	case _:
+}) {
+				var ` = mappedExpr.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var v = `;
+							if (! noReplacements) {
+								{
+									var e = `this.findReplacement(v.id);
+									if (e != null) {
+										return reflaxe.helpers.TypedExprHelper.wrapParenthesisIfOrderSensitive(e);
+									};
+								};
+							} else {};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							{
+								var tvr = new reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl(`this.mode, mappedExpr, `this.varUsageCount);
+								tvr.parent = `this;
+								return tvr.fixTemporaries();
+							};
+						};
+					};
+					default: {}
+				};
+			};
+			return haxe.macro.TypedExprTools.map(mappedExpr, function(e:haxe.macro.TypedExpr) return mapTypedExpr[0](e, noReplacements));
+		};
+		var result = [];
+		var hasOverload = false;
+		{
+			var ` = 0;
+			var ` = this.exprList.length;
+			while (` < `) {
+				var i = ` ++;
+				if (i < this.exprList.length - 1) {
+					@:ast(switch (exprList[i].expr) {
+	case TVar(tvar, maybeExpr):
+		{
+			if (maybeExpr != null && shouldRemoveVariable(tvar, maybeExpr)) {
+				tvarMap.set(tvar.id, mapTypedExpr(maybeExpr.trustMe(), false));
+				hasOverload = true;
+				continue;
+			};
+		};	
+	case _:
+}) {
+						var ` = this.exprList[i].expr;
+						if (enumIndex ` == 13) {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var tvar = `;
+								var maybeExpr = `;
+								{
+									{
+										if (maybeExpr != null && this.shouldRemoveVariable(tvar, maybeExpr)) {
+											{
+												var this = this.tvarMap;
+												var key = tvar.id;
+												var value = mapTypedExpr[0](cast cast {
+													if ((maybeExpr == null)) throw "Trusted on null value.";
+													@:nullSafety(Off) maybeExpr;
+												}, false);
+												cast this.set(key, value);
+											};
+											hasOverload = true;
+											continue;
+										};
+									};
+								};
+							};
+						} else {};
+					};
+				};
+				result.push(mapTypedExpr[0](this.exprList[i], this.parent == null && ! hasOverload));
+			};
+		};
+		return reflaxe.helpers.TypedExprHelper.copy(this.expr, haxe.macro.TypedExprDef.TBlock(result));
+	}
+
+	function shouldRemoveVariable(tvar:haxe.macro.TVar, maybeExpr:Null<haxe.macro.TypedExpr>) {
+		var count = this.getVariableUsageCount(tvar.id);
+		return @:ast(switch (mode) {
+	case OnlyAvoidTemporaryFieldAccess:
+		shouldRemoveVariableBeauseAvoidTemporaries(tvar, maybeExpr);	
+	case AllTempVariables if (count < 2):
+		tvar.name.startsWith("temp");	
+	case AllOneUseVariables if (count < 2):
+		true;	
+	case AllVariables:
+		true;	
+	case _:
+		false;	
+}) {
+			var ` = this.mode;
+			switch (enumIndex `) {
+				case 0: {
+					{
+						reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.shouldRemoveVariableBeauseAvoidTemporaries(tvar, maybeExpr);
+					};
+				};
+				case 1: {
+					if (count < 2) {
+						StringTools.startsWith(tvar.name, "temp");
+					} else {
+						false;
+					};
+				};
+				case 2: {
+					if (count < 2) {
+						true;
+					} else {
+						false;
+					};
+				};
+				case 3: {
+					{
+						true;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	function findReplacement(variableId:Int) {
+		if ({
+			var this = this.tvarMap;
+			cast this.exists(variableId);
+		}) {
+			return {
+				var maybe = {
+					var this = this.tvarMap;
+					cast this.get(variableId);
+				};
+				cast {
+					if (maybe == null) {
+						throw "Trusted on null value.";
+					};
+					@:nullSafety(Off) maybe;
+				};
+			};
+		} else {
+			if (this.parent != null) {
+				var e = this.parent.findReplacement(variableId);
+				if (e != null) {
+					return e;
+				};
+			};
+		};
+		return null;
+	}
+
+	function getVariableUsageCount(variableId:Int) {
+		return if (this.varUsageCount != null && {
+			var this = this.varUsageCount;
+			cast this.exists(variableId);
+		}) {
+			var tmp = {
+				{
+					var this = this.varUsageCount;
+					cast this.get(variableId);
+				};
+			};
+			if (tmp != null) tmp else {
+				0;
+			};
+		} else {
+			0;
+		};
+	}
+
+	static function shouldRemoveVariableBeauseAvoidTemporaries(tvar:haxe.macro.TVar, maybeExpr:Null<haxe.macro.TypedExpr>) {
+		var fieldAccess = reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.isField(maybeExpr);
+		if (fieldAccess == null) {
+			return false;
+		};
+		var isAvoidTemporariesType = @:ast(switch (tvar.t) {
+	case TInst(clsRef, _):
+		clsRef.get().hasMeta(Meta.AvoidTemporaries);	
+	case TAbstract(absRef, _):
+		absRef.get().hasMeta(Meta.AvoidTemporaries);	
+	case TEnum(enmRef, _):
+		enmRef.get().hasMeta(Meta.AvoidTemporaries);	
+	case _:
+		false;	
+}) {
+			var ` = tvar.t;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var enmRef = `;
+						{
+							reflaxe.helpers.NameMetaHelper.hasMeta(enmRef.get(), cast ":avoidTemporaries");
+						};
+					};
+				};
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var clsRef = `;
+						{
+							reflaxe.helpers.NameMetaHelper.hasMeta(clsRef.get(), cast ":avoidTemporaries");
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var absRef = `;
+						{
+							reflaxe.helpers.NameMetaHelper.hasMeta(absRef.get(), cast ":avoidTemporaries");
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+		if (isAvoidTemporariesType) {
+			return true;
+		};
+		return @:ast(switch (fieldAccess) {
+	case FInstance(_, _, cf) | FStatic(_, cf):
+		cf.get().hasMeta(Meta.AvoidTemporaries);	
+	case _:
+		false;	
+}) if (fieldAccess == null) {
+			false;
+		} else switch (enumIndex fieldAccess) {
+			case 0: {
+				var ` = fieldAccess[0];
+				var ` = fieldAccess[1];
+				var ` = fieldAccess[2];
+				{
+					var cf = `;
+					{
+						reflaxe.helpers.NameMetaHelper.hasMeta(cf.get(), cast ":avoidTemporaries");
+					};
+				};
+			};
+			case 1: {
+				var ` = fieldAccess[0];
+				var ` = fieldAccess[1];
+				{
+					var cf = `;
+					{
+						reflaxe.helpers.NameMetaHelper.hasMeta(cf.get(), cast ":avoidTemporaries");
+					};
+				};
+			};
+			default: {
+				false;
+			}
+		};
+	}
+
+	static function isField(expr:Null<haxe.macro.TypedExpr>) {
+		if (expr == null) {
+			return null;
+		};
+		return @:ast(switch (expr.expr) {
+	case TParenthesis(e):
+		isField(e);	
+	case TCast(e, null):
+		isField(e);	
+	case TMeta(_, e):
+		isField(e);	
+	case TField(_, fa):
+		fa;	
+	case _:
+		null;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var fa = `;
+						{
+							fa;
+						};
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.isField(e);
+						};
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					if (` == null) {
+						var e = `;
+						{
+							reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.isField(e);
+						};
+					} else {
+						null;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							reflaxe.preprocessors.implementations.RemoveTemporaryVariablesImpl.isField(e);
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+}

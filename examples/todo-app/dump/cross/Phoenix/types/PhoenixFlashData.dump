@@ -1,0 +1,1 @@
+typedef phoenix.types.PhoenixFlashData = { ?type : Null<String>, ?title : Null<String>, ?timeout : Null<Int>, ?message : Null<String>, ?dismissible : Null<Bool>, ?details : Null<Array<String>>, ?action : Null<{ url : String, label : String }> }

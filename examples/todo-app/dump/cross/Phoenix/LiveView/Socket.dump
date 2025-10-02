@@ -1,0 +1,27 @@
+@:realPath("phoenix.Socket") @:used @:native("Phoenix.LiveView.Socket")
+extern class Phoenix.LiveView.Socket<T> {
+
+	var assigns:phoenix.Socket.T;
+
+	var changed:Map<String, Bool>;
+
+	var connected:Bool;
+
+	var endpoint:String;
+
+	var id:String;
+
+	var parent_pid:phoenix.ProcessId;
+
+	var root_pid:phoenix.ProcessId;
+
+	var router:String;
+
+	var transport_pid:phoenix.ProcessId;
+
+	var view:String;
+
+	var fingerprints:Map<String, String>;
+
+	var _private:Map<String, Any>;
+}

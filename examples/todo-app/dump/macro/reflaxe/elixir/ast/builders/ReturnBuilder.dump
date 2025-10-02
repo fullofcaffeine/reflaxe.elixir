@@ -1,0 +1,171 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.builders.ReturnBuilder {
+
+	public static function build(e:Null<haxe.macro.TypedExpr>, context:reflaxe.elixir.CompilationContext) {
+		if (e != null) {
+			if (reflaxe.elixir.ast.builders.ReturnBuilder.isSwitchExpression(e)) {
+				return reflaxe.elixir.ast.builders.ReturnBuilder.processReturnSwitch(e, context);
+			};
+			var result = if (context.compiler != null) {
+				context.compiler.compileExpressionImpl(e, false);
+			} else {
+				return null;
+			};
+			if (result == null) {
+				return {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+				}.def;
+			};
+			return result.def;
+		} else {
+			return reflaxe.elixir.ast.ElixirASTDef.ENil;
+		};
+	}
+
+	static function isSwitchExpression(e:haxe.macro.TypedExpr) {
+		if (e == null) {
+			return false;
+		};
+		return @:ast(switch (e.expr) {
+	case TSwitch(_, _, _):
+		true;	
+	case TMeta(_, innerExpr):
+		isSwitchExpression(innerExpr);	
+	case TParenthesis(innerExpr):
+		isSwitchExpression(innerExpr);	
+	default:
+		false;	
+}) {
+			var ` = e.expr;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					{
+						var innerExpr = `;
+						{
+							reflaxe.elixir.ast.builders.ReturnBuilder.isSwitchExpression(innerExpr);
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var innerExpr = `;
+						{
+							reflaxe.elixir.ast.builders.ReturnBuilder.isSwitchExpression(innerExpr);
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function processReturnSwitch(e:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		var switchExpr = reflaxe.elixir.ast.builders.ReturnBuilder.extractSwitch(e);
+		if (switchExpr == null) {
+			return if (context.compiler != null) {
+				var result = context.compiler.compileExpressionImpl(e, false);
+				if (result != null) {
+					result.def;
+				} else {
+					null;
+				};
+			} else {
+				null;
+			};
+		};
+		var result = if (context.compiler != null) {
+			context.compiler.compileExpressionImpl(switchExpr, false);
+		} else {
+			return null;
+		};
+		if (result == null) {
+			return null;
+		};
+		@:ast(switch (e.expr) {
+	case TMeta(meta, _):
+		if (result.metadata == null) {
+			result.metadata = { };
+		};	
+	default:
+}) {
+			var ` = e.expr;
+			if (enumIndex ` == 25) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var meta = `;
+					{
+						if (result.metadata == null) {
+							result.metadata = {};
+						};
+					};
+				};
+			} else {};
+		};
+		return result.def;
+	}
+
+	static function extractSwitch(e:haxe.macro.TypedExpr) {
+		if (e == null) {
+			return null;
+		};
+		return @:ast(switch (e.expr) {
+	case TSwitch(_, _, _):
+		e;	
+	case TMeta(_, innerExpr):
+		extractSwitch(innerExpr);	
+	case TParenthesis(innerExpr):
+		extractSwitch(innerExpr);	
+	default:
+		null;	
+}) {
+			var ` = e.expr;
+			switch (enumIndex `) {
+				case 6: {
+					var ` = `[0];
+					{
+						var innerExpr = `;
+						{
+							reflaxe.elixir.ast.builders.ReturnBuilder.extractSwitch(innerExpr);
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						e;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var innerExpr = `;
+						{
+							reflaxe.elixir.ast.builders.ReturnBuilder.extractSwitch(innerExpr);
+						};
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+}

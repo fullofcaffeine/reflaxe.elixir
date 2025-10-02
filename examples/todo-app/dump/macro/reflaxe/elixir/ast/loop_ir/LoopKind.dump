@@ -1,0 +1,8 @@
+@:flatEnum
+enum reflaxe.elixir.ast.loop_ir.LoopKind {
+	ForRange;
+	ForEach;
+	While;
+	DoWhile;
+	Comprehension;
+}

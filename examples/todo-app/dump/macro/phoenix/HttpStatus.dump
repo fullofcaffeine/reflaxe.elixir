@@ -1,0 +1,18 @@
+enum phoenix.HttpStatus {
+	Ok;
+	Created;
+	NoContent;
+	MovedPermanently;
+	Found;
+	NotModified;
+	BadRequest;
+	Unauthorized;
+	Forbidden;
+	NotFound;
+	MethodNotAllowed;
+	UnprocessableEntity;
+	InternalServerError;
+	BadGateway;
+	ServiceUnavailable;
+	Custom(code:Int);
+}

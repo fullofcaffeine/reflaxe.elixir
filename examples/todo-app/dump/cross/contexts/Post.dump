@@ -1,0 +1,1 @@
+typedef contexts.Post = { user_id : Int, title : String, id : Int }

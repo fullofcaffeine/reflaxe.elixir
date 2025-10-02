@@ -1,0 +1,1 @@
+typedef server.components.ErrorAssigns = { field : server.components.FormField }

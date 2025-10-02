@@ -1,0 +1,1 @@
+typedef server.components.TableAssigns = { rows : Array<server.components.TableRowData>, columns : Array<server.components.TableColumn> }

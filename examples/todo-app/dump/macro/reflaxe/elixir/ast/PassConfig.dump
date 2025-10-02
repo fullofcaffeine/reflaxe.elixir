@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.PassConfig = { pass : reflaxe.elixir.ast.TransformPass, name : String, enabled : Bool, description : String, ?contextualPass : Null<reflaxe.elixir.ast.ContextualTransformPass> }

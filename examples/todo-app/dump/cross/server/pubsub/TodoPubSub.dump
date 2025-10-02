@@ -1,0 +1,295 @@
+@:keep @:directlyUsed @:used
+class server.pubsub.TodoPubSub {
+
+	public static function subscribe(topic:server.pubsub.TodoPubSubTopic) {
+		return Phoenix.SafePubSub.subscribeWithConverter(topic, server.pubsub.TodoPubSub.topicToString);
+	}
+
+	public static function broadcast(topic:server.pubsub.TodoPubSubTopic, message:server.pubsub.TodoPubSubMessage) {
+		return Phoenix.SafePubSub.broadcastWithConverters(topic, message, server.pubsub.TodoPubSub.topicToString, server.pubsub.TodoPubSub.messageToElixir);
+	}
+
+	public static function parseMessage(msg:Dynamic) {
+		return Phoenix.SafePubSub.parseWithConverter(msg, server.pubsub.TodoPubSub.parseMessageImpl);
+	}
+
+	public static function topicToString(topic:server.pubsub.TodoPubSubTopic) {
+		return @:ast(switch (topic) {
+	case TodoUpdates:
+		"todo:updates";	
+	case UserActivity:
+		"user:activity";	
+	case SystemNotifications:
+		"system:notifications";	
+}) switch ((@:exhaustive enumIndex topic)) {
+			case 0: "todo:updates";
+			case 1: "user:activity";
+			case 2: "system:notifications";
+		};
+	}
+
+	public static function messageToElixir(message:server.pubsub.TodoPubSubMessage) {
+		var basePayload = @:ast(switch (message) {
+	case TodoCreated(todo):
+		{ type : "todo_created", todo : todo };	
+	case TodoUpdated(todo):
+		{ type : "todo_updated", todo : todo };	
+	case TodoDeleted(id):
+		cast { type : "todo_deleted", todo_id : id };	
+	case BulkUpdate(action):
+		cast { type : "bulk_update", action : bulkActionToString(action) };	
+	case UserOnline(user_id):
+		cast { type : "user_online", user_id : user_id };	
+	case UserOffline(user_id):
+		cast { type : "user_offline", user_id : user_id };	
+	case SystemAlert(message, level):
+		cast { type : "system_alert", message : message, level : alertLevelToString(level) };	
+}) switch ((@:exhaustive enumIndex message)) {
+			case 0: {
+				var _g = message[0];
+				{
+					var todo = _g;
+					{type : "todo_created", todo : todo};
+				};
+			};
+			case 1: {
+				var _g = message[0];
+				{
+					var todo = _g;
+					{type : "todo_updated", todo : todo};
+				};
+			};
+			case 2: {
+				var _g = message[0];
+				{
+					var id = _g;
+					cast {type : "todo_deleted", todo_id : id};
+				};
+			};
+			case 3: {
+				var _g = message[0];
+				{
+					var action = _g;
+					cast {type : "bulk_update", action : server.pubsub.TodoPubSub.bulkActionToString(action)};
+				};
+			};
+			case 4: {
+				var _g = message[0];
+				{
+					var user_id = _g;
+					cast {type : "user_online", user_id : user_id};
+				};
+			};
+			case 5: {
+				var _g = message[0];
+				{
+					var user_id = _g;
+					cast {type : "user_offline", user_id : user_id};
+				};
+			};
+			case 6: {
+				var _g = message[0];
+				var _g1 = message[1];
+				{
+					var message = _g;
+					var level = _g1;
+					cast {type : "system_alert", message : message, level : server.pubsub.TodoPubSub.alertLevelToString(level)};
+				};
+			};
+		};
+		return Phoenix.SafePubSub.addTimestamp(basePayload);
+	}
+
+	public static function parseMessageImpl(msg:Dynamic) {
+		if ((! Phoenix.SafePubSub.isValidMessage(msg))) {
+			haxe.Log.trace(Phoenix.SafePubSub.createMalformedMessageError(msg), {fileName : "src_haxe/server/pubsub/TodoPubSub.hx", lineNumber : 191, className : "server.pubsub.TodoPubSub", methodName : "parseMessageImpl"});
+			return haxe.ds.Option.None;
+		};
+		return @:ast(switch (msg.type) {
+	case "todo_created":
+		if (msg.todo != null) Some(TodoCreated(msg.todo)) else None;	
+	case "todo_updated":
+		if (msg.todo != null) Some(TodoUpdated(msg.todo)) else None;	
+	case "todo_deleted":
+		if (msg.todo_id != null) Some(TodoDeleted(msg.todo_id)) else None;	
+	case "bulk_update":
+		if (msg.action != null) {
+			var bulkAction = parseBulkAction(msg.action);
+			switch (bulkAction) {
+				case Some(action):
+					Some(BulkUpdate(action));				
+				case None:
+					None;				
+			};
+		} else None;	
+	case "user_online":
+		if (msg.user_id != null) Some(UserOnline(msg.user_id)) else None;	
+	case "user_offline":
+		if (msg.user_id != null) Some(UserOffline(msg.user_id)) else None;	
+	case "system_alert":
+		if (msg.message != null && msg.level != null) {
+			var alertLevel = parseAlertLevel(msg.level);
+			switch (alertLevel) {
+				case Some(level):
+					Some(SystemAlert(msg.message, level));				
+				case None:
+					None;				
+			};
+		} else None;	
+	case _:
+		trace(SafePubSub.createUnknownMessageError(msg.type));
+		None;	
+}) {
+			var _g = msg.type;
+			switch ((_g)) {
+				case "bulk_update": if ((msg.action != null)) {
+					var bulkAction = server.pubsub.TodoPubSub.parseBulkAction(msg.action);
+					@:ast(switch (bulkAction) {
+	case Some(action):
+		Some(BulkUpdate(action));	
+	case None:
+		None;	
+}) switch ((@:exhaustive enumIndex bulkAction)) {
+						case 0: {
+							var _g = bulkAction[0];
+							{
+								var action = _g;
+								haxe.ds.Option.Some(server.pubsub.TodoPubSubMessage.BulkUpdate(action));
+							};
+						};
+						case 1: haxe.ds.Option.None;
+					};
+				} else haxe.ds.Option.None;
+				case "system_alert": if ((msg.message != null && msg.level != null)) {
+					var alertLevel = server.pubsub.TodoPubSub.parseAlertLevel(msg.level);
+					@:ast(switch (alertLevel) {
+	case Some(level):
+		Some(SystemAlert(msg.message, level));	
+	case None:
+		None;	
+}) switch ((@:exhaustive enumIndex alertLevel)) {
+						case 0: {
+							var _g = alertLevel[0];
+							{
+								var level = _g;
+								haxe.ds.Option.Some(server.pubsub.TodoPubSubMessage.SystemAlert(msg.message, level));
+							};
+						};
+						case 1: haxe.ds.Option.None;
+					};
+				} else haxe.ds.Option.None;
+				case "todo_created": if ((msg.todo != null)) haxe.ds.Option.Some(server.pubsub.TodoPubSubMessage.TodoCreated(msg.todo)) else haxe.ds.Option.None;
+				case "todo_deleted": if ((msg.todo_id != null)) haxe.ds.Option.Some(server.pubsub.TodoPubSubMessage.TodoDeleted(msg.todo_id)) else haxe.ds.Option.None;
+				case "todo_updated": if ((msg.todo != null)) haxe.ds.Option.Some(server.pubsub.TodoPubSubMessage.TodoUpdated(msg.todo)) else haxe.ds.Option.None;
+				case "user_offline": if ((msg.user_id != null)) haxe.ds.Option.Some(server.pubsub.TodoPubSubMessage.UserOffline(msg.user_id)) else haxe.ds.Option.None;
+				case "user_online": if ((msg.user_id != null)) haxe.ds.Option.Some(server.pubsub.TodoPubSubMessage.UserOnline(msg.user_id)) else haxe.ds.Option.None;
+				default: {
+					haxe.Log.trace(Phoenix.SafePubSub.createUnknownMessageError(msg.type), {fileName : "src_haxe/server/pubsub/TodoPubSub.hx", lineNumber : 223, className : "server.pubsub.TodoPubSub", methodName : "parseMessageImpl"});
+					haxe.ds.Option.None;
+				}
+			};
+		};
+	}
+
+	static function bulkActionToString(action:server.types.BulkOperationType) {
+		return @:ast(switch (action) {
+	case CompleteAll:
+		"complete_all";	
+	case DeleteCompleted:
+		"delete_completed";	
+	case SetPriority(priority):
+		"set_priority";	
+	case AddTag(tag):
+		"add_tag";	
+	case RemoveTag(tag):
+		"remove_tag";	
+}) switch ((@:exhaustive enumIndex action)) {
+			case 0: "complete_all";
+			case 1: "delete_completed";
+			case 2: {
+				var _g = action[0];
+				{
+					var priority = _g;
+					"set_priority";
+				};
+			};
+			case 3: {
+				var _g = action[0];
+				{
+					var tag = _g;
+					"add_tag";
+				};
+			};
+			case 4: {
+				var _g = action[0];
+				{
+					var tag = _g;
+					"remove_tag";
+				};
+			};
+		};
+	}
+
+	static function parseBulkAction(action:String) {
+		return @:ast(switch (action) {
+	case "complete_all":
+		Some(CompleteAll);	
+	case "delete_completed":
+		Some(DeleteCompleted);	
+	case "set_priority":
+		Some(SetPriority(TodoPriority.Medium));	
+	case "add_tag":
+		Some(AddTag(""));	
+	case "remove_tag":
+		Some(RemoveTag(""));	
+	case _:
+		None;	
+}) switch ((action)) {
+			case "add_tag": haxe.ds.Option.Some(server.types.BulkOperationType.AddTag(""));
+			case "complete_all": haxe.ds.Option.Some(server.types.BulkOperationType.CompleteAll);
+			case "delete_completed": haxe.ds.Option.Some(server.types.BulkOperationType.DeleteCompleted);
+			case "remove_tag": haxe.ds.Option.Some(server.types.BulkOperationType.RemoveTag(""));
+			case "set_priority": haxe.ds.Option.Some(server.types.BulkOperationType.SetPriority(server.types.TodoPriority.Medium));
+			default: haxe.ds.Option.None
+		};
+	}
+
+	static function alertLevelToString(level:server.types.AlertLevel) {
+		return @:ast(switch (level) {
+	case Info:
+		"info";	
+	case Warning:
+		"warning";	
+	case Error:
+		"error";	
+	case Critical:
+		"critical";	
+}) switch ((@:exhaustive enumIndex level)) {
+			case 0: "info";
+			case 1: "warning";
+			case 2: "error";
+			case 3: "critical";
+		};
+	}
+
+	static function parseAlertLevel(level:String) {
+		return @:ast(switch (level) {
+	case "info":
+		Some(Info);	
+	case "warning":
+		Some(Warning);	
+	case "error":
+		Some(Error);	
+	case "critical":
+		Some(Critical);	
+	case _:
+		None;	
+}) switch ((level)) {
+			case "critical": haxe.ds.Option.Some(server.types.AlertLevel.Critical);
+			case "error": haxe.ds.Option.Some(server.types.AlertLevel.Error);
+			case "info": haxe.ds.Option.Some(server.types.AlertLevel.Info);
+			case "warning": haxe.ds.Option.Some(server.types.AlertLevel.Warning);
+			default: haxe.ds.Option.None
+		};
+	}
+}

@@ -1,0 +1,7 @@
+enum reflaxe.elixir.ast.loop_ir.AccumulatorUpdate {
+	Append;
+	Prepend;
+	Increment;
+	Assignment;
+	Custom(expr:reflaxe.elixir.ast.ElixirAST);
+}
