@@ -1,0 +1,7 @@
+@:flatEnum
+enum phoenix.OnDeleteAction {
+	Nothing;
+	Restrict;
+	Delete_all;
+	Nilify_all;
+}

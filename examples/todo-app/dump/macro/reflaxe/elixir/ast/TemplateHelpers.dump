@@ -1,0 +1,368 @@
+class reflaxe.elixir.ast.TemplateHelpers {
+
+	public static function collectTemplateContent(ast:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (ast.def) {
+	case EString(s):
+		s;	
+	case EBinary(StringConcat, left, right):
+		collectTemplateContent(left) + collectTemplateContent(right);	
+	case EVar(name):
+		"<%= " + name + " %>";	
+	case ECall(module, func, args):
+		var callStr = if (module != null) {
+			switch (module.def) {
+				case EVar(m):
+					m + "." + func;				
+				default:
+					func;				
+			};
+		} else {
+			func;
+		};
+		if (args.length > 0) {
+			var argStrs = [];
+			for (arg  in  args) {
+				argStrs.push(collectTemplateArgument(arg));
+			};
+			callStr += "(" + argStrs.join(", ") + ")";
+		} else {
+			callStr += "()";
+		};
+		"<%= " + callStr + " %>";	
+	default:
+		"<%= [unhandled expression] %>";	
+}) {
+			var ` = ast.def;
+			switch (enumIndex `) {
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var module = `;
+						var func = `;
+						var args = `;
+						{
+							var callStr = if (module != null) {
+								@:ast(switch (module.def) {
+	case EVar(m):
+		m + "." + func;	
+	default:
+		func;	
+}) {
+									var ` = module.def;
+									if (enumIndex ` == 38) {
+										var ` = `[0];
+										{
+											var m = `;
+											{
+												m + "." + func;
+											};
+										};
+									} else {
+										func;
+									};
+								};
+							} else {
+								func;
+							};
+							if (args.length > 0) {
+								var argStrs = [];
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var arg = args[`];
+										++ `;
+										argStrs.push(reflaxe.elixir.ast.TemplateHelpers.collectTemplateArgument(arg));
+									};
+								};
+								callStr += "(" + argStrs.join(", ") + ")";
+							} else {
+								callStr += "()";
+							};
+							"<%= " + callStr + " %>";
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 25) {
+						{
+							var left = `;
+							var right = `;
+							{
+								reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(left) + reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(right);
+							};
+						};
+					} else {
+						"<%= [unhandled expression] %>";
+					};
+				};
+				case 32: {
+					var ` = `[0];
+					{
+						var s = `;
+						{
+							s;
+						};
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var name = `;
+						{
+							"<%= " + name + " %>";
+						};
+					};
+				};
+				default: {
+					"<%= [unhandled expression] %>";
+				}
+			};
+		};
+	}
+
+	public static function collectTemplateArgument(ast:reflaxe.elixir.ast.ElixirAST) {
+		return @:ast(switch (ast.def) {
+	case EString(s):
+		"\"" + s + "\"";	
+	case EVar(name):
+		name;	
+	case EAtom(a):
+		":" + a;	
+	case EInteger(i):
+		Std.string(i);	
+	case EFloat(f):
+		Std.string(f);	
+	case EBoolean(b):
+		b ? "true" : "false";	
+	case ENil:
+		"nil";	
+	case EField(obj, field):
+		switch (obj.def) {
+			case EVar(v):
+				v + "." + field;			
+			default:
+				"[complex]." + field;			
+		};	
+	default:
+		"[complex arg]";	
+}) {
+			var ` = ast.def;
+			switch (enumIndex `) {
+				case 28: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var obj = `;
+						var field = `;
+						{
+							@:ast(switch (obj.def) {
+	case EVar(v):
+		v + "." + field;	
+	default:
+		"[complex]." + field;	
+}) {
+								var ` = obj.def;
+								if (enumIndex ` == 38) {
+									var ` = `[0];
+									{
+										var v = `;
+										{
+											v + "." + field;
+										};
+									};
+								} else {
+									"[complex]." + field;
+								};
+							};
+						};
+					};
+				};
+				case 31: {
+					var ` = `[0];
+					{
+						var a = `;
+						{
+							":" + a;
+						};
+					};
+				};
+				case 32: {
+					var ` = `[0];
+					{
+						var s = `;
+						{
+							"\"" + s + "\"";
+						};
+					};
+				};
+				case 33: {
+					var ` = `[0];
+					{
+						var i = `;
+						{
+							Std.string(i);
+						};
+					};
+				};
+				case 34: {
+					var ` = `[0];
+					{
+						var f = `;
+						{
+							Std.string(f);
+						};
+					};
+				};
+				case 35: {
+					var ` = `[0];
+					{
+						var b = `;
+						{
+							if (b) {
+								"true";
+							} else {
+								"false";
+							};
+						};
+					};
+				};
+				case 36: {
+					{
+						"nil";
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						var name = `;
+						{
+							name;
+						};
+					};
+				};
+				default: {
+					"[complex arg]";
+				}
+			};
+		};
+	}
+
+	public static function isHXXModule(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TTypeExpr(m):
+		var moduleName = moduleTypeToString(m);
+		moduleName == "HXX";	
+	default:
+		false;	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 5) {
+				var ` = `[0];
+				{
+					var m = `;
+					{
+						var moduleName = reflaxe.elixir.ast.TemplateHelpers.moduleTypeToString(m);
+						moduleName == "HXX";
+					};
+				};
+			} else {
+				false;
+			};
+		};
+	}
+
+	static function moduleTypeToString(m:haxe.macro.ModuleType) {
+		return @:ast(switch (m) {
+	case TClassDecl(c):
+		var cls = c.get();
+		if (cls.pack.length > 0) {
+			cls.pack.join(".") + "." + cls.name;
+		} else {
+			cls.name;
+		};	
+	case TEnumDecl(e):
+		var enm = e.get();
+		if (enm.pack.length > 0) {
+			enm.pack.join(".") + "." + enm.name;
+		} else {
+			enm.name;
+		};	
+	case TAbstract(a):
+		var abs = a.get();
+		if (abs.pack.length > 0) {
+			abs.pack.join(".") + "." + abs.name;
+		} else {
+			abs.name;
+		};	
+	case TTypeDecl(t):
+		var typ = t.get();
+		if (typ.pack.length > 0) {
+			typ.pack.join(".") + "." + typ.name;
+		} else {
+			typ.name;
+		};	
+}) switch (@:exhaustive enumIndex m) {
+			case 0: {
+				var ` = m[0];
+				{
+					var c = `;
+					{
+						var cls = c.get();
+						if (cls.pack.length > 0) {
+							cls.pack.join(".") + "." + cls.name;
+						} else {
+							cls.name;
+						};
+					};
+				};
+			};
+			case 1: {
+				var ` = m[0];
+				{
+					var e = `;
+					{
+						var enm = e.get();
+						if (enm.pack.length > 0) {
+							enm.pack.join(".") + "." + enm.name;
+						} else {
+							enm.name;
+						};
+					};
+				};
+			};
+			case 2: {
+				var ` = m[0];
+				{
+					var t = `;
+					{
+						var typ = t.get();
+						if (typ.pack.length > 0) {
+							typ.pack.join(".") + "." + typ.name;
+						} else {
+							typ.name;
+						};
+					};
+				};
+			};
+			case 3: {
+				var ` = m[0];
+				{
+					var a = `;
+					{
+						var abs = a.get();
+						if (abs.pack.length > 0) {
+							abs.pack.join(".") + "." + abs.name;
+						} else {
+							abs.name;
+						};
+					};
+				};
+			};
+		};
+	}
+}

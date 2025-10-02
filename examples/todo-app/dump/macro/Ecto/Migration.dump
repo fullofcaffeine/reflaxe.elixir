@@ -1,0 +1,27 @@
+@:realPath("Ecto.Migration") @:realPath("phoenix.EctoMigration") @:native("Ecto.Migration")
+extern class Ecto.Migration {
+
+	static function create_table(name:String, options:Null<phoenix.CreateTableOptions>):phoenix.TableBuilder;
+
+	static function drop_table(name:String, options:Null<phoenix.DropTableOptions>):Void;
+
+	static function alter_table(name:String):phoenix.TableBuilder;
+
+	static function add_column(table:String, name:String, type:String, options:Null<phoenix.FieldOptions>):Void;
+
+	static function remove_column(table:String, name:String):Void;
+
+	static function modify_column(table:String, name:String, type:String, options:Null<phoenix.FieldOptions>):Void;
+
+	static function rename_column(table:String, oldName:String, newName:String):Void;
+
+	static function create_index(table:String, columns:Array<String>, options:Null<phoenix.IndexOptions>):Void;
+
+	static function drop_index(table:String, columns:Array<String>, options:Null<phoenix.IndexOptions>):Void;
+
+	static function execute(sql:String):Void;
+
+	static function create_constraint(table:String, name:String, constraint:phoenix.ConstraintDefinition):Void;
+
+	static function drop_constraint(table:String, name:String):Void;
+}

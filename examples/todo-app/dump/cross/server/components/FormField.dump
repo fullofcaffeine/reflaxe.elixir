@@ -1,0 +1,1 @@
+typedef server.components.FormField = { value : String, name : String, id : String, ?errors : Null<Array<String>> }

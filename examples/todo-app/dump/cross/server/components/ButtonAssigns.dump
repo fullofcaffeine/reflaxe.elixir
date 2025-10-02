@@ -1,0 +1,1 @@
+typedef server.components.ButtonAssigns = { ?type : Null<String>, inner_content : String, ?disabled : Null<Bool>, ?className : Null<String> }

@@ -1,0 +1,130 @@
+class reflaxe.elixir.macros.LiveViewPreserver {
+
+	public static function init() {
+		haxe.macro.Context.onAfterTyping(reflaxe.elixir.macros.LiveViewPreserver.preserveLiveViewMethods);
+	}
+
+	static function preserveLiveViewMethods(types:Array<haxe.macro.ModuleType>) {
+		{
+			var ` = 0;
+			while (` < types.length) {
+				var type = types[`];
+				++ `;
+				@:ast(switch (type) {
+	case TClassDecl(classRef):
+		var cls = classRef.get();
+		if (cls.meta.has(":liveview")) {
+			if (!cls.meta.has(":keep")) {
+				cls.meta.add(":keep", [], cls.pos);
+			};
+			for (field  in  cls.statics.get()) {
+				if (!field.meta.has(":keep")) {
+					field.meta.add(":keep", [], field.pos);
+				};
+			};
+			for (field  in  cls.fields.get()) {
+				if (!field.meta.has(":keep")) {
+					field.meta.add(":keep", [], field.pos);
+				};
+			};
+		};
+		if (cls.meta.has(":controller") || cls.meta.has(":channel") || cls.meta.has(":endpoint") || cls.meta.has(":router") || cls.meta.has(":presence") || cls.meta.has(":socket")) {
+			if (!cls.meta.has(":keep")) {
+				cls.meta.add(":keep", [], cls.pos);
+			};
+			for (field  in  cls.statics.get()) {
+				if (!field.meta.has(":keep")) {
+					field.meta.add(":keep", [], field.pos);
+				};
+			};
+		};	
+	default:
+}) if (enumIndex type == 0) {
+					var ` = type[0];
+					{
+						var classRef = `;
+						{
+							var cls = classRef.get();
+							if (cls.meta.has(":liveview")) {
+								if (! cls.meta.has(":keep")) {
+									cls.meta.add(":keep", [], cls.pos);
+								};
+								{
+									var ` = 0;
+									var ` = cls.statics.get();
+									while (` < `.length) {
+										var field = `[`];
+										++ `;
+										if (! field.meta.has(":keep")) {
+											field.meta.add(":keep", [], field.pos);
+										};
+									};
+								};
+								{
+									var ` = 0;
+									var ` = cls.fields.get();
+									while (` < `.length) {
+										var field = `[`];
+										++ `;
+										if (! field.meta.has(":keep")) {
+											field.meta.add(":keep", [], field.pos);
+										};
+									};
+								};
+							};
+							if (cls.meta.has(":controller") || cls.meta.has(":channel") || cls.meta.has(":endpoint") || cls.meta.has(":router") || cls.meta.has(":presence") || cls.meta.has(":socket")) {
+								if (! cls.meta.has(":keep")) {
+									cls.meta.add(":keep", [], cls.pos);
+								};
+								{
+									var ` = 0;
+									var ` = cls.statics.get();
+									while (` < `.length) {
+										var field = `[`];
+										++ `;
+										if (! field.meta.has(":keep")) {
+											field.meta.add(":keep", [], field.pos);
+										};
+									};
+								};
+							};
+						};
+					};
+				} else {};
+			};
+		};
+	}
+
+	public static function buildLiveView() {
+		var fields = haxe.macro.Context.getBuildFields();
+		{
+			var ` = 0;
+			while (` < fields.length) {
+				var field = fields[`];
+				++ `;
+				if (field.access.contains(haxe.macro.Access.AStatic)) {
+					if (field.meta == null) {
+						field.meta = [];
+					};
+					var hasKeep = false;
+					{
+						var ` = 0;
+						var ` = field.meta;
+						while (` < `.length) {
+							var meta = `[`];
+							++ `;
+							if (meta.name == ":keep" || meta.name == "keep") {
+								hasKeep = true;
+								break;
+							};
+						};
+					};
+					if (! hasKeep) {
+						field.meta.push({name : ":keep", params : [], pos : field.pos});
+					};
+				};
+			};
+		};
+		return fields;
+	}
+}

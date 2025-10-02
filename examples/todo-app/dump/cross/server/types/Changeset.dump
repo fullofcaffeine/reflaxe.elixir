@@ -1,0 +1,1 @@
+typedef server.types.Changeset<T> = { valid : Bool, errors : Array<server.types.FieldError>, data : server.types.Changeset.T, changes : Dynamic, action : Null<String> }

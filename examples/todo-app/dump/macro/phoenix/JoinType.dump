@@ -1,0 +1,8 @@
+@:flatEnum
+enum phoenix.JoinType {
+	Inner;
+	Left;
+	Right;
+	Full;
+	Cross;
+}

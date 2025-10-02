@@ -370,7 +370,32 @@ class ElixirASTBuilder {
         
         // Store context for recursive calls
         var previousContext = currentContext;
+
+        #if debug_variable_renaming
+        var entriesBeforeSet = Lambda.count(context.tempVarRenameMap);
+        var prevEntries = if (previousContext != null) Lambda.count(previousContext.tempVarRenameMap) else 0;
+        trace('[ElixirASTBuilder.buildFromTypedExprWithContext] About to set currentContext - incoming: $entriesBeforeSet entries, previous had: $prevEntries');
+        #end
+
+        // FIXED: Preserve tempVarRenameMap from previous context when nested calls occur
+        // Nested buildFromTypedExpr calls were overwriting currentContext with contexts that had empty maps
+        // This was losing the parameter registrations from buildClassAST
+        if (previousContext != null && Lambda.count(context.tempVarRenameMap) == 0 && Lambda.count(previousContext.tempVarRenameMap) > 0) {
+            #if debug_variable_renaming
+            trace('[ElixirASTBuilder.buildFromTypedExprWithContext] PRESERVING ${Lambda.count(previousContext.tempVarRenameMap)} map entries from previous context');
+            #end
+            // Copy entries from previous context to preserve registrations
+            for (key in previousContext.tempVarRenameMap.keys()) {
+                context.tempVarRenameMap.set(key, previousContext.tempVarRenameMap.get(key));
+            }
+        }
+
         currentContext = context;
+
+        #if debug_variable_renaming
+        var entriesAfterSet = Lambda.count(currentContext.tempVarRenameMap);
+        trace('[ElixirASTBuilder.buildFromTypedExprWithContext] Set currentContext - now has $entriesAfterSet map entries');
+        #end
 
         // Store the compilation context's usage map for context-aware variable naming
         // If no usage map provided in context, analyze now
@@ -478,6 +503,19 @@ class ElixirASTBuilder {
         }
         #end
 
+        #if debug_ast_builder
+        // DEBUG: Trace TVar expressions at entry point
+        var exprType = Type.enumConstructor(expr.expr);
+        if (exprType == "TVar") {
+            switch(expr.expr) {
+                case TVar(tvar, init):
+                    trace('[convertExpression ENTRY] 🔍 TVar detected: ${tvar.name}');
+                    trace('[convertExpression ENTRY]   TVar init: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
+                default:
+            }
+        }
+        #end
+
         return switch(expr.expr) {
             // ================================================================
             // Literals and Constants
@@ -557,10 +595,27 @@ class ElixirASTBuilder {
                 EVar(varName);
                 
             case TVar(v, init):
+                #if debug_ast_builder
+                // DEBUG: Track what TVar compilation returns for infrastructure variables
+                trace('[DEBUG TVar] Compiling TVar: ${v.name}');
+                if (v.name.indexOf("g") >= 0 || v.name.indexOf("_") >= 0) {
+                    trace('[DEBUG TVar]   Name contains g or underscore: ${v.name}');
+                    trace('[DEBUG TVar]   Init type: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
+                    trace('[DEBUG TVar]   Is simple init: ${init == null || isSimpleInit(init)}');
+                }
+                #end
+
                 // Delegate simple variable declarations to VariableBuilder
                 // Complex patterns (blocks, comprehensions) are handled below
                 if (init == null || isSimpleInit(init)) {
                     var result = VariableBuilder.buildVariableDeclaration(v, init, currentContext);
+
+                    #if debug_ast_builder
+                    if (v.name == "_g" || v.name == "g") {
+                        trace('[DEBUG TVar]   VariableBuilder result: ${result != null ? Type.enumConstructor(result.def) : "null"}');
+                    }
+                    #end
+
                     if (result != null) {
                         return result;
                     }
@@ -612,9 +667,11 @@ class ElixirASTBuilder {
                                     trace('[Infrastructure Variable Mapping] ${v.name} (id: ${v.id}) = ${localVar.name}.${fieldName} -> will use ${extractedVarName}');
                                     trace('[Infrastructure Variable Mapping] Storing in tempVarRenameMap: key="${v.name}" (name, not ID) value="${extractedVarName}"');
                                     #end
-                                    
-                                    // Still skip the assignment itself - we just tracked the mapping
-                                    return null;
+
+                                    // FIXED: Don't skip the assignment! We need to generate the variable binding
+                                    // The mapping is for pattern matching, but the variable still needs to exist
+                                    // for the switch expression to reference it.
+                                    // Fall through to let VariableBuilder generate: g = Map.get(msg, :type)
                                 default:
                                     // Field access on something other than a local variable
                             }
@@ -2157,6 +2214,28 @@ class ElixirASTBuilder {
                 ControlFlowBuilder.buildIf(econd, eif, eelse, currentContext);
                 
             case TBlock(el):
+                #if debug_ast_builder
+                // DEBUG: Check if this block contains infrastructure variable + switch pattern
+                if (el.length == 2) {
+                    var hasVar = switch(el[0].expr) { case TVar(_,_): true; default: false; };
+                    var hasSwitch = switch(el[1].expr) { case TSwitch(_,_,_): true; default: false; };
+                    if (hasVar && hasSwitch) {
+                        trace('[ElixirASTBuilder] TBlock with TVar + TSwitch detected!');
+                        switch(el[0].expr) {
+                            case TVar(tvar, init):
+                                trace('[ElixirASTBuilder]   TVar name: ${tvar.name}');
+                                trace('[ElixirASTBuilder]   TVar init: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
+                            default:
+                        }
+                        switch(el[1].expr) {
+                            case TSwitch(target, _, _):
+                                trace('[ElixirASTBuilder]   TSwitch target: ${Type.enumConstructor(target.expr)}');
+                            default:
+                        }
+                    }
+                }
+                #end
+
                 // Delegate to BlockBuilder for modular handling
                 var result = BlockBuilder.build(el, currentContext);
                 if (result != null) {
@@ -2306,13 +2385,24 @@ class ElixirASTBuilder {
                 var args = [];
                 var paramRenaming = new Map<String, String>();
                 
-                // Now build the body with awareness of parameter mappings
-                // We need to temporarily override the collision detection for these parameters
+                // FIXED: Don't reset tempVarRenameMap - preserve registrations from buildClassAST
+                // ElixirCompiler.buildClassAST already registered parameter mappings in the context
+                // Creating a new map here would lose those critical registrations
+                // This was causing priority2 bug where registered "priority" mapping was lost
+
+                #if debug_variable_renaming
+                var existingEntries = Lambda.count(currentContext.tempVarRenameMap);
+                var funcInfo = if (f.args.length > 0) {
+                    'with ${f.args.length} args: ${f.args.map(a -> a.v.name).join(", ")}';
+                } else {
+                    'with no args';
+                };
+                trace('[ElixirASTBuilder TFunction] Processing function $funcInfo - map has $existingEntries entries');
+                #end
+
+                // Keep existing map with buildClassAST registrations instead of creating new one
                 var oldTempVarRenameMap = currentContext.tempVarRenameMap;
-                currentContext.tempVarRenameMap = new Map();
-                for (key in oldTempVarRenameMap.keys()) {
-                    currentContext.tempVarRenameMap.set(key, oldTempVarRenameMap.get(key));
-                }
+                // NO RESET: Use the map as-is with all existing registrations
                 
                 // Process all parameters: handle naming, unused prefixing, and registration
                 var isFirstParam = true;
@@ -2346,7 +2436,7 @@ class ElixirASTBuilder {
                         var suffix = renamedPattern.matched(2);
 
                         // Only strip suffix if it looks like a shadowing rename (suffix 2 or 3, common field names)
-                        var commonFieldNames = ["options", "columns", "name", "value", "type", "data", "fields", "items"];
+                        var commonFieldNames = ["options", "columns", "name", "value", "type", "data", "fields", "items", "priority"];
                         if ((suffix == "2" || suffix == "3") && commonFieldNames.indexOf(baseWithoutSuffix) >= 0) {
                             strippedName = baseWithoutSuffix;
                             hasNumericSuffix = true;
@@ -2463,7 +2553,18 @@ class ElixirASTBuilder {
                 if (functionUsageMap != null) {
                     currentContext.variableUsageMap = functionUsageMap;
                 }
+
+                trace('[TFunction DEBUG] BEFORE body compilation: tempVarRenameMap has ${Lambda.count(currentContext.tempVarRenameMap)} entries');
+                if (currentContext.tempVarRenameMap.keys().hasNext()) {
+                    trace('[TFunction DEBUG] Map contents:');
+                    for (k in currentContext.tempVarRenameMap.keys()) {
+                        trace('[TFunction DEBUG]   "$k" -> "${currentContext.tempVarRenameMap.get(k)}"');
+                    }
+                }
+
                 var body = buildFromTypedExpr(f.expr, currentContext);
+
+                trace('[TFunction DEBUG] AFTER body compilation: tempVarRenameMap has ${Lambda.count(currentContext.tempVarRenameMap)} entries');
                 
                 // Restore the original map and clean up function parameter tracking
                 currentContext.tempVarRenameMap = oldTempVarRenameMap;

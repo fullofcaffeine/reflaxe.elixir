@@ -1,0 +1,1 @@
+typedef phoenix.Session = { ?user_id : Null<Int>, ?user_agent : Null<String>, ?token : Null<String>, ?timezone : Null<String>, ?login_at : Null<String>, ?locale : Null<String>, ?ip_address : Null<String>, ?csrf_token : Null<String> }

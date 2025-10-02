@@ -1,0 +1,1 @@
+typedef elixir.otp.ChildSpec = { ?type : Null<elixir.otp.ChildType>, start : { module : String, func : String, args : Array<Dynamic> }, ?shutdown : Null<elixir.otp.ShutdownType>, ?restart : Null<elixir.otp.RestartType>, ?modules : Null<Array<String>>, id : String }

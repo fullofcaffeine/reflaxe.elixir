@@ -1,0 +1,64 @@
+@:realPath("server.schemas.Todo") @:keep @:directlyUsed @:used @:native("TodoApp.Todo") @:schema("todos") @:timestamps
+class TodoApp.Todo {
+
+	public function new() {
+		this.tags = [];
+		this.priority = "medium";
+		this.completed = false;
+		this.tags = [];
+		this.completed = false;
+		this.priority = "medium";
+	}
+
+	@:field
+	public var id:Int;
+
+	@:field
+	public var title:String;
+
+	@:field
+	public var description:String;
+
+	@:value(false) @:field
+	public var completed:Bool;
+
+	@:value("medium") @:field
+	public var priority:String;
+
+	@:field
+	public var dueDate:Null<Date>;
+
+	@:value([]) @:field
+	public var tags:Array<String>;
+
+	@:field
+	public var userId:Int;
+
+	@:changeset
+	public static function changeset(todo:TodoApp.Todo, params:server.schemas.TodoParams) {
+		var cs = {
+			var this1;
+			this1 = __elixir__("Ecto.Changeset.change({0}, {1})", todo, params);
+			cast this1;
+		};
+		return {
+			var this1 = cast {
+				var this1 = cast __elixir__("Ecto.Changeset.validate_required({0}, Enum.map({1}, &String.to_atom/1))", cast cs, ["title", "userId"]);
+				var opts = {min : cast 3, max : cast 200};
+				if ((opts.min != null && opts.max != null && opts.is != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, max: {3}, is: {4}])", this1, "title", opts.min, opts.max, opts.is) else if ((opts.min != null && opts.max != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, max: {3}])", this1, "title", opts.min, opts.max) else if ((opts.min != null && opts.is != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, is: {3}])", this1, "title", opts.min, opts.is) else if ((opts.max != null && opts.is != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [max: {2}, is: {3}])", this1, "title", opts.max, opts.is) else if ((opts.min != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}])", this1, "title", opts.min) else if ((opts.max != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [max: {2}])", this1, "title", opts.max) else if ((opts.is != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [is: {2}])", this1, "title", opts.is) else __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [])", this1, "title");
+			};
+			var opts = {max : cast 1000};
+			if ((opts.min != null && opts.max != null && opts.is != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, max: {3}, is: {4}])", this1, "description", opts.min, opts.max, opts.is) else if ((opts.min != null && opts.max != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, max: {3}])", this1, "description", opts.min, opts.max) else if ((opts.min != null && opts.is != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}, is: {3}])", this1, "description", opts.min, opts.is) else if ((opts.max != null && opts.is != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [max: {2}, is: {3}])", this1, "description", opts.max, opts.is) else if ((opts.min != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [min: {2}])", this1, "description", opts.min) else if ((opts.max != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [max: {2}])", this1, "description", opts.max) else if ((opts.is != null)) __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [is: {2}])", this1, "description", opts.is) else __elixir__("Ecto.Changeset.validate_length({0}, String.to_atom({1}), [])", this1, "description");
+		};
+	}
+
+	public static function toggleCompleted(todo:TodoApp.Todo) {
+		var params = {completed : cast ! todo.completed};
+		return TodoApp.Todo.changeset(todo, params);
+	}
+
+	public static function updatePriority(todo:TodoApp.Todo, priority:String) {
+		var params = {priority : priority};
+		return TodoApp.Todo.changeset(todo, params);
+	}
+}

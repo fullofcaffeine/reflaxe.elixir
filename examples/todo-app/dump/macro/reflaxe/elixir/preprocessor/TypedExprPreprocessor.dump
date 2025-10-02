@@ -1,0 +1,1257 @@
+class reflaxe.elixir.preprocessor.TypedExprPreprocessor {
+
+	@:value(~/^_?g[0-9]*$/)
+	static var INFRASTRUCTURE_VAR_PATTERN(default,never):EReg = new EReg("^_?g[0-9]*$", "");
+
+	public static function preprocess(expr:haxe.macro.TypedExpr) {
+		if (expr == null) {
+			return null;
+		};
+		if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isMapIterationPattern(expr)) {
+			return reflaxe.elixir.preprocessor.TypedExprPreprocessor.transformMapIteration(expr);
+		};
+		if (! reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(expr)) {
+			return expr;
+		};
+		var substitutions = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var result = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions);
+		return result;
+	}
+
+	static function containsInfrastructurePattern(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+		true;	
+	case TBlock(exprs):
+		Lambda.exists(exprs, function(e) ->  @:implicitReturn return containsInfrastructurePattern(e));	
+	case TReturn(e) if (e != null):
+		containsInfrastructurePattern(e);	
+	case TFunction(func):
+		func.expr != null && containsInfrastructurePattern(func.expr);	
+	case TIf(cond, e1, e2):
+		containsInfrastructurePattern(cond) || containsInfrastructurePattern(e1) || (e2 != null && containsInfrastructurePattern(e2));	
+	case TSwitch(e, cases, edef):
+		containsInfrastructurePattern(e) || Lambda.exists(cases, function(c) ->  @:implicitReturn return Lambda.exists(c.values, function(v) ->  @:implicitReturn return containsInfrastructurePattern(v)) || containsInfrastructurePattern(c.expr)) || (edef != null && containsInfrastructurePattern(edef));	
+	case TTry(e, catches):
+		containsInfrastructurePattern(e) || Lambda.exists(catches, function(c) ->  @:implicitReturn return containsInfrastructurePattern(c.expr));	
+	case TWhile(cond, e, _):
+		containsInfrastructurePattern(cond) || containsInfrastructurePattern(e);	
+	case TFor(v, iter, e):
+		containsInfrastructurePattern(iter) || containsInfrastructurePattern(e);	
+	default:
+		false;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 12: {
+					var ` = `[0];
+					{
+						var func = `;
+						{
+							func.expr != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(func.expr);
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var init = `;
+						if (init != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)) {
+							true;
+						} else {
+							false;
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							Lambda.exists(exprs, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e));
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var iter = `;
+						var e = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(iter) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e);
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var e1 = `;
+						var e2 = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(cond) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e1) || (e2 != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e2));
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var e = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(cond) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e);
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						var cases = `;
+						var edef = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e) || Lambda.exists(cases, function(c:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }) return Lambda.exists(c.values, function(v:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(v)) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(c.expr)) || (edef != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(edef));
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var catches = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e) || Lambda.exists(catches, function(c:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(c.expr));
+						};
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						var e = `;
+						if (e != null) {
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsInfrastructurePattern(e);
+						} else {
+							false;
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function processExpr(expr:haxe.macro.TypedExpr, substitutions:Map<String, haxe.macro.TypedExpr>) {
+		return @:ast(switch (expr.expr) {
+	case TBlock(exprs):
+		processBlock(exprs, expr.pos, expr.t, substitutions);	
+	case TLocal(v):
+		if (substitutions.exists(v.name)) {
+			substitutions.get(v.name);
+		} else {
+			expr;
+		};	
+	case TParenthesis(inner):
+		var processedInner = processExpr(inner, substitutions);
+		if (processedInner != inner) {
+			{ expr : TParenthesis(processedInner), pos : expr.pos, t : expr.t };
+		} else {
+			expr;
+		};	
+	case TSwitch(e, cases, edef):
+		var switchTarget = switch (e.expr) {
+			case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+				substitutions.get(v.name);			
+			case TLocal(v) if (isInfrastructureVar(v.name)):
+				processExpr(e, substitutions);			
+			default:
+				processExpr(e, substitutions);			
+		};
+		processSwitchExpr(switchTarget, cases, edef, expr.pos, expr.t, substitutions);	
+	case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+		substitutions.set(v.name, init);
+		var strippedName = (v.name.charAt(0) == "_") ? v.name.substr(1) : v.name;
+		if (strippedName != v.name) {
+			substitutions.set(strippedName, init);
+		};
+		{ expr : TBlock([]), pos : expr.pos, t : expr.t };	
+	case TField(e, field):
+		switch (e.expr) {
+			case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+				var substituted = substitutions.get(v.name);
+				var newFieldExpr = { expr : TField(substituted, field), pos : expr.pos, t : expr.t };
+				processExpr(newFieldExpr, substitutions);			
+			default:
+				TypedExprTools.map(expr, function(e) ->  @:implicitReturn return processExpr(e, substitutions));			
+		};	
+	case TCall(e, args):
+		switch (e.expr) {
+			case TField(obj, method):
+				switch (obj.expr) {
+					case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+						var substituted = substitutions.get(v.name);
+						var newFieldExpr = { expr : TField(substituted, method), pos : e.pos, t : e.t };
+						var newCallExpr = { expr : TCall(newFieldExpr, args.map(function(a) ->  @:implicitReturn return processExpr(a, substitutions))), pos : expr.pos, t : expr.t };
+						newCallExpr;					
+					default:
+						TypedExprTools.map(expr, function(e) ->  @:implicitReturn return processExpr(e, substitutions));					
+				};			
+			default:
+				TypedExprTools.map(expr, function(e) ->  @:implicitReturn return processExpr(e, substitutions));			
+		};	
+	case TWhile(cond, body, normalWhile):
+		var localSubstitutions = new Map<String,TypedExpr>();
+		for (key  in  substitutions.keys()) {
+			localSubstitutions.set(key, substitutions.get(key));
+		};
+		scanForInfrastructureVars(body, localSubstitutions);
+		var processedCond = processExpr(cond, localSubstitutions);
+		var processedBody = processExpr(body, localSubstitutions);
+		{ expr : TWhile(processedCond, processedBody, normalWhile), pos : expr.pos, t : expr.t };	
+	case TFor(v, iter, body):
+		var localSubstitutions = new Map<String,TypedExpr>();
+		for (key  in  substitutions.keys()) {
+			localSubstitutions.set(key, substitutions.get(key));
+		};
+		scanForInfrastructureVars(body, localSubstitutions);
+		var processedBody = processExpr(body, localSubstitutions);
+		var processedIter = processExpr(iter, substitutions);
+		{ expr : TFor(v, processedIter, processedBody), pos : expr.pos, t : expr.t };	
+	default:
+		TypedExprTools.map(expr, function(e) ->  @:implicitReturn return processExpr(e, substitutions));	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							if ({
+								var key = v.name;
+								substitutions.exists(key);
+							}) {
+								{
+									var key = v.name;
+									substitutions.get(key);
+								};
+							} else {
+								expr;
+							};
+						};
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var field = `;
+						{
+							@:ast(switch (e.expr) {
+	case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+		var substituted = substitutions.get(v.name);
+		var newFieldExpr = { expr : TField(substituted, field), pos : expr.pos, t : expr.t };
+		processExpr(newFieldExpr, substitutions);	
+	default:
+		TypedExprTools.map(expr, function(e) ->  @:implicitReturn return processExpr(e, substitutions));	
+}) {
+								var ` = e.expr;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									{
+										var v = `;
+										if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name) && {
+											var key = v.name;
+											substitutions.exists(key);
+										}) {
+											var substituted = {
+												var key = v.name;
+												substitutions.get(key);
+											};
+											var newFieldExpr = {expr : haxe.macro.TypedExprDef.TField(substituted, field), pos : expr.pos, t : expr.t};
+											reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(newFieldExpr, substitutions);
+										} else {
+											haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions));
+										};
+									};
+								} else {
+									haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions));
+								};
+							};
+						};
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var inner = `;
+						{
+							var processedInner = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(inner, substitutions);
+							if (processedInner != inner) {
+								{expr : haxe.macro.TypedExprDef.TParenthesis(processedInner), pos : expr.pos, t : expr.t};
+							} else {
+								expr;
+							};
+						};
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var args = `;
+						{
+							@:ast(switch (e.expr) {
+	case TField(obj, method):
+		switch (obj.expr) {
+			case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+				var substituted = substitutions.get(v.name);
+				var newFieldExpr = { expr : TField(substituted, method), pos : e.pos, t : e.t };
+				var newCallExpr = { expr : TCall(newFieldExpr, args.map(function(a) ->  @:implicitReturn return processExpr(a, substitutions))), pos : expr.pos, t : expr.t };
+				newCallExpr;			
+			default:
+				TypedExprTools.map(expr, function(e) ->  @:implicitReturn return processExpr(e, substitutions));			
+		};	
+	default:
+		TypedExprTools.map(expr, function(e) ->  @:implicitReturn return processExpr(e, substitutions));	
+}) {
+								var ` = e.expr;
+								if (enumIndex ` == 4) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var obj = `;
+										var method = `;
+										{
+											@:ast(switch (obj.expr) {
+	case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+		var substituted = substitutions.get(v.name);
+		var newFieldExpr = { expr : TField(substituted, method), pos : e.pos, t : e.t };
+		var newCallExpr = { expr : TCall(newFieldExpr, args.map(function(a) ->  @:implicitReturn return processExpr(a, substitutions))), pos : expr.pos, t : expr.t };
+		newCallExpr;	
+	default:
+		TypedExprTools.map(expr, function(e) ->  @:implicitReturn return processExpr(e, substitutions));	
+}) {
+												var ` = obj.expr;
+												if (enumIndex ` == 1) {
+													var ` = `[0];
+													{
+														var v = `;
+														if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name) && {
+															var key = v.name;
+															substitutions.exists(key);
+														}) {
+															var substituted = {
+																var key = v.name;
+																substitutions.get(key);
+															};
+															var newFieldExpr = {expr : haxe.macro.TypedExprDef.TField(substituted, method), pos : e.pos, t : e.t};
+															var newCallExpr = {expr : haxe.macro.TypedExprDef.TCall(newFieldExpr, {
+																var ` = [];
+																{
+																	var ` = 0;
+																	var ` = args;
+																	while (` < `.length) {
+																		var v = `[`];
+																		++ `;
+																		`.push(function(a:haxe.macro.TypedExpr) {
+																			return reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(a, substitutions);
+																		}(v));
+																	};
+																};
+																`;
+															}), pos : expr.pos, t : expr.t};
+															newCallExpr;
+														} else {
+															haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions));
+														};
+													};
+												} else {
+													haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions));
+												};
+											};
+										};
+									};
+								} else {
+									haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions));
+								};
+							};
+						};
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var init = `;
+						if (init != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)) {
+							{
+								var key = v.name;
+								substitutions.set(key, init);
+							};
+							var strippedName = if ((v.name.charAt(0) == "_")) {
+								v.name.substr(1, null);
+							} else {
+								v.name;
+							};
+							if (strippedName != v.name) {
+								{
+									substitutions.set(strippedName, init);
+								};
+							};
+							{expr : haxe.macro.TypedExprDef.TBlock([]), pos : expr.pos, t : expr.t};
+						} else {
+							haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions));
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.processBlock(exprs, expr.pos, expr.t, substitutions);
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var iter = `;
+						var body = `;
+						{
+							var localSubstitutions = {
+								{};
+								new haxe.ds.StringMap();
+							};
+							for (key in substitutions.keys()) {
+								{
+									var value = substitutions.get(key);
+									localSubstitutions.set(key, value);
+								};
+							};
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.scanForInfrastructureVars(body, localSubstitutions);
+							var processedBody = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(body, localSubstitutions);
+							var processedIter = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(iter, substitutions);
+							{expr : haxe.macro.TypedExprDef.TFor(v, processedIter, processedBody), pos : expr.pos, t : expr.t};
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var body = `;
+						var normalWhile = `;
+						{
+							var localSubstitutions = {
+								{};
+								new haxe.ds.StringMap();
+							};
+							for (key in substitutions.keys()) {
+								{
+									var value = substitutions.get(key);
+									localSubstitutions.set(key, value);
+								};
+							};
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.scanForInfrastructureVars(body, localSubstitutions);
+							var processedCond = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(cond, localSubstitutions);
+							var processedBody = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(body, localSubstitutions);
+							{expr : haxe.macro.TypedExprDef.TWhile(processedCond, processedBody, normalWhile), pos : expr.pos, t : expr.t};
+						};
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var e = `;
+						var cases = `;
+						var edef = `;
+						{
+							var switchTarget = @:ast(switch (e.expr) {
+	case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+		substitutions.get(v.name);	
+	case TLocal(v) if (isInfrastructureVar(v.name)):
+		processExpr(e, substitutions);	
+	default:
+		processExpr(e, substitutions);	
+}) {
+								var ` = e.expr;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									{
+										var v = `;
+										if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name) && {
+											var key = v.name;
+											substitutions.exists(key);
+										}) {
+											{
+												var key = v.name;
+												substitutions.get(key);
+											};
+										} else {
+											var v = `;
+											if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)) {
+												reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions);
+											} else {
+												reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions);
+											};
+										};
+									};
+								} else {
+									reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions);
+								};
+							};
+							reflaxe.elixir.preprocessor.TypedExprPreprocessor.processSwitchExpr(switchTarget, cases, edef, expr.pos, expr.t, substitutions);
+						};
+					};
+				};
+				default: {
+					haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions));
+				}
+			};
+		};
+	}
+
+	static function processBlock(exprs:Array<haxe.macro.TypedExpr>, pos:haxe.macro.Position, t:haxe.macro.Type, substitutions:Map<String, haxe.macro.TypedExpr>) {
+		var processed = [];
+		var i = 0;
+		while (i < exprs.length) {
+			var current = exprs[i];
+			if (i < exprs.length - 1) {
+				@:ast(switch (current.expr) {
+	case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+		var next = exprs[i + 1];
+		var actualSwitchExpr = next;
+		var skipCount = 2;
+		switch (next.expr) {
+			case TBlock(blockExprs) if (blockExprs.length > 0):
+				var firstInBlock = blockExprs[0];
+				switch (firstInBlock.expr) {
+					case TSwitch(_, _, _):
+						actualSwitchExpr = firstInBlock;					
+					default:
+				};			
+			default:
+		};
+		switch (actualSwitchExpr.expr) {
+			case TSwitch(e, cases, edef):
+				if (usesVariable(e, v.name)) {
+					substitutions.set(v.name, init);
+					var strippedName = (v.name.charAt(0) == "_") ? v.name.substr(1) : v.name;
+					if (strippedName != v.name) {
+						substitutions.set(strippedName, init);
+					};
+					var transformedSwitch = processSwitchExpr(substituteVariable(e, v.name, init), cases, edef, actualSwitchExpr.pos, actualSwitchExpr.t, substitutions);
+					processed.push(transformedSwitch);
+					i += skipCount;
+					continue;
+				} else { };			
+			case TVar(v2, init2) if (init2 != null):
+				switch (init2.expr) {
+					case TLocal(localVar) if (localVar.name == v.name):
+						if (i + 2 < exprs.length) {
+							var third = exprs[i + 2];
+							switch (third.expr) {
+								case TSwitch(e, cases, edef) if (usesVariable(e, v.name)):
+									var transformedSwitch = processSwitchExpr(substituteVariable(e, v.name, init), cases, edef, third.pos, third.t, substitutions);
+									var assignment = { expr : TVar(v2, transformedSwitch), pos : current.pos, t : current.t };
+									processed.push(assignment);
+									i += 3;
+									continue;								
+								default:
+							};
+						};					
+					default:
+				};			
+			default:
+		};
+		substitutions.set(v.name, init);
+		i++;
+		continue;	
+	default:
+}) {
+					var ` = current.expr;
+					if (enumIndex ` == 13) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var v = `;
+							var init = `;
+							if (init != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)) {
+								var next = exprs[i + 1];
+								var actualSwitchExpr = next;
+								var skipCount = 2;
+								@:ast(switch (next.expr) {
+	case TBlock(blockExprs) if (blockExprs.length > 0):
+		var firstInBlock = blockExprs[0];
+		switch (firstInBlock.expr) {
+			case TSwitch(_, _, _):
+				actualSwitchExpr = firstInBlock;			
+			default:
+		};	
+	default:
+}) {
+									var ` = next.expr;
+									if (enumIndex ` == 14) {
+										var ` = `[0];
+										{
+											var blockExprs = `;
+											if (blockExprs.length > 0) {
+												var firstInBlock = blockExprs[0];
+												@:ast(switch (firstInBlock.expr) {
+	case TSwitch(_, _, _):
+		actualSwitchExpr = firstInBlock;	
+	default:
+}) {
+													var ` = firstInBlock.expr;
+													if (enumIndex ` == 18) {
+														var ` = `[0];
+														var ` = `[1];
+														var ` = `[2];
+														{
+															actualSwitchExpr = firstInBlock;
+														};
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								};
+								@:ast(switch (actualSwitchExpr.expr) {
+	case TSwitch(e, cases, edef):
+		if (usesVariable(e, v.name)) {
+			substitutions.set(v.name, init);
+			var strippedName = (v.name.charAt(0) == "_") ? v.name.substr(1) : v.name;
+			if (strippedName != v.name) {
+				substitutions.set(strippedName, init);
+			};
+			var transformedSwitch = processSwitchExpr(substituteVariable(e, v.name, init), cases, edef, actualSwitchExpr.pos, actualSwitchExpr.t, substitutions);
+			processed.push(transformedSwitch);
+			i += skipCount;
+			continue;
+		} else { };	
+	case TVar(v2, init2) if (init2 != null):
+		switch (init2.expr) {
+			case TLocal(localVar) if (localVar.name == v.name):
+				if (i + 2 < exprs.length) {
+					var third = exprs[i + 2];
+					switch (third.expr) {
+						case TSwitch(e, cases, edef) if (usesVariable(e, v.name)):
+							var transformedSwitch = processSwitchExpr(substituteVariable(e, v.name, init), cases, edef, third.pos, third.t, substitutions);
+							var assignment = { expr : TVar(v2, transformedSwitch), pos : current.pos, t : current.t };
+							processed.push(assignment);
+							i += 3;
+							continue;						
+						default:
+					};
+				};			
+			default:
+		};	
+	default:
+}) {
+									var ` = actualSwitchExpr.expr;
+									switch (enumIndex `) {
+										case 13: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												var v2 = `;
+												var init2 = `;
+												if (init2 != null) {
+													@:ast(switch (init2.expr) {
+	case TLocal(localVar) if (localVar.name == v.name):
+		if (i + 2 < exprs.length) {
+			var third = exprs[i + 2];
+			switch (third.expr) {
+				case TSwitch(e, cases, edef) if (usesVariable(e, v.name)):
+					var transformedSwitch = processSwitchExpr(substituteVariable(e, v.name, init), cases, edef, third.pos, third.t, substitutions);
+					var assignment = { expr : TVar(v2, transformedSwitch), pos : current.pos, t : current.t };
+					processed.push(assignment);
+					i += 3;
+					continue;				
+				default:
+			};
+		};	
+	default:
+}) {
+														var ` = init2.expr;
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var localVar = `;
+																if (localVar.name == v.name) {
+																	if (i + 2 < exprs.length) {
+																		var third = exprs[i + 2];
+																		@:ast(switch (third.expr) {
+	case TSwitch(e, cases, edef) if (usesVariable(e, v.name)):
+		var transformedSwitch = processSwitchExpr(substituteVariable(e, v.name, init), cases, edef, third.pos, third.t, substitutions);
+		var assignment = { expr : TVar(v2, transformedSwitch), pos : current.pos, t : current.t };
+		processed.push(assignment);
+		i += 3;
+		continue;	
+	default:
+}) {
+																			var ` = third.expr;
+																			if (enumIndex ` == 18) {
+																				var ` = `[0];
+																				var ` = `[1];
+																				var ` = `[2];
+																				{
+																					var e = `;
+																					var cases = `;
+																					var edef = `;
+																					if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.usesVariable(e, v.name)) {
+																						var transformedSwitch = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processSwitchExpr(reflaxe.elixir.preprocessor.TypedExprPreprocessor.substituteVariable(e, v.name, init), cases, edef, third.pos, third.t, substitutions);
+																						var assignment = {expr : haxe.macro.TypedExprDef.TVar(v2, transformedSwitch), pos : current.pos, t : current.t};
+																						processed.push(assignment);
+																						i += 3;
+																						continue;
+																					} else {};
+																				};
+																			} else {};
+																		};
+																	};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+										};
+										case 18: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var e = `;
+												var cases = `;
+												var edef = `;
+												{
+													if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.usesVariable(e, v.name)) {
+														{
+															var key = v.name;
+															substitutions.set(key, init);
+														};
+														var strippedName = if ((v.name.charAt(0) == "_")) {
+															v.name.substr(1, null);
+														} else {
+															v.name;
+														};
+														if (strippedName != v.name) {
+															{
+																substitutions.set(strippedName, init);
+															};
+														};
+														var transformedSwitch = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processSwitchExpr(reflaxe.elixir.preprocessor.TypedExprPreprocessor.substituteVariable(e, v.name, init), cases, edef, actualSwitchExpr.pos, actualSwitchExpr.t, substitutions);
+														processed.push(transformedSwitch);
+														i += skipCount;
+														continue;
+													} else {};
+												};
+											};
+										};
+										default: {}
+									};
+								};
+								{
+									var key = v.name;
+									substitutions.set(key, init);
+								};
+								i ++;
+								continue;
+							} else {};
+						};
+					} else {};
+				};
+			};
+			processed.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(current, substitutions));
+			i ++;
+		};
+		return {expr : haxe.macro.TypedExprDef.TBlock(processed), pos : pos, t : t};
+	}
+
+	static function processSwitchExpr(e:haxe.macro.TypedExpr, cases:Array<{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }>, edef:Null<haxe.macro.TypedExpr>, pos:haxe.macro.Position, t:haxe.macro.Type, substitutions:Map<String, haxe.macro.TypedExpr>) {
+		var processedTarget = reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(e, substitutions);
+		var processedCases = {
+			var ` = [];
+			{
+				var ` = 0;
+				var ` = cases;
+				while (` < `.length) {
+					var v = `[`];
+					++ `;
+					`.push(function(c:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }) {
+						return {
+							var processedBody = @:ast(switch (c.expr.expr) {
+	case TBlock(exprs):
+		var filteredExprs = [];
+		for (expr  in  exprs) {
+			switch (expr.expr) {
+				case TVar(v, init) if (isInfrastructureVar(v.name) && init != null):
+					switch (init.expr) {
+						case TEnumParameter(_, _, _):
+							continue;						
+						default:
+							filteredExprs.push(processExpr(expr, substitutions));						
+					};				
+				default:
+					filteredExprs.push(processExpr(expr, substitutions));				
+			};
+		};
+		{ expr : TBlock(filteredExprs), pos : c.expr.pos, t : c.expr.t };	
+	default:
+		processExpr(c.expr, substitutions);	
+}) {
+								var ` = c.expr.expr;
+								if ((enumIndex ` == 14)) {
+									var ` = `[0];
+									{
+										var exprs = `;
+										{
+											var filteredExprs = [];
+											{
+												var ` = 0;
+												while ((` < exprs.length)) {
+													var expr = exprs[`];
+													++ `;
+													@:ast(switch (expr.expr) {
+	case TVar(v, init) if (isInfrastructureVar(v.name) && init != null):
+		switch (init.expr) {
+			case TEnumParameter(_, _, _):
+				continue;			
+			default:
+				filteredExprs.push(processExpr(expr, substitutions));			
+		};	
+	default:
+		filteredExprs.push(processExpr(expr, substitutions));	
+}) {
+														var ` = expr.expr;
+														if ((enumIndex ` == 13)) {
+															var ` = `[0];
+															var ` = `[1];
+															{
+																var v = `;
+																var init = `;
+																if ((reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name) && init != null)) @:ast(switch (init.expr) {
+	case TEnumParameter(_, _, _):
+		continue;	
+	default:
+		filteredExprs.push(processExpr(expr, substitutions));	
+}) {
+																	var ` = init.expr;
+																	if ((enumIndex ` == 26)) {
+																		var ` = `[0];
+																		var ` = `[1];
+																		var ` = `[2];
+																		continue;
+																	} else filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions));
+																} else filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions));
+															};
+														} else filteredExprs.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(expr, substitutions));
+													};
+												};
+											};
+											{expr : haxe.macro.TypedExprDef.TBlock(filteredExprs), pos : c.expr.pos, t : c.expr.t};
+										};
+									};
+								} else reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(c.expr, substitutions);
+							};
+							{values : {
+								var _this = c.values;
+								{
+									var ` = [];
+									{
+										var ` = 0;
+										var ` = _this;
+										while ((` < `.length)) {
+											var v = `[`];
+											++ `;
+											`.push(reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(v, substitutions));
+										};
+									};
+									`;
+								};
+							}, expr : processedBody};
+						};
+					}(v));
+				};
+			};
+			`;
+		};
+		var processedDefault = if (edef != null) {
+			reflaxe.elixir.preprocessor.TypedExprPreprocessor.processExpr(edef, substitutions);
+		} else {
+			null;
+		};
+		return {expr : haxe.macro.TypedExprDef.TSwitch(processedTarget, processedCases, processedDefault), pos : pos, t : t};
+	}
+
+	public static function isInfrastructureVar(name:String) {
+		return reflaxe.elixir.preprocessor.TypedExprPreprocessor.INFRASTRUCTURE_VAR_PATTERN.match(name);
+	}
+
+	static function usesVariable(expr:haxe.macro.TypedExpr, varName:String) {
+		var found = [false];
+		var check = [null];
+		check[0] = function(e:haxe.macro.TypedExpr) {
+			@:ast(switch (e.expr) {
+	case TLocal(v) if (v.name == varName):
+		found = true;	
+	default:
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 1) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v.name == varName) {
+							found[0] = true;
+						} else {};
+					};
+				} else {};
+			};
+			if (! found[0]) {
+				haxe.macro.TypedExprTools.iter(e, check[0]);
+			};
+			return e;
+		};
+		check[0](expr);
+		return found[0];
+	}
+
+	static function substituteVariable(expr:haxe.macro.TypedExpr, varName:String, replacement:haxe.macro.TypedExpr) {
+		return haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) {
+			return @:ast(switch (e.expr) {
+	case TLocal(v) if (v.name == varName):
+		replacement;	
+	default:
+		e;	
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 1) {
+					var ` = `[0];
+					{
+						var v = `;
+						if (v.name == varName) {
+							replacement;
+						} else {
+							e;
+						};
+					};
+				} else {
+					e;
+				};
+			};
+		});
+	}
+
+	static function scanForInfrastructureVars(expr:haxe.macro.TypedExpr, substitutions:Map<String, haxe.macro.TypedExpr>) {
+		if (expr == null) {
+			return;
+		};
+		@:ast(switch (expr.expr) {
+	case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+		substitutions.set(v.name, init);	
+	case TBlock(exprs):
+		for (e  in  exprs) {
+			scanForInfrastructureVars(e, substitutions);
+		};	
+	default:
+		TypedExprTools.iter(expr, function(e) {
+			scanForInfrastructureVars(e, substitutions);
+		});	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var v = `;
+						var init = `;
+						if (init != null && reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name)) {
+							{
+								var key = v.name;
+								substitutions.set(key, init);
+							};
+						} else {
+							haxe.macro.TypedExprTools.iter(expr, function(e:haxe.macro.TypedExpr) {
+								reflaxe.elixir.preprocessor.TypedExprPreprocessor.scanForInfrastructureVars(e, substitutions);
+							});
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var e = exprs[`];
+									++ `;
+									reflaxe.elixir.preprocessor.TypedExprPreprocessor.scanForInfrastructureVars(e, substitutions);
+								};
+							};
+						};
+					};
+				};
+				default: {
+					haxe.macro.TypedExprTools.iter(expr, function(e:haxe.macro.TypedExpr) {
+						reflaxe.elixir.preprocessor.TypedExprPreprocessor.scanForInfrastructureVars(e, substitutions);
+					});
+				}
+			};
+		};
+	}
+
+	static function isMapIterationPattern(expr:haxe.macro.TypedExpr) {
+		var hasMapIteration = [false];
+		var scan = [null];
+		scan[0] = function(e:haxe.macro.TypedExpr) {
+			if (e == null) {
+				return;
+			};
+			@:ast(switch (e.expr) {
+	case TFor(v, iter, body):
+		if (containsKeyValueIterator(iter) || containsKeyValueIterator(body)) {
+			hasMapIteration = true;
+		};
+		switch (iter.t) {
+			case TAbstract(t, params):
+				var abstractType = t.get();
+				if (abstractType.name == "KeyValueIterator" || abstractType.module == "haxe.iterators.MapKeyValueIterator") {
+					hasMapIteration = true;
+				};			
+			case TInst(t, params):
+				var classType = t.get();
+				if (classType.name == "MapKeyValueIterator" || classType.module == "haxe.iterators.MapKeyValueIterator") {
+					hasMapIteration = true;
+				};			
+			default:
+		};	
+	default:
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 15) {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						var iter = `;
+						var body = `;
+						{
+							if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsKeyValueIterator(iter) || reflaxe.elixir.preprocessor.TypedExprPreprocessor.containsKeyValueIterator(body)) {
+								hasMapIteration[0] = true;
+							};
+							@:ast(switch (iter.t) {
+	case TAbstract(t, params):
+		var abstractType = t.get();
+		if (abstractType.name == "KeyValueIterator" || abstractType.module == "haxe.iterators.MapKeyValueIterator") {
+			hasMapIteration = true;
+		};	
+	case TInst(t, params):
+		var classType = t.get();
+		if (classType.name == "MapKeyValueIterator" || classType.module == "haxe.iterators.MapKeyValueIterator") {
+			hasMapIteration = true;
+		};	
+	default:
+}) {
+								var ` = iter.t;
+								switch (enumIndex `) {
+									case 2: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var t = `;
+											var params = `;
+											{
+												var classType = t.get();
+												if (classType.name == "MapKeyValueIterator" || classType.module == "haxe.iterators.MapKeyValueIterator") {
+													hasMapIteration[0] = true;
+												};
+											};
+										};
+									};
+									case 8: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var t = `;
+											var params = `;
+											{
+												var abstractType = t.get();
+												if (abstractType.name == "KeyValueIterator" || abstractType.module == "haxe.iterators.MapKeyValueIterator") {
+													hasMapIteration[0] = true;
+												};
+											};
+										};
+									};
+									default: {}
+								};
+							};
+						};
+					};
+				} else {};
+			};
+			if (! hasMapIteration[0]) {
+				haxe.macro.TypedExprTools.iter(e, scan[0]);
+			};
+		};
+		scan[0](expr);
+		return hasMapIteration[0];
+	}
+
+	static function containsKeyValueIterator(expr:haxe.macro.TypedExpr) {
+		var hasIterator = [false];
+		var scan = [null];
+		scan[0] = function(e:haxe.macro.TypedExpr) {
+			if (e == null || hasIterator[0]) {
+				return;
+			};
+			@:ast(switch (e.expr) {
+	case TCall(target, args):
+		switch (target.expr) {
+			case TField(obj, FInstance(_, _, cf)):
+				var methodName = cf.get().name;
+				if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+					hasIterator = true;
+				};			
+			case TField(obj, FAnon(cf)):
+				var methodName = cf.get().name;
+				if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+					hasIterator = true;
+				};			
+			default:
+		};	
+	default:
+}) {
+				var ` = e.expr;
+				if (enumIndex ` == 9) {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var target = `;
+						var args = `;
+						{
+							@:ast(switch (target.expr) {
+	case TField(obj, FInstance(_, _, cf)):
+		var methodName = cf.get().name;
+		if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+			hasIterator = true;
+		};	
+	case TField(obj, FAnon(cf)):
+		var methodName = cf.get().name;
+		if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+			hasIterator = true;
+		};	
+	default:
+}) {
+								var ` = target.expr;
+								if (enumIndex ` == 4) {
+									var ` = `[0];
+									var ` = `[1];
+									switch (enumIndex `) {
+										case 0: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												var cf = `;
+												var obj = `;
+												{
+													var methodName = cf.get().name;
+													if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+														hasIterator[0] = true;
+													};
+												};
+											};
+										};
+										case 2: {
+											var ` = `[0];
+											{
+												var cf = `;
+												var obj = `;
+												{
+													var methodName = cf.get().name;
+													if (methodName == "keyValueIterator" || methodName == "hasNext" || methodName == "next") {
+														hasIterator[0] = true;
+													};
+												};
+											};
+										};
+										default: {}
+									};
+								} else {};
+							};
+						};
+					};
+				} else {};
+			};
+			if (! hasIterator[0]) {
+				haxe.macro.TypedExprTools.iter(e, scan[0]);
+			};
+		};
+		scan[0](expr);
+		return hasIterator[0];
+	}
+
+	static function transformMapIteration(expr:haxe.macro.TypedExpr) {
+		@:ast(switch (expr.expr) {
+	case TFor(v, iter, body):
+		return { expr : TFor(v, iter, body), pos : expr.pos, t : expr.t };	
+	default:
+		return TypedExprTools.map(expr, function(e) ->  @:implicitReturn return isMapIterationPattern(e) ? transformMapIteration(e) : e);	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 15) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var v = `;
+					var iter = `;
+					var body = `;
+					{
+						return {expr : haxe.macro.TypedExprDef.TFor(v, iter, body), pos : expr.pos, t : expr.t};
+					};
+				};
+			} else {
+				return haxe.macro.TypedExprTools.map(expr, function(e:haxe.macro.TypedExpr) return if (reflaxe.elixir.preprocessor.TypedExprPreprocessor.isMapIterationPattern(e)) {
+					reflaxe.elixir.preprocessor.TypedExprPreprocessor.transformMapIteration(e);
+				} else {
+					e;
+				});
+			};
+		};
+	}
+}

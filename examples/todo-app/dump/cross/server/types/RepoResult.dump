@@ -1,0 +1,1 @@
+typedef server.types.RepoResult<T> = { success : Bool, ?error : Null<String>, ?data : Null<server.types.RepoResult.T>, ?changeset : Null<Dynamic> }

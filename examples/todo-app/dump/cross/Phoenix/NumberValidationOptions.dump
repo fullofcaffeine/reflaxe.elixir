@@ -1,0 +1,1 @@
+typedef phoenix.NumberValidationOptions = { ?not_equal_to : Null<Float>, ?message : Null<String>, ?less_than_or_equal_to : Null<Float>, ?less_than : Null<Float>, ?greater_than_or_equal_to : Null<Float>, ?greater_than : Null<Float>, ?equal_to : Null<Float> }

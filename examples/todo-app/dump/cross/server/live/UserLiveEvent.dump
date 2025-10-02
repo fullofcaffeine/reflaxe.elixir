@@ -1,0 +1,11 @@
+@:used
+enum server.live.UserLiveEvent {
+	NewUser;
+	EditUser(id:Int);
+	SaveUser(params:{ user : Dynamic });
+	DeleteUser(id:Int);
+	Search(params:{ search_term : String });
+	FilterStatus(params:{ status : String });
+	ClearSearch;
+	Cancel;
+}

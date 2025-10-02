@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.macros.TableMetadata = { name : String, indexes : Array<reflaxe.elixir.macros.IndexMetadata>, createdAt : haxe.macro.Position, constraints : Array<reflaxe.elixir.macros.ConstraintMetadata>, columns : Map<String, reflaxe.elixir.macros.ColumnMetadata> }

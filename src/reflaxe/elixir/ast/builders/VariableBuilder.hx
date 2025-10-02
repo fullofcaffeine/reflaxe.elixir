@@ -162,9 +162,29 @@ class VariableBuilder {
                         
                         #if debug_infrastructure_vars
                         trace('[Infrastructure Variable] Mapping ${v.name} -> $extractedVarName');
+                        trace('[Infrastructure Variable FIX] Generating variable binding instead of skipping');
                         #end
-                        
-                        // Skip the assignment
+
+                        // FIXED: Don't skip! Generate the variable binding so g is defined
+                        // The mapping is for pattern matching optimization, but the variable must exist
+                        var buildExpression = context.getExpressionBuilder();
+                        var initAST = buildExpression(init);
+
+                        #if debug_infrastructure_vars
+                        trace('[Infrastructure Variable FIX] initAST is ${initAST == null ? "null" : "not null"}');
+                        #end
+
+                        if (initAST != null) {
+                            var varName = resolveDeclarationName(v, context);
+                            #if debug_infrastructure_vars
+                            trace('[Infrastructure Variable FIX] Generating EMatch for $varName');
+                            #end
+                            return EMatch(PVar(varName), initAST);
+                        }
+
+                        #if debug_infrastructure_vars
+                        trace('[Infrastructure Variable FIX] FAILED - initAST was null, returning null');
+                        #end
                         return null;
                         
                     default:

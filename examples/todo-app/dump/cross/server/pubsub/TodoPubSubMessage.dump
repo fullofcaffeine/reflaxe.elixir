@@ -1,0 +1,10 @@
+@:directlyUsed @:used
+enum server.pubsub.TodoPubSubMessage {
+	TodoCreated(todo:TodoApp.Todo);
+	TodoUpdated(todo:TodoApp.Todo);
+	TodoDeleted(id:Int);
+	BulkUpdate(action:server.types.BulkOperationType);
+	UserOnline(user_id:Int);
+	UserOffline(user_id:Int);
+	SystemAlert(message:String, level:server.types.AlertLevel);
+}

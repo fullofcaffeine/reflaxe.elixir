@@ -1,0 +1,747 @@
+class reflaxe.BaseCompiler {
+
+	public function new() {
+		this.dynamicTypesHandled = [];
+		this.dynamicTypeStack = [];
+		this.reservedVarNameMap = null;
+		this.currentModule = null;
+		this.typeUsage = null;
+		this.fileDirOverride = null;
+		this.fileNameOverride = null;
+		this.extraFiles = new haxe.ds.StringMap();
+		this.output = null;
+		this.expressionPreprocessors = [];
+		this.options = new reflaxe.BaseCompilerOptions(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+		this.compileEndCallbacks = [];
+	}
+
+	public function filterTypes(moduleTypes:Array<haxe.macro.ModuleType>) {
+		return moduleTypes;
+	}
+
+	public function shouldGenerateClass(cls:haxe.macro.ClassType) {
+		if (reflaxe.helpers.ClassTypeHelper.isTypeParameter(cls)) {
+			return false;
+		};
+		if (reflaxe.helpers.ClassTypeHelper.isExprClass(cls)) {
+			return false;
+		};
+		return ! reflaxe.helpers.BaseTypeHelper.isReflaxeExtern(cls) || ! this.options.ignoreExterns;
+	}
+
+	public function shouldGenerateEnum(enumType:haxe.macro.EnumType) {
+		return ! reflaxe.helpers.BaseTypeHelper.isReflaxeExtern(enumType) || ! this.options.ignoreExterns;
+	}
+
+	public function shouldGenerateClassField(cls:haxe.macro.ClassField) {
+		return true;
+	}
+
+	public function onCompileStart() {}
+
+	public function onCompileEnd() {}
+
+	public function onOutputComplete() {}
+
+	public function onClassAdded(cls:haxe.macro.ClassType, output:Null<String>) {}
+
+	public function onEnumAdded(cls:haxe.macro.EnumType, output:Null<String>) {}
+
+	public function onTypedefAdded(cls:haxe.macro.DefType, output:Null<String>) {}
+
+	public function onAbstractAdded(cls:haxe.macro.AbstractType, output:Null<String>) {}
+
+	@:value([])
+	public var compileEndCallbacks(default,null):Array<() -> Void>;
+
+	function addCompileEndCallback(callback:() -> Void) {
+		this.compileEndCallbacks.push(callback);
+	}
+
+	@:value({ pos : null })
+	function err(msg:String, pos:Null<haxe.macro.Position> = null) {
+		if (pos == null) {
+			pos = reflaxe.helpers.Context.currentPos();
+		};
+		return reflaxe.helpers.Context.error(msg, pos);
+	}
+
+	@:value({ })
+	public var options(default,null):reflaxe.BaseCompilerOptions;
+
+	@:value([])
+	public var expressionPreprocessors(default,null):Array<reflaxe.preprocessors.ExpressionPreprocessor>;
+
+	public function setOptions(options:reflaxe.BaseCompilerOptions) {
+		this.options = options;
+		this.expressionPreprocessors = (@:mergeBlock {
+			var tmp = {
+				options.expressionPreprocessors;
+			};
+			if (tmp != null) tmp else {
+				reflaxe.preprocessors.ExpressionPreprocessorHelper.defaults();
+			};
+		});
+		this.setupReservedVarNames();
+	}
+
+	@:value(null)
+	public var output(default,null):Null<reflaxe.output.OutputManager>;
+
+	public function generateOutputIterator
+
+	public function setOutputDir(outputDir:String) {
+		if (this.output == null) {
+			this.output = new reflaxe.output.OutputManager(this);
+		};
+		this.output.setOutputDir(outputDir);
+	}
+
+	public function generateFiles() {
+		if (this.output != null) {
+			this.output.generateFiles();
+		} else {
+			this.err("Attempted to output without being assigned destination.", null);
+		};
+	}
+
+	public function generateFilesManually() {}
+
+	@:value([])
+	public var extraFiles(default,null):Map<String, Map<Int, String>>;
+
+	@:value({ content : "" })
+	public function setExtraFile(path:reflaxe.output.OutputPath, content:String = "") {
+		{
+			var this = this.extraFiles;
+			var key = reflaxe.output._OutputPath.OutputPath_Impl_.toString(path);
+			var value = {
+				var ` = {
+					{};
+					new haxe.ds.IntMap();
+				};
+				`.set(0, content);
+				`;
+			};
+			cast this.set(key, value);
+		};
+	}
+
+	public function extraFileExists(path:reflaxe.output.OutputPath) {
+		var pathString = reflaxe.output._OutputPath.OutputPath_Impl_.toString(path);
+		return {
+			var this = this.extraFiles;
+			cast this.exists(pathString);
+		};
+	}
+
+	@:value({ content : "" })
+	public function setExtraFileIfEmpty(path:reflaxe.output.OutputPath, content:String = "") {
+		if (! this.extraFileExists(path)) {
+			this.setExtraFile(path, content);
+		};
+	}
+
+	@:value({ priority : 0 })
+	public function getExtraFileContent(path:reflaxe.output.OutputPath, priority:Int = 0) {
+		var pathString = reflaxe.output._OutputPath.OutputPath_Impl_.toString(path);
+		return if (! {
+			var this = this.extraFiles;
+			cast this.exists(pathString);
+		}) {
+			"";
+		} else {
+			var current = {
+				var this = this.extraFiles;
+				cast this.get(pathString);
+			};
+			if (current != null) {
+				if (current.exists(priority)) {
+					(@:mergeBlock {
+						var tmp = {
+							cast current.get(priority);
+						};
+						if (tmp != null) tmp else {
+							"";
+						};
+					});
+				} else {
+					"";
+				};
+			} else {
+				"";
+			};
+		};
+	}
+
+	@:value({ priority : 0 })
+	public function replaceInExtraFile(path:reflaxe.output.OutputPath, content:String, priority:Int = 0) {
+		var pathString = reflaxe.output._OutputPath.OutputPath_Impl_.toString(path);
+		if (! {
+			var this = this.extraFiles;
+			cast this.exists(pathString);
+		}) {
+			{
+				var this = this.extraFiles;
+				var value = {
+					{};
+					new haxe.ds.IntMap();
+				};
+				cast this.set(pathString, value);
+			};
+		};
+		var current = {
+			var this = this.extraFiles;
+			cast this.get(pathString);
+		};
+		if (current != null) {
+			cast {
+				current.set(priority, content);
+				content;
+			};
+			{
+				var this = this.extraFiles;
+				cast this.set(pathString, current);
+			};
+		};
+	}
+
+	@:value({ priority : 0 })
+	public function appendToExtraFile(path:reflaxe.output.OutputPath, content:String, priority:Int = 0) {
+		this.replaceInExtraFile(path, this.getExtraFileContent(path, priority) + content, priority);
+	}
+
+	@:value(null)
+	var fileNameOverride:Null<String>;
+
+	@:value(null)
+	var fileDirOverride:Null<String>;
+
+	public function setOutputFileName(name:Null<String>) {
+		this.fileNameOverride = name;
+	}
+
+	public function setOutputFileDir(dir:Null<String>) {
+		this.fileDirOverride = dir;
+	}
+
+	public function getMainExpr() {
+		return reflaxe.helpers.Context.getMainExpr();
+	}
+
+	public function getMainModule() {
+		var mainExpr = this.getMainExpr();
+		if (mainExpr == null) {
+			return null;
+		};
+		return @:ast(switch (mainExpr.expr) {
+	case TCall(callExpr, _):
+		{
+			switch (callExpr.expr) {
+				case TField(_, fa):
+					{
+						switch (fa) {
+							case FStatic(clsRef, _):
+								TClassDecl(clsRef);							
+							case _:
+								null;							
+						};
+					};				
+				case _:
+					null;				
+			};
+		};	
+	case _:
+		null;	
+}) {
+			var ` = mainExpr.expr;
+			if (enumIndex ` == 9) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var callExpr = `;
+					{
+						{
+							@:ast(switch (callExpr.expr) {
+	case TField(_, fa):
+		{
+			switch (fa) {
+				case FStatic(clsRef, _):
+					TClassDecl(clsRef);				
+				case _:
+					null;				
+			};
+		};	
+	case _:
+		null;	
+}) {
+								var ` = callExpr.expr;
+								if (enumIndex ` == 4) {
+									var ` = `[0];
+									var ` = `[1];
+									{
+										var fa = `;
+										{
+											{
+												@:ast(switch (fa) {
+	case FStatic(clsRef, _):
+		TClassDecl(clsRef);	
+	case _:
+		null;	
+}) if (enumIndex fa == 1) {
+													var ` = fa[0];
+													var ` = fa[1];
+													{
+														var clsRef = `;
+														{
+															haxe.macro.ModuleType.TClassDecl(clsRef);
+														};
+													};
+												} else {
+													null;
+												};
+											};
+										};
+									};
+								} else {
+									null;
+								};
+							};
+						};
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+
+	@:value(null)
+	var typeUsage:Null<reflaxe.compiler.TypeUsageMap>;
+
+	public function getTypeUsage() {
+		return this.typeUsage;
+	}
+
+	@:value(null)
+	var currentModule:Null<haxe.macro.ModuleType>;
+
+	public function getCurrentModule() {
+		return this.currentModule;
+	}
+
+	public function setupModule(mt:Null<haxe.macro.ModuleType>) {
+		this.currentModule = mt;
+		this.typeUsage = if ((mt != null && this.options.trackUsedTypes)) {
+			reflaxe.compiler.TypeUsageTracker.trackTypesInModuleType(mt);
+		} else {
+			null;
+		};
+	}
+
+	public function compileClass
+
+	public function compileEnum
+
+	public function compileTypedef
+
+	public function compileAbstract
+
+	@:value(null)
+	var reservedVarNameMap:Null<Map<String, Bool>>;
+
+	function setupReservedVarNames() {
+		if (this.options.reservedVarNames.length == 0) {
+			return;
+		};
+		this.reservedVarNameMap = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = 0;
+			var ` = this.options.reservedVarNames;
+			while (` < `.length) {
+				var name = `[`];
+				++ `;
+				{
+					var this = this.reservedVarNameMap;
+					cast this.set(name, true);
+					true;
+				};
+			};
+		};
+	}
+
+	public function addReservedVarName(name:String) {
+		if (this.reservedVarNameMap == null) {
+			this.reservedVarNameMap = {
+				{};
+				new haxe.ds.StringMap();
+			};
+		};
+		{
+			var this = this.reservedVarNameMap;
+			cast this.set(name, true);
+			true;
+		};
+	}
+
+	@:value({ field : null, expr : null })
+	public function compileVarName(name:String, expr:Null<haxe.macro.TypedExpr> = null, field:Null<haxe.macro.ClassField> = null) {
+		if (this.reservedVarNameMap != null) {
+			while ({
+				var this = this.reservedVarNameMap;
+				cast this.exists(name);
+			}) {
+				name = "_" + name;
+			};
+		};
+		return name;
+	}
+
+	public function compileMetadata(metaAccess:Null<haxe.macro.MetaAccess>, target:haxe.display.MetadataTarget) {
+		return reflaxe.compiler.MetadataCompiler.compileMetadata(this.options, metaAccess, target);
+	}
+
+	function expressionType(expr:Null<haxe.macro.TypedExpr>) {
+		if (expr == null) {
+			return 0;
+		};
+		return @:ast(switch (expr.expr) {
+	case TConst(_) | TLocal(_) | TArray(_, _) | TVar(_, _) | TTypeExpr(_) | TEnumParameter(_, _, _) | TEnumIndex(_) | TIdent(_):
+		0;	
+	case TBinop(_, _, _) | TCall(_, _) | TUnop(_, _, _) | TCast(_, _) | TField(_, _):
+		1;	
+	case TObjectDecl(_):
+		2;	
+	case TArrayDecl(_):
+		3;	
+	case TNew(_, _, _):
+		4;	
+	case TFunction(_):
+		5;	
+	case TBlock(_):
+		6;	
+	case TFor(_, _, _):
+		7;	
+	case TIf(_, _, _):
+		8;	
+	case TWhile(_, _, _):
+		9;	
+	case TSwitch(_, _, _):
+		10;	
+	case TTry(_, _):
+		11;	
+	case TReturn(_):
+		12;	
+	case TBreak | TContinue:
+		13;	
+	case TThrow(_):
+		14;	
+	case TMeta(_, e):
+		expressionType(e);	
+	case TParenthesis(e):
+		expressionType(e);	
+}) {
+			var ` = expr.expr;
+			switch (@:exhaustive enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					{
+						0;
+					};
+				};
+				case 1: {
+					var ` = `[0];
+					{
+						0;
+					};
+				};
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						0;
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						1;
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						1;
+					};
+				};
+				case 5: {
+					var ` = `[0];
+					{
+						0;
+					};
+				};
+				case 6: {
+					var ` = `[0];
+					{
+						var e = `;
+						{
+							this.expressionType(e);
+						};
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						2;
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					{
+						3;
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						1;
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						4;
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						1;
+					};
+				};
+				case 12: {
+					var ` = `[0];
+					{
+						5;
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						0;
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						6;
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						7;
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						8;
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						9;
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						10;
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						11;
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						12;
+					};
+				};
+				case 21, 22: {
+					{
+						13;
+					};
+				};
+				case 23: {
+					var ` = `[0];
+					{
+						14;
+					};
+				};
+				case 24: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						1;
+					};
+				};
+				case 25: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							this.expressionType(e);
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						0;
+					};
+				};
+				case 27: {
+					var ` = `[0];
+					{
+						0;
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					{
+						0;
+					};
+				};
+			};
+		};
+	}
+
+	@:value([])
+	public var dynamicTypeStack:Array<haxe.macro.ModuleType>;
+
+	@:value([])
+	public var dynamicTypesHandled:Array<String>;
+
+	public function addModuleTypeForCompilation(mt:haxe.macro.ModuleType) {
+		var id = reflaxe.helpers.ModuleTypeHelper.getUniqueId(mt);
+		if (! this.dynamicTypesHandled.contains(id)) {
+			this.dynamicTypesHandled.push(id);
+			this.dynamicTypeStack.push(mt);
+		};
+	}
+
+	public function addTypeForCompilation(type:haxe.macro.Type) {
+		var moduleType = reflaxe.helpers.TypeHelper.toModuleType(type);
+		if (moduleType != null) {
+			this.addModuleTypeForCompilation(moduleType);
+			return true;
+		};
+		return false;
+	}
+
+	function extractStringFromMeta(meta:haxe.macro.MetaAccess, name:String) {
+		return if (reflaxe.helpers.NullableMetaAccessHelper.maybeHas(meta, name)) {
+			var entry = reflaxe.helpers.NullableMetaAccessHelper.maybeExtract(meta, name)[0];
+			@:nullSafety(Off) if (entry == null || entry.params == null || entry.params.length == 0) {
+				reflaxe.helpers.Context.error("One string argument expected containing the native code.", entry.pos);
+				return null;
+			};
+			@:nullSafety(Off) var code = @:ast(switch (entry.params[0].expr) {
+	case EConst(CString(s, _)):
+		s;	
+	case _:
+		{
+			Context.error("One string argument expected.", entry.pos);
+		};	
+}) {
+				var ` = entry.params[0].expr;
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					if (enumIndex ` == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var s = `;
+							{
+								s;
+							};
+						};
+					} else {
+						{
+							reflaxe.helpers.Context.error("One string argument expected.", entry.pos);
+						};
+					};
+				} else {
+					{
+						reflaxe.helpers.Context.error("One string argument expected.", entry.pos);
+					};
+				};
+			};
+			{entry : entry, code : code};
+		} else {
+			null;
+		};
+	}
+
+	public function onExpressionUnsuccessful(pos:haxe.macro.Position) {
+		return this.err("Could not generate expression.", pos);
+	}
+
+	@:value({ position : null })
+	public function generateInjectionExpression(content:String, position:Null<haxe.macro.Position> = null) {
+		if (this.options.targetCodeInjectionName == null) {
+			throw "`targetCodeInjectionName` option must be defined to use this function.";
+		};
+		position = if (position != null) {
+			position;
+		} else {
+			reflaxe.helpers.Context.currentPos();
+		};
+		return {expr : haxe.macro.TypedExprDef.TCall({expr : haxe.macro.TypedExprDef.TIdent(this.options.targetCodeInjectionName), pos : cast cast {
+			if (position == null) {
+				throw "Trusted on null value.";
+			};
+			@:nullSafety(Off) position;
+		}, t : haxe.macro.Type.TDynamic(null)}, [{expr : haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TString(content)), pos : cast cast {
+			if (position == null) {
+				throw "Trusted on null value.";
+			};
+			@:nullSafety(Off) position;
+		}, t : haxe.macro.Type.TDynamic(null)}]), pos : cast cast {
+			if (position == null) {
+				throw "Trusted on null value.";
+			};
+			@:nullSafety(Off) position;
+		}, t : haxe.macro.Type.TDynamic(null)};
+	}
+}

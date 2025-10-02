@@ -1,0 +1,1 @@
+typedef ecto.DropOptions = { ?ifExists : Null<Bool>, ?cascade : Null<Bool> }

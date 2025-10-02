@@ -1,0 +1,10 @@
+@:flatEnum
+enum reflaxe.elixir.ast.PhoenixContext {
+	LiveView;
+	LiveComponent;
+	Controller;
+	Router;
+	Channel;
+	Endpoint;
+	None;
+}

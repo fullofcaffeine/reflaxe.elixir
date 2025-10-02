@@ -581,12 +581,19 @@ class LoopBuilder {
                                      normalWhile: Bool,
                                      buildExpr: TypedExpr -> ElixirAST,
                                      toSnakeCase: String -> String = null): ElixirAST {
-        
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] ========== WHILE/DO-WHILE COMPILATION START ==========');
+        trace('[XRay LoopBuilder] normalWhile: $normalWhile (${normalWhile ? "while" : "do-while"})');
+        trace('[XRay LoopBuilder] Condition expr: ${econd.expr}');
+        trace('[XRay LoopBuilder] Body expr type: ${e.expr}');
+        #end
+
         // Default snake case converter if not provided
         if (toSnakeCase == null) {
             toSnakeCase = function(s) return s.toLowerCase();
         }
-        
+
         // CRITICAL: First detect if this is a desugared for loop
         var forPattern = detectDesugarForLoopPattern(econd, e);
         if (forPattern != null) {
@@ -604,12 +611,29 @@ class LoopBuilder {
         };
 
         // Build and analyze IR
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] Analyzing loop IR...');
+        #end
         var ir = analyzeLoop(whileExpr, buildExpr);
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] IR Analysis Complete:');
+        trace('[XRay LoopBuilder]   IR kind: ${ir.kind}');
+        trace('[XRay LoopBuilder]   IR confidence: ${ir.confidence}');
+        trace('[XRay LoopBuilder]   IR accumulators: ${ir.accumulators.length}');
+        trace('[XRay LoopBuilder]   IR yield: ${ir.yield != null ? "present" : "null"}');
+        #end
 
         // Check confidence and decide emission strategy
         if (ir.confidence >= CONFIDENCE_THRESHOLD) {
+            #if debug_loop_builder
+            trace('[XRay LoopBuilder] High confidence (${ir.confidence}) - using IR emission');
+            #end
             return emitFromIR(ir, buildExpr, null, toSnakeCase);
         } else {
+            #if debug_loop_builder
+            trace('[XRay LoopBuilder] Low confidence (${ir.confidence}) - falling back to legacy');
+            #end
             // Fall back to legacy - would delegate to original TWhile handling
             // For now, use simple reduce_while
             return buildLegacyWhile(buildExpr(econd), buildExpr(e), normalWhile, buildExpr);
@@ -1227,6 +1251,20 @@ class LoopBuilder {
     static function buildLegacyWhile(cond: ElixirAST, body: ElixirAST,
                                     normalWhile: Bool,
                                     buildExpr: TypedExpr -> ElixirAST): ElixirAST {
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] buildLegacyWhile called');
+        trace('[XRay LoopBuilder]   normalWhile: $normalWhile');
+        trace('[XRay LoopBuilder]   condition AST type: ${cond != null ? Type.enumConstructor(cond.def) : "null"}');
+        trace('[XRay LoopBuilder]   body AST type: ${body != null ? Type.enumConstructor(body.def) : "null"}');
+        if (body != null) {
+            trace('[XRay LoopBuilder]   body is null: false');
+            trace('[XRay LoopBuilder]   body toString: ${ElixirASTPrinter.print(body, 0).substring(0, 100)}');
+        } else {
+            trace('[XRay LoopBuilder]   body is null: true');
+        }
+        #end
+
         // Simple reduce_while implementation
         var stream = makeAST(ERemoteCall(
             makeAST(EVar("Stream")),
@@ -1242,6 +1280,11 @@ class LoopBuilder {
 
         var initAcc = makeAST(EAtom("ok"));
 
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] Creating reducer body...');
+        trace('[XRay LoopBuilder]   body before wrapping: ${body != null ? ElixirASTPrinter.print(body, 0).substring(0, 200) : "null"}');
+        #end
+
         var reducerBody = makeAST(EIf(
             cond,
             makeAST(ETuple([
@@ -1253,6 +1296,11 @@ class LoopBuilder {
                 makeAST(EAtom("ok"))
             ]))
         ));
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] Reducer body created');
+        trace('[XRay LoopBuilder]   reducerBody toString: ${ElixirASTPrinter.print(reducerBody, 0).substring(0, 300)}');
+        #end
 
         var reducerFn = makeAST(EFn([{
             args: [PWildcard, PVar("acc")],
@@ -2355,13 +2403,30 @@ class LoopBuilder {
     /**
      * Build idiomatic while loop using reduce_while
      */
-    static function buildWhileLoop(econd: TypedExpr, e: TypedExpr, 
+    static function buildWhileLoop(econd: TypedExpr, e: TypedExpr,
                                    normalWhile: Bool,
                                    context: BuildContext,
                                    toElixirVarName: String -> String): ElixirASTDef {
-        
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] buildWhileLoop called');
+        trace('[XRay LoopBuilder]   normalWhile: $normalWhile (${normalWhile ? "while" : "do-while"})');
+        trace('[XRay LoopBuilder]   condition TypedExpr: ${e.expr}');
+        trace('[XRay LoopBuilder]   body TypedExpr: ${e.expr}');
+        #end
+
         var condition = context.buildFromTypedExpr(econd);
         var body = context.buildFromTypedExpr(e);
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] After compiling from TypedExpr:');
+        trace('[XRay LoopBuilder]   condition AST: ${Type.enumConstructor(condition.def)}');
+        trace('[XRay LoopBuilder]   body AST: ${Type.enumConstructor(body.def)}');
+        if (body != null) {
+            var bodyStr = ElixirASTPrinter.print(body, 0);
+            trace('[XRay LoopBuilder]   body printed (first 300 chars): ${bodyStr.substring(0, bodyStr.length > 300 ? 300 : bodyStr.length)}');
+        }
+        #end
         
         // Detect mutated variables for state threading
         var mutatedVars = MutabilityDetector.detectMutatedVariables(e);
@@ -2442,7 +2507,26 @@ class LoopBuilder {
         context: BuildContext,
         toElixirVarName: String -> String
     ): ElixirASTDef {
-        
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] buildReduceWhileWithState called');
+        trace('[XRay LoopBuilder]   mutatedVars count: ${Lambda.count(mutatedVars)}');
+        trace('[XRay LoopBuilder]   condition AST: ${Type.enumConstructor(condition.def)}');
+        trace('[XRay LoopBuilder]   body AST type: ${Type.enumConstructor(body.def)}');
+        if (body != null) {
+            var bodyStr = ElixirASTPrinter.print(body, 0);
+            trace('[XRay LoopBuilder]   body content (first 300 chars): ${bodyStr.substring(0, bodyStr.length > 300 ? 300 : bodyStr.length)}');
+            switch(body.def) {
+                case EBlock(exprs):
+                    trace('[XRay LoopBuilder]   body is EBlock with ${exprs.length} expressions');
+                default:
+                    trace('[XRay LoopBuilder]   body is not an EBlock');
+            }
+        } else {
+            trace('[XRay LoopBuilder]   body is null!');
+        }
+        #end
+
         // Build the initial accumulator tuple
         var accVarList: Array<{name: String, tvar: TVar}> = [];
         for (id => v in mutatedVars) {
@@ -2475,8 +2559,44 @@ class LoopBuilder {
             body,
             accVarList.map(item -> item.name)
         );
-        
-        return ERemoteCall(
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] Building reduce_while structure...');
+        trace('[XRay LoopBuilder]   transformedBody will be in EBlock with cont tuple');
+        #end
+
+        // Build the lambda body EIf structure
+        var lambdaIfBody = makeAST(EIf(
+            transformedCondition,
+            makeAST(EBlock([
+                transformedBody,
+                makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), newAccTuple]))
+            ])),
+            makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), newAccTuple]))
+        ));
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] Lambda EIf body created');
+        var ifBodyStr = ElixirASTPrinter.print(lambdaIfBody, 0);
+        trace('[XRay LoopBuilder]   Lambda if-body (first 500 chars): ${ifBodyStr.substring(0, ifBodyStr.length > 500 ? 500 : ifBodyStr.length)}');
+        #end
+
+        // Build the complete reducer function
+        var reducerFn = makeAST(EFn([
+            {
+                args: [PWildcard, accPattern],
+                guard: null,
+                body: lambdaIfBody
+            }
+        ]));
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] Reducer function created');
+        var reducerStr = ElixirASTPrinter.print(reducerFn, 0);
+        trace('[XRay LoopBuilder]   Reducer fn (first 600 chars): ${reducerStr.substring(0, reducerStr.length > 600 ? 600 : reducerStr.length)}');
+        #end
+
+        var result = ERemoteCall(
             makeAST(EVar("Enum")),
             "reduce_while",
             [
@@ -2493,22 +2613,16 @@ class LoopBuilder {
                     ]
                 )),
                 initAcc,
-                makeAST(EFn([
-                    {
-                        args: [PWildcard, accPattern],
-                        guard: null,
-                        body: makeAST(EIf(
-                            transformedCondition,
-                            makeAST(EBlock([
-                                transformedBody,
-                                makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), newAccTuple]))
-                            ])),
-                            makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), newAccTuple]))
-                        ))
-                    }
-                ]))
+                reducerFn
             ]
         );
+
+        #if debug_loop_builder
+        trace('[XRay LoopBuilder] Complete reduce_while structure built');
+        trace('[XRay LoopBuilder] Returning from buildReduceWhileWithState');
+        #end
+
+        return result;
     }
     
     /**

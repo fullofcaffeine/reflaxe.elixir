@@ -1,0 +1,3545 @@
+class reflaxe.elixir.ast.ElixirASTPrinter {
+
+	@:value(0)
+	static var loopIdCounter:Int = 0;
+
+	@:value(null)
+	static var currentUnusedFunctions:Null<Array<String>> = null;
+
+	public static function printAST(ast:reflaxe.elixir.ast.ElixirAST, context:Null<reflaxe.elixir.CompilationContext> = null) {
+		return reflaxe.elixir.ast.ElixirASTPrinter.print(ast, 0);
+	}
+
+	@:value({ indent : 0 })
+	public static function print(ast:reflaxe.elixir.ast.ElixirAST, indent:Int = 0) {
+		if (ast == null) {
+			return "";
+		};
+		var result = @:ast(switch (ast.def) {
+	case EDefmodule(name, doBlock):
+		if (ast.metadata != null && ast.metadata.unusedPrivateFunctions != null) {
+			currentUnusedFunctions = ast.metadata.unusedPrivateFunctions;
+		};
+		var moduleContent = "";
+		if (ast.metadata != null && ast.metadata.unusedPrivateFunctionsWithArity != null && ast.metadata.unusedPrivateFunctionsWithArity.length > 0) {
+			var unusedFuncList = [];
+			for (func  in  ast.metadata.unusedPrivateFunctionsWithArity) {
+				unusedFuncList.push("{:_${func.name}, ${func.arity}}");
+			};
+			if (unusedFuncList.length > 0) {
+				moduleContent += indentStr(indent + 1) + "@compile [{:nowarn_unused_function, [" + unusedFuncList.join(", ") + "]}]\n\n";
+			};
+		};
+		moduleContent += indentStr(indent + 1) + print(doBlock, indent + 1);
+		var moduleResult = "defmodule ${name} do\n" + moduleContent + "\n" + indentStr(indent) + "end";
+		currentUnusedFunctions = null;
+		moduleResult;	
+	case EModule(name, attributes, body):
+		var isException = ast.metadata != null && ast.metadata.isException == true;
+		if (isException) {
+			var result = "defmodule ${name} do\n";
+			result += indentStr(indent + 1) + "defexception [:message]\n";
+			for (expr  in  body) {
+				var exprStr = print(expr, indent + 1);
+				if (!exprStr.startsWith("defstruct")) {
+					result += "\n" + indentStr(indent + 1) + exprStr + "\n";
+				};
+			};
+			result += indentStr(indent) + "end";
+			result;
+		} else {
+			var result = "defmodule ${name} do\n";
+			for (attr  in  attributes) {
+				result += indentStr(indent + 1) + printAttribute(attr) + "\n";
+			};
+			if (attributes.length > 0 && body.length > 0) {
+				result += "\n";
+			};
+			for (expr  in  body) {
+				result += indentStr(indent + 1) + print(expr, indent + 1) + "\n";
+			};
+			result += indentStr(indent) + "end";
+			result;
+		};	
+	default:
+		printNode(ast.def, indent);	
+}) {
+			var ` = ast.def;
+			switch (enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var name = `;
+						var attributes = `;
+						var body = `;
+						{
+							var isException = ast.metadata != null && ast.metadata.isException == true;
+							if (isException) {
+								var result = "defmodule " + name + " do\n";
+								result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + "defexception [:message]\n";
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var expr = body[`];
+										++ `;
+										var exprStr = reflaxe.elixir.ast.ElixirASTPrinter.print(expr, indent + 1);
+										if (! StringTools.startsWith(exprStr, "defstruct")) {
+											result += "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + exprStr + "\n";
+										};
+									};
+								};
+								result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+								result;
+							} else {
+								var result = "defmodule " + name + " do\n";
+								{
+									var ` = 0;
+									while (` < attributes.length) {
+										var attr = attributes[`];
+										++ `;
+										result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.printAttribute(attr) + "\n";
+									};
+								};
+								if (attributes.length > 0 && body.length > 0) {
+									result += "\n";
+								};
+								{
+									var ` = 0;
+									while (` < body.length) {
+										var expr = body[`];
+										++ `;
+										result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, indent + 1) + "\n";
+									};
+								};
+								result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+								result;
+							};
+						};
+					};
+				};
+				case 1: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var name = `;
+						var doBlock = `;
+						{
+							if (ast.metadata != null && ast.metadata.unusedPrivateFunctions != null) {
+								reflaxe.elixir.ast.ElixirASTPrinter.currentUnusedFunctions = ast.metadata.unusedPrivateFunctions;
+							};
+							var moduleContent = "";
+							if (ast.metadata != null && ast.metadata.unusedPrivateFunctionsWithArity != null && ast.metadata.unusedPrivateFunctionsWithArity.length > 0) {
+								var unusedFuncList = [];
+								{
+									var ` = 0;
+									var ` = ast.metadata.unusedPrivateFunctionsWithArity;
+									while (` < `.length) {
+										var func = `[`];
+										++ `;
+										unusedFuncList.push("{:_" + func.name + ", " + func.arity + "}");
+									};
+								};
+								if (unusedFuncList.length > 0) {
+									moduleContent += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + "@compile [{:nowarn_unused_function, [" + unusedFuncList.join(", ") + "]}]\n\n";
+								};
+							};
+							moduleContent += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(doBlock, indent + 1);
+							var moduleResult = "defmodule " + name + " do\n" + moduleContent + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+							reflaxe.elixir.ast.ElixirASTPrinter.currentUnusedFunctions = null;
+							moduleResult;
+						};
+					};
+				};
+				default: {
+					reflaxe.elixir.ast.ElixirASTPrinter.printNode(ast.def, indent);
+				}
+			};
+		};
+		return result;
+	}
+
+	static function printNode(node:reflaxe.elixir.ast.ElixirASTDef, indent:Int) {
+		return @:ast(switch (node) {
+	case EModule(name, attributes, body):
+		var result = "defmodule ${name} do\n";
+		for (attr  in  attributes) {
+			result += indentStr(indent + 1) + printAttribute(attr) + "\n";
+		};
+		if (attributes.length > 0 && body.length > 0) {
+			result += "\n";
+		};
+		for (expr  in  body) {
+			result += indentStr(indent + 1) + print(expr, indent + 1) + "\n";
+		};
+		result += indentStr(indent) + "end";
+		result;	
+	case EDefmodule(name, doBlock):
+		"defmodule ${name} do\n" + indentStr(indent + 1) + print(doBlock, indent + 1) + "\n" + indentStr(indent) + "end";	
+	case EDef(name, args, guards, body):
+		var argStr = printPatterns(args);
+		var guardStr = guards != null ? " when " + print(guards, 0) : "";
+		"def ${name}(${argStr})${guardStr} do\n" + indentStr(indent + 1) + print(body, indent + 1) + "\n" + indentStr(indent) + "end";	
+	case EDefp(name, args, guards, body):
+		var funcName = name;
+		var argStr = printPatterns(args);
+		var guardStr = guards != null ? " when " + print(guards, 0) : "";
+		"defp ${funcName}(${argStr})${guardStr} do\n" + indentStr(indent + 1) + print(body, indent + 1) + "\n" + indentStr(indent) + "end";	
+	case EDefmacro(name, args, guards, body):
+		var argStr = printPatterns(args);
+		var guardStr = guards != null ? " when " + print(guards, 0) : "";
+		"defmacro ${name}(${argStr})${guardStr} do\n" + indentStr(indent + 1) + print(body, indent + 1) + "\n" + indentStr(indent) + "end";	
+	case EDefmacrop(name, args, guards, body):
+		var argStr = printPatterns(args);
+		var guardStr = guards != null ? " when " + print(guards, 0) : "";
+		"defmacrop ${name}(${argStr})${guardStr} do\n" + indentStr(indent + 1) + print(body, indent + 1) + "\n" + indentStr(indent) + "end";	
+	case ECase(expr, clauses):
+		"case " + print(expr, 0) + " do\n" + [for (clause  in  clauses) indentStr(indent + 1) + printCaseClause(clause, indent + 1)].join("\n") + "\n" + indentStr(indent) + "end";	
+	case ECond(clauses):
+		var clauseStrs = [];
+		for (clause  in  clauses) {
+			var conditionStr = print(clause.condition, 0);
+			var bodyStr = print(clause.body, indent + 2);
+			var isMultiLine = switch (clause.body.def) {
+				case EIf(_, _, _):
+					true;				
+				case ECase(_, _):
+					true;				
+				case ECond(_):
+					true;				
+				case EWith(_, _, _):
+					true;				
+				case EBlock(exprs) if (exprs.length > 1):
+					true;				
+				case _:
+					bodyStr.indexOf("\n") >= 0;				
+			};
+			if (isMultiLine) {
+				clauseStrs.push(indentStr(indent + 1) + conditionStr + " ->\n" + indentStr(indent + 2) + bodyStr);
+			} else {
+				clauseStrs.push(indentStr(indent + 1) + conditionStr + " -> " + bodyStr);
+			};
+		};
+		"cond do\n" + clauseStrs.join("\n") + "\n" + indentStr(indent) + "end";	
+	case EMatch(pattern, expr):
+		var patternStr = printPattern(pattern);
+		var keepInline = expr != null && expr.metadata != null && expr.metadata.keepInlineInAssignment == true;
+		switch (pattern) {
+			case PVar(name):
+				var rhsName = switch (expr != null ? expr.def : null) {
+					case EVar(varName):
+						varName;					
+					default:
+						null;					
+				};
+				if (rhsName != null && rhsName == name && !ElixirASTBuilder.isTempPatternVarName(name)) {
+					return "";
+				};			
+			default:
+		};
+		if (keepInline) {
+			patternStr + " = " + print(expr, 0);
+		} else {
+			patternStr + " = " + print(expr, 0);
+		};	
+	case EWith(clauses, doBlock, elseBlock):
+		var withClauses = [for (clause  in  clauses) printPattern(clause.pattern) + " <- " + print(clause.expr, 0)].join(",\n" + indentStr(indent + 1));
+		var result = "with " + withClauses + " do\n" + indentStr(indent + 1) + print(doBlock, indent + 1) + "\n";
+		if (elseBlock != null) {
+			result += indentStr(indent) + "else\n" + indentStr(indent + 1) + print(elseBlock, indent + 1) + "\n";
+		};
+		result + indentStr(indent) + "end";	
+	case EIf(condition, thenBranch, elseBranch):
+		var isInline = isSimpleExpression(thenBranch) && (elseBranch == null || isSimpleExpression(elseBranch));
+		var conditionStr = printIfCondition(condition);
+		if (isInline && elseBranch != null) {
+			"if " + conditionStr + ", do: " + print(thenBranch, 0) + ", else: " + print(elseBranch, 0);
+		} else if (elseBranch != null) {
+			"if " + conditionStr + " do\n" + indentStr(indent + 1) + print(thenBranch, indent + 1) + "\n" + indentStr(indent) + "else\n" + indentStr(indent + 1) + print(elseBranch, indent + 1) + "\n" + indentStr(indent) + "end";
+		} else if (isInline) {
+			"if " + conditionStr + ", do: " + print(thenBranch, 0);
+		} else {
+			"if " + conditionStr + " do\n" + indentStr(indent + 1) + print(thenBranch, indent + 1) + "\n" + indentStr(indent) + "end";
+		};	
+	case EUnless(condition, body, elseBranch):
+		if (elseBranch != null) {
+			"unless " + print(condition, 0) + " do\n" + indentStr(indent + 1) + print(body, indent + 1) + "\n" + indentStr(indent) + "else\n" + indentStr(indent + 1) + print(elseBranch, indent + 1) + "\n" + indentStr(indent) + "end";
+		} else {
+			"unless " + print(condition, 0) + " do\n" + indentStr(indent + 1) + print(body, indent + 1) + "\n" + indentStr(indent) + "end";
+		};	
+	case ETry(body, rescue, catchClauses, afterBlock, elseBlock):
+		var result = "try do\n" + indentStr(indent + 1) + print(body, indent + 1) + "\n";
+		if (rescue.length > 0) {
+			result += indentStr(indent) + "rescue\n";
+			for (r  in  rescue) {
+				result += indentStr(indent + 1) + printRescueClause(r, indent + 1) + "\n";
+			};
+		};
+		if (catchClauses.length > 0) {
+			result += indentStr(indent) + "catch\n";
+			for (c  in  catchClauses) {
+				result += indentStr(indent + 1) + printCatchClause(c, indent + 1) + "\n";
+			};
+		};
+		if (elseBlock != null) {
+			result += indentStr(indent) + "else\n" + indentStr(indent + 1) + print(elseBlock, indent + 1) + "\n";
+		};
+		if (afterBlock != null) {
+			result += indentStr(indent) + "after\n" + indentStr(indent + 1) + print(afterBlock, indent + 1) + "\n";
+		};
+		result + indentStr(indent) + "end";	
+	case ERaise(exception, attributes):
+		if (attributes != null) {
+			"raise " + print(exception, 0) + ", " + print(attributes, 0);
+		} else {
+			"raise " + print(exception, 0);
+		};	
+	case EThrow(value):
+		var valueStr = switch (value.def) {
+			case EBinary(StringConcat, left, right):
+				var leftStr = print(left, 0);
+				var rightStr = print(right, 0);
+				leftStr = leftStr.split("\n").join(" ");
+				rightStr = rightStr.split("\n").join(" ");
+				leftStr + " <> " + rightStr;			
+			default:
+				var result = print(value, 0);
+				result.split("\n").join(" ");			
+		};
+		"throw(" + valueStr + ")";	
+	case EList(elements):
+		"[" + [for (e  in  elements) {
+			switch (e.def) {
+				case EBlock(exprs) if (exprs.length > 1):
+					"(fn -> " + print(e, 0) + " end).()";				
+				case EBlock(exprs):
+					print(e, 0);				
+				default:
+					print(e, 0);				
+			};
+		}].join(", ") + "]";	
+	case ETuple(elements):
+		"{" + [for (e  in  elements) print(e, 0)].join(", ") + "}";	
+	case EMap(pairs):
+		"%{" + [for (p  in  pairs) {
+			var key = print(p.key, 0);
+			var value = p.value;
+			var valueStr = switch (value.def) {
+				case EBlock(exprs) if (exprs.length > 1):
+					"(fn -> " + print(value, 0) + " end).()";				
+				case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+					"(" + print(value, 0) + ")";				
+				case _:
+					print(value, 0);				
+			};
+			key + " => " + valueStr;
+		}].join(", ") + "}";	
+	case EStruct(module, fields):
+		"%" + module + "{" + [for (f  in  fields) {
+			var value = f.value;
+			var valueStr = switch (value.def) {
+				case EBlock(exprs) if (exprs.length > 1):
+					"(fn -> " + print(value, 0) + " end).()";				
+				case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+					"(" + print(value, 0) + ")";				
+				case _:
+					print(value, 0);				
+			};
+			f.key + ": " + valueStr;
+		}].join(", ") + "}";	
+	case EStructUpdate(struct, fields):
+		"%{" + print(struct, 0) + " | " + [for (f  in  fields) {
+			var value = f.value;
+			var valueStr = switch (value.def) {
+				case EBlock(exprs) if (exprs.length > 1):
+					"(fn -> " + print(value, 0) + " end).()";				
+				case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+					"(" + print(value, 0) + ")";				
+				case _:
+					print(value, 0);				
+			};
+			f.key + ": " + valueStr;
+		}].join(", ") + "}";	
+	case EKeywordList(pairs):
+		"[" + [for (p  in  pairs) {
+			var value = p.value;
+			var valueStr = switch (value.def) {
+				case EBlock(exprs) if (exprs.length > 1):
+					"(fn -> " + print(value, 0) + " end).()";				
+				case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+					"(" + print(value, 0) + ")";				
+				case _:
+					print(value, 0);				
+			};
+			p.key + ": " + valueStr;
+		}].join(", ") + "]";	
+	case EBitstring(segments):
+		"<<" + [for (s  in  segments) printBinarySegment(s)].join(", ") + ">>";	
+	case ECall(target, funcName, args):
+		if (funcName == "assign_multiple" && target == null) {
+			funcName = "assign";
+		};
+		if (funcName == "while_loop" && target == null && args.length == 2) {
+			var condition = args[0];
+			var body = args[1];
+			var loopFuncName = "loop_" + (loopIdCounter++);
+			var lines = [];
+			lines.push("(fn ->");
+			lines.push("  " + loopFuncName + " = fn " + loopFuncName + " ->");
+			lines.push("    if " + print(condition, 0) + " do");
+			lines.push("      " + print(body, 3));
+			lines.push("      " + loopFuncName + ".(" + loopFuncName + ")");
+			lines.push("    else");
+			lines.push("      :ok");
+			lines.push("    end");
+			lines.push("  end");
+			lines.push("  " + loopFuncName + ".(" + loopFuncName + ")");
+			lines.push("end).()");
+			lines.join("\n" + indentStr(indent));
+		} else {
+			var argStr = [for (a  in  args) printFunctionArg(a)].join(", ");
+			if (target != null) {
+				if (funcName == "") {
+					print(target, indent) + ".(" + argStr + ")";
+				} else {
+					var isEnumMethod = switch (funcName) {
+						case "map" | "filter" | "reduce" | "each" | "find" | "reject" | "take" | "drop" | "any" | "all" | "count" | "member" | "sort" | "reverse" | "zip" | "concat" | "flat_map" | "group_by" | "split" | "join" | "at" | "fetch" | "empty" | "sum" | "min" | "max" | "uniq" | "with_index":
+							true;						
+						default:
+							false;						
+					};
+					if (isEnumMethod) {
+						var enumCall = "Enum." + funcName + "(" + print(target, indent);
+						if (argStr.length > 0) {
+							enumCall + ", " + argStr + ")";
+						} else {
+							enumCall + ")";
+						};
+					} else {
+						var targetStr = switch (target.def) {
+							case ECase(_, _) | ECond(_) | EWith(_, _, _):
+								"(" + print(target, indent) + ") |> Kernel." + funcName;							
+							case EIf(_, _, elseBranch) if (elseBranch != null):
+								"(" + print(target, indent) + ") |> Kernel." + funcName;							
+							default:
+								print(target, indent) + "." + funcName;							
+						};
+						targetStr + "(" + argStr + ")";
+					};
+				};
+			} else {
+				funcName + "(" + argStr + ")";
+			};
+		};	
+	case EMacroCall(macroName, args, doBlock):
+		var argStr = [for (a  in  args) print(a, 0)].join(", ");
+		macroName + (args.length > 0 ? " " + argStr : "") + " do\n" + indentStr(indent + 1) + print(doBlock, indent + 1) + "\n" + indentStr(indent) + "end";	
+	case ERemoteCall(module, funcName, args):
+		var argStr = [for (a  in  args) printFunctionArg(a)].join(", ");
+		print(module, 0) + "." + funcName + "(" + argStr + ")";	
+	case EPipe(left, right):
+		print(left, 0) + " |> " + print(right, 0);	
+	case EBinary(op, left, right):
+		if (op == Remainder) {
+			var leftStr = print(left, 0);
+			var rightStr = print(right, 0);
+			"rem(" + leftStr + ", " + rightStr + ")";
+		} else {
+			var needsParens = needsParentheses(node);
+			var opStr = binaryOpToString(op);
+			var leftStr = switch (left.def) {
+				case EIf(_, _, _):
+					"(" + print(left, 0) + ")";				
+				default:
+					print(left, 0);				
+			};
+			var rightStr = switch (right.def) {
+				case EIf(_, _, _):
+					"(" + print(right, 0) + ")";				
+				default:
+					print(right, 0);				
+			};
+			var result = leftStr + " " + opStr + " " + rightStr;
+			needsParens ? "(" + result + ")" : result;
+		};	
+	case EUnary(op, expr):
+		unaryOpToString(op) + print(expr, 0);	
+	case EField(target, field):
+		print(target, 0) + "." + field;	
+	case EAccess(target, key):
+		print(target, 0) + "[" + print(key, 0) + "]";	
+	case ERange(start, end, exclusive):
+		print(start, 0) + (exclusive ? "..." : "..") + print(end, 0);	
+	case EAtom(value):
+		var atomStr:String = value;
+		var needsQuotes = false;
+		if (atomStr.length == 0) {
+			needsQuotes = true;
+		} else {
+			var firstChar = atomStr.charAt(0);
+			if (!isLetter(firstChar) && firstChar != "_") {
+				needsQuotes = true;
+			} else {
+				var i = 1;
+				var len = atomStr.length;
+				var lastChar = atomStr.charAt(len - 1);
+				var endsWithBangOrQuestion = (lastChar == "!" || lastChar == "?");
+				var checkUntil = endsWithBangOrQuestion ? len - 1 : len;
+				while (i < checkUntil && !needsQuotes) {
+					var c = atomStr.charAt(i);
+					if (!isLetter(c) && !isDigit(c) && c != "_") {
+						needsQuotes = true;
+					};
+					i++;
+				};
+			};
+		};
+		if (needsQuotes) {
+			":\"" + atomStr + "\"";
+		} else {
+			":" + atomStr;
+		};	
+	case EString(value):
+		"\"" + escapeString(value) + "\"";	
+	case EInteger(value):
+		Std.string(value);	
+	case EFloat(value):
+		Std.string(value);	
+	case EBoolean(value):
+		value ? "true" : "false";	
+	case ENil:
+		"nil";	
+	case ECharlist(value):
+		"'" + escapeString(value) + "'";	
+	case EVar(name):
+		name;	
+	case EPin(expr):
+		"^" + print(expr, 0);	
+	case EUnderscore:
+		"_";	
+	case EFor(generators, filters, body, into, uniq):
+		var genStr = [for (g  in  generators) printPattern(g.pattern) + " <- " + print(g.expr, 0)].join(", ");
+		var filterStr = filters.length > 0 ? ", " + [for (f  in  filters) print(f, 0)].join(", ") : "";
+		var options = [];
+		if (into != null) options.push("into: " + print(into, 0));
+		if (uniq) options.push("uniq: true");
+		var optStr = options.length > 0 ? ", " + options.join(", ") : "";
+		"for " + genStr + filterStr + optStr + ", do: " + print(body, 0);	
+	case EFn(clauses):
+		if (clauses.length == 1 && clauses[0].guard == null) {
+			var clause = clauses[0];
+			var argStr = printPatterns(clause.args);
+			var paramPart = clause.args.length == 0 ? "" : " " + argStr;
+			var bodyStr = print(clause.body, indent + 1);
+			var isMultiLine = switch (clause.body.def) {
+				case EIf(_, _, _):
+					true;				
+				case ECase(_, _):
+					true;				
+				case ECond(_):
+					true;				
+				case EBlock(exprs) if (exprs.length > 1):
+					true;				
+				case _:
+					bodyStr.indexOf("\n") >= 0;				
+			};
+			if (isMultiLine) {
+				"fn" + paramPart + " ->\n" + indentStr(indent + 1) + bodyStr + "\n" + indentStr(indent) + "end";
+			} else {
+				"fn" + paramPart + " -> " + bodyStr + " end";
+			};
+		} else {
+			"fn\n" + [for (clause  in  clauses) indentStr(indent + 1) + printPatterns(clause.args) + (clause.guard != null ? " when " + print(clause.guard, 0) : "") + " ->\n" + indentStr(indent + 2) + print(clause.body, indent + 2)].join("\n") + "\n" + indentStr(indent) + "end";
+		};	
+	case ECapture(expr, arity):
+		if (arity != null) {
+			"&" + print(expr, 0) + "/" + arity;
+		} else {
+			"&" + print(expr, 0);
+		};	
+	case EAlias(module, as):
+		if (as != null) {
+			"alias " + module + ", as: " + as;
+		} else {
+			"alias " + module;
+		};	
+	case EImport(module, only, except):
+		var result = "import " + module;
+		if (only != null) {
+			result += ", only: [" + [for (o  in  only) o.name + ": " + o.arity].join(", ") + "]";
+		} else if (except != null) {
+			result += ", except: [" + [for (e  in  except) e.name + ": " + e.arity].join(", ") + "]";
+		};
+		result;	
+	case EUse(module, options):
+		if (options.length == 1) {
+			switch (options[0].def) {
+				case EKeywordList(pairs):
+					"use " + module + ", " + [for (p  in  pairs) {
+						var value = switch (p.value.def) {
+							case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+								"(" + print(p.value, 0) + ")";							
+							case _:
+								print(p.value, 0);							
+						};
+						p.key + ": " + value;
+					}].join(", ");				
+				case _:
+					"use " + module + ", " + print(options[0], 0);				
+			};
+		} else if (options.length > 0) {
+			"use " + module + ", " + [for (o  in  options) print(o, 0)].join(", ");
+		} else {
+			"use " + module;
+		};	
+	case ERequire(module, as):
+		if (as != null) {
+			"require " + module + ", as: " + as;
+		} else {
+			"require " + module;
+		};	
+	case EQuote(options, expr):
+		var optStr = options.length > 0 ? " " + [for (o  in  options) print(o, 0)].join(", ") + "," : "";
+		switch (expr.def) {
+			case EBlock(_):
+				"quote" + optStr + " do\n" + indentStr(indent + 1) + print(expr, indent + 1) + "\n" + indentStr(indent) + "end";			
+			case _:
+				"quote" + optStr + " do: " + print(expr, 0);			
+		};	
+	case EUnquote(expr):
+		"unquote(" + print(expr, 0) + ")";	
+	case EUnquoteSplicing(expr):
+		"unquote_splicing(" + print(expr, 0) + ")";	
+	case EReceive(clauses, after):
+		var result = "receive do\n";
+		for (clause  in  clauses) {
+			result += indentStr(indent + 1) + printCaseClause(clause, indent + 1) + "\n";
+		};
+		if (after != null) {
+			result += indentStr(indent) + "after\n" + indentStr(indent + 1) + print(after.timeout, 0) + " ->\n" + indentStr(indent + 2) + print(after.body, indent + 2) + "\n";
+		};
+		result + indentStr(indent) + "end";	
+	case ESend(target, message):
+		"send(" + print(target, 0) + ", " + print(message, 0) + ")";	
+	case EBlock(expressions):
+		if (expressions.length == 0) {
+			"";
+		} else if (expressions.length == 1) {
+			print(expressions[0], indent);
+		} else {
+			var parts = [];
+			var printed:Array<String> = [];
+			for (expr  in  expressions) {
+				var str = print(expr, indent);
+				if (str != null && str.trim().length > 0) {
+					printed.push(str);
+				};
+			};
+			for (i  in  0 ... printed.length) {
+				parts.push(printed[i]);
+				if (i < printed.length - 1) {
+					parts.push("\n" + indentStr(indent));
+				};
+			};
+			parts.join("");
+		};	
+	case EParen(expr):
+		"(" + print(expr, 0) + ")";	
+	case EDo(body):
+		"do\n" + [for (expr  in  body) indentStr(indent + 1) + print(expr, indent + 1)].join("\n") + "\n" + indentStr(indent) + "end";	
+	case EModuleAttribute(name, value):
+		"@" + name + " " + print(value, indent);	
+	case EModuledoc(content):
+		"@moduledoc \"\"\"" + "\n" + content + "\n" + "\"\"\"";	
+	case EDoc(content):
+		"@doc \"\"\"" + "\n" + content + "\n" + "\"\"\"";	
+	case ESpec(signature):
+		"@spec " + signature;	
+	case ETypeDef(name, definition):
+		"@type " + name + " :: " + definition;	
+	case ESigil(type, content, modifiers):
+		"~" + type + "\"\"\"" + "\n" + content + "\n" + "\"\"\"" + modifiers;	
+	case ERaw(code):
+		if (code.indexOf("\n") != -1 && code.indexOf("=") != -1) {
+			"(\n" + code + "\n)";
+		} else {
+			code;
+		};	
+	case EAssign(name):
+		"@" + name;	
+	case EFragment(tag, attributes, children):
+		"<" + tag + printAttributes(attributes) + ">" + [for (c  in  children) print(c, 0)].join("") + "</" + tag + ">";	
+}) switch (@:exhaustive enumIndex node) {
+			case 0: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var name = `;
+					var attributes = `;
+					var body = `;
+					{
+						var result = "defmodule " + name + " do\n";
+						{
+							var ` = 0;
+							while (` < attributes.length) {
+								var attr = attributes[`];
+								++ `;
+								result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.printAttribute(attr) + "\n";
+							};
+						};
+						if (attributes.length > 0 && body.length > 0) {
+							result += "\n";
+						};
+						{
+							var ` = 0;
+							while (` < body.length) {
+								var expr = body[`];
+								++ `;
+								result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, indent + 1) + "\n";
+							};
+						};
+						result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+						result;
+					};
+				};
+			};
+			case 1: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var name = `;
+					var doBlock = `;
+					{
+						"defmodule " + name + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(doBlock, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 2: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				var ` = node[3];
+				{
+					var name = `;
+					var args = `;
+					var guards = `;
+					var body = `;
+					{
+						var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printPatterns(args);
+						var guardStr = if (guards != null) {
+							" when " + reflaxe.elixir.ast.ElixirASTPrinter.print(guards, 0);
+						} else {
+							"";
+						};
+						"def " + name + "(" + argStr + ")" + guardStr + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(body, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 3: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				var ` = node[3];
+				{
+					var name = `;
+					var args = `;
+					var guards = `;
+					var body = `;
+					{
+						var funcName = name;
+						var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printPatterns(args);
+						var guardStr = if (guards != null) {
+							" when " + reflaxe.elixir.ast.ElixirASTPrinter.print(guards, 0);
+						} else {
+							"";
+						};
+						"defp " + funcName + "(" + argStr + ")" + guardStr + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(body, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 4: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				var ` = node[3];
+				{
+					var name = `;
+					var args = `;
+					var guards = `;
+					var body = `;
+					{
+						var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printPatterns(args);
+						var guardStr = if (guards != null) {
+							" when " + reflaxe.elixir.ast.ElixirASTPrinter.print(guards, 0);
+						} else {
+							"";
+						};
+						"defmacro " + name + "(" + argStr + ")" + guardStr + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(body, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 5: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				var ` = node[3];
+				{
+					var name = `;
+					var args = `;
+					var guards = `;
+					var body = `;
+					{
+						var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printPatterns(args);
+						var guardStr = if (guards != null) {
+							" when " + reflaxe.elixir.ast.ElixirASTPrinter.print(guards, 0);
+						} else {
+							"";
+						};
+						"defmacrop " + name + "(" + argStr + ")" + guardStr + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(body, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 6: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var expr = `;
+					var clauses = `;
+					{
+						"case " + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0) + " do\n" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var clause = clauses[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.printCaseClause(clause, indent + 1));
+								};
+							};
+							`;
+						}.join("\n") + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 7: {
+				var ` = node[0];
+				{
+					var clauses = `;
+					{
+						var clauseStrs = [];
+						{
+							var ` = 0;
+							while (` < clauses.length) {
+								var clause = clauses[`];
+								++ `;
+								var conditionStr = reflaxe.elixir.ast.ElixirASTPrinter.print(clause.condition, 0);
+								var bodyStr = reflaxe.elixir.ast.ElixirASTPrinter.print(clause.body, indent + 2);
+								var isMultiLine = @:ast(switch (clause.body.def) {
+	case EIf(_, _, _):
+		true;	
+	case ECase(_, _):
+		true;	
+	case ECond(_):
+		true;	
+	case EWith(_, _, _):
+		true;	
+	case EBlock(exprs) if (exprs.length > 1):
+		true;	
+	case _:
+		bodyStr.indexOf("\n") >= 0;	
+}) {
+									var ` = clause.body.def;
+									switch (enumIndex `) {
+										case 6: {
+											var ` = `[0];
+											var ` = `[1];
+											{
+												true;
+											};
+										};
+										case 7: {
+											var ` = `[0];
+											{
+												true;
+											};
+										};
+										case 9: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												true;
+											};
+										};
+										case 10: {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											{
+												true;
+											};
+										};
+										case 53: {
+											var ` = `[0];
+											{
+												var exprs = `;
+												if (exprs.length > 1) {
+													true;
+												} else {
+													bodyStr.indexOf("\n", null) >= 0;
+												};
+											};
+										};
+										default: {
+											bodyStr.indexOf("\n", null) >= 0;
+										}
+									};
+								};
+								if (isMultiLine) {
+									clauseStrs.push(reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + conditionStr + " ->\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 2) + bodyStr);
+								} else {
+									clauseStrs.push(reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + conditionStr + " -> " + bodyStr);
+								};
+							};
+						};
+						"cond do\n" + clauseStrs.join("\n") + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 8: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var pattern = `;
+					var expr = `;
+					{
+						var patternStr = reflaxe.elixir.ast.ElixirASTPrinter.printPattern(pattern);
+						var keepInline = expr != null && expr.metadata != null && expr.metadata.keepInlineInAssignment == true;
+						@:ast(switch (pattern) {
+	case PVar(name):
+		var rhsName = switch (expr != null ? expr.def : null) {
+			case EVar(varName):
+				varName;			
+			default:
+				null;			
+		};
+		if (rhsName != null && rhsName == name && !ElixirASTBuilder.isTempPatternVarName(name)) {
+			return "";
+		};	
+	default:
+}) if (enumIndex pattern == 0) {
+							var ` = pattern[0];
+							{
+								var name = `;
+								{
+									var rhsName = @:ast(switch (expr != null ? expr.def : null) {
+	case EVar(varName):
+		varName;	
+	default:
+		null;	
+}) {
+										var ` = if (expr != null) {
+											expr.def;
+										} else {
+											null;
+										};
+										if (` == null) {
+											null;
+										} else if (enumIndex ` == 38) {
+											var ` = `[0];
+											{
+												var varName = `;
+												{
+													varName;
+												};
+											};
+										} else {
+											null;
+										};
+									};
+									if (rhsName != null && rhsName == name && ! reflaxe.elixir.ast.ElixirASTBuilder.isTempPatternVarName(name)) {
+										return "";
+									};
+								};
+							};
+						} else {};
+						if (keepInline) {
+							patternStr + " = " + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0);
+						} else {
+							patternStr + " = " + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0);
+						};
+					};
+				};
+			};
+			case 9: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var clauses = `;
+					var doBlock = `;
+					var elseBlock = `;
+					{
+						var withClauses = {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < clauses.length) {
+									var clause = clauses[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.printPattern(clause.pattern) + " <- " + reflaxe.elixir.ast.ElixirASTPrinter.print(clause.expr, 0));
+								};
+							};
+							`;
+						}.join(",\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1));
+						var result = "with " + withClauses + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(doBlock, indent + 1) + "\n";
+						if (elseBlock != null) {
+							result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "else\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(elseBlock, indent + 1) + "\n";
+						};
+						result + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 10: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var condition = `;
+					var thenBranch = `;
+					var elseBranch = `;
+					{
+						var isInline = reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(thenBranch) && (elseBranch == null || reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(elseBranch));
+						var conditionStr = reflaxe.elixir.ast.ElixirASTPrinter.printIfCondition(condition);
+						if (isInline && elseBranch != null) {
+							"if " + conditionStr + ", do: " + reflaxe.elixir.ast.ElixirASTPrinter.print(thenBranch, 0) + ", else: " + reflaxe.elixir.ast.ElixirASTPrinter.print(elseBranch, 0);
+						} else {
+							if (elseBranch != null) {
+								"if " + conditionStr + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(thenBranch, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "else\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(elseBranch, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+							} else {
+								if (isInline) {
+									"if " + conditionStr + ", do: " + reflaxe.elixir.ast.ElixirASTPrinter.print(thenBranch, 0);
+								} else {
+									"if " + conditionStr + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(thenBranch, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+								};
+							};
+						};
+					};
+				};
+			};
+			case 11: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var condition = `;
+					var body = `;
+					var elseBranch = `;
+					{
+						if (elseBranch != null) {
+							"unless " + reflaxe.elixir.ast.ElixirASTPrinter.print(condition, 0) + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(body, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "else\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(elseBranch, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+						} else {
+							"unless " + reflaxe.elixir.ast.ElixirASTPrinter.print(condition, 0) + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(body, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+						};
+					};
+				};
+			};
+			case 12: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				var ` = node[3];
+				var ` = node[4];
+				{
+					var body = `;
+					var rescue = `;
+					var catchClauses = `;
+					var afterBlock = `;
+					var elseBlock = `;
+					{
+						var result = "try do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(body, indent + 1) + "\n";
+						if (rescue.length > 0) {
+							result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "rescue\n";
+							{
+								var ` = 0;
+								while (` < rescue.length) {
+									var r = rescue[`];
+									++ `;
+									result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.printRescueClause(r, indent + 1) + "\n";
+								};
+							};
+						};
+						if (catchClauses.length > 0) {
+							result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "catch\n";
+							{
+								var ` = 0;
+								while (` < catchClauses.length) {
+									var c = catchClauses[`];
+									++ `;
+									result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.printCatchClause(c, indent + 1) + "\n";
+								};
+							};
+						};
+						if (elseBlock != null) {
+							result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "else\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(elseBlock, indent + 1) + "\n";
+						};
+						if (afterBlock != null) {
+							result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "after\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(afterBlock, indent + 1) + "\n";
+						};
+						result + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 13: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var exception = `;
+					var attributes = `;
+					{
+						if (attributes != null) {
+							"raise " + reflaxe.elixir.ast.ElixirASTPrinter.print(exception, 0) + ", " + reflaxe.elixir.ast.ElixirASTPrinter.print(attributes, 0);
+						} else {
+							"raise " + reflaxe.elixir.ast.ElixirASTPrinter.print(exception, 0);
+						};
+					};
+				};
+			};
+			case 14: {
+				var ` = node[0];
+				{
+					var value = `;
+					{
+						var valueStr = @:ast(switch (value.def) {
+	case EBinary(StringConcat, left, right):
+		var leftStr = print(left, 0);
+		var rightStr = print(right, 0);
+		leftStr = leftStr.split("\n").join(" ");
+		rightStr = rightStr.split("\n").join(" ");
+		leftStr + " <> " + rightStr;	
+	default:
+		var result = print(value, 0);
+		result.split("\n").join(" ");	
+}) {
+							var ` = value.def;
+							if (enumIndex ` == 26) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								if (enumIndex ` == 25) {
+									{
+										var left = `;
+										var right = `;
+										{
+											var leftStr = reflaxe.elixir.ast.ElixirASTPrinter.print(left, 0);
+											var rightStr = reflaxe.elixir.ast.ElixirASTPrinter.print(right, 0);
+											leftStr = leftStr.split("\n").join(" ");
+											rightStr = rightStr.split("\n").join(" ");
+											leftStr + " <> " + rightStr;
+										};
+									};
+								} else {
+									var result = reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+									result.split("\n").join(" ");
+								};
+							} else {
+								var result = reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+								result.split("\n").join(" ");
+							};
+						};
+						"throw(" + valueStr + ")";
+					};
+				};
+			};
+			case 15: {
+				var ` = node[0];
+				{
+					var elements = `;
+					{
+						"[" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < elements.length) {
+									var e = elements[`];
+									++ `;
+									`.push(@:ast(switch (e.def) {
+	case EBlock(exprs) if (exprs.length > 1):
+		"(fn -> " + print(e, 0) + " end).()";	
+	case EBlock(exprs):
+		print(e, 0);	
+	default:
+		print(e, 0);	
+}) {
+										var ` = e.def;
+										if (enumIndex ` == 53) {
+											var ` = `[0];
+											{
+												var exprs = `;
+												if (exprs.length > 1) {
+													"(fn -> " + reflaxe.elixir.ast.ElixirASTPrinter.print(e, 0) + " end).()";
+												} else {
+													var exprs = `;
+													{
+														reflaxe.elixir.ast.ElixirASTPrinter.print(e, 0);
+													};
+												};
+											};
+										} else {
+											reflaxe.elixir.ast.ElixirASTPrinter.print(e, 0);
+										};
+									});
+								};
+							};
+							`;
+						}.join(", ") + "]";
+					};
+				};
+			};
+			case 16: {
+				var ` = node[0];
+				{
+					var elements = `;
+					{
+						"{" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < elements.length) {
+									var e = elements[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.print(e, 0));
+								};
+							};
+							`;
+						}.join(", ") + "}";
+					};
+				};
+			};
+			case 17: {
+				var ` = node[0];
+				{
+					var pairs = `;
+					{
+						"%{" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < pairs.length) {
+									var p = pairs[`];
+									++ `;
+									var key = reflaxe.elixir.ast.ElixirASTPrinter.print(p.key, 0);
+									var value = p.value;
+									var valueStr = @:ast(switch (value.def) {
+	case EBlock(exprs) if (exprs.length > 1):
+		"(fn -> " + print(value, 0) + " end).()";	
+	case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+		"(" + print(value, 0) + ")";	
+	case _:
+		print(value, 0);	
+}) {
+										var ` = value.def;
+										switch (enumIndex `) {
+											case 10: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var cond = `;
+													var thenBranch = `;
+													var elseBranch = `;
+													if (elseBranch != null && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(thenBranch) && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(elseBranch)) {
+														"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0) + ")";
+													} else {
+														reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+													};
+												};
+											};
+											case 53: {
+												var ` = `[0];
+												{
+													var exprs = `;
+													if (exprs.length > 1) {
+														"(fn -> " + reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0) + " end).()";
+													} else {
+														reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+													};
+												};
+											};
+											default: {
+												reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+											}
+										};
+									};
+									`.push(key + " => " + valueStr);
+								};
+							};
+							`;
+						}.join(", ") + "}";
+					};
+				};
+			};
+			case 18: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var module = `;
+					var fields = `;
+					{
+						"%" + module + "{" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < fields.length) {
+									var f = fields[`];
+									++ `;
+									var value = f.value;
+									var valueStr = @:ast(switch (value.def) {
+	case EBlock(exprs) if (exprs.length > 1):
+		"(fn -> " + print(value, 0) + " end).()";	
+	case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+		"(" + print(value, 0) + ")";	
+	case _:
+		print(value, 0);	
+}) {
+										var ` = value.def;
+										switch (enumIndex `) {
+											case 10: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var cond = `;
+													var thenBranch = `;
+													var elseBranch = `;
+													if (elseBranch != null && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(thenBranch) && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(elseBranch)) {
+														"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0) + ")";
+													} else {
+														reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+													};
+												};
+											};
+											case 53: {
+												var ` = `[0];
+												{
+													var exprs = `;
+													if (exprs.length > 1) {
+														"(fn -> " + reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0) + " end).()";
+													} else {
+														reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+													};
+												};
+											};
+											default: {
+												reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+											}
+										};
+									};
+									`.push(f.key + ": " + valueStr);
+								};
+							};
+							`;
+						}.join(", ") + "}";
+					};
+				};
+			};
+			case 19: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var struct = `;
+					var fields = `;
+					{
+						"%{" + reflaxe.elixir.ast.ElixirASTPrinter.print(struct, 0) + " | " + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < fields.length) {
+									var f = fields[`];
+									++ `;
+									var value = f.value;
+									var valueStr = @:ast(switch (value.def) {
+	case EBlock(exprs) if (exprs.length > 1):
+		"(fn -> " + print(value, 0) + " end).()";	
+	case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+		"(" + print(value, 0) + ")";	
+	case _:
+		print(value, 0);	
+}) {
+										var ` = value.def;
+										switch (enumIndex `) {
+											case 10: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var cond = `;
+													var thenBranch = `;
+													var elseBranch = `;
+													if (elseBranch != null && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(thenBranch) && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(elseBranch)) {
+														"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0) + ")";
+													} else {
+														reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+													};
+												};
+											};
+											case 53: {
+												var ` = `[0];
+												{
+													var exprs = `;
+													if (exprs.length > 1) {
+														"(fn -> " + reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0) + " end).()";
+													} else {
+														reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+													};
+												};
+											};
+											default: {
+												reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+											}
+										};
+									};
+									`.push(f.key + ": " + valueStr);
+								};
+							};
+							`;
+						}.join(", ") + "}";
+					};
+				};
+			};
+			case 20: {
+				var ` = node[0];
+				{
+					var pairs = `;
+					{
+						"[" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < pairs.length) {
+									var p = pairs[`];
+									++ `;
+									var value = p.value;
+									var valueStr = @:ast(switch (value.def) {
+	case EBlock(exprs) if (exprs.length > 1):
+		"(fn -> " + print(value, 0) + " end).()";	
+	case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+		"(" + print(value, 0) + ")";	
+	case _:
+		print(value, 0);	
+}) {
+										var ` = value.def;
+										switch (enumIndex `) {
+											case 10: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var cond = `;
+													var thenBranch = `;
+													var elseBranch = `;
+													if (elseBranch != null && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(thenBranch) && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(elseBranch)) {
+														"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0) + ")";
+													} else {
+														reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+													};
+												};
+											};
+											case 53: {
+												var ` = `[0];
+												{
+													var exprs = `;
+													if (exprs.length > 1) {
+														"(fn -> " + reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0) + " end).()";
+													} else {
+														reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+													};
+												};
+											};
+											default: {
+												reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+											}
+										};
+									};
+									`.push(p.key + ": " + valueStr);
+								};
+							};
+							`;
+						}.join(", ") + "]";
+					};
+				};
+			};
+			case 21: {
+				var ` = node[0];
+				{
+					var segments = `;
+					{
+						"<<" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < segments.length) {
+									var s = segments[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.printBinarySegment(s));
+								};
+							};
+							`;
+						}.join(", ") + ">>";
+					};
+				};
+			};
+			case 22: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var target = `;
+					var funcName = `;
+					var args = `;
+					{
+						if (funcName == "assign_multiple" && target == null) {
+							funcName = "assign";
+						};
+						if (funcName == "while_loop" && target == null && args.length == 2) {
+							var condition = args[0];
+							var body = args[1];
+							var loopFuncName = "loop_" + (reflaxe.elixir.ast.ElixirASTPrinter.loopIdCounter ++);
+							var lines = [];
+							lines.push("(fn ->");
+							lines.push("  " + loopFuncName + " = fn " + loopFuncName + " ->");
+							lines.push("    if " + reflaxe.elixir.ast.ElixirASTPrinter.print(condition, 0) + " do");
+							lines.push("      " + reflaxe.elixir.ast.ElixirASTPrinter.print(body, 3));
+							lines.push("      " + loopFuncName + ".(" + loopFuncName + ")");
+							lines.push("    else");
+							lines.push("      :ok");
+							lines.push("    end");
+							lines.push("  end");
+							lines.push("  " + loopFuncName + ".(" + loopFuncName + ")");
+							lines.push("end).()");
+							lines.join("\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent));
+						} else {
+							var argStr = {
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < args.length) {
+										var a = args[`];
+										++ `;
+										`.push(reflaxe.elixir.ast.ElixirASTPrinter.printFunctionArg(a));
+									};
+								};
+								`;
+							}.join(", ");
+							if (target != null) {
+								if (funcName == "") {
+									reflaxe.elixir.ast.ElixirASTPrinter.print(target, indent) + ".(" + argStr + ")";
+								} else {
+									var isEnumMethod = @:ast(switch (funcName) {
+	case "map" | "filter" | "reduce" | "each" | "find" | "reject" | "take" | "drop" | "any" | "all" | "count" | "member" | "sort" | "reverse" | "zip" | "concat" | "flat_map" | "group_by" | "split" | "join" | "at" | "fetch" | "empty" | "sum" | "min" | "max" | "uniq" | "with_index":
+		true;	
+	default:
+		false;	
+}) switch (funcName) {
+										case "all", "any", "at", "concat", "count", "drop", "each", "empty", "fetch", "filter", "find", "flat_map", "group_by", "join", "map", "max", "member", "min", "reduce", "reject", "reverse", "sort", "split", "sum", "take", "uniq", "with_index", "zip": {
+											{
+												true;
+											};
+										};
+										default: {
+											false;
+										}
+									};
+									if (isEnumMethod) {
+										var enumCall = "Enum." + funcName + "(" + reflaxe.elixir.ast.ElixirASTPrinter.print(target, indent);
+										if (argStr.length > 0) {
+											enumCall + ", " + argStr + ")";
+										} else {
+											enumCall + ")";
+										};
+									} else {
+										var targetStr = @:ast(switch (target.def) {
+	case ECase(_, _) | ECond(_) | EWith(_, _, _):
+		"(" + print(target, indent) + ") |> Kernel." + funcName;	
+	case EIf(_, _, elseBranch) if (elseBranch != null):
+		"(" + print(target, indent) + ") |> Kernel." + funcName;	
+	default:
+		print(target, indent) + "." + funcName;	
+}) {
+											var ` = target.def;
+											switch (enumIndex `) {
+												case 6: {
+													var ` = `[0];
+													var ` = `[1];
+													{
+														"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(target, indent) + ") |> Kernel." + funcName;
+													};
+												};
+												case 7: {
+													var ` = `[0];
+													{
+														"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(target, indent) + ") |> Kernel." + funcName;
+													};
+												};
+												case 9: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(target, indent) + ") |> Kernel." + funcName;
+													};
+												};
+												case 10: {
+													var ` = `[0];
+													var ` = `[1];
+													var ` = `[2];
+													{
+														var elseBranch = `;
+														if (elseBranch != null) {
+															"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(target, indent) + ") |> Kernel." + funcName;
+														} else {
+															reflaxe.elixir.ast.ElixirASTPrinter.print(target, indent) + "." + funcName;
+														};
+													};
+												};
+												default: {
+													reflaxe.elixir.ast.ElixirASTPrinter.print(target, indent) + "." + funcName;
+												}
+											};
+										};
+										targetStr + "(" + argStr + ")";
+									};
+								};
+							} else {
+								funcName + "(" + argStr + ")";
+							};
+						};
+					};
+				};
+			};
+			case 23: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var macroName = `;
+					var args = `;
+					var doBlock = `;
+					{
+						var argStr = {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < args.length) {
+									var a = args[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.print(a, 0));
+								};
+							};
+							`;
+						}.join(", ");
+						macroName + (if (args.length > 0) {
+							" " + argStr;
+						} else {
+							"";
+						}) + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(doBlock, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 24: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var module = `;
+					var funcName = `;
+					var args = `;
+					{
+						var argStr = {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < args.length) {
+									var a = args[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.printFunctionArg(a));
+								};
+							};
+							`;
+						}.join(", ");
+						reflaxe.elixir.ast.ElixirASTPrinter.print(module, 0) + "." + funcName + "(" + argStr + ")";
+					};
+				};
+			};
+			case 25: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var left = `;
+					var right = `;
+					{
+						reflaxe.elixir.ast.ElixirASTPrinter.print(left, 0) + " |> " + reflaxe.elixir.ast.ElixirASTPrinter.print(right, 0);
+					};
+				};
+			};
+			case 26: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var op = `;
+					var left = `;
+					var right = `;
+					{
+						if (op == reflaxe.elixir.ast.EBinaryOp.Remainder) {
+							var leftStr = reflaxe.elixir.ast.ElixirASTPrinter.print(left, 0);
+							var rightStr = reflaxe.elixir.ast.ElixirASTPrinter.print(right, 0);
+							"rem(" + leftStr + ", " + rightStr + ")";
+						} else {
+							var needsParens = reflaxe.elixir.ast.ElixirASTPrinter.needsParentheses(node);
+							var opStr = reflaxe.elixir.ast.ElixirASTPrinter.binaryOpToString(op);
+							var leftStr = @:ast(switch (left.def) {
+	case EIf(_, _, _):
+		"(" + print(left, 0) + ")";	
+	default:
+		print(left, 0);	
+}) {
+								var ` = left.def;
+								if (enumIndex ` == 10) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(left, 0) + ")";
+									};
+								} else {
+									reflaxe.elixir.ast.ElixirASTPrinter.print(left, 0);
+								};
+							};
+							var rightStr = @:ast(switch (right.def) {
+	case EIf(_, _, _):
+		"(" + print(right, 0) + ")";	
+	default:
+		print(right, 0);	
+}) {
+								var ` = right.def;
+								if (enumIndex ` == 10) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									{
+										"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(right, 0) + ")";
+									};
+								} else {
+									reflaxe.elixir.ast.ElixirASTPrinter.print(right, 0);
+								};
+							};
+							var result = leftStr + " " + opStr + " " + rightStr;
+							if (needsParens) {
+								"(" + result + ")";
+							} else {
+								result;
+							};
+						};
+					};
+				};
+			};
+			case 27: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var op = `;
+					var expr = `;
+					{
+						reflaxe.elixir.ast.ElixirASTPrinter.unaryOpToString(op) + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0);
+					};
+				};
+			};
+			case 28: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var target = `;
+					var field = `;
+					{
+						reflaxe.elixir.ast.ElixirASTPrinter.print(target, 0) + "." + field;
+					};
+				};
+			};
+			case 29: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var target = `;
+					var key = `;
+					{
+						reflaxe.elixir.ast.ElixirASTPrinter.print(target, 0) + "[" + reflaxe.elixir.ast.ElixirASTPrinter.print(key, 0) + "]";
+					};
+				};
+			};
+			case 30: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var start = `;
+					var end = `;
+					var exclusive = `;
+					{
+						reflaxe.elixir.ast.ElixirASTPrinter.print(start, 0) + (if (exclusive) {
+							"...";
+						} else {
+							"..";
+						}) + reflaxe.elixir.ast.ElixirASTPrinter.print(end, 0);
+					};
+				};
+			};
+			case 31: {
+				var ` = node[0];
+				{
+					var value = `;
+					{
+						var atomStr = value;
+						var needsQuotes = false;
+						if (atomStr.length == 0) {
+							needsQuotes = true;
+						} else {
+							var firstChar = atomStr.charAt(0);
+							if (! reflaxe.elixir.ast.ElixirASTPrinter.isLetter(firstChar) && firstChar != "_") {
+								needsQuotes = true;
+							} else {
+								var i = 1;
+								var len = atomStr.length;
+								var lastChar = atomStr.charAt(len - 1);
+								var endsWithBangOrQuestion = (lastChar == "!" || lastChar == "?");
+								var checkUntil = if (endsWithBangOrQuestion) {
+									len - 1;
+								} else {
+									len;
+								};
+								while (i < checkUntil && ! needsQuotes) {
+									var c = atomStr.charAt(i);
+									if (! reflaxe.elixir.ast.ElixirASTPrinter.isLetter(c) && ! reflaxe.elixir.ast.ElixirASTPrinter.isDigit(c) && c != "_") {
+										needsQuotes = true;
+									};
+									i ++;
+								};
+							};
+						};
+						if (needsQuotes) {
+							":\"" + atomStr + "\"";
+						} else {
+							":" + atomStr;
+						};
+					};
+				};
+			};
+			case 32: {
+				var ` = node[0];
+				{
+					var value = `;
+					{
+						"\"" + reflaxe.elixir.ast.ElixirASTPrinter.escapeString(value) + "\"";
+					};
+				};
+			};
+			case 33: {
+				var ` = node[0];
+				{
+					var value = `;
+					{
+						Std.string(value);
+					};
+				};
+			};
+			case 34: {
+				var ` = node[0];
+				{
+					var value = `;
+					{
+						Std.string(value);
+					};
+				};
+			};
+			case 35: {
+				var ` = node[0];
+				{
+					var value = `;
+					{
+						if (value) {
+							"true";
+						} else {
+							"false";
+						};
+					};
+				};
+			};
+			case 36: {
+				{
+					"nil";
+				};
+			};
+			case 37: {
+				var ` = node[0];
+				{
+					var value = `;
+					{
+						"'" + reflaxe.elixir.ast.ElixirASTPrinter.escapeString(value) + "'";
+					};
+				};
+			};
+			case 38: {
+				var ` = node[0];
+				{
+					var name = `;
+					{
+						name;
+					};
+				};
+			};
+			case 39: {
+				var ` = node[0];
+				{
+					var expr = `;
+					{
+						"^" + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0);
+					};
+				};
+			};
+			case 40: {
+				{
+					"_";
+				};
+			};
+			case 41: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				var ` = node[3];
+				var ` = node[4];
+				{
+					var generators = `;
+					var filters = `;
+					var body = `;
+					var into = `;
+					var uniq = `;
+					{
+						var genStr = {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < generators.length) {
+									var g = generators[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.printPattern(g.pattern) + " <- " + reflaxe.elixir.ast.ElixirASTPrinter.print(g.expr, 0));
+								};
+							};
+							`;
+						}.join(", ");
+						var filterStr = if (filters.length > 0) {
+							", " + {
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < filters.length) {
+										var f = filters[`];
+										++ `;
+										`.push(reflaxe.elixir.ast.ElixirASTPrinter.print(f, 0));
+									};
+								};
+								`;
+							}.join(", ");
+						} else {
+							"";
+						};
+						var options = [];
+						if (into != null) {
+							options.push("into: " + reflaxe.elixir.ast.ElixirASTPrinter.print(into, 0));
+						};
+						if (uniq) {
+							options.push("uniq: true");
+						};
+						var optStr = if (options.length > 0) {
+							", " + options.join(", ");
+						} else {
+							"";
+						};
+						"for " + genStr + filterStr + optStr + ", do: " + reflaxe.elixir.ast.ElixirASTPrinter.print(body, 0);
+					};
+				};
+			};
+			case 42: {
+				var ` = node[0];
+				{
+					var clauses = `;
+					{
+						if (clauses.length == 1 && clauses[0].guard == null) {
+							var clause = clauses[0];
+							var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printPatterns(clause.args);
+							var paramPart = if (clause.args.length == 0) {
+								"";
+							} else {
+								" " + argStr;
+							};
+							var bodyStr = reflaxe.elixir.ast.ElixirASTPrinter.print(clause.body, indent + 1);
+							var isMultiLine = @:ast(switch (clause.body.def) {
+	case EIf(_, _, _):
+		true;	
+	case ECase(_, _):
+		true;	
+	case ECond(_):
+		true;	
+	case EBlock(exprs) if (exprs.length > 1):
+		true;	
+	case _:
+		bodyStr.indexOf("\n") >= 0;	
+}) {
+								var ` = clause.body.def;
+								switch (enumIndex `) {
+									case 6: {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											true;
+										};
+									};
+									case 7: {
+										var ` = `[0];
+										{
+											true;
+										};
+									};
+									case 10: {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											true;
+										};
+									};
+									case 53: {
+										var ` = `[0];
+										{
+											var exprs = `;
+											if (exprs.length > 1) {
+												true;
+											} else {
+												bodyStr.indexOf("\n", null) >= 0;
+											};
+										};
+									};
+									default: {
+										bodyStr.indexOf("\n", null) >= 0;
+									}
+								};
+							};
+							if (isMultiLine) {
+								"fn" + paramPart + " ->\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + bodyStr + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+							} else {
+								"fn" + paramPart + " -> " + bodyStr + " end";
+							};
+						} else {
+							"fn\n" + {
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < clauses.length) {
+										var clause = clauses[`];
+										++ `;
+										`.push(reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.printPatterns(clause.args) + (if (clause.guard != null) {
+											" when " + reflaxe.elixir.ast.ElixirASTPrinter.print(clause.guard, 0);
+										} else {
+											"";
+										}) + " ->\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 2) + reflaxe.elixir.ast.ElixirASTPrinter.print(clause.body, indent + 2));
+									};
+								};
+								`;
+							}.join("\n") + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+						};
+					};
+				};
+			};
+			case 43: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var expr = `;
+					var arity = `;
+					{
+						if (arity != null) {
+							"&" + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0) + "/" + arity;
+						} else {
+							"&" + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0);
+						};
+					};
+				};
+			};
+			case 44: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var module = `;
+					var as = `;
+					{
+						if (as != null) {
+							"alias " + module + ", as: " + as;
+						} else {
+							"alias " + module;
+						};
+					};
+				};
+			};
+			case 45: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var module = `;
+					var only = `;
+					var except = `;
+					{
+						var result = "import " + module;
+						if (only != null) {
+							result += ", only: [" + {
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < only.length) {
+										var o = only[`];
+										++ `;
+										`.push(o.name + ": " + o.arity);
+									};
+								};
+								`;
+							}.join(", ") + "]";
+						} else {
+							if (except != null) {
+								result += ", except: [" + {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < except.length) {
+											var e = except[`];
+											++ `;
+											`.push(e.name + ": " + e.arity);
+										};
+									};
+									`;
+								}.join(", ") + "]";
+							};
+						};
+						result;
+					};
+				};
+			};
+			case 46: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var module = `;
+					var options = `;
+					{
+						if (options.length == 1) {
+							@:ast(switch (options[0].def) {
+	case EKeywordList(pairs):
+		"use " + module + ", " + [for (p  in  pairs) {
+			var value = switch (p.value.def) {
+				case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+					"(" + print(p.value, 0) + ")";				
+				case _:
+					print(p.value, 0);				
+			};
+			p.key + ": " + value;
+		}].join(", ");	
+	case _:
+		"use " + module + ", " + print(options[0], 0);	
+}) {
+								var ` = options[0].def;
+								if (enumIndex ` == 20) {
+									var ` = `[0];
+									{
+										var pairs = `;
+										{
+											"use " + module + ", " + {
+												var ` = [];
+												{
+													var ` = 0;
+													while (` < pairs.length) {
+														var p = pairs[`];
+														++ `;
+														var value = @:ast(switch (p.value.def) {
+	case EIf(cond, thenBranch, elseBranch) if (elseBranch != null && isSimpleExpression(thenBranch) && isSimpleExpression(elseBranch)):
+		"(" + print(p.value, 0) + ")";	
+	case _:
+		print(p.value, 0);	
+}) {
+															var ` = p.value.def;
+															if (enumIndex ` == 10) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																{
+																	var cond = `;
+																	var thenBranch = `;
+																	var elseBranch = `;
+																	if (elseBranch != null && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(thenBranch) && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(elseBranch)) {
+																		"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(p.value, 0) + ")";
+																	} else {
+																		reflaxe.elixir.ast.ElixirASTPrinter.print(p.value, 0);
+																	};
+																};
+															} else {
+																reflaxe.elixir.ast.ElixirASTPrinter.print(p.value, 0);
+															};
+														};
+														`.push(p.key + ": " + value);
+													};
+												};
+												`;
+											}.join(", ");
+										};
+									};
+								} else {
+									"use " + module + ", " + reflaxe.elixir.ast.ElixirASTPrinter.print(options[0], 0);
+								};
+							};
+						} else {
+							if (options.length > 0) {
+								"use " + module + ", " + {
+									var ` = [];
+									{
+										var ` = 0;
+										while (` < options.length) {
+											var o = options[`];
+											++ `;
+											`.push(reflaxe.elixir.ast.ElixirASTPrinter.print(o, 0));
+										};
+									};
+									`;
+								}.join(", ");
+							} else {
+								"use " + module;
+							};
+						};
+					};
+				};
+			};
+			case 47: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var module = `;
+					var as = `;
+					{
+						if (as != null) {
+							"require " + module + ", as: " + as;
+						} else {
+							"require " + module;
+						};
+					};
+				};
+			};
+			case 48: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var options = `;
+					var expr = `;
+					{
+						var optStr = if (options.length > 0) {
+							" " + {
+								var ` = [];
+								{
+									var ` = 0;
+									while (` < options.length) {
+										var o = options[`];
+										++ `;
+										`.push(reflaxe.elixir.ast.ElixirASTPrinter.print(o, 0));
+									};
+								};
+								`;
+							}.join(", ") + ",";
+						} else {
+							"";
+						};
+						@:ast(switch (expr.def) {
+	case EBlock(_):
+		"quote" + optStr + " do\n" + indentStr(indent + 1) + print(expr, indent + 1) + "\n" + indentStr(indent) + "end";	
+	case _:
+		"quote" + optStr + " do: " + print(expr, 0);	
+}) {
+							var ` = expr.def;
+							if (enumIndex ` == 53) {
+								var ` = `[0];
+								{
+									"quote" + optStr + " do\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, indent + 1) + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+								};
+							} else {
+								"quote" + optStr + " do: " + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0);
+							};
+						};
+					};
+				};
+			};
+			case 49: {
+				var ` = node[0];
+				{
+					var expr = `;
+					{
+						"unquote(" + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0) + ")";
+					};
+				};
+			};
+			case 50: {
+				var ` = node[0];
+				{
+					var expr = `;
+					{
+						"unquote_splicing(" + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0) + ")";
+					};
+				};
+			};
+			case 51: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var clauses = `;
+					var after = `;
+					{
+						var result = "receive do\n";
+						{
+							var ` = 0;
+							while (` < clauses.length) {
+								var clause = clauses[`];
+								++ `;
+								result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.printCaseClause(clause, indent + 1) + "\n";
+							};
+						};
+						if (after != null) {
+							result += reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "after\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(after.timeout, 0) + " ->\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 2) + reflaxe.elixir.ast.ElixirASTPrinter.print(after.body, indent + 2) + "\n";
+						};
+						result + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 52: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var target = `;
+					var message = `;
+					{
+						"send(" + reflaxe.elixir.ast.ElixirASTPrinter.print(target, 0) + ", " + reflaxe.elixir.ast.ElixirASTPrinter.print(message, 0) + ")";
+					};
+				};
+			};
+			case 53: {
+				var ` = node[0];
+				{
+					var expressions = `;
+					{
+						if (expressions.length == 0) {
+							"";
+						} else {
+							if (expressions.length == 1) {
+								reflaxe.elixir.ast.ElixirASTPrinter.print(expressions[0], indent);
+							} else {
+								var parts = [];
+								var printed = [];
+								{
+									var ` = 0;
+									while (` < expressions.length) {
+										var expr = expressions[`];
+										++ `;
+										var str = reflaxe.elixir.ast.ElixirASTPrinter.print(expr, indent);
+										if (str != null && StringTools.trim(str).length > 0) {
+											printed.push(str);
+										};
+									};
+								};
+								{
+									var ` = 0;
+									var ` = printed.length;
+									while (` < `) {
+										var i = ` ++;
+										parts.push(printed[i]);
+										if (i < printed.length - 1) {
+											parts.push("\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent));
+										};
+									};
+								};
+								parts.join("");
+							};
+						};
+					};
+				};
+			};
+			case 54: {
+				var ` = node[0];
+				{
+					var expr = `;
+					{
+						"(" + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, 0) + ")";
+					};
+				};
+			};
+			case 55: {
+				var ` = node[0];
+				{
+					var body = `;
+					{
+						"do\n" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < body.length) {
+									var expr = body[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(expr, indent + 1));
+								};
+							};
+							`;
+						}.join("\n") + "\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent) + "end";
+					};
+				};
+			};
+			case 56: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var name = `;
+					var value = `;
+					{
+						"@" + name + " " + reflaxe.elixir.ast.ElixirASTPrinter.print(value, indent);
+					};
+				};
+			};
+			case 57: {
+				var ` = node[0];
+				{
+					var content = `;
+					{
+						"@moduledoc \"\"\"" + "\n" + content + "\n" + "\"\"\"";
+					};
+				};
+			};
+			case 58: {
+				var ` = node[0];
+				{
+					var content = `;
+					{
+						"@doc \"\"\"" + "\n" + content + "\n" + "\"\"\"";
+					};
+				};
+			};
+			case 59: {
+				var ` = node[0];
+				{
+					var signature = `;
+					{
+						"@spec " + signature;
+					};
+				};
+			};
+			case 60: {
+				var ` = node[0];
+				var ` = node[1];
+				{
+					var name = `;
+					var definition = `;
+					{
+						"@type " + name + " :: " + definition;
+					};
+				};
+			};
+			case 61: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var type = `;
+					var content = `;
+					var modifiers = `;
+					{
+						"~" + type + "\"\"\"" + "\n" + content + "\n" + "\"\"\"" + modifiers;
+					};
+				};
+			};
+			case 62: {
+				var ` = node[0];
+				{
+					var code = `;
+					{
+						if (code.indexOf("\n", null) != -1 && code.indexOf("=", null) != -1) {
+							"(\n" + code + "\n)";
+						} else {
+							code;
+						};
+					};
+				};
+			};
+			case 63: {
+				var ` = node[0];
+				{
+					var name = `;
+					{
+						"@" + name;
+					};
+				};
+			};
+			case 64: {
+				var ` = node[0];
+				var ` = node[1];
+				var ` = node[2];
+				{
+					var tag = `;
+					var attributes = `;
+					var children = `;
+					{
+						"<" + tag + reflaxe.elixir.ast.ElixirASTPrinter.printAttributes(attributes) + ">" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < children.length) {
+									var c = children[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.print(c, 0));
+								};
+							};
+							`;
+						}.join("") + "</" + tag + ">";
+					};
+				};
+			};
+		};
+	}
+
+	static function printPattern(pattern:reflaxe.elixir.ast.EPattern) {
+		return @:ast(switch (pattern) {
+	case PVar(name):
+		name;	
+	case PLiteral(value):
+		print(value, 0);	
+	case PTuple(elements):
+		"{" + printPatterns(elements) + "}";	
+	case PList(elements):
+		"[" + printPatterns(elements) + "]";	
+	case PCons(head, tail):
+		"[" + printPattern(head) + " | " + printPattern(tail) + "]";	
+	case PMap(pairs):
+		"%{" + [for (p  in  pairs) print(p.key, 0) + " => " + printPattern(p.value)].join(", ") + "}";	
+	case PStruct(module, fields):
+		"%" + module + "{" + [for (f  in  fields) f.key + ": " + printPattern(f.value)].join(", ") + "}";	
+	case PPin(pattern):
+		"^" + printPattern(pattern);	
+	case PWildcard:
+		"_";	
+	case PAlias(varName, pattern):
+		printPattern(pattern) + " = " + varName;	
+	case PBinary(segments):
+		"<<" + [for (s  in  segments) printPatternBinarySegment(s)].join(", ") + ">>";	
+}) switch (@:exhaustive enumIndex pattern) {
+			case 0: {
+				var ` = pattern[0];
+				{
+					var name = `;
+					{
+						name;
+					};
+				};
+			};
+			case 1: {
+				var ` = pattern[0];
+				{
+					var value = `;
+					{
+						reflaxe.elixir.ast.ElixirASTPrinter.print(value, 0);
+					};
+				};
+			};
+			case 2: {
+				var ` = pattern[0];
+				{
+					var elements = `;
+					{
+						"{" + reflaxe.elixir.ast.ElixirASTPrinter.printPatterns(elements) + "}";
+					};
+				};
+			};
+			case 3: {
+				var ` = pattern[0];
+				{
+					var elements = `;
+					{
+						"[" + reflaxe.elixir.ast.ElixirASTPrinter.printPatterns(elements) + "]";
+					};
+				};
+			};
+			case 4: {
+				var ` = pattern[0];
+				var ` = pattern[1];
+				{
+					var head = `;
+					var tail = `;
+					{
+						"[" + reflaxe.elixir.ast.ElixirASTPrinter.printPattern(head) + " | " + reflaxe.elixir.ast.ElixirASTPrinter.printPattern(tail) + "]";
+					};
+				};
+			};
+			case 5: {
+				var ` = pattern[0];
+				{
+					var pairs = `;
+					{
+						"%{" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < pairs.length) {
+									var p = pairs[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.print(p.key, 0) + " => " + reflaxe.elixir.ast.ElixirASTPrinter.printPattern(p.value));
+								};
+							};
+							`;
+						}.join(", ") + "}";
+					};
+				};
+			};
+			case 6: {
+				var ` = pattern[0];
+				var ` = pattern[1];
+				{
+					var module = `;
+					var fields = `;
+					{
+						"%" + module + "{" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < fields.length) {
+									var f = fields[`];
+									++ `;
+									`.push(f.key + ": " + reflaxe.elixir.ast.ElixirASTPrinter.printPattern(f.value));
+								};
+							};
+							`;
+						}.join(", ") + "}";
+					};
+				};
+			};
+			case 7: {
+				var ` = pattern[0];
+				{
+					var pattern = `;
+					{
+						"^" + reflaxe.elixir.ast.ElixirASTPrinter.printPattern(pattern);
+					};
+				};
+			};
+			case 8: {
+				{
+					"_";
+				};
+			};
+			case 9: {
+				var ` = pattern[0];
+				var ` = pattern[1];
+				{
+					var varName = `;
+					var pattern = `;
+					{
+						reflaxe.elixir.ast.ElixirASTPrinter.printPattern(pattern) + " = " + varName;
+					};
+				};
+			};
+			case 10: {
+				var ` = pattern[0];
+				{
+					var segments = `;
+					{
+						"<<" + {
+							var ` = [];
+							{
+								var ` = 0;
+								while (` < segments.length) {
+									var s = segments[`];
+									++ `;
+									`.push(reflaxe.elixir.ast.ElixirASTPrinter.printPatternBinarySegment(s));
+								};
+							};
+							`;
+						}.join(", ") + ">>";
+					};
+				};
+			};
+		};
+	}
+
+	static function printPatterns(patterns:Array<reflaxe.elixir.ast.EPattern>) {
+		return {
+			var ` = [];
+			{
+				var ` = 0;
+				while (` < patterns.length) {
+					var p = patterns[`];
+					++ `;
+					`.push(reflaxe.elixir.ast.ElixirASTPrinter.printPattern(p));
+				};
+			};
+			`;
+		}.join(", ");
+	}
+
+	static function printCaseClause(clause:reflaxe.elixir.ast.ECaseClause, indent:Int) {
+		var result = reflaxe.elixir.ast.ElixirASTPrinter.printPattern(clause.pattern);
+		if (clause.guard != null) {
+			result += " when " + reflaxe.elixir.ast.ElixirASTPrinter.print(clause.guard, 0);
+		};
+		result += " ->\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(clause.body, indent + 1);
+		return result;
+	}
+
+	static function printRescueClause(clause:reflaxe.elixir.ast.ERescueClause, indent:Int) {
+		var result = reflaxe.elixir.ast.ElixirASTPrinter.printPattern(clause.pattern);
+		if (clause.varName != null) {
+			result += " -> " + clause.varName;
+		};
+		result += " ->\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(clause.body, indent + 1);
+		return result;
+	}
+
+	static function printCatchClause(clause:reflaxe.elixir.ast.ECatchClause, indent:Int) {
+		var kindStr = @:ast(switch (clause.kind) {
+	case Error:
+		":error";	
+	case Exit:
+		":exit";	
+	case Throw:
+		":throw";	
+	case Any:
+		"_";	
+}) {
+			var ` = clause.kind;
+			switch (@:exhaustive enumIndex `) {
+				case 0: {
+					{
+						":error";
+					};
+				};
+				case 1: {
+					{
+						":exit";
+					};
+				};
+				case 2: {
+					{
+						":throw";
+					};
+				};
+				case 3: {
+					{
+						"_";
+					};
+				};
+			};
+		};
+		return kindStr + ", " + reflaxe.elixir.ast.ElixirASTPrinter.printPattern(clause.pattern) + " ->\n" + reflaxe.elixir.ast.ElixirASTPrinter.indentStr(indent + 1) + reflaxe.elixir.ast.ElixirASTPrinter.print(clause.body, indent + 1);
+	}
+
+	static function printAttribute(attr:reflaxe.elixir.ast.EAttribute) {
+		return "@" + attr.name + " " + reflaxe.elixir.ast.ElixirASTPrinter.print(attr.value, 0);
+	}
+
+	static function printAttributes(attrs:Array<reflaxe.elixir.ast.EAttribute>) {
+		if (attrs.length == 0) {
+			return "";
+		};
+		return " " + {
+			var ` = [];
+			{
+				var ` = 0;
+				while (` < attrs.length) {
+					var a = attrs[`];
+					++ `;
+					`.push(a.name + "=\"" + reflaxe.elixir.ast.ElixirASTPrinter.print(a.value, 0) + "\"");
+				};
+			};
+			`;
+		}.join(" ");
+	}
+
+	static function printBinarySegment(segment:reflaxe.elixir.ast.EBinarySegment) {
+		var result = reflaxe.elixir.ast.ElixirASTPrinter.print(segment.value, 0);
+		var specs = [];
+		if (segment.size != null) {
+			specs.push("size(" + reflaxe.elixir.ast.ElixirASTPrinter.print(segment.size, 0) + ")");
+		};
+		if (segment.type != null) {
+			specs.push(segment.type);
+		};
+		if (segment.modifiers != null) {
+			specs = specs.concat(segment.modifiers);
+		};
+		if (specs.length > 0) {
+			result += "::" + specs.join("-");
+		};
+		return result;
+	}
+
+	static function printPatternBinarySegment(segment:reflaxe.elixir.ast.PBinarySegment) {
+		var result = reflaxe.elixir.ast.ElixirASTPrinter.printPattern(segment.pattern);
+		var specs = [];
+		if (segment.size != null) {
+			specs.push("size(" + reflaxe.elixir.ast.ElixirASTPrinter.print(segment.size, 0) + ")");
+		};
+		if (segment.type != null) {
+			specs.push(segment.type);
+		};
+		if (segment.modifiers != null) {
+			specs = specs.concat(segment.modifiers);
+		};
+		if (specs.length > 0) {
+			result += "::" + specs.join("-");
+		};
+		return result;
+	}
+
+	static function binaryOpToString(op:reflaxe.elixir.ast.EBinaryOp) {
+		return @:ast(switch (op) {
+	case Add:
+		"+";	
+	case Subtract:
+		"-";	
+	case Multiply:
+		"*";	
+	case Divide:
+		"/";	
+	case Remainder:
+		"rem";	
+	case Power:
+		"**";	
+	case Equal:
+		"==";	
+	case NotEqual:
+		"!=";	
+	case StrictEqual:
+		"===";	
+	case StrictNotEqual:
+		"!==";	
+	case Less:
+		"<";	
+	case Greater:
+		">";	
+	case LessEqual:
+		"<=";	
+	case GreaterEqual:
+		">=";	
+	case And:
+		"and";	
+	case Or:
+		"or";	
+	case AndAlso:
+		"&&";	
+	case OrElse:
+		"||";	
+	case BitwiseAnd:
+		"&&&";	
+	case BitwiseOr:
+		"|||";	
+	case BitwiseXor:
+		"^^^";	
+	case ShiftLeft:
+		"<<<";	
+	case ShiftRight:
+		">>>";	
+	case Concat:
+		"++";	
+	case ListSubtract:
+		"--";	
+	case In:
+		"in";	
+	case StringConcat:
+		"<>";	
+	case Match:
+		"=";	
+	case Pipe:
+		"|>";	
+	case TypeCheck:
+		"::";	
+	case When:
+		"when";	
+}) switch (@:exhaustive enumIndex op) {
+			case 0: {
+				{
+					"+";
+				};
+			};
+			case 1: {
+				{
+					"-";
+				};
+			};
+			case 2: {
+				{
+					"*";
+				};
+			};
+			case 3: {
+				{
+					"/";
+				};
+			};
+			case 4: {
+				{
+					"rem";
+				};
+			};
+			case 5: {
+				{
+					"**";
+				};
+			};
+			case 6: {
+				{
+					"==";
+				};
+			};
+			case 7: {
+				{
+					"!=";
+				};
+			};
+			case 8: {
+				{
+					"===";
+				};
+			};
+			case 9: {
+				{
+					"!==";
+				};
+			};
+			case 10: {
+				{
+					"<";
+				};
+			};
+			case 11: {
+				{
+					">";
+				};
+			};
+			case 12: {
+				{
+					"<=";
+				};
+			};
+			case 13: {
+				{
+					">=";
+				};
+			};
+			case 14: {
+				{
+					"and";
+				};
+			};
+			case 15: {
+				{
+					"or";
+				};
+			};
+			case 16: {
+				{
+					"&&";
+				};
+			};
+			case 17: {
+				{
+					"||";
+				};
+			};
+			case 18: {
+				{
+					"&&&";
+				};
+			};
+			case 19: {
+				{
+					"|||";
+				};
+			};
+			case 20: {
+				{
+					"^^^";
+				};
+			};
+			case 21: {
+				{
+					"<<<";
+				};
+			};
+			case 22: {
+				{
+					">>>";
+				};
+			};
+			case 23: {
+				{
+					"++";
+				};
+			};
+			case 24: {
+				{
+					"--";
+				};
+			};
+			case 25: {
+				{
+					"<>";
+				};
+			};
+			case 26: {
+				{
+					"in";
+				};
+			};
+			case 27: {
+				{
+					"=";
+				};
+			};
+			case 28: {
+				{
+					"|>";
+				};
+			};
+			case 29: {
+				{
+					"::";
+				};
+			};
+			case 30: {
+				{
+					"when";
+				};
+			};
+		};
+	}
+
+	static function unaryOpToString(op:reflaxe.elixir.ast.EUnaryOp) {
+		return @:ast(switch (op) {
+	case Not:
+		"not ";	
+	case Negate:
+		"-";	
+	case Positive:
+		"+";	
+	case BitwiseNot:
+		"~~~";	
+	case Bang:
+		"!";	
+}) switch (@:exhaustive enumIndex op) {
+			case 0: {
+				{
+					"not ";
+				};
+			};
+			case 1: {
+				{
+					"-";
+				};
+			};
+			case 2: {
+				{
+					"+";
+				};
+			};
+			case 3: {
+				{
+					"~~~";
+				};
+			};
+			case 4: {
+				{
+					"!";
+				};
+			};
+		};
+	}
+
+	static function needsParentheses(node:reflaxe.elixir.ast.ElixirASTDef) {
+		return @:ast(switch (node) {
+	case EBinary(Subtract, _, _):
+		true;	
+	case EBinary(op, _, _):
+		false;	
+	default:
+		false;	
+}) if (enumIndex node == 26) {
+			var ` = node[0];
+			var ` = node[1];
+			var ` = node[2];
+			if (enumIndex ` == 1) {
+				{
+					true;
+				};
+			} else {
+				var op = `;
+				{
+					false;
+				};
+			};
+		} else {
+			false;
+		};
+	}
+
+	static function escapeString(s:String) {
+		return StringTools.replace(StringTools.replace(StringTools.replace(StringTools.replace(StringTools.replace(s, "\\", "\\\\"), "\"", "\\\""), "\n", "\\n"), "\r", "\\r"), "\t", "\\t");
+	}
+
+	static function indentStr(level:Int) {
+		var result = "";
+		{
+			var ` = 0;
+			var ` = level;
+			while (` < `) {
+				var i = ` ++;
+				result += "  ";
+			};
+		};
+		return result;
+	}
+
+	static function isSimpleExpression(ast:reflaxe.elixir.ast.ElixirAST) {
+		if (ast == null) {
+			return false;
+		};
+		return @:ast(switch (ast.def) {
+	case EVar(_) | EAtom(_) | ENil | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | EField(_, _) | ETuple(_) | EList(_) | EMap(_):
+		true;	
+	case ECall(_, _, args):
+		args.length <= 2;	
+	case EBinary(op, left, right):
+		if (op == Match) {
+			false;
+		} else {
+			isSimpleExpression(left) && isSimpleExpression(right);
+		};	
+	case EMatch(_, _):
+		false;	
+	case EBlock(expressions):
+		if (expressions.length == 0) {
+			return false;
+		};
+		for (expr  in  expressions) {
+			if (containsAssignment(expr)) {
+				return false;
+			};
+		};
+		expressions.length == 1 && isSimpleExpression(expressions[0]);	
+	case _:
+		false;	
+}) {
+			var ` = ast.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						false;
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 22: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var args = `;
+						{
+							args.length <= 2;
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						var left = `;
+						var right = `;
+						{
+							if (op == reflaxe.elixir.ast.EBinaryOp.Match) {
+								false;
+							} else {
+								reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(left) && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(right);
+							};
+						};
+					};
+				};
+				case 28: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				};
+				case 31: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 32: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 33: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 34: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 35: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 36: {
+					{
+						true;
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var expressions = `;
+						{
+							if (expressions.length == 0) {
+								return false;
+							};
+							{
+								var ` = 0;
+								while (` < expressions.length) {
+									var expr = expressions[`];
+									++ `;
+									if (reflaxe.elixir.ast.ElixirASTPrinter.containsAssignment(expr)) {
+										return false;
+									};
+								};
+							};
+							expressions.length == 1 && reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(expressions[0]);
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function containsAssignment(ast:reflaxe.elixir.ast.ElixirAST) {
+		if (ast == null) {
+			return false;
+		};
+		return @:ast(switch (ast.def) {
+	case EMatch(_, _):
+		true;	
+	case EBinary(op, _, _) if (op == Match):
+		true;	
+	case EBlock(expressions):
+		for (expr  in  expressions) {
+			if (containsAssignment(expr)) return true;
+		};
+		false;	
+	case EIf(_, thenBranch, elseBranch):
+		containsAssignment(thenBranch) || (elseBranch != null && containsAssignment(elseBranch));	
+	case _:
+		false;	
+}) {
+			var ` = ast.def;
+			switch (enumIndex `) {
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				};
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var thenBranch = `;
+						var elseBranch = `;
+						{
+							reflaxe.elixir.ast.ElixirASTPrinter.containsAssignment(thenBranch) || (elseBranch != null && reflaxe.elixir.ast.ElixirASTPrinter.containsAssignment(elseBranch));
+						};
+					};
+				};
+				case 26: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var op = `;
+						if (op == reflaxe.elixir.ast.EBinaryOp.Match) {
+							true;
+						} else {
+							false;
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var expressions = `;
+						{
+							{
+								var ` = 0;
+								while (` < expressions.length) {
+									var expr = expressions[`];
+									++ `;
+									if (reflaxe.elixir.ast.ElixirASTPrinter.containsAssignment(expr)) {
+										return true;
+									};
+								};
+							};
+							false;
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function printIfCondition(condition:reflaxe.elixir.ast.ElixirAST) {
+		if (condition == null) {
+			return "";
+		};
+		@:ast(switch (condition.def) {
+	case EParen(inner):
+		if (isSimpleVariable(inner)) {
+			return print(inner, 0);
+		};
+		return "(" + print(inner, 0) + ")";	
+	default:
+		return print(condition, 0);	
+}) {
+			var ` = condition.def;
+			if (enumIndex ` == 54) {
+				var ` = `[0];
+				{
+					var inner = `;
+					{
+						if (reflaxe.elixir.ast.ElixirASTPrinter.isSimpleVariable(inner)) {
+							return reflaxe.elixir.ast.ElixirASTPrinter.print(inner, 0);
+						};
+						return "(" + reflaxe.elixir.ast.ElixirASTPrinter.print(inner, 0) + ")";
+					};
+				};
+			} else {
+				return reflaxe.elixir.ast.ElixirASTPrinter.print(condition, 0);
+			};
+		};
+	}
+
+	static function isSimpleVariable(ast:reflaxe.elixir.ast.ElixirAST) {
+		if (ast == null) {
+			return false;
+		};
+		return @:ast(switch (ast.def) {
+	case EVar(_) | ENil | EBoolean(_):
+		true;	
+	default:
+		false;	
+}) {
+			var ` = ast.def;
+			switch (enumIndex `) {
+				case 35: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 36: {
+					{
+						true;
+					};
+				};
+				case 38: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	static function printFunctionArg(arg:reflaxe.elixir.ast.ElixirAST) {
+		if (arg == null) {
+			return "";
+		};
+		@:ast(switch (arg.def) {
+	case EIf(condition, thenBranch, elseBranch):
+		var needsParens = if (arg.metadata != null && arg.metadata.keepInlineInAssignment == true) {
+			true;
+		} else {
+			var thenSimple = isSimpleExpression(thenBranch);
+			var elseSimple = elseBranch != null ? isSimpleExpression(elseBranch) : true;
+			thenSimple && elseSimple;
+		};
+		if (needsParens) {
+			return "(" + print(arg, 0) + ")";
+		} else {
+			return print(arg, 0);
+		};	
+	case EBlock(expressions) if (expressions.length > 1):
+		return "(fn -> " + print(arg, 0) + " end).()";	
+	default:
+		return print(arg, 0);	
+}) {
+			var ` = arg.def;
+			switch (enumIndex `) {
+				case 10: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var condition = `;
+						var thenBranch = `;
+						var elseBranch = `;
+						{
+							var needsParens = if (arg.metadata != null && arg.metadata.keepInlineInAssignment == true) {
+								true;
+							} else {
+								var thenSimple = reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(thenBranch);
+								var elseSimple = if (elseBranch != null) {
+									reflaxe.elixir.ast.ElixirASTPrinter.isSimpleExpression(elseBranch);
+								} else {
+									true;
+								};
+								thenSimple && elseSimple;
+							};
+							if (needsParens) {
+								return "(" + reflaxe.elixir.ast.ElixirASTPrinter.print(arg, 0) + ")";
+							} else {
+								return reflaxe.elixir.ast.ElixirASTPrinter.print(arg, 0);
+							};
+						};
+					};
+				};
+				case 53: {
+					var ` = `[0];
+					{
+						var expressions = `;
+						if (expressions.length > 1) {
+							return "(fn -> " + reflaxe.elixir.ast.ElixirASTPrinter.print(arg, 0) + " end).()";
+						} else {
+							return reflaxe.elixir.ast.ElixirASTPrinter.print(arg, 0);
+						};
+					};
+				};
+				default: {
+					return reflaxe.elixir.ast.ElixirASTPrinter.print(arg, 0);
+				}
+			};
+		};
+	}
+
+	static function isModuleName(s:String) {
+		if (s.length == 0) {
+			return false;
+		};
+		var firstChar = s.charAt(0);
+		if (firstChar != firstChar.toUpperCase()) {
+			return false;
+		};
+		var parts = s.split(".");
+		{
+			var ` = 0;
+			while (` < parts.length) {
+				var part = parts[`];
+				++ `;
+				if (part.length == 0) {
+					return false;
+				};
+				var first = part.charAt(0);
+				if (first != first.toUpperCase() || ! new EReg("^[A-Z]", "").match(first)) {
+					return false;
+				};
+			};
+		};
+		return true;
+	}
+
+	static function isAppModuleName(s:String) {
+		if (! reflaxe.elixir.ast.ElixirASTPrinter.isModuleName(s)) {
+			return false;
+		};
+		return s.indexOf("App", null) != -1 || StringTools.endsWith(s, ".PubSub") || StringTools.endsWith(s, ".Repo") || StringTools.endsWith(s, ".Endpoint") || StringTools.endsWith(s, ".Telemetry") || StringTools.endsWith(s, ".Supervisor") || StringTools.endsWith(s, ".Application") || StringTools.endsWith(s, "Web");
+	}
+
+	static function isLetter(c:String) {
+		if (c.length != 1) {
+			return false;
+		};
+		var code = c.charCodeAt(0);
+		return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+	}
+
+	static function isDigit(c:String) {
+		if (c.length != 1) {
+			return false;
+		};
+		var code = c.charCodeAt(0);
+		return code >= 48 && code <= 57;
+	}
+}

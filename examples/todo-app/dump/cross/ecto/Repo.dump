@@ -1,0 +1,27 @@
+@:realPath("phoenix.EctoRepo") @:native("Ecto.Repo")
+extern class Ecto.Repo {
+
+	static function get<T>(queryable:Class<get.T>, id:Int):Null<get.T>;
+
+	static function get_by<T>(queryable:Class<get_by.T>, conditions:phoenix.QueryConditions):Null<get_by.T>;
+
+	static function all<T>(queryable:phoenix.Query<all.T>):Array<all.T>;
+
+	static function one<T>(queryable:phoenix.Query<one.T>):Null<one.T>;
+
+	static function insert<T>(changeset:phoenix.Changeset<insert.T>):phoenix.Result<insert.T, String>;
+
+	static function update<T>(changeset:phoenix.Changeset<update.T>):phoenix.Result<update.T, String>;
+
+	static function delete<T>(record:delete.T):phoenix.Result<delete.T, String>;
+
+	static function insert_or_update<T>(changeset:phoenix.Changeset<insert_or_update.T>):phoenix.Result<insert_or_update.T, String>;
+
+	static function query(sql:String, params:Array<phoenix.QueryValue>):phoenix.QueryResult;
+
+	static function transaction<T>(func:() -> transaction.T):phoenix.Result<transaction.T, String>;
+
+	static function connected():Bool;
+
+	static function config():phoenix.RepoConfig;
+}

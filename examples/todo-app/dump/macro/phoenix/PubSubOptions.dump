@@ -1,0 +1,1 @@
+typedef phoenix.PubSubOptions = { ?metadata : Null<Map<String, Any>>, ?link : Null<Bool>, ?fastlane : Null<Map<String, Any>> }

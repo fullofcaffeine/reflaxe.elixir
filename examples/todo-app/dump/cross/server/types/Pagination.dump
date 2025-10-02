@@ -1,0 +1,1 @@
+typedef server.types.Pagination = { total_pages : Int, total_count : Int, per_page : Int, page : Int, has_prev : Bool, has_next : Bool }

@@ -1,0 +1,1 @@
+typedef server.infrastructure.TelemetryMetric = { ?unit : Null<String>, ?tags : Null<Array<String>>, name : String, measurement : String, event : String }

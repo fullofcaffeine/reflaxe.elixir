@@ -1,0 +1,2 @@
+@:enum
+abstract elixir.ComparisonResult to String {}

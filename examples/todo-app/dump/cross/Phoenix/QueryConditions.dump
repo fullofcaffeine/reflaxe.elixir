@@ -1,0 +1,1 @@
+typedef phoenix.QueryConditions = { ?where : Null<Map<String, phoenix.QueryValue>>, ?or : Null<Array<phoenix.QueryConditions>>, ?not : Null<phoenix.QueryConditions>, ?and : Null<Array<phoenix.QueryConditions>> }

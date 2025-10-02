@@ -1,0 +1,1 @@
+typedef phoenix.PatchOptions = { ?to : Null<String>, ?replace : Null<Bool> }

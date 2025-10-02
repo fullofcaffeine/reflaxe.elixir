@@ -1,0 +1,1 @@
+typedef phoenix.SchemaField = { type : phoenix.FieldType, options : phoenix.FieldOptions, name : String }
