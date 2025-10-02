@@ -124,8 +124,8 @@ class TypedExprPreprocessor {
         trace('[TypedExprPreprocessor] Starting preprocessing - pattern detected');
         #end
         
-        // Create initial substitution map
-        var substitutions = new Map<String, TypedExpr>();
+        // Create initial substitution map (ID-based to prevent shadowing)
+        var substitutions = new Map<Int, TypedExpr>();
         
         // Process the expression
         var result = processExpr(expr, substitutions);
@@ -182,27 +182,44 @@ class TypedExprPreprocessor {
     
     /**
      * Process a TypedExpr with substitution tracking
-     * 
+     *
      * WHY: Core transformation logic with variable substitution
      * WHAT: Recursively processes expressions, detecting patterns and applying transformations
      * HOW: Pattern matches on expression type and applies appropriate transformation
-     * 
+     *
      * @param expr Expression to process
-     * @param substitutions Map of variable names to substitute expressions
+     * @param substitutions Map of variable IDs to substitute expressions (ID-based to prevent shadowing)
      * @return Transformed expression
      */
-    static function processExpr(expr: TypedExpr, substitutions: Map<String, TypedExpr>): TypedExpr {
+    static function processExpr(expr: TypedExpr, substitutions: Map<Int, TypedExpr>): TypedExpr {
         return switch(expr.expr) {
             // Handle blocks that might contain switch patterns
             case TBlock(exprs):
                 processBlock(exprs, expr.pos, expr.t, substitutions);
                 
             // Handle local variable references that might need substitution
-            case TLocal(v) if (substitutions.exists(v.name)):
-                #if debug_preprocessor
-                trace('[TypedExprPreprocessor] Substituting ${v.name} with original expression');
+            case TLocal(v):
+                #if debug_infrastructure_vars
+                if (isInfrastructureVar(v.name)) {
+                    trace('[processExpr TLocal] Checking infrastructure variable: ${v.name} (ID: ${v.id})');
+                    trace('[processExpr TLocal] Substitution exists? ${substitutions.exists(v.id)}');
+                    if (substitutions.exists(v.id)) {
+                        trace('[processExpr TLocal] SUBSTITUTING ${v.name} (ID: ${v.id}) with original expression');
+                    } else {
+                        trace('[processExpr TLocal] NO SUBSTITUTION FOUND for ${v.name} (ID: ${v.id})!');
+                        trace('[processExpr TLocal] Available substitutions: ${[for (k in substitutions.keys()) k].join(", ")}');
+                    }
+                }
                 #end
-                substitutions.get(v.name);
+
+                if (substitutions.exists(v.id)) {
+                    #if debug_preprocessor
+                    trace('[TypedExprPreprocessor] Substituting ${v.name} (ID: ${v.id}) with original expression');
+                    #end
+                    substitutions.get(v.id);
+                } else {
+                    expr; // No substitution, return as-is
+                }
                 
             // Handle parenthesis - process the inner expression and preserve substitutions
             case TParenthesis(inner):
@@ -216,30 +233,61 @@ class TypedExprPreprocessor {
                 
             // Handle switch statements directly (in case they're not in a block)
             case TSwitch(e, cases, edef):
+                #if debug_infrastructure_vars
+                trace('[processExpr TSwitch] ===== DIRECT SWITCH PROCESSING =====');
+                trace('[processExpr TSwitch] Switch target type: ${e.expr}');
+                #end
+
                 // Special handling for switches with undefined infrastructure variables
-                // This happens when Haxe generates switch(g2) but never defines g2
+                // FIX: Apply substitution for infrastructure variables in switch targets
                 var switchTarget = switch(e.expr) {
-                    case TLocal(v) if (isInfrastructureVar(v.name) && !substitutions.exists(v.name)):
-                        #if debug_preprocessor
-                        trace('[TypedExprPreprocessor] Switch uses undefined infrastructure variable: ${v.name}');
-                        trace('[TypedExprPreprocessor] Looking for the actual expression in the switch context');
+                    case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.id)):
+                        // Apply substitution - replace infrastructure variable with its initialization expression
+                        #if debug_infrastructure_vars
+                        trace('[processExpr TSwitch] Infrastructure var detected: ${v.name} (ID: ${v.id})');
+                        trace('[processExpr TSwitch] ✓ APPLYING substitution for ID ${v.id}');
+                        var substExpr = substitutions.get(v.id);
+                        trace('[processExpr TSwitch] Substitution expression: ${substExpr.expr}');
                         #end
-                        
-                        // In for loops with switches, Haxe sometimes generates switch(g2) 
-                        // where g2 should have been the switch expression
-                        // We need to find the actual expression and use it directly
-                        // For now, we'll just process it as-is, but flag it for special handling
-                        e;
+                        substitutions.get(v.id);
+                    case TLocal(v) if (isInfrastructureVar(v.name)):
+                        #if debug_infrastructure_vars
+                        trace('[processExpr TSwitch] Infrastructure var detected: ${v.name} (ID: ${v.id})');
+                        trace('[processExpr TSwitch] ✗ NO SUBSTITUTION exists for ID ${v.id}');
+                        var allKeys = [for (k in substitutions.keys()) k];
+                        trace('[processExpr TSwitch] Available substitutions: ${allKeys.join(", ")}');
+                        #end
+                        // Not an infrastructure var with substitution - process normally
+                        processExpr(e, substitutions);
                     default:
-                        e;
+                        #if debug_infrastructure_vars
+                        trace('[processExpr TSwitch] Not an infrastructure variable, processing normally');
+                        #end
+                        // Not an infrastructure var with substitution - process normally
+                        processExpr(e, substitutions);
                 };
-                
+
+                #if debug_infrastructure_vars
+                trace('[processExpr TSwitch] Calling processSwitchExpr...');
+                #end
+
                 processSwitchExpr(switchTarget, cases, edef, expr.pos, expr.t, substitutions);
                 
             // Skip TVar assignments for infrastructure variables that aren't used elsewhere
             case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
-                // Infrastructure variable assignment - track for substitution
-                substitutions.set(v.name, init);
+                #if debug_infrastructure_vars
+                trace('[processExpr] Eliminating infrastructure variable: ${v.name} (ID: ${v.id})');
+                #end
+
+                // Infrastructure variable assignment - track for substitution by ID
+                // Using ID instead of name prevents shadowing bugs in nested scopes
+                substitutions.set(v.id, init);
+
+                #if debug_infrastructure_vars
+                trace('[processExpr] Registered substitution for ID ${v.id} (name: ${v.name})');
+                trace('[processExpr] Substitutions now has ${Lambda.count(substitutions)} entries');
+                #end
+
                 // Return empty block to skip generating the assignment
                 {expr: TBlock([]), pos: expr.pos, t: expr.t};
                 
@@ -247,9 +295,9 @@ class TypedExprPreprocessor {
             case TField(e, field):
                 // Check if this is field access on an infrastructure variable
                 switch(e.expr) {
-                    case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+                    case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.id)):
                         // Substitute the infrastructure variable with its actual value
-                        var substituted = substitutions.get(v.name);
+                        var substituted = substitutions.get(v.id);
                         #if debug_preprocessor
                         trace('[TypedExprPreprocessor] SUBSTITUTING: Field access ${v.name}.${field} with substituted base');
                         #end
@@ -272,9 +320,9 @@ class TypedExprPreprocessor {
                 switch(e.expr) {
                     case TField(obj, method):
                         switch(obj.expr) {
-                            case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.name)):
+                            case TLocal(v) if (isInfrastructureVar(v.name) && substitutions.exists(v.id)):
                                 // Substitute the infrastructure variable with its actual value
-                                var substituted = substitutions.get(v.name);
+                                var substituted = substitutions.get(v.id);
                                 #if debug_preprocessor
                                 trace('[TypedExprPreprocessor] SUBSTITUTING: Method call ${v.name}.${method}() with substituted base');
                                 #end
@@ -305,9 +353,9 @@ class TypedExprPreprocessor {
                 #if debug_preprocessor
                 trace('[TypedExprPreprocessor] Processing TWhile (possibly desugared for loop)');
                 #end
-                
-                // Create local substitution map inheriting from parent scope
-                var localSubstitutions = new Map<String, TypedExpr>();
+
+                // Create local substitution map inheriting from parent scope (ID-based)
+                var localSubstitutions = new Map<Int, TypedExpr>();
                 for (key in substitutions.keys()) {
                     localSubstitutions.set(key, substitutions.get(key));
                 }
@@ -342,9 +390,9 @@ class TypedExprPreprocessor {
                 #if debug_preprocessor
                 trace('[TypedExprPreprocessor] Processing TFor with iterator variable: ${v.name}');
                 #end
-                
-                // Create local substitution map inheriting from parent scope
-                var localSubstitutions = new Map<String, TypedExpr>();
+
+                // Create local substitution map inheriting from parent scope (ID-based)
+                var localSubstitutions = new Map<Int, TypedExpr>();
                 for (key in substitutions.keys()) {
                     localSubstitutions.set(key, substitutions.get(key));
                 }
@@ -384,60 +432,240 @@ class TypedExprPreprocessor {
     
     /**
      * Process a TBlock looking for infrastructure variable patterns
-     * 
+     *
      * WHY: Most infrastructure variables are created in blocks before their usage
      * WHAT: Detects patterns like TVar(_g, expr) followed by TSwitch(TLocal(_g))
      * HOW: Scans block statements, identifies patterns, and transforms them
-     * 
+     *
      * PATTERN DETECTED:
      * TBlock([
      *   TVar(_g, field_expr),     // Infrastructure variable assignment
      *   TSwitch(TLocal(_g), ...)  // Switch using infrastructure variable
      * ])
-     * 
+     *
      * TRANSFORMS TO:
      * TSwitch(field_expr, ...)     // Direct switch on original expression
      */
-    static function processBlock(exprs: Array<TypedExpr>, pos: haxe.macro.Expr.Position, t: Type, substitutions: Map<String, TypedExpr>): TypedExpr {
+    static function processBlock(exprs: Array<TypedExpr>, pos: haxe.macro.Expr.Position, t: Type, substitutions: Map<Int, TypedExpr>): TypedExpr {
         var processed = [];
         var i = 0;
-        
+
+        #if debug_infrastructure_vars
+        trace('[processBlock] ===== BLOCK ANALYSIS =====');
+        trace('[processBlock] Block has ${exprs.length} expressions');
+        for (idx in 0...exprs.length) {
+            var exprType = switch(exprs[idx].expr) {
+                case TVar(v, init):
+                    var initInfo = if (init != null) {
+                        switch(init.expr) {
+                            case TCall(e, _):
+                                var callTarget = switch(e.expr) {
+                                    case TField(_, FInstance(_, _, cf)): 'method:${cf.get().name}';
+                                    case TField(_, FStatic(_, cf)): 'static:${cf.get().name}';
+                                    case TField(_, FAnon(cf)): 'anon:${cf.get().name}';
+                                    case TField(_, FDynamic(s)): 'dynamic:$s';
+                                    case TLocal(v): 'local:${v.name}';
+                                    default: 'other';
+                                }
+                                'TCall($callTarget)';
+                            case TObjectDecl(fields): 'TObjectDecl(${fields.length} fields)';
+                            default: 'init=${Std.string(init.expr).substr(0, 50)}';
+                        }
+                    } else "null";
+                    'TVar(${v.name}, $initInfo)';
+                case TSwitch(e, cases, _):
+                    var targetInfo = switch(e.expr) {
+                        case TLocal(v): 'TLocal(${v.name})';
+                        case TField(_, FInstance(_, _, cf)): 'TField.FInstance(${cf.get().name})';
+                        case TField(_, FStatic(_, cf)): 'TField.FStatic(${cf.get().name})';
+                        case TField(_, FAnon(cf)): 'TField.FAnon(${cf.get().name})';
+                        case TField(_, FDynamic(s)): 'TField.FDynamic($s)';
+                        default: 'Other(${Std.string(e.expr).substr(0, 30)})';
+                    }
+                    'TSwitch(target=$targetInfo, ${cases.length} cases)';
+                case TIf(cond, _, _):
+                    var condInfo = switch(cond.expr) {
+                        case TCall(e, _):
+                            var callTarget = switch(e.expr) {
+                                case TField(_, FInstance(_, _, cf)): 'method:${cf.get().name}';
+                                case TField(_, FStatic(_, cf)): 'static:${cf.get().name}';
+                                default: 'other';
+                            }
+                            'TCall($callTarget)';
+                        case TBinop(op, _, _): 'TBinop($op)';
+                        default: 'Other';
+                    }
+                    'TIf(cond=$condInfo)';
+                case TBlock(innerExprs): 'TBlock(${innerExprs.length} exprs)';
+                case TReturn(e): 'TReturn(${e != null ? "expr" : "void"})';
+                case TCall(e, args):
+                    var callTarget = switch(e.expr) {
+                        case TField(_, FInstance(_, _, cf)): 'method:${cf.get().name}';
+                        case TField(_, FStatic(_, cf)): 'static:${cf.get().name}';
+                        case TLocal(v): 'local:${v.name}';
+                        default: 'other';
+                    }
+                    'TCall($callTarget, ${args.length} args)';
+                default: 'Other(${Std.string(exprs[idx].expr).substr(0, 50)})';
+            }
+            trace('[processBlock]   [$idx]: $exprType');
+        }
+        trace('[processBlock] =============================');
+        #end
+
         while (i < exprs.length) {
             var current = exprs[i];
-            
-            // Check for infrastructure variable pattern
+
+            #if debug_infrastructure_vars
+            var currentType = switch(current.expr) {
+                case TVar(v, _): 'TVar(${v.name})';
+                case TSwitch(e, _, _):
+                    switch(e.expr) {
+                        case TLocal(v): 'TSwitch(TLocal(${v.name}))';
+                        default: 'TSwitch(other)';
+                    }
+                case TIf(_, _, _): 'TIf';
+                case TBlock(_): 'TBlock';
+                default: 'Other';
+            }
+            trace('[processBlock] Processing expression $i: $currentType');
+            #end
+
+            // Check for infrastructure variable pattern FIRST (before processing individually)
             if (i < exprs.length - 1) {
                 switch(current.expr) {
                     case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
                         var next = exprs[i + 1];
-                        
+
                         #if debug_preprocessor
                         trace('[TypedExprPreprocessor] Found infrastructure variable: ${v.name}');
                         trace('[TypedExprPreprocessor] Next expression type: ${next.expr}');
                         #end
+
+                        #if debug_infrastructure_vars
+                        trace('[processBlock] ===== INFRASTRUCTURE VAR DETECTION =====');
+                        trace('[processBlock] Found TVar at index $i: ${v.name}');
+                        trace('[processBlock] Is infrastructure var: ${isInfrastructureVar(v.name)}');
+                        trace('[processBlock] Has init: ${init != null}');
+                        if (init != null) {
+                            trace('[processBlock] Init expression type: ${init.expr}');
+                        }
+                        trace('[processBlock] Next expr exists: ${i + 1 < exprs.length}');
+                        if (i + 1 < exprs.length) {
+                            var nextExprType = switch(next.expr) {
+                                case TSwitch(_, _, _): 'TSwitch';
+                                case TBlock(_): 'TBlock';
+                                case TReturn(_): 'TReturn';
+                                case TIf(_, _, _): 'TIf';
+                                default: 'Other(${next.expr})';
+                            }
+                            trace('[processBlock] Next expr type at index ${i+1}: $nextExprType');
+                        }
+                        #end
                         
                         // Check if next expression is a switch using this variable
+                        // CRITICAL: Also check inside nested blocks! Haxe sometimes wraps switches
+                        var actualSwitchExpr = next;
+                        var skipCount = 2; // Default: skip TVar and immediate next
+
+                        #if debug_infrastructure_vars
+                        var nextType = switch(next.expr) {
+                            case TBlock(_): "TBlock";
+                            case TSwitch(_, _, _): "TSwitch";
+                            case TReturn(_): "TReturn";
+                            default: "Other";
+                        }
+                        trace('[processBlock] Next expression type: $nextType');
+                        #end
+
+                        // Unwrap nested TBlock if present
                         switch(next.expr) {
+                            case TBlock(blockExprs) if (blockExprs.length > 0):
+                                #if debug_infrastructure_vars
+                                trace('[processBlock] Next is TBlock with ${blockExprs.length} expressions');
+                                trace('[processBlock] Checking first expression in nested block');
+                                #end
+
+                                // Check if first expression in nested block is the switch
+                                var firstInBlock = blockExprs[0];
+                                switch(firstInBlock.expr) {
+                                    case TSwitch(_, _, _):
+                                        #if debug_infrastructure_vars
+                                        trace('[processBlock] Found switch inside nested block!');
+                                        #end
+                                        actualSwitchExpr = firstInBlock;
+                                        // Still skip 2: TVar + the TBlock wrapper
+                                    default:
+                                }
+                            default:
+                        }
+
+                        switch(actualSwitchExpr.expr) {
                             case TSwitch(e, cases, edef):
+                                #if debug_infrastructure_vars
+                                trace('[processBlock] Checking if switch uses ${v.name}');
+                                var uses = usesVariable(e, v.name);
+                                trace('[processBlock] usesVariable result: $uses');
+                                #end
+
                                 if (usesVariable(e, v.name)) {
                                     #if debug_preprocessor
                                     trace('[TypedExprPreprocessor] Detected switch pattern with ${v.name}');
                                     #end
-                                    
+
+                                    #if debug_infrastructure_vars
+                                    trace('[processBlock] FOUND PATTERN! Substituting ${v.name} in switch');
+                                    #end
+
+
+									// CRITICAL: Register substitution BEFORE processing switch
+									// This mirrors what processExpr does for individual TVar expressions
+									// Pattern detection must populate substitutions map just like expression processing does
+									#if debug_infrastructure_vars
+									trace('[processBlock] ===== REGISTERING SUBSTITUTION =====');
+									trace('[processBlock] Infrastructure variable: ${v.name} (ID: ${v.id})');
+									trace('[processBlock] Initialization expression: ${init.expr}');
+									#end
+
+									substitutions.set(v.id, init);
+
+									#if debug_infrastructure_vars
+									trace('[processBlock] ✓ Registered substitution: ID ${v.id} (name: ${v.name}) -> ${init.expr}');
+									// Show complete state of substitutions map
+									var allKeys = [for (k in substitutions.keys()) k];
+									trace('[processBlock] Substitutions map now contains ${allKeys.length} entries: ${allKeys.join(", ")}');
+									trace('[processBlock] =====================================');
+									#end
                                     // Transform: substitute the variable with its initialization
+                                    // Now substitutions map contains the mapping for recursive processing
                                     var transformedSwitch = processSwitchExpr(
                                         substituteVariable(e, v.name, init),
                                         cases,
                                         edef,
-                                        next.pos,
-                                        next.t,
+                                        actualSwitchExpr.pos,
+                                        actualSwitchExpr.t,
                                         substitutions
                                     );
-                                    
+
+                                    #if debug_infrastructure_vars
+                                    trace('[processBlock] Transformed switch created');
+                                    trace('[processBlock] Adding transformed switch to processed list');
+                                    trace('[processBlock] Skipping $skipCount expressions (TVar + wrapper)');
+                                    #end
+
                                     // Skip the TVar and add the transformed switch
                                     processed.push(transformedSwitch);
-                                    i += 2; // Skip both TVar and TSwitch
+                                    i += skipCount; // Skip TVar and next expression
+
+                                    #if debug_infrastructure_vars
+                                    trace('[processBlock] Pattern match complete - continuing to next expression');
+                                    #end
+
                                     continue;
+                                } else {
+                                    #if debug_infrastructure_vars
+                                    trace('[processBlock] Switch does NOT use ${v.name} - skipping pattern');
+                                    #end
                                 }
                             
                             case TVar(v2, init2) if (init2 != null):
@@ -484,8 +712,8 @@ class TypedExprPreprocessor {
                             default:
                         }
                         
-                        // If no pattern matched, track substitution for later use
-                        substitutions.set(v.name, init);
+                        // If no pattern matched, track substitution for later use (ID-based)
+                        substitutions.set(v.id, init);
                         // Don't add the TVar to processed (skip it)
                         i++;
                         continue;
@@ -509,16 +737,43 @@ class TypedExprPreprocessor {
     
     /**
      * Process a switch expression with substitutions
-     * 
+     *
      * WHY: Switch expressions might reference infrastructure variables
-     * WHAT: Applies substitutions and processes cases  
+     * WHAT: Applies substitutions and processes cases
      * HOW: Recursively processes switch target and case expressions
-     * 
+     *
      * SPECIAL HANDLING: Removes orphaned g variable assignments in case bodies
      */
-    static function processSwitchExpr(e: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, edef: Null<TypedExpr>, 
-                                      pos: haxe.macro.Expr.Position, t: Type, 
-                                      substitutions: Map<String, TypedExpr>): TypedExpr {
+    static function processSwitchExpr(e: TypedExpr, cases: Array<{values: Array<TypedExpr>, expr: TypedExpr}>, edef: Null<TypedExpr>,
+                                      pos: haxe.macro.Expr.Position, t: Type,
+                                      substitutions: Map<Int, TypedExpr>): TypedExpr {
+        #if debug_infrastructure_vars
+        trace('[processSwitchExpr] ===== PROCESSING SWITCH TARGET =====');
+        trace('[processSwitchExpr] Switch target expression type: ${e.expr}');
+
+        // Check if switch uses an infrastructure variable
+        switch(e.expr) {
+            case TLocal(v):
+                trace('[processSwitchExpr] Switch uses TLocal variable: ${v.name} (ID: ${v.id})');
+                trace('[processSwitchExpr] Is infrastructure var: ${isInfrastructureVar(v.name)}');
+                trace('[processSwitchExpr] Checking substitution map...');
+                trace('[processSwitchExpr] - Substitution exists for ID ${v.id}: ${substitutions.exists(v.id)}');
+
+                // Show all keys in substitutions map
+                var allKeys = [for (k in substitutions.keys()) k];
+                trace('[processSwitchExpr] - All IDs in substitutions map: ${allKeys.join(", ")}');
+
+                if (substitutions.exists(v.id)) {
+                    var substExpr = substitutions.get(v.id);
+                    trace('[processSwitchExpr] ✓ FOUND substitution for ID ${v.id} (name: ${v.name}): ${substExpr.expr}');
+                } else {
+                    trace('[processSwitchExpr] ✗ NO SUBSTITUTION FOUND for ID ${v.id} (name: ${v.name})');
+                }
+            default:
+                trace('[processSwitchExpr] Switch target is not a TLocal variable');
+        }
+        #end
+
         // Process the switch target
         var processedTarget = processExpr(e, substitutions);
         
@@ -631,24 +886,24 @@ class TypedExprPreprocessor {
     
     /**
      * Scan for infrastructure variable declarations and add to substitution map
-     * 
+     *
      * WHY: Need to pre-scan loop bodies to find infrastructure variables before processing
      * WHAT: Recursively finds TVar declarations with infrastructure variable names
      * HOW: Traverses expression tree looking for TVar(g*, init) patterns
-     * 
+     *
      * This allows us to build a complete substitution map before processing the loop body,
      * ensuring that references to infrastructure variables can be properly substituted.
      */
-    static function scanForInfrastructureVars(expr: TypedExpr, substitutions: Map<String, TypedExpr>): Void {
+    static function scanForInfrastructureVars(expr: TypedExpr, substitutions: Map<Int, TypedExpr>): Void {
         if (expr == null) return;
-        
+
         switch(expr.expr) {
             case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
-                // Found an infrastructure variable declaration
+                // Found an infrastructure variable declaration (store by ID)
                 #if debug_preprocessor
-                trace('[TypedExprPreprocessor] scanForInfrastructureVars: Found ${v.name} = [expression]');
+                trace('[TypedExprPreprocessor] scanForInfrastructureVars: Found ${v.name} (ID: ${v.id}) = [expression]');
                 #end
-                substitutions.set(v.name, init);
+                substitutions.set(v.id, init);
                 
             case TBlock(exprs):
                 // Scan all expressions in the block
