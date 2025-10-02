@@ -594,6 +594,55 @@ Some `.exs` tests fail with 16+ failures because they expect fixtures in `test/f
 ### Makefile Path Handling
 The Makefile needs updating to properly handle the nested `snapshot/` structure for the pattern rules.
 
+## ✅ Recent Regression Tests (October 2025)
+
+### EmptyIfBranches - Empty If-Expression Bug Fix
+
+**Location**: `test/snapshot/regression/EmptyIfBranches/`
+**Status**: ✅ **PASSES** - Validates Bug #1 fix
+
+**What It Tests**:
+- Empty then branch with non-empty else
+- Non-empty then with empty else
+- Both branches empty
+- Nested empty if expressions
+- JSON printer pattern (char_code < 32 check)
+
+**Why It Matters**:
+Prevents regression of the empty if-expression bug where `if c == nil, do: , else:` generated invalid Elixir syntax. The fix ensures empty branches use block syntax with explicit `nil`.
+
+**Run This Test**:
+```bash
+./scripts/test-runner.sh --pattern "EmptyIfBranches"
+# OR
+npm run test:regression
+```
+
+### SwitchSideEffects - Switch Cases in Loops Bug
+
+**Location**: `test/snapshot/regression/SwitchSideEffects/`
+**Status**: ⚠️ **PARTIAL** - Bug #2 not yet fixed, but test created
+
+**What It Tests**:
+- ✅ Switch without loop (control test - PASSES)
+- ❌ Switch inside loop (demonstrates the bug - FAILS until fixed)
+- ✅ Simple assignments (PASSES when not in loops)
+- ✅ Mixed operations (+=, -=, *=) (PASSES when not in loops)
+- ✅ Nested switches (PASSES when not in loops)
+
+**Why It Matters**:
+Documents the pipeline coordination issue where switch cases with compound assignments disappear inside loops. This test will automatically pass once Bug #2 is fixed, preventing regression.
+
+**Current Failure Expected**:
+```bash
+./scripts/test-runner.sh --pattern "SwitchSideEffects"
+# Test testSwitchInsideLoop will fail - this is expected until Bug #2 is fixed
+```
+
+**See Documentation**:
+- [`docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md`](/docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md) - Complete bug analysis
+- [`src/reflaxe/elixir/ast/CLAUDE.md`](/src/reflaxe/elixir/ast/CLAUDE.md) - AST-specific patterns
+
 ## 📈 Test Maintenance
 
 ### After Compiler Changes
