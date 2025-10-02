@@ -1,0 +1,7 @@
+# Regression test for Bug #1: Empty if-expression generates invalid Elixir syntax
+-cp .
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-D elixir_output=out

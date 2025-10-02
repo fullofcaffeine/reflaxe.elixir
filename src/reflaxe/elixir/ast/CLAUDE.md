@@ -171,6 +171,140 @@ if (ASTUtils.containsIteratorPattern(rhs)) {
 ### Historical Context
 Created in response to Map iterator transformation failures where pattern matching failed on unexpected AST structures (nested EBlock issues). User specifically requested "abstractions/patterns to prevent hard-to-debug mismatchers" - ASTUtils is the solution.
 
+## ⚠️ CRITICAL: Empty Expression Handling (October 2025)
+
+### Empty If-Branches Must Use Block Syntax
+
+**Problem Discovered**: Empty inline syntax `if x, do: , else:` generates invalid Elixir (missing expressions).
+
+**Root Cause**: `isSimpleExpression()` in ElixirASTPrinter.hx incorrectly returned `true` for `EBlock([])`.
+
+**The Fix** (ElixirASTPrinter.hx line 1368):
+```haxe
+case EBlock(expressions):
+    // ✅ FIX: Empty blocks are NOT simple - they need block syntax to generate nil
+    if (expressions.length == 0) {
+        return false;  // Force block syntax for empty branches
+    }
+    expressions.length == 1 && isSimpleExpression(expressions[0]);
+```
+
+**Why Empty Blocks Aren't "Simple"**:
+- Simple expressions use inline syntax: `if cond, do: expr, else: expr`
+- Empty blocks need block syntax to generate `nil`:
+  ```elixir
+  if cond do
+    nil  # Explicit value for empty block
+  end
+  ```
+- Elixir requires all branches to return a value (nil is a value)
+
+**Correct Generated Code**:
+```elixir
+# ✅ CORRECT: Block syntax with explicit nil
+if c == nil do
+  nil
+else
+  "not null"
+end
+
+# ❌ WRONG: Invalid inline syntax
+if c == nil, do: , else: "not null"  # Syntax error!
+```
+
+**Regression Test**: `test/snapshot/regression/EmptyIfBranches/` validates this fix forever.
+
+**See**: [`/docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md`](/docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md) - Complete bug documentation
+
+## ⚠️ KNOWN ISSUE: Switch Side-Effects in Loops (October 2025)
+
+### Problem: Switch Cases Disappear Inside Loops
+
+**Symptom**: Switch statements with compound assignments (`result += "string"`) inside for/while loops have their case branches completely disappear from generated output.
+
+**Root Cause Identified**: Pipeline coordination issue between LoopBuilder and SwitchBuilder.
+
+**Evidence**:
+- Switches **outside loops**: Compile correctly ✅
+- Switches **inside loops**: Cases disappear ❌
+- Debug tracing proves: Switch never reaches SwitchBuilder when inside loop
+
+**Current Status**: ⚠️ **NOT YET FIXED** - Requires architectural investigation
+
+**Affected Code**:
+```haxe
+// Haxe - This pattern fails
+for (i in 0...length) {
+    switch (charCode) {
+        case 34: result += '\\"';   // These cases disappear!
+        case 92: result += '\\\\';
+        default: result += "other";
+    }
+}
+```
+
+**Expected Elixir**:
+```elixir
+# Should generate case expression with rebinding
+Enum.reduce(0..(length-1), result, fn i, result ->
+  result = case char_code do
+    34 -> result <> "\\\""    # Should have all cases
+    92 -> result <> "\\\\"
+    _ -> result <> "other"
+  end
+  result
+end)
+```
+
+**Actual Generated**:
+```elixir
+# Cases are missing - empty if-else instead
+if char_code == nil do
+  # Empty - cases disappeared!
+else
+  # Empty - cases disappeared!
+end
+```
+
+**Investigation Path**:
+1. LoopBuilder calls `context.buildFromTypedExpr(e2)` for loop body
+2. Loop body contains TSwitch expression
+3. **Switch structure is lost before reaching SwitchBuilder**
+4. Need to trace where switch cases are dropped in pipeline
+
+**Workaround**: Avoid compound assignments in switch cases inside loops until this is fixed.
+
+**Regression Test**: `test/snapshot/regression/SwitchSideEffects/` created and waiting for fix.
+
+**See**: [`/docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md`](/docs/03-compiler-development/EMPTY_IF_EXPRESSION_AND_SWITCH_BUGS_FIX.md#bug-2-switch-side-effects-disappear) - Complete investigation findings
+
+## 🎯 Compound Assignment → Rebinding Transformation
+
+### Elixir Immutability Pattern
+
+**Haxe Pattern**: `result += "string"` (mutation)
+**Elixir Pattern**: `result = result <> "string"` (rebinding with new value)
+
+**Why This Matters**:
+- Elixir is immutable - no in-place modification exists
+- `+=` operator doesn't exist in Elixir
+- Must transform to rebinding pattern
+- The variable name stays the same, but points to new value
+
+**Transformation Examples**:
+```haxe
+// Haxe compound assignments
+result += "string"    →  result = result <> "string"   // String concatenation
+counter += 1          →  counter = counter + 1         // Number addition
+list += [item]        →  list = list ++ [item]        // List concatenation
+```
+
+**Common Pitfalls to Avoid**:
+- ❌ Don't treat += as mutation (doesn't exist in Elixir)
+- ❌ Don't generate `result += "string"` (invalid Elixir)
+- ✅ Always generate rebinding: `result = result <> "string"`
+- ✅ Choose correct operator: `<>` for strings, `+` for numbers, `++` for lists
+
 ---
 
 **Remember**: Every line added to ElixirASTBuilder.hx makes the compiler harder to maintain, debug, and extend. The prohibition is absolute and non-negotiable.

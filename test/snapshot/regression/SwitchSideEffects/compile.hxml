@@ -1,0 +1,8 @@
+# Regression test for Bug #2: Switch case branches with side-effects disappear
+-cp .
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+--no-output
+-D elixir_output=out
+-D debug_switch_compilation
