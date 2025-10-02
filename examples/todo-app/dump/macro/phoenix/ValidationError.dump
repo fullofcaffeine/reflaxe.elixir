@@ -1,0 +1,1 @@
+typedef phoenix.ValidationError = { validation : String, message : String, field : String, code : String }

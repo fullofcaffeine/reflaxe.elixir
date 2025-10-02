@@ -1,0 +1,1 @@
+typedef phoenix.MountParams = { ?sort : Null<String>, ?slug : Null<String>, ?search : Null<String>, ?page : Null<String>, ?id : Null<String>, ?filter : Null<String>, ?action : Null<String> }

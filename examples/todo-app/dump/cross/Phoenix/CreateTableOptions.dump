@@ -1,0 +1,1 @@
+typedef phoenix.CreateTableOptions = { ?temporary : Null<Bool>, ?if_not_exists : Null<Bool>, ?engine : Null<String>, ?collation : Null<String>, ?charset : Null<String> }

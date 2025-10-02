@@ -1,0 +1,1 @@
+typedef phoenix.IndexOptions = { ?where : Null<String>, ?usingIndex : Null<String>, ?unique : Null<Bool>, ?prefix : Null<String>, ?name : Null<String>, ?if_not_exists : Null<Bool>, ?if_exists : Null<Bool>, ?concurrently : Null<Bool> }

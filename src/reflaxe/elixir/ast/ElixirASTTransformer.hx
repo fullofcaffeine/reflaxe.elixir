@@ -2942,6 +2942,14 @@ class ElixirASTTransformer {
                     switch(module.def) {
                         case EVar("Enum"):
                             if (funcName == "reduce_while" && args != null && args.length >= 3) {
+                                #if debug_loop_transformation
+                                trace("[LoopTransform] Found Enum.reduce_while call");
+                                trace("[LoopTransform]   Args length: " + args.length);
+                                if (args.length >= 3) {
+                                    trace("[LoopTransform]   Third arg (reducer fn) type: " + Type.enumConstructor(args[2].def));
+                                }
+                                #end
+
                                 // Check if first arg is Stream.iterate
                                 var streamArg = args[0];
                                 switch(streamArg.def) {
@@ -2950,7 +2958,7 @@ class ElixirASTTransformer {
                                             case EVar("Stream"):
                                                 if (streamFunc == "iterate" && streamArgs != null && streamArgs.length >= 2) {
                                                     #if debug_loop_transformation
-                                                    trace("[LoopTransform] Found Stream.iterate pattern");
+                                                    trace("[LoopTransform] Found Stream.iterate pattern - WILL ATTEMPT TRANSFORMATION");
                                                     #end
                                                     
                                                     // Extract the initial value and increment function
@@ -7006,18 +7014,23 @@ class ElixirASTTransformer {
         for (varName in allUnderscoreVars.keys()) {
             // Check if this variable is actually used (referenced after declaration)
             var isUsed = underscoreVars.exists(varName) && underscoreVars.get(varName);
-            
+
             if (isUsed) {
-                // This underscore variable is used, so rename it
-                // Check if it's a Haxe-generated temp pattern
+                // CRITICAL FIX: Skip infrastructure variables (_g, _g1, etc.)
+                // These are Haxe-generated temporaries for switch desugaring that MUST keep their names
+                // Reason: The variable declaration might be in a different scope/block than we can see
+                // Example: `switch(msg.type)` desugars to `var _g = msg.type; switch(_g)`
+                // If we rename `_g` to `g` in the switch but not in the declaration, we get undefined variable errors
                 if (~/^_g(_?\d*)?$/.match(varName)) {
-                    // _g, _g_1, _g1 -> g, g_1, g1
-                    var newName = varName.substr(1);
-                    renameMap.set(varName, newName);
                     #if debug_ast_transformer
-                    trace('[XRay UnderscoreCleanup] Renaming used variable: $varName -> $newName');
+                    trace('[XRay UnderscoreCleanup] PRESERVING infrastructure variable: $varName (used in switch desugaring)');
                     #end
-                } else if (~/^_\d+$/.match(varName)) {
+                    // DO NOT rename - keep the underscore prefix
+                    continue;
+                }
+
+                // This underscore variable is used, so rename it
+                if (~/^_\d+$/.match(varName)) {
                     // _1, _2 -> temp_1, temp_2 (avoid pure numeric)
                     var newName = "temp" + varName.substr(1);
                     renameMap.set(varName, newName);

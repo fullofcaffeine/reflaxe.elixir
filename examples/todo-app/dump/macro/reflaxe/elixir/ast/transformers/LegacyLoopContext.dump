@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.transformers.LegacyLoopContext = { variable : String, range : { min : Int, max : Int }, parent : Null<reflaxe.elixir.ast.transformers.LegacyLoopContext> }

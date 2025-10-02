@@ -1,0 +1,1 @@
+typedef phoenix.types.FlashMessage = { type : phoenix.types.FlashType, ?title : Null<String>, ?timeout : Null<Int>, message : String, ?dismissible : Null<Bool>, ?details : Null<Array<String>>, ?action : Null<{ url : String, label : String }> }

@@ -1,0 +1,11 @@
+@:flatEnum
+enum reflaxe.elixir.ast.loop_ir.EmissionStrategy {
+	EnumEach;
+	EnumMap;
+	EnumReduce;
+	EnumReduceWhile;
+	Comprehension;
+	Recursion;
+	Stream;
+	Legacy;
+}

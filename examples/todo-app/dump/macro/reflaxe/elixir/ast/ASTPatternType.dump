@@ -1,0 +1,21 @@
+enum reflaxe.elixir.ast.ASTPatternType {
+	SimpleRangeLoop(start:Int, end:Int, variable:String);
+	ArrayIteration(array:String, itemVar:String);
+	WhileLoop(condition:reflaxe.elixir.ast.ElixirAST);
+	MapKeyValueIteration(mapVar:String, keyVar:String, valueVar:String);
+	MapKeysIteration(mapVar:String, keyVar:String);
+	MapValuesIteration(mapVar:String, valueVar:String);
+	ListHead(list:String);
+	ListTail(list:String);
+	ArrayComprehension(source:String, filter:reflaxe.elixir.ast.ElixirAST, transform:reflaxe.elixir.ast.ElixirAST);
+	MapComprehension(source:String, keyTransform:reflaxe.elixir.ast.ElixirAST, valueTransform:reflaxe.elixir.ast.ElixirAST);
+	EnumMatch(enumVar:String, constructors:Array<String>);
+	OptionPattern(someCase:reflaxe.elixir.ast.ElixirAST, noneCase:reflaxe.elixir.ast.ElixirAST);
+	ResultPattern(okCase:reflaxe.elixir.ast.ElixirAST, errorCase:reflaxe.elixir.ast.ElixirAST);
+	StringConcatenation(parts:Array<reflaxe.elixir.ast.ElixirAST>);
+	StringInterpolation(template:String, values:Array<reflaxe.elixir.ast.ElixirAST>);
+	YCombinatorLoop(iterVar:String, accumulator:String);
+	InfrastructureVariable(name:String, purpose:String);
+	InlineExpansion(tmpVar:String, init:reflaxe.elixir.ast.ElixirAST, nullBranch:reflaxe.elixir.ast.ElixirAST, nonNullBranch:reflaxe.elixir.ast.ElixirAST);
+	NullCoalescing(tmpVar:String, leftExpr:reflaxe.elixir.ast.ElixirAST, rightExpr:reflaxe.elixir.ast.ElixirAST);
+}

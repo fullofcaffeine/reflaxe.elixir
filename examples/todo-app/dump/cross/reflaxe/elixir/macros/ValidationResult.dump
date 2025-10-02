@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.macros.ValidationResult = { valid : Bool, errors : Array<String> }

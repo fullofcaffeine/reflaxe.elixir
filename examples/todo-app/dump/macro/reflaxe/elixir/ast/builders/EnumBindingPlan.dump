@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.builders.EnumBindingPlan = { parameterBindings : Array<reflaxe.elixir.ast.builders.ParameterBinding>, isIdiomatic : Bool, enumConstructor : String }

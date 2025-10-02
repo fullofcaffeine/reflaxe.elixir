@@ -50,10 +50,10 @@ import reflaxe.elixir.ast.ElixirASTBuilder;
  * - Performance: Pattern detection optimized in one place
  * 
  * EDGE CASES:
- * - Empty blocks → nil
+ * - Empty blocks → EBlock([]) (generates no code, not 'nil')
  * - Single expression blocks → unwrap to expression
  * - Nested blocks → recursive pattern detection
- * - Infrastructure variables → skip generation
+ * - Infrastructure variables → skip generation (via empty blocks)
  * - Statement combining → merge related statements
  */
 @:nullSafety(Off)
@@ -79,11 +79,13 @@ class BlockBuilder {
         #end
         
         // Empty block case
+        // ARCHITECTURE: Empty blocks represent "no code" (e.g., eliminated infrastructure variables)
+        // Return EBlock([]) which prints as empty string, NOT ENil which prints as 'nil'
         if (el.length == 0) {
             #if debug_ast_builder
-            trace('[BlockBuilder] Empty block, returning nil');
+            trace('[BlockBuilder] Empty block, returning EBlock([]) for no code generation');
             #end
-            return ENil;
+            return EBlock([]);
         }
         
         // Single expression - just return it unwrapped
@@ -619,15 +621,33 @@ class BlockBuilder {
         }
         
         // Check for infrastructure variable + switch pattern
+        // CRITICAL: This preserves `var _g = expr; switch(_g)` patterns from Haxe desugaring
         if (expressions.length == 2) {
+            #if debug_ast_builder
+            trace('[BlockBuilder] Checking 2-expr block for infrastructure var pattern');
+            trace('[BlockBuilder]   Expr[0] type: ${Type.enumConstructor(expressions[0].def)}');
+            trace('[BlockBuilder]   Expr[1] type: ${Type.enumConstructor(expressions[1].def)}');
+            #end
+
             switch(expressions[0].def) {
                 case EMatch(PVar(varName), init):
-                    // Check if varName is infrastructure variable
-                    if (varName == "g" || varName.indexOf("g") == 0) {
-                        // Keep both statements - infrastructure var might be needed
+                    #if debug_ast_builder
+                    trace('[BlockBuilder]   Found EMatch with PVar: $varName');
+                    trace('[BlockBuilder]   Is infrastructure var: ${isInfrastructureVar(varName)}');
+                    #end
+
+                    // Check if varName is infrastructure variable (_g, _g1, g, g1, etc.)
+                    if (isInfrastructureVar(varName)) {
+                        #if debug_ast_builder
+                        trace('[BlockBuilder] ✓ PRESERVING infrastructure variable pattern: $varName = ...; switch');
+                        #end
+                        // Keep both statements - infrastructure var is needed for switch
                         return EBlock(expressions);
                     }
                 default:
+                    #if debug_ast_builder
+                    trace('[BlockBuilder]   Not EMatch pattern');
+                    #end
             }
         }
         

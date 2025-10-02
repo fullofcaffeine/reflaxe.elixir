@@ -1,0 +1,84 @@
+@:realPath("Ecto.Schema") @:realPath("phoenix.EctoSchema") @:native("Ecto.Schema")
+class Ecto.Schema {
+
+	static macro function schema
+
+	@:has_untyped
+	static macro function embedded_schema(fields:Array<phoenix.SchemaField>) {
+		return cast {expr : haxe.macro.ExprDef.EBlock([]), pos : $__mk_pos__("../../std/phoenix/Ecto.hx", 8445, 8447)};
+	}
+
+	static inline function field(name:String, type:phoenix.FieldType, options:Null<phoenix.FieldOptions> = null) {
+		return {name : name, type : type, options : if (options != null) {
+			options;
+		} else {}};
+	}
+
+	static inline function belongs_to<T>(name:String, schema:Class<belongs_to.T>, options:Null<phoenix.AssociationOptions> = null) {
+		return {
+			var options = cast options;
+			{name : name, type : phoenix.FieldType.BelongsTo, options : if (options != null) {
+				options;
+			} else {}};
+		};
+	}
+
+	static inline function has_one<T>(name:String, schema:Class<has_one.T>, options:Null<phoenix.AssociationOptions> = null) {
+		return {
+			var options = cast options;
+			{name : name, type : phoenix.FieldType.HasOne, options : if (options != null) {
+				options;
+			} else {}};
+		};
+	}
+
+	static inline function has_many<T>(name:String, schema:Class<has_many.T>, options:Null<phoenix.AssociationOptions> = null) {
+		return {
+			var options = cast options;
+			{name : name, type : phoenix.FieldType.HasMany, options : if (options != null) {
+				options;
+			} else {}};
+		};
+	}
+
+	static inline function many_to_many<T>(name:String, schema:Class<many_to_many.T>, options:Null<phoenix.ManyToManyOptions> = null) {
+		return {
+			var options = cast options;
+			{name : name, type : phoenix.FieldType.ManyToMany, options : if (options != null) {
+				options;
+			} else {}};
+		};
+	}
+
+	static inline function embeds_one<T>(name:String, schema:Class<embeds_one.T>, options:Null<phoenix.EmbedOptions> = null) {
+		return {
+			var options = cast options;
+			{name : name, type : phoenix.FieldType.Custom("embed"), options : if (options != null) {
+				options;
+			} else {}};
+		};
+	}
+
+	static inline function embeds_many<T>(name:String, schema:Class<embeds_many.T>, options:Null<phoenix.EmbedOptions> = null) {
+		return {
+			var options = cast options;
+			{name : name, type : phoenix.FieldType.Array(phoenix.FieldType.Custom("embed")), options : if (options != null) {
+				options;
+			} else {}};
+		};
+	}
+
+	static inline function timestamps(options:Null<phoenix.TimestampsOptions> = null) {
+		return [{
+			var options = cast options;
+			{name : "inserted_at", type : phoenix.FieldType.Naive_datetime, options : if (options != null) {
+				options;
+			} else {}};
+		}, {
+			var options = cast options;
+			{name : "updated_at", type : phoenix.FieldType.Naive_datetime, options : if (options != null) {
+				options;
+			} else {}};
+		}];
+	}
+}

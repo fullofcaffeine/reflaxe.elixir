@@ -1,0 +1,1 @@
+typedef server.infrastructure.ChildSpec = { type : String, start : { module : String, func : String, args : Array<server.infrastructure.TelemetryOptions> }, shutdown : String, restart : String, id : String }

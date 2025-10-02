@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.builders.ParameterBinding = { name : String, isUsed : Bool, index : Int }

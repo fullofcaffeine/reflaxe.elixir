@@ -1,0 +1,219 @@
+@:realPath("server.live.UserLive") @:used @:keep @:native("TodoAppWeb.UserLive") @:liveview
+class TodoAppWeb.UserLive {
+
+	@:keep
+	static function mount(_params:Dynamic, _session:Dynamic, socket:Phoenix.LiveView.Socket<server.live.UserLiveAssigns>) {
+		var users = contexts.Users.listUsers(null);
+		var liveSocket = socket;
+		return {status : "ok", socket : cast Phoenix.Component.assign(liveSocket, {users : users, selected_user : null, changeset : contexts.Users.changeUser(null), search_term : "", show_form : false})};
+	}
+
+	@:keep
+	static function handleEvent(event:server.live.UserLiveEvent, socket:Phoenix.LiveView.Socket<server.live.UserLiveAssigns>) {
+		var liveSocket = socket;
+		return @:ast(switch (event) {
+	case NewUser:
+		handleNewUser(liveSocket);	
+	case EditUser(id):
+		handleEditUser(id, liveSocket);	
+	case SaveUser(params):
+		handleSaveUser(params, liveSocket);	
+	case DeleteUser(id):
+		handleDeleteUser(id, liveSocket);	
+	case Search(params):
+		handleSearch(params.search_term, liveSocket);	
+	case FilterStatus(params):
+		handleFilterStatus(params.status, liveSocket);	
+	case ClearSearch:
+		handleClearSearch(liveSocket);	
+	case Cancel:
+		handleCancel(liveSocket);	
+}) switch ((@:exhaustive enumIndex event)) {
+			case 0: TodoAppWeb.UserLive.handleNewUser(liveSocket);
+			case 1: {
+				var _g = event[0];
+				{
+					var id = _g;
+					TodoAppWeb.UserLive.handleEditUser(id, liveSocket);
+				};
+			};
+			case 2: {
+				var _g = event[0];
+				{
+					var params = _g;
+					TodoAppWeb.UserLive.handleSaveUser(params, liveSocket);
+				};
+			};
+			case 3: {
+				var _g = event[0];
+				{
+					var id = _g;
+					TodoAppWeb.UserLive.handleDeleteUser(id, liveSocket);
+				};
+			};
+			case 4: {
+				var _g = event[0];
+				{
+					var params = _g;
+					TodoAppWeb.UserLive.handleSearch(params.search_term, liveSocket);
+				};
+			};
+			case 5: {
+				var _g = event[0];
+				{
+					var params = _g;
+					TodoAppWeb.UserLive.handleFilterStatus(params.status, liveSocket);
+				};
+			};
+			case 6: TodoAppWeb.UserLive.handleClearSearch(liveSocket);
+			case 7: TodoAppWeb.UserLive.handleCancel(liveSocket);
+		};
+	}
+
+	@:keep
+	static function handleNewUser(socket:phoenix.LiveSocket<server.live.UserLiveAssigns>) {
+		var changeset = contexts.Users.changeUser(null);
+		var selectedUser = null;
+		var showForm = true;
+		return {status : "noreply", socket : cast Phoenix.Component.assign(socket, {changeset : changeset, selected_user : selectedUser, show_form : showForm})};
+	}
+
+	@:keep
+	static function handleEditUser(userId:Int, socket:phoenix.LiveSocket<server.live.UserLiveAssigns>) {
+		var selectedUser = contexts.Users.getUser(userId);
+		var changeset = contexts.Users.changeUser(selectedUser);
+		var showForm = true;
+		return {status : "noreply", socket : cast Phoenix.Component.assign(socket, {selected_user : selectedUser, changeset : changeset, show_form : showForm})};
+	}
+
+	@:keep
+	static function handleSaveUser(params:{ user : Dynamic }, socket:phoenix.LiveSocket<server.live.UserLiveAssigns>) {
+		var userParams = params.user;
+		var selectedUser = cast socket.assigns.selectedUser;
+		var result = if ((selectedUser == null)) contexts.Users.createUser(userParams) else contexts.Users.updateUser(selectedUser, userParams);
+		return @:ast(switch (result) {
+	case Ok(user):
+		var users = Users.listUsers(null);
+		{ status : "noreply", socket : socket.merge({ users : users, showForm : false, selectedUser : null, changeset : Users.changeUser(null) }) };	
+	case Error(changeset):
+		{ status : "noreply", socket : socket.assign(_.changeset, changeset) };	
+}) switch ((@:exhaustive enumIndex result)) {
+			case 0: {
+				var _g = result[0];
+				{
+					var user = _g;
+					{
+						var users = contexts.Users.listUsers(null);
+						{status : "noreply", socket : cast Phoenix.Component.assign(socket, {users : users, show_form : false, selected_user : null, changeset : contexts.Users.changeUser(null)})};
+					};
+				};
+			};
+			case 1: {
+				var _g = result[0];
+				{
+					var changeset = _g;
+					{status : "noreply", socket : cast Phoenix.Component.assign(socket, "changeset", changeset)};
+				};
+			};
+		};
+	}
+
+	@:keep
+	static function handleDeleteUser(userId:Int, socket:phoenix.LiveSocket<server.live.UserLiveAssigns>) {
+		var user = contexts.Users.getUser(userId);
+		var result = contexts.Users.deleteUser(user);
+		return @:ast(switch (result) {
+	case Ok(deletedUser):
+		var users = Users.listUsers(null);
+		{ status : "noreply", socket : socket.assign(_.users, users) };	
+	case Error(changeset):
+		{ status : "noreply", socket : socket };	
+}) switch ((@:exhaustive enumIndex result)) {
+			case 0: {
+				var _g = result[0];
+				{
+					var deletedUser = _g;
+					{
+						var users = contexts.Users.listUsers(null);
+						{status : "noreply", socket : cast Phoenix.Component.assign(socket, "users", users)};
+					};
+				};
+			};
+			case 1: {
+				var _g = result[0];
+				{
+					var changeset = _g;
+					{status : "noreply", socket : cast socket};
+				};
+			};
+		};
+	}
+
+	@:keep
+	static function handleSearch(searchTerm:String, socket:phoenix.LiveSocket<server.live.UserLiveAssigns>) {
+		var filter = if ((searchTerm.length > 0)) {name : searchTerm, email : searchTerm, isActive : null} else null;
+		var users = contexts.Users.listUsers(filter);
+		return {status : "noreply", socket : cast Phoenix.Component.assign(socket, {users : users, search_term : searchTerm})};
+	}
+
+	@:keep
+	static function handleFilterStatus(status:String, socket:phoenix.LiveSocket<server.live.UserLiveAssigns>) {
+		var filter = if ((status.length > 0)) {name : null, email : null, isActive : status == "active"} else null;
+		var users = contexts.Users.listUsers(filter);
+		return {status : "noreply", socket : cast Phoenix.Component.assign(socket, "users", users)};
+	}
+
+	@:keep
+	static function handleClearSearch(socket:phoenix.LiveSocket<server.live.UserLiveAssigns>) {
+		var users = contexts.Users.listUsers(null);
+		return {status : "noreply", socket : cast Phoenix.Component.assign(socket, {users : users, search_term : ""})};
+	}
+
+	@:keep
+	static function handleCancel(socket:phoenix.LiveSocket<server.live.UserLiveAssigns>) {
+		return {status : "noreply", socket : cast Phoenix.Component.assign(socket, {show_form : false, selected_user : null, changeset : contexts.Users.changeUser(null)})};
+	}
+
+	@:keep
+	static function render(assigns:Dynamic) {
+		return {
+			var templateStr = "\n        <div class=\"min-h-screen bg-gray-50 py-8\">\n            <div class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8\">\n                <!-- Header with gradient background -->\n                <div class=\"bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 mb-8\">\n                    <div class=\"flex justify-between items-center\">\n                        <div>\n                            <h1 class=\"text-3xl font-bold text-white\">User Management</h1>\n                            <p class=\"text-blue-100 mt-1\">Manage your application users</p>\n                        </div>\n                        <button \n                            phx-click=\"new_user\" \n                            class=\"bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors shadow-md\"\n                        >\n                            <svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                                <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 6v6m0 0v6m0-6h6m-6 0H6\"></path>\n                            </svg>\n                            New User\n                        </button>\n                    </div>\n                </div>\n                \n                <!-- Search and Filter Section -->\n                <div class=\"bg-white rounded-lg shadow-md p-6 mb-6\">\n                    <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\">\n                        <div class=\"md:col-span-2\">\n                            <label class=\"block text-sm font-medium text-gray-700 mb-2\">Search Users</label>\n                            <form phx-change=\"search\" phx-submit=\"search\">\n                                <div class=\"relative\">\n                                    <input \n                                        name=\"search_term\"\n                                        value={@searchTerm}\n                                        placeholder=\"Search by name or email...\"\n                                        type=\"text\"\n                                        class=\"w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500\"\n                                    />\n                                    <svg class=\"absolute left-3 top-2.5 w-5 h-5 text-gray-400\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                                        <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z\"></path>\n                                    </svg>\n                                </div>\n                            </form>\n                        </div>\n                        <div>\n                            <label class=\"block text-sm font-medium text-gray-700 mb-2\">Filter by Status</label>\n                            <select phx-change=\"filter_status\" class=\"w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500\">\n                                <option value=\"\">All Users</option>\n                                <option value=\"active\">Active</option>\n                                <option value=\"inactive\">Inactive</option>\n                            </select>\n                        </div>\n                    </div>\n                    \n                    <%= if @searchTerm != \"\" do %>\n                        <div class=\"mt-4 flex items-center text-sm text-gray-600\">\n                            <span>Showing results for: <span class=\"font-semibold\">{@searchTerm}</span></span>\n                            <button phx-click=\"clear_search\" class=\"ml-2 text-blue-600 hover:text-blue-800\">Clear</button>\n                        </div>\n                    <% end %>\n                </div>\n                \n                " + TodoAppWeb.UserLive.renderUserList(assigns) + "\n                " + TodoAppWeb.UserLive.renderUserForm(assigns) + "\n            </div>\n        </div>\n        ";
+			templateStr;
+		};
+	}
+
+	@:keep
+	static function renderUserList(assigns:Dynamic) {
+		return "\n        <div class=\"bg-white rounded-lg shadow-md overflow-hidden\">\n            <table class=\"min-w-full divide-y divide-gray-200\">\n                <thead class=\"bg-gray-50\">\n                    <tr>\n                        <th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">\n                            Name\n                        </th>\n                        <th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">\n                            Email\n                        </th>\n                        <th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">\n                            Age\n                        </th>\n                        <th scope=\"col\" class=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">\n                            Status\n                        </th>\n                        <th scope=\"col\" class=\"relative px-6 py-3\">\n                            <span class=\"sr-only\">Actions</span>\n                        </th>\n                    </tr>\n                </thead>\n                <tbody class=\"bg-white divide-y divide-gray-200\">\n                    <%= for user <- @users do %>\n                        <tr class=\"hover:bg-gray-50 transition-colors\">\n                            <td class=\"px-6 py-4 whitespace-nowrap\">\n                                <div class=\"flex items-center\">\n                                    <div class=\"flex-shrink-0 h-10 w-10\">\n                                        <div class=\"h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold\">\n                                            <%= String.first(user.name) %>\n                                        </div>\n                                    </div>\n                                    <div class=\"ml-4\">\n                                        <div class=\"text-sm font-medium text-gray-900\">\n                                            <%= user.name %>\n                                        </div>\n                                    </div>\n                                </div>\n                            </td>\n                            <td class=\"px-6 py-4 whitespace-nowrap\">\n                                <div class=\"text-sm text-gray-900\"><%= user.email %></div>\n                            </td>\n                            <td class=\"px-6 py-4 whitespace-nowrap\">\n                                <div class=\"text-sm text-gray-900\"><%= user.age %></div>\n                            </td>\n                            <td class=\"px-6 py-4 whitespace-nowrap\">\n                                <%= if user.is_active do %>\n                                    <span class=\"px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800\">\n                                        Active\n                                    </span>\n                                <% else %>\n                                    <span class=\"px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800\">\n                                        Inactive\n                                    </span>\n                                <% end %>\n                            </td>\n                            <td class=\"px-6 py-4 whitespace-nowrap text-right text-sm font-medium\">\n                                <button \n                                    phx-click=\"edit_user\" \n                                    phx-value-id={user.id}\n                                    class=\"text-indigo-600 hover:text-indigo-900 mr-3\"\n                                >\n                                    Edit\n                                </button>\n                                <button \n                                    phx-click=\"delete_user\" \n                                    phx-value-id={user.id}\n                                    data-confirm=\"Are you sure you want to delete this user?\"\n                                    class=\"text-red-600 hover:text-red-900\"\n                                >\n                                    Delete\n                                </button>\n                            </td>\n                        </tr>\n                    <% end %>\n                </tbody>\n            </table>\n            \n            <%= if length(@users) == 0 do %>\n                <div class=\"text-center py-12\">\n                    <svg class=\"mx-auto h-12 w-12 text-gray-400\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\">\n                        <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4\" />\n                    </svg>\n                    <h3 class=\"mt-2 text-sm font-medium text-gray-900\">No users found</h3>\n                    <p class=\"mt-1 text-sm text-gray-500\">\n                        <%= if @searchTerm != \"\" do %>\n                            Try adjusting your search criteria\n                        <% else %>\n                            Get started by creating a new user\n                        <% end %>\n                    </p>\n                </div>\n            <% end %>\n    </div>\n        ";
+	}
+
+	@:keep
+	static function renderUserRow(assigns:Dynamic) {
+		var user = assigns.user;
+		return {
+			var templateStr = "\n        <tr>\n            <td>" + user.name + "</td>\n            <td>" + user.email + "</td>\n            <td>" + user.age + "</td>\n            <td>\n                <span class={getStatusClass(user.active)}>\n                    " + TodoAppWeb.UserLive.getStatusText(user.active) + "\n                </span>\n            </td>\n            <td class=\"actions\">\n                <.button phx-click=\"edit_user\" phx-value-id={user.id} size=\"sm\">\n                    Edit\n                </.button>\n                <.button \n                    phx-click=\"delete_user\" \n                    phx-value-id={user.id} \n                    data-confirm=\"Are you sure?\"\n                    variant=\"danger\"\n                    size=\"sm\"\n                >\n                    Delete\n                </.button>\n            </td>\n        </tr>\n        ";
+			templateStr;
+		};
+	}
+
+	@:keep
+	static function getStatusClass(active:Bool) {
+		return if ((active)) "status active" else "status inactive";
+	}
+
+	@:keep
+	static function getStatusText(active:Bool) {
+		return if ((active)) "Active" else "Inactive";
+	}
+
+	@:keep
+	static function renderUserForm(assigns:Dynamic) {
+		if ((! assigns.showForm)) return "";
+		return "\n        <div class=\"modal\">\n            <div class=\"modal-content\">\n                <div class=\"modal-header\">\n                    <h2><%= if @selectedUser, do: \"Edit User\", else: \"New User\" %></h2>\n                    <button phx-click=\"cancel\" class=\"close\">&times;</button>\n                </div>\n                \n                <.form for={@changeset} phx-submit=\"save_user\">\n                    <div class=\"form-group\">\n                        <.label for=\"name\">Name</.label>\n                        <.input field={@changeset[:name]} type=\"text\" required />\n                        <.error field={@changeset[:name]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label for=\"email\">Email</.label>\n                        <.input field={@changeset[:email]} type=\"email\" required />\n                        <.error field={@changeset[:email]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.label for=\"age\">Age</.label>\n                        <.input field={@changeset[:age]} type=\"number\" />\n                        <.error field={@changeset[:age]} />\n                    </div>\n                    \n                    <div class=\"form-group\">\n                        <.input \n                            field={@changeset[:active]} \n                            type=\"checkbox\" \n                            label=\"Active\"\n                        />\n                    </div>\n                    \n                    <div class=\"form-actions\">\n                        <.button type=\"submit\">\n                            <%= if @selectedUser, do: \"Update\", else: \"Create\" %> User\n                        </.button>\n                        <.button type=\"button\" phx-click=\"cancel\" variant=\"secondary\">\n                            Cancel\n                        </.button>\n                    </div>\n                </.form>\n            </div>\n        </div>\n        ";
+	}
+
+	@:keep
+	public static function main() {
+		haxe.Log.trace("UserLive with @:liveview annotation compiled successfully!", {fileName : "src_haxe/server/live/UserLive.hx", lineNumber : 505, className : "server.live.UserLive", methodName : "main"});
+	}
+}

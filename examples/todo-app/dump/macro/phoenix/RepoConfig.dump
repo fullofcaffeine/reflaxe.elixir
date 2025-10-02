@@ -1,0 +1,1 @@
+typedef phoenix.RepoConfig = { username : String, timeout : Int, port : Int, pool_size : Int, password : String, hostname : String, database : String, adapter : String }

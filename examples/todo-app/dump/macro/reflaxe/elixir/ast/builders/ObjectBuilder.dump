@@ -1,0 +1,560 @@
+@:nullSafety(Off)
+class reflaxe.elixir.ast.builders.ObjectBuilder {
+
+	public static function build(fields:Array<{ name : String, expr : haxe.macro.TypedExpr }>, context:reflaxe.elixir.CompilationContext) {
+		if (reflaxe.elixir.ast.builders.ObjectBuilder.isTuplePattern(fields)) {
+			return reflaxe.elixir.ast.builders.ObjectBuilder.buildTuple(fields, context);
+		};
+		if (reflaxe.elixir.ast.builders.ObjectBuilder.isSupervisorOptions(fields)) {
+			return reflaxe.elixir.ast.builders.ObjectBuilder.buildSupervisorOptions(fields, context);
+		};
+		if (reflaxe.elixir.ast.builders.ObjectBuilder.isChildSpec(fields)) {
+			return reflaxe.elixir.ast.builders.ObjectBuilder.buildChildSpec(fields, context);
+		};
+		return reflaxe.elixir.ast.builders.ObjectBuilder.buildRegularMap(fields, context);
+	}
+
+	static function isTuplePattern(fields:Array<{ name : String, expr : haxe.macro.TypedExpr }>) {
+		if (fields.length == 0) {
+			return false;
+		};
+		{
+			var ` = 0;
+			while (` < fields.length) {
+				var field = fields[`];
+				++ `;
+				if (! new EReg("^_\\d+$", "").match(field.name)) {
+					return false;
+				};
+			};
+		};
+		return true;
+	}
+
+	static function buildTuple(fields:Array<{ name : String, expr : haxe.macro.TypedExpr }>, context:reflaxe.elixir.CompilationContext) {
+		var sortedFields = fields.copy();
+		sortedFields.sort(function(a:{ name : String, expr : haxe.macro.TypedExpr }, b:{ name : String, expr : haxe.macro.TypedExpr }) {
+			var aIndex = Std.parseInt(a.name.substr(1, null));
+			var bIndex = Std.parseInt(b.name.substr(1, null));
+			return aIndex - bIndex;
+		});
+		var tupleElements = [];
+		{
+			var ` = 0;
+			while (` < sortedFields.length) {
+				var field = sortedFields[`];
+				++ `;
+				tupleElements.push(context.compiler.compileExpressionImpl(field.expr, false));
+			};
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.ETuple(tupleElements);
+	}
+
+	static function isSupervisorOptions(fields:Array<{ name : String, expr : haxe.macro.TypedExpr }>) {
+		var hasStrategy = false;
+		var hasMaxRestarts = false;
+		var hasMaxSeconds = false;
+		{
+			var ` = 0;
+			while (` < fields.length) {
+				var field = fields[`];
+				++ `;
+				@:ast(switch (field.name) {
+	case "strategy":
+		hasStrategy = true;	
+	case "max_restarts":
+		hasMaxRestarts = true;	
+	case "max_seconds":
+		hasMaxSeconds = true;	
+	case _:
+}) {
+					var ` = field.name;
+					switch (`) {
+						case "max_restarts": {
+							{
+								hasMaxRestarts = true;
+							};
+						};
+						case "max_seconds": {
+							{
+								hasMaxSeconds = true;
+							};
+						};
+						case "strategy": {
+							{
+								hasStrategy = true;
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		return hasStrategy && (hasMaxRestarts || hasMaxSeconds);
+	}
+
+	static function buildSupervisorOptions(fields:Array<{ name : String, expr : haxe.macro.TypedExpr }>, context:reflaxe.elixir.CompilationContext) {
+		var keywordPairs = [];
+		{
+			var ` = 0;
+			while (` < fields.length) {
+				var field = fields[`];
+				++ `;
+				var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+				var fieldValue = context.compiler.compileExpressionImpl(field.expr, false);
+				keywordPairs.push({key : atomName, value : fieldValue});
+			};
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.EKeywordList(keywordPairs);
+	}
+
+	static function isChildSpec(fields:Array<{ name : String, expr : haxe.macro.TypedExpr }>) {
+		var hasId = false;
+		var hasStart = false;
+		{
+			var ` = 0;
+			while (` < fields.length) {
+				var field = fields[`];
+				++ `;
+				@:ast(switch (field.name) {
+	case "id":
+		hasId = true;	
+	case "start":
+		hasStart = true;	
+	case _:
+}) {
+					var ` = field.name;
+					switch (`) {
+						case "id": {
+							{
+								hasId = true;
+							};
+						};
+						case "start": {
+							{
+								hasStart = true;
+							};
+						};
+						default: {}
+					};
+				};
+			};
+		};
+		return hasId && hasStart;
+	}
+
+	static function buildChildSpec(fields:Array<{ name : String, expr : haxe.macro.TypedExpr }>, context:reflaxe.elixir.CompilationContext) {
+		var pairs = [];
+		{
+			var ` = 0;
+			while (` < fields.length) {
+				var field = fields[`];
+				++ `;
+				var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+				var key = {
+					var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+						var this;
+						this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+						cast this;
+					});
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				};
+				var fieldValue = if (field.name == "start") {
+					reflaxe.elixir.ast.builders.ObjectBuilder.handleChildSpecStartField(field.expr, context);
+				} else {
+					if (field.name == "type" || field.name == "restart" || field.name == "shutdown") {
+						reflaxe.elixir.ast.builders.ObjectBuilder.handleAtomField(field.expr, context);
+					} else {
+						context.compiler.compileExpressionImpl(field.expr, false);
+					};
+				};
+				pairs.push({key : key, value : fieldValue});
+			};
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.EMap(pairs);
+	}
+
+	static function handleChildSpecStartField(expr:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		@:ast(switch (expr.expr) {
+	case TObjectDecl(startFields):
+		var moduleField = null;
+		var funcField = null;
+		var argsField = null;
+		for (sf  in  startFields) {
+			switch (sf.name) {
+				case "module":
+					moduleField = sf;				
+				case "func":
+					funcField = sf;				
+				case "args":
+					argsField = sf;				
+				case _:
+			};
+		};
+		if (moduleField != null && funcField != null && argsField != null) {
+			var moduleAst = switch (moduleField.expr.expr) {
+				case TConst(TString(s)):
+					makeAST(EVar(s));				
+				case _:
+					context.compiler.compileExpressionImpl(moduleField.expr, false);				
+			};
+			var funcAst = switch (funcField.expr.expr) {
+				case TConst(TString(s)):
+					makeAST(EAtom(s));				
+				case _:
+					context.compiler.compileExpressionImpl(funcField.expr, false);				
+			};
+			var argsAst = context.compiler.compileExpressionImpl(argsField.expr, false);
+			return makeAST(ETuple([moduleAst, funcAst, argsAst]));
+		} else {
+			return context.compiler.compileExpressionImpl(expr, false);
+		};	
+	case _:
+		return context.compiler.compileExpressionImpl(expr, false);	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 7) {
+				var ` = `[0];
+				{
+					var startFields = `;
+					{
+						var moduleField = null;
+						var funcField = null;
+						var argsField = null;
+						{
+							var ` = 0;
+							while (` < startFields.length) {
+								var sf = startFields[`];
+								++ `;
+								@:ast(switch (sf.name) {
+	case "module":
+		moduleField = sf;	
+	case "func":
+		funcField = sf;	
+	case "args":
+		argsField = sf;	
+	case _:
+}) {
+									var ` = sf.name;
+									switch (`) {
+										case "args": {
+											{
+												argsField = sf;
+											};
+										};
+										case "func": {
+											{
+												funcField = sf;
+											};
+										};
+										case "module": {
+											{
+												moduleField = sf;
+											};
+										};
+										default: {}
+									};
+								};
+							};
+						};
+						if (moduleField != null && funcField != null && argsField != null) {
+							var moduleAst = @:ast(switch (moduleField.expr.expr) {
+	case TConst(TString(s)):
+		makeAST(EVar(s));	
+	case _:
+		context.compiler.compileExpressionImpl(moduleField.expr, false);	
+}) {
+								var ` = moduleField.expr.expr;
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									if (enumIndex ` == 2) {
+										var ` = `[0];
+										{
+											var s = `;
+											{
+												{
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EVar(s), metadata : {}, pos : pos};
+												};
+											};
+										};
+									} else {
+										context.compiler.compileExpressionImpl(moduleField.expr, false);
+									};
+								} else {
+									context.compiler.compileExpressionImpl(moduleField.expr, false);
+								};
+							};
+							var funcAst = @:ast(switch (funcField.expr.expr) {
+	case TConst(TString(s)):
+		makeAST(EAtom(s));	
+	case _:
+		context.compiler.compileExpressionImpl(funcField.expr, false);	
+}) {
+								var ` = funcField.expr.expr;
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									if (enumIndex ` == 2) {
+										var ` = `[0];
+										{
+											var s = `;
+											{
+												{
+													var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+														var this;
+														this = reflaxe.elixir.ast.NameUtils.toSnakeCase(s);
+														cast this;
+													});
+													var pos = null;
+													{def : def, metadata : {}, pos : pos};
+												};
+											};
+										};
+									} else {
+										context.compiler.compileExpressionImpl(funcField.expr, false);
+									};
+								} else {
+									context.compiler.compileExpressionImpl(funcField.expr, false);
+								};
+							};
+							var argsAst = context.compiler.compileExpressionImpl(argsField.expr, false);
+							return {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([moduleAst, funcAst, argsAst]), metadata : {}, pos : pos};
+							};
+						} else {
+							return context.compiler.compileExpressionImpl(expr, false);
+						};
+					};
+				};
+			} else {
+				return context.compiler.compileExpressionImpl(expr, false);
+			};
+		};
+	}
+
+	static function handleAtomField(expr:haxe.macro.TypedExpr, context:reflaxe.elixir.CompilationContext) {
+		@:ast(switch (expr.expr) {
+	case TConst(TString(s)):
+		return makeAST(EAtom(s));	
+	case _:
+		return context.compiler.compileExpressionImpl(expr, false);	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				if (enumIndex ` == 2) {
+					var ` = `[0];
+					{
+						var s = `;
+						{
+							return {
+								var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+									var this;
+									this = reflaxe.elixir.ast.NameUtils.toSnakeCase(s);
+									cast this;
+								});
+								var pos = null;
+								{def : def, metadata : {}, pos : pos};
+							};
+						};
+					};
+				} else {
+					return context.compiler.compileExpressionImpl(expr, false);
+				};
+			} else {
+				return context.compiler.compileExpressionImpl(expr, false);
+			};
+		};
+	}
+
+	static function buildRegularMap(fields:Array<{ name : String, expr : haxe.macro.TypedExpr }>, context:reflaxe.elixir.CompilationContext) {
+		var pairs = [];
+		{
+			var ` = 0;
+			while (` < fields.length) {
+				var field = fields[`];
+				++ `;
+				var atomName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+				var key = {
+					var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+						var this;
+						this = reflaxe.elixir.ast.NameUtils.toSnakeCase(atomName);
+						cast this;
+					});
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				};
+				var fieldValue = reflaxe.elixir.ast.builders.ObjectBuilder.handleFieldValue(field, context);
+				pairs.push({key : key, value : fieldValue});
+			};
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.EMap(pairs);
+	}
+
+	static function handleFieldValue(field:{ name : String, expr : haxe.macro.TypedExpr }, context:reflaxe.elixir.CompilationContext) {
+		@:ast(switch (field.expr.expr) {
+	case TBlock([{ expr : TVar(tmpVar, init) }, { expr : TBinop(OpNullCoal, { expr : TLocal(v) }, defaultExpr) }]) if (v.id == tmpVar.id && init != null):
+		var initAst = context.compiler.compileExpressionImpl(init, false);
+		var defaultAst = context.compiler.compileExpressionImpl(defaultExpr, false);
+		var tmpVarName = VariableAnalyzer.toElixirVarName(tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name);
+		var ifExpr = makeAST(EIf(makeAST(EBinary(EBinaryOp.NotEqual, makeAST(EMatch(PVar(tmpVarName), initAst)), makeAST(ENil))), makeAST(EVar(tmpVarName)), defaultAst));
+		if (ifExpr.metadata == null) ifExpr.metadata = { };
+		ifExpr.metadata.keepInlineInAssignment = true;
+		return ifExpr;	
+	case TLocal(v):
+		var idKey = Std.string(v.id);
+		trace("[ObjectBuilder DEBUG] Field \"${field.name}\" TLocal: name=\"${v.name}\" id=${v.id}");
+		trace("[ObjectBuilder DEBUG] Checking tempVarRenameMap for idKey \"$idKey\"");
+		trace("[ObjectBuilder DEBUG] tempVarRenameMap exists: ${context.tempVarRenameMap != null}");
+		if (context.tempVarRenameMap != null) {
+			trace("[ObjectBuilder DEBUG] tempVarRenameMap has ${Lambda.count(context.tempVarRenameMap)} entries");
+			trace("[ObjectBuilder DEBUG] idKey exists in map: ${context.tempVarRenameMap.exists(idKey)}");
+			trace("[ObjectBuilder DEBUG] name exists in map: ${context.tempVarRenameMap.exists(v.name)}");
+		};
+		if (context.tempVarRenameMap.exists(idKey)) {
+			var mappedName = context.tempVarRenameMap.get(idKey);
+			trace("[ObjectBuilder DEBUG] Found ID mapping: \"$idKey\" -> \"$mappedName\"");
+			return makeAST(EVar(mappedName));
+		} else {
+			trace("[ObjectBuilder DEBUG] No ID mapping found, falling back to compileExpressionImpl");
+			return context.compiler.compileExpressionImpl(field.expr, false);
+		};	
+	case _:
+		return context.compiler.compileExpressionImpl(field.expr, false);	
+}) {
+			var ` = field.expr.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							var idKey = Std.string(v.id);
+							haxe.Log.trace("[ObjectBuilder DEBUG] Field \"" + field.name + "\" TLocal: name=\"" + v.name + "\" id=" + v.id, {fileName : "../../src/reflaxe/elixir/ast/builders/ObjectBuilder.hx", lineNumber : 389, className : "reflaxe.elixir.ast.builders.ObjectBuilder", methodName : "handleFieldValue"});
+							haxe.Log.trace("[ObjectBuilder DEBUG] Checking tempVarRenameMap for idKey \"" + idKey + "\"", {fileName : "../../src/reflaxe/elixir/ast/builders/ObjectBuilder.hx", lineNumber : 390, className : "reflaxe.elixir.ast.builders.ObjectBuilder", methodName : "handleFieldValue"});
+							haxe.Log.trace("[ObjectBuilder DEBUG] tempVarRenameMap exists: " + Std.string(context.tempVarRenameMap != null), {fileName : "../../src/reflaxe/elixir/ast/builders/ObjectBuilder.hx", lineNumber : 391, className : "reflaxe.elixir.ast.builders.ObjectBuilder", methodName : "handleFieldValue"});
+							if (context.tempVarRenameMap != null) {
+								haxe.Log.trace("[ObjectBuilder DEBUG] tempVarRenameMap has " + Lambda.count(cast context.tempVarRenameMap, null) + " entries", {fileName : "../../src/reflaxe/elixir/ast/builders/ObjectBuilder.hx", lineNumber : 393, className : "reflaxe.elixir.ast.builders.ObjectBuilder", methodName : "handleFieldValue"});
+								haxe.Log.trace("[ObjectBuilder DEBUG] idKey exists in map: " + Std.string({
+									var this = context.tempVarRenameMap;
+									cast this.exists(idKey);
+								}), {fileName : "../../src/reflaxe/elixir/ast/builders/ObjectBuilder.hx", lineNumber : 394, className : "reflaxe.elixir.ast.builders.ObjectBuilder", methodName : "handleFieldValue"});
+								haxe.Log.trace("[ObjectBuilder DEBUG] name exists in map: " + Std.string({
+									var this = context.tempVarRenameMap;
+									var key = v.name;
+									cast this.exists(key);
+								}), {fileName : "../../src/reflaxe/elixir/ast/builders/ObjectBuilder.hx", lineNumber : 395, className : "reflaxe.elixir.ast.builders.ObjectBuilder", methodName : "handleFieldValue"});
+							};
+							if ({
+								var this = context.tempVarRenameMap;
+								cast this.exists(idKey);
+							}) {
+								var mappedName = {
+									var this = context.tempVarRenameMap;
+									cast this.get(idKey);
+								};
+								haxe.Log.trace("[ObjectBuilder DEBUG] Found ID mapping: \"" + idKey + "\" -> \"" + mappedName + "\"", {fileName : "../../src/reflaxe/elixir/ast/builders/ObjectBuilder.hx", lineNumber : 401, className : "reflaxe.elixir.ast.builders.ObjectBuilder", methodName : "handleFieldValue"});
+								return {
+									var pos = null;
+									{def : reflaxe.elixir.ast.ElixirASTDef.EVar(mappedName), metadata : {}, pos : pos};
+								};
+							} else {
+								haxe.Log.trace("[ObjectBuilder DEBUG] No ID mapping found, falling back to compileExpressionImpl", {fileName : "../../src/reflaxe/elixir/ast/builders/ObjectBuilder.hx", lineNumber : 407, className : "reflaxe.elixir.ast.builders.ObjectBuilder", methodName : "handleFieldValue"});
+								return context.compiler.compileExpressionImpl(field.expr, false);
+							};
+						};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					if (`.length == 2) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ` = `.expr;
+							var ` = `.pos;
+							var ` = `.t;
+							if (enumIndex ` == 13) {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 3) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										if (enumIndex ` == 24) {
+											{
+												var ` = `.expr;
+												var ` = `.pos;
+												var ` = `.t;
+												if (enumIndex ` == 1) {
+													var ` = `[0];
+													{
+														var v = `;
+														var defaultExpr = `;
+														var init = `;
+														var tmpVar = `;
+														if (v.id == tmpVar.id && init != null) {
+															var initAst = context.compiler.compileExpressionImpl(init, false);
+															var defaultAst = context.compiler.compileExpressionImpl(defaultExpr, false);
+															var tmpVarName = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(if (tmpVar.name.charAt(0) == "_") {
+																tmpVar.name.substr(1, null);
+															} else {
+																tmpVar.name;
+															}, null);
+															var ifExpr = {
+																var pos = null;
+																{def : reflaxe.elixir.ast.ElixirASTDef.EIf({
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.NotEqual, {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.EMatch(reflaxe.elixir.ast.EPattern.PVar(tmpVarName), initAst), metadata : {}, pos : pos};
+																	}, {
+																		var pos = null;
+																		{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+																	}), metadata : {}, pos : pos};
+																}, {
+																	var pos = null;
+																	{def : reflaxe.elixir.ast.ElixirASTDef.EVar(tmpVarName), metadata : {}, pos : pos};
+																}, defaultAst), metadata : {}, pos : pos};
+															};
+															if (ifExpr.metadata == null) {
+																ifExpr.metadata = {};
+															};
+															ifExpr.metadata.keepInlineInAssignment = true;
+															return ifExpr;
+														} else {
+															return context.compiler.compileExpressionImpl(field.expr, false);
+														};
+													};
+												} else {
+													return context.compiler.compileExpressionImpl(field.expr, false);
+												};
+											};
+										} else {
+											return context.compiler.compileExpressionImpl(field.expr, false);
+										};
+									} else {
+										return context.compiler.compileExpressionImpl(field.expr, false);
+									};
+								};
+							} else {
+								return context.compiler.compileExpressionImpl(field.expr, false);
+							};
+						};
+					} else {
+						return context.compiler.compileExpressionImpl(field.expr, false);
+					};
+				};
+				default: {
+					return context.compiler.compileExpressionImpl(field.expr, false);
+				}
+			};
+		};
+	}
+}

@@ -1,0 +1,8 @@
+@:flatEnum
+enum reflaxe.elixir.ast.context.CompilationPhase {
+	NotStarted;
+	Building;
+	Transforming;
+	Printing;
+	Completed;
+}

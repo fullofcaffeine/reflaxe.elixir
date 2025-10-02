@@ -1,0 +1,2 @@
+@:used @:forward
+abstract phoenix.LiveSocket<T> from Phoenix.LiveView.Socket<phoenix.LiveSocket.T> to Phoenix.LiveView.Socket<phoenix.LiveSocket.T> {}

@@ -1,0 +1,7 @@
+@:directlyUsed @:used @:flatEnum
+enum server.types.AlertLevel {
+	Info;
+	Warning;
+	Error;
+	Critical;
+}

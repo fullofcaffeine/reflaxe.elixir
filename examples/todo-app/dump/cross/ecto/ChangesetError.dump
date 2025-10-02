@@ -1,0 +1,1 @@
+typedef ecto.ChangesetError = { ?validation : Null<String>, message : String, field : String, ?constraint : Null<String> }

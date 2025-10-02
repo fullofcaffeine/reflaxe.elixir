@@ -1,0 +1,12 @@
+enum phoenix.ComparisonOperator {
+	Equal;
+	NotEqual;
+	GreaterThan;
+	GreaterThanOrEqual;
+	LessThan;
+	LessThanOrEqual;
+	In(values:Array<phoenix.QueryValue>);
+	Like(pattern:String);
+	IsNull;
+	IsNotNull;
+}

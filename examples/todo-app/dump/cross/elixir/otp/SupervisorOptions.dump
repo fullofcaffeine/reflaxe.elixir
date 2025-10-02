@@ -1,0 +1,1 @@
+typedef elixir.otp.SupervisorOptions = { ?strategy : Null<elixir.otp.SupervisorStrategy>, ?max_seconds : Null<Int>, ?max_restarts : Null<Int> }

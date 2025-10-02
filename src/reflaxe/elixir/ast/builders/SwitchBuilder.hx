@@ -72,6 +72,10 @@ class SwitchBuilder {
      */
     public static function build(e: TypedExpr, cases: Array<{values:Array<TypedExpr>, expr:TypedExpr}>, edef: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
 
+        // DEBUG: Log ALL switch compilations
+        trace('[SwitchBuilder START] Compiling switch at ${e.pos}');
+        trace('[SwitchBuilder START] Switch target: ${Type.enumConstructor(e.expr)}');
+
         // CRITICAL: Detect TEnumIndex optimization and recover enum type
         // This is the KEY to eliminating integer-based switch cases!
         var enumType: Null<EnumType> = null;
@@ -116,18 +120,35 @@ class SwitchBuilder {
 
         // Track switch target for infrastructure variable management
         var targetVarName = extractTargetVarName(actualSwitchExpr);
+
+        // DEBUG: Output switch target info
+        trace('[SwitchBuilder DEBUG] Switch target expression type: ${Type.enumConstructor(actualSwitchExpr.expr)}');
+        if (targetVarName != null) {
+            trace('[SwitchBuilder DEBUG] Extracted variable name: ${targetVarName}');
+            trace('[SwitchBuilder DEBUG] Is infrastructure var: ${isInfrastructureVar(targetVarName)}');
+        }
+
         if (targetVarName != null && isInfrastructureVar(targetVarName)) {
+            trace('[SwitchBuilder DEBUG] Infrastructure variable detected but not handled!');
         }
 
         // Build the switch target expression (use actual enum, not index)
         var targetAST = if (context.compiler != null) {
             var result = context.compiler.compileExpressionImpl(actualSwitchExpr, false);
+            trace('[SwitchBuilder DEBUG] Compiled target AST: ${Type.enumConstructor(result.def)}');
+            // DEBUG: Show exact variable name if it's EVar
+            switch(result.def) {
+                case EVar(name):
+                    trace('[SwitchBuilder DEBUG] EVar variable name: "${name}"');
+                default:
+            }
             result;
         } else {
             return null;  // Can't proceed without compiler
         }
 
         if (targetAST == null) {
+            trace('[SwitchBuilder ERROR] Target AST compilation returned null!');
             return null;
         }
 
@@ -214,15 +235,29 @@ class SwitchBuilder {
         
         // Build case body
         var body: ElixirAST = if (switchCase.expr != null && context.compiler != null) {
+            #if debug_switch_compilation
+            trace('[SwitchBuilder] Compiling case body');
+            trace('[SwitchBuilder]   Expr type: ${Type.enumConstructor(switchCase.expr.expr)}');
+            #end
+
             var result = context.compiler.compileExpressionImpl(switchCase.expr, false);
+
             if (result != null) {
+                #if debug_switch_compilation
+                trace('[SwitchBuilder]   ✓ Success: Generated AST');
+                #end
                 result;  // Already an ElixirAST
             } else {
-                // Compilation failed - use nil
-                makeAST(ENil);
+                #if debug_switch_compilation
+                trace('[SwitchBuilder]   ❌ ERROR: compileExpressionImpl returned NULL!');
+                trace('[SwitchBuilder]   Position: ${switchCase.expr.pos}');
+                #end
+
+                // CRITICAL: Don't silently accept failure - throw error to expose root cause
+                Context.error('Switch case body compilation failed - compileExpressionImpl returned null', switchCase.expr.pos);
             }
         } else {
-            // Empty case body - use nil
+            // Empty case body - use nil (this is valid)
             makeAST(ENil);
         }
         

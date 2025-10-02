@@ -1,0 +1,6 @@
+@:flatEnum
+enum reflaxe.elixir.ast.transformers.BindingContext {
+	Expr;
+	Pattern;
+	Pinned;
+}

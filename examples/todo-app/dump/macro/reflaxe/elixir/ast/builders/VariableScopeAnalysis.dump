@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.builders.VariableScopeAnalysis = { loopLocalVariables : Map<String, haxe.macro.TVar>, freeVariables : Map<String, haxe.macro.TVar>, assignments : Array<{ target : String, source : haxe.macro.TypedExpr }>, accumulatorVariables : Map<String, { varName : String, isStringConcat : Bool, isListAppend : Bool, initialValue : reflaxe.elixir.ast.ElixirAST }> }

@@ -1,0 +1,6 @@
+enum reflaxe.elixir.ast.builders.LoopTransform {
+	EnumEachRange(varName:String, start:haxe.macro.TypedExpr, end:haxe.macro.TypedExpr, body:haxe.macro.TypedExpr);
+	EnumEachCollection(varName:String, collection:haxe.macro.TypedExpr, body:haxe.macro.TypedExpr);
+	Comprehension(targetVar:String, v:haxe.macro.TVar, iterator:haxe.macro.TypedExpr, filter:Null<haxe.macro.TypedExpr>, body:haxe.macro.TypedExpr);
+	StandardFor(v:haxe.macro.TVar, iterator:haxe.macro.TypedExpr, body:haxe.macro.TypedExpr);
+}

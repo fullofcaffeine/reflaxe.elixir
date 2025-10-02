@@ -1,0 +1,6 @@
+@:directlyUsed @:used @:flatEnum
+enum server.pubsub.TodoPubSubTopic {
+	TodoUpdates;
+	UserActivity;
+	SystemNotifications;
+}

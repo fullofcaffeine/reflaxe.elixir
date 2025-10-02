@@ -1,0 +1,4 @@
+interface reflaxe.elixir.behaviors.IBehaviorTransformer {
+
+	function transformMethodCall(className:String, methodName:String, args:Array<reflaxe.elixir.ast.ElixirAST>, isStatic:Bool):Null<reflaxe.elixir.ast.ElixirAST>;
+}

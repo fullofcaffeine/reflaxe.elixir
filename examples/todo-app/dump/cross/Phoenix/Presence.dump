@@ -1,0 +1,27 @@
+@:realPath("phoenix.Presence") @:native("Phoenix.Presence")
+extern class Phoenix.Presence {
+
+	@:realPath("track") @:native("track")
+	static function track(socket:Dynamic, key:phoenix.PresenceKey, meta:phoenix.PresenceMeta):Dynamic;
+
+	@:realPath("trackPid") @:native("track")
+	static function track(pid:Dynamic, topic:phoenix.Topic, key:phoenix.PresenceKey, meta:phoenix.PresenceMeta):Dynamic;
+
+	@:realPath("untrack") @:native("untrack")
+	static function untrack(socket:Dynamic, key:phoenix.PresenceKey):Dynamic;
+
+	@:realPath("untrackPid") @:native("untrack")
+	static function untrack(pid:Dynamic, topic:phoenix.Topic, key:phoenix.PresenceKey):Dynamic;
+
+	@:realPath("list") @:native("list")
+	static function list(socketOrTopic:Dynamic):phoenix.PresenceList;
+
+	@:realPath("update") @:native("update")
+	static function update(socket:Dynamic, key:phoenix.PresenceKey, meta:phoenix.PresenceMeta):Dynamic;
+
+	@:realPath("updatePid") @:native("update")
+	static function update(pid:Dynamic, topic:phoenix.Topic, key:phoenix.PresenceKey, meta:phoenix.PresenceMeta):Dynamic;
+
+	@:realPath("getByKey") @:native("get_by_key")
+	static function get_by_key<TMeta>(socketOrTopic:Dynamic, key:phoenix.PresenceKey):Array<phoenix.PresenceEntry<getByKey.TMeta>>;
+}

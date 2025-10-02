@@ -1,0 +1,365 @@
+class reflaxe.elixir.ast.LoopHelpers {
+
+	public static function processLoopIntent(intent:reflaxe.elixir.ast.intent.LoopIntent, metadata:reflaxe.elixir.ast.intent.LoopIntentMetadata, context:reflaxe.elixir.CompilationContext) {
+		return reflaxe.elixir.ast.optimizers.LoopOptimizer.processLoopIntent(intent, metadata, context);
+	}
+
+	public static function buildMapIteration(pattern:reflaxe.elixir.ast.optimizers.MapIterationPattern, context:reflaxe.elixir.CompilationContext) {
+		var buildFromTypedExpr = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr;
+		var makeAST = reflaxe.elixir.ast.ElixirASTHelpers.make;
+		var mapAst = buildFromTypedExpr(pattern.mapExpr, context);
+		var bodyAst = buildFromTypedExpr(pattern.body, context);
+		var isCollecting = reflaxe.elixir.ast.LoopHelpers.analyzesAsExpression(pattern.body);
+		var tuplePattern = reflaxe.elixir.ast.EPattern.PTuple([reflaxe.elixir.ast.EPattern.PVar(reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(pattern.keyVar, null)), reflaxe.elixir.ast.EPattern.PVar(reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(pattern.valueVar, null))]);
+		var fnClause = {args : [tuplePattern], body : bodyAst};
+		var enumFunction = if (isCollecting) {
+			"map";
+		} else {
+			"each";
+		};
+		return makeAST(reflaxe.elixir.ast.ElixirASTDef.ECall(makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), null), enumFunction, [mapAst, makeAST(reflaxe.elixir.ast.ElixirASTDef.EFn([fnClause]), null)]), null);
+	}
+
+	public static function analyzesAsExpression(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TBlock(stmts):
+		if (stmts.length > 0) {
+			analyzesAsExpression(stmts[stmts.length - 1]);
+		} else {
+			false;
+		};	
+	case TCall(_, _):
+		true;	
+	case TArrayDecl(_):
+		true;	
+	case TObjectDecl(_):
+		true;	
+	case TConst(_):
+		true;	
+	case TLocal(_):
+		true;	
+	case TBinop(_, _, _):
+		true;	
+	case TUnop(_, _, _):
+		true;	
+	case TReturn(_):
+		false;	
+	case TFor(_, _) | TWhile(_, _, _):
+		false;	
+	default:
+		false;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 1: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 7: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					{
+						true;
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var stmts = `;
+						{
+							if (stmts.length > 0) {
+								reflaxe.elixir.ast.LoopHelpers.analyzesAsExpression(stmts[stmts.length - 1]);
+							} else {
+								false;
+							};
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						false;
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						false;
+					};
+				};
+				case 20: {
+					var ` = `[0];
+					{
+						false;
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+
+	public static function isSimpleLoopBody(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TBlock([single]):
+		isSimpleLoopBody(single);	
+	case TCall(_, _):
+		true;	
+	case TVar(_, _):
+		false;	
+	case TIf(_, _, _):
+		false;	
+	case TSwitch(_, _, _):
+		false;	
+	case TFor(_, _) | TWhile(_, _, _):
+		false;	
+	default:
+		true;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						true;
+					};
+				};
+				case 13: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						false;
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					if (`.length == 1) {
+						var ` = `[0];
+						{
+							var single = `;
+							{
+								reflaxe.elixir.ast.LoopHelpers.isSimpleLoopBody(single);
+							};
+						};
+					} else {
+						true;
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						false;
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						false;
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						false;
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						false;
+					};
+				};
+				default: {
+					true;
+				}
+			};
+		};
+	}
+
+	public static function extractLoopVariable(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TFor(v, _):
+		v;	
+	case TWhile(_, _, _):
+		null;	
+	case TBlock([single]):
+		extractLoopVariable(single);	
+	default:
+		null;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 14: {
+					var ` = `[0];
+					if (`.length == 1) {
+						var ` = `[0];
+						{
+							var single = `;
+							{
+								reflaxe.elixir.ast.LoopHelpers.extractLoopVariable(single);
+							};
+						};
+					} else {
+						null;
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var v = `;
+						{
+							v;
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						null;
+					};
+				};
+				default: {
+					null;
+				}
+			};
+		};
+	}
+
+	public static function containsLoop(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TFor(_, _) | TWhile(_, _, _):
+		true;	
+	case TBlock(exprs):
+		Lambda.exists(exprs, containsLoop);	
+	case TIf(_, thenExpr, elseExpr):
+		containsLoop(thenExpr) || (elseExpr != null && containsLoop(elseExpr));	
+	case TSwitch(_, cases, def):
+		Lambda.exists(cases, function(c) ->  @:implicitReturn return containsLoop(c.expr)) || (def != null && containsLoop(def));	
+	case TTry(e, catches):
+		containsLoop(e) || Lambda.exists(catches, function(c) ->  @:implicitReturn return containsLoop(c.expr));	
+	default:
+		false;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							Lambda.exists(exprs, reflaxe.elixir.ast.LoopHelpers.containsLoop);
+						};
+					};
+				};
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var thenExpr = `;
+						var elseExpr = `;
+						{
+							reflaxe.elixir.ast.LoopHelpers.containsLoop(thenExpr) || (elseExpr != null && reflaxe.elixir.ast.LoopHelpers.containsLoop(elseExpr));
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						true;
+					};
+				};
+				case 18: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cases = `;
+						var def = `;
+						{
+							Lambda.exists(cases, function(c:{ values : Array<haxe.macro.TypedExpr>, expr : haxe.macro.TypedExpr }) return reflaxe.elixir.ast.LoopHelpers.containsLoop(c.expr)) || (def != null && reflaxe.elixir.ast.LoopHelpers.containsLoop(def));
+						};
+					};
+				};
+				case 19: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						var catches = `;
+						{
+							reflaxe.elixir.ast.LoopHelpers.containsLoop(e) || Lambda.exists(catches, function(c:{ v : haxe.macro.TVar, expr : haxe.macro.TypedExpr }) return reflaxe.elixir.ast.LoopHelpers.containsLoop(c.expr));
+						};
+					};
+				};
+				default: {
+					false;
+				}
+			};
+		};
+	}
+}

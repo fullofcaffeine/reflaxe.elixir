@@ -1,0 +1,19 @@
+@:realPath("phoenix.EctoSchema") @:native("Ecto.Schema")
+extern class Ecto.Schema {
+
+	static inline function field(name:String, type:phoenix.FieldType, options:Null<phoenix.FieldOptions>):phoenix.SchemaField;
+
+	static inline function belongs_to<T>(name:String, schema:Class<belongs_to.T>, options:Null<phoenix.AssociationOptions>):phoenix.SchemaField;
+
+	static inline function has_one<T>(name:String, schema:Class<has_one.T>, options:Null<phoenix.AssociationOptions>):phoenix.SchemaField;
+
+	static inline function has_many<T>(name:String, schema:Class<has_many.T>, options:Null<phoenix.AssociationOptions>):phoenix.SchemaField;
+
+	static inline function many_to_many<T>(name:String, schema:Class<many_to_many.T>, options:Null<phoenix.ManyToManyOptions>):phoenix.SchemaField;
+
+	static inline function embeds_one<T>(name:String, schema:Class<embeds_one.T>, options:Null<phoenix.EmbedOptions>):phoenix.SchemaField;
+
+	static inline function embeds_many<T>(name:String, schema:Class<embeds_many.T>, options:Null<phoenix.EmbedOptions>):phoenix.SchemaField;
+
+	static inline function timestamps(options:Null<phoenix.TimestampsOptions>):Array<phoenix.SchemaField>;
+}

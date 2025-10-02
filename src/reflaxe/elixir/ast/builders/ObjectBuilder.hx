@@ -385,15 +385,26 @@ class ObjectBuilder {
             case TLocal(v):
                 // Check if the variable has been renamed
                 var idKey = Std.string(v.id);
-                
+
+                trace('[ObjectBuilder DEBUG] Field "${field.name}" TLocal: name="${v.name}" id=${v.id}');
+                trace('[ObjectBuilder DEBUG] Checking tempVarRenameMap for idKey "$idKey"');
+                trace('[ObjectBuilder DEBUG] tempVarRenameMap exists: ${context.tempVarRenameMap != null}');
+                if (context.tempVarRenameMap != null) {
+                    trace('[ObjectBuilder DEBUG] tempVarRenameMap has ${Lambda.count(context.tempVarRenameMap)} entries');
+                    trace('[ObjectBuilder DEBUG] idKey exists in map: ${context.tempVarRenameMap.exists(idKey)}');
+                    trace('[ObjectBuilder DEBUG] name exists in map: ${context.tempVarRenameMap.exists(v.name)}');
+                }
+
                 // Check tempVarRenameMap for renamed variables
                 if (context.tempVarRenameMap.exists(idKey)) {
                     var mappedName = context.tempVarRenameMap.get(idKey);
+                    trace('[ObjectBuilder DEBUG] Found ID mapping: "$idKey" -> "$mappedName"');
                     #if debug_variable_renaming
                     trace('[ObjectBuilder] Field "${field.name}" using tempVarRenameMap: "${v.name}" -> "${mappedName}"');
                     #end
                     return makeAST(EVar(mappedName));
                 } else {
+                    trace('[ObjectBuilder DEBUG] No ID mapping found, falling back to compileExpressionImpl');
                     // No mapping, compile normally
                     return context.compiler.compileExpressionImpl(field.expr, false);
                 }

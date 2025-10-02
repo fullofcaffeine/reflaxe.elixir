@@ -1,0 +1,16 @@
+@:keep @:used @:application @:appName("TodoApp")
+class TodoApp {
+
+	@:keep
+	public static function start(type:elixir.otp.ApplicationStartType, args:elixir.otp.ApplicationArgs) {
+		var children = [elixir.otp.ChildSpecFormat.ModuleRef("TodoApp.Repo"), elixir.otp.ChildSpecFormat.ModuleWithConfig("Phoenix.PubSub", [{key : "name", value : cast "TodoApp.PubSub"}]), elixir.otp.ChildSpecFormat.ModuleRef("TodoAppWeb.Telemetry"), elixir.otp.ChildSpecFormat.ModuleRef("TodoAppWeb.Endpoint")];
+		var opts = {strategy : elixir.otp.SupervisorStrategy.OneForOne, max_restarts : cast 3, max_seconds : cast 5};
+		var supervisorResult = Supervisor.start_link(children, opts);
+		return supervisorResult;
+	}
+
+	@:keep
+	public static function prep_stop(state:Dynamic) {
+		return state;
+	}
+}

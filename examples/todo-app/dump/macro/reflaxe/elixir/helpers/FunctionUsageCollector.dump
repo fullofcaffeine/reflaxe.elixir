@@ -1,0 +1,30 @@
+class reflaxe.elixir.helpers.FunctionUsageCollector {
+
+	public function new() {
+		this.declaredFunctions = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		this.calledFunctions = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		this.currentModule = "";
+	}
+
+	public var currentModule:String;
+
+	var declaredFunctions:Map<String, Bool>;
+
+	var calledFunctions:Map<String, Bool>;
+
+	public function collectCalls(expr:haxe.macro.TypedExpr) {}
+
+	public function getUnusedPrivateFunctions() {
+		return [];
+	}
+
+	public function getUnusedPrivateFunctionsWithArity() {
+		return [];
+	}
+}

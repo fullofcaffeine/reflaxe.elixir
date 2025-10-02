@@ -1,0 +1,1 @@
+typedef reflaxe.elixir.ast.LoopContext = { variableName : String, rangeMin : Int, rangeMax : Int, iteratorExpr : String, depth : Int }

@@ -1,0 +1,1 @@
+typedef server.infrastructure.TelemetryOptions = { ?reporters : Null<Array<String>>, ?name : Null<String>, ?metrics_port : Null<Int> }

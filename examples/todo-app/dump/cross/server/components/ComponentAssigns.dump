@@ -1,0 +1,1 @@
+typedef server.components.ComponentAssigns = { ?show : Null<Bool>, ?inner_content : Null<String>, ?id : Null<String>, ?className : Null<String> }

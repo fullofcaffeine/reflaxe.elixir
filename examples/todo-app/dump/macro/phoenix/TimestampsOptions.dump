@@ -1,0 +1,1 @@
+typedef phoenix.TimestampsOptions = { ?updated_at : Null<String>, ?type : Null<phoenix.FieldType>, ?inserted_at : Null<String> }

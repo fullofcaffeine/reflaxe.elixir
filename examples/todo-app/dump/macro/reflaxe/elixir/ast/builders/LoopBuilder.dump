@@ -1,0 +1,4188 @@
+class reflaxe.elixir.ast.builders.LoopBuilder {
+
+	@:value(0.7)
+	static inline var CONFIDENCE_THRESHOLD:Float = 0.7;
+
+	public static function analyzeFor(v:haxe.macro.TVar, e1:haxe.macro.TypedExpr, e2:haxe.macro.TypedExpr) {
+		var accumulation = reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(e2);
+		var hasSideEffects = reflaxe.elixir.ast.builders.LoopBuilder.hasSideEffectsOnly(e2);
+		@:ast(switch (e1.expr) {
+	case TBinop(OpInterval, startExpr, endExpr):
+		if (hasSideEffects) {
+			return EnumEachRange(v.name, startExpr, endExpr, e2);
+		} else {
+			return StandardFor(v, e1, e2);
+		};	
+	case TLocal(_) | TField(_, _):
+		if (hasSideEffects) {
+			return EnumEachCollection(v.name, e1, e2);
+		} else {
+			return StandardFor(v, e1, e2);
+		};	
+	default:
+		return StandardFor(v, e1, e2);	
+}) {
+			var ` = e1.expr;
+			switch (enumIndex `) {
+				case 1: {
+					var ` = `[0];
+					{
+						if (hasSideEffects) {
+							return reflaxe.elixir.ast.builders.LoopTransform.EnumEachCollection(v.name, e1, e2);
+						} else {
+							return reflaxe.elixir.ast.builders.LoopTransform.StandardFor(v, e1, e2);
+						};
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					if (enumIndex ` == 21) {
+						{
+							var startExpr = `;
+							var endExpr = `;
+							{
+								if (hasSideEffects) {
+									return reflaxe.elixir.ast.builders.LoopTransform.EnumEachRange(v.name, startExpr, endExpr, e2);
+								} else {
+									return reflaxe.elixir.ast.builders.LoopTransform.StandardFor(v, e1, e2);
+								};
+							};
+						};
+					} else {
+						return reflaxe.elixir.ast.builders.LoopTransform.StandardFor(v, e1, e2);
+					};
+				};
+				case 4: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						if (hasSideEffects) {
+							return reflaxe.elixir.ast.builders.LoopTransform.EnumEachCollection(v.name, e1, e2);
+						} else {
+							return reflaxe.elixir.ast.builders.LoopTransform.StandardFor(v, e1, e2);
+						};
+					};
+				};
+				default: {
+					return reflaxe.elixir.ast.builders.LoopTransform.StandardFor(v, e1, e2);
+				}
+			};
+		};
+	}
+
+	static function extractIntValue(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TConst(TInt(i)):
+		i;	
+	default:
+		0;	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 0) {
+				var ` = `[0];
+				if (enumIndex ` == 0) {
+					var ` = `[0];
+					{
+						var i = `;
+						{
+							i;
+						};
+					};
+				} else {
+					0;
+				};
+			} else {
+				0;
+			};
+		};
+	}
+
+	public static function buildFromTransform(transform:reflaxe.elixir.ast.builders.LoopTransform, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		@:ast(switch (transform) {
+	case EnumEachRange(varName, startExpr, endExpr, body):
+		var loopVar:TVar = { name : varName, id : 0, t : null, capture : false, extra : null, meta : null, isStatic : false };
+		var iterator = { expr : TBinop(OpInterval, startExpr, endExpr), pos : startExpr.pos, t : startExpr.t };
+		var analysis = analyzeVariableScopes(loopVar, iterator, body);
+		var accumulation = detectAccumulationPattern(body);
+		if (accumulation != null) {
+			return buildAccumulationLoop(varName, makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false)), body, accumulation, buildExpr, toSnakeCase);
+		};
+		var initializations = trackRequiredInitializations(body);
+		var range = makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));
+		var snakeVar = toSnakeCase(varName);
+		var bodyAst = buildExpr(body);
+		var loopContext:LoopContext = { variableName : varName, rangeMin : extractIntValue(startExpr), rangeMax : extractIntValue(endExpr) - 1, depth : 0, iteratorExpr : "${extractIntValue(startExpr)}..${extractIntValue(endExpr) - 1}" };
+		var metadata:ElixirMetadata = { loopContextStack : [loopContext], isWithinLoop : true, loopVariableName : varName };
+		if (bodyAst.metadata == null) bodyAst.metadata = { };
+		if (bodyAst.metadata.loopContextStack == null) {
+			bodyAst.metadata.loopContextStack = [loopContext];
+		} else {
+			bodyAst.metadata.loopContextStack.push(loopContext);
+		};
+		bodyAst.metadata.isWithinLoop = true;
+		var loopAst = makeAST(ERemoteCall(makeAST(EVar("Enum")), "each", [range, makeAST(EFn([{ args : [PVar(snakeVar)], body : bodyAst }]))]));
+		loopAst.metadata = metadata;
+		return wrapWithInitializations(loopAst, initializations, toSnakeCase);	
+	case EnumEachCollection(varName, collection, body):
+		var accumulation = detectAccumulationPattern(body);
+		if (accumulation != null) {
+			return buildAccumulationLoop(varName, buildExpr(collection), body, accumulation, buildExpr, toSnakeCase);
+		};
+		var initializations = trackRequiredInitializations(body);
+		var collectionAst = buildExpr(collection);
+		var snakeVar = toSnakeCase(varName);
+		var bodyAst = buildExpr(body);
+		var loopContext:LoopContext = { variableName : varName, rangeMin : 0, rangeMax : 999, depth : 0, iteratorExpr : "collection" };
+		var metadata:ElixirMetadata = { loopContextStack : [loopContext], isWithinLoop : true, loopVariableName : varName };
+		if (bodyAst.metadata == null) bodyAst.metadata = { };
+		if (bodyAst.metadata.loopContextStack == null) {
+			bodyAst.metadata.loopContextStack = [loopContext];
+		} else {
+			bodyAst.metadata.loopContextStack.push(loopContext);
+		};
+		bodyAst.metadata.isWithinLoop = true;
+		var loopAst = makeAST(ERemoteCall(makeAST(EVar("Enum")), "each", [collectionAst, makeAST(EFn([{ args : [PVar(snakeVar)], body : bodyAst }]))]));
+		loopAst.metadata = metadata;
+		return wrapWithInitializations(loopAst, initializations, toSnakeCase);	
+	case Comprehension(targetVar, v, iterator, filter, body):
+		var varName = toSnakeCase(v.name);
+		var pattern = PVar(varName);
+		var iteratorExpr = buildExpr(iterator);
+		var bodyExpr = buildExpr(body);
+		return makeAST(EFor([{ pattern : pattern, expr : iteratorExpr }], [], bodyExpr, null, false));	
+	case StandardFor(v, iterator, body):
+		var varName = toSnakeCase(v.name);
+		var pattern = PVar(varName);
+		var iteratorExpr = buildExpr(iterator);
+		var bodyExpr = buildExpr(body);
+		return makeAST(EFor([{ pattern : pattern, expr : iteratorExpr }], [], bodyExpr, null, false));	
+}) switch (@:exhaustive enumIndex transform) {
+			case 0: {
+				var ` = transform[0];
+				var ` = transform[1];
+				var ` = transform[2];
+				var ` = transform[3];
+				{
+					var varName = `;
+					var startExpr = `;
+					var endExpr = `;
+					var body = `;
+					{
+						var loopVar = {name : varName, id : 0, t : null, capture : false, extra : null, meta : null, isStatic : false};
+						var iterator = {expr : haxe.macro.TypedExprDef.TBinop(haxe.macro.Binop.OpInterval, startExpr, endExpr), pos : startExpr.pos, t : startExpr.t};
+						var analysis = reflaxe.elixir.ast.builders.LoopBuilder.analyzeVariableScopes(loopVar, iterator, body);
+						var accumulation = reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(body);
+						if (accumulation != null) {
+							return reflaxe.elixir.ast.builders.LoopBuilder.buildAccumulationLoop(varName, {
+								var def = reflaxe.elixir.ast.ElixirASTDef.ERange(buildExpr(startExpr), buildExpr(endExpr), false);
+								var pos = null;
+								{def : def, metadata : {}, pos : pos};
+							}, body, accumulation, buildExpr, toSnakeCase);
+						};
+						var initializations = reflaxe.elixir.ast.builders.LoopBuilder.trackRequiredInitializations(body);
+						var range = {
+							var def = reflaxe.elixir.ast.ElixirASTDef.ERange(buildExpr(startExpr), buildExpr(endExpr), false);
+							var pos = null;
+							{def : def, metadata : {}, pos : pos};
+						};
+						var snakeVar = toSnakeCase(varName);
+						var bodyAst = buildExpr(body);
+						var loopContext = {variableName : varName, rangeMin : reflaxe.elixir.ast.builders.LoopBuilder.extractIntValue(startExpr), rangeMax : reflaxe.elixir.ast.builders.LoopBuilder.extractIntValue(endExpr) - 1, depth : 0, iteratorExpr : "${extractIntValue(startExpr)}..${extractIntValue(endExpr) - 1}"};
+						var metadata = {loopContextStack : [loopContext], isWithinLoop : cast true, loopVariableName : varName};
+						if (bodyAst.metadata == null) {
+							bodyAst.metadata = {};
+						};
+						if (bodyAst.metadata.loopContextStack == null) {
+							bodyAst.metadata.loopContextStack = [loopContext];
+						} else {
+							bodyAst.metadata.loopContextStack.push(loopContext);
+						};
+						bodyAst.metadata.isWithinLoop = true;
+						var loopAst = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+							}, "each", [range, {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(snakeVar)], body : bodyAst}]), metadata : {}, pos : pos};
+							}]), metadata : {}, pos : pos};
+						};
+						loopAst.metadata = metadata;
+						return reflaxe.elixir.ast.builders.LoopBuilder.wrapWithInitializations(loopAst, initializations, toSnakeCase);
+					};
+				};
+			};
+			case 1: {
+				var ` = transform[0];
+				var ` = transform[1];
+				var ` = transform[2];
+				{
+					var varName = `;
+					var collection = `;
+					var body = `;
+					{
+						var accumulation = reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(body);
+						if (accumulation != null) {
+							return reflaxe.elixir.ast.builders.LoopBuilder.buildAccumulationLoop(varName, buildExpr(collection), body, accumulation, buildExpr, toSnakeCase);
+						};
+						var initializations = reflaxe.elixir.ast.builders.LoopBuilder.trackRequiredInitializations(body);
+						var collectionAst = buildExpr(collection);
+						var snakeVar = toSnakeCase(varName);
+						var bodyAst = buildExpr(body);
+						var loopContext = {variableName : varName, rangeMin : 0, rangeMax : 999, depth : 0, iteratorExpr : "collection"};
+						var metadata = {loopContextStack : [loopContext], isWithinLoop : cast true, loopVariableName : varName};
+						if (bodyAst.metadata == null) {
+							bodyAst.metadata = {};
+						};
+						if (bodyAst.metadata.loopContextStack == null) {
+							bodyAst.metadata.loopContextStack = [loopContext];
+						} else {
+							bodyAst.metadata.loopContextStack.push(loopContext);
+						};
+						bodyAst.metadata.isWithinLoop = true;
+						var loopAst = {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+							}, "each", [collectionAst, {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(snakeVar)], body : bodyAst}]), metadata : {}, pos : pos};
+							}]), metadata : {}, pos : pos};
+						};
+						loopAst.metadata = metadata;
+						return reflaxe.elixir.ast.builders.LoopBuilder.wrapWithInitializations(loopAst, initializations, toSnakeCase);
+					};
+				};
+			};
+			case 2: {
+				var ` = transform[0];
+				var ` = transform[1];
+				var ` = transform[2];
+				var ` = transform[3];
+				var ` = transform[4];
+				{
+					var targetVar = `;
+					var v = `;
+					var iterator = `;
+					var filter = `;
+					var body = `;
+					{
+						var varName = toSnakeCase(v.name);
+						var pattern = reflaxe.elixir.ast.EPattern.PVar(varName);
+						var iteratorExpr = buildExpr(iterator);
+						var bodyExpr = buildExpr(body);
+						return {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EFor([{pattern : pattern, expr : iteratorExpr}], [], bodyExpr, null, false), metadata : {}, pos : pos};
+						};
+					};
+				};
+			};
+			case 3: {
+				var ` = transform[0];
+				var ` = transform[1];
+				var ` = transform[2];
+				{
+					var v = `;
+					var iterator = `;
+					var body = `;
+					{
+						var varName = toSnakeCase(v.name);
+						var pattern = reflaxe.elixir.ast.EPattern.PVar(varName);
+						var iteratorExpr = buildExpr(iterator);
+						var bodyExpr = buildExpr(body);
+						return {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EFor([{pattern : pattern, expr : iteratorExpr}], [], bodyExpr, null, false), metadata : {}, pos : pos};
+						};
+					};
+				};
+			};
+		};
+	}
+
+	static function detectAccumulationPattern(body:haxe.macro.TypedExpr) {
+		@:ast(switch (body.expr) {
+	case TBlock(exprs):
+		for (e  in  exprs) {
+			var result = detectAccumulationPattern(e);
+			if (result != null) return result;
+		};	
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, _):
+		return { varName : v.name, isStringConcat : true, isListAppend : false };	
+	case TBinop(OpAssign, { expr : TLocal(v1) }, { expr : TBinop(OpAdd, { expr : TLocal(v2) }, _) }) if (v1.name == v2.name):
+		return { varName : v1.name, isStringConcat : true, isListAppend : false };	
+	case TBinop(OpAssign, { expr : TLocal(v1) }, { expr : TCall({ expr : TField({ expr : TLocal(v2) }, FInstance(_, _, cf)) }, _) }) if (v1.name == v2.name && cf.get().name == "concat"):
+		return { varName : v1.name, isStringConcat : false, isListAppend : true };	
+	case TCall({ expr : TField({ expr : TLocal(v) }, FInstance(_, _, cf)) }, _) if (cf.get().name == "push"):
+		return { varName : v.name, isStringConcat : false, isListAppend : true };	
+	case TIf(_, thenExpr, elseExpr):
+		var thenResult = detectAccumulationPattern(thenExpr);
+		if (thenResult != null) return thenResult;
+		if (elseExpr != null) {
+			return detectAccumulationPattern(elseExpr);
+		};	
+	default:
+}) {
+			var ` = body.expr;
+			switch (enumIndex `) {
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					switch (enumIndex `) {
+						case 4: {
+							{
+								var ` = `.expr;
+								var ` = `.pos;
+								var ` = `.t;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									{
+										var ` = `.expr;
+										var ` = `.pos;
+										var ` = `.t;
+										switch (enumIndex `) {
+											case 3: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												if (enumIndex ` == 0) {
+													{
+														var ` = `.expr;
+														var ` = `.pos;
+														var ` = `.t;
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var v2 = `;
+																var v1 = `;
+																if (v1.name == v2.name) {
+																	return {varName : v1.name, isStringConcat : true, isListAppend : false};
+																} else {};
+															};
+														} else {};
+													};
+												} else {};
+											};
+											case 9: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 4) {
+														var ` = `[0];
+														var ` = `[1];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 1) {
+																var ` = `[0];
+																if (enumIndex ` == 0) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var cf = `;
+																		var v2 = `;
+																		var v1 = `;
+																		if (v1.name == v2.name && cf.get().name == "concat") {
+																			return {varName : v1.name, isStringConcat : false, isListAppend : true};
+																		} else {};
+																	};
+																} else {};
+															} else {};
+														};
+													} else {};
+												};
+											};
+											default: {}
+										};
+									};
+								} else {};
+							};
+						};
+						case 20: {
+							var ` = `[0];
+							if (enumIndex ` == 0) {
+								{
+									var ` = `.expr;
+									var ` = `.pos;
+									var ` = `.t;
+									if (enumIndex ` == 1) {
+										var ` = `[0];
+										{
+											var v = `;
+											{
+												return {varName : v.name, isStringConcat : true, isListAppend : false};
+											};
+										};
+									} else {};
+								};
+							} else {};
+						};
+						default: {}
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var ` = `.expr;
+						var ` = `.pos;
+						var ` = `.t;
+						if (enumIndex ` == 4) {
+							var ` = `[0];
+							var ` = `[1];
+							{
+								var ` = `.expr;
+								var ` = `.pos;
+								var ` = `.t;
+								if (enumIndex ` == 1) {
+									var ` = `[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var cf = `;
+											var v = `;
+											if (cf.get().name == "push") {
+												return {varName : v.name, isStringConcat : false, isListAppend : true};
+											} else {};
+										};
+									} else {};
+								} else {};
+							};
+						} else {};
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var e = exprs[`];
+									++ `;
+									var result = reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(e);
+									if (result != null) {
+										return result;
+									};
+								};
+							};
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var thenExpr = `;
+						var elseExpr = `;
+						{
+							var thenResult = reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(thenExpr);
+							if (thenResult != null) {
+								return thenResult;
+							};
+							if (elseExpr != null) {
+								return reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(elseExpr);
+							};
+						};
+					};
+				};
+				default: {}
+			};
+		};
+		return null;
+	}
+
+	static function hasSideEffectsOnly(expr:haxe.macro.TypedExpr) {
+		if (reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(expr) != null) {
+			return false;
+		};
+		@:ast(switch (expr.expr) {
+	case TCall(e, _):
+		switch (e.expr) {
+			case TIdent(s):
+				return s == "trace" || s == "throw" || s == "assert";			
+			case TField(_, FStatic(_, cf)):
+				var name = cf.get().name;
+				return name == "trace" || name == "log" || name == "println" || name == "print" || name == "debug" || name == "info" || name == "warn" || name == "error";			
+			case TField(_, FInstance(_, _, cf)):
+				var name = cf.get().name;
+				return name == "push" || name == "add" || name == "remove" || name == "set" || name == "clear";			
+			default:
+				return false;			
+		};	
+	case TBlock(exprs):
+		if (exprs.length == 0) return true;
+		for (e  in  exprs) {
+			if (!hasSideEffectsOnly(e)) return false;
+		};
+		return true;	
+	case TBinop(OpAssign | OpAssignOp(_), _, _):
+		return true;	
+	case TUnop(OpIncrement | OpDecrement, _, _):
+		return true;	
+	case TIf(_, then_, else_):
+		return hasSideEffectsOnly(then_) && (else_ == null || hasSideEffectsOnly(else_));	
+	case TConst(_):
+		return true;	
+	case TLocal(_):
+		return true;	
+	default:
+		return false;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					{
+						return true;
+					};
+				};
+				case 1: {
+					var ` = `[0];
+					{
+						return true;
+					};
+				};
+				case 3: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					switch (enumIndex `) {
+						case 4: {
+							{
+								return true;
+							};
+						};
+						case 20: {
+							var ` = `[0];
+							{
+								return true;
+							};
+						};
+						default: {
+							return false;
+						}
+					};
+				};
+				case 9: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var e = `;
+						{
+							@:ast(switch (e.expr) {
+	case TIdent(s):
+		return s == "trace" || s == "throw" || s == "assert";	
+	case TField(_, FStatic(_, cf)):
+		var name = cf.get().name;
+		return name == "trace" || name == "log" || name == "println" || name == "print" || name == "debug" || name == "info" || name == "warn" || name == "error";	
+	case TField(_, FInstance(_, _, cf)):
+		var name = cf.get().name;
+		return name == "push" || name == "add" || name == "remove" || name == "set" || name == "clear";	
+	default:
+		return false;	
+}) {
+								var ` = e.expr;
+								switch (enumIndex `) {
+									case 4: {
+										var ` = `[0];
+										var ` = `[1];
+										switch (enumIndex `) {
+											case 0: {
+												var ` = `[0];
+												var ` = `[1];
+												var ` = `[2];
+												{
+													var cf = `;
+													{
+														var name = cf.get().name;
+														return name == "push" || name == "add" || name == "remove" || name == "set" || name == "clear";
+													};
+												};
+											};
+											case 1: {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var cf = `;
+													{
+														var name = cf.get().name;
+														return name == "trace" || name == "log" || name == "println" || name == "print" || name == "debug" || name == "info" || name == "warn" || name == "error";
+													};
+												};
+											};
+											default: {
+												return false;
+											}
+										};
+									};
+									case 28: {
+										var ` = `[0];
+										{
+											var s = `;
+											{
+												return s == "trace" || s == "throw" || s == "assert";
+											};
+										};
+									};
+									default: {
+										return false;
+									}
+								};
+							};
+						};
+					};
+				};
+				case 11: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					switch (enumIndex `) {
+						case 0, 1: {
+							{
+								return true;
+							};
+						};
+						default: {
+							return false;
+						}
+					};
+				};
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							if (exprs.length == 0) {
+								return true;
+							};
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var e = exprs[`];
+									++ `;
+									if (! reflaxe.elixir.ast.builders.LoopBuilder.hasSideEffectsOnly(e)) {
+										return false;
+									};
+								};
+							};
+							return true;
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var then_ = `;
+						var else_ = `;
+						{
+							return reflaxe.elixir.ast.builders.LoopBuilder.hasSideEffectsOnly(then_) && (else_ == null || reflaxe.elixir.ast.builders.LoopBuilder.hasSideEffectsOnly(else_));
+						};
+					};
+				};
+				default: {
+					return false;
+				}
+			};
+		};
+	}
+
+	@:value({ toSnakeCase : null })
+	public static function buildWhile(econd:haxe.macro.TypedExpr, e:haxe.macro.TypedExpr, normalWhile:Bool, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:Null<String -> String> = null) {
+		if (toSnakeCase == null) {
+			toSnakeCase = function(s:String) return s.toLowerCase();
+		};
+		var forPattern = reflaxe.elixir.ast.builders.LoopBuilder.detectDesugarForLoopPattern(econd, e);
+		if (forPattern != null) {
+			return reflaxe.elixir.ast.builders.LoopBuilder.buildFromForPattern(forPattern, buildExpr, toSnakeCase);
+		};
+		var whileExpr = {expr : haxe.macro.TypedExprDef.TWhile(econd, e, normalWhile), pos : econd.pos, t : e.t};
+		var ir = reflaxe.elixir.ast.builders.LoopBuilder.analyzeLoop(whileExpr, buildExpr);
+		if (ir.confidence >= 0.7) {
+			return reflaxe.elixir.ast.builders.LoopBuilder.emitFromIR(ir, buildExpr, null, toSnakeCase);
+		} else {
+			return reflaxe.elixir.ast.builders.LoopBuilder.buildLegacyWhile(buildExpr(econd), buildExpr(e), normalWhile, buildExpr);
+		};
+	}
+
+	public static function detectDesugarForLoopPattern(cond:haxe.macro.TypedExpr, body:haxe.macro.TypedExpr) {
+		var actualCond = @:ast(switch (cond.expr) {
+	case TParenthesis(inner):
+		inner;	
+	default:
+		cond;	
+}) {
+			var ` = cond.expr;
+			if (enumIndex ` == 6) {
+				var ` = `[0];
+				{
+					var inner = `;
+					{
+						inner;
+					};
+				};
+			} else {
+				cond;
+			};
+		};
+		var bounds = @:ast(switch (actualCond.expr) {
+	case TBinop(OpLt | OpLte, e1, e2):
+		var counter = extractInfrastructureVarName(e1);
+		var limit = extractInfrastructureVarName(e2);
+		if (counter != null && limit != null) {
+			{ counter : counter, limit : limit };
+		} else null;	
+	default:
+		null;	
+}) {
+			var ` = actualCond.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				switch (enumIndex `) {
+					case 9, 10: {
+						{
+							var e1 = `;
+							var e2 = `;
+							{
+								var counter = reflaxe.elixir.ast.builders.LoopBuilder.extractInfrastructureVarName(e1);
+								var limit = reflaxe.elixir.ast.builders.LoopBuilder.extractInfrastructureVarName(e2);
+								if (counter != null && limit != null) {
+									{counter : counter, limit : limit};
+								} else {
+									null;
+								};
+							};
+						};
+					};
+					default: {
+						null;
+					}
+				};
+			} else {
+				null;
+			};
+		};
+		if (bounds == null) {
+			return null;
+		};
+		var bodyInfo = reflaxe.elixir.ast.builders.LoopBuilder.analyzeForLoopBody(body, bounds.counter);
+		if (bodyInfo == null) {
+			return null;
+		};
+		var startExpr = {expr : haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TInt(0)), pos : cond.pos, t : cond.t};
+		var endExpr = @:ast(switch (cond.expr) {
+	case TBinop(_, _, limit):
+		limit;	
+	default:
+		startExpr;	
+}) {
+			var ` = cond.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var limit = `;
+					{
+						limit;
+					};
+				};
+			} else {
+				startExpr;
+			};
+		};
+		return {userVar : bodyInfo.userVar, startExpr : startExpr, endExpr : endExpr, userCode : bodyInfo.userCode, hasSideEffectsOnly : bodyInfo.hasSideEffectsOnly};
+	}
+
+	static function extractInfrastructureVarName(expr:haxe.macro.TypedExpr) {
+		return @:ast(switch (expr.expr) {
+	case TLocal(v):
+		var name = v.name;
+		if (name == "g" || name == "_g" || ~/^_?g[0-9]*$/.match(name)) {
+			name;
+		} else null;	
+	default:
+		null;	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 1) {
+				var ` = `[0];
+				{
+					var v = `;
+					{
+						var name = v.name;
+						if (name == "g" || name == "_g" || new EReg("^_?g[0-9]*$", "").match(name)) {
+							name;
+						} else {
+							null;
+						};
+					};
+				};
+			} else {
+				null;
+			};
+		};
+	}
+
+	static function analyzeForLoopBody(body:haxe.macro.TypedExpr, counterVar:String) {
+		@:ast(switch (body.expr) {
+	case TBlock(exprs) if (exprs.length >= 2):
+		var userVar = "i";
+		var userCodeStart = 0;
+		switch (exprs[0].expr) {
+			case TVar(v, init) if (init != null):
+				if (extractInfrastructureVarName(init) == counterVar) {
+					userVar = v.name;
+					userCodeStart = 1;
+				};			
+			default:
+		};
+		var lastExpr = exprs[exprs.length - 1];
+		var isIncrement = switch (lastExpr.expr) {
+			case TUnop(OpIncrement, _, e):
+				extractInfrastructureVarName(e) == counterVar;			
+			case TBinop(OpAssign, e1, _):
+				extractInfrastructureVarName(e1) == counterVar;			
+			default:
+				false;			
+		};
+		if (!isIncrement) return null;
+		var userCodeExprs = exprs.slice(userCodeStart, exprs.length - 1);
+		var userCode = if (userCodeExprs.length == 1) {
+			userCodeExprs[0];
+		} else {
+			{ expr : TBlock(userCodeExprs), pos : body.pos, t : body.t };
+		};
+		return { userVar : userVar, userCode : userCode, hasSideEffectsOnly : hasSideEffectsOnly(userCode) };	
+	default:
+		return null;	
+}) {
+			var ` = body.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					if (exprs.length >= 2) {
+						var userVar = "i";
+						var userCodeStart = 0;
+						@:ast(switch (exprs[0].expr) {
+	case TVar(v, init) if (init != null):
+		if (extractInfrastructureVarName(init) == counterVar) {
+			userVar = v.name;
+			userCodeStart = 1;
+		};	
+	default:
+}) {
+							var ` = exprs[0].expr;
+							if (enumIndex ` == 13) {
+								var ` = `[0];
+								var ` = `[1];
+								{
+									var v = `;
+									var init = `;
+									if (init != null) {
+										if (reflaxe.elixir.ast.builders.LoopBuilder.extractInfrastructureVarName(init) == counterVar) {
+											userVar = v.name;
+											userCodeStart = 1;
+										};
+									} else {};
+								};
+							} else {};
+						};
+						var lastExpr = exprs[exprs.length - 1];
+						var isIncrement = @:ast(switch (lastExpr.expr) {
+	case TUnop(OpIncrement, _, e):
+		extractInfrastructureVarName(e) == counterVar;	
+	case TBinop(OpAssign, e1, _):
+		extractInfrastructureVarName(e1) == counterVar;	
+	default:
+		false;	
+}) {
+							var ` = lastExpr.expr;
+							switch (enumIndex `) {
+								case 3: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									if (enumIndex ` == 4) {
+										{
+											var e1 = `;
+											{
+												reflaxe.elixir.ast.builders.LoopBuilder.extractInfrastructureVarName(e1) == counterVar;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								case 11: {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									if (enumIndex ` == 0) {
+										{
+											var e = `;
+											{
+												reflaxe.elixir.ast.builders.LoopBuilder.extractInfrastructureVarName(e) == counterVar;
+											};
+										};
+									} else {
+										false;
+									};
+								};
+								default: {
+									false;
+								}
+							};
+						};
+						if (! isIncrement) {
+							return null;
+						};
+						var userCodeExprs = exprs.slice(userCodeStart, exprs.length - 1);
+						var userCode = if (userCodeExprs.length == 1) {
+							userCodeExprs[0];
+						} else {
+							{expr : haxe.macro.TypedExprDef.TBlock(userCodeExprs), pos : body.pos, t : body.t};
+						};
+						return {userVar : userVar, userCode : userCode, hasSideEffectsOnly : reflaxe.elixir.ast.builders.LoopBuilder.hasSideEffectsOnly(userCode)};
+					} else {
+						return null;
+					};
+				};
+			} else {
+				return null;
+			};
+		};
+	}
+
+	public static function buildFromForPattern(pattern:{ userVar : String, userCode : haxe.macro.TypedExpr, startExpr : haxe.macro.TypedExpr, hasSideEffectsOnly : Bool, endExpr : haxe.macro.TypedExpr }, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		var range = {
+			var def = reflaxe.elixir.ast.ElixirASTDef.ERange(buildExpr(pattern.startExpr), buildExpr(pattern.endExpr), false);
+			var pos = null;
+			{def : def, metadata : {}, pos : pos};
+		};
+		var varName = toSnakeCase(pattern.userVar);
+		var body = buildExpr(pattern.userCode);
+		if (pattern.hasSideEffectsOnly) {
+			return {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+				}, "each", [range, {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(varName)], body : body}]), metadata : {}, pos : pos};
+				}]), metadata : {}, pos : pos};
+			};
+		} else {
+			return {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EFor([{pattern : reflaxe.elixir.ast.EPattern.PVar(varName), expr : range}], [], body, null, false), metadata : {}, pos : pos};
+			};
+		};
+	}
+
+	public static function buildWithFullContext(startExpr:haxe.macro.TypedExpr, endExpr:haxe.macro.TypedExpr, whileBody:haxe.macro.TypedExpr, counterVar:String, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		var accumulation = reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(whileBody);
+		var analysis = reflaxe.elixir.ast.builders.LoopBuilder.analyzeForLoopBody(whileBody, counterVar);
+		if (analysis == null) {
+			var defaultVar = "i";
+			var range = {
+				var def = reflaxe.elixir.ast.ElixirASTDef.ERange(buildExpr(startExpr), buildExpr(endExpr), false);
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			};
+			var cleanedBody = reflaxe.elixir.ast.builders.LoopBuilder.cleanLoopBodyFromInfrastructure(whileBody, counterVar, defaultVar);
+			if (accumulation != null) {
+				return reflaxe.elixir.ast.builders.LoopBuilder.buildAccumulationLoop(defaultVar, range, cleanedBody, accumulation, buildExpr, toSnakeCase);
+			};
+			return {
+				var def = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+				}, "each", [range, {
+					var def = reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(defaultVar)], body : buildExpr(cleanedBody)}]);
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				}]);
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			};
+		};
+		if (accumulation != null) {
+			var range = {
+				var def = reflaxe.elixir.ast.ElixirASTDef.ERange(buildExpr(startExpr), buildExpr(endExpr), false);
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			};
+			return reflaxe.elixir.ast.builders.LoopBuilder.buildAccumulationLoop(analysis.userVar, range, analysis.userCode, accumulation, buildExpr, toSnakeCase);
+		};
+		return reflaxe.elixir.ast.builders.LoopBuilder.buildFromForPattern({userVar : analysis.userVar, startExpr : startExpr, endExpr : endExpr, userCode : analysis.userCode, hasSideEffectsOnly : analysis.hasSideEffectsOnly}, buildExpr, toSnakeCase);
+	}
+
+	static function analyzeLoop(expr:haxe.macro.TypedExpr, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST) {
+		var ir = {kind : @:ast(switch (expr.expr) {
+	case TFor(_, _, _):
+		ForEach;	
+	case TWhile(_, _, _):
+		While;	
+	case _:
+		ForEach;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						reflaxe.elixir.ast.loop_ir.LoopKind.ForEach;
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						reflaxe.elixir.ast.loop_ir.LoopKind.While;
+					};
+				};
+				default: {
+					reflaxe.elixir.ast.loop_ir.LoopKind.ForEach;
+				}
+			};
+		}, source : reflaxe.elixir.ast.loop_ir.LoopSource.Collection({
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+		}), elementPattern : null, accumulators : [], filters : [], yield : null, earlyExit : null, bodyEffects : {hasSideEffects : false, producesValue : false, modifiesAccumulator : false, hasNestedLoops : false, hasComplexControl : false}, confidence : 0.0, originalExpr : expr};
+		var analyzers = [new reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer(buildExpr)];
+		var totalConfidence = 0.0;
+		var analyzerCount = 0;
+		{
+			var ` = 0;
+			while (` < analyzers.length) {
+				var analyzer = analyzers[`];
+				++ `;
+				analyzer.analyze(expr, ir);
+				var confidence = analyzer.calculateConfidence();
+				if (confidence > 0) {
+					totalConfidence += confidence;
+					analyzerCount ++;
+				};
+			};
+		};
+		if (analyzerCount > 0) {
+			ir.confidence = totalConfidence / analyzerCount;
+		};
+		return ir;
+	}
+
+	static function emitFromIR(ir:reflaxe.elixir.ast.loop_ir.LoopIR, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, extractPattern:Null<haxe.macro.TypedExpr -> reflaxe.elixir.ast.EPattern>, toSnakeCase:String -> String) {
+		var strategy = reflaxe.elixir.ast.builders.LoopBuilder.selectStrategy(ir);
+		return @:ast(switch (strategy) {
+	case EnumEach:
+		emitEnumEach(ir, buildExpr, toSnakeCase);	
+	case EnumMap:
+		emitEnumMap(ir, buildExpr, toSnakeCase);	
+	case Comprehension:
+		emitComprehension(ir, buildExpr, toSnakeCase);	
+	case EnumReduce:
+		emitEnumReduce(ir, buildExpr, toSnakeCase);	
+	case _:
+		emitSimpleLoop(ir, buildExpr, toSnakeCase);	
+}) switch (enumIndex strategy) {
+			case 0: {
+				{
+					reflaxe.elixir.ast.builders.LoopBuilder.emitEnumEach(ir, buildExpr, toSnakeCase);
+				};
+			};
+			case 1: {
+				{
+					reflaxe.elixir.ast.builders.LoopBuilder.emitEnumMap(ir, buildExpr, toSnakeCase);
+				};
+			};
+			case 2: {
+				{
+					reflaxe.elixir.ast.builders.LoopBuilder.emitEnumReduce(ir, buildExpr, toSnakeCase);
+				};
+			};
+			case 4: {
+				{
+					reflaxe.elixir.ast.builders.LoopBuilder.emitComprehension(ir, buildExpr, toSnakeCase);
+				};
+			};
+			default: {
+				reflaxe.elixir.ast.builders.LoopBuilder.emitSimpleLoop(ir, buildExpr, toSnakeCase);
+			}
+		};
+	}
+
+	static function selectStrategy(ir:reflaxe.elixir.ast.loop_ir.LoopIR) {
+		if (ir.bodyEffects.hasSideEffects && ! ir.bodyEffects.producesValue) {
+			return reflaxe.elixir.ast.loop_ir.EmissionStrategy.EnumEach;
+		};
+		if (ir.filters.length > 0 && ir.yield != null) {
+			return reflaxe.elixir.ast.loop_ir.EmissionStrategy.Comprehension;
+		};
+		if (ir.yield != null && ! ir.bodyEffects.modifiesAccumulator) {
+			return reflaxe.elixir.ast.loop_ir.EmissionStrategy.EnumMap;
+		};
+		if (ir.accumulators.length > 0) {
+			return reflaxe.elixir.ast.loop_ir.EmissionStrategy.EnumReduce;
+		};
+		return reflaxe.elixir.ast.loop_ir.EmissionStrategy.EnumEach;
+	}
+
+	static function emitEnumEach(ir:reflaxe.elixir.ast.loop_ir.LoopIR, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		var source = @:ast(switch (ir.originalExpr.expr) {
+	case TFor(_, e1, _):
+		switch (e1.expr) {
+			case TBinop(OpInterval, startExpr, endExpr):
+				makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));			
+			case _:
+				buildExpr(e1);			
+		};	
+	case _:
+		makeAST(ENil);	
+}) {
+			var ` = ir.originalExpr.expr;
+			if (enumIndex ` == 15) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var e1 = `;
+					{
+						@:ast(switch (e1.expr) {
+	case TBinop(OpInterval, startExpr, endExpr):
+		makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));	
+	case _:
+		buildExpr(e1);	
+}) {
+							var ` = e1.expr;
+							if (enumIndex ` == 3) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								if (enumIndex ` == 21) {
+									{
+										var startExpr = `;
+										var endExpr = `;
+										{
+											{
+												var def = reflaxe.elixir.ast.ElixirASTDef.ERange(buildExpr(startExpr), buildExpr(endExpr), false);
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											};
+										};
+									};
+								} else {
+									buildExpr(e1);
+								};
+							} else {
+								buildExpr(e1);
+							};
+						};
+					};
+				};
+			} else {
+				{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+				};
+			};
+		};
+		var varName = if (ir.elementPattern != null) {
+			toSnakeCase(ir.elementPattern.varName);
+		} else {
+			"_item";
+		};
+		var body = @:ast(switch (ir.originalExpr.expr) {
+	case TFor(_, _, bodyExpr):
+		buildExpr(bodyExpr);	
+	case TWhile(_, bodyExpr, _):
+		buildExpr(bodyExpr);	
+	case _:
+		makeAST(ENil);	
+}) {
+			var ` = ir.originalExpr.expr;
+			switch (enumIndex `) {
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var bodyExpr = `;
+						{
+							buildExpr(bodyExpr);
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var bodyExpr = `;
+						{
+							buildExpr(bodyExpr);
+						};
+					};
+				};
+				default: {
+					{
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+					};
+				}
+			};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+			}, "each", [source, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(varName)], body : body}]), metadata : {}, pos : pos};
+			}]), metadata : {}, pos : pos};
+		};
+	}
+
+	static function emitEnumMap(ir:reflaxe.elixir.ast.loop_ir.LoopIR, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		var source = @:ast(switch (ir.originalExpr.expr) {
+	case TFor(_, e1, _):
+		switch (e1.expr) {
+			case TBinop(OpInterval, startExpr, endExpr):
+				makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));			
+			case _:
+				buildExpr(e1);			
+		};	
+	case _:
+		makeAST(ENil);	
+}) {
+			var ` = ir.originalExpr.expr;
+			if (enumIndex ` == 15) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var e1 = `;
+					{
+						@:ast(switch (e1.expr) {
+	case TBinop(OpInterval, startExpr, endExpr):
+		makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));	
+	case _:
+		buildExpr(e1);	
+}) {
+							var ` = e1.expr;
+							if (enumIndex ` == 3) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								if (enumIndex ` == 21) {
+									{
+										var startExpr = `;
+										var endExpr = `;
+										{
+											{
+												var def = reflaxe.elixir.ast.ElixirASTDef.ERange(buildExpr(startExpr), buildExpr(endExpr), false);
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											};
+										};
+									};
+								} else {
+									buildExpr(e1);
+								};
+							} else {
+								buildExpr(e1);
+							};
+						};
+					};
+				};
+			} else {
+				{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+				};
+			};
+		};
+		var varName = if (ir.elementPattern != null) {
+			toSnakeCase(ir.elementPattern.varName);
+		} else {
+			"_item";
+		};
+		var body = @:ast(switch (ir.originalExpr.expr) {
+	case TFor(_, _, bodyExpr):
+		buildExpr(bodyExpr);	
+	case TWhile(_, bodyExpr, _):
+		buildExpr(bodyExpr);	
+	case _:
+		if (ir.yield != null) {
+			ir.yield.expr;
+		} else {
+			makeAST(ENil);
+		};	
+}) {
+			var ` = ir.originalExpr.expr;
+			switch (enumIndex `) {
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var bodyExpr = `;
+						{
+							buildExpr(bodyExpr);
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var bodyExpr = `;
+						{
+							buildExpr(bodyExpr);
+						};
+					};
+				};
+				default: {
+					if (ir.yield != null) {
+						ir.yield.expr;
+					} else {
+						{
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+						};
+					};
+				}
+			};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+			}, "map", [source, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(varName)], body : body}]), metadata : {}, pos : pos};
+			}]), metadata : {}, pos : pos};
+		};
+	}
+
+	static function emitComprehension(ir:reflaxe.elixir.ast.loop_ir.LoopIR, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		var source = @:ast(switch (ir.originalExpr.expr) {
+	case TFor(_, e1, _):
+		switch (e1.expr) {
+			case TBinop(OpInterval, startExpr, endExpr):
+				makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));			
+			case _:
+				buildExpr(e1);			
+		};	
+	case _:
+		makeAST(ENil);	
+}) {
+			var ` = ir.originalExpr.expr;
+			if (enumIndex ` == 15) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var e1 = `;
+					{
+						@:ast(switch (e1.expr) {
+	case TBinop(OpInterval, startExpr, endExpr):
+		makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));	
+	case _:
+		buildExpr(e1);	
+}) {
+							var ` = e1.expr;
+							if (enumIndex ` == 3) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								if (enumIndex ` == 21) {
+									{
+										var startExpr = `;
+										var endExpr = `;
+										{
+											{
+												var def = reflaxe.elixir.ast.ElixirASTDef.ERange(buildExpr(startExpr), buildExpr(endExpr), false);
+												var pos = null;
+												{def : def, metadata : {}, pos : pos};
+											};
+										};
+									};
+								} else {
+									buildExpr(e1);
+								};
+							} else {
+								buildExpr(e1);
+							};
+						};
+					};
+				};
+			} else {
+				{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+				};
+			};
+		};
+		var varName = if (ir.elementPattern != null) {
+			toSnakeCase(ir.elementPattern.varName);
+		} else {
+			"_item";
+		};
+		var generators = [{pattern : reflaxe.elixir.ast.EPattern.PVar(varName), expr : source}];
+		var filters = [];
+		{
+			var ` = 0;
+			var ` = ir.filters;
+			while (` < `.length) {
+				var filter = `[`];
+				++ `;
+				filters.push(filter.condition);
+			};
+		};
+		var body = @:ast(switch (ir.originalExpr.expr) {
+	case TFor(_, _, bodyExpr):
+		buildExpr(bodyExpr);	
+	case TWhile(_, bodyExpr, _):
+		buildExpr(bodyExpr);	
+	case _:
+		if (ir.yield != null) {
+			ir.yield.expr;
+		} else {
+			makeAST(ENil);
+		};	
+}) {
+			var ` = ir.originalExpr.expr;
+			switch (enumIndex `) {
+				case 15: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var bodyExpr = `;
+						{
+							buildExpr(bodyExpr);
+						};
+					};
+				};
+				case 17: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var bodyExpr = `;
+						{
+							buildExpr(bodyExpr);
+						};
+					};
+				};
+				default: {
+					if (ir.yield != null) {
+						ir.yield.expr;
+					} else {
+						{
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+						};
+					};
+				}
+			};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFor(generators, filters, body, null, false), metadata : {}, pos : pos};
+		};
+	}
+
+	static function emitEnumReduce(ir:reflaxe.elixir.ast.loop_ir.LoopIR, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		return reflaxe.elixir.ast.builders.LoopBuilder.emitSimpleLoop(ir, buildExpr, toSnakeCase);
+	}
+
+	static function emitSimpleLoop(ir:reflaxe.elixir.ast.loop_ir.LoopIR, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		@:ast(switch (ir.kind) {
+	case ForRange | ForEach:
+		return buildLegacyForFromIR(ir, buildExpr, toSnakeCase);	
+	case While | DoWhile:
+		return buildLegacyWhileFromIR(ir, buildExpr);	
+	case _:
+		return makeAST(ENil);	
+}) {
+			var ` = ir.kind;
+			switch (enumIndex `) {
+				case 0, 1: {
+					{
+						return reflaxe.elixir.ast.builders.LoopBuilder.buildLegacyForFromIR(ir, buildExpr, toSnakeCase);
+					};
+				};
+				case 2, 3: {
+					{
+						return reflaxe.elixir.ast.builders.LoopBuilder.buildLegacyWhileFromIR(ir, buildExpr);
+					};
+				};
+				default: {
+					return {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+					};
+				}
+			};
+		};
+	}
+
+	static function buildLegacyFor(v:haxe.macro.TVar, e1:haxe.macro.TypedExpr, e2:haxe.macro.TypedExpr, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, extractPattern:haxe.macro.TypedExpr -> reflaxe.elixir.ast.EPattern, toSnakeCase:String -> String) {
+		var varName = toSnakeCase(v.name);
+		var pattern = reflaxe.elixir.ast.EPattern.PVar(varName);
+		var expr = buildExpr(e1);
+		var body = buildExpr(e2);
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFor([{pattern : pattern, expr : expr}], [], body, null, false), metadata : {}, pos : pos};
+		};
+	}
+
+	static function buildLegacyWhile(cond:reflaxe.elixir.ast.ElixirAST, body:reflaxe.elixir.ast.ElixirAST, normalWhile:Bool, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST) {
+		var stream = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Stream"), metadata : {}, pos : pos};
+			}, "iterate", [{
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar("n")], body : {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Add, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar("n"), metadata : {}, pos : pos};
+					}, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(1), metadata : {}, pos : pos};
+					}), metadata : {}, pos : pos};
+				}}]), metadata : {}, pos : pos};
+			}]), metadata : {}, pos : pos};
+		};
+		var initAcc = {
+			var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+				var this;
+				this = reflaxe.elixir.ast.NameUtils.toSnakeCase("ok");
+				cast this;
+			});
+			var pos = null;
+			{def : def, metadata : {}, pos : pos};
+		};
+		var reducerBody = {
+			var def = reflaxe.elixir.ast.ElixirASTDef.EIf(cond, {
+				var def = reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+					var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+						var this;
+						this = reflaxe.elixir.ast.NameUtils.toSnakeCase("cont");
+						cast this;
+					});
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				}, {
+					var def = reflaxe.elixir.ast.ElixirASTDef.EBlock([body, {
+						var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+							var this;
+							this = reflaxe.elixir.ast.NameUtils.toSnakeCase("ok");
+							cast this;
+						});
+						var pos = null;
+						{def : def, metadata : {}, pos : pos};
+					}]);
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				}]);
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			}, {
+				var def = reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+					var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+						var this;
+						this = reflaxe.elixir.ast.NameUtils.toSnakeCase("halt");
+						cast this;
+					});
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				}, {
+					var def = reflaxe.elixir.ast.ElixirASTDef.EAtom(@:implicitCast {
+						var this;
+						this = reflaxe.elixir.ast.NameUtils.toSnakeCase("ok");
+						cast this;
+					});
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				}]);
+				var pos = null;
+				{def : def, metadata : {}, pos : pos};
+			});
+			var pos = null;
+			{def : def, metadata : {}, pos : pos};
+		};
+		var reducerFn = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PWildcard, reflaxe.elixir.ast.EPattern.PVar("acc")], body : reducerBody}]), metadata : {}, pos : pos};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+			}, "reduce_while", [stream, initAcc, reducerFn]), metadata : {}, pos : pos};
+		};
+	}
+
+	static function cleanLoopBodyFromInfrastructure(expr:haxe.macro.TypedExpr, counterVar:String, userVar:String) {
+		return @:ast(switch (expr.expr) {
+	case TBlock(exprs):
+		var cleaned = [];
+		for (e  in  exprs) {
+			var shouldInclude = switch (e.expr) {
+				case TBinop(OpAssign, { expr : TLocal(v1) }, { expr : TBinop(OpAssign, { expr : TLocal(v2) }, _) }):
+					false;				
+				case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TLocal(v2) }) if (v.name == userVar && (v2.name == counterVar || v2.name.indexOf("g") == 0 || v2.name.indexOf("_g") == 0)):
+					false;				
+				case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, { expr : TLocal(v2) }, _) }) if (v.name == counterVar && v2.name == counterVar):
+					false;				
+				default:
+					true;				
+			};
+			if (shouldInclude) {
+				var cleanedExpr = cleanLoopBodyFromInfrastructure(e, counterVar, userVar);
+				cleaned.push(cleanedExpr);
+			};
+		};
+		if (cleaned.length == 0) {
+			{ expr : TConst(TNull), pos : expr.pos, t : expr.t };
+		} else if (cleaned.length == 1) {
+			cleaned[0];
+		} else {
+			{ expr : TBlock(cleaned), pos : expr.pos, t : expr.t };
+		};	
+	case TIf(cond, thenExpr, elseExpr):
+		var cleanedThen = cleanLoopBodyFromInfrastructure(thenExpr, counterVar, userVar);
+		var cleanedElse = elseExpr != null ? cleanLoopBodyFromInfrastructure(elseExpr, counterVar, userVar) : null;
+		{ expr : TIf(cond, cleanedThen, cleanedElse), pos : expr.pos, t : expr.t };	
+	default:
+		expr;	
+}) {
+			var ` = expr.expr;
+			switch (enumIndex `) {
+				case 14: {
+					var ` = `[0];
+					{
+						var exprs = `;
+						{
+							var cleaned = [];
+							{
+								var ` = 0;
+								while (` < exprs.length) {
+									var e = exprs[`];
+									++ `;
+									var shouldInclude = @:ast(switch (e.expr) {
+	case TBinop(OpAssign, { expr : TLocal(v1) }, { expr : TBinop(OpAssign, { expr : TLocal(v2) }, _) }):
+		false;	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TLocal(v2) }) if (v.name == userVar && (v2.name == counterVar || v2.name.indexOf("g") == 0 || v2.name.indexOf("_g") == 0)):
+		false;	
+	case TBinop(OpAssign, { expr : TLocal(v) }, { expr : TBinop(OpAdd, { expr : TLocal(v2) }, _) }) if (v.name == counterVar && v2.name == counterVar):
+		false;	
+	default:
+		true;	
+}) {
+										var ` = e.expr;
+										if (enumIndex ` == 3) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 4) {
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 1) {
+														var ` = `[0];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															switch (enumIndex `) {
+																case 1: {
+																	var ` = `[0];
+																	{
+																		var v2 = `;
+																		var v = `;
+																		if (v.name == userVar && (v2.name == counterVar || v2.name.indexOf("g", null) == 0 || v2.name.indexOf("_g", null) == 0)) {
+																			false;
+																		} else {
+																			true;
+																		};
+																	};
+																};
+																case 3: {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	switch (enumIndex `) {
+																		case 0: {
+																			{
+																				var ` = `.expr;
+																				var ` = `.pos;
+																				var ` = `.t;
+																				if (enumIndex ` == 1) {
+																					var ` = `[0];
+																					{
+																						var v2 = `;
+																						var v = `;
+																						if (v.name == counterVar && v2.name == counterVar) {
+																							false;
+																						} else {
+																							true;
+																						};
+																					};
+																				} else {
+																					true;
+																				};
+																			};
+																		};
+																		case 4: {
+																			{
+																				var ` = `.expr;
+																				var ` = `.pos;
+																				var ` = `.t;
+																				if (enumIndex ` == 1) {
+																					var ` = `[0];
+																					{
+																						var v2 = `;
+																						var v1 = `;
+																						{
+																							false;
+																						};
+																					};
+																				} else {
+																					true;
+																				};
+																			};
+																		};
+																		default: {
+																			true;
+																		}
+																	};
+																};
+																default: {
+																	true;
+																}
+															};
+														};
+													} else {
+														true;
+													};
+												};
+											} else {
+												true;
+											};
+										} else {
+											true;
+										};
+									};
+									if (shouldInclude) {
+										var cleanedExpr = reflaxe.elixir.ast.builders.LoopBuilder.cleanLoopBodyFromInfrastructure(e, counterVar, userVar);
+										cleaned.push(cleanedExpr);
+									};
+								};
+							};
+							if (cleaned.length == 0) {
+								{expr : haxe.macro.TypedExprDef.TConst(haxe.macro.TConstant.TNull), pos : expr.pos, t : expr.t};
+							} else {
+								if (cleaned.length == 1) {
+									cleaned[0];
+								} else {
+									{expr : haxe.macro.TypedExprDef.TBlock(cleaned), pos : expr.pos, t : expr.t};
+								};
+							};
+						};
+					};
+				};
+				case 16: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var cond = `;
+						var thenExpr = `;
+						var elseExpr = `;
+						{
+							var cleanedThen = reflaxe.elixir.ast.builders.LoopBuilder.cleanLoopBodyFromInfrastructure(thenExpr, counterVar, userVar);
+							var cleanedElse = if (elseExpr != null) {
+								reflaxe.elixir.ast.builders.LoopBuilder.cleanLoopBodyFromInfrastructure(elseExpr, counterVar, userVar);
+							} else {
+								null;
+							};
+							{expr : haxe.macro.TypedExprDef.TIf(cond, cleanedThen, cleanedElse), pos : expr.pos, t : expr.t};
+						};
+					};
+				};
+				default: {
+					expr;
+				}
+			};
+		};
+	}
+
+	static function buildLegacyForFromIR(ir:reflaxe.elixir.ast.loop_ir.LoopIR, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		var varName = if (ir.elementPattern != null) {
+			toSnakeCase(ir.elementPattern.varName);
+		} else {
+			"_item";
+		};
+		var source = @:ast(switch (ir.source) {
+	case Range(start, end, _):
+		makeAST(ERange(start, end, false));	
+	case Collection(expr):
+		expr;	
+	case _:
+		makeAST(ENil);	
+}) {
+			var ` = ir.source;
+			switch (enumIndex `) {
+				case 0: {
+					var ` = `[0];
+					var ` = `[1];
+					var ` = `[2];
+					{
+						var start = `;
+						var end = `;
+						{
+							{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.ERange(start, end, false), metadata : {}, pos : pos};
+							};
+						};
+					};
+				};
+				case 1: {
+					var ` = `[0];
+					{
+						var expr = `;
+						{
+							expr;
+						};
+					};
+				};
+				default: {
+					{
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+					};
+				}
+			};
+		};
+		var body = @:ast(switch (ir.originalExpr.expr) {
+	case TFor(_, _, bodyExpr):
+		buildExpr(bodyExpr);	
+	case _:
+		makeAST(ENil);	
+}) {
+			var ` = ir.originalExpr.expr;
+			if (enumIndex ` == 15) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var bodyExpr = `;
+					{
+						buildExpr(bodyExpr);
+					};
+				};
+			} else {
+				{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+				};
+			};
+		};
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFor([{pattern : reflaxe.elixir.ast.EPattern.PVar(varName), expr : source}], [], body, null, false), metadata : {}, pos : pos};
+		};
+	}
+
+	static function buildLegacyWhileFromIR(ir:reflaxe.elixir.ast.loop_ir.LoopIR, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST) {
+		var cond = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+		};
+		var body = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+		};
+		@:ast(switch (ir.originalExpr.expr) {
+	case TWhile(condExpr, bodyExpr, _):
+		cond = buildExpr(condExpr);
+		body = buildExpr(bodyExpr);	
+	case _:
+}) {
+			var ` = ir.originalExpr.expr;
+			if (enumIndex ` == 17) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				{
+					var condExpr = `;
+					var bodyExpr = `;
+					{
+						cond = buildExpr(condExpr);
+						body = buildExpr(bodyExpr);
+					};
+				};
+			} else {};
+		};
+		return reflaxe.elixir.ast.builders.LoopBuilder.buildLegacyWhile(cond, body, true, buildExpr);
+	}
+
+	static function analyzeVariableScopes(loopVar:haxe.macro.TVar, iterator:haxe.macro.TypedExpr, body:haxe.macro.TypedExpr) {
+		var analysis = {freeVariables : {
+			{};
+			new haxe.ds.StringMap();
+		}, loopLocalVariables : {
+			{};
+			new haxe.ds.StringMap();
+		}, accumulatorVariables : {
+			{};
+			new haxe.ds.StringMap();
+		}, assignments : []};
+		var references = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var definitions = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var collectVars = [null];
+		collectVars[0] = function(expr:haxe.macro.TypedExpr, inDefinition:Bool) {
+			if (expr == null) {
+				return;
+			};
+			@:ast(switch (expr.expr) {
+	case TLocal(v):
+		if (v.name != loopVar.name) {
+			if (!inDefinition) {
+				references.set(v.name, v);
+			};
+		};	
+	case TVar(v, init):
+		definitions.set(v.name, v);
+		if (init != null) {
+			collectVars(init, false);
+		};	
+	case TBinop(OpAssign | OpAssignOp(_), e1, e2):
+		switch (e1.expr) {
+			case TLocal(v):
+				analysis.assignments.push({ target : v.name, source : e2 });			
+			default:
+		};
+		collectVars(e1, true);
+		collectVars(e2, false);	
+	case TBlock(exprs):
+		for (e  in  exprs) {
+			collectVars(e, false);
+		};	
+	case TField(e, _):
+		collectVars(e, false);	
+	default:
+		TypedExprTools.iter(expr, function(e) collectVars(e, false));	
+}) {
+				var ` = expr.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								if (v.name != loopVar.name) {
+									if (! inDefinition) {
+										{
+											var key = v.name;
+											references.set(key, v);
+										};
+									};
+								};
+							};
+						};
+					};
+					case 3: {
+						var ` = `[0];
+						var ` = `[1];
+						var ` = `[2];
+						switch (enumIndex `) {
+							case 4: {
+								{
+									var e1 = `;
+									var e2 = `;
+									{
+										@:ast(switch (e1.expr) {
+	case TLocal(v):
+		analysis.assignments.push({ target : v.name, source : e2 });	
+	default:
+}) {
+											var ` = e1.expr;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var v = `;
+													{
+														analysis.assignments.push({target : v.name, source : e2});
+													};
+												};
+											} else {};
+										};
+										collectVars[0](e1, true);
+										collectVars[0](e2, false);
+									};
+								};
+							};
+							case 20: {
+								var ` = `[0];
+								{
+									var e1 = `;
+									var e2 = `;
+									{
+										@:ast(switch (e1.expr) {
+	case TLocal(v):
+		analysis.assignments.push({ target : v.name, source : e2 });	
+	default:
+}) {
+											var ` = e1.expr;
+											if (enumIndex ` == 1) {
+												var ` = `[0];
+												{
+													var v = `;
+													{
+														analysis.assignments.push({target : v.name, source : e2});
+													};
+												};
+											} else {};
+										};
+										collectVars[0](e1, true);
+										collectVars[0](e2, false);
+									};
+								};
+							};
+							default: {
+								haxe.macro.TypedExprTools.iter(expr, function(e:haxe.macro.TypedExpr) collectVars[0](e, false));
+							}
+						};
+					};
+					case 4: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var e = `;
+							{
+								collectVars[0](e, false);
+							};
+						};
+					};
+					case 13: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var v = `;
+							var init = `;
+							{
+								{
+									var key = v.name;
+									definitions.set(key, v);
+								};
+								if (init != null) {
+									collectVars[0](init, false);
+								};
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var e = exprs[`];
+										++ `;
+										collectVars[0](e, false);
+									};
+								};
+							};
+						};
+					};
+					default: {
+						haxe.macro.TypedExprTools.iter(expr, function(e:haxe.macro.TypedExpr) collectVars[0](e, false));
+					}
+				};
+			};
+		};
+		if (iterator != null) {
+			collectVars[0](iterator, false);
+		};
+		collectVars[0](body, false);
+		{
+			var ` = cast new haxe.iterators.MapKeyValueIterator(references);
+			while (`.hasNext()) {
+				var ` = `.next();
+				var name = `.key;
+				var v = `.value;
+				{
+					if (! definitions.exists(name) && name != loopVar.name) {
+						{
+							var this = analysis.freeVariables;
+							cast this.set(name, v);
+						};
+					} else {
+						if (definitions.exists(name)) {
+							{
+								var this = analysis.loopLocalVariables;
+								cast this.set(name, v);
+							};
+						};
+					};
+				};
+			};
+		};
+		var accumPattern = reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(body);
+		if (accumPattern != null) {
+			{
+				var this = analysis.accumulatorVariables;
+				var key = accumPattern.varName;
+				var value = {varName : accumPattern.varName, isStringConcat : accumPattern.isStringConcat, isListAppend : accumPattern.isListAppend, initialValue : if ((accumPattern.isStringConcat)) {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EString(""), metadata : {}, pos : pos};
+				} else if ((accumPattern.isListAppend)) {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+				} else {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+				}};
+				cast this.set(key, value);
+			};
+		};
+		return analysis;
+	}
+
+	static function trackRequiredInitializations(body:haxe.macro.TypedExpr) {
+		var initializations = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		var findReferences = [null];
+		findReferences[0] = function(expr:haxe.macro.TypedExpr) {
+			if (expr == null) {
+				return;
+			};
+			@:ast(switch (expr.expr) {
+	case TLocal(v):
+		var name = v.name;
+		if (name == "items" || name == "result") {
+			if (!initializations.exists(name)) {
+				if (name == "items") {
+					initializations.set(name, makeAST(EList([])));
+				} else if (name == "result") {
+					initializations.set(name, makeAST(EString("")));
+				};
+			};
+		};	
+	case TVar(v, init):
+		if (init != null) {
+			initializations.remove(v.name);
+		};	
+	case TBlock(exprs):
+		for (e  in  exprs) {
+			findReferences(e);
+		};	
+	default:
+		TypedExprTools.iter(expr, findReferences);	
+}) {
+				var ` = expr.expr;
+				switch (enumIndex `) {
+					case 1: {
+						var ` = `[0];
+						{
+							var v = `;
+							{
+								var name = v.name;
+								if (name == "items" || name == "result") {
+									if (! initializations.exists(name)) {
+										if (name == "items") {
+											{
+												var value = {
+													var pos = null;
+													{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+												};
+												initializations.set(name, value);
+											};
+										} else {
+											if (name == "result") {
+												{
+													var value = {
+														var pos = null;
+														{def : reflaxe.elixir.ast.ElixirASTDef.EString(""), metadata : {}, pos : pos};
+													};
+													initializations.set(name, value);
+												};
+											};
+										};
+									};
+								};
+							};
+						};
+					};
+					case 13: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var v = `;
+							var init = `;
+							{
+								if (init != null) {
+									{
+										var key = v.name;
+										initializations.remove(key);
+									};
+								};
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var e = exprs[`];
+										++ `;
+										findReferences[0](e);
+									};
+								};
+							};
+						};
+					};
+					default: {
+						haxe.macro.TypedExprTools.iter(expr, findReferences[0]);
+					}
+				};
+			};
+		};
+		findReferences[0](body);
+		return initializations;
+	}
+
+	static function buildEnvironmentCapture(analysis:reflaxe.elixir.ast.builders.VariableScopeAnalysis, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		if (Lambda.count(cast analysis.freeVariables, null) == 0) {
+			return null;
+		};
+		var variables = {
+			{};
+			new haxe.ds.StringMap();
+		};
+		{
+			var ` = {
+				var this = analysis.freeVariables;
+				cast new haxe.iterators.MapKeyValueIterator(cast this);
+			};
+			while (`.hasNext()) {
+				var ` = `.next();
+				var name = `.key;
+				var tvar = `.value;
+				{
+					{
+						var value = toSnakeCase(name);
+						variables.set(name, value);
+					};
+				};
+			};
+		};
+		return {variables : variables, needsCapture : true};
+	}
+
+	static function wrapWithInitializations(loopAst:reflaxe.elixir.ast.ElixirAST, initializations:Map<String, reflaxe.elixir.ast.ElixirAST>, toSnakeCase:String -> String) {
+		if (initializations == null || Lambda.count(cast initializations, null) == 0) {
+			return loopAst;
+		};
+		var statements = [];
+		{
+			var ` = cast new haxe.iterators.MapKeyValueIterator(initializations);
+			while (`.hasNext()) {
+				var ` = `.next();
+				var varName = `.key;
+				var initValue = `.value;
+				{
+					var snakeName = toSnakeCase(varName);
+					statements.push({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar(snakeName), metadata : {}, pos : pos};
+						}, initValue), metadata : {}, pos : pos};
+					});
+				};
+			};
+		};
+		statements.push(loopAst);
+		return {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(statements), metadata : {}, pos : pos};
+		};
+	}
+
+	static function buildAccumulationLoop(iteratorVar:String, source:reflaxe.elixir.ast.ElixirAST, body:haxe.macro.TypedExpr, accumulation:{ varName : String, isStringConcat : Bool, isListAppend : Bool }, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		var snakeIterator = toSnakeCase(iteratorVar);
+		var snakeAccum = toSnakeCase(accumulation.varName);
+		var initialValue = if (accumulation.isStringConcat) {
+			{
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EString(""), metadata : {}, pos : pos};
+			};
+		} else {
+			if (accumulation.isListAppend) {
+				{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EList([]), metadata : {}, pos : pos};
+				};
+			} else {
+				{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ENil, metadata : {}, pos : pos};
+				};
+			};
+		};
+		var initializations = reflaxe.elixir.ast.builders.LoopBuilder.trackRequiredInitializations(body);
+		{
+			var key = accumulation.varName;
+			initializations.remove(key);
+		};
+		var transformedBody = reflaxe.elixir.ast.builders.LoopBuilder.transformBodyForReduce(body, accumulation, buildExpr, toSnakeCase);
+		var reduceAst = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+			}, "reduce", [source, initialValue, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(snakeIterator), reflaxe.elixir.ast.EPattern.PVar(snakeAccum)], body : transformedBody}]), metadata : {}, pos : pos};
+			}]), metadata : {}, pos : pos};
+		};
+		return reflaxe.elixir.ast.builders.LoopBuilder.wrapWithInitializations(reduceAst, initializations, toSnakeCase);
+	}
+
+	static function transformBodyForReduce(expr:haxe.macro.TypedExpr, accumulation:{ varName : String, isStringConcat : Bool, isListAppend : Bool }, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		@:ast(switch (expr.expr) {
+	case TBlock(exprs):
+		var transformed = [];
+		var foundAccumulation = false;
+		for (i  in  0 ... exprs.length) {
+			var e = exprs[i];
+			var isAccumulation = switch (e.expr) {
+				case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, _) if (v.name == accumulation.varName):
+					true;				
+				case TBinop(OpAssign, { expr : TLocal(v1) }, { expr : TBinop(OpAdd, { expr : TLocal(v2) }, _) }) if (v1.name == accumulation.varName && v2.name == accumulation.varName):
+					true;				
+				default:
+					false;				
+			};
+			if (isAccumulation) {
+				foundAccumulation = true;
+				var newValue = extractAccumulationValue(e, accumulation, buildExpr, toSnakeCase);
+				if (i == exprs.length - 1) {
+					transformed.push(newValue);
+				} else {
+					var accVar = toSnakeCase(accumulation.varName);
+					transformed.push(makeAST(EBinary(Match, makeAST(EVar(accVar)), newValue)));
+				};
+			} else {
+				var shouldSkip = false;
+				var compiledAst = buildExpr(e);
+				var astString = ElixirASTPrinter.printAST(compiledAst);
+				if (astString.indexOf(" = g ") >= 0 || astString.indexOf(" = g + ") >= 0 || astString.indexOf(" = _g ") >= 0 || astString.indexOf("g + 1") >= 0) {
+					shouldSkip = true;
+				};
+				switch (e.expr) {
+					case TBinop(OpAssign, { expr : TLocal(lhs) }, { expr : TBinop(OpAdd, { expr : TLocal(rhs) }, { expr : TConst(TInt(1)) }) }):
+						if (lhs.name == "i" && (rhs.name == "g" || rhs.name.startsWith("_g") || rhs.name.startsWith("g"))) {
+							shouldSkip = true;
+						};					
+					case TBinop(OpAssign, { expr : TLocal(v) }, _):
+						if (v.name == "g" || v.name.startsWith("_g") || v.name.startsWith("g")) {
+							shouldSkip = true;
+						};					
+					default:
+				};
+				if (!shouldSkip) {
+					var ast = buildExpr(e);
+					transformed.push(ast);
+				};
+			};
+		};
+		if (foundAccumulation && transformed.length > 0) {
+			var lastIsAccumulation = switch (exprs[exprs.length - 1].expr) {
+				case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, _) if (v.name == accumulation.varName):
+					true;				
+				case TBinop(OpAssign, { expr : TLocal(v1) }, { expr : TBinop(OpAdd, { expr : TLocal(v2) }, _) }) if (v1.name == accumulation.varName && v2.name == accumulation.varName):
+					true;				
+				default:
+					false;				
+			};
+			if (!lastIsAccumulation) {
+				transformed.push(makeAST(EVar(toSnakeCase(accumulation.varName))));
+			};
+		};
+		return makeAST(EBlock(transformed));	
+	default:
+		return makeAST(EBlock([buildExpr(expr), makeAST(EVar(toSnakeCase(accumulation.varName)))]));	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					{
+						var transformed = [];
+						var foundAccumulation = false;
+						{
+							var ` = 0;
+							var ` = exprs.length;
+							while (` < `) {
+								var i = ` ++;
+								var e = exprs[i];
+								var isAccumulation = @:ast(switch (e.expr) {
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, _) if (v.name == accumulation.varName):
+		true;	
+	case TBinop(OpAssign, { expr : TLocal(v1) }, { expr : TBinop(OpAdd, { expr : TLocal(v2) }, _) }) if (v1.name == accumulation.varName && v2.name == accumulation.varName):
+		true;	
+	default:
+		false;	
+}) {
+									var ` = e.expr;
+									if (enumIndex ` == 3) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										switch (enumIndex `) {
+											case 4: {
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 1) {
+														var ` = `[0];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 3) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 0) {
+																	{
+																		var ` = `.expr;
+																		var ` = `.pos;
+																		var ` = `.t;
+																		if (enumIndex ` == 1) {
+																			var ` = `[0];
+																			{
+																				var v2 = `;
+																				var v1 = `;
+																				if (v1.name == accumulation.varName && v2.name == accumulation.varName) {
+																					true;
+																				} else {
+																					false;
+																				};
+																			};
+																		} else {
+																			false;
+																		};
+																	};
+																} else {
+																	false;
+																};
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+											};
+											case 20: {
+												var ` = `[0];
+												if (enumIndex ` == 0) {
+													{
+														var ` = `.expr;
+														var ` = `.pos;
+														var ` = `.t;
+														if (enumIndex ` == 1) {
+															var ` = `[0];
+															{
+																var v = `;
+																if (v.name == accumulation.varName) {
+																	true;
+																} else {
+																	false;
+																};
+															};
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+											default: {
+												false;
+											}
+										};
+									} else {
+										false;
+									};
+								};
+								if (isAccumulation) {
+									foundAccumulation = true;
+									var newValue = reflaxe.elixir.ast.builders.LoopBuilder.extractAccumulationValue(e, accumulation, buildExpr, toSnakeCase);
+									if (i == exprs.length - 1) {
+										transformed.push(newValue);
+									} else {
+										var accVar = toSnakeCase(accumulation.varName);
+										transformed.push({
+											var pos = null;
+											{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Match, {
+												var pos = null;
+												{def : reflaxe.elixir.ast.ElixirASTDef.EVar(accVar), metadata : {}, pos : pos};
+											}, newValue), metadata : {}, pos : pos};
+										});
+									};
+								} else {
+									var shouldSkip = false;
+									var compiledAst = buildExpr(e);
+									var astString = reflaxe.elixir.ast.ElixirASTPrinter.printAST(compiledAst, null);
+									if (astString.indexOf(" = g ", null) >= 0 || astString.indexOf(" = g + ", null) >= 0 || astString.indexOf(" = _g ", null) >= 0 || astString.indexOf("g + 1", null) >= 0) {
+										shouldSkip = true;
+									};
+									@:ast(switch (e.expr) {
+	case TBinop(OpAssign, { expr : TLocal(lhs) }, { expr : TBinop(OpAdd, { expr : TLocal(rhs) }, { expr : TConst(TInt(1)) }) }):
+		if (lhs.name == "i" && (rhs.name == "g" || rhs.name.startsWith("_g") || rhs.name.startsWith("g"))) {
+			shouldSkip = true;
+		};	
+	case TBinop(OpAssign, { expr : TLocal(v) }, _):
+		if (v.name == "g" || v.name.startsWith("_g") || v.name.startsWith("g")) {
+			shouldSkip = true;
+		};	
+	default:
+}) {
+										var ` = e.expr;
+										if (enumIndex ` == 3) {
+											var ` = `[0];
+											var ` = `[1];
+											var ` = `[2];
+											if (enumIndex ` == 4) {
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 1) {
+														var ` = `[0];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 3) {
+																var ` = `[0];
+																var ` = `[1];
+																var ` = `[2];
+																if (enumIndex ` == 0) {
+																	{
+																		var ` = `.expr;
+																		var ` = `.pos;
+																		var ` = `.t;
+																		if (enumIndex ` == 1) {
+																			var ` = `[0];
+																			{
+																				var ` = `.expr;
+																				var ` = `.pos;
+																				var ` = `.t;
+																				if (enumIndex ` == 0) {
+																					var ` = `[0];
+																					if (enumIndex ` == 0) {
+																						var ` = `[0];
+																						if (` == 1) {
+																							{
+																								var rhs = `;
+																								var lhs = `;
+																								{
+																									if (lhs.name == "i" && (rhs.name == "g" || StringTools.startsWith(rhs.name, "_g") || StringTools.startsWith(rhs.name, "g"))) {
+																										shouldSkip = true;
+																									};
+																								};
+																							};
+																						} else {
+																							var v = `;
+																							{
+																								if (v.name == "g" || StringTools.startsWith(v.name, "_g") || StringTools.startsWith(v.name, "g")) {
+																									shouldSkip = true;
+																								};
+																							};
+																						};
+																					} else {
+																						var v = `;
+																						{
+																							if (v.name == "g" || StringTools.startsWith(v.name, "_g") || StringTools.startsWith(v.name, "g")) {
+																								shouldSkip = true;
+																							};
+																						};
+																					};
+																				} else {
+																					var v = `;
+																					{
+																						if (v.name == "g" || StringTools.startsWith(v.name, "_g") || StringTools.startsWith(v.name, "g")) {
+																							shouldSkip = true;
+																						};
+																					};
+																				};
+																			};
+																		} else {
+																			var v = `;
+																			{
+																				if (v.name == "g" || StringTools.startsWith(v.name, "_g") || StringTools.startsWith(v.name, "g")) {
+																					shouldSkip = true;
+																				};
+																			};
+																		};
+																	};
+																} else {
+																	var v = `;
+																	{
+																		if (v.name == "g" || StringTools.startsWith(v.name, "_g") || StringTools.startsWith(v.name, "g")) {
+																			shouldSkip = true;
+																		};
+																	};
+																};
+															} else {
+																var v = `;
+																{
+																	if (v.name == "g" || StringTools.startsWith(v.name, "_g") || StringTools.startsWith(v.name, "g")) {
+																		shouldSkip = true;
+																	};
+																};
+															};
+														};
+													} else {};
+												};
+											} else {};
+										} else {};
+									};
+									if (! shouldSkip) {
+										var ast = buildExpr(e);
+										transformed.push(ast);
+									};
+								};
+							};
+						};
+						if (foundAccumulation && transformed.length > 0) {
+							var lastIsAccumulation = @:ast(switch (exprs[exprs.length - 1].expr) {
+	case TBinop(OpAssignOp(OpAdd), { expr : TLocal(v) }, _) if (v.name == accumulation.varName):
+		true;	
+	case TBinop(OpAssign, { expr : TLocal(v1) }, { expr : TBinop(OpAdd, { expr : TLocal(v2) }, _) }) if (v1.name == accumulation.varName && v2.name == accumulation.varName):
+		true;	
+	default:
+		false;	
+}) {
+								var ` = exprs[exprs.length - 1].expr;
+								if (enumIndex ` == 3) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									switch (enumIndex `) {
+										case 4: {
+											{
+												var ` = `.expr;
+												var ` = `.pos;
+												var ` = `.t;
+												if (enumIndex ` == 1) {
+													var ` = `[0];
+													{
+														var ` = `.expr;
+														var ` = `.pos;
+														var ` = `.t;
+														if (enumIndex ` == 3) {
+															var ` = `[0];
+															var ` = `[1];
+															var ` = `[2];
+															if (enumIndex ` == 0) {
+																{
+																	var ` = `.expr;
+																	var ` = `.pos;
+																	var ` = `.t;
+																	if (enumIndex ` == 1) {
+																		var ` = `[0];
+																		{
+																			var v2 = `;
+																			var v1 = `;
+																			if (v1.name == accumulation.varName && v2.name == accumulation.varName) {
+																				true;
+																			} else {
+																				false;
+																			};
+																		};
+																	} else {
+																		false;
+																	};
+																};
+															} else {
+																false;
+															};
+														} else {
+															false;
+														};
+													};
+												} else {
+													false;
+												};
+											};
+										};
+										case 20: {
+											var ` = `[0];
+											if (enumIndex ` == 0) {
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 1) {
+														var ` = `[0];
+														{
+															var v = `;
+															if (v.name == accumulation.varName) {
+																true;
+															} else {
+																false;
+															};
+														};
+													} else {
+														false;
+													};
+												};
+											} else {
+												false;
+											};
+										};
+										default: {
+											false;
+										}
+									};
+								} else {
+									false;
+								};
+							};
+							if (! lastIsAccumulation) {
+								transformed.push({
+									var def = reflaxe.elixir.ast.ElixirASTDef.EVar(toSnakeCase(accumulation.varName));
+									var pos = null;
+									{def : def, metadata : {}, pos : pos};
+								});
+							};
+						};
+						return {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EBlock(transformed), metadata : {}, pos : pos};
+						};
+					};
+				};
+			} else {
+				return {
+					var def = reflaxe.elixir.ast.ElixirASTDef.EBlock([buildExpr(expr), {
+						var def = reflaxe.elixir.ast.ElixirASTDef.EVar(toSnakeCase(accumulation.varName));
+						var pos = null;
+						{def : def, metadata : {}, pos : pos};
+					}]);
+					var pos = null;
+					{def : def, metadata : {}, pos : pos};
+				};
+			};
+		};
+	}
+
+	static function extractAccumulationValue(expr:haxe.macro.TypedExpr, accumulation:{ varName : String, isStringConcat : Bool, isListAppend : Bool }, buildExpr:haxe.macro.TypedExpr -> reflaxe.elixir.ast.ElixirAST, toSnakeCase:String -> String) {
+		var accVar = {
+			var def = reflaxe.elixir.ast.ElixirASTDef.EVar(toSnakeCase(accumulation.varName));
+			var pos = null;
+			{def : def, metadata : {}, pos : pos};
+		};
+		@:ast(switch (expr.expr) {
+	case TBinop(OpAssignOp(OpAdd), _, value):
+		if (accumulation.isStringConcat) {
+			return makeAST(EBinary(StringConcat, accVar, buildExpr(value)));
+		} else {
+			return makeAST(EBinary(Add, accVar, buildExpr(value)));
+		};	
+	case TBinop(OpAssign, _, { expr : TBinop(OpAdd, _, value) }):
+		if (accumulation.isStringConcat) {
+			return makeAST(EBinary(StringConcat, accVar, buildExpr(value)));
+		} else {
+			return makeAST(EBinary(Add, accVar, buildExpr(value)));
+		};	
+	default:
+		return accVar;	
+}) {
+			var ` = expr.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				switch (enumIndex `) {
+					case 4: {
+						{
+							var ` = `.expr;
+							var ` = `.pos;
+							var ` = `.t;
+							if (enumIndex ` == 3) {
+								var ` = `[0];
+								var ` = `[1];
+								var ` = `[2];
+								if (enumIndex ` == 0) {
+									{
+										var value = `;
+										{
+											if (accumulation.isStringConcat) {
+												return {
+													var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.StringConcat, accVar, buildExpr(value));
+													var pos = null;
+													{def : def, metadata : {}, pos : pos};
+												};
+											} else {
+												return {
+													var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Add, accVar, buildExpr(value));
+													var pos = null;
+													{def : def, metadata : {}, pos : pos};
+												};
+											};
+										};
+									};
+								} else {
+									return accVar;
+								};
+							} else {
+								return accVar;
+							};
+						};
+					};
+					case 20: {
+						var ` = `[0];
+						if (enumIndex ` == 0) {
+							{
+								var value = `;
+								{
+									if (accumulation.isStringConcat) {
+										return {
+											var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.StringConcat, accVar, buildExpr(value));
+											var pos = null;
+											{def : def, metadata : {}, pos : pos};
+										};
+									} else {
+										return {
+											var def = reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Add, accVar, buildExpr(value));
+											var pos = null;
+											{def : def, metadata : {}, pos : pos};
+										};
+									};
+								};
+							};
+						} else {
+							return accVar;
+						};
+					};
+					default: {
+						return accVar;
+					}
+				};
+			} else {
+				return accVar;
+			};
+		};
+	}
+
+	static function isMapIterator(iterator:haxe.macro.TypedExpr) {
+		@:ast(switch (iterator.t) {
+	case TAbstract(t, params):
+		var abstractType = t.get();
+		return abstractType.name == "KeyValueIterator" || abstractType.module == "haxe.iterators.MapKeyValueIterator";	
+	case TInst(t, params):
+		var classType = t.get();
+		return classType.name == "MapKeyValueIterator" || classType.module == "haxe.iterators.MapKeyValueIterator";	
+	default:
+		return false;	
+}) {
+			var ` = iterator.t;
+			switch (enumIndex `) {
+				case 2: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var t = `;
+						var params = `;
+						{
+							var classType = t.get();
+							return classType.name == "MapKeyValueIterator" || classType.module == "haxe.iterators.MapKeyValueIterator";
+						};
+					};
+				};
+				case 8: {
+					var ` = `[0];
+					var ` = `[1];
+					{
+						var t = `;
+						var params = `;
+						{
+							var abstractType = t.get();
+							return abstractType.name == "KeyValueIterator" || abstractType.module == "haxe.iterators.MapKeyValueIterator";
+						};
+					};
+				};
+				default: {
+					return false;
+				}
+			};
+		};
+	}
+
+	static function extractMapIterationVariables(body:haxe.macro.TypedExpr, iteratorVar:String) {
+		var keyVar = null;
+		var valueVar = null;
+		@:ast(switch (body.expr) {
+	case TBlock(exprs):
+		for (expr  in  exprs) {
+			switch (expr.expr) {
+				case TVar(tvar, init) if (init != null):
+					switch (init.expr) {
+						case TField({ expr : TLocal(local) }, FInstance(_, _, cf)) if (local.name == iteratorVar):
+							var fieldName = cf.get().name;
+							if (fieldName == "key") {
+								keyVar = tvar.name;
+							} else if (fieldName == "value") {
+								valueVar = tvar.name;
+							};						
+						default:
+					};				
+				default:
+			};
+		};	
+	default:
+}) {
+			var ` = body.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					{
+						{
+							var ` = 0;
+							while (` < exprs.length) {
+								var expr = exprs[`];
+								++ `;
+								@:ast(switch (expr.expr) {
+	case TVar(tvar, init) if (init != null):
+		switch (init.expr) {
+			case TField({ expr : TLocal(local) }, FInstance(_, _, cf)) if (local.name == iteratorVar):
+				var fieldName = cf.get().name;
+				if (fieldName == "key") {
+					keyVar = tvar.name;
+				} else if (fieldName == "value") {
+					valueVar = tvar.name;
+				};			
+			default:
+		};	
+	default:
+}) {
+									var ` = expr.expr;
+									if (enumIndex ` == 13) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var tvar = `;
+											var init = `;
+											if (init != null) {
+												@:ast(switch (init.expr) {
+	case TField({ expr : TLocal(local) }, FInstance(_, _, cf)) if (local.name == iteratorVar):
+		var fieldName = cf.get().name;
+		if (fieldName == "key") {
+			keyVar = tvar.name;
+		} else if (fieldName == "value") {
+			valueVar = tvar.name;
+		};	
+	default:
+}) {
+													var ` = init.expr;
+													if (enumIndex ` == 4) {
+														var ` = `[0];
+														var ` = `[1];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 1) {
+																var ` = `[0];
+																if (enumIndex ` == 0) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var cf = `;
+																		var local = `;
+																		if (local.name == iteratorVar) {
+																			var fieldName = cf.get().name;
+																			if (fieldName == "key") {
+																				keyVar = tvar.name;
+																			} else {
+																				if (fieldName == "value") {
+																					valueVar = tvar.name;
+																				};
+																			};
+																		} else {};
+																	};
+																} else {};
+															} else {};
+														};
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								};
+							};
+						};
+					};
+				};
+			} else {};
+		};
+		return {key : keyVar, value : valueVar, keyUsed : keyVar != null, valueUsed : valueVar != null};
+	}
+
+	static function removeMapIterationExtractions(body:haxe.macro.TypedExpr, iteratorVar:String) {
+		@:ast(switch (body.expr) {
+	case TBlock(exprs):
+		var filteredExprs = [];
+		for (expr  in  exprs) {
+			var shouldKeep = switch (expr.expr) {
+				case TVar(_, init) if (init != null):
+					switch (init.expr) {
+						case TField({ expr : TLocal(local) }, FInstance(_, _, cf)) if (local.name == iteratorVar && (cf.get().name == "key" || cf.get().name == "value")):
+							false;						
+						default:
+							true;						
+					};				
+				default:
+					true;				
+			};
+			if (shouldKeep) {
+				filteredExprs.push(expr);
+			};
+		};
+		return { expr : filteredExprs.length == 1 ? filteredExprs[0].expr : TBlock(filteredExprs), pos : body.pos, t : body.t };	
+	default:
+		return body;	
+}) {
+			var ` = body.expr;
+			if (enumIndex ` == 14) {
+				var ` = `[0];
+				{
+					var exprs = `;
+					{
+						var filteredExprs = [];
+						{
+							var ` = 0;
+							while (` < exprs.length) {
+								var expr = exprs[`];
+								++ `;
+								var shouldKeep = @:ast(switch (expr.expr) {
+	case TVar(_, init) if (init != null):
+		switch (init.expr) {
+			case TField({ expr : TLocal(local) }, FInstance(_, _, cf)) if (local.name == iteratorVar && (cf.get().name == "key" || cf.get().name == "value")):
+				false;			
+			default:
+				true;			
+		};	
+	default:
+		true;	
+}) {
+									var ` = expr.expr;
+									if (enumIndex ` == 13) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var init = `;
+											if (init != null) {
+												@:ast(switch (init.expr) {
+	case TField({ expr : TLocal(local) }, FInstance(_, _, cf)) if (local.name == iteratorVar && (cf.get().name == "key" || cf.get().name == "value")):
+		false;	
+	default:
+		true;	
+}) {
+													var ` = init.expr;
+													if (enumIndex ` == 4) {
+														var ` = `[0];
+														var ` = `[1];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 1) {
+																var ` = `[0];
+																if (enumIndex ` == 0) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	{
+																		var cf = `;
+																		var local = `;
+																		if (local.name == iteratorVar && (cf.get().name == "key" || cf.get().name == "value")) {
+																			false;
+																		} else {
+																			true;
+																		};
+																	};
+																} else {
+																	true;
+																};
+															} else {
+																true;
+															};
+														};
+													} else {
+														true;
+													};
+												};
+											} else {
+												true;
+											};
+										};
+									} else {
+										true;
+									};
+								};
+								if (shouldKeep) {
+									filteredExprs.push(expr);
+								};
+							};
+						};
+						return {expr : if (filteredExprs.length == 1) {
+							filteredExprs[0].expr;
+						} else {
+							haxe.macro.TypedExprDef.TBlock(filteredExprs);
+						}, pos : body.pos, t : body.t};
+					};
+				};
+			} else {
+				return body;
+			};
+		};
+	}
+
+	static function buildIdiomaticMapIteration(v:haxe.macro.TVar, iterator:haxe.macro.TypedExpr, body:haxe.macro.TypedExpr, context:reflaxe.elixir.ast.builders.BuildContext, toElixirVarName:String -> String) {
+		var mapExpr = @:ast(switch (iterator.expr) {
+	case TCall({ expr : TField(map, _) }, _):
+		map;	
+	default:
+		iterator;	
+}) {
+			var ` = iterator.expr;
+			if (enumIndex ` == 9) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var ` = `.expr;
+					var ` = `.pos;
+					var ` = `.t;
+					if (enumIndex ` == 4) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var map = `;
+							{
+								map;
+							};
+						};
+					} else {
+						iterator;
+					};
+				};
+			} else {
+				iterator;
+			};
+		};
+		var mapAst = context.buildFromTypedExpr(mapExpr, null);
+		var vars = reflaxe.elixir.ast.builders.LoopBuilder.extractMapIterationVariables(body, v.name);
+		var cleanedBody = reflaxe.elixir.ast.builders.LoopBuilder.removeMapIterationExtractions(body, v.name);
+		var bodyAst = context.buildFromTypedExpr(cleanedBody, null);
+		var isCollecting = reflaxe.elixir.ast.builders.LoopBuilder.detectAccumulationPattern(cleanedBody) != null;
+		var pattern = if (vars.keyUsed && vars.valueUsed) {
+			var keyPattern = reflaxe.elixir.ast.EPattern.PVar(toElixirVarName(vars.key));
+			var valuePattern = reflaxe.elixir.ast.EPattern.PVar(toElixirVarName(vars.value));
+			reflaxe.elixir.ast.EPattern.PTuple([keyPattern, valuePattern]);
+		} else {
+			if (vars.keyUsed && ! vars.valueUsed) {
+				var keyPattern = reflaxe.elixir.ast.EPattern.PVar(toElixirVarName(vars.key));
+				var valuePattern = reflaxe.elixir.ast.EPattern.PVar("_");
+				reflaxe.elixir.ast.EPattern.PTuple([keyPattern, valuePattern]);
+			} else {
+				if (! vars.keyUsed && vars.valueUsed) {
+					var keyPattern = reflaxe.elixir.ast.EPattern.PVar("_");
+					var valuePattern = reflaxe.elixir.ast.EPattern.PVar(toElixirVarName(vars.value));
+					reflaxe.elixir.ast.EPattern.PTuple([keyPattern, valuePattern]);
+				} else {
+					reflaxe.elixir.ast.EPattern.PTuple([reflaxe.elixir.ast.EPattern.PVar("_"), reflaxe.elixir.ast.EPattern.PVar("_")]);
+				};
+			};
+		};
+		var enumFunc = if (isCollecting) {
+			"map";
+		} else {
+			"each";
+		};
+		return reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+		}, enumFunc, [mapAst, {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [pattern], body : bodyAst}]), metadata : {}, pos : pos};
+		}]);
+	}
+
+	public static function buildFor(v:haxe.macro.TVar, e1:haxe.macro.TypedExpr, e2:haxe.macro.TypedExpr, expr:haxe.macro.TypedExpr, context:reflaxe.elixir.ast.builders.BuildContext, toElixirVarName:String -> String) {
+		var isMapIter = @:ast(switch (e1.expr) {
+	case TCall({ expr : TField(_, FInstance(_, _, cf)) }, []) if (cf.get().name == "keyValueIterator"):
+		trace("[LoopBuilder] Detected Map iterator via keyValueIterator() method");
+		true;	
+	default:
+		var result = isMapIterator(e1);
+		trace("[LoopBuilder] isMapIterator result: $result for expr type: ${e1.t}");
+		result;	
+}) {
+			var ` = e1.expr;
+			if (enumIndex ` == 9) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var ` = `.expr;
+					var ` = `.pos;
+					var ` = `.t;
+					if (enumIndex ` == 4) {
+						var ` = `[0];
+						var ` = `[1];
+						if (enumIndex ` == 0) {
+							var ` = `[0];
+							var ` = `[1];
+							var ` = `[2];
+							if (`.length == 0) {
+								{
+									var cf = `;
+									if (cf.get().name == "keyValueIterator") {
+										haxe.Log.trace("[LoopBuilder] Detected Map iterator via keyValueIterator() method", {fileName : "../../src/reflaxe/elixir/ast/builders/LoopBuilder.hx", lineNumber : 2153, className : "reflaxe.elixir.ast.builders.LoopBuilder", methodName : "buildFor"});
+										true;
+									} else {
+										var result = reflaxe.elixir.ast.builders.LoopBuilder.isMapIterator(e1);
+										haxe.Log.trace("[LoopBuilder] isMapIterator result: " + Std.string(result) + " for expr type: " + Std.string(e1.t), {fileName : "../../src/reflaxe/elixir/ast/builders/LoopBuilder.hx", lineNumber : 2157, className : "reflaxe.elixir.ast.builders.LoopBuilder", methodName : "buildFor"});
+										result;
+									};
+								};
+							} else {
+								var result = reflaxe.elixir.ast.builders.LoopBuilder.isMapIterator(e1);
+								haxe.Log.trace("[LoopBuilder] isMapIterator result: " + Std.string(result) + " for expr type: " + Std.string(e1.t), {fileName : "../../src/reflaxe/elixir/ast/builders/LoopBuilder.hx", lineNumber : 2157, className : "reflaxe.elixir.ast.builders.LoopBuilder", methodName : "buildFor"});
+								result;
+							};
+						} else {
+							var result = reflaxe.elixir.ast.builders.LoopBuilder.isMapIterator(e1);
+							haxe.Log.trace("[LoopBuilder] isMapIterator result: " + Std.string(result) + " for expr type: " + Std.string(e1.t), {fileName : "../../src/reflaxe/elixir/ast/builders/LoopBuilder.hx", lineNumber : 2157, className : "reflaxe.elixir.ast.builders.LoopBuilder", methodName : "buildFor"});
+							result;
+						};
+					} else {
+						var result = reflaxe.elixir.ast.builders.LoopBuilder.isMapIterator(e1);
+						haxe.Log.trace("[LoopBuilder] isMapIterator result: " + Std.string(result) + " for expr type: " + Std.string(e1.t), {fileName : "../../src/reflaxe/elixir/ast/builders/LoopBuilder.hx", lineNumber : 2157, className : "reflaxe.elixir.ast.builders.LoopBuilder", methodName : "buildFor"});
+						result;
+					};
+				};
+			} else {
+				var result = reflaxe.elixir.ast.builders.LoopBuilder.isMapIterator(e1);
+				haxe.Log.trace("[LoopBuilder] isMapIterator result: " + Std.string(result) + " for expr type: " + Std.string(e1.t), {fileName : "../../src/reflaxe/elixir/ast/builders/LoopBuilder.hx", lineNumber : 2157, className : "reflaxe.elixir.ast.builders.LoopBuilder", methodName : "buildFor"});
+				result;
+			};
+		};
+		if (isMapIter) {
+			return reflaxe.elixir.ast.builders.LoopBuilder.buildIdiomaticMapIteration(v, e1, e2, context, toElixirVarName);
+		};
+		var loopMetadata = reflaxe.elixir.ast.builders.LoopBuilder.createMetadata(expr);
+		var loopContext = {variableName : v.name, rangeMin : reflaxe.elixir.ast.builders.LoopBuilder.extractRangeMin(e1), rangeMax : reflaxe.elixir.ast.builders.LoopBuilder.extractRangeMax(e1), depth : 0, iteratorExpr : reflaxe.elixir.ast.builders.LoopBuilder.captureIteratorExpression(e1)};
+		if (loopMetadata.loopContextStack == null) {
+			loopMetadata.loopContextStack = [];
+		};
+		loopMetadata.loopContextStack.push(loopContext);
+		loopMetadata.loopVariableName = v.name;
+		loopMetadata.originalLoopExpression = reflaxe.elixir.ast.builders.LoopBuilder.captureExpressionText(e2, v.name);
+		loopMetadata.isWithinLoop = true;
+		if (context.isFeatureEnabled("loop_builder_enhanced")) {
+			var transform = reflaxe.elixir.ast.builders.LoopBuilder.analyzeFor(v, e1, e2);
+			var ast = reflaxe.elixir.ast.builders.LoopBuilder.buildFromTransform(transform, function(e:haxe.macro.TypedExpr) return context.buildFromTypedExpr(e, null), function(name:String) return toElixirVarName(name));
+			if (ast != null) {
+				return {def : ast.def, metadata : loopMetadata, pos : expr.pos}.def;
+			};
+			return ast.def;
+		} else {
+			var varName = toElixirVarName(v.name);
+			var pattern = reflaxe.elixir.ast.EPattern.PVar(varName);
+			var iteratorExpr = context.buildFromTypedExpr(e1, null);
+			var bodyExpr = context.buildFromTypedExpr(e2, null);
+			var forDef = reflaxe.elixir.ast.ElixirASTDef.EFor([{pattern : pattern, expr : iteratorExpr}], [], bodyExpr, null, false);
+			return {def : forDef, metadata : loopMetadata, pos : expr.pos}.def;
+		};
+	}
+
+	public static function buildWhileComplete(econd:haxe.macro.TypedExpr, e:haxe.macro.TypedExpr, normalWhile:Bool, expr:haxe.macro.TypedExpr, context:reflaxe.elixir.ast.builders.BuildContext, toElixirVarName:String -> String) {
+		if (context.isFeatureEnabled("loop_builder_enabled")) {
+			var forPattern = reflaxe.elixir.ast.builders.LoopBuilder.detectDesugarForLoopPattern(econd, e);
+			if (forPattern != null) {
+				return reflaxe.elixir.ast.builders.LoopBuilder.buildFromForPattern(forPattern, function(expr:haxe.macro.TypedExpr) return context.buildFromTypedExpr(expr, null), function(s:String) return toElixirVarName(s)).def;
+			};
+		};
+		var arrayPattern = reflaxe.elixir.ast.builders.LoopBuilder.detectArrayIterationPattern(econd, e);
+		if (arrayPattern != null) {
+			return reflaxe.elixir.ast.builders.LoopBuilder.generateIdiomaticEnumCall(arrayPattern.arrayRef, arrayPattern.operation, e, context, toElixirVarName);
+		};
+		var mapPattern = reflaxe.elixir.ast.builders.LoopBuilder.detectMapIterationPattern(econd, e);
+		if (mapPattern != null) {
+			return reflaxe.elixir.ast.builders.LoopBuilder.buildIdiomaticMapIterationFromWhile(mapPattern, context, toElixirVarName);
+		};
+		return reflaxe.elixir.ast.builders.LoopBuilder.buildWhileLoop(econd, e, normalWhile, context, toElixirVarName);
+	}
+
+	static function detectArrayIterationPattern(econd:haxe.macro.TypedExpr, body:haxe.macro.TypedExpr) {
+		var actualCond = @:ast(switch (econd.expr) {
+	case TParenthesis(inner):
+		inner;	
+	default:
+		econd;	
+}) {
+			var ` = econd.expr;
+			if (enumIndex ` == 6) {
+				var ` = `[0];
+				{
+					var inner = `;
+					{
+						inner;
+					};
+				};
+			} else {
+				econd;
+			};
+		};
+		@:ast(switch (actualCond.expr) {
+	case TBinop(OpLt, { expr : TLocal(indexVar) }, { expr : TField(arr, FInstance(_, _, cf)) }) if (StringTools.startsWith(indexVar.name, "_g") && cf.get().name == "length"):
+		var pattern = ElixirASTPatterns.detectArrayOperationPattern(body);
+		if (pattern != null) {
+			return { arrayRef : arr, operation : pattern };
+		};	
+	default:
+}) {
+			var ` = actualCond.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 9) {
+					{
+						var ` = `.expr;
+						var ` = `.pos;
+						var ` = `.t;
+						if (enumIndex ` == 1) {
+							var ` = `[0];
+							{
+								var ` = `.expr;
+								var ` = `.pos;
+								var ` = `.t;
+								if (enumIndex ` == 4) {
+									var ` = `[0];
+									var ` = `[1];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										var ` = `[1];
+										var ` = `[2];
+										{
+											var cf = `;
+											var arr = `;
+											var indexVar = `;
+											if (StringTools.startsWith(indexVar.name, "_g") && cf.get().name == "length") {
+												var pattern = reflaxe.elixir.ast.ElixirASTPatterns.detectArrayOperationPattern(body);
+												if (pattern != null) {
+													return {arrayRef : arr, operation : pattern};
+												};
+											} else {};
+										};
+									} else {};
+								} else {};
+							};
+						} else {};
+					};
+				} else {};
+			} else {};
+		};
+		return null;
+	}
+
+	static function detectMapIterationPattern(econd:haxe.macro.TypedExpr, body:haxe.macro.TypedExpr) {
+		var iteratorVar = [null];
+		var hasNextCall = @:ast(switch (econd.expr) {
+	case TCall({ expr : TField({ expr : TLocal(v) }, FInstance(_, _, cf)) }, []) if (cf.get().name == "hasNext"):
+		iteratorVar = v.name;
+		true;	
+	default:
+		false;	
+}) {
+			var ` = econd.expr;
+			if (enumIndex ` == 9) {
+				var ` = `[0];
+				var ` = `[1];
+				{
+					var ` = `.expr;
+					var ` = `.pos;
+					var ` = `.t;
+					if (enumIndex ` == 4) {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var ` = `.expr;
+							var ` = `.pos;
+							var ` = `.t;
+							if (enumIndex ` == 1) {
+								var ` = `[0];
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									var ` = `[1];
+									var ` = `[2];
+									if (`.length == 0) {
+										{
+											var v = `;
+											var cf = `;
+											if (cf.get().name == "hasNext") {
+												iteratorVar[0] = v.name;
+												true;
+											} else {
+												false;
+											};
+										};
+									} else {
+										false;
+									};
+								} else {
+									false;
+								};
+							} else {
+								false;
+							};
+						};
+					} else {
+						false;
+					};
+				};
+			} else {
+				false;
+			};
+		};
+		if (! hasNextCall || iteratorVar[0] == null) {
+			return null;
+		};
+		var keyVar = [null];
+		var valueVar = [null];
+		var mapExpr = null;
+		var scanForIteratorUsage = [null];
+		scanForIteratorUsage[0] = function(expr:haxe.macro.TypedExpr) {
+			if (expr == null) {
+				return;
+			};
+			@:ast(switch (expr.expr) {
+	case TBlock(exprs):
+		for (e  in  exprs) scanForIteratorUsage(e);	
+	case TVar(tvar, init) if (init != null):
+		switch (init.expr) {
+			case TField({ expr : TCall({ expr : TField({ expr : TLocal(v) }, FInstance(_, _, cf)) }, []) }, FInstance(_, _, fieldCf)) if (v.name == iteratorVar && cf.get().name == "next"):
+				var fieldName = fieldCf.get().name;
+				if (fieldName == "key") {
+					keyVar = tvar.name;
+				} else if (fieldName == "value") {
+					valueVar = tvar.name;
+				};			
+			default:
+		};	
+	default:
+		TypedExprTools.iter(expr, scanForIteratorUsage);	
+}) {
+				var ` = expr.expr;
+				switch (enumIndex `) {
+					case 13: {
+						var ` = `[0];
+						var ` = `[1];
+						{
+							var tvar = `;
+							var init = `;
+							if (init != null) {
+								@:ast(switch (init.expr) {
+	case TField({ expr : TCall({ expr : TField({ expr : TLocal(v) }, FInstance(_, _, cf)) }, []) }, FInstance(_, _, fieldCf)) if (v.name == iteratorVar && cf.get().name == "next"):
+		var fieldName = fieldCf.get().name;
+		if (fieldName == "key") {
+			keyVar = tvar.name;
+		} else if (fieldName == "value") {
+			valueVar = tvar.name;
+		};	
+	default:
+}) {
+									var ` = init.expr;
+									if (enumIndex ` == 4) {
+										var ` = `[0];
+										var ` = `[1];
+										{
+											var ` = `.expr;
+											var ` = `.pos;
+											var ` = `.t;
+											if (enumIndex ` == 9) {
+												var ` = `[0];
+												var ` = `[1];
+												{
+													var ` = `.expr;
+													var ` = `.pos;
+													var ` = `.t;
+													if (enumIndex ` == 4) {
+														var ` = `[0];
+														var ` = `[1];
+														{
+															var ` = `.expr;
+															var ` = `.pos;
+															var ` = `.t;
+															if (enumIndex ` == 1) {
+																var ` = `[0];
+																if (enumIndex ` == 0) {
+																	var ` = `[0];
+																	var ` = `[1];
+																	var ` = `[2];
+																	if (`.length == 0) {
+																		if (enumIndex ` == 0) {
+																			var ` = `[0];
+																			var ` = `[1];
+																			var ` = `[2];
+																			{
+																				var fieldCf = `;
+																				var cf = `;
+																				var v = `;
+																				if (v.name == iteratorVar[0] && cf.get().name == "next") {
+																					var fieldName = fieldCf.get().name;
+																					if (fieldName == "key") {
+																						keyVar[0] = tvar.name;
+																					} else {
+																						if (fieldName == "value") {
+																							valueVar[0] = tvar.name;
+																						};
+																					};
+																				} else {};
+																			};
+																		} else {};
+																	} else {};
+																} else {};
+															} else {};
+														};
+													} else {};
+												};
+											} else {};
+										};
+									} else {};
+								};
+							} else {
+								haxe.macro.TypedExprTools.iter(expr, scanForIteratorUsage[0]);
+							};
+						};
+					};
+					case 14: {
+						var ` = `[0];
+						{
+							var exprs = `;
+							{
+								{
+									var ` = 0;
+									while (` < exprs.length) {
+										var e = exprs[`];
+										++ `;
+										scanForIteratorUsage[0](e);
+									};
+								};
+							};
+						};
+					};
+					default: {
+						haxe.macro.TypedExprTools.iter(expr, scanForIteratorUsage[0]);
+					}
+				};
+			};
+		};
+		scanForIteratorUsage[0](body);
+		if (keyVar[0] != null || valueVar[0] != null) {
+			return {mapExpr : null, iteratorVar : iteratorVar[0], keyVar : if (keyVar[0] != null) {
+				keyVar[0];
+			} else {
+				"_";
+			}, valueVar : if (valueVar[0] != null) {
+				valueVar[0];
+			} else {
+				"_";
+			}};
+		};
+		return null;
+	}
+
+	static function buildIdiomaticMapIterationFromWhile(pattern:{ valueVar : String, mapExpr : haxe.macro.TypedExpr, keyVar : String, iteratorVar : String }, context:reflaxe.elixir.ast.builders.BuildContext, toElixirVarName:String -> String) {
+		return reflaxe.elixir.ast.ElixirASTDef.EString("# TODO: Map iteration pattern detected but needs broader context to extract map expression");
+	}
+
+	static function buildWhileLoop(econd:haxe.macro.TypedExpr, e:haxe.macro.TypedExpr, normalWhile:Bool, context:reflaxe.elixir.ast.builders.BuildContext, toElixirVarName:String -> String) {
+		var condition = context.buildFromTypedExpr(econd, null);
+		var body = context.buildFromTypedExpr(e, null);
+		var mutatedVars = reflaxe.elixir.helpers.MutabilityDetector.detectMutatedVariables(e);
+		var conditionVars = {
+			{};
+			new haxe.ds.IntMap();
+		};
+		var findConditionVars = [null];
+		findConditionVars[0] = function(expr:haxe.macro.TypedExpr) {
+			if (expr == null) {
+				return;
+			};
+			@:ast(switch (expr.expr) {
+	case TLocal(v):
+		conditionVars.set(v.id, v);	
+	default:
+		TypedExprTools.iter(expr, findConditionVars);	
+}) {
+				var ` = expr.expr;
+				if (enumIndex ` == 1) {
+					var ` = `[0];
+					{
+						var v = `;
+						{
+							{
+								var key = v.id;
+								conditionVars.set(key, v);
+							};
+						};
+					};
+				} else {
+					haxe.macro.TypedExprTools.iter(expr, findConditionVars[0]);
+				};
+			};
+		};
+		findConditionVars[0](econd);
+		for (v in conditionVars.iterator()) {
+			if (! {
+				var key = v.id;
+				mutatedVars.exists(key);
+			}) {
+				{
+					var key = v.id;
+					mutatedVars.set(key, v);
+				};
+			};
+		};
+		if (Lambda.count(cast mutatedVars, null) > 0) {
+			return reflaxe.elixir.ast.builders.LoopBuilder.buildReduceWhileWithState(mutatedVars, condition, body, context, toElixirVarName);
+		} else {
+			return reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+			}, "reduce_while", [{
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Stream"), metadata : {}, pos : pos};
+				}, "iterate", [{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+				}, {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar("n")], guard : null, body : {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Add, {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar("n"), metadata : {}, pos : pos};
+						}, {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(1), metadata : {}, pos : pos};
+						}), metadata : {}, pos : pos};
+					}}]), metadata : {}, pos : pos};
+				}]), metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "ok"), metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PWildcard, reflaxe.elixir.ast.EPattern.PVar("acc")], guard : null, body : {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EIf(condition, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([body, {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "cont"), metadata : {}, pos : pos};
+							}, {
+								var pos = null;
+								{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+							}]), metadata : {}, pos : pos};
+						}]), metadata : {}, pos : pos};
+					}, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "halt"), metadata : {}, pos : pos};
+						}, {
+							var pos = null;
+							{def : reflaxe.elixir.ast.ElixirASTDef.EVar("acc"), metadata : {}, pos : pos};
+						}]), metadata : {}, pos : pos};
+					}), metadata : {}, pos : pos};
+				}}]), metadata : {}, pos : pos};
+			}]);
+		};
+	}
+
+	static function buildReduceWhileWithState(mutatedVars:Map<Int, haxe.macro.TVar>, condition:reflaxe.elixir.ast.ElixirAST, body:reflaxe.elixir.ast.ElixirAST, context:reflaxe.elixir.ast.builders.BuildContext, toElixirVarName:String -> String) {
+		var accVarList = [];
+		{
+			var ` = cast new haxe.iterators.MapKeyValueIterator(mutatedVars);
+			while (`.hasNext()) {
+				var ` = `.next();
+				var id = `.key;
+				var v = `.value;
+				{
+					accVarList.push({name : toElixirVarName(v.name), tvar : v});
+				};
+			};
+		};
+		accVarList.sort(function(a:{ tvar : haxe.macro.TVar, name : String }, b:{ tvar : haxe.macro.TVar, name : String }) return Reflect.compare(a.tvar.id, b.tvar.id));
+		var accInitializers = [];
+		var accPatterns = [];
+		var accRebuilders = [];
+		{
+			var ` = 0;
+			while (` < accVarList.length) {
+				var item = accVarList[`];
+				++ `;
+				accInitializers.push({
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EVar(item.name), metadata : {}, pos : pos};
+				});
+				accPatterns.push(reflaxe.elixir.ast.EPattern.PVar(item.name));
+				accRebuilders.push({
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EVar(item.name), metadata : {}, pos : pos};
+				});
+			};
+		};
+		var initAcc = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ETuple(accInitializers), metadata : {}, pos : pos};
+		};
+		var accPattern = reflaxe.elixir.ast.EPattern.PTuple(accPatterns);
+		var newAccTuple = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ETuple(accRebuilders), metadata : {}, pos : pos};
+		};
+		var transformedCondition = reflaxe.elixir.ast.builders.LoopBuilder.transformExpressionWithMapping(condition, {
+			var ` = [];
+			{
+				var ` = 0;
+				var ` = accVarList;
+				while (` < `.length) {
+					var v = `[`];
+					++ `;
+					`.push(function(item:{ tvar : haxe.macro.TVar, name : String }) {
+						return item.name;
+					}(v));
+				};
+			};
+			`;
+		});
+		var transformedBody = reflaxe.elixir.ast.builders.LoopBuilder.transformExpressionWithMapping(body, {
+			var ` = [];
+			{
+				var ` = 0;
+				var ` = accVarList;
+				while (` < `.length) {
+					var v = `[`];
+					++ `;
+					`.push(function(item:{ tvar : haxe.macro.TVar, name : String }) {
+						return item.name;
+					}(v));
+				};
+			};
+			`;
+		});
+		var lambdaIfBody = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EIf(transformedCondition, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EBlock([transformedBody, {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "cont"), metadata : {}, pos : pos};
+					}, newAccTuple]), metadata : {}, pos : pos};
+				}]), metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.ETuple([{
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EAtom(cast "halt"), metadata : {}, pos : pos};
+				}, newAccTuple]), metadata : {}, pos : pos};
+			}), metadata : {}, pos : pos};
+		};
+		var reducerFn = {
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PWildcard, accPattern], guard : null, body : lambdaIfBody}]), metadata : {}, pos : pos};
+		};
+		var result = reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+		}, "reduce_while", [{
+			var pos = null;
+			{def : reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Stream"), metadata : {}, pos : pos};
+			}, "iterate", [{
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(0), metadata : {}, pos : pos};
+			}, {
+				var pos = null;
+				{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar("n")], guard : null, body : {
+					var pos = null;
+					{def : reflaxe.elixir.ast.ElixirASTDef.EBinary(reflaxe.elixir.ast.EBinaryOp.Add, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar("n"), metadata : {}, pos : pos};
+					}, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EInteger(1), metadata : {}, pos : pos};
+					}), metadata : {}, pos : pos};
+				}}]), metadata : {}, pos : pos};
+			}]), metadata : {}, pos : pos};
+		}, initAcc, reducerFn]);
+		return result;
+	}
+
+	static function transformExpressionWithMapping(expr:reflaxe.elixir.ast.ElixirAST, varNames:Array<String>) {
+		return expr;
+	}
+
+	static function generateIdiomaticEnumCall(arrayRef:haxe.macro.TypedExpr, operation:String, body:haxe.macro.TypedExpr, context:reflaxe.elixir.ast.builders.BuildContext, toElixirVarName:String -> String) {
+		var array = context.buildFromTypedExpr(arrayRef, null);
+		@:ast(switch (operation) {
+	case "map":
+		var itemVar = "item";
+		var transformation = context.buildFromTypedExpr(body);
+		return ERemoteCall(makeAST(EVar("Enum")), "map", [array, makeAST(EFn([{ args : [PVar(itemVar)], guard : null, body : transformation }]))]);	
+	case "filter":
+		var itemVar = "item";
+		var predicate = context.buildFromTypedExpr(body);
+		return ERemoteCall(makeAST(EVar("Enum")), "filter", [array, makeAST(EFn([{ args : [PVar(itemVar)], guard : null, body : predicate }]))]);	
+	case "each":
+		var itemVar = "item";
+		var action = context.buildFromTypedExpr(body);
+		return ERemoteCall(makeAST(EVar("Enum")), "each", [array, makeAST(EFn([{ args : [PVar(itemVar)], guard : null, body : action }]))]);	
+	default:
+		return buildWhileLoop(arrayRef, body, true, context, toElixirVarName);	
+}) switch (operation) {
+			case "each": {
+				{
+					var itemVar = "item";
+					var action = context.buildFromTypedExpr(body, null);
+					return reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+					}, "each", [array, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(itemVar)], guard : null, body : action}]), metadata : {}, pos : pos};
+					}]);
+				};
+			};
+			case "filter": {
+				{
+					var itemVar = "item";
+					var predicate = context.buildFromTypedExpr(body, null);
+					return reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+					}, "filter", [array, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(itemVar)], guard : null, body : predicate}]), metadata : {}, pos : pos};
+					}]);
+				};
+			};
+			case "map": {
+				{
+					var itemVar = "item";
+					var transformation = context.buildFromTypedExpr(body, null);
+					return reflaxe.elixir.ast.ElixirASTDef.ERemoteCall({
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EVar("Enum"), metadata : {}, pos : pos};
+					}, "map", [array, {
+						var pos = null;
+						{def : reflaxe.elixir.ast.ElixirASTDef.EFn([{args : [reflaxe.elixir.ast.EPattern.PVar(itemVar)], guard : null, body : transformation}]), metadata : {}, pos : pos};
+					}]);
+				};
+			};
+			default: {
+				return reflaxe.elixir.ast.builders.LoopBuilder.buildWhileLoop(arrayRef, body, true, context, toElixirVarName);
+			}
+		};
+	}
+
+	static function createMetadata(expr:haxe.macro.TypedExpr) {
+		return {};
+	}
+
+	static function extractRangeMin(iterator:haxe.macro.TypedExpr) {
+		@:ast(switch (iterator.expr) {
+	case TBinop(OpInterval, startExpr, _):
+		switch (startExpr.expr) {
+			case TConst(TInt(i)):
+				return i;			
+			default:
+				return 0;			
+		};	
+	default:
+		return 0;	
+}) {
+			var ` = iterator.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 21) {
+					{
+						var startExpr = `;
+						{
+							@:ast(switch (startExpr.expr) {
+	case TConst(TInt(i)):
+		return i;	
+	default:
+		return 0;	
+}) {
+								var ` = startExpr.expr;
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var i = `;
+											{
+												return i;
+											};
+										};
+									} else {
+										return 0;
+									};
+								} else {
+									return 0;
+								};
+							};
+						};
+					};
+				} else {
+					return 0;
+				};
+			} else {
+				return 0;
+			};
+		};
+	}
+
+	static function extractRangeMax(iterator:haxe.macro.TypedExpr) {
+		@:ast(switch (iterator.expr) {
+	case TBinop(OpInterval, _, endExpr):
+		switch (endExpr.expr) {
+			case TConst(TInt(i)):
+				return i - 1;			
+			default:
+				return 0;			
+		};	
+	default:
+		return 0;	
+}) {
+			var ` = iterator.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 21) {
+					{
+						var endExpr = `;
+						{
+							@:ast(switch (endExpr.expr) {
+	case TConst(TInt(i)):
+		return i - 1;	
+	default:
+		return 0;	
+}) {
+								var ` = endExpr.expr;
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var i = `;
+											{
+												return i - 1;
+											};
+										};
+									} else {
+										return 0;
+									};
+								} else {
+									return 0;
+								};
+							};
+						};
+					};
+				} else {
+					return 0;
+				};
+			} else {
+				return 0;
+			};
+		};
+	}
+
+	static function captureIteratorExpression(iterator:haxe.macro.TypedExpr) {
+		@:ast(switch (iterator.expr) {
+	case TBinop(OpInterval, startExpr, endExpr):
+		var start = switch (startExpr.expr) {
+			case TConst(TInt(i)):
+				Std.string(i);			
+			default:
+				"?";			
+		};
+		var end = switch (endExpr.expr) {
+			case TConst(TInt(i)):
+				Std.string(i - 1);			
+			default:
+				"?";			
+		};
+		return start + ".." + end;	
+	default:
+		return "unknown";	
+}) {
+			var ` = iterator.expr;
+			if (enumIndex ` == 3) {
+				var ` = `[0];
+				var ` = `[1];
+				var ` = `[2];
+				if (enumIndex ` == 21) {
+					{
+						var startExpr = `;
+						var endExpr = `;
+						{
+							var start = @:ast(switch (startExpr.expr) {
+	case TConst(TInt(i)):
+		Std.string(i);	
+	default:
+		"?";	
+}) {
+								var ` = startExpr.expr;
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var i = `;
+											{
+												Std.string(i);
+											};
+										};
+									} else {
+										"?";
+									};
+								} else {
+									"?";
+								};
+							};
+							var end = @:ast(switch (endExpr.expr) {
+	case TConst(TInt(i)):
+		Std.string(i - 1);	
+	default:
+		"?";	
+}) {
+								var ` = endExpr.expr;
+								if (enumIndex ` == 0) {
+									var ` = `[0];
+									if (enumIndex ` == 0) {
+										var ` = `[0];
+										{
+											var i = `;
+											{
+												Std.string(i - 1);
+											};
+										};
+									} else {
+										"?";
+									};
+								} else {
+									"?";
+								};
+							};
+							return start + ".." + end;
+						};
+					};
+				} else {
+					return "unknown";
+				};
+			} else {
+				return "unknown";
+			};
+		};
+	}
+
+	static function captureExpressionText(expr:haxe.macro.TypedExpr, varName:String) {
+		return "<expression with " + varName + ">";
+	}
+}
