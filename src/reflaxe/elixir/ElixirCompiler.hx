@@ -1074,6 +1074,42 @@ class ElixirCompiler extends GenericCompiler<
             trace('[AST Pipeline]   Transformed AST ID: $transformedAstId');
 
             ast = transformedAst;
+
+            #if debug_loop_builder
+            // Check if this is a reduce_while call to inspect lambda integrity
+            if (ast != null) {
+                switch(ast.def) {
+                    case ERemoteCall(module, funcName, args):
+                        switch(module.def) {
+                            case EVar("Enum"):
+                                if (funcName == "reduce_while" && args != null && args.length >= 3) {
+                                    trace('[XRay Pipeline] After transformation - Enum.reduce_while detected');
+                                    var reducerArg = args[2];
+                                    trace('[XRay Pipeline]   Reducer arg type: ${Type.enumConstructor(reducerArg.def)}');
+                                    switch(reducerArg.def) {
+                                        case EFn(clauses):
+                                            if (clauses.length > 0) {
+                                                var clause = clauses[0];
+                                                trace('[XRay Pipeline]   Lambda body type: ${Type.enumConstructor(clause.body.def)}');
+                                                switch(clause.body.def) {
+                                                    case EBlock(exprs):
+                                                        trace('[XRay Pipeline]   Lambda body is EBlock with ${exprs.length} expressions');
+                                                    case EIf(_, _, _):
+                                                        trace('[XRay Pipeline]   Lambda body is EIf (correct structure)');
+                                                    default:
+                                                        trace('[XRay Pipeline]   Lambda body is: ${Type.enumConstructor(clause.body.def)}');
+                                                }
+                                            }
+                                        default:
+                                            trace('[XRay Pipeline]   Reducer is not EFn: ${Type.enumConstructor(reducerArg.def)}');
+                                    }
+                                }
+                            default:
+                        }
+                    default:
+                }
+            }
+            #end
         }
 
         trace('[AST Pipeline] Returning AST to caller');
@@ -1470,9 +1506,18 @@ class ElixirCompiler extends GenericCompiler<
             // This fixes the issue where parameters with numeric suffixes (like options2)
             // aren't mapped correctly in the function body
             if (funcData.tfunc != null) {
+                #if debug_variable_renaming
+                trace('[ElixirCompiler] Processing ${funcData.field.name} - funcData.tfunc is NOT null, registering ${funcData.tfunc.args.length} parameters');
+                trace('[ElixirCompiler] Context tempVarRenameMap BEFORE registration: ${Lambda.count(context.tempVarRenameMap)} entries');
+                #end
+
                 for (arg in funcData.tfunc.args) {
                     var originalName = arg.v.name;
                     var idKey = Std.string(arg.v.id);
+
+                    #if debug_variable_renaming
+                    trace('[ElixirCompiler] Processing parameter for ${funcData.field.name}: "$originalName" (id: $idKey)');
+                    #end
 
                     // Check if parameter has numeric suffix that indicates shadowing
                     var strippedName = originalName;
@@ -1482,7 +1527,7 @@ class ElixirCompiler extends GenericCompiler<
                         var suffix = renamedPattern.matched(2);
 
                         // Only strip suffix for common field names
-                        var commonFieldNames = ["options", "columns", "name", "value", "type", "data", "fields", "items"];
+                        var commonFieldNames = ["options", "columns", "name", "value", "type", "data", "fields", "items", "priority"];
                         if ((suffix == "2" || suffix == "3") && commonFieldNames.indexOf(baseWithoutSuffix) >= 0) {
                             strippedName = baseWithoutSuffix;
 
@@ -1511,16 +1556,44 @@ class ElixirCompiler extends GenericCompiler<
                     } else {
                         baseName;
                     };
+                    #if debug_variable_renaming
+                    trace('[ElixirCompiler] About to register for ${funcData.field.name}: idKey="$idKey" originalName="$originalName" finalName="$finalName" unused=$isUnused');
+                    trace('[ElixirCompiler] Map exists check: ${context.tempVarRenameMap.exists(idKey)}');
+                    #end
+
                     if (!context.tempVarRenameMap.exists(idKey)) {
+                        #if debug_variable_renaming
+                        trace('[ElixirCompiler] ENTERED if block - about to set mappings');
+                        #end
+
                         // Dual-key storage: ID for pattern positions, name for EVar references
                         context.tempVarRenameMap.set(idKey, finalName);           // ID-based (pattern matching)
                         context.tempVarRenameMap.set(originalName, finalName);    // NAME-based (EVar renaming)
 
+                        #if debug_variable_renaming
+                        trace('[ElixirCompiler] COMPLETED setting mappings for idKey=$idKey');
+                        trace('[ElixirCompiler] Context hashcode: ${untyped context.__id}');
+                        trace('[ElixirCompiler] Map hashcode: ${untyped context.tempVarRenameMap.__id}');
+                        #end
+
+                        #if debug_variable_renaming
+                        trace('[ElixirCompiler] ✓ Registered dual-key: id=$idKey name=$originalName -> $finalName');
+                        trace('[ElixirCompiler] Map size after registration: ${Lambda.count(context.tempVarRenameMap)}');
+                        #end
+
                         #if debug_hygiene
                         trace('[Hygiene] Dual-key registered: id=$idKey name=$originalName -> $finalName');
                         #end
+                    } else {
+                        #if debug_variable_renaming
+                        trace('[ElixirCompiler] ✗ Skipped registration (idKey already exists): $idKey');
+                        #end
                     }
                 }
+
+                #if debug_variable_renaming
+                trace('[ElixirCompiler] AFTER registration loop for ${funcData.field.name} - map has ${Lambda.count(context.tempVarRenameMap)} entries');
+                #end
             }
 
             // Build the function body with proper context
@@ -1587,6 +1660,9 @@ class ElixirCompiler extends GenericCompiler<
                     trace("[SwitchReturnDebug] Not a direct return, building normally");
                     #end
                     // Normal expression handling
+                    #if debug_variable_renaming
+                    trace('[ElixirCompiler] About to call buildFromTypedExpr for ${funcData.field.name} - context.tempVarRenameMap has ${Lambda.count(context.tempVarRenameMap)} entries');
+                    #end
                     reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
             };
 
