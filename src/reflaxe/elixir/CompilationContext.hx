@@ -725,23 +725,87 @@ class CompilationContext implements BuildContext {
      * @return Original expr or substituted expr if found in map
      */
     public function substituteIfNeeded(expr: TypedExpr): TypedExpr {
-        if (expr == null || infraVarSubstitutions == null) {
+        if (expr == null) {
+            #if debug_preprocessor
+            trace('[CompilationContext.substituteIfNeeded] expr is null, returning');
+            #end
             return expr;
         }
 
-        return switch(expr.expr) {
+        if (infraVarSubstitutions == null) {
+            #if debug_preprocessor
+            trace('[CompilationContext.substituteIfNeeded] infraVarSubstitutions map is null!');
+            #end
+            return expr;
+        }
+
+        #if debug_preprocessor
+        trace('[CompilationContext.substituteIfNeeded] Checking expr type: ${Type.enumConstructor(expr.expr)}');
+        trace('[CompilationContext.substituteIfNeeded] Substitution map has ${Lambda.count(infraVarSubstitutions)} entries');
+        for (id in infraVarSubstitutions.keys()) {
+            trace('[CompilationContext.substituteIfNeeded]   Map entry: ID=$id');
+        }
+        #end
+
+        // Recursively unwrap TParenthesis and TMeta to find TLocal
+        // Safety limit to prevent infinite loops from circular references
+        var unwrapped = expr;
+        var unwrapCount = 0;
+        var maxUnwrap = 100;  // Safety limit
+
+        while (unwrapCount < maxUnwrap) {
+            var unwrappedNext: Null<TypedExpr> = switch(unwrapped.expr) {
+                case TParenthesis(e):
+                    #if debug_preprocessor
+                    trace('[CompilationContext.substituteIfNeeded]   Unwrapping TParenthesis (level ${unwrapCount + 1})');
+                    #end
+                    e;
+                case TMeta(_, e):
+                    #if debug_preprocessor
+                    trace('[CompilationContext.substituteIfNeeded]   Unwrapping TMeta (level ${unwrapCount + 1})');
+                    #end
+                    e;
+                default:
+                    null;
+            };
+
+            if (unwrappedNext == null) {
+                break;  // No more unwrapping needed
+            }
+
+            unwrapped = unwrappedNext;
+            unwrapCount++;
+        }
+
+        if (unwrapCount >= maxUnwrap) {
+            #if debug_preprocessor
+            trace('[CompilationContext.substituteIfNeeded]   WARNING: Hit unwrap limit ${maxUnwrap}, possible circular reference');
+            #end
+        }
+
+        return switch(unwrapped.expr) {
             case TLocal(tvar):
+                #if debug_preprocessor
+                trace('[CompilationContext.substituteIfNeeded]   Found TLocal: ${tvar.name} (ID: ${tvar.id})');
+                #end
                 // Check if this TLocal references a substituted infrastructure variable
                 var substituted = infraVarSubstitutions.get(tvar.id);
                 if (substituted != null) {
                     #if debug_preprocessor
-                    trace('[CompilationContext.substituteIfNeeded] Found substitution for ${tvar.name} (ID: ${tvar.id})');
+                    trace('[CompilationContext.substituteIfNeeded]   ✓ SUBSTITUTION FOUND! Replacing ${tvar.name}');
                     #end
                     substituted;
                 } else {
+                    #if debug_preprocessor
+                    trace('[CompilationContext.substituteIfNeeded]   ✗ No substitution for ${tvar.name} (ID: ${tvar.id})');
+                    #end
                     expr;
                 }
             default:
+                #if debug_preprocessor
+                trace('[CompilationContext.substituteIfNeeded]   After unwrapping: ${Type.enumConstructor(unwrapped.expr)} - not a TLocal');
+                #end
+                // Don't substitute - the expression is not an infrastructure variable reference
                 expr;
         };
     }

@@ -130,6 +130,11 @@ class TypedExprPreprocessor {
             return null;
         }
 
+        // Simplified debug output - just track what we're processing
+        #if debug_preprocessor
+        trace('[Preprocessor] Processing expression');
+        #end
+
         // Check for Map iteration patterns first (special handling needed)
         if (isMapIterationPattern(expr)) {
             #if debug_preprocessor
@@ -150,23 +155,35 @@ class TypedExprPreprocessor {
             #end
             return expr; // No transformation needed
         }
-        
+
         #if debug_preprocessor
         trace('[TypedExprPreprocessor] Starting preprocessing - pattern detected');
         #end
-        
-        // Create initial substitution map (ID-based to prevent shadowing)
-        var substitutions = new Map<Int, TypedExpr>();
+
+        // CRITICAL FIX: Use existing substitutions map instead of creating new one
+        // This allows accumulation across multiple preprocess() calls
+        var substitutions = lastSubstitutions != null ? lastSubstitutions : new Map<Int, TypedExpr>();
 
         // Process the expression
         var result = processExpr(expr, substitutions);
 
-        // Store substitutions for later retrieval by compiler
+        // Store/update substitutions for later retrieval by compiler
         lastSubstitutions = substitutions;
 
         #if debug_preprocessor
         trace('[TypedExprPreprocessor] Preprocessing complete');
-        trace('[TypedExprPreprocessor] Substitutions made: ${[for (k in substitutions.keys()) k]}');
+        trace('[TypedExprPreprocessor] Substitutions created: ${Lambda.count(substitutions)} entries');
+        if (Lambda.count(substitutions) > 0) {
+            trace('[TypedExprPreprocessor] ===== SUBSTITUTION MAP CONTENTS =====');
+            for (id in substitutions.keys()) {
+                var subExpr = substitutions.get(id);
+                var exprType = Type.enumConstructor(subExpr.expr);
+                trace('[TypedExprPreprocessor]   ID ${id} => ${exprType}');
+            }
+            trace('[TypedExprPreprocessor] ====================================');
+        } else {
+            trace('[TypedExprPreprocessor] WARNING: No substitutions were created!');
+        }
         #end
 
         return result;
@@ -183,12 +200,17 @@ class TypedExprPreprocessor {
      * @return True if the pattern is found
      */
     static function containsInfrastructurePattern(expr: TypedExpr): Bool {
+        #if debug_preprocessor
+        var exprType = Type.enumConstructor(expr.expr);
+        #end
+
         var result = switch(expr.expr) {
-            case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+            case TVar(v, init):
+                var isInfra = init != null && isInfrastructureVar(v.name);
                 #if debug_preprocessor
-                trace('[containsInfrastructurePattern] Found TVar infrastructure: ${v.name}');
+                trace('[containsInfrastructurePattern] Found TVar: ${v.name} (ID: ${v.id}), init=${init != null}, isInfra=$isInfra');
                 #end
-                true;
+                isInfra;
             case TBlock(exprs):
                 #if debug_preprocessor
                 trace('[containsInfrastructurePattern] Checking TBlock with ${exprs.length} exprs');
@@ -287,6 +309,21 @@ class TypedExprPreprocessor {
                     trace('[applySubstitutionsRecursively] TLocal ${v.name} (ID: ${v.id}) - NO substitution');
                     #end
                     expr;
+                }
+
+            // Handle TVar explicitly to ensure init expression is processed
+            case TVar(v, init):
+                #if debug_preprocessor
+                trace('[applySubstitutionsRecursively] Processing TVar: ${v.name}, hasInit: ${init != null}');
+                #end
+
+                if (init != null) {
+                    // CRITICAL: Recursively process the init expression
+                    // This is where nested infrastructure variables are found!
+                    var processedInit = applySubstitutionsRecursively(init, subs);
+                    return {expr: TVar(v, processedInit), pos: expr.pos, t: expr.t};
+                } else {
+                    return expr;
                 }
 
             // Handle blocks explicitly for better control
@@ -473,28 +510,49 @@ class TypedExprPreprocessor {
 
             // Check if this is an infrastructure variable declaration
             switch(current.expr) {
-                case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
-                    #if debug_infrastructure_vars
-                    trace('[processBlock] Found infrastructure variable: ${v.name} (ID: ${v.id})');
-                    trace('[processBlock] Registering substitution for later recursive application');
+                case TVar(v, init):
+                    #if debug_preprocessor
+                    trace('[processBlock] Found TVar: ${v.name} (ID: ${v.id}), init=${init != null}, isInfra=${isInfrastructureVar(v.name)}');
                     #end
 
-                    // Register the substitution (ID-based)
-                    substitutions.set(v.id, init);
+                    if (init != null && isInfrastructureVar(v.name)) {
+                        #if debug_preprocessor
+                        trace('[processBlock] ✓ INFRASTRUCTURE VARIABLE DETECTED: "${v.name}" (ID: ${v.id})');
+                        trace('[processBlock] Init expression type: ${Type.enumConstructor(init.expr)}');
+                        trace('[processBlock] Registering substitution...');
+                        #end
 
-                    #if debug_infrastructure_vars
-                    trace('[processBlock] ✓ Registered substitution: ID ${v.id} -> ${init.expr}');
-                    var allKeys = [for (k in substitutions.keys()) k];
-                    trace('[processBlock] Substitutions map now has ${allKeys.length} entries');
-                    #end
+                        // Register the substitution (ID-based)
+                        substitutions.set(v.id, init);
 
-                    // Skip this TVar in output (infrastructure variables are eliminated)
-                    i++;
-                    continue;
+                        #if debug_preprocessor
+                        trace('[processBlock] ✓ REGISTERED: "${v.name}" (ID ${v.id}) => ${Type.enumConstructor(init.expr)}');
+                        var allKeys = [for (k in substitutions.keys()) k];
+                        var allNames = [];
+                        for (k in allKeys) {
+                            // We can't get the name from the ID directly, but we can show the ID list
+                            allNames.push('ID:${k}');
+                        }
+                        trace('[processBlock] Substitutions map now has ${allKeys.length} entries: ${allNames.join(", ")}');
+                        #end
+
+                        // Skip this TVar in output (infrastructure variables are eliminated)
+                        i++;
+                        continue;
+                    } else {
+                        #if debug_preprocessor
+                        trace('[processBlock] Not infrastructure variable, processing normally');
+                        #end
+
+                        // CRITICAL: Process non-infrastructure TVars too!
+                        var transformed = applySubstitutionsRecursively(current, substitutions);
+                        processed.push(transformed);
+                        i++;
+                    }
 
                 default:
                     // For all other expressions, apply recursive substitution
-                    #if debug_infrastructure_vars
+                    #if debug_preprocessor
                     trace('[processBlock] Applying recursive substitution to expression $i');
                     #end
 
@@ -559,18 +617,19 @@ class TypedExprPreprocessor {
             // Process case body and filter out orphaned infrastructure variable assignments
             var processedBody = switch(c.expr.expr) {
                 case TBlock(exprs):
-                    // Filter out orphaned g variable assignments at the start of blocks
+                    // Filter out orphaned enum parameter assignments in case bodies
+                    // These are redundant because the pattern already extracts the values
                     var filteredExprs = [];
                     for (expr in exprs) {
                         switch(expr.expr) {
-                            case TVar(v, init) if (isInfrastructureVar(v.name) && init != null):
-                                // Check if this is an orphaned enum parameter extraction
+                            case TVar(v, init) if (init != null):
+                                // Check if this is an enum parameter extraction
                                 switch(init.expr) {
                                     case TEnumParameter(_, _, _):
                                         #if debug_preprocessor
-                                        trace('[TypedExprPreprocessor] Filtering orphaned assignment in case body: ${v.name}');
+                                        trace('[TypedExprPreprocessor] Filtering redundant enum parameter assignment in case body: ${v.name}');
                                         #end
-                                        // Skip this assignment
+                                        // Skip this assignment - pattern already extracted the value
                                         continue;
                                     default:
                                         // Keep other assignments
