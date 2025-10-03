@@ -134,7 +134,9 @@ class SwitchBuilder {
 
         // Build the switch target expression (use actual enum, not index)
         var targetAST = if (context.compiler != null) {
-            var result = context.compiler.compileExpressionImpl(actualSwitchExpr, false);
+            // Apply infrastructure variable substitution before re-compilation
+            var substitutedTarget = context.substituteIfNeeded(actualSwitchExpr);
+            var result = context.compiler.compileExpressionImpl(substitutedTarget, false);
             trace('[SwitchBuilder DEBUG] Compiled target AST: ${Type.enumConstructor(result.def)}');
             // DEBUG: Show exact variable name if it's EVar
             switch(result.def) {
@@ -240,7 +242,9 @@ class SwitchBuilder {
             trace('[SwitchBuilder]   Expr type: ${Type.enumConstructor(switchCase.expr.expr)}');
             #end
 
-            var result = context.compiler.compileExpressionImpl(switchCase.expr, false);
+            // Apply infrastructure variable substitution before re-compilation
+            var substitutedBody = context.substituteIfNeeded(switchCase.expr);
+            var result = context.compiler.compileExpressionImpl(substitutedBody, false);
 
             if (result != null) {
                 #if debug_switch_compilation
