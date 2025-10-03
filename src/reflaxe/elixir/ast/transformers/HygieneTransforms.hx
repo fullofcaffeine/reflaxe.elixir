@@ -683,7 +683,11 @@ class HygieneTransforms {
         var nameMapping = new Map<String, String>();
 
         for (binding in allBindings) {
-            if (!binding.used && !binding.name.startsWith("_")) {
+            // CRITICAL FIX: Pattern variables should NEVER be renamed with underscore prefix
+            // Pattern-bound variables (like 'value' in {:ok, value}) are ALWAYS available in the case body
+            // by definition - they're bound by the pattern match, not declared as unused locals.
+            // Renaming them breaks the pattern→body coordination.
+            if (!binding.used && !binding.name.startsWith("_") && binding.kind != PatternVar) {
                 var key = '${binding.containerId}:${binding.context}:${binding.slotIndex}';
                 if (!renameIndex.exists(key)) {
                     renameIndex.set(key, []);
@@ -825,7 +829,11 @@ class HygieneTransforms {
         #end
 
         for (binding in allBindings) {
-            if (!binding.used && !binding.name.startsWith("_")) {
+            // CRITICAL FIX: Pattern variables should NEVER be renamed with underscore prefix
+            // Pattern-bound variables (like 'value' in {:ok, value}) are ALWAYS available in the case body
+            // by definition - they're bound by the pattern match, not declared as unused locals.
+            // Renaming them breaks the pattern→body coordination.
+            if (!binding.used && !binding.name.startsWith("_") && binding.kind != PatternVar) {
                 var key = '${binding.containerId}:${binding.context}:${binding.slotIndex}';
                 if (!renameIndex.exists(key)) {
                     renameIndex.set(key, []);
