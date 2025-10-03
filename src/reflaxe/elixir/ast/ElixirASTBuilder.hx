@@ -2826,10 +2826,38 @@ class ElixirASTBuilder {
                         #end
                         // This would create g = g, skip the assignment by returning null
                         return null;
-                    } else {
-                        // Normal case: use the binding plan variable
+                    }
+
+                    // CRITICAL FIX: If the pattern already extracted to a real variable name (not temp var),
+                    // return null to skip the redundant TVar assignment entirely.
+                    // Example: pattern {:ok, value} already binds 'value', so TVar(value, TEnumParameter(...))
+                    // should be skipped - the value is already available from the pattern.
+                    //
+                    // This prevents generating:
+                    //   {:ok, value} ->
+                    //     value = value  # or value = nil
+                    //
+                    // When we should generate:
+                    //   {:ok, value} ->
+                    //     # value already available from pattern
+                    //
+                    // Check if the final name is NOT a temporary/infrastructure variable
+                    var finalNameIsTemp = (info.finalName != null &&
+                                          (info.finalName == "_" ||
+                                           TypedExprPreprocessor.isInfrastructureVar(info.finalName)));
+
+                    if (!finalNameIsTemp) {
+                        // Pattern uses a real variable name (like "value", not "_g" or "_")
+                        // The pattern already extracted the value, no assignment needed
                         #if debug_ast_builder
-                        trace('[DEBUG EMBEDDED TEnumParameter] RETURNING BINDING PLAN VAR: ${info.finalName}');
+                        trace('[TEnumParameter] Pattern already extracted to real var ${info.finalName}, returning null to skip TVar assignment');
+                        #end
+                        return null;
+                    } else {
+                        // Pattern uses a temporary/ignored variable - return the variable reference
+                        // This handles cases like pattern {:ok, _} where we still need the assignment
+                        #if debug_ast_builder
+                        trace('[DEBUG EMBEDDED TEnumParameter] RETURNING BINDING PLAN VAR (temp): ${info.finalName}');
                         #end
                         return EVar(info.finalName);
                     }
