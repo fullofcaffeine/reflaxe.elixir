@@ -725,16 +725,23 @@ class ElixirASTPrinter {
              * - `(if cond, do: val1, else: val2) + 5`
              */
             case EBinary(op, left, right):
-                // Special handling for remainder operator - it's a function in Elixir, not infix
+                // Special handling for operators that are functions in Elixir, not infix
                 if (op == Remainder) {
                     // Generate rem(n, 2) instead of n rem 2
                     var leftStr = print(left, 0);
                     var rightStr = print(right, 0);
                     'rem(' + leftStr + ', ' + rightStr + ')';
+                } else if (isBitwiseOp(op)) {
+                    // Bitwise operators require Bitwise module functions
+                    // Generate: Bitwise.band(n, 15) instead of n &&& 15
+                    var funcName = bitwiseOpToFunction(op);
+                    var leftStr = print(left, 0);
+                    var rightStr = print(right, 0);
+                    'Bitwise.' + funcName + '(' + leftStr + ', ' + rightStr + ')';
                 } else {
                     var needsParens = needsParentheses(node);
                     var opStr = binaryOpToString(op);
-                    
+
                     // Check if operands need parentheses (e.g., if expressions in comparisons)
                     var leftStr = switch(left.def) {
                         case EIf(_, _, _):
@@ -743,7 +750,7 @@ class ElixirASTPrinter {
                         default:
                             print(left, 0);
                     };
-                    
+
                     var rightStr = switch(right.def) {
                         case EIf(_, _, _):
                             // If expressions in binary operations need parentheses
@@ -1302,6 +1309,40 @@ class ElixirASTPrinter {
         }
     }
     
+    /**
+     * Check if operator is a bitwise operation
+     *
+     * WHY: Bitwise operators in Elixir require the Bitwise module
+     * WHAT: Returns true for &&&, |||, ^^^, <<<, >>>
+     * HOW: Pattern matches on EBinaryOp
+     */
+    static function isBitwiseOp(op: EBinaryOp): Bool {
+        return switch(op) {
+            case BitwiseAnd | BitwiseOr | BitwiseXor | ShiftLeft | ShiftRight: true;
+            default: false;
+        };
+    }
+
+    /**
+     * Convert bitwise operator to Bitwise module function name
+     *
+     * WHY: Bitwise operators must be called as Bitwise.function_name()
+     * WHAT: Maps EBinaryOp to Bitwise module function names
+     * HOW: Direct mapping based on Elixir Bitwise module API
+     *
+     * @see https://hexdocs.pm/elixir/Bitwise.html
+     */
+    static function bitwiseOpToFunction(op: EBinaryOp): String {
+        return switch(op) {
+            case BitwiseAnd: 'band';    // Bitwise AND: &&&
+            case BitwiseOr: 'bor';      // Bitwise OR: |||
+            case BitwiseXor: 'bxor';    // Bitwise XOR: ^^^
+            case ShiftLeft: 'bsl';      // Bitwise Shift Left: <<<
+            case ShiftRight: 'bsr';     // Bitwise Shift Right: >>>
+            default: throw 'Not a bitwise operator: $op';
+        };
+    }
+
     /**
      * Convert unary operator to string
      */
