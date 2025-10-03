@@ -1312,9 +1312,21 @@ class ElixirASTPrinter {
     /**
      * Check if operator is a bitwise operation
      *
-     * WHY: Bitwise operators in Elixir require the Bitwise module
-     * WHAT: Returns true for &&&, |||, ^^^, <<<, >>>
-     * HOW: Pattern matches on EBinaryOp
+     * WHY: Elixir doesn't support custom infix bitwise operators like Haxe
+     * - The BEAM VM implements bitwise operations as module functions, not operators
+     * - Unlike Haxe's & operator, Elixir requires explicit Bitwise.band() calls
+     * - This design enables compile-time optimization and consistent function semantics
+     *
+     * WHAT: Returns true for all bitwise operators (&, |, ^, <<, >>)
+     * - BitwiseAnd (&) requires Bitwise.band()
+     * - BitwiseOr (|) requires Bitwise.bor()
+     * - BitwiseXor (^) requires Bitwise.bxor()
+     * - ShiftLeft (<<) requires Bitwise.bsl()
+     * - ShiftRight (>>) requires Bitwise.bsr()
+     *
+     * HOW: Pattern matches on EBinaryOp enum variants
+     * - Simple pattern match covers all 5 bitwise operators
+     * - Returns false for all other operators (arithmetic, comparison, etc.)
      */
     static function isBitwiseOp(op: EBinaryOp): Bool {
         return switch(op) {
@@ -1326,19 +1338,54 @@ class ElixirASTPrinter {
     /**
      * Convert bitwise operator to Bitwise module function name
      *
-     * WHY: Bitwise operators must be called as Bitwise.function_name()
-     * WHAT: Maps EBinaryOp to Bitwise module function names
-     * HOW: Direct mapping based on Elixir Bitwise module API
+     * WHY: Elixir/BEAM architectural decision - bitwise ops as functions, not infix operators
+     * - BEAM VM design: All bitwise operations implemented as module functions
+     * - Type consistency: Functions provide clear integer-only type semantics
+     * - Macro expansion: 'use Bitwise' imports these same function names
+     * - Historical: Erlang uses 'band', 'bor', etc. - Elixir maintains compatibility
+     * - Unlike arithmetic (+, -, *), bitwise ops are less common and don't justify operators
      *
-     * @see https://hexdocs.pm/elixir/Bitwise.html
+     * WHAT: Maps Haxe bitwise operators to Elixir Bitwise module function names
+     * - & (BitwiseAnd) → band (bitwise AND)
+     * - | (BitwiseOr) → bor (bitwise OR)
+     * - ^ (BitwiseXor) → bxor (bitwise XOR)
+     * - << (ShiftLeft) → bsl (bitwise shift left)
+     * - >> (ShiftRight) → bsr (bitwise shift right)
+     *
+     * HOW: Direct string mapping to official Bitwise module API
+     * - Returns lowercase function names matching Elixir.Bitwise exports
+     * - Throws for non-bitwise operators to catch programming errors
+     * - Generated code: Bitwise.band(n, 15) instead of n & 15
+     *
+     * GENERATED CODE EXAMPLE:
+     * ```haxe
+     * // Haxe Input
+     * var masked = value & 0xFF;
+     * ```
+     * ```elixir
+     * # Generated Elixir
+     * masked = Bitwise.band(value, 255)
+     * ```
+     *
+     * ELIXIR DESIGN RATIONALE:
+     * The Bitwise module approach provides several benefits:
+     * 1. **Explicit imports**: 'use Bitwise' makes bitwise operations visible at module top
+     * 2. **Type safety**: Functions enforce integer-only operations at compile-time
+     * 3. **Performance**: BEAM can optimize function calls as efficiently as operators
+     * 4. **Consistency**: Matches Erlang's band/bor/bxor naming convention
+     * 5. **Discoverability**: Bitwise.band() is searchable, & syntax for bitwise is cryptic
+     *
+     * @see https://hexdocs.pm/elixir/Bitwise.html - Official Bitwise module documentation
+     * @see https://www.erlang.org/doc/reference_manual/expressions.html#bitwise-expressions - Erlang bitwise expressions
+     * @see test/snapshot/regression/bitwise_operations/ - Comprehensive test suite
      */
     static function bitwiseOpToFunction(op: EBinaryOp): String {
         return switch(op) {
-            case BitwiseAnd: 'band';    // Bitwise AND: &&&
-            case BitwiseOr: 'bor';      // Bitwise OR: |||
-            case BitwiseXor: 'bxor';    // Bitwise XOR: ^^^
-            case ShiftLeft: 'bsl';      // Bitwise Shift Left: <<<
-            case ShiftRight: 'bsr';     // Bitwise Shift Right: >>>
+            case BitwiseAnd: 'band';    // Bitwise AND: &
+            case BitwiseOr: 'bor';      // Bitwise OR: |
+            case BitwiseXor: 'bxor';    // Bitwise XOR: ^
+            case ShiftLeft: 'bsl';      // Bitwise Shift Left: <<
+            case ShiftRight: 'bsr';     // Bitwise Shift Right: >>
             default: throw 'Not a bitwise operator: $op';
         };
     }

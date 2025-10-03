@@ -1,0 +1,2 @@
+defmodule IntIterator do
+end
