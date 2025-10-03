@@ -42,6 +42,7 @@ import reflaxe.elixir.ast.intent.LoopIntent;
 import reflaxe.elixir.ast.intent.LoopIntent.*;  // Import all enum constructors
 import reflaxe.elixir.ast.transformers.DesugarredForDetector;
 import reflaxe.elixir.CompilationContext;
+import reflaxe.elixir.preprocessor.TypedExprPreprocessor;
 import reflaxe.elixir.helpers.PatternDetector;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
@@ -2797,10 +2798,8 @@ class ElixirASTBuilder {
 
                     // CRITICAL: Check if we're trying to extract from a temp var that doesn't exist
                     // This happens when the pattern used canonical names directly
-                    if (sourceVarName != null &&
-                        (sourceVarName == "g" || (sourceVarName.startsWith("g") && sourceVarName.length > 1 &&
-                         sourceVarName.charAt(1) >= '0' && sourceVarName.charAt(1) <= '9'))) {
-                        // We're trying to extract from a temp var like 'g', 'g1', 'g2'
+                    if (sourceVarName != null && TypedExprPreprocessor.isInfrastructureVar(sourceVarName)) {
+                        // We're trying to extract from an infrastructure var like 'g', '_g', 'g1', '_g1'
                         // But if the binding plan uses a different name, the pattern already extracted it
                         if (info.finalName != sourceVarName) {
                             #if debug_ast_builder
@@ -2840,13 +2839,11 @@ class ElixirASTBuilder {
                     #end
 
                     // CRITICAL FIX: When there's no binding plan and we're trying to extract from
-                    // a temp var that doesn't exist (like 'g'), return null to skip the assignment
+                    // a temp var that doesn't exist (like 'g', '_g'), return null to skip the assignment
                     // This happens in embedded switches where the pattern uses the actual variable name
-                    if (sourceVarName != null &&
-                        (sourceVarName == "g" || (sourceVarName.startsWith("g") && sourceVarName.length > 1 &&
-                         sourceVarName.charAt(1) >= '0' && sourceVarName.charAt(1) <= '9'))) {
+                    if (sourceVarName != null && TypedExprPreprocessor.isInfrastructureVar(sourceVarName)) {
                         #if debug_ast_builder
-                        trace('[DEBUG EMBEDDED TEnumParameter] Skipping extraction from non-existent temp var: $sourceVarName');
+                        trace('[DEBUG EMBEDDED TEnumParameter] Skipping extraction from non-existent infrastructure var: $sourceVarName');
                         #end
                         // Return null to skip the assignment - the pattern already extracted the value
                         return null;
