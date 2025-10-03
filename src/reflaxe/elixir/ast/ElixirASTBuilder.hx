@@ -2846,21 +2846,17 @@ class ElixirASTBuilder {
                                           (info.finalName == "_" ||
                                            TypedExprPreprocessor.isInfrastructureVar(info.finalName)));
 
-                    if (!finalNameIsTemp) {
-                        // Pattern uses a real variable name (like "value", not "_g" or "_")
-                        // The pattern already extracted the value, no assignment needed
-                        #if debug_ast_builder
-                        trace('[TEnumParameter] Pattern already extracted to real var ${info.finalName}, returning null to skip TVar assignment');
-                        #end
-                        return null;
+                    // ALWAYS skip TVar assignment for pattern-extracted variables
+                    // Whether temp var (like "_g") or real var (like "value"),
+                    // the pattern already extracted it - no assignment needed
+                    #if debug_ast_builder
+                    if (finalNameIsTemp) {
+                        trace('[TEnumParameter] Temp/infrastructure var ${info.finalName}, returning null to skip TVar assignment');
                     } else {
-                        // Pattern uses a temporary/ignored variable - return the variable reference
-                        // This handles cases like pattern {:ok, _} where we still need the assignment
-                        #if debug_ast_builder
-                        trace('[DEBUG EMBEDDED TEnumParameter] RETURNING BINDING PLAN VAR (temp): ${info.finalName}');
-                        #end
-                        return EVar(info.finalName);
+                        trace('[TEnumParameter] Real variable ${info.finalName}, returning null - pattern already extracted');
                     }
+                    #end
+                    return null;
                 } else {
                     #if debug_ast_builder
                     trace('[DEBUG EMBEDDED TEnumParameter] NO BINDING PLAN! ClauseContext: ${currentContext.currentClauseContext != null}, index: $index, sourceVarName: $sourceVarName');
