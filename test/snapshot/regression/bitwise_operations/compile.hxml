@@ -1,0 +1,7 @@
+-lib reflaxe
+-lib reflaxe.elixir
+
+-cp .
+-main Main
+
+-D elixir-output=out
