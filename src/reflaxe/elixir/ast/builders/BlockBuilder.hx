@@ -93,12 +93,10 @@ class BlockBuilder {
             #if debug_ast_builder
             trace('[BlockBuilder] Single expression block, unwrapping');
             #end
-            return if (context.compiler != null) {
-                var result = context.compiler.compileExpressionImpl(el[0], false);
-                result != null ? result.def : ENil;
-            } else {
-                ENil;
-            };
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(el[0], context);
+            return result != null ? result.def : ENil;
         }
         
         // ====================================================================
@@ -240,8 +238,10 @@ class BlockBuilder {
                         var arrayExpr = makeAST(EVar(cast(arrayVar, String)));
                         
                         // Build body with variable substitution
-                        var bodyAST = context.compiler.compileExpressionImpl(body, false);
-                        
+                        // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                        // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                        var bodyAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(body, context);
+
                         // Generate: Enum.each(array, fn item -> body end)
                         return ERemoteCall(
                             makeAST(EAtom("Enum")),
@@ -270,11 +270,13 @@ class BlockBuilder {
                         if (startExpr == null || endExpr == null) {
                             return ENil;
                         }
-                        
-                        var startAST = context.compiler.compileExpressionImpl(startExpr, false);
-                        var endAST = context.compiler.compileExpressionImpl(endExpr, false);
-                        var bodyAST = context.compiler.compileExpressionImpl(body, false);
-                        
+
+                        // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                        // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                        var startAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(startExpr, context);
+                        var endAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(endExpr, context);
+                        var bodyAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(body, context);
+
                         // Generate: Enum.each(start..end, fn i -> body end)
                         return ERemoteCall(
                             makeAST(EAtom("Enum")),
@@ -296,7 +298,9 @@ class BlockBuilder {
         if (pattern != null && Reflect.hasField(pattern, "whileExpr")) {
             var whileExpr: TypedExpr = Reflect.field(pattern, "whileExpr");
             if (whileExpr != null && whileExpr.expr != null) {
-                return context.compiler.compileExpressionImpl(whileExpr, false).def;
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(whileExpr, context).def;
             }
         }
         
@@ -363,10 +367,12 @@ class BlockBuilder {
             if (sourceExpr == null || bodyExpr == null) {
                 return buildRegularBlock(el, context);
             }
-            
-            var sourceAST = context.compiler.compileExpressionImpl(sourceExpr, false);
-            var bodyAST = context.compiler.compileExpressionImpl(bodyExpr, false);
-            
+
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            var sourceAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(sourceExpr, context);
+            var bodyAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(bodyExpr, context);
+
             // Generate appropriate Enum call based on operation type
             var enumFunc = switch(opType) {
                 case "map": "map";
@@ -397,12 +403,14 @@ class BlockBuilder {
     static function detectNullCoalescingPattern(el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
         // Pattern: TVar followed by TBinop(OpNullCoal) using that var
         switch([el[0].expr, el[1].expr]) {
-            case [TVar(tmpVar, init), TBinop(OpNullCoal, {expr: TLocal(v)}, defaultExpr)] 
+            case [TVar(tmpVar, init), TBinop(OpNullCoal, {expr: TLocal(v)}, defaultExpr)]
                 if (v.id == tmpVar.id && init != null):
                 // This is the null coalescing pattern
                 if (context.compiler != null) {
-                    var initAst = context.compiler.compileExpressionImpl(init, false);
-                    var defaultAst = context.compiler.compileExpressionImpl(defaultExpr, false);
+                    // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                    // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                    var initAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(init, context);
+                    var defaultAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(defaultExpr, context);
                     var tmpVarName = VariableAnalyzer.toElixirVarName(tmpVar.name);
                     
                     // Generate: if (tmp = init) != nil, do: tmp, else: default
@@ -490,12 +498,14 @@ class BlockBuilder {
             // Build a simple list from the elements
             var listItems = [];
             for (elem in elements) {
-                var ast = context.compiler.compileExpressionImpl(elem, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(elem, context);
                 if (ast != null) {
                     listItems.push(ast);
                 }
             }
-            
+
             if (listItems.length > 0) {
                 return EList(listItems);
             }
@@ -511,8 +521,10 @@ class BlockBuilder {
     static function checkForInlineExpansion(el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
         if (ElixirASTPatterns.isInlineExpansionBlock(el)) {
             return ElixirASTPatterns.transformInlineExpansion(
-                el, 
-                function(e) return context.compiler.compileExpressionImpl(e, false),
+                el,
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                function(e) return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context),
                 function(name) return VariableAnalyzer.toElixirVarName(name)
             );
         }
@@ -529,8 +541,9 @@ class BlockBuilder {
                 case TVar(v, init) if (init != null):
                     // Check if this is an infrastructure variable
                     if (isInfrastructureVar(v.name)) {
-                        // Build the initialization AST and store it
-                        var initAST = context.compiler.compileExpressionImpl(init, false);
+                        // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                        // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                        var initAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(init, context);
                         context.infrastructureVarInitValues.set(v.name, initAST);
                         
                         #if debug_infrastructure_vars
@@ -561,9 +574,11 @@ class BlockBuilder {
         }
         
         var expressions: Array<ElixirAST> = [];
-        
+
         for (expr in el) {
-            var compiled = context.compiler.compileExpressionImpl(expr, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            var compiled = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
             if (compiled != null) {
                 expressions.push(compiled);
             }

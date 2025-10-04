@@ -172,6 +172,45 @@ if (ASTUtils.containsIteratorPattern(rhs)) {
 ### Historical Context
 Created in response to Map iterator transformation failures where pattern matching failed on unexpected AST structures (nested EBlock issues). User specifically requested "abstractions/patterns to prevent hard-to-debug mismatchers" - ASTUtils is the solution.
 
+## ⚠️ CRITICAL: Context Preservation in Builders (January 2025)
+
+**FUNDAMENTAL RULE: Builders must NEVER call `compiler.compileExpressionImpl` - use `ElixirASTBuilder.buildFromTypedExpr` instead.**
+
+### The Context Isolation Bug
+
+When builders call `context.compiler.compileExpressionImpl()`, it creates a **NEW** compilation context, losing critical state:
+- `ClauseContext.localToName` - Pattern variable registrations
+- `tempVarRenameMap` - Infrastructure variable mappings
+- Scope information and feature flags
+
+**Symptom**: Pattern variables get nil assignments instead of being used directly from patterns:
+```elixir
+# BUGGY OUTPUT:
+{:ok, value} ->
+  value = nil          # ❌ Wrong!
+  "Success: #{value}"
+
+# CORRECT OUTPUT:
+{:ok, value} ->
+  "Success: #{value}"  # ✅ Direct use
+```
+
+### The Fix Pattern
+
+```haxe
+// ❌ WRONG: Creates new context
+var result = context.compiler.compileExpressionImpl(expr, false);
+
+// ✅ RIGHT: Preserves context
+var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
+```
+
+### Status
+- ✅ **Fixed**: SwitchBuilder.hx, BlockBuilder.hx
+- ⚠️ **Needs Review**: ObjectBuilder, FunctionBuilder, ReturnBuilder, FieldAccessBuilder, ExceptionBuilder
+
+**See**: [`/docs/03-compiler-development/CONTEXT_PRESERVATION_PATTERN.md`](/docs/03-compiler-development/CONTEXT_PRESERVATION_PATTERN.md) - Complete documentation
+
 ## ⚠️ CRITICAL: Empty Expression Handling (October 2025)
 
 ### Empty If-Branches Must Use Block Syntax

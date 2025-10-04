@@ -112,7 +112,9 @@ class FunctionBuilder {
         
         // Build function body with context
         var body = if (context.compiler != null) {
-            context.compiler.compileExpressionImpl(f.expr, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(f.expr, context);
         } else {
             null;
         };

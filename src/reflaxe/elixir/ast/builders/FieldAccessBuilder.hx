@@ -209,7 +209,9 @@ class FieldAccessBuilder {
         // Regular static field access
         // Build the object expression first
         var objAST = if (context.compiler != null) {
-            context.compiler.compileExpressionImpl(e, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
         } else {
             null;
         }
@@ -244,22 +246,24 @@ class FieldAccessBuilder {
         
         // Compile the object expression
         var objAST = if (context.compiler != null) {
-            context.compiler.compileExpressionImpl(e, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
         } else {
             null;
         }
-        
+
         if (objAST == null) {
             #if debug_ast_builder
             trace('[FieldAccessBuilder] Failed to compile object for field access');
             #end
             return null;
         }
-        
+
         // Generate field access
         return EField(objAST, fieldName);
     }
-    
+
     /**
      * Build dynamic field access
      * 
@@ -271,10 +275,12 @@ class FieldAccessBuilder {
         #if debug_ast_builder
         trace('[FieldAccessBuilder] Dynamic field: ${fieldName}');
         #end
-        
+
         // Compile the object expression
         var objAST = if (context.compiler != null) {
-            context.compiler.compileExpressionImpl(e, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
         } else {
             null;
         }
