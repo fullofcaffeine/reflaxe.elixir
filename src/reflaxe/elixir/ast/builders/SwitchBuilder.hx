@@ -168,18 +168,20 @@ class SwitchBuilder {
         var oldClauseContext = context.currentClauseContext;
         context.currentClauseContext = clauseContext;
         
-        // Build case clauses
+        // Build case clauses (may generate multiple clauses per case due to guard chains)
         var caseClauses: Array<ECaseClause> = [];
-        
+
         for (i in 0...cases.length) {
             var switchCase = cases[i];
             trace('[SwitchBuilder] Building case ${i + 1}/${cases.length}');
-            var clause = buildCaseClause(switchCase, targetVarName, context);
-            if (clause != null) {
-                trace('[SwitchBuilder]   Case clause built successfully');
-                caseClauses.push(clause);
+            var clausesFromCase = buildCaseClause(switchCase, targetVarName, context);
+            if (clausesFromCase.length > 0) {
+                trace('[SwitchBuilder]   Generated ${clausesFromCase.length} clause(s) from this case');
+                for (clause in clausesFromCase) {
+                    caseClauses.push(clause);
+                }
             } else {
-                trace('[SwitchBuilder]   Case clause build returned null!');
+                trace('[SwitchBuilder]   Case clause build returned empty array!');
             }
         }
         
@@ -217,92 +219,224 @@ class SwitchBuilder {
     }
     
     /**
-     * Build a single case clause
-     * 
+     * Build case clause(s) - may return multiple clauses for guard chains
+     *
      * WHY: Each switch case needs proper pattern extraction and body compilation
-     * WHAT: Creates ECaseClause with pattern and body
-     * HOW: Analyzes case values, extracts patterns, compiles body
+     *      Guard chains (multiple if-else) should generate separate when clauses
+     * WHAT: Creates one or more ECaseClause with pattern, optional guard, and body
+     * HOW: Analyzes case values, extracts patterns, detects guard chains, compiles bodies
      */
-    static function buildCaseClause(switchCase: {values:Array<TypedExpr>, expr:TypedExpr}, targetVarName: String, context: CompilationContext): Null<ECaseClause> {
+    static function buildCaseClause(switchCase: {values:Array<TypedExpr>, expr:TypedExpr}, targetVarName: String, context: CompilationContext): Array<ECaseClause> {
         // Handle multiple values in one case (fall-through pattern)
         if (switchCase.values.length == 0) {
-            return null;
+            return [];
         }
-        
+
         // For now, handle single value cases (most common)
         // TODO: Handle multiple values with pattern alternatives
         var value = switchCase.values[0];
-        
-        // Build pattern from case value
-        var pattern = buildPattern(value, targetVarName, context);
-        if (pattern == null) {
-            return null;
-        }
 
-        // Build case body
-        var body: ElixirAST = if (switchCase.expr != null && context.compiler != null) {
-            #if debug_switch_compilation
-            trace('[SwitchBuilder] Compiling case body');
-            trace('[SwitchBuilder]   Expr type: ${Type.enumConstructor(switchCase.expr.expr)}');
-            #end
+        // CRITICAL: Extract pattern variables from the CASE PATTERN, not the guard
+        // The pattern (switchCase.values[0]) has the user's intended variable names (n, n, n...)
+        // The guard (switchCase.expr) has Haxe's renamed variables (n, n2, n3...) - WRONG!
+        // We need the canonical pattern names for consistent mapping
+        trace('[SwitchBuilder] ====== PATTERN ANALYSIS ======');
+        trace('[SwitchBuilder] Pattern expr type: ${Type.enumConstructor(value.expr)}');
 
-            // Apply infrastructure variable substitution before re-compilation
-            var substitutedBody = context.substituteIfNeeded(switchCase.expr);
+        // CRITICAL FIX: Extract canonical variable names from GUARD when available
+        // TEnumIndex changes pattern TLocal names (n → value), so we extract from guard instead
+        var patternVars: Array<String> = [];
 
-            // CRITICAL FIX: Register pattern variables in ClauseContext AFTER substitution
-            // This ensures we get the ACTUAL TVar IDs that will be compiled, not pre-substitution IDs
-            if (context.currentClauseContext != null) {
-                var patternVars = extractPatternVariables(pattern);
-                var bodyVars = extractTVarsFromExpr(substitutedBody);  // Extract from SUBSTITUTED body!
-
-                #if debug_switch_compilation
-                trace('[SwitchBuilder] Registering pattern variables');
-                trace('[SwitchBuilder]   Pattern vars: ${patternVars}');
-                trace('[SwitchBuilder]   Body vars count: ${bodyVars.length}');
-                #end
-
-                // Match pattern variables with TVar IDs (positional matching)
-                var matchCount = patternVars.length < bodyVars.length ? patternVars.length : bodyVars.length;
-                for (i in 0...matchCount) {
-                    var tvarId = bodyVars[i].id;
-                    var patternName = patternVars[i];
-
-                    #if debug_switch_compilation
-                    trace('[SwitchBuilder]   Registering: TVar(${tvarId}) -> ${patternName}');
-                    #end
-
-                    context.currentClauseContext.localToName.set(tvarId, patternName);
+        // CRITICAL FIX: Unwrap TBlock before checking for TIf (guards are often wrapped)
+        var exprForExtraction = switchCase.expr;
+        switch(switchCase.expr.expr) {
+            case TBlock(exprs):
+                // Search for TIf in the block
+                for (expr in exprs) {
+                    if (Type.enumConstructor(expr.expr) == "TIf") {
+                        exprForExtraction = expr;
+                        break;
+                    }
                 }
-            }
-
-            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve ClauseContext
-            // Using compiler.compileExpressionImpl creates a NEW context, losing our pattern variable registrations
-            var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
-
-            if (result != null) {
-                #if debug_switch_compilation
-                trace('[SwitchBuilder]   ✓ Success: Generated AST');
-                #end
-                result;  // Already an ElixirAST
-            } else {
-                #if debug_switch_compilation
-                trace('[SwitchBuilder]   ❌ ERROR: compileExpressionImpl returned NULL!');
-                trace('[SwitchBuilder]   Position: ${switchCase.expr.pos}');
-                #end
-
-                // CRITICAL: Don't silently accept failure - throw error to expose root cause
-                Context.error('Switch case body compilation failed - compileExpressionImpl returned null', switchCase.expr.pos);
-            }
-        } else {
-            // Empty case body - use nil (this is valid)
-            makeAST(ENil);
+            default:
+                // Not wrapped in block
         }
-        
-        return {
-            pattern: pattern,
-            guard: null,  // TODO: Add guard support if needed
-            body: body
+
+        // Check if this case has a guard (TIf structure with condition containing variable)
+        var guardVar: Null<String> = switch(exprForExtraction.expr) {
+            case TIf(econd, _, _):
+                // Guard exists - extract TLocal name from condition
+                extractFirstTLocalName(econd);
+            default:
+                null;
         };
+
+        if (guardVar != null) {
+            // Has guard - use guard variable with stripped suffix as canonical name
+            patternVars = [stripNumericSuffix(guardVar)];
+        } else {
+            // No guard - extract from pattern
+            var patternVarsFromPattern = extractVarsFromPatternExpr(value);
+            if (patternVarsFromPattern.length > 0) {
+                patternVars = patternVarsFromPattern;
+            }
+        }
+
+        // CRITICAL: Extract TLocal IDs from guard and register in tempVarRenameMap
+        // This ensures guard expressions compile with the same variable names as patterns
+        // Without this, guards get different names (n, n2, n3) due to independent TLocal instances
+        // NOTE: TLocal variables look up names via context.tempVarRenameMap (ElixirASTBuilder.hx:557)
+        var tvarMapping = extractTLocalIDsFromGuard(switchCase.expr, patternVars);
+
+        #if debug_guard_compilation
+        trace('[SwitchBuilder] Registering ${tvarMapping.keys().length} TLocal mapping(s) in tempVarRenameMap:');
+        for (tvarId in tvarMapping.keys()) {
+            var name = tvarMapping.get(tvarId);
+            var idKey = Std.string(tvarId);  // Convert ID to string key format
+            trace('[SwitchBuilder]   TLocal#${tvarId} → ${name}');
+            context.tempVarRenameMap.set(idKey, name);
+        }
+        #else
+        // Register mappings (without debug output)
+        for (tvarId in tvarMapping.keys()) {
+            var idKey = Std.string(tvarId);  // Convert ID to string key format
+            context.tempVarRenameMap.set(idKey, tvarMapping.get(tvarId));
+        }
+        #end
+
+        // Build pattern from case value (pass pattern variables for idiomatic enum patterns)
+        var pattern = buildPattern(value, targetVarName, patternVars, context);
+        if (pattern == null) {
+            return [];
+        }
+
+        // ENHANCED GUARD CHAIN DETECTION: Extract ALL guards from if-else chain
+        var clauses: Array<ECaseClause> = [];
+
+        if (switchCase.expr != null) {
+            // Haxe may wrap guard clauses in TBlock - unwrap if needed
+            var exprToCheck = switchCase.expr;
+            switch(switchCase.expr.expr) {
+                case TBlock(exprs):
+                    // Search for TIf in the block
+                    for (expr in exprs) {
+                        if (Type.enumConstructor(expr.expr) == "TIf") {
+                            exprToCheck = expr;
+                            break;
+                        }
+                    }
+                default:
+                    // Not wrapped in block
+            }
+
+            // Extract all guards from the if-else chain
+            clauses = extractGuardChain(exprToCheck, pattern, context);
+        }
+
+        // If no guards detected, create single clause without guard
+        if (clauses.length == 0) {
+            var body = if (switchCase.expr != null && context.compiler != null) {
+                var substitutedBody = context.substituteIfNeeded(switchCase.expr);
+                reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+            } else {
+                null;
+            };
+
+            if (body != null) {
+                clauses.push({
+                    pattern: pattern,
+                    guard: null,
+                    body: body
+                });
+            }
+        }
+
+        return clauses;
+    }
+
+    /**
+     * Extract all guards from an if-else chain
+     *
+     * WHY: Haxe merges multiple guard clauses into nested if-else before TypedExpr
+     *      We need to reconstruct the original guard clauses for idiomatic Elixir
+     * WHAT: Traverses if-else chain and creates separate clause for each condition
+     * HOW: Recursively walks TIf else-branches, extracting each condition as a guard
+     *
+     * Example:
+     *   TIf(n > 0, "pos", TIf(n < 0, "neg", "zero"))
+     *   →
+     *   [{guard: n > 0, body: "pos"}, {guard: n < 0, body: "neg"}, {guard: null, body: "zero"}]
+     */
+    static function extractGuardChain(expr: TypedExpr, pattern: EPattern, context: CompilationContext): Array<ECaseClause> {
+        var clauses: Array<ECaseClause> = [];
+        var current = expr;
+
+        trace('[GuardChain] Starting extraction, expr type: ${Type.enumConstructor(current.expr)}');
+
+        // Traverse the if-else chain
+        while (true) {
+            switch(current.expr) {
+                case TIf(econd, eif, eelse):
+                    trace('[GuardChain] Found TIf - extracting guard');
+                    // Extract guard condition
+                    var guard = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(econd, context);
+
+                    // Compile then-branch as body
+                    var substitutedBody = context.substituteIfNeeded(eif);
+                    var body = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+
+                    // Create clause with guard
+                    clauses.push({
+                        pattern: pattern,
+                        guard: guard,
+                        body: body
+                    });
+                    trace('[GuardChain]   Created clause with guard');
+
+                    // Continue with else-branch (may be another TIf or final value)
+                    if (eelse != null) {
+                        trace('[GuardChain]   Else-branch type: ${Type.enumConstructor(eelse.expr)}');
+
+                        // Unwrap TBlock to find nested TIf
+                        var nextExpr = eelse;
+                        switch(eelse.expr) {
+                            case TBlock(exprs):
+                                trace('[GuardChain]   Unwrapping TBlock with ${exprs.length} expressions');
+                                // Search for TIf in the block
+                                for (expr in exprs) {
+                                    if (Type.enumConstructor(expr.expr) == "TIf") {
+                                        trace('[GuardChain]   Found TIf inside TBlock');
+                                        nextExpr = expr;
+                                        break;
+                                    }
+                                }
+                            default:
+                                // Not a TBlock, use as-is
+                        }
+
+                        current = nextExpr;
+                    } else {
+                        trace('[GuardChain]   No else-branch, stopping');
+                        break;
+                    }
+
+                default:
+                    trace('[GuardChain] Not a TIf (type: ${Type.enumConstructor(current.expr)}), creating final clause');
+                    // Reached final else (not a TIf) - create clause without guard
+                    var substitutedBody = context.substituteIfNeeded(current);
+                    var body = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+
+                    clauses.push({
+                        pattern: pattern,
+                        guard: null,
+                        body: body
+                    });
+                    break;
+            }
+        }
+
+        trace('[GuardChain] Extracted ${clauses.length} total clauses');
+        return clauses;
     }
     
     /**
@@ -311,8 +445,10 @@ class SwitchBuilder {
      * WHY: Patterns need to match Elixir's pattern matching semantics
      * WHAT: Converts Haxe case values to Elixir patterns, handling TEnumIndex optimization
      * HOW: Analyzes value type, generates appropriate pattern, maps integers to enum constructors
+     *
+     * @param guardVars - Variable names extracted from guard conditions (for TEnumIndex cases)
      */
-    static function buildPattern(value: TypedExpr, targetVarName: String, context: CompilationContext): Null<EPattern> {
+    static function buildPattern(value: TypedExpr, targetVarName: String, guardVars: Array<String>, context: CompilationContext): Null<EPattern> {
         trace('[SwitchBuilder] Building pattern for: ${Type.enumConstructor(value.expr)}');
         switch(value.expr) {
             case TConst(c):
@@ -330,7 +466,11 @@ class SwitchBuilder {
                             var constructor = getEnumConstructorByIndex(enumType, i);
                             if (constructor != null) {
                                 trace('[SwitchBuilder]     *** Found constructor: ${constructor.name} ***');
-                                return generateIdiomaticEnumPattern(constructor, context);
+
+                                // Use guard variables passed from buildCaseClause
+                                // When TEnumIndex optimization transforms case Ok(n) to case 0,
+                                // we recover the user's variable name from the guard condition
+                                return generateIdiomaticEnumPattern(constructor, guardVars, context);
                             } else {
                                 trace('[SwitchBuilder]     WARNING: No constructor found for index $i');
                             }
@@ -351,7 +491,7 @@ class SwitchBuilder {
                 trace('[SwitchBuilder]   Found TCall, checking if enum constructor');
                 if (isEnumConstructor(e)) {
                     trace('[SwitchBuilder]     Confirmed enum constructor, building enum pattern');
-                    return buildEnumPattern(e, args, context);
+                    return buildEnumPattern(e, args, guardVars, context);
                 }
                 trace('[SwitchBuilder]     Not an enum constructor');
                 return null;
@@ -373,13 +513,15 @@ class SwitchBuilder {
      * Generate idiomatic Elixir pattern for enum constructor
      *
      * WHY: Convert recovered enum constructors to idiomatic {:atom, params} patterns
-     * WHAT: Creates tuple patterns with actual parameter names
-     * HOW: Extracts parameter names from EnumField.type
+     * WHAT: Creates tuple patterns with user's variable names from guards when available
+     * HOW: Uses guardVars if provided, otherwise falls back to EnumField parameter names
+     *
+     * CRITICAL: When TEnumIndex optimization loses variable names, we recover them from guard conditions
      */
-    static function generateIdiomaticEnumPattern(ef: EnumField, context: CompilationContext): EPattern {
+    static function generateIdiomaticEnumPattern(ef: EnumField, guardVars: Array<String>, context: CompilationContext): EPattern {
         var atomName = NameUtils.toSnakeCase(ef.name);
 
-        // Extract parameter names from EnumField.type
+        // Extract parameter names from EnumField.type (fallback)
         var parameterNames: Array<String> = [];
         switch(ef.type) {
             case TFun(args, _):
@@ -399,16 +541,300 @@ class SwitchBuilder {
             var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
 
             for (i in 0...parameterNames.length) {
-                var paramName = VariableAnalyzer.toElixirVarName(parameterNames[i]);
-                trace('[SwitchBuilder]     Parameter $i: ${paramName}');
+                // Use guard variable if available, otherwise use enum parameter name
+                var sourceName = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
+                var paramName = VariableAnalyzer.toElixirVarName(sourceName);
+                trace('[SwitchBuilder]     Parameter $i: GuardVar=${guardVars != null && i < guardVars.length ? guardVars[i] : "none"}, EnumParam=${parameterNames[i]}, Using=${paramName}');
                 patterns.push(PVar(paramName));
             }
 
-            trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${parameterNames.join(", ")}}');
+            var finalNames = [for (i in 0...parameterNames.length)
+                (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i]];
+            trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}');
             return PTuple(patterns);
         }
     }
-    
+
+    /**
+     * Extract variable names from guard condition
+     *
+     * WHY: TEnumIndex optimization loses user's variable names from patterns
+     * WHAT: Recovers variable names by analyzing guard TIf conditions
+     * HOW: Recursively traverses TIf to find TLocal variables used in comparisons
+     *
+     * Example: case Ok(n) if (n > 0) → guards have TIf(TBinop(OpGt, TLocal(n), TConst(0)))
+     *          We extract "n" from the TLocal
+     */
+    static function extractGuardVariables(caseExpr: TypedExpr): Array<String> {
+        var vars: Array<String> = [];
+
+        function traverse(expr: TypedExpr): Void {
+            if (expr == null) return;
+
+            switch(expr.expr) {
+                case TLocal(v):
+                    // Found a variable in the guard
+                    if (!vars.contains(v.name)) {
+                        vars.push(v.name);
+                    }
+                case TBinop(_, e1, e2):
+                    traverse(e1);
+                    traverse(e2);
+                case TIf(econd, eif, eelse):
+                    traverse(econd);
+                    traverse(eif);
+                    if (eelse != null) traverse(eelse);
+                case TBlock(exprs):
+                    for (e in exprs) traverse(e);
+                case TUnop(_, _, e1):
+                    traverse(e1);
+                case TField(e, _):
+                    traverse(e);
+                case TCall(e, el):
+                    traverse(e);
+                    for (arg in el) traverse(arg);
+                case TParenthesis(e):
+                    traverse(e);
+                default:
+                    // Other expressions don't contain variable references we care about
+            }
+        }
+
+        traverse(caseExpr);
+        return vars;
+    }
+
+    /**
+     * Extract first TLocal variable name from expression (for guard variable extraction)
+     *
+     * WHY: Guards in TIf conditions contain the user's variable choice
+     * WHAT: Returns first TLocal.name found, or null if none
+     * HOW: Simple recursive traversal stopping at first TLocal
+     */
+    static function extractFirstTLocalName(expr: Null<TypedExpr>): Null<String> {
+        if (expr == null) return null;
+
+        return switch(expr.expr) {
+            case TLocal(v):
+                v.name;
+            case TBinop(_, e1, e2):
+                var result = extractFirstTLocalName(e1);
+                result != null ? result : extractFirstTLocalName(e2);
+            case TUnop(_, _, e):
+                extractFirstTLocalName(e);
+            case TParenthesis(e):
+                extractFirstTLocalName(e);
+            case TCall(e, el):
+                var result = extractFirstTLocalName(e);
+                if (result != null) return result;
+                for (arg in el) {
+                    result = extractFirstTLocalName(arg);
+                    if (result != null) return result;
+                }
+                null;
+            default:
+                null;
+        };
+    }
+
+    /**
+     * Extract variable names from GUARD expression (for finding canonical names)
+     *
+     * WHY: When TEnumIndex optimization changes pattern variable names, guard preserves originals
+     * WHAT: Extracts TLocal names from guard expression
+     * HOW: Simple traversal collecting v.name from TLocal nodes
+     */
+    static function extractVarsFromGuardExpr(guardExpr: Null<TypedExpr>): Array<String> {
+        if (guardExpr == null) {
+            trace('[extractVarsFromGuardExpr] guardExpr is null');
+            return [];
+        }
+
+        trace('[extractVarsFromGuardExpr] Starting extraction from: ${Type.enumConstructor(guardExpr.expr)}');
+        var vars: Array<String> = [];
+
+        function traverse(expr: TypedExpr): Void {
+            if (expr == null) return;
+
+            trace('[extractVarsFromGuardExpr]   Traversing: ${Type.enumConstructor(expr.expr)}');
+            switch(expr.expr) {
+                case TLocal(v):
+                    trace('[extractVarsFromGuardExpr]     FOUND TLocal: ${v.name} (id=${v.id})');
+                    if (!vars.contains(v.name)) {
+                        vars.push(v.name);
+                    }
+                case TIf(econd, eif, eelse):
+                    // CRITICAL: Guard is ONLY in the TIf condition, not in then/else branches
+                    // Structure: TIf(guard_condition, case_body, else_next_case)
+                    // We ONLY want variables from the guard condition!
+                    traverse(econd);  // Extract from guard only
+                    // Don't traverse eif/eelse - those are case body and continuation
+                case TBinop(_, e1, e2):
+                    traverse(e1); traverse(e2);
+                case TUnop(_, _, e):
+                    traverse(e);
+                case TParenthesis(e):
+                    traverse(e);
+                case TCall(e, el):
+                    traverse(e);
+                    for (arg in el) traverse(arg);
+                default:
+            }
+        }
+
+        traverse(guardExpr);
+        return vars;
+    }
+
+    /**
+     * Strip numeric suffix from Haxe-renamed variables
+     *
+     * WHY: Haxe adds suffixes (n, n2, n3) for same variable in different cases
+     * WHAT: Removes numeric suffix to get canonical name
+     * HOW: Regex to strip trailing digits
+     *
+     * Examples: n2 -> n, value3 -> value, msg -> msg
+     */
+    static function stripNumericSuffix(name: String): String {
+        var pattern = ~/^(.+?)(\d+)$/;
+        if (pattern.match(name)) {
+            return pattern.matched(1);
+        }
+        return name;
+    }
+
+    /**
+     * Extract variable names from case PATTERN (not guard)
+     *
+     * WHY: Case patterns contain the user's intended variable names before Haxe's renaming
+     *      Guard expressions have Haxe's renamed variables (n, n2, n3) which are wrong
+     *
+     * WHAT: Extracts variable names from pattern TEnumParameter or TLocal nodes
+     *
+     * HOW: Recursively traverses pattern expression, collects TLocal names
+     *
+     * Example: case Ok(n) → extract "n" from pattern
+     *          Guard has n2, but pattern has the canonical "n"
+     */
+    static function extractVarsFromPatternExpr(patternExpr: TypedExpr): Array<String> {
+        var vars: Array<String> = [];
+
+        trace('[extractVarsFromPatternExpr] Pattern expr type: ${Type.enumConstructor(patternExpr.expr)}');
+
+        function traverse(expr: TypedExpr): Void {
+            if (expr == null) return;
+
+            trace('[extractVarsFromPatternExpr]   Traversing: ${Type.enumConstructor(expr.expr)}');
+
+            switch(expr.expr) {
+                case TEnumParameter(e, ef, index):
+                    // This is an enum constructor parameter in the pattern
+                    // Extract the actual parameter name from the enum field
+                    trace('[extractVarsFromPatternExpr]     Found TEnumParameter, ef.name=${ef.name}, index=$index');
+                    trace('[extractVarsFromPatternExpr]     Inner expr (e) type: ${Type.enumConstructor(e.expr)}');
+
+                    // CRITICAL: Don't extract from enum type definition - traverse to find actual TLocal
+                    // The enum parameter type has names like "value", but we need the actual variable like "n"
+                    traverse(e);
+                case TLocal(v):
+                    // Direct variable in pattern
+                    trace('[extractVarsFromPatternExpr]     Found TLocal: ${v.name} (id=${v.id})');
+                    if (!vars.contains(v.name)) {
+                        vars.push(v.name);
+                    }
+                case TCall(_, args):
+                    // Constructor call in pattern
+                    trace('[extractVarsFromPatternExpr]     Found TCall with ${args.length} args');
+                    for (arg in args) traverse(arg);
+                case TField(e, _):
+                    trace('[extractVarsFromPatternExpr]     Found TField');
+                    traverse(e);
+                default:
+                    // Other pattern types
+                    trace('[extractVarsFromPatternExpr]     Unhandled type');
+            }
+        }
+
+        traverse(patternExpr);
+        trace('[extractVarsFromPatternExpr] Final vars: [${vars.join(", ")}]');
+        return vars;
+    }
+
+    /**
+     * Extract TLocal variable IDs from guard expressions and map to canonical names
+     *
+     * WHY: Guard expressions create independent TLocal instances with different IDs
+     *      for the same variable name. This causes guards to use different names (n, n2, n3)
+     *      even though they should all use the pattern variable name (n).
+     *
+     * WHAT: Maps each TLocal ID found in guard to its canonical variable name from pattern.
+     *       Only maps TLocals that appear in patternNames to avoid pollution.
+     *
+     * HOW: Recursively traverses guard expression AST, extracts TLocal IDs,
+     *      registers them in ClauseContext.localToName for consistent compilation.
+     *
+     * Example:
+     *   Pattern: case Ok(n) if (n > 0)
+     *   Guard has: TBinop(OpGt, TLocal(id=42, name="n"), TConst(0))
+     *   Mapping: {42 => "n"} so guard compiles to "n > 0" not "n2 > 0"
+     */
+    static function extractTLocalIDsFromGuard(expr: TypedExpr, patternNames: Array<String>): Map<Int, String> {
+        var mapping = new Map<Int, String>();
+
+        function traverse(e: TypedExpr) {
+            if (e == null) return;
+
+            switch(e.expr) {
+                case TLocal(v):
+                    // CRITICAL FIX: Strip numeric suffix before checking pattern names
+                    // Haxe renames variables (n → n2, n3), but we want to map them all to canonical "n"
+                    var baseName = stripNumericSuffix(v.name);
+
+                    if (patternNames.contains(baseName)) {
+                        // Map this TLocal ID to the canonical name (not the renamed version)
+                        mapping.set(v.id, baseName);
+                    }
+                case TBinop(_, e1, e2):
+                    traverse(e1);
+                    traverse(e2);
+                case TIf(econd, eif, eelse):
+                    traverse(econd);
+                    traverse(eif);
+                    if (eelse != null) traverse(eelse);
+                case TUnop(_, _, e1):
+                    traverse(e1);
+                case TParenthesis(e1):
+                    traverse(e1);
+                case TMeta(_, e1):
+                    traverse(e1);
+                case TBlock(el):
+                    for (e in el) traverse(e);
+                case TCall(_, el):
+                    for (e in el) traverse(e);
+                case TField(e, _):
+                    traverse(e);
+                default:
+                    // Other cases don't contain TLocal variables we care about
+            }
+        }
+
+        #if debug_guard_compilation
+        trace('[SwitchBuilder] Extracting TLocal IDs from guard expression...');
+        trace('[SwitchBuilder]   Pattern variables: [${patternNames.join(", ")}]');
+        #end
+
+        traverse(expr);
+
+        #if debug_guard_compilation
+        trace('[SwitchBuilder] Extracted ${mapping.keys().length} TLocal ID mapping(s):');
+        for (id in mapping.keys()) {
+            trace('[SwitchBuilder]   TLocal#${id} → ${mapping.get(id)}');
+        }
+        #end
+
+        return mapping;
+    }
+
     /**
      * Build enum constructor pattern
      *
@@ -418,8 +844,10 @@ class SwitchBuilder {
      *
      * CRITICAL FIX: This eliminates generated "g" variables by using the actual parameter
      * names defined in the enum constructor (e.g., "value" for Some(value: T))
+     *
+     * @param guardVars - Variable names extracted from guard conditions (preferred over enum param names)
      */
-    static function buildEnumPattern(constructorExpr: TypedExpr, args: Array<TypedExpr>, context: CompilationContext): Null<EPattern> {
+    static function buildEnumPattern(constructorExpr: TypedExpr, args: Array<TypedExpr>, guardVars: Array<String>, context: CompilationContext): Null<EPattern> {
         // Extract constructor name and EnumField
         var ef: EnumField = null;
         var constructorName = switch(constructorExpr.expr) {
@@ -457,27 +885,33 @@ class SwitchBuilder {
         // Build parameter patterns - first element is the atom
         var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
 
-        // Use actual parameter names from EnumField instead of Haxe's generated names
+        // Use actual parameter names with priority: guardVars > TLocal > EnumField
         for (i in 0...args.length) {
             var arg = args[i];
 
-            // Get the actual parameter name from EnumField if available
-            var actualParamName = i < parameterNames.length ? parameterNames[i] : null;
+            // Priority 1: Guard variable (from user's guard condition)
+            var guardVar = (guardVars != null && i < guardVars.length) ? guardVars[i] : null;
+
+            // Priority 2: EnumField parameter name (fallback)
+            var enumParam = i < parameterNames.length ? parameterNames[i] : null;
 
             switch(arg.expr) {
                 case TLocal(v):
-                    // Use actual parameter name instead of Haxe's generated "g" variable
-                    var varName = if (actualParamName != null) {
-                        // Convert to Elixir naming convention
-                        VariableAnalyzer.toElixirVarName(actualParamName);
-                    } else {
-                        // Fallback to Haxe's name (for compatibility)
-                        VariableAnalyzer.toElixirVarName(v.name);
-                    };
+                    // CRITICAL: Use source variable name with priority system
+                    // 1. guardVar (from guard like "n > 0") - most specific
+                    // 2. v.name (from TLocal in pattern) - user's choice
+                    // 3. enumParam (from enum definition) - fallback
+                    var sourceName = guardVar != null ? guardVar : v.name;
 
-                    #if debug_ast_builder
-                    trace('[SwitchBuilder] Parameter $i: Haxe=${v.name}, Actual=${actualParamName}, Using=${varName}');
-                    #end
+                    trace('[SwitchBuilder] *** PATTERN VAR DEBUG ***');
+                    trace('[SwitchBuilder]   Index: $i');
+                    trace('[SwitchBuilder]   GuardVar: ${guardVar}');
+                    trace('[SwitchBuilder]   TLocal v.name: ${v.name}');
+                    trace('[SwitchBuilder]   EnumParam: ${enumParam}');
+                    trace('[SwitchBuilder]   Using sourceName: ${sourceName}');
+
+                    var varName = VariableAnalyzer.toElixirVarName(sourceName);
+                    trace('[SwitchBuilder]   Final varName: ${varName}');
 
                     patterns.push(PVar(varName));
                 default:

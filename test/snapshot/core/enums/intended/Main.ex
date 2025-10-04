@@ -38,30 +38,14 @@ end
   end
   def describe_rgb(color) do
     case color do
-      {:rgb, _, _, _} ->
-        nil
-        nil
-        nil
-        nil
-        if (r > 200 and g < 50 and b < 50) do
-          "mostly red"
-        else
-          _r2 = g
-          _b2 = g2
-          if (g1 > 200 and r2 < 50 and b2 < 50) do
-            "mostly green"
-          else
-            _r3 = g
-            _b3 = g2
-            if (b3 > 200 and r3 < 50 and g1 < 50) do
-              "mostly blue"
-            else
-              _r4 = g
-              _b4 = g2
-              "mixed color"
-            end
-          end
-        end
+      {:rgb, r, g, b} when r > 200 and g < 50 and b < 50 ->
+        "mostly red"
+      {:rgb, r, g, b} when g > 200 and r < 50 and b < 50 ->
+        "mostly green"
+      {:rgb, r, g, b} when b > 200 and r < 50 and g < 50 ->
+        "mostly blue"
+      {:rgb, r, g, b} ->
+        "mixed color"
       _ ->
         "not RGB"
     end
