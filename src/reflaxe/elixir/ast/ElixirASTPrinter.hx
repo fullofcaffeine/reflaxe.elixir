@@ -313,8 +313,8 @@ class ElixirASTPrinter {
                     // This ensures null coalescing stays on one line to avoid syntax errors
                     patternStr + ' = ' + print(expr, 0);
                 } else {
-                    // Regular assignment
-                    patternStr + ' = ' + print(expr, 0);
+                    // Regular assignment - pass indent for proper nesting of block expressions (case, cond, etc.)
+                    patternStr + ' = ' + print(expr, indent);
                 }
                 
             case EWith(clauses, doBlock, elseBlock):
