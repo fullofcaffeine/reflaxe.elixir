@@ -81,7 +81,9 @@ class ReturnBuilder {
             
             // Normal return expression
             var result = if (context.compiler != null) {
-                context.compiler.compileExpressionImpl(e, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
             } else {
                 return null;
             };
@@ -263,7 +265,9 @@ class ReturnBuilder {
         if (switchExpr == null) {
             // Not actually a switch after all
             return if (context.compiler != null) {
-                var result = context.compiler.compileExpressionImpl(processedExpr, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(processedExpr, context);
                 result != null ? result.def : null;
             } else {
                 null;
@@ -272,7 +276,9 @@ class ReturnBuilder {
 
         // Compile the switch expression
         var result = if (context.compiler != null) {
-            context.compiler.compileExpressionImpl(switchExpr, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(switchExpr, context);
         } else {
             return null;
         };

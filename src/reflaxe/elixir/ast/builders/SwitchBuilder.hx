@@ -136,7 +136,9 @@ class SwitchBuilder {
         var targetAST = if (context.compiler != null) {
             // Apply infrastructure variable substitution before re-compilation
             var substitutedTarget = context.substituteIfNeeded(actualSwitchExpr);
-            var result = context.compiler.compileExpressionImpl(substitutedTarget, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedTarget, context);
             trace('[SwitchBuilder DEBUG] Compiled target AST: ${Type.enumConstructor(result.def)}');
             // DEBUG: Show exact variable name if it's EVar
             switch(result.def) {
@@ -184,7 +186,9 @@ class SwitchBuilder {
         // Add default case if present
         if (edef != null) {
             var defaultBody = if (context.compiler != null) {
-                context.compiler.compileExpressionImpl(edef, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(edef, context);
             } else {
                 null;
             }
@@ -234,7 +238,7 @@ class SwitchBuilder {
         if (pattern == null) {
             return null;
         }
-        
+
         // Build case body
         var body: ElixirAST = if (switchCase.expr != null && context.compiler != null) {
             #if debug_switch_compilation
@@ -244,7 +248,36 @@ class SwitchBuilder {
 
             // Apply infrastructure variable substitution before re-compilation
             var substitutedBody = context.substituteIfNeeded(switchCase.expr);
-            var result = context.compiler.compileExpressionImpl(substitutedBody, false);
+
+            // CRITICAL FIX: Register pattern variables in ClauseContext AFTER substitution
+            // This ensures we get the ACTUAL TVar IDs that will be compiled, not pre-substitution IDs
+            if (context.currentClauseContext != null) {
+                var patternVars = extractPatternVariables(pattern);
+                var bodyVars = extractTVarsFromExpr(substitutedBody);  // Extract from SUBSTITUTED body!
+
+                #if debug_switch_compilation
+                trace('[SwitchBuilder] Registering pattern variables');
+                trace('[SwitchBuilder]   Pattern vars: ${patternVars}');
+                trace('[SwitchBuilder]   Body vars count: ${bodyVars.length}');
+                #end
+
+                // Match pattern variables with TVar IDs (positional matching)
+                var matchCount = patternVars.length < bodyVars.length ? patternVars.length : bodyVars.length;
+                for (i in 0...matchCount) {
+                    var tvarId = bodyVars[i].id;
+                    var patternName = patternVars[i];
+
+                    #if debug_switch_compilation
+                    trace('[SwitchBuilder]   Registering: TVar(${tvarId}) -> ${patternName}');
+                    #end
+
+                    context.currentClauseContext.localToName.set(tvarId, patternName);
+                }
+            }
+
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve ClauseContext
+            // Using compiler.compileExpressionImpl creates a NEW context, losing our pattern variable registrations
+            var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
 
             if (result != null) {
                 #if debug_switch_compilation
@@ -526,7 +559,7 @@ class SwitchBuilder {
     
     /**
      * Check if expression is an enum constructor
-     * 
+     *
      * WHY: Enum constructors need special pattern handling
      * WHAT: Identifies enum constructor calls
      * HOW: Checks field access type
@@ -536,6 +569,149 @@ class SwitchBuilder {
             case TField(_, FEnum(_, _)): true;
             default: false;
         };
+    }
+
+    /**
+     * Extract variable names from pattern
+     *
+     * WHY: Pattern variables must be registered in ClauseContext before body compilation
+     * WHAT: Recursively extracts all PVar names from a pattern
+     * HOW: Traverses pattern structure, collecting variable names in order
+     */
+    static function extractPatternVariables(pattern: EPattern): Array<String> {
+        var vars: Array<String> = [];
+
+        function traverse(p: EPattern): Void {
+            switch(p) {
+                case PVar(name):
+                    vars.push(name);
+                case PTuple(elements):
+                    for (elem in elements) {
+                        traverse(elem);
+                    }
+                case PList(elements):
+                    for (elem in elements) {
+                        traverse(elem);
+                    }
+                case PCons(head, tail):
+                    traverse(head);
+                    traverse(tail);
+                case PMap(pairs):
+                    for (pair in pairs) {
+                        traverse(pair.value);
+                    }
+                case PStruct(_, fields):
+                    for (field in fields) {
+                        traverse(field.value);
+                    }
+                case PLiteral(_):
+                    // Literals don't bind variables
+                case PWildcard:
+                    // Underscore doesn't bind
+                case PPin(inner):
+                    // Pin patterns don't bind new variables
+                    traverse(inner);
+                case PAlias(varName, pattern):
+                    // Alias creates a binding for the variable name
+                    vars.push(varName);
+                    // But also traverse the inner pattern
+                    traverse(pattern);
+                case PBinary(segments):
+                    // Binary patterns can contain variable bindings in segments
+                    for (segment in segments) {
+                        traverse(segment.pattern);
+                    }
+            }
+        }
+
+        traverse(pattern);
+        return vars;
+    }
+
+    /**
+     * Extract TVar declarations from case body expression
+     *
+     * WHY: Need to match TVar IDs with pattern variable names for ClauseContext registration
+     * WHAT: Finds all TVar nodes in the expression tree
+     * HOW: Recursively traverses TypedExpr, collecting TVar nodes
+     */
+    static function extractTVarsFromExpr(expr: TypedExpr): Array<{id: Int, name: String}> {
+        var tvars: Array<{id: Int, name: String}> = [];
+
+        function traverse(e: TypedExpr): Void {
+            switch(e.expr) {
+                case TVar(tvar, init):
+                    tvars.push({id: tvar.id, name: tvar.name});
+                    if (init != null) {
+                        traverse(init);
+                    }
+                case TBlock(el):
+                    for (expr in el) {
+                        traverse(expr);
+                    }
+                case TBinop(_, e1, e2):
+                    traverse(e1);
+                    traverse(e2);
+                case TCall(e, el):
+                    traverse(e);
+                    for (arg in el) {
+                        traverse(arg);
+                    }
+                case TField(e, _):
+                    traverse(e);
+                case TIf(econd, eif, eelse):
+                    traverse(econd);
+                    traverse(eif);
+                    if (eelse != null) {
+                        traverse(eelse);
+                    }
+                case TSwitch(e, cases, edef):
+                    traverse(e);
+                    for (c in cases) {
+                        for (v in c.values) {
+                            traverse(v);
+                        }
+                        traverse(c.expr);
+                    }
+                    if (edef != null) {
+                        traverse(edef);
+                    }
+                case TWhile(econd, e, _):
+                    traverse(econd);
+                    traverse(e);
+                case TFor(v, it, expr):
+                    traverse(it);
+                    traverse(expr);
+                case TReturn(e):
+                    if (e != null) {
+                        traverse(e);
+                    }
+                case TArrayDecl(el):
+                    for (e in el) {
+                        traverse(e);
+                    }
+                case TObjectDecl(fields):
+                    for (f in fields) {
+                        traverse(f.expr);
+                    }
+                case TParenthesis(e) | TMeta(_, e) | TCast(e, _):
+                    traverse(e);
+                case TArray(e1, e2):
+                    traverse(e1);
+                    traverse(e2);
+                case TUnop(_, _, e):
+                    traverse(e);
+                case TNew(_, _, el):
+                    for (e in el) {
+                        traverse(e);
+                    }
+                default:
+                    // Other expression types don't contain TVars we care about
+            }
+        }
+
+        traverse(expr);
+        return tvars;
     }
 }
 
