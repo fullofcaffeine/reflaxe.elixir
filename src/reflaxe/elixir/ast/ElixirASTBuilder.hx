@@ -606,6 +606,29 @@ class ElixirASTBuilder {
                 }
                 #end
 
+                // CRITICAL FIX: Skip TVar generation for pattern-bound variables BEFORE delegation
+                // When a variable is already bound by the pattern (e.g., {:ok, value}),
+                // generating "value = nil" is incorrect - the pattern already provides the value
+                #if debug_ast_builder
+                trace('[TVar CHECK] var=${v.name} id=${v.id} hasClauseContext=${currentContext.currentClauseContext != null}');
+                if (currentContext.currentClauseContext != null) {
+                    trace('[TVar CHECK]   localToName has ${v.id}? ${currentContext.currentClauseContext.localToName.exists(v.id)}');
+                    trace('[TVar CHECK]   localToName size: ${Lambda.count(currentContext.currentClauseContext.localToName)}');
+                }
+                #end
+
+                if (currentContext.currentClauseContext != null) {
+                    // Check localToName mapping (pattern variable bindings)
+                    if (currentContext.currentClauseContext.localToName.exists(v.id)) {
+                        #if debug_ast_builder
+                        trace('[TVar] ✅ SKIPPING: Variable ${v.name} (id=${v.id}) already bound by pattern');
+                        trace('[TVar]   Pattern binding: ${currentContext.currentClauseContext.localToName.get(v.id)}');
+                        #end
+                        // Return null to skip this TVar - the pattern already bound the variable
+                        return null;
+                    }
+                }
+
                 // Delegate simple variable declarations to VariableBuilder
                 // Complex patterns (blocks, comprehensions) are handled below
                 if (init == null || isSimpleInit(init)) {
@@ -1141,7 +1164,6 @@ class ElixirASTBuilder {
                 #if debug_hygiene
                 trace('[Hygiene] TVar built faithfully: id=${v.id} name=${v.name} -> $finalVarName (no premature underscore)');
                 #end
-
 
                 // Handle variable initialization
                 var matchNode = if (init != null) {

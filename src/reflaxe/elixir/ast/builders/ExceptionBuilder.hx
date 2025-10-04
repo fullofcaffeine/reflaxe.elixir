@@ -70,7 +70,9 @@ class ExceptionBuilder {
         
         // Build the try body
         var body = if (context.compiler != null) {
-            context.compiler.compileExpressionImpl(e, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
         } else {
             return null;
         };
@@ -91,7 +93,9 @@ class ExceptionBuilder {
             
             // Build the catch body
             var catchBody = if (context.compiler != null) {
-                context.compiler.compileExpressionImpl(c.expr, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(c.expr, context);
             } else {
                 makeAST(ENil);
             };
@@ -132,7 +136,9 @@ class ExceptionBuilder {
         #end
         
         var throwExpr = if (context.compiler != null) {
-            context.compiler.compileExpressionImpl(e, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
         } else {
             return null;
         };

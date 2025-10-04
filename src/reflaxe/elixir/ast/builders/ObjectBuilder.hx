@@ -149,7 +149,9 @@ class ObjectBuilder {
         // Build tuple elements in order
         var tupleElements = [];
         for (field in sortedFields) {
-            tupleElements.push(context.compiler.compileExpressionImpl(field.expr, false));
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+            tupleElements.push(reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(field.expr, context));
         }
         
         return ETuple(tupleElements);
@@ -192,7 +194,8 @@ class ObjectBuilder {
         for (field in fields) {
             // Convert field names to snake_case for idiomatic Elixir atoms
             var atomName = NameUtils.toSnakeCase(field.name);
-            var fieldValue = context.compiler.compileExpressionImpl(field.expr, false);
+            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+            var fieldValue = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(field.expr, context);
             keywordPairs.push({key: atomName, value: fieldValue});
         }
         
@@ -243,8 +246,8 @@ class ObjectBuilder {
                 // These fields should be atoms when they're strings
                 handleAtomField(field.expr, context);
             } else {
-                // Standard field value compilation
-                context.compiler.compileExpressionImpl(field.expr, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(field.expr, context);
             };
             
             pairs.push({key: key, value: fieldValue});
@@ -283,29 +286,36 @@ class ObjectBuilder {
                             // Convert string module name to atom
                             makeAST(EVar(s));
                         case _:
-                            context.compiler.compileExpressionImpl(moduleField.expr, false);
+                            // CRITICAL FIX: Preserve context
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(moduleField.expr, context);
                     };
-                    
+
                     var funcAst = switch(funcField.expr.expr) {
                         case TConst(TString(s)):
                             // Convert string function name to atom
                             makeAST(EAtom(s));
                         case _:
-                            context.compiler.compileExpressionImpl(funcField.expr, false);
+                            // CRITICAL FIX: Preserve context
+                            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(funcField.expr, context);
                     };
-                    
-                    var argsAst = context.compiler.compileExpressionImpl(argsField.expr, false);
+
+                    // CRITICAL FIX: Preserve context
+                    var argsAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(argsField.expr, context);
                     
                     // Create tuple {Module, :func, args}
                     return makeAST(ETuple([moduleAst, funcAst, argsAst]));
                 } else {
                     // Not the expected format, compile normally
-                    return context.compiler.compileExpressionImpl(expr, false);
+                    // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                    // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                    return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
                 }
-                
+
             case _:
                 // Not an object, compile normally
-                return context.compiler.compileExpressionImpl(expr, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
         }
     }
     
@@ -321,7 +331,9 @@ class ObjectBuilder {
             case TConst(TString(s)):
                 return makeAST(EAtom(s));
             case _:
-                return context.compiler.compileExpressionImpl(expr, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
         }
     }
     
@@ -359,11 +371,13 @@ class ObjectBuilder {
     static function handleFieldValue(field: {name: String, expr: TypedExpr}, context: CompilationContext): ElixirAST {
         switch(field.expr.expr) {
             // Detect null coalescing pattern
-            case TBlock([{expr: TVar(tmpVar, init)}, {expr: TBinop(OpNullCoal, {expr: TLocal(v)}, defaultExpr)}]) 
+            case TBlock([{expr: TVar(tmpVar, init)}, {expr: TBinop(OpNullCoal, {expr: TLocal(v)}, defaultExpr)}])
                 if (v.id == tmpVar.id && init != null):
                 // Transform null coalescing pattern to idiomatic Elixir
-                var initAst = context.compiler.compileExpressionImpl(init, false);
-                var defaultAst = context.compiler.compileExpressionImpl(defaultExpr, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                var initAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(init, context);
+                var defaultAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(defaultExpr, context);
                 var tmpVarName = VariableAnalyzer.toElixirVarName(
                     tmpVar.name.charAt(0) == "_" ? tmpVar.name.substr(1) : tmpVar.name
                 );
@@ -404,14 +418,18 @@ class ObjectBuilder {
                     #end
                     return makeAST(EVar(mappedName));
                 } else {
-                    trace('[ObjectBuilder DEBUG] No ID mapping found, falling back to compileExpressionImpl');
+                    trace('[ObjectBuilder DEBUG] No ID mapping found, falling back to buildFromTypedExpr');
                     // No mapping, compile normally
-                    return context.compiler.compileExpressionImpl(field.expr, false);
+                    // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                    // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                    return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(field.expr, context);
                 }
-                
+
             case _:
                 // Standard field value compilation
-                return context.compiler.compileExpressionImpl(field.expr, false);
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                return reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(field.expr, context);
         }
     }
 }
