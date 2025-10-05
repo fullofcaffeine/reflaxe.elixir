@@ -44,4 +44,5 @@
 --macro include('ElixirGlobal')
 
 # Prevent loop unrolling to preserve expressions in generated code
--D loop_unroll_max_cost=10
+# Set to 0 to disable all loop unrolling (preserve array comprehensions)
+-D loop_unroll_max_cost=0

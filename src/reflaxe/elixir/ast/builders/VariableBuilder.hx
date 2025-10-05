@@ -357,6 +357,9 @@ class VariableBuilder {
 
         // Priority 2: Check clause context for case-local variables
         if (context.currentClauseContext != null) {
+            #if debug_clause_context
+            trace('[VarBuilder] Checking ClauseContext for TVar: ${tvar.name} (id: $tvarId)');
+            #end
             var clauseMapping = context.currentClauseContext.lookupVariable(tvarId);
             if (clauseMapping != null) {
                 #if debug_clause_context
@@ -364,7 +367,12 @@ class VariableBuilder {
                 #end
                 return clauseMapping;
             }
-        }
+            #if debug_clause_context
+            trace('[VarBuilder] No ClauseContext mapping found for ${tvar.name} (id: $tvarId)');
+            #end
+        } #if debug_clause_context else {
+            trace('[VarBuilder] ClauseContext is NULL for ${tvar.name} (id: $tvarId)');
+        } #end
 
         // Priority 3: Check tempVarRenameMap for function parameters (DUAL-KEY STORAGE)
         // CRITICAL FIX: This is the same pattern that fixed HygieneTransforms
