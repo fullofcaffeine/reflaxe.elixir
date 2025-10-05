@@ -238,7 +238,7 @@ class StructUpdateTransform {
      */
     static function detectAndExtractFieldMutation(expr: ElixirAST): Null<{key: String, value: ElixirAST}> {
         if (expr == null) return null;
-        
+
         // Check for field concatenation pattern
         switch(expr.def) {
             case EBinary(Concat, left, right):
@@ -247,7 +247,15 @@ class StructUpdateTransform {
                     case EField(obj, field):
                         switch(obj.def) {
                             case EVar("struct"):
-                                // Found struct.field ++ something
+                                // GUARD: Only treat as struct field if field is not an array variable
+                                if (isArrayVariable(field)) {
+                                    #if debug_struct_update_transform
+                                    trace('[XRay StructUpdate] Skipping array variable field: struct.$field');
+                                    #end
+                                    return null;
+                                }
+
+                                // Found struct.field ++ something (and field is NOT an array variable)
                                 return {
                                     key: field,
                                     value: makeAST(EBinary(Concat, left, right))
