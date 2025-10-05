@@ -281,8 +281,11 @@ class StructUpdateTransform {
     /**
      * Check if a variable name indicates it's an array/list operation variable
      * These are compiler-generated infrastructure variables for array building
+     *
+     * PUBLIC: Shared with ImmutabilityTransform to prevent struct update transformation
+     * for array infrastructure variables (g, g2, _g, _g2, etc.)
      */
-    static function isArrayVariable(varName: String): Bool {
+    public static function isArrayVariable(varName: String): Bool {
         if (varName == null) return false;
 
         // Check for compiler-generated array variables
