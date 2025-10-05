@@ -271,54 +271,94 @@ class StructUpdateTransform {
     }
     
     /**
+     * Check if a variable name indicates it's an array/list operation variable
+     * These are compiler-generated infrastructure variables for array building
+     */
+    static function isArrayVariable(varName: String): Bool {
+        if (varName == null) return false;
+
+        // Check for compiler-generated array variables
+        // Pattern: g, g2, g3, _g, _g2, etc.
+        if (varName == "g") return true;
+        if (StringTools.startsWith(varName, "g") && ~/^g\d+$/.match(varName)) return true;
+        if (StringTools.startsWith(varName, "_g")) return true;
+
+        return false;
+    }
+
+    /**
      * Check if an expression is an ignored field mutation (like struct.columns ++ [...])
+     *
+     * CRITICAL: Only applies to actual struct field operations, NOT array operations.
+     * This prevents incorrectly transforming array concatenation like `arr = arr ++ [item]`
+     * into struct update syntax `%{struct | arr: arr ++ [item]}`.
      */
     static function isIgnoredFieldMutation(expr: ElixirAST): Bool {
         if (expr == null) return false;
-        
+
         switch(expr.def) {
             case EBinary(Concat, left, right):
                 // Check if left side is struct.field access
                 switch(left.def) {
                     case EField(obj, field):
                         switch(obj.def) {
-                            case EVar("struct"):
-                                return true;
+                            case EVar(varName):
+                                // GUARD: Only treat as struct field if variable is "struct"
+                                // AND not an array infrastructure variable
+                                if (varName == "struct" && !isArrayVariable(field)) {
+                                    return true;
+                                }
+                                // GUARD: Reject array variables (g, g2, _g, etc.)
+                                if (isArrayVariable(varName)) {
+                                    #if debug_struct_update_transform
+                                    trace('[XRay StructUpdate] Skipping array variable: $varName.$field');
+                                    #end
+                                    return false;
+                                }
                             default:
                         }
                     default:
                 }
             default:
         }
-        
+
         return false;
     }
     
     /**
      * Extract field update information from a mutation expression
+     *
+     * CRITICAL: Only extracts from actual struct field operations, NOT array operations.
      */
     static function extractFieldUpdate(expr: ElixirAST): Null<{key: String, value: ElixirAST}> {
         if (expr == null) return null;
-        
+
         switch(expr.def) {
             case EBinary(Concat, left, right):
                 // Extract field name and build update expression
                 switch(left.def) {
                     case EField(obj, field):
                         switch(obj.def) {
-                            case EVar("struct"):
-                                // Build the complete update expression: struct.field ++ right
-                                return {
-                                    key: field,
-                                    value: makeAST(EBinary(Concat, left, right))
-                                };
+                            case EVar(varName):
+                                // GUARD: Only extract if variable is "struct" and field is not an array variable
+                                if (varName == "struct" && !isArrayVariable(field)) {
+                                    // Build the complete update expression: struct.field ++ right
+                                    return {
+                                        key: field,
+                                        value: makeAST(EBinary(Concat, left, right))
+                                    };
+                                }
+                                // GUARD: Skip array variables
+                                if (isArrayVariable(varName)) {
+                                    return null;
+                                }
                             default:
                         }
                     default:
                 }
             default:
         }
-        
+
         return null;
     }
     
