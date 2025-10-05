@@ -822,6 +822,7 @@ class ElixirASTBuilder {
                 #end
                 
                 // Check for conditional comprehension pattern: var evens = { var g = []; if statements; g }
+                // AND for unrolled comprehension pattern: var doubled = { doubled = n = 1; [] ++ [n*2]; ... }
                 if (init != null) {
                     switch(init.expr) {
                         case TBlock(blockStmts) if (blockStmts.length >= 3):
@@ -859,7 +860,27 @@ class ElixirASTBuilder {
                             if (mapLiteral != null) {
                                 return EMatch(PVar(VariableAnalyzer.toElixirVarName(v.name)), mapLiteral);
                             }
-                            // Check if this is a conditional comprehension pattern
+
+                            // NEW: Check for unrolled array comprehension pattern FIRST
+                            // Pattern: var doubled = { doubled = n = 1; [] ++ [expr]; n = 2; ...; [] }
+                            #if debug_ast_builder
+                            trace('[TVar COMPREHENSION CHECK] Checking if TBlock is unrolled comprehension');
+                            trace('[TVar COMPREHENSION CHECK] Block has ${blockStmts.length} statements');
+                            #end
+
+                            var comprehensionAST = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(blockStmts, currentContext);
+                            if (comprehensionAST != null) {
+                                #if debug_ast_builder
+                                trace('[TVar COMPREHENSION] ✅ Detected unrolled comprehension in TVar initialization!');
+                                trace('[TVar COMPREHENSION] Variable: ${v.name}');
+                                trace('[TVar COMPREHENSION] Converting to idiomatic Elixir comprehension');
+                                #end
+                                // Return assignment: doubled = for n <- [1,2,3], do: n * 2
+                                var varName = VariableAnalyzer.toElixirVarName(v.name);
+                                return EMatch(PVar(varName), comprehensionAST);
+                            }
+
+                            // FALLBACK: Check if this is a conditional comprehension pattern
                             var isConditionalComp = false;
                             var tempVarName = "";
                             

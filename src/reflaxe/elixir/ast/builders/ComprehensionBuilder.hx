@@ -246,24 +246,61 @@ class ComprehensionBuilder {
     
     /**
      * Check if statements match unrolled comprehension pattern
-     * 
+     *
      * WHY: Haxe unrolls constant-range loops into sequential concatenations
-     * WHAT: Detects var g = []; g = g ++ [val]; ... pattern
-     * HOW: Looks for var g = []; g = g ++ [val]; ... pattern
-     *      OR var g = []; if (cond) g = g ++ [val]; ... pattern (conditional comprehensions)
+     * WHAT: Detects BOTH old pattern (var g = []; g = g ++ [val]) AND new pattern (doubled = n = 1; [] ++ [n * 2])
+     * HOW: Tries multiple detection strategies:
+     *      1. Legacy pattern: var g = []; g = g ++ [val]; ... g
+     *      2. New pattern: result = n = 1; [] ++ [n * 2]; n = 2; ... []
+     *
+     * EDGE CASES:
+     * - Conditional comprehensions with if statements
+     * - Both patterns can appear depending on Haxe optimization level
      */
     static function isUnrolledComprehension(statements: Array<TypedExpr>): Bool {
         if (statements.length < 3) return false;
-        
+
         #if debug_array_comprehension
         #if debug_ast_builder
-        trace('[Array Comprehension Detection] Checking for unrolled comprehension');
+        trace('[Array Comprehension Detection] Checking for unrolled comprehension (${statements.length} statements)');
         #end
         #end
-        
+
+        // Try legacy pattern first (var g = []; g = g ++ [val]; g)
+        if (isLegacyUnrolledComprehension(statements)) {
+            #if debug_array_comprehension
+            #if debug_ast_builder
+            trace('[Array Comprehension Detection] ✓ Matched legacy pattern');
+            #end
+            #end
+            return true;
+        }
+
+        // Try new pattern (result = n = 1; [] ++ [n * 2]; n = 2; ...)
+        if (isChainedAssignmentComprehension(statements)) {
+            #if debug_array_comprehension
+            #if debug_ast_builder
+            trace('[Array Comprehension Detection] ✓ Matched chained assignment pattern');
+            #end
+            #end
+            return true;
+        }
+
+        #if debug_array_comprehension
+        #if debug_ast_builder
+        trace('[Array Comprehension Detection] ✗ No pattern matched');
+        #end
+        #end
+        return false;
+    }
+
+    /**
+     * Detect legacy unrolled comprehension pattern: var g = []; g = g ++ [val]; g
+     */
+    static function isLegacyUnrolledComprehension(statements: Array<TypedExpr>): Bool {
         var firstStmt = unwrapMetaParens(statements[0]);
         var lastStmt = unwrapMetaParens(statements[statements.length - 1]);
-        
+
         // Check first statement: var _g = []
         var tempVarName: String = null;
         switch(firstStmt.expr) {
@@ -272,7 +309,7 @@ class ComprehensionBuilder {
             default:
                 return false;
         }
-        
+
         // Check last statement: returns the temp var
         switch(lastStmt.expr) {
             case TLocal(v) if (v.name == tempVarName):
@@ -280,7 +317,7 @@ class ComprehensionBuilder {
             default:
                 return false;
         }
-        
+
         // Check middle statements for concatenation pattern
         var hasConcatenation = false;
         for (i in 1...statements.length - 1) {
@@ -296,8 +333,60 @@ class ComprehensionBuilder {
                 default:
             }
         }
-        
+
         return hasConcatenation;
+    }
+
+    /**
+     * Detect new chained assignment pattern: result = n = 1; [] ++ [n * 2]; n = 2; ...
+     *
+     * WHY: Haxe's compile-time evaluation generates chained assignments
+     * WHAT: Detects pattern where comprehension is unrolled into chained assignments and bare concatenations
+     * HOW: Checks for:
+     *      - First: Chained assignment (doubled = n = val)
+     *      - Middle: Loop variable reassignments (n = 2, n = 3) OR bare concatenations ([] ++ [expr])
+     *      - Last: Empty array ([])
+     */
+    static function isChainedAssignmentComprehension(statements: Array<TypedExpr>): Bool {
+        if (statements.length < 3) return false;
+
+        var firstStmt = unwrapMetaParens(statements[0]);
+        var lastStmt = unwrapMetaParens(statements[statements.length - 1]);
+
+        // Check first: Chained assignment (doubled = n = 1)
+        var hasChainedAssignment = switch(firstStmt.expr) {
+            case TBinop(OpAssign, {expr: TLocal(_)}, {expr: TBinop(OpAssign, {expr: TLocal(_)}, _)}):
+                true;
+            default:
+                false;
+        };
+
+        if (!hasChainedAssignment) return false;
+
+        // Check last: Empty array
+        var endsWithEmptyArray = switch(lastStmt.expr) {
+            case TArrayDecl([]): true;
+            default: false;
+        };
+
+        if (!endsWithEmptyArray) return false;
+
+        // Check middle: Should have bare concatenations ([] ++ [expr]) or loop var assignments
+        var hasBareConcat = false;
+        for (i in 1...statements.length - 1) {
+            var stmt = unwrapMetaParens(statements[i]);
+            switch(stmt.expr) {
+                // Bare concatenation: [] ++ [expr]
+                case TBinop(OpAdd, {expr: TArrayDecl([])}, {expr: TArrayDecl(_)}):
+                    hasBareConcat = true;
+                // Loop variable reassignment: n = 2
+                case TBinop(OpAssign, {expr: TLocal(_)}, _):
+                    // This is fine - loop variable updates
+                default:
+            }
+        }
+
+        return hasBareConcat;
     }
     
     /**
