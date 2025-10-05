@@ -85,7 +85,8 @@ class PatternBuilder {
         var plan: EnumBindingPlan = {
             enumConstructor: null,
             parameterBindings: [],
-            isIdiomatic: false
+            isIdiomatic: false,
+            patternExtractedParams: extractedParams.copy()  // Track which params the pattern extracts
         };
         
         // Extract enum information
@@ -163,6 +164,7 @@ class PatternBuilder {
                 
             // Variables (for pattern matching)
             case TLocal(v):
+                trace('[PatternBuilder.convertPattern] TLocal v.name: ${v.name}, v.id: ${v.id}');
                 PVar(ElixirASTHelpers.toElixirVarName(v.name));
                 
             // Enum constructors
@@ -844,6 +846,8 @@ typedef EnumBindingPlan = {
     var enumConstructor: String;
     var parameterBindings: Array<ParameterBinding>;
     var isIdiomatic: Bool;
+    /** Parameters extracted by the pattern itself (for coordination with body compilation) */
+    var patternExtractedParams: Array<String>;
 }
 
 /**

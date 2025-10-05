@@ -1166,7 +1166,17 @@ class ElixirASTPrinter {
         return switch(pattern) {
             case PVar(name): name;
             case PLiteral(value): print(value, 0);
-            case PTuple(elements): '{' + printPatterns(elements) + '}';
+            case PTuple(elements):
+                trace('[ASTPrinter] Printing PTuple with ${elements.length} elements');
+                for (i in 0...elements.length) {
+                    var elem = elements[i];
+                    switch(elem) {
+                        case PVar(name): trace('[ASTPrinter]   Element $i: PVar("$name")');
+                        case PLiteral(ast): trace('[ASTPrinter]   Element $i: PLiteral');
+                        default: trace('[ASTPrinter]   Element $i: ${Type.enumConstructor(elem)}');
+                    }
+                }
+                '{' + printPatterns(elements) + '}';
             case PList(elements): '[' + printPatterns(elements) + ']';
             case PCons(head, tail): '[' + printPattern(head) + ' | ' + printPattern(tail) + ']';
             case PMap(pairs): 

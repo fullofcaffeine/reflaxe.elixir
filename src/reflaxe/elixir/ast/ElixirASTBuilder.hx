@@ -2784,6 +2784,39 @@ class ElixirASTBuilder {
                 }
                 #end
 
+                // TASK 4.5 FIX: Check if this parameter was already extracted by the pattern
+                // If the enum field name is in patternExtractedParams, the pattern already bound it
+                if (currentContext.currentClauseContext != null &&
+                    currentContext.currentClauseContext.patternExtractedParams.contains(ef.name)) {
+
+                    #if debug_enum_extraction
+                    trace('[TEnumParameter] SKIPPING - Parameter "${ef.name}" already extracted by pattern');
+                    trace('[TEnumParameter]   Pattern extracted params: ${currentContext.currentClauseContext.patternExtractedParams.join(", ")}');
+                    #end
+
+                    // The pattern already extracted this parameter
+                    // Use the binding plan to find the actual variable name
+                    if (currentContext.currentClauseContext.enumBindingPlan.exists(index)) {
+                        var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
+
+                        #if debug_enum_extraction
+                        trace('[TEnumParameter]   Using pattern-bound variable: ${info.finalName}');
+                        #end
+
+                        // Return the pattern-bound variable directly
+                        return EVar(info.finalName);
+                    } else {
+                        // Fallback: use the enum field name as variable name
+                        var varName = VariableAnalyzer.toElixirVarName(ef.name);
+
+                        #if debug_enum_extraction
+                        trace('[TEnumParameter]   No binding plan, using enum field name: $varName');
+                        #end
+
+                        return EVar(varName);
+                    }
+                }
+
                 // CRITICAL FIX for ChangesetUtils pattern-body mismatch:
                 // When TEnumParameter tries to extract from a variable like 'g' that doesn't exist
                 // because the pattern used canonical names directly (like {:ok, value}),

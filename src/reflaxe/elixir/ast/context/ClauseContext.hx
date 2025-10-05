@@ -49,6 +49,11 @@ class ClauseContext {
     // to map indices back to constructor names and parameters
     public var enumType: Null<haxe.macro.Type.EnumType> = null;
 
+    // TASK 4.5 FIX: Track which enum parameters were extracted by the pattern itself
+    // This prevents TEnumParameter from trying to re-extract already-extracted values
+    // Example: case {:some, action} extracts "action", so TEnumParameter shouldn't extract it again
+    public var patternExtractedParams: Array<String> = [];
+
     // Synthetic bindings for variables that only exist in Elixir
     public var syntheticBindings: Array<{name: String, init: ElixirAST}> = [];
 

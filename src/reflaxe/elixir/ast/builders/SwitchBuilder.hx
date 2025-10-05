@@ -236,51 +236,19 @@ class SwitchBuilder {
         // TODO: Handle multiple values with pattern alternatives
         var value = switchCase.values[0];
 
-        // CRITICAL: Extract pattern variables from the CASE PATTERN, not the guard
-        // The pattern (switchCase.values[0]) has the user's intended variable names (n, n, n...)
-        // The guard (switchCase.expr) has Haxe's renamed variables (n, n2, n3...) - WRONG!
-        // We need the canonical pattern names for consistent mapping
+        // CRITICAL FIX: Extract variable names from CASE BODY, not pattern or guard!
+        // After TEnumIndex optimization: pattern=TConst(0), NO variable names!
+        // The user's variable "action" is in the case BODY where it's used
+        // This is the ONLY way to recover the correct variable name after TEnumIndex
         trace('[SwitchBuilder] ====== PATTERN ANALYSIS ======');
         trace('[SwitchBuilder] Pattern expr type: ${Type.enumConstructor(value.expr)}');
 
-        // CRITICAL FIX: Extract canonical variable names from GUARD when available
-        // TEnumIndex changes pattern TLocal names (n → value), so we extract from guard instead
-        var patternVars: Array<String> = [];
+        // NEW FIX: Extract variables from case body (where they're actually used)
+        var patternVars = extractUsedVariablesFromCaseBody(switchCase.expr);
 
-        // CRITICAL FIX: Unwrap TBlock before checking for TIf (guards are often wrapped)
-        var exprForExtraction = switchCase.expr;
-        switch(switchCase.expr.expr) {
-            case TBlock(exprs):
-                // Search for TIf in the block
-                for (expr in exprs) {
-                    if (Type.enumConstructor(expr.expr) == "TIf") {
-                        exprForExtraction = expr;
-                        break;
-                    }
-                }
-            default:
-                // Not wrapped in block
-        }
-
-        // Check if this case has a guard (TIf structure with condition containing variable)
-        var guardVar: Null<String> = switch(exprForExtraction.expr) {
-            case TIf(econd, _, _):
-                // Guard exists - extract TLocal name from condition
-                extractFirstTLocalName(econd);
-            default:
-                null;
-        };
-
-        if (guardVar != null) {
-            // Has guard - use guard variable with stripped suffix as canonical name
-            patternVars = [stripNumericSuffix(guardVar)];
-        } else {
-            // No guard - extract from pattern
-            var patternVarsFromPattern = extractVarsFromPatternExpr(value);
-            if (patternVarsFromPattern.length > 0) {
-                patternVars = patternVarsFromPattern;
-            }
-        }
+        #if debug_enum_extraction
+        trace('[SwitchBuilder] Extracted ${patternVars.length} variables from case body: [${patternVars.join(", ")}]');
+        #end
 
         // CRITICAL: Extract TLocal IDs from guard and register in tempVarRenameMap
         // This ensures guard expressions compile with the same variable names as patterns
@@ -716,6 +684,251 @@ class SwitchBuilder {
      * Example: case Ok(n) → extract "n" from pattern
      *          Guard has n2, but pattern has the canonical "n"
      */
+    /**
+     * Extract variable names from CASE BODY (post-TEnumIndex optimization)
+     *
+     * WHY: After TEnumIndex optimization, pattern becomes TConst(TInt(0)) with NO variable names
+     *      The user's variable binding "action" is REMOVED from pattern but PRESERVED in case body
+     *      We must scan the case body for TLocal references to recover original variable names
+     *
+     * WHAT: Traverses case body expression to find ALL TLocal variables used
+     *       These are the variables that the pattern SHOULD bind to
+     *
+     * HOW: Recursively walks case body AST, collecting unique TLocal variable names
+     *      Returns them in discovery order (matches parameter order for multi-param enums)
+     *
+     * CRITICAL: This is the ONLY way to get correct variable names after TEnumIndex optimization!
+     *
+     * Example:
+     *   Haxe: case Some(action): switch(action) { ... }
+     *   After TEnumIndex: pattern=TConst(0), body=TBlock([TSwitch(TLocal(action), ...)])
+     *   This function finds "action" in the body and returns ["action"]
+     */
+    static function extractUsedVariablesFromCaseBody(caseBodyExpr: TypedExpr): Array<String> {
+        var vars: Array<String> = [];
+        var seenIds: Map<Int, Bool> = new Map();  // Track by TLocal.id to avoid duplicates
+
+        #if debug_enum_extraction
+        trace('[extractUsedVariablesFromCaseBody] Scanning case body type: ${Type.enumConstructor(caseBodyExpr.expr)}');
+        #end
+
+        // CRITICAL: For TSwitch in case body, the switch TARGET is the variable we need!
+        // Example: case Some(_): switch(action) { ... }
+        // We need "action" (the switch target), NOT variables from inner cases
+        switch(caseBodyExpr.expr) {
+            case TSwitch(e, _, _):
+                // The switch target expression is what the outer pattern should bind
+                switch(e.expr) {
+                    case TLocal(v):
+                        #if debug_enum_extraction
+                        trace('[extractUsedVariablesFromCaseBody]   Found TSwitch target TLocal: ${v.name} (id=${v.id})');
+                        #end
+                        return [v.name];  // Return immediately - this is THE variable
+                    default:
+                        // Switch target isn't a simple variable - fall through to full traversal
+                }
+            case TBlock(exprs):
+                // Unwrap block and recursively check expressions for TSwitch
+                #if debug_enum_extraction
+                trace('[extractUsedVariablesFromCaseBody]   TBlock has ${exprs.length} expressions');
+                for (i in 0...exprs.length) {
+                    trace('[extractUsedVariablesFromCaseBody]     Expression $i type: ${Type.enumConstructor(exprs[i].expr)}');
+                }
+                #end
+
+                // Helper to recursively unwrap TBlocks, TMeta, and TParenthesis to find TSwitch
+                function findSwitchTarget(expr: TypedExpr, depth: Int = 0): Null<String> {
+                    #if debug_enum_extraction
+                    var indent = [for (i in 0...depth) "  "].join("");
+                    trace('[findSwitchTarget]${indent}Checking expr type: ${Type.enumConstructor(expr.expr)}');
+                    #end
+
+                    switch(expr.expr) {
+                        case TSwitch(e, _, _):
+                            // Found a switch! Extract its target
+                            #if debug_enum_extraction
+                            trace('[findSwitchTarget]${indent}  Found TSwitch! Target type: ${Type.enumConstructor(e.expr)}');
+                            #end
+
+                            // Unwrap target if it's wrapped in TParenthesis or TMeta
+                            var unwrappedTarget = e;
+                            while (true) {
+                                switch(unwrappedTarget.expr) {
+                                    case TParenthesis(inner):
+                                        #if debug_enum_extraction
+                                        trace('[findSwitchTarget]${indent}    Unwrapping target TParenthesis...');
+                                        #end
+                                        unwrappedTarget = inner;
+                                    case TMeta(_, inner):
+                                        #if debug_enum_extraction
+                                        trace('[findSwitchTarget]${indent}    Unwrapping target TMeta...');
+                                        #end
+                                        unwrappedTarget = inner;
+                                    default:
+                                        break;
+                                }
+                            }
+
+                            // Now check if unwrapped target is TLocal or TEnumIndex
+                            switch(unwrappedTarget.expr) {
+                                case TLocal(v):
+                                    #if debug_enum_extraction
+                                    trace('[findSwitchTarget]${indent}    ✅ TSwitch target is TLocal: ${v.name} (id=${v.id})');
+                                    #end
+                                    return v.name;
+                                case TEnumIndex(e):
+                                    // The variable was transformed to enum index - extract from inner expr
+                                    #if debug_enum_extraction
+                                    trace('[findSwitchTarget]${indent}    Found TEnumIndex, extracting from inner expr type: ${Type.enumConstructor(e.expr)}');
+                                    #end
+                                    switch(e.expr) {
+                                        case TLocal(v):
+                                            #if debug_enum_extraction
+                                            trace('[findSwitchTarget]${indent}    ✅ TEnumIndex inner is TLocal: ${v.name} (id=${v.id})');
+                                            #end
+                                            return v.name;
+                                        default:
+                                            #if debug_enum_extraction
+                                            trace('[findSwitchTarget]${indent}    ❌ TEnumIndex inner is not TLocal (type: ${Type.enumConstructor(e.expr)})');
+                                            #end
+                                            return null;
+                                    }
+                                default:
+                                    #if debug_enum_extraction
+                                    trace('[findSwitchTarget]${indent}    ❌ TSwitch target is not TLocal or TEnumIndex (type: ${Type.enumConstructor(unwrappedTarget.expr)})');
+                                    #end
+                                    return null;
+                            }
+                        case TMeta(_, innerExpr):
+                            // Unwrap metadata wrapper
+                            #if debug_enum_extraction
+                            trace('[findSwitchTarget]${indent}  Unwrapping TMeta...');
+                            #end
+                            return findSwitchTarget(innerExpr, depth + 1);
+                        case TParenthesis(innerExpr):
+                            // Unwrap parenthesis wrapper
+                            #if debug_enum_extraction
+                            trace('[findSwitchTarget]${indent}  Unwrapping TParenthesis...');
+                            #end
+                            return findSwitchTarget(innerExpr, depth + 1);
+                        case TBlock(innerExprs):
+                            // Recursively unwrap nested TBlock
+                            #if debug_enum_extraction
+                            trace('[findSwitchTarget]${indent}  TBlock has ${innerExprs.length} inner expressions');
+                            #end
+                            for (i in 0...innerExprs.length) {
+                                #if debug_enum_extraction
+                                trace('[findSwitchTarget]${indent}    Checking inner expr $i...');
+                                #end
+                                var result = findSwitchTarget(innerExprs[i], depth + 1);
+                                if (result != null) {
+                                    #if debug_enum_extraction
+                                    trace('[findSwitchTarget]${indent}    ✅ Found in inner expr $i: $result');
+                                    #end
+                                    return result;
+                                }
+                            }
+                            #if debug_enum_extraction
+                            trace('[findSwitchTarget]${indent}  ❌ No TSwitch found in any inner expr');
+                            #end
+                            return null;
+                        default:
+                            return null;
+                    }
+                }
+
+                // Try to find TSwitch in any expression (including nested blocks)
+                for (expr in exprs) {
+                    var switchTarget = findSwitchTarget(expr);
+                    if (switchTarget != null) {
+                        return [switchTarget];  // Found it!
+                    }
+                }
+            default:
+                // Not a switch - continue with full traversal
+        }
+
+        // Fallback: Full traversal for non-switch cases
+        function traverse(expr: TypedExpr): Void {
+            if (expr == null) return;
+
+            switch(expr.expr) {
+                case TLocal(v):
+                    // Found a variable used in case body
+                    if (!seenIds.exists(v.id)) {
+                        #if debug_enum_extraction
+                        trace('[extractUsedVariablesFromCaseBody]   Found TLocal (traversal): ${v.name} (id=${v.id})');
+                        #end
+                        vars.push(v.name);
+                        seenIds.set(v.id, true);
+                    }
+
+                // Traverse all expression types to find TLocal variables
+                case TBlock(exprs):
+                    for (e in exprs) traverse(e);
+                case TBinop(_, e1, e2):
+                    traverse(e1);
+                    traverse(e2);
+                case TUnop(_, _, e):
+                    traverse(e);
+                case TCall(e, args):
+                    traverse(e);
+                    for (arg in args) traverse(arg);
+                case TField(e, _):
+                    traverse(e);
+                case TArray(e1, e2):
+                    traverse(e1);
+                    traverse(e2);
+                case TIf(econd, eif, eelse):
+                    traverse(econd);
+                    traverse(eif);
+                    if (eelse != null) traverse(eelse);
+                case TSwitch(e, _, _):
+                    // DON'T traverse into nested switches - we already handled this above
+                    // Only traverse the switch target at the immediate level
+                    traverse(e);
+                case TWhile(econd, e, _):
+                    traverse(econd);
+                    traverse(e);
+                case TFor(v, e1, e2):
+                    traverse(e1);
+                    traverse(e2);
+                case TReturn(e):
+                    if (e != null) traverse(e);
+                case TThrow(e):
+                    traverse(e);
+                case TTry(e, catches):
+                    traverse(e);
+                    for (c in catches) traverse(c.expr);
+                case TParenthesis(e):
+                    traverse(e);
+                case TMeta(_, e):
+                    traverse(e);
+                case TCast(e, _):
+                    traverse(e);
+                case TEnumParameter(e, _, _):
+                    traverse(e);
+                case TObjectDecl(fields):
+                    for (f in fields) traverse(f.expr);
+                case TArrayDecl(el):
+                    for (e in el) traverse(e);
+                case TNew(_, _, el):
+                    for (e in el) traverse(e);
+
+                default:
+                    // TConst, TBreak, TContinue, TIdent, TTypeExpr - no traversal needed
+            }
+        }
+
+        traverse(caseBodyExpr);
+
+        #if debug_enum_extraction
+        trace('[extractUsedVariablesFromCaseBody] Extracted ${vars.length} variables: [${vars.join(", ")}]');
+        #end
+
+        return vars;
+    }
+
     static function extractVarsFromPatternExpr(patternExpr: TypedExpr): Array<String> {
         var vars: Array<String> = [];
 
@@ -889,11 +1102,19 @@ class SwitchBuilder {
         for (i in 0...args.length) {
             var arg = args[i];
 
+            #if debug_enum_extraction
+            trace('[SwitchBuilder.buildEnumPattern] Processing arg $i: ${Type.enumConstructor(arg.expr)}');
+            #end
+
             // Priority 1: Guard variable (from user's guard condition)
             var guardVar = (guardVars != null && i < guardVars.length) ? guardVars[i] : null;
 
             // Priority 2: EnumField parameter name (fallback)
             var enumParam = i < parameterNames.length ? parameterNames[i] : null;
+
+            #if debug_enum_extraction
+            trace('[SwitchBuilder.buildEnumPattern]   guardVar: $guardVar, enumParam: $enumParam');
+            #end
 
             switch(arg.expr) {
                 case TLocal(v):
@@ -902,6 +1123,10 @@ class SwitchBuilder {
                     // 2. v.name (from TLocal in pattern) - user's choice
                     // 3. enumParam (from enum definition) - fallback
                     var sourceName = guardVar != null ? guardVar : v.name;
+
+                    #if debug_enum_extraction
+                    trace('[SwitchBuilder.buildEnumPattern]   TLocal v.name: ${v.name}, sourceName: $sourceName');
+                    #end
 
                     trace('[SwitchBuilder] *** PATTERN VAR DEBUG ***');
                     trace('[SwitchBuilder]   Index: $i');
@@ -916,8 +1141,25 @@ class SwitchBuilder {
                     patterns.push(PVar(varName));
                 default:
                     // Use underscore for non-variable patterns
+                    trace('[SwitchBuilder] *** PATTERN VAR DEBUG (NOT TLocal!) ***');
+                    trace('[SwitchBuilder]   Index: $i');
+                    trace('[SwitchBuilder]   Arg expr type: ${Type.enumConstructor(arg.expr)}');
+                    trace('[SwitchBuilder]   EnumParam: ${enumParam}');
+                    trace('[SwitchBuilder]   GuardVar: ${guardVar}');
                     patterns.push(PWildcard);
             }
+        }
+
+        // TASK 4.5 FIX: Store pattern-extracted parameters in ClauseContext
+        // This allows TEnumParameter handling to know which parameters were already extracted
+        if (context.currentClauseContext != null && parameterNames.length > 0) {
+            // Store the actual enum field names that this pattern extracts
+            // This prevents TEnumParameter from trying to re-extract them
+            context.currentClauseContext.patternExtractedParams = parameterNames.copy();
+
+            #if debug_enum_extraction
+            trace('[SwitchBuilder] Stored ${parameterNames.length} pattern-extracted params: ${parameterNames.join(", ")}');
+            #end
         }
 
         // Return tuple pattern for enum constructor
