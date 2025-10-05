@@ -14,7 +14,8 @@ typedef ComprehensionInfo = {
     resultVar: String,
     loopVar: String,
     values: Array<ElixirAST>,
-    bodyExpr: ElixirAST
+    bodyExpr: ElixirAST,
+    ?filterCondition: ElixirAST  // Optional filter for comprehensions with guards
 }
 
 /**
@@ -886,9 +887,14 @@ class LoopTransforms {
         };
 
         // Build comprehension AST: for loopVar <- [values], do: bodyExpr
+        // Include filter condition as guard if present
+        var filters = comprehensionInfo.filterCondition != null
+            ? [comprehensionInfo.filterCondition]
+            : [];
+
         var comprehension = makeAST(EFor(
             [generator],               // generators array
-            [],                        // no filters
+            filters,                   // filter conditions (guards)
             comprehensionInfo.bodyExpr, // body expression
             null,                      // no into
             false                      // not uniq
@@ -966,16 +972,35 @@ class LoopTransforms {
                                 return null;
                         }
 
-                        // Match the actual pattern: ECall(EList([]), "push", [expr])
+                        // Match either:
+                        // 1. Simple: ECall(EList([]), "push", [expr])
+                        // 2. Filtered: EIf(condition, ECall(..., "push", [expr]), ...)
                         switch(innerStmts[1].def) {
                             case ECall({def: EList([])}, "push", [expr]):
+                                // Simple comprehension
                                 if (bodyExpr == null) {
                                     bodyExpr = expr;
                                 }
-                                // Body expression should be consistent across iterations
+                            case EIf(condition, thenExpr, _):
+                                // Filtered comprehension - extract condition and body
+                                switch(thenExpr.def) {
+                                    case ECall({def: EList([])}, "push", [expr]):
+                                        if (bodyExpr == null) {
+                                            bodyExpr = expr;
+                                        }
+                                        // Store the filter condition for guard clause
+                                        if (filterCondition == null) {
+                                            filterCondition = condition;
+                                        }
+                                    default:
+                                        #if debug_loop_transforms
+                                        trace('[XRay detectBlockComprehension]       Filtered comprehension then-branch is not [].push()');
+                                        #end
+                                        return null;
+                                }
                             default:
                                 #if debug_loop_transforms
-                                trace('[XRay detectBlockComprehension]       Second statement is not [].push(), returning null');
+                                trace('[XRay detectBlockComprehension]       Second statement is neither [].push() nor if-push, returning null');
                                 #end
                                 return null;
                         }
@@ -1004,7 +1029,8 @@ class LoopTransforms {
             resultVar: resultVar,
             loopVar: loopVar,
             values: values,
-            bodyExpr: bodyExpr
+            bodyExpr: bodyExpr,
+            filterCondition: filterCondition  // Include filter for guard clauses
         };
     }
 
