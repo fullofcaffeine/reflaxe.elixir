@@ -193,6 +193,14 @@ class CompilationContext implements BuildContext {
     public var currentModule: Null<String>;
 
     /**
+     * Current class being compiled
+     * WHY: Enables same-module optimization for static method calls
+     * WHAT: Holds the ClassType of the class currently being compiled
+     * HOW: Set by ElixirCompiler.compileClassImpl before compiling class body
+     */
+    public var currentClass: Null<ClassType>;
+
+    /**
      * Flag indicating if current module has Phoenix.Presence behavior
      * Affects how certain method calls are generated
      */
@@ -557,11 +565,12 @@ class CompilationContext implements BuildContext {
 
     /**
      * Get the current class type being compiled
+     * WHY: Enables same-module optimization for static method calls
+     * WHAT: Returns the ClassType of the class currently being compiled
+     * HOW: Returns the currentClass field set by ElixirCompiler
      */
     public function getCurrentClass(): Null<ClassType> {
-        // This would need to be added to track the actual ClassType
-        // For now return null
-        return null;
+        return currentClass;
     }
 
     /**
