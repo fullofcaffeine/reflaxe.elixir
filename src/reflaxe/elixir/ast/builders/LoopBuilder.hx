@@ -2199,7 +2199,8 @@ class LoopBuilder {
         loopMetadata.isWithinLoop = true;
         
         // Check if LoopBuilder enhanced features are enabled
-        if (context.isFeatureEnabled("loop_builder_enhanced")) {
+        // FIX: Use correct flag name - "loop_builder_enabled" not "loop_builder_enhanced"
+        if (context.isFeatureEnabled("loop_builder_enabled")) {
             var transform = analyzeFor(v, e1, e2);
             var ast = buildFromTransform(
                 transform,
