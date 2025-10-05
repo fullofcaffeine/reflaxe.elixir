@@ -180,7 +180,26 @@ class BlockBuilder {
             #end
             return buildListComprehension(el, context);
         }
-        
+
+        // ====================================================================
+        // PATTERN DETECTION PHASE 6: Embedded Array Comprehensions
+        // ====================================================================
+        // NEW: Scan for comprehension sub-sequences within larger blocks
+        // Pattern: doubled = n = 1; [] ++ [expr]; n = 2; ...; []
+        if (el.length >= 3) {
+            #if debug_array_comprehension
+            trace('[BlockBuilder] Scanning for embedded comprehension patterns in ${el.length} statements');
+            #end
+
+            var result = detectAndReplaceEmbeddedComprehensions(el, context);
+            if (result != null) {
+                #if debug_array_comprehension
+                trace('[BlockBuilder] ✓ Detected and replaced embedded comprehensions');
+                #end
+                return result;
+            }
+        }
+
         // ====================================================================
         // DEFAULT: Build Regular Block
         // ====================================================================
@@ -577,7 +596,98 @@ class BlockBuilder {
         // Fallback to regular block
         return buildRegularBlock(el, context);
     }
-    
+
+    /**
+     * Detect and replace embedded comprehension patterns within larger blocks
+     *
+     * WHY: Comprehensions may be embedded within blocks containing other statements
+     * WHAT: Scans for chained assignment comprehension patterns and replaces them
+     * HOW: Finds pattern start, extracts subsequence, builds comprehension, rebuilds block
+     */
+    static function detectAndReplaceEmbeddedComprehensions(el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
+        var i = 0;
+        var statements = [];
+
+        while (i < el.length) {
+            // Check if current position starts a comprehension pattern
+            // Pattern: doubled = n = 1; [] ++ [expr]; n = 2; ...; []
+            var patternStart = i;
+            var isComprehensionStart = false;
+
+            if (i < el.length) {
+                switch(el[i].expr) {
+                    case TBinop(OpAssign, {expr: TLocal(_)}, {expr: TBinop(OpAssign, {expr: TLocal(_)}, _)}):
+                        // Found chained assignment - potential comprehension start
+                        isComprehensionStart = true;
+                    default:
+                }
+            }
+
+            if (isComprehensionStart) {
+                // Find the end of the comprehension pattern (empty array)
+                var patternEnd = -1;
+                for (j in (i + 1)...el.length) {
+                    switch(el[j].expr) {
+                        case TArrayDecl([]):
+                            // Check if this empty array ends the pattern
+                            // (must have bare concatenations between start and here)
+                            var hasBareConcat = false;
+                            for (k in (i + 1)...j) {
+                                switch(el[k].expr) {
+                                    case TBinop(OpAdd, {expr: TArrayDecl([])}, {expr: TArrayDecl(_)}):
+                                        hasBareConcat = true;
+                                    default:
+                                }
+                            }
+                            if (hasBareConcat) {
+                                patternEnd = j;
+                                break;
+                            }
+                        default:
+                    }
+                }
+
+                if (patternEnd > patternStart) {
+                    // Extract the comprehension subsequence
+                    var comprehensionStmts = el.slice(patternStart, patternEnd + 1);
+
+                    #if debug_array_comprehension
+                    trace('[BlockBuilder] Found embedded comprehension: statements ${patternStart} to ${patternEnd}');
+                    #end
+
+                    // Try to build comprehension from this subsequence
+                    var comprehension = ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(comprehensionStmts, context);
+                    if (comprehension != null) {
+                        #if debug_array_comprehension
+                        trace('[BlockBuilder] Successfully built comprehension from embedded pattern');
+                        #end
+
+                        // Add the comprehension as a statement
+                        statements.push(comprehension);
+
+                        // Skip past the comprehension pattern
+                        i = patternEnd + 1;
+                        continue;
+                    }
+                }
+            }
+
+            // Not a comprehension - process normally
+            var stmt = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(el[i], context);
+            if (stmt != null) {
+                statements.push(stmt);
+            }
+            i++;
+        }
+
+        // If we replaced any comprehensions, return the rebuilt block
+        if (statements.length != el.length) {
+            return EBlock(statements);
+        }
+
+        return null;  // No comprehensions found
+    }
+
     /**
      * Check for inline expansion patterns
      */
