@@ -858,17 +858,23 @@ class LoopTransforms {
 
         // TRY VARIANT 1: Sequential filtered comprehension (more specific, check first)
         // Pattern: evens = n = 1; if (cond) [] ++ [n]; n = 2; if (cond) [] ++ [n]; ...; []
+        #if debug_loop_transforms
+        trace('[XRay detectComprehensionPattern] Trying VARIANT 1: Sequential filtered comprehension...');
+        #end
         var comprehensionInfo = detectSequentialComprehension(stmts, startIdx);
         var stmtCount = 0;  // Track how many statements were consumed
 
         if (comprehensionInfo != null) {
             #if debug_loop_transforms
-            trace('[XRay LoopTransforms]   ✓ Found sequential filtered comprehension');
+            trace('[XRay detectComprehensionPattern]   ✓ MATCHED Variant 1 - Sequential filtered comprehension');
             #end
             // Calculate statement count: 1 (init) + 1 (first conditional) + 2 * remaining pairs + 1 (terminator)
             // Pattern: evens = n = 1; if (cond) [] ++ [n]; n = 2; if (cond) [] ++ [n]; ...; []
             stmtCount = 1 + 1 + (comprehensionInfo.values.length - 1) * 2 + 1;
         } else {
+            #if debug_loop_transforms
+            trace('[XRay detectComprehensionPattern]   ✗ Variant 1 failed, trying VARIANT 2: Block comprehension...');
+            #end
             // TRY VARIANT 2: Block comprehension (wrapped, less specific)
             // Pattern: doubled = { n = 1; [] ++ [n*2]; ...; [] }
             comprehensionInfo = switch(firstStmt.def) {
@@ -879,11 +885,17 @@ class LoopTransforms {
                     null;
             };
             stmtCount = 1;  // Block comprehension consumes 1 statement
+
+            #if debug_loop_transforms
+            if (comprehensionInfo != null) {
+                trace('[XRay detectComprehensionPattern]   ✓ MATCHED Variant 2 - Block comprehension');
+            }
+            #end
         }
 
         if (comprehensionInfo == null) {
             #if debug_loop_transforms
-            trace('[XRay LoopTransforms]   Not a comprehension pattern (tried both variants), skipping');
+            trace('[XRay detectComprehensionPattern]   ✗ NO MATCH - Not a comprehension pattern');
             #end
             return null;
         }
@@ -1119,11 +1131,16 @@ class LoopTransforms {
      * Pattern: resultVar = loopVar = value1; if (cond) [] ++ [expr]; loopVar = value2; if (cond) [] ++ [expr]; ...; []
      */
     static function detectSequentialComprehension(stmts: Array<ElixirAST>, startIdx: Int): Null<ComprehensionInfo> {
-        if (startIdx + 4 >= stmts.length) return null;  // Need at least: init, if, var, if, []
-
         #if debug_loop_transforms
-        trace('[XRay detectSequentialComprehension] Checking from index $startIdx');
+        trace('[XRay detectSequentialComprehension] CALLED - Checking from index $startIdx of ${stmts.length} statements');
         #end
+
+        if (startIdx + 4 >= stmts.length) {
+            #if debug_loop_transforms
+            trace('[XRay detectSequentialComprehension]   SKIP - Not enough statements (need at least 5)');
+            #end
+            return null;
+        }
 
         // First statement must be: resultVar = loopVar = firstValue
         var firstStmt = stmts[startIdx];
@@ -1133,19 +1150,18 @@ class LoopTransforms {
 
         switch(firstStmt.def) {
             case EMatch(PVar(resVar), {def: EMatch(PVar(lVar), value)}):
+                #if debug_loop_transforms
+                trace('[XRay detectSequentialComprehension]   ✓ Found chained assignment: $resVar = $lVar = ...');
+                #end
                 resultVar = resVar;
                 loopVar = lVar;
                 firstValue = value;
             default:
                 #if debug_loop_transforms
-                trace('[XRay detectSequentialComprehension]   First statement not chained assignment, returning null');
+                trace('[XRay detectSequentialComprehension]   ✗ First statement not chained assignment');
                 #end
                 return null;
         }
-
-        #if debug_loop_transforms
-        trace('[XRay detectSequentialComprehension]   Found chained assignment: $resultVar = $loopVar = firstValue');
-        #end
 
         var values: Array<ElixirAST> = [firstValue];
         var filterCondition: Null<ElixirAST> = null;
@@ -1154,17 +1170,16 @@ class LoopTransforms {
         // Check if there's a conditional for the FIRST value (immediately after init)
         var i = startIdx + 1;
         if (i < stmts.length && isConditionalAppend(stmts[i])) {
+            #if debug_loop_transforms
+            trace('[XRay detectSequentialComprehension]   ✓ Found conditional for first value');
+            #end
             // Extract filter condition and body from first conditional
             filterCondition = extractCondition(stmts[i]);
             bodyExpr = extractBodyExpr(stmts[i]);
             i++;  // Move past first conditional
-
-            #if debug_loop_transforms
-            trace('[XRay detectSequentialComprehension]   Found conditional for first value, extracted filter and body');
-            #end
         } else {
             #if debug_loop_transforms
-            trace('[XRay detectSequentialComprehension]   No conditional after first value, not a filtered comprehension');
+            trace('[XRay detectSequentialComprehension]   ✗ No conditional after first value, not a filtered comprehension');
             #end
             return null;  // Filtered comprehensions MUST have conditional
         }
