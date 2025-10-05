@@ -878,9 +878,19 @@ class LoopTransforms {
             // TRY VARIANT 2: Block comprehension (wrapped, less specific)
             // Pattern: doubled = { n = 1; [] ++ [n*2]; ...; [] }
             comprehensionInfo = switch(firstStmt.def) {
-                case EMatch(PVar(resultVar), {def: EBlock(blockStmts)}):
-                    // Pattern is INSIDE the block RHS
-                    detectBlockComprehension(resultVar, blockStmts);
+                case EMatch(PVar(resultVar), rhs):
+                    #if debug_loop_transforms
+                    trace('[XRay detectComprehensionPattern]   VARIANT 2: Found EMatch, RHS type: ${Type.enumConstructor(rhs.def)}');
+                    #end
+                    switch(rhs.def) {
+                        case EBlock(blockStmts):
+                            #if debug_loop_transforms
+                            trace('[XRay detectComprehensionPattern]   VARIANT 2: RHS is EBlock with ${blockStmts.length} statements, calling detectBlockComprehension');
+                            #end
+                            detectBlockComprehension(resultVar, blockStmts);
+                        default:
+                            null;
+                    }
                 default:
                     null;
             };
@@ -1000,7 +1010,7 @@ class LoopTransforms {
                             // Check if remaining statements are EIf (filtered pattern)
                             var allEIf = true;
                             for (i in 1...stmts.length - 1) {  // Skip first and last
-                                if (!Type.enumEq(Type.enumConstructor(stmts[i].def), "EIf")) {
+                                if (Type.enumConstructor(stmts[i].def) != "EIf") {
                                     allEIf = false;
                                     break;
                                 }
