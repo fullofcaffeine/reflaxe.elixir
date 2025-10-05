@@ -37,7 +37,12 @@ class ArrayBuilder {
      */
     public static function buildArrayDecl(elements: Array<TypedExpr>, context: CompilationContext): ElixirASTDef {
         var buildExpression = context.getExpressionBuilder();
-        
+
+        trace('[DEBUG ArrayBuilder] buildArrayDecl called with ${elements.length} elements');
+        if (elements.length > 0) {
+            trace('[DEBUG ArrayBuilder] First element type: ${Type.enumConstructor(elements[0].expr)}');
+        }
+
         #if debug_ast_builder
         trace('[AST Builder] TArrayDecl with ${elements.length} elements');
         if (elements.length > 0) {
@@ -59,8 +64,10 @@ class ArrayBuilder {
         if (elements.length == 1) {
             switch(elements[0].expr) {
                 case TBlock(stmts):
+                    trace('[DEBUG ArrayBuilder] Found single-element array with TBlock containing ${stmts.length} statements');
                     // Try to reconstruct comprehension from desugared block
                     var comprehension = ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(stmts, context);
+                    trace('[DEBUG ArrayBuilder] Comprehension result: ${comprehension != null ? "SUCCESS" : "NULL"}');
                     if (comprehension != null) {
                         switch(comprehension.def) {
                             case EFor(_, _, _, _, _):

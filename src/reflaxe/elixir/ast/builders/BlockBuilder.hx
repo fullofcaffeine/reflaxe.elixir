@@ -437,13 +437,34 @@ class BlockBuilder {
     
     /**
      * Check if block is building a list through concatenations
+     *
+     * WHY: Detects both legacy and new unrolled comprehension patterns
+     * WHAT: Checks for TWO patterns:
+     *       1. Legacy: g = []; g ++ [val1]; g ++ [val2]; ...; g
+     *       2. New: result = n = 1; [] ++ [n * 2]; n = 2; ...; []
+     * HOW: Pattern detection based on first and last statements
      */
     static function isListBuildingPattern(el: Array<TypedExpr>): Bool {
-        // Pattern: g = []; g ++ [val1]; g ++ [val2]; ...; g
         if (el.length < 3) return false;
-        
-        // Check first expression is empty array init
-        var isListInit = switch(el[0].expr) {
+
+        trace('[DEBUG BlockBuilder] isListBuildingPattern called with ${el.length} statements');
+        trace('[DEBUG BlockBuilder] First statement type: ${el[0].expr.getName()}');
+
+        // Check if first statement is TVar with TBlock initialization (unrolled comprehension)
+        var hasVarWithBlock = switch(el[0].expr) {
+            case TVar(v, init) if (init != null):
+                trace('[DEBUG BlockBuilder] TVar found: ${v.name}, init type: ${init.expr.getName()}');
+                switch(init.expr) {
+                    case TBlock(stmts):
+                        trace('[DEBUG BlockBuilder] TVar has TBlock init with ${stmts.length} statements!');
+                        true;
+                    default: false;
+                }
+            default: false;
+        };
+
+        // Pattern 1: Legacy unrolled comprehension (g = []; g ++ [val]; g)
+        var isLegacyPattern = switch(el[0].expr) {
             case TVar(_, init) if (init != null):
                 switch(init.expr) {
                     case TArrayDecl([]): true;
@@ -451,19 +472,61 @@ class BlockBuilder {
                 }
             default: false;
         };
-        
-        if (!isListInit) return false;
-        
-        // Check for concatenation pattern
-        var hasConcatenations = false;
-        for (i in 1...el.length - 1) {
-            switch(el[i].expr) {
-                case TBinop(OpAdd, _, _): hasConcatenations = true;
-                case _:
+
+        if (isLegacyPattern) {
+            // Check for concatenation pattern
+            var hasConcatenations = false;
+            for (i in 1...el.length - 1) {
+                switch(el[i].expr) {
+                    case TBinop(OpAdd, _, _): hasConcatenations = true;
+                    case _:
+                }
+            }
+            return hasConcatenations;
+        }
+
+        // Pattern 2: New chained assignment pattern (doubled = n = 1; [] ++ [expr]; n = 2; ...)
+        var hasChainedAssignment = switch(el[0].expr) {
+            case TBinop(OpAssign, {expr: TLocal(_)}, {expr: TBinop(OpAssign, {expr: TLocal(_)}, _)}):
+                true;
+            default: false;
+        };
+
+        trace('[DEBUG BlockBuilder] hasChainedAssignment: $hasChainedAssignment (length: ${el.length})');
+
+        if (hasChainedAssignment) {
+            trace('[DEBUG BlockBuilder] Found chained assignment in first statement!');
+
+            // Check last statement is empty array
+            var lastIdx = el.length - 1;
+            var endsWithEmptyArray = switch(el[lastIdx].expr) {
+                case TArrayDecl([]): true;
+                default: false;
+            };
+
+            #if debug_array_comprehension
+            trace('[BlockBuilder.isListBuildingPattern] Last statement is empty array: $endsWithEmptyArray');
+            #end
+
+            if (endsWithEmptyArray) {
+                // Check middle statements have bare concatenations
+                for (i in 1...lastIdx) {
+                    switch(el[i].expr) {
+                        case TBinop(OpAdd, {expr: TArrayDecl([])}, {expr: TArrayDecl(_)}):
+                            #if debug_array_comprehension
+                            trace('[BlockBuilder.isListBuildingPattern] ✓ Found bare concatenation at index $i - PATTERN MATCHED!');
+                            #end
+                            return true;  // Found bare concatenation - this is the pattern!
+                        case _:
+                    }
+                }
+                #if debug_array_comprehension
+                trace('[BlockBuilder.isListBuildingPattern] No bare concatenations found in middle');
+                #end
             }
         }
-        
-        return hasConcatenations;
+
+        return false;
     }
     
     /**
