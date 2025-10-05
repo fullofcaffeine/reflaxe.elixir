@@ -624,6 +624,177 @@ class LoopTransforms {
     }
     
     /**
+     * Detect array comprehension pattern (chained assignments with bare concatenations)
+     *
+     * WHY: Haxe unrolls [for (n in list) n * 2] into sequential statements
+     * WHAT: Detect pattern: doubled = n = 1; [] ++ [expr]; n = 2; ...; []
+     * HOW: Check for chained assignment start, bare concatenations middle, empty array end
+     *
+     * PATTERN:
+     * - First statement: Chained assignment (doubled = n = 1)
+     * - Middle statements: Bare concatenations ([] ++ [expr]) and loop var reassignments (n = 2)
+     * - Last statement: Empty array ([])
+     *
+     * Returns: {transformed: ElixirAST comprehension, count: Int statements consumed} or null
+     */
+    static function detectComprehensionPattern(stmts: Array<ElixirAST>, startIdx: Int): Null<{transformed: ElixirAST, count: Int}> {
+        if (startIdx + 2 >= stmts.length) return null;  // Need at least 3 statements
+
+        #if debug_loop_transforms
+        trace('[XRay LoopTransforms] detectComprehensionPattern: Checking from index $startIdx');
+        #end
+
+        var firstStmt = stmts[startIdx];
+
+        // Check for chained assignment pattern: doubled = n = 1
+        // Structure: EMatch(PVar("doubled"), EMatch(PVar("n"), EConst(1)))
+        var isChainedAssignment = switch(firstStmt.def) {
+            case EMatch(PVar(_), {def: EMatch(PVar(_), _)}):
+                true;
+            default:
+                false;
+        };
+
+        if (!isChainedAssignment) {
+            #if debug_loop_transforms
+            trace('[XRay LoopTransforms]   Not a chained assignment, skipping');
+            #end
+            return null;
+        }
+
+        #if debug_loop_transforms
+        trace('[XRay LoopTransforms]   ✓ Found chained assignment start');
+        #end
+
+        // Scan forward to find the end (empty array)
+        var endIdx = -1;
+        var hasBareConcat = false;
+
+        for (i in (startIdx + 1)...stmts.length) {
+            var stmt = stmts[i];
+
+            switch(stmt.def) {
+                // Empty array marks the end
+                case EList([]):
+                    endIdx = i;
+                    #if debug_loop_transforms
+                    trace('[XRay LoopTransforms]   ✓ Found empty array end at index $i');
+                    #end
+                    break;
+
+                // Bare concatenation: [] ++ [expr]
+                case EBinary(Concat, {def: EList([])}, {def: EList(_)}):
+                    hasBareConcat = true;
+                    #if debug_loop_transforms
+                    trace('[XRay LoopTransforms]   ✓ Found bare concatenation at index $i');
+                    #end
+
+                // Loop variable reassignment: n = 2
+                case EMatch(PVar(_), _):
+                    #if debug_loop_transforms
+                    trace('[XRay LoopTransforms]   Found loop var reassignment at index $i');
+                    #end
+
+                // Unknown pattern, not a comprehension
+                default:
+                    #if debug_loop_transforms
+                    trace('[XRay LoopTransforms]   Unknown pattern at index $i, stopping: ${stmt.def}');
+                    #end
+                    return null;
+            }
+        }
+
+        // Validate we found a complete pattern
+        if (endIdx == -1 || !hasBareConcat) {
+            #if debug_loop_transforms
+            trace('[XRay LoopTransforms]   Incomplete pattern (endIdx=$endIdx, hasBareConcat=$hasBareConcat)');
+            #end
+            return null;
+        }
+
+        var count = endIdx - startIdx + 1;  // Include the empty array
+
+        #if debug_loop_transforms
+        trace('[XRay LoopTransforms] ✅ DETECTED COMPREHENSION PATTERN: $count statements');
+        #end
+
+        // Extract the subsequence and build the comprehension
+        var comprehensionStmts = stmts.slice(startIdx, endIdx + 1);
+
+        // Use ComprehensionBuilder to transform to idiomatic Elixir
+        // We need to convert these ElixirAST statements back to TypedExpr...
+        // BUT WAIT: We're in the TRANSFORMER phase, these are already ElixirAST!
+        // So we need a different approach - build the comprehension directly from AST
+
+        // Extract components from the pattern
+        var resultVar: String = null;
+        var loopVar: String = null;
+        var values: Array<ElixirAST> = [];
+        var bodyExpr: ElixirAST = null;
+
+        // Parse first statement: doubled = n = 1
+        switch(firstStmt.def) {
+            case EMatch(PVar(result), {def: EMatch(PVar(loop), firstValue)}):
+                resultVar = result;
+                loopVar = loop;
+                values.push(firstValue);
+            default:
+        }
+
+        // Parse middle statements to extract values and body expression
+        for (i in (startIdx + 1)...endIdx) {
+            var stmt = stmts[i];
+
+            switch(stmt.def) {
+                // Bare concatenation: [] ++ [expr]
+                case EBinary(Concat, {def: EList([])}, {def: EList([expr])}):
+                    bodyExpr = expr;  // Save the expression being accumulated
+
+                // Loop variable reassignment: n = value
+                case EMatch(PVar(varName), value) if (varName == loopVar):
+                    values.push(value);
+
+                default:
+            }
+        }
+
+        // Build the comprehension: doubled = for n <- [1, 2, 3, 4, 5], do: n * 2
+        if (resultVar != null && loopVar != null && values.length > 0 && bodyExpr != null) {
+            var listAST = makeAST(EList(values));
+
+            // Build generator: n <- [1, 2, 3, 4, 5]
+            var generator: EGenerator = {
+                pattern: PVar(loopVar),
+                expr: listAST
+            };
+
+            // Build comprehension AST: for n <- [1,2,3,4,5], do: n * 2
+            var comprehension = makeAST(EFor(
+                [generator],  // generators array
+                [],           // no filters
+                bodyExpr,     // body expression
+                null,         // no into
+                false         // not uniq
+            ));
+
+            // Wrap in assignment: doubled = for ...
+            var transformed = makeAST(EMatch(PVar(resultVar), comprehension));
+
+            #if debug_loop_transforms
+            trace('[XRay LoopTransforms] ✅ Generated comprehension for variable: $resultVar');
+            #end
+
+            return {transformed: transformed, count: count};
+        }
+
+        #if debug_loop_transforms
+        trace('[XRay LoopTransforms]   Failed to extract comprehension components');
+        #end
+
+        return null;
+    }
+
+    /**
      * Detect if a block of statements represents an unrolled loop
      * Now handles partial matches - identifies consecutive similar statements with incrementing indices
      */
@@ -637,9 +808,20 @@ class LoopTransforms {
         var transformedStmts: Array<ElixirAST> = [];
         
         while (i < stmts.length) {
-            // Try to detect a loop starting at position i
+            // PRIORITY 1: Try to detect array comprehension pattern first
+            // Pattern: doubled = n = 1; [] ++ [expr]; n = 2; ...; []
+            var comprehensionResult = detectComprehensionPattern(stmts, i);
+
+            if (comprehensionResult != null) {
+                trace('[XRay LoopTransforms] ✅ Found comprehension pattern at position $i consuming ${comprehensionResult.count} statements');
+                transformedStmts.push(comprehensionResult.transformed);
+                i += comprehensionResult.count;
+                continue;
+            }
+
+            // PRIORITY 2: Try to detect a regular unrolled loop starting at position i
             var loopGroup = detectLoopGroup(stmts, i);
-            
+
             if (loopGroup != null) {
                 trace('[XRay LoopTransforms] ✅ Found loop group at position $i with ${loopGroup.count} iterations');
                 transformedStmts.push(loopGroup.transformed);
