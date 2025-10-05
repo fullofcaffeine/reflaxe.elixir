@@ -1019,21 +1019,91 @@ class LoopTransforms {
                             if (allEIf) {
                                 #if debug_loop_transforms
                                 trace('[XRay detectBlockComprehension] Detected FILTERED pattern - all middle statements are EIf');
-                                // Examine first EIf to understand structure
-                                var firstIf = stmts[1];
-                                switch(firstIf.def) {
-                                    case EIf(cond, thenBranch, elseBranch):
-                                        trace('[XRay detectBlockComprehension]   First EIf condition: ${Type.enumConstructor(cond.def)}');
-                                        trace('[XRay detectBlockComprehension]   Then branch: ${Type.enumConstructor(thenBranch.def)}');
-                                        if (elseBranch != null) {
-                                            trace('[XRay detectBlockComprehension]   Else branch: ${Type.enumConstructor(elseBranch.def)}');
-                                        }
-                                    default:
-                                }
                                 #end
-                                // TODO: Extract loop variable, values, filter condition, and body expression
-                                // This is the filtered comprehension pattern!
-                                return null;  // For now, return null until we implement extraction
+
+                                // Extract pattern from first EIf to understand structure
+                                var loopVar: String = null;
+                                var values: Array<ElixirAST> = [];
+                                var filterCondition: ElixirAST = null;
+                                var bodyExpr: ElixirAST = null;
+
+                                // Process each EIf to extract values and infer loop variable
+                                for (i in 1...stmts.length - 1) {
+                                    switch(stmts[i].def) {
+                                        case EIf(cond, thenBranch, _):
+                                            // First EIf: extract filter condition and analyze for loop variable
+                                            if (filterCondition == null) {
+                                                filterCondition = cond;
+
+                                                // Extract loop variable from condition
+                                                // Pattern: variable % 2 == 0, variable > threshold, etc.
+                                                loopVar = extractVariableFromCondition(cond);
+                                            }
+
+                                            // Extract value and body from then branch
+                                            // Pattern: [].push(expr) or [] ++ [expr]
+                                            switch(thenBranch.def) {
+                                                case ECall({def: EList([])}, "push", [expr]):
+                                                    // Extract body expression (first occurrence)
+                                                    if (bodyExpr == null) {
+                                                        bodyExpr = expr;
+
+                                                        // If we haven't found loop variable yet, try the body
+                                                        if (loopVar == null) {
+                                                            loopVar = extractVariableFromExpr(expr);
+                                                        }
+                                                    }
+
+                                                    // Collect the value being tested
+                                                    // Pattern: if (0 % 2 == 0) push(0), if (1 % 2 == 0) push(1)
+                                                    var iterValue = extractIterationValue(cond, loopVar);
+                                                    if (iterValue != null) {
+                                                        values.push(iterValue);
+                                                    }
+
+                                                case EBinary(Concat, {def: EList([])}, {def: EList([expr])}):
+                                                    if (bodyExpr == null) {
+                                                        bodyExpr = expr;
+
+                                                        if (loopVar == null) {
+                                                            loopVar = extractVariableFromExpr(expr);
+                                                        }
+                                                    }
+
+                                                    var iterValue = extractIterationValue(cond, loopVar);
+                                                    if (iterValue != null) {
+                                                        values.push(iterValue);
+                                                    }
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                }
+
+                                #if debug_loop_transforms
+                                trace('[XRay detectBlockComprehension] Extracted:');
+                                trace('[XRay detectBlockComprehension]   Loop variable: $loopVar');
+                                trace('[XRay detectBlockComprehension]   Values count: ${values.length}');
+                                trace('[XRay detectBlockComprehension]   Filter condition: ${filterCondition != null ? Type.enumConstructor(filterCondition.def) : "null"}');
+                                trace('[XRay detectBlockComprehension]   Body expr: ${bodyExpr != null ? Type.enumConstructor(bodyExpr.def) : "null"}');
+                                #end
+
+                                // Validate we have all required components
+                                if (loopVar == null || values.length == 0 || filterCondition == null || bodyExpr == null) {
+                                    #if debug_loop_transforms
+                                    trace('[XRay detectBlockComprehension] Incomplete extraction - missing components');
+                                    #end
+                                    return null;
+                                }
+
+                                // Build ComprehensionInfo
+                                return {
+                                    resultVar: accumVar,
+                                    loopVar: loopVar,
+                                    values: values,
+                                    bodyExpr: bodyExpr,
+                                    filterCondition: filterCondition
+                                };
                             }
                         default:
                     }
@@ -1201,6 +1271,132 @@ class LoopTransforms {
         return switch(stmt.def) {
             case EMatch(_, value): value;
             default: null;
+        };
+    }
+
+    /**
+     * Extract variable name from a condition expression
+     * Pattern: variable % 2 == 0, variable > threshold, etc.
+     */
+    static function extractVariableFromCondition(cond: ElixirAST): Null<String> {
+        return switch(cond.def) {
+            // Binary operations: var % 2 == 0, var > threshold
+            case EBinary(_, left, _):
+                extractVariableFromExpr(left);
+            // Unary operations: !var, -var
+            case EUnary(_, expr):
+                extractVariableFromExpr(expr);
+            // Direct variable reference
+            case EVar(name):
+                name;
+            default:
+                null;
+        };
+    }
+
+    /**
+     * Extract variable name from any expression (recursive search)
+     */
+    static function extractVariableFromExpr(expr: ElixirAST): Null<String> {
+        return switch(expr.def) {
+            case EVar(name):
+                name;
+            case EBinary(_, left, right):
+                var leftVar = extractVariableFromExpr(left);
+                leftVar != null ? leftVar : extractVariableFromExpr(right);
+            case EUnary(_, innerExpr):
+                extractVariableFromExpr(innerExpr);
+            case ECall(target, _, _) if (target != null):
+                extractVariableFromExpr(target);
+            case EField(target, _):
+                extractVariableFromExpr(target);
+            default:
+                null;
+        };
+    }
+
+    /**
+     * Extract the iteration value from a condition
+     * Pattern: if (0 % 2 == 0) -> 0, if (1 % 2 == 0) -> 1
+     * We need to find the literal value that's being tested with the loop variable
+     */
+    static function extractIterationValue(cond: ElixirAST, loopVar: String): Null<ElixirAST> {
+        return switch(cond.def) {
+            case EBinary(_, left, right):
+                // Check if left side contains the loop variable, return right side value
+                var leftHasVar = containsVariable(left, loopVar);
+                if (leftHasVar) {
+                    // Left side has the variable, extract value from it
+                    extractValueFromSide(left, loopVar);
+                } else {
+                    // Check right side
+                    var rightHasVar = containsVariable(right, loopVar);
+                    if (rightHasVar) {
+                        extractValueFromSide(right, loopVar);
+                    } else {
+                        null;
+                    }
+                }
+            default:
+                null;
+        };
+    }
+
+    /**
+     * Check if an expression contains a specific variable
+     */
+    static function containsVariable(expr: ElixirAST, varName: String): Bool {
+        return switch(expr.def) {
+            case EVar(name):
+                name == varName;
+            case EBinary(_, left, right):
+                containsVariable(left, varName) || containsVariable(right, varName);
+            case EUnary(_, innerExpr):
+                containsVariable(innerExpr, varName);
+            case ECall(target, _, args):
+                var hasInTarget = (target != null && containsVariable(target, varName));
+                var hasInArgs = Lambda.exists(args, arg -> containsVariable(arg, varName));
+                hasInTarget || hasInArgs;
+            default:
+                false;
+        };
+    }
+
+    /**
+     * Extract the literal value from a side of binary expression containing the loop variable
+     * Pattern: (0 % 2) -> extract 0
+     */
+    static function extractValueFromSide(expr: ElixirAST, loopVar: String): Null<ElixirAST> {
+        return switch(expr.def) {
+            case EBinary(_, left, right):
+                // If left is the variable, right is the value
+                switch(left.def) {
+                    case EVar(name) if (name == loopVar):
+                        null;  // The variable itself, not the value
+                    case EVar(_):
+                        null;
+                    default:
+                        // Left has the variable in an operation, extract from it
+                        var leftVal = extractValueFromSide(left, loopVar);
+                        if (leftVal != null) {
+                            leftVal;
+                        } else {
+                            // Try right side
+                            extractValueFromSide(right, loopVar);
+                        }
+                }
+            case EInteger(n):
+                expr;  // Found a literal integer
+            case EFloat(f):
+                expr;  // Found a literal float
+            case EString(s):
+                expr;  // Found a literal string
+            case EAtom(a):
+                expr;  // Found an atom
+            case EVar(name) if (name != loopVar):
+                expr;  // Found a different variable (could be the value)
+            default:
+                null;
         };
     }
 
