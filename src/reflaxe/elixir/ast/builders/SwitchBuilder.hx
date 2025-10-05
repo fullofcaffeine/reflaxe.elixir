@@ -250,27 +250,29 @@ class SwitchBuilder {
         trace('[SwitchBuilder] Extracted ${patternVars.length} variables from case body: [${patternVars.join(", ")}]');
         #end
 
-        // CRITICAL: Extract TLocal IDs from guard and register in tempVarRenameMap
+        // CRITICAL: Extract TLocal IDs from guard and register in ClauseContext.localToName
         // This ensures guard expressions compile with the same variable names as patterns
         // Without this, guards get different names (n, n2, n3) due to independent TLocal instances
-        // NOTE: TLocal variables look up names via context.tempVarRenameMap (ElixirASTBuilder.hx:557)
+        // NOTE: VariableBuilder.resolveVariableName() checks ClauseContext.lookupVariable() first
         var tvarMapping = extractTLocalIDsFromGuard(switchCase.expr, patternVars);
 
         #if debug_guard_compilation
-        trace('[SwitchBuilder] Registering ${tvarMapping.keys().length} TLocal mapping(s) in tempVarRenameMap:');
-        for (tvarId in tvarMapping.keys()) {
-            var name = tvarMapping.get(tvarId);
-            var idKey = Std.string(tvarId);  // Convert ID to string key format
-            trace('[SwitchBuilder]   TLocal#${tvarId} → ${name}');
-            context.tempVarRenameMap.set(idKey, name);
-        }
-        #else
-        // Register mappings (without debug output)
-        for (tvarId in tvarMapping.keys()) {
-            var idKey = Std.string(tvarId);  // Convert ID to string key format
-            context.tempVarRenameMap.set(idKey, tvarMapping.get(tvarId));
-        }
+        var mappingCount = Lambda.count(tvarMapping);
+        trace('[SwitchBuilder] Current ClauseContext: ${context.currentClauseContext != null ? "EXISTS" : "NULL"}');
+        trace('[SwitchBuilder] Registering $mappingCount TLocal mapping(s) in ClauseContext.localToName:');
         #end
+
+        if (context.currentClauseContext != null) {
+            for (tvarId in tvarMapping.keys()) {
+                var name = tvarMapping.get(tvarId);
+                #if debug_guard_compilation
+                trace('[SwitchBuilder]   TLocal#${tvarId} → ${name}');
+                #end
+                context.currentClauseContext.localToName.set(tvarId, name);
+            }
+        } #if debug_guard_compilation else {
+            trace('[SwitchBuilder ERROR] ClauseContext is NULL - cannot register mappings!');
+        } #end
 
         // Build pattern from case value (pass pattern variables for idiomatic enum patterns)
         var pattern = buildPattern(value, targetVarName, patternVars, context);
@@ -1039,7 +1041,8 @@ class SwitchBuilder {
         traverse(expr);
 
         #if debug_guard_compilation
-        trace('[SwitchBuilder] Extracted ${mapping.keys().length} TLocal ID mapping(s):');
+        var extractedCount = Lambda.count(mapping);
+        trace('[SwitchBuilder] Extracted $extractedCount TLocal ID mapping(s):');
         for (id in mapping.keys()) {
             trace('[SwitchBuilder]   TLocal#${id} → ${mapping.get(id)}');
         }

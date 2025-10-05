@@ -550,11 +550,24 @@ class ElixirASTBuilder {
                 var idKey = Std.string(v.id);
                 var nameKey = v.name;
 
-                // CRITICAL FIX: Strip Haxe's numeric shadowing suffix in constructor arguments
-                // WHY: Haxe renames parameters when they shadow class fields (replacer -> replacer2)
-                // WHAT: In constructor contexts, strip the suffix to get original parameter name
-                // HOW: Check flag, detect pattern (name + digits), strip suffix
-                var varName = if (currentContext.tempVarRenameMap.exists(idKey)) {
+                // PRIORITY 0: Check ClauseContext for case-local TLocal variables
+                // WHY: Guard expressions use TLocal references that need consistent names with patterns
+                // WHAT: ClauseContext.localToName maps TLocal IDs to canonical pattern variable names
+                // HOW: SwitchBuilder registers mappings when extracting pattern variables
+                var clauseMapping: Null<String> = null;
+                if (currentContext.currentClauseContext != null) {
+                    clauseMapping = currentContext.currentClauseContext.lookupVariable(v.id);
+                    if (clauseMapping != null) {
+                        #if debug_clause_context
+                        trace('[TLocal ClauseContext] Found mapping for ${v.name} (id=${v.id}) -> $clauseMapping');
+                        #end
+                    }
+                }
+
+                var varName = if (clauseMapping != null) {
+                    // Use ClauseContext mapping (highest priority)
+                    clauseMapping;
+                } else if (currentContext.tempVarRenameMap.exists(idKey)) {
                     // ID-based lookup succeeds (builder phase registered this variable)
                     var renamed = currentContext.tempVarRenameMap.get(idKey);
                     #if debug_hygiene
