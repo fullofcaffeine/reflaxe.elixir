@@ -1088,9 +1088,38 @@ class LoopTransforms {
                                                     }
 
                                                 // Pattern 3: Struct update %{struct | field: struct.field ++ [expr]}
+                                                case EStructUpdate(struct, fields):
+                                                    #if debug_loop_transforms
+                                                    trace('[XRay detectBlockComprehension]       Found EStructUpdate with ${fields.length} fields');
+                                                    #end
+
+                                                    // Look for field update pattern: _g: struct._g ++ [literal]
+                                                    for (field in fields) {
+                                                        switch(field.value.def) {
+                                                            case EBinary(Concat, _, {def: EList([expr])}):
+                                                                #if debug_loop_transforms
+                                                                trace('[XRay detectBlockComprehension]       Found concatenation in struct field update');
+                                                                #end
+
+                                                                if (bodyExpr == null) {
+                                                                    bodyExpr = expr;
+                                                                }
+
+                                                                var literalValue = extractLiteralFromExpr(expr);
+                                                                if (literalValue != null) {
+                                                                    values.push(literalValue);
+                                                                    #if debug_loop_transforms
+                                                                    trace('[XRay detectBlockComprehension]       ✓ Collected literal value from struct update');
+                                                                    #end
+                                                                }
+                                                            default:
+                                                        }
+                                                    }
+
+                                                // Pattern 4: Old struct update detection (ECall pattern - keeping for backwards compat)
                                                 case ECall(target, "update", args):
                                                     #if debug_loop_transforms
-                                                    trace('[XRay detectBlockComprehension]       Found struct update with ${args.length} args');
+                                                    trace('[XRay detectBlockComprehension]       Found old-style struct update with ${args.length} args');
                                                     #end
 
                                                     // The last argument should be a map with the concatenation
@@ -1291,6 +1320,12 @@ class LoopTransforms {
                 switch(thenExpr.def) {
                     case EBinary(Concat, {def: EList([])}, {def: EList([expr])}): true;
                     case ECall({def: EList([])}, "push", [expr]): true;  // Also handle .push() pattern
+                    case EStructUpdate(struct, fields):  // Handle struct update pattern
+                        // Check if any field has concatenation pattern
+                        Lambda.exists(fields, field -> switch(field.value.def) {
+                            case EBinary(Concat, _, {def: EList([_])}): true;
+                            default: false;
+                        });
                     default: false;
                 }
             default: false;
@@ -1316,6 +1351,15 @@ class LoopTransforms {
                 switch(thenExpr.def) {
                     case EBinary(Concat, _, {def: EList([expr])}): expr;
                     case ECall({def: EList([])}, "push", [expr]): expr;
+                    case EStructUpdate(struct, fields):
+                        // Extract expr from field concatenation
+                        for (field in fields) {
+                            switch(field.value.def) {
+                                case EBinary(Concat, _, {def: EList([expr])}): return expr;
+                                default:
+                            }
+                        }
+                        null;
                     default: null;
                 }
             default: null;
