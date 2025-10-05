@@ -10,6 +10,13 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import Type;
 
+typedef ComprehensionInfo = {
+    resultVar: String,
+    loopVar: String,
+    values: Array<ElixirAST>,
+    bodyExpr: ElixirAST
+}
+
 /**
  * LOOP TRANSFORMATION MODULE
  * 
@@ -837,152 +844,168 @@ class LoopTransforms {
 
         var firstStmt = stmts[startIdx];
 
-        // Check for chained assignment pattern: doubled = n = 1
-        // Structure: EMatch(PVar("doubled"), EMatch(PVar("n"), EConst(1)))
-        var isChainedAssignment = switch(firstStmt.def) {
-            case EMatch(PVar(_), {def: EMatch(PVar(_), _)}):
-                true;
+        #if debug_loop_transforms
+        trace('[XRay LoopTransforms]   First statement type: ${firstStmt.def}');
+        switch(firstStmt.def) {
+            case EMatch(pattern, rhs):
+                trace('[XRay LoopTransforms]   EMatch pattern: $pattern');
+                trace('[XRay LoopTransforms]   EMatch RHS type: ${rhs.def}');
             default:
-                false;
+                trace('[XRay LoopTransforms]   Not EMatch, is: ${Type.enumConstructor(firstStmt.def)}');
+        }
+        #end
+
+        // Check for comprehension pattern: doubled = { n = 1; [] ++ [n*2]; ...; [] }
+        // Structure: EMatch(PVar("doubled"), EBlock([nested blocks with pattern]))
+        var comprehensionInfo = switch(firstStmt.def) {
+            case EMatch(PVar(resultVar), {def: EBlock(blockStmts)}):
+                // Pattern is INSIDE the block RHS
+                detectBlockComprehension(resultVar, blockStmts);
+            default:
+                null;
         };
 
-        if (!isChainedAssignment) {
+        if (comprehensionInfo == null) {
             #if debug_loop_transforms
-            trace('[XRay LoopTransforms]   Not a chained assignment, skipping');
+            trace('[XRay LoopTransforms]   Not a block comprehension pattern, skipping');
             #end
             return null;
         }
 
         #if debug_loop_transforms
-        trace('[XRay LoopTransforms]   ✓ Found chained assignment start');
+        trace('[XRay LoopTransforms]   ✓ Found block comprehension: ${comprehensionInfo.resultVar} = for ${comprehensionInfo.loopVar} <- [${comprehensionInfo.values.length} values]');
         #end
 
-        // Scan forward to find the end (empty array)
-        var endIdx = -1;
-        var hasBareConcat = false;
+        // Build the comprehension from the extracted info
+        var listAST = makeAST(EList(comprehensionInfo.values));
 
-        for (i in (startIdx + 1)...stmts.length) {
-            var stmt = stmts[i];
+        // Build generator: loopVar <- [values]
+        var generator: EGenerator = {
+            pattern: PVar(comprehensionInfo.loopVar),
+            expr: listAST
+        };
 
-            switch(stmt.def) {
-                // Empty array marks the end
-                case EList([]):
-                    endIdx = i;
-                    #if debug_loop_transforms
-                    trace('[XRay LoopTransforms]   ✓ Found empty array end at index $i');
-                    #end
-                    break;
+        // Build comprehension AST: for loopVar <- [values], do: bodyExpr
+        var comprehension = makeAST(EFor(
+            [generator],               // generators array
+            [],                        // no filters
+            comprehensionInfo.bodyExpr, // body expression
+            null,                      // no into
+            false                      // not uniq
+        ));
 
-                // Bare concatenation: [] ++ [expr]
-                case EBinary(Concat, {def: EList([])}, {def: EList(_)}):
-                    hasBareConcat = true;
-                    #if debug_loop_transforms
-                    trace('[XRay LoopTransforms]   ✓ Found bare concatenation at index $i');
-                    #end
-
-                // Loop variable reassignment: n = 2
-                case EMatch(PVar(_), _):
-                    #if debug_loop_transforms
-                    trace('[XRay LoopTransforms]   Found loop var reassignment at index $i');
-                    #end
-
-                // Unknown pattern, not a comprehension
-                default:
-                    #if debug_loop_transforms
-                    trace('[XRay LoopTransforms]   Unknown pattern at index $i, stopping: ${stmt.def}');
-                    #end
-                    return null;
-            }
-        }
-
-        // Validate we found a complete pattern
-        if (endIdx == -1 || !hasBareConcat) {
-            #if debug_loop_transforms
-            trace('[XRay LoopTransforms]   Incomplete pattern (endIdx=$endIdx, hasBareConcat=$hasBareConcat)');
-            #end
-            return null;
-        }
-
-        var count = endIdx - startIdx + 1;  // Include the empty array
+        // Wrap in assignment: resultVar = for ...
+        var transformed = makeAST(EMatch(PVar(comprehensionInfo.resultVar), comprehension));
 
         #if debug_loop_transforms
-        trace('[XRay LoopTransforms] ✅ DETECTED COMPREHENSION PATTERN: $count statements');
+        trace('[XRay LoopTransforms] ✅ Generated comprehension: ${comprehensionInfo.resultVar} = for ${comprehensionInfo.loopVar} <- [${comprehensionInfo.values.length} values], do: ...');
         #end
 
-        // Extract the subsequence and build the comprehension
-        var comprehensionStmts = stmts.slice(startIdx, endIdx + 1);
+        return {transformed: transformed, count: 1};  // Only 1 statement in output
+    }
 
-        // Use ComprehensionBuilder to transform to idiomatic Elixir
-        // We need to convert these ElixirAST statements back to TypedExpr...
-        // BUT WAIT: We're in the TRANSFORMER phase, these are already ElixirAST!
-        // So we need a different approach - build the comprehension directly from AST
+    /**
+     * Detect comprehension pattern inside a block assigned to a variable.
+     *
+     * Pattern: doubled = { n = 1; [] ++ [n*2]; n = 2; [] ++ [n*2]; ...; [] }
+     *
+     * Returns: {resultVar, loopVar, values, bodyExpr} or null
+     */
+    static function detectBlockComprehension(resultVar: String, stmts: Array<ElixirAST>): Null<ComprehensionInfo> {
+        #if debug_loop_transforms
+        trace('[XRay detectBlockComprehension] Checking $resultVar with ${stmts.length} statements');
+        #end
 
-        // Extract components from the pattern
-        var resultVar: String = null;
+        if (stmts.length < 3) {
+            #if debug_loop_transforms
+            trace('[XRay detectBlockComprehension]   Too few statements: ${stmts.length}');
+            #end
+            return null;  // Need at least 2 iterations + empty list
+        }
+
         var loopVar: String = null;
         var values: Array<ElixirAST> = [];
         var bodyExpr: ElixirAST = null;
 
-        // Parse first statement: doubled = n = 1
-        switch(firstStmt.def) {
-            case EMatch(PVar(result), {def: EMatch(PVar(loop), firstValue)}):
-                resultVar = result;
-                loopVar = loop;
-                values.push(firstValue);
-            default:
-        }
-
-        // Parse middle statements to extract values and body expression
-        for (i in (startIdx + 1)...endIdx) {
+        var i = 0;
+        while (i < stmts.length - 1) {  // -1 to leave room for final empty list
             var stmt = stmts[i];
 
-            switch(stmt.def) {
-                // Bare concatenation: [] ++ [expr]
-                case EBinary(Concat, {def: EList([])}, {def: EList([expr])}):
-                    bodyExpr = expr;  // Save the expression being accumulated
-
-                // Loop variable reassignment: n = value
-                case EMatch(PVar(varName), value) if (varName == loopVar):
-                    values.push(value);
-
-                default:
-            }
-        }
-
-        // Build the comprehension: doubled = for n <- [1, 2, 3, 4, 5], do: n * 2
-        if (resultVar != null && loopVar != null && values.length > 0 && bodyExpr != null) {
-            var listAST = makeAST(EList(values));
-
-            // Build generator: n <- [1, 2, 3, 4, 5]
-            var generator: EGenerator = {
-                pattern: PVar(loopVar),
-                expr: listAST
-            };
-
-            // Build comprehension AST: for n <- [1,2,3,4,5], do: n * 2
-            var comprehension = makeAST(EFor(
-                [generator],  // generators array
-                [],           // no filters
-                bodyExpr,     // body expression
-                null,         // no into
-                false         // not uniq
-            ));
-
-            // Wrap in assignment: doubled = for ...
-            var transformed = makeAST(EMatch(PVar(resultVar), comprehension));
-
             #if debug_loop_transforms
-            trace('[XRay LoopTransforms] ✅ Generated comprehension for variable: $resultVar');
+            trace('[XRay detectBlockComprehension]   Checking statement $i: ${Type.enumConstructor(stmt.def)}');
             #end
 
-            return {transformed: transformed, count: count};
+            switch(stmt.def) {
+                case EBlock(innerStmts):
+                    #if debug_loop_transforms
+                    trace('[XRay detectBlockComprehension]     EBlock with ${innerStmts.length} statements');
+                    for (j in 0...innerStmts.length) {
+                        var desc = switch(innerStmts[j].def) {
+                            case ECall(target, name, args): 'ECall(target=${target != null ? Type.enumConstructor(target.def) : "null"}, name=$name, ${args.length} args)';
+                            case EBinary(op, left, right): 'EBinary($op, ${Type.enumConstructor(left.def)}, ${Type.enumConstructor(right.def)})';
+                            default: Type.enumConstructor(innerStmts[j].def);
+                        };
+                        trace('[XRay detectBlockComprehension]       Inner statement $j: $desc');
+                    }
+                    #end
+
+                    if (innerStmts.length == 2) {
+                        // Each iteration block has 2 statements:
+                        // 1. n = value
+                        // 2. [].push(expr)  <- This is what Haxe actually generates!
+
+                        switch(innerStmts[0].def) {
+                            case EMatch(PVar(varName), value):
+                                if (loopVar == null) {
+                                    loopVar = varName;
+                                } else if (loopVar != varName) {
+                                    return null;  // Variable name changed, not a comprehension
+                                }
+                                values.push(value);
+                            default:
+                                return null;
+                        }
+
+                        // Match the actual pattern: ECall(EList([]), "push", [expr])
+                        switch(innerStmts[1].def) {
+                            case ECall({def: EList([])}, "push", [expr]):
+                                if (bodyExpr == null) {
+                                    bodyExpr = expr;
+                                }
+                                // Body expression should be consistent across iterations
+                            default:
+                                #if debug_loop_transforms
+                                trace('[XRay detectBlockComprehension]       Second statement is not [].push(), returning null');
+                                #end
+                                return null;
+                        }
+                    }
+
+                default:
+                    return null;
+            }
+
+            i++;
         }
 
-        #if debug_loop_transforms
-        trace('[XRay LoopTransforms]   Failed to extract comprehension components');
-        #end
+        // Final statement must be empty list
+        if (!switch(stmts[stmts.length - 1].def) {
+            case EList([]): true;
+            default: false;
+        }) {
+            return null;
+        }
 
-        return null;
+        if (loopVar == null || values.length == 0 || bodyExpr == null) {
+            return null;
+        }
+
+        return {
+            resultVar: resultVar,
+            loopVar: loopVar,
+            values: values,
+            bodyExpr: bodyExpr
+        };
     }
 
     /**
