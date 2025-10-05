@@ -856,25 +856,43 @@ class LoopTransforms {
         }
         #end
 
-        // Check for comprehension pattern: doubled = { n = 1; [] ++ [n*2]; ...; [] }
-        // Structure: EMatch(PVar("doubled"), EBlock([nested blocks with pattern]))
-        var comprehensionInfo = switch(firstStmt.def) {
-            case EMatch(PVar(resultVar), {def: EBlock(blockStmts)}):
-                // Pattern is INSIDE the block RHS
-                detectBlockComprehension(resultVar, blockStmts);
-            default:
-                null;
-        };
+        // TRY VARIANT 1: Sequential filtered comprehension (more specific, check first)
+        // Pattern: evens = n = 1; if (cond) [] ++ [n]; n = 2; if (cond) [] ++ [n]; ...; []
+        var comprehensionInfo = detectSequentialComprehension(stmts, startIdx);
+        var stmtCount = 0;  // Track how many statements were consumed
+
+        if (comprehensionInfo != null) {
+            #if debug_loop_transforms
+            trace('[XRay LoopTransforms]   ✓ Found sequential filtered comprehension');
+            #end
+            // Calculate statement count: 1 (init) + 1 (first conditional) + 2 * remaining pairs + 1 (terminator)
+            // Pattern: evens = n = 1; if (cond) [] ++ [n]; n = 2; if (cond) [] ++ [n]; ...; []
+            stmtCount = 1 + 1 + (comprehensionInfo.values.length - 1) * 2 + 1;
+        } else {
+            // TRY VARIANT 2: Block comprehension (wrapped, less specific)
+            // Pattern: doubled = { n = 1; [] ++ [n*2]; ...; [] }
+            comprehensionInfo = switch(firstStmt.def) {
+                case EMatch(PVar(resultVar), {def: EBlock(blockStmts)}):
+                    // Pattern is INSIDE the block RHS
+                    detectBlockComprehension(resultVar, blockStmts);
+                default:
+                    null;
+            };
+            stmtCount = 1;  // Block comprehension consumes 1 statement
+        }
 
         if (comprehensionInfo == null) {
             #if debug_loop_transforms
-            trace('[XRay LoopTransforms]   Not a block comprehension pattern, skipping');
+            trace('[XRay LoopTransforms]   Not a comprehension pattern (tried both variants), skipping');
             #end
             return null;
         }
 
         #if debug_loop_transforms
-        trace('[XRay LoopTransforms]   ✓ Found block comprehension: ${comprehensionInfo.resultVar} = for ${comprehensionInfo.loopVar} <- [${comprehensionInfo.values.length} values]');
+        trace('[XRay LoopTransforms]   ✓ Found comprehension: ${comprehensionInfo.resultVar} = for ${comprehensionInfo.loopVar} <- [${comprehensionInfo.values.length} values]');
+        if (comprehensionInfo.filterCondition != null) {
+            trace('[XRay LoopTransforms]   With filter condition (guard clause)');
+        }
         #end
 
         // Build the comprehension from the extracted info
@@ -904,10 +922,10 @@ class LoopTransforms {
         var transformed = makeAST(EMatch(PVar(comprehensionInfo.resultVar), comprehension));
 
         #if debug_loop_transforms
-        trace('[XRay LoopTransforms] ✅ Generated comprehension: ${comprehensionInfo.resultVar} = for ${comprehensionInfo.loopVar} <- [${comprehensionInfo.values.length} values], do: ...');
+        trace('[XRay LoopTransforms] ✅ Generated comprehension: ${comprehensionInfo.resultVar} = for ${comprehensionInfo.loopVar} <- [${comprehensionInfo.values.length} values], ${filters.length} guards, do: ...');
         #end
 
-        return {transformed: transformed, count: 1};  // Only 1 statement in output
+        return {transformed: transformed, count: stmtCount};  // Return actual statement count consumed
     }
 
     /**
@@ -1031,6 +1049,183 @@ class LoopTransforms {
             values: values,
             bodyExpr: bodyExpr,
             filterCondition: filterCondition  // Include filter for guard clauses
+        };
+    }
+
+    /**
+     * Helper: Check if statement is a loop variable assignment
+     * Pattern: n = value
+     */
+    static function isLoopVarAssignment(stmt: ElixirAST, loopVar: String): Bool {
+        return switch(stmt.def) {
+            case EMatch(PVar(name), _) if (name == loopVar): true;
+            default: false;
+        };
+    }
+
+    /**
+     * Helper: Check if statement is a conditional append
+     * Pattern: if (condition), do: [] ++ [expr]
+     */
+    static function isConditionalAppend(stmt: ElixirAST): Bool {
+        return switch(stmt.def) {
+            case EIf(condition, thenExpr, _):
+                switch(thenExpr.def) {
+                    case EBinary(Concat, {def: EList([])}, {def: EList([expr])}): true;
+                    case ECall({def: EList([])}, "push", [expr]): true;  // Also handle .push() pattern
+                    default: false;
+                }
+            default: false;
+        };
+    }
+
+    /**
+     * Helper: Extract filter condition from if statement
+     */
+    static function extractCondition(ifStmt: ElixirAST): Null<ElixirAST> {
+        return switch(ifStmt.def) {
+            case EIf(cond, _, _): cond;
+            default: null;
+        };
+    }
+
+    /**
+     * Helper: Extract body expression from conditional append
+     */
+    static function extractBodyExpr(ifStmt: ElixirAST): Null<ElixirAST> {
+        return switch(ifStmt.def) {
+            case EIf(_, thenExpr, _):
+                switch(thenExpr.def) {
+                    case EBinary(Concat, _, {def: EList([expr])}): expr;
+                    case ECall({def: EList([])}, "push", [expr]): expr;
+                    default: null;
+                }
+            default: null;
+        };
+    }
+
+    /**
+     * Helper: Extract value from assignment
+     */
+    static function extractAssignmentValue(stmt: ElixirAST): Null<ElixirAST> {
+        return switch(stmt.def) {
+            case EMatch(_, value): value;
+            default: null;
+        };
+    }
+
+    /**
+     * Detect sequential filtered comprehension pattern
+     * Pattern: resultVar = loopVar = value1; if (cond) [] ++ [expr]; loopVar = value2; if (cond) [] ++ [expr]; ...; []
+     */
+    static function detectSequentialComprehension(stmts: Array<ElixirAST>, startIdx: Int): Null<ComprehensionInfo> {
+        if (startIdx + 4 >= stmts.length) return null;  // Need at least: init, if, var, if, []
+
+        #if debug_loop_transforms
+        trace('[XRay detectSequentialComprehension] Checking from index $startIdx');
+        #end
+
+        // First statement must be: resultVar = loopVar = firstValue
+        var firstStmt = stmts[startIdx];
+        var resultVar: String = null;
+        var loopVar: String = null;
+        var firstValue: ElixirAST = null;
+
+        switch(firstStmt.def) {
+            case EMatch(PVar(resVar), {def: EMatch(PVar(lVar), value)}):
+                resultVar = resVar;
+                loopVar = lVar;
+                firstValue = value;
+            default:
+                #if debug_loop_transforms
+                trace('[XRay detectSequentialComprehension]   First statement not chained assignment, returning null');
+                #end
+                return null;
+        }
+
+        #if debug_loop_transforms
+        trace('[XRay detectSequentialComprehension]   Found chained assignment: $resultVar = $loopVar = firstValue');
+        #end
+
+        var values: Array<ElixirAST> = [firstValue];
+        var filterCondition: Null<ElixirAST> = null;
+        var bodyExpr: Null<ElixirAST> = null;
+
+        // Check if there's a conditional for the FIRST value (immediately after init)
+        var i = startIdx + 1;
+        if (i < stmts.length && isConditionalAppend(stmts[i])) {
+            // Extract filter condition and body from first conditional
+            filterCondition = extractCondition(stmts[i]);
+            bodyExpr = extractBodyExpr(stmts[i]);
+            i++;  // Move past first conditional
+
+            #if debug_loop_transforms
+            trace('[XRay detectSequentialComprehension]   Found conditional for first value, extracted filter and body');
+            #end
+        } else {
+            #if debug_loop_transforms
+            trace('[XRay detectSequentialComprehension]   No conditional after first value, not a filtered comprehension');
+            #end
+            return null;  // Filtered comprehensions MUST have conditional
+        }
+
+        var pairCount = 0;
+
+        // Now iterate through pairs: (loopVar = value, if (cond) [] ++ [expr])
+        while (i < stmts.length - 1) {  // -1 to leave room for final []
+            // Check for loop variable assignment
+            if (!isLoopVarAssignment(stmts[i], loopVar)) {
+                #if debug_loop_transforms
+                trace('[XRay detectSequentialComprehension]   Statement $i not loop var assignment, stopping at $pairCount pairs');
+                #end
+                break;
+            }
+
+            var nextValue = extractAssignmentValue(stmts[i]);
+            if (nextValue == null) break;
+            values.push(nextValue);
+
+            // Next statement must be conditional append
+            if (i + 1 >= stmts.length || !isConditionalAppend(stmts[i + 1])) {
+                #if debug_loop_transforms
+                trace('[XRay detectSequentialComprehension]   Statement ${i+1} not conditional append, stopping');
+                #end
+                break;
+            }
+
+            pairCount++;
+            i += 2;  // Move to next pair
+        }
+
+        // Must have at least 1 additional pair after first (2 total values minimum)
+        if (values.length < 2) {
+            #if debug_loop_transforms
+            trace('[XRay detectSequentialComprehension]   Only ${values.length} values found, need at least 2');
+            #end
+            return null;
+        }
+
+        // Check for empty list terminator
+        if (i >= stmts.length || !switch(stmts[i].def) {
+            case EList([]): true;
+            default: false;
+        }) {
+            #if debug_loop_transforms
+            trace('[XRay detectSequentialComprehension]   No empty list terminator at index $i');
+            #end
+            return null;
+        }
+
+        #if debug_loop_transforms
+        trace('[XRay detectSequentialComprehension]   ✓ Found sequential filtered comprehension: ${values.length} values, $pairCount pairs');
+        #end
+
+        return {
+            resultVar: resultVar,
+            loopVar: loopVar,
+            values: values,
+            bodyExpr: bodyExpr,
+            filterCondition: filterCondition
         };
     }
 
