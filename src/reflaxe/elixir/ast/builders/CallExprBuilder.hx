@@ -204,7 +204,19 @@ class CallExprBuilder {
                         // Function definitions use snake_case (parse_action), so calls must match
                         var elixirMethodName = ElixirNaming.toVarName(methodName);
 
-                        return ERemoteCall(makeAST(EVar(className)), elixirMethodName, argASTs);
+                        // IDIOMATIC FIX: Within the same module, use unqualified function calls
+                        // Elixir allows calling module functions directly when within that module
+                        // Main.test_end() → test_end() for better idiomatic code
+                        var currentClass = context.getCurrentClass();
+                        var isSameModule = currentClass != null && currentClass.name == className;
+
+                        if (isSameModule) {
+                            // Same module - use direct function call
+                            return ECall(null, elixirMethodName, argASTs);
+                        } else {
+                            // Different module - use qualified call
+                            return ERemoteCall(makeAST(EVar(className)), elixirMethodName, argASTs);
+                        }
                         
                     case FEnum(_, ef):
                         // This should have been caught by PatternDetector.isEnumConstructor

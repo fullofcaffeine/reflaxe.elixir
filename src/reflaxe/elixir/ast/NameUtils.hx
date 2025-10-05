@@ -1,8 +1,10 @@
 package reflaxe.elixir.ast;
 
+import reflaxe.elixir.ast.naming.ElixirNaming;
+
 /**
  * Minimal name conversion utilities for the AST pipeline
- * 
+ *
  * WHY: After removing 75 helper files, we still need basic name conversion
  * WHAT: Provides CamelCase → snake_case and module name extraction
  * HOW: Simple regex-based transformations used across the compiler
@@ -57,19 +59,10 @@ class NameUtils {
     
     /**
      * Check if a name is a reserved keyword in Elixir
+     * Delegates to ElixirNaming for complete and consistent keyword detection
      */
-    public static function isElixirReserved(name: String): Bool {
-        // Elixir reserved keywords
-        var reserved = [
-            "after", "and", "catch", "cond", "do", "else", "end", "false", "fn",
-            "in", "nil", "not", "or", "rescue", "true", "when", "with",
-            // Also include common special forms
-            "alias", "case", "def", "defp", "defmodule", "defmacro", "defmacrop",
-            "defstruct", "defdelegate", "defprotocol", "defimpl", "for", "if",
-            "import", "quote", "receive", "require", "super", "try", "unless",
-            "unquote", "use"
-        ];
-        return reserved.indexOf(name) >= 0;
+    public static inline function isElixirReserved(name: String): Bool {
+        return ElixirNaming.isReserved(name);
     }
     
     /**
@@ -88,14 +81,15 @@ class NameUtils {
 
     /**
      * Convert name to safe Elixir parameter name, handling reserved keywords
-     * Parameters get underscore prefix to avoid conflicts
+     * Parameters get _param suffix to avoid conflicts (matches FunctionBuilder pattern)
      */
     public static function toSafeElixirParameterName(name: String): String {
         var snakeName = toSnakeCase(name);
 
-        // If it's a reserved keyword, prefix with underscore to make it safe
+        // If it's a reserved keyword, add _param suffix to make it safe
+        // This matches the pattern used in FunctionBuilder.hx for consistency
         if (isElixirReserved(snakeName)) {
-            return "_" + snakeName;
+            return snakeName + "_param";
         }
 
         return snakeName;
