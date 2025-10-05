@@ -1040,13 +1040,24 @@ class LoopTransforms {
                                             // Extract literal value and body expression from then branch
                                             #if debug_loop_transforms
                                             trace('[XRay detectBlockComprehension]     Then branch type: ${Type.enumConstructor(thenBranch.def)}');
+                                            // Detailed inspection of ECall structure
+                                            switch(thenBranch.def) {
+                                                case ECall(target, funcName, args):
+                                                    trace('[XRay detectBlockComprehension]       ECall target: ${target != null ? Type.enumConstructor(target.def) : "null"}');
+                                                    trace('[XRay detectBlockComprehension]       ECall funcName: "$funcName"');
+                                                    trace('[XRay detectBlockComprehension]       ECall args count: ${args.length}');
+                                                    for (idx in 0...args.length) {
+                                                        trace('[XRay detectBlockComprehension]         Arg $idx: ${Type.enumConstructor(args[idx].def)}');
+                                                    }
+                                                default:
+                                            }
                                             #end
 
                                             switch(thenBranch.def) {
-                                                // Pattern 1: [].push(expr)
-                                                case ECall({def: EList([])}, "push", [expr]):
+                                                // Pattern 1: variable.push(expr) - the actual pattern!
+                                                case ECall({def: EVar(_)}, "push", [expr]):
                                                     #if debug_loop_transforms
-                                                    trace('[XRay detectBlockComprehension]       Found push with expr type: ${Type.enumConstructor(expr.def)}');
+                                                    trace('[XRay detectBlockComprehension]       Found variable.push with expr type: ${Type.enumConstructor(expr.def)}');
                                                     #end
 
                                                     if (bodyExpr == null) {
@@ -1056,6 +1067,9 @@ class LoopTransforms {
                                                     var literalValue = extractLiteralFromExpr(expr);
                                                     if (literalValue != null) {
                                                         values.push(literalValue);
+                                                        #if debug_loop_transforms
+                                                        trace('[XRay detectBlockComprehension]       ✓ Collected literal value');
+                                                        #end
                                                     }
 
                                                 // Pattern 2: [] ++ [expr]
