@@ -9,6 +9,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.helpers.PatternDetector;
 import reflaxe.elixir.ast.builders.VariableBuilder;
+import reflaxe.elixir.ast.naming.ElixirNaming;
 
 /**
  * CallExprBuilder: Handles function/method call expression building
@@ -186,20 +187,24 @@ class CallExprBuilder {
                         // Static method call
                         var className = classRef.get().name;
                         var methodName = cf.get().name;
-                        
+
                         // Check for special Haxe standard library calls
                         var specialCall = handleSpecialCall(className, methodName, args, context);
                         if (specialCall != null) {
                             return specialCall;
                         }
-                        
+
                         // Check for Phoenix-specific patterns
                         var phoenixCall = handlePhoenixCall(className, methodName, args, context);
                         if (phoenixCall != null) {
                             return phoenixCall;
                         }
-                        
-                        return ERemoteCall(makeAST(EVar(className)), methodName, argASTs);
+
+                        // CRITICAL FIX: Convert method name to snake_case for Elixir function calls
+                        // Function definitions use snake_case (parse_action), so calls must match
+                        var elixirMethodName = ElixirNaming.toVarName(methodName);
+
+                        return ERemoteCall(makeAST(EVar(className)), elixirMethodName, argASTs);
                         
                     case FEnum(_, ef):
                         // This should have been caught by PatternDetector.isEnumConstructor
