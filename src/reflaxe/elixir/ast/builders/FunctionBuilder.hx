@@ -11,6 +11,7 @@ import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.ElixirASTHelpers;
+import reflaxe.elixir.ast.naming.ElixirNaming;
 import reflaxe.elixir.helpers.PatternDetector;
 import reflaxe.elixir.helpers.UsageDetector;
 
@@ -186,7 +187,8 @@ class FunctionBuilder {
         var baseName = ElixirASTHelpers.toElixirVarName(strippedName);
         
         // Check for reserved keywords
-        if (isElixirReservedKeyword(baseName)) {
+        // Use ElixirNaming.isReserved() for complete and consistent keyword detection
+        if (ElixirNaming.isReserved(baseName)) {
             baseName = baseName + "_param";
         }
         
@@ -254,20 +256,7 @@ class FunctionBuilder {
         
         return name;
     }
-    
-    /**
-     * Check if name is an Elixir reserved keyword
-     * 
-     * WHY: Reserved keywords cannot be used as variable names
-     * WHAT: Checks against list of Elixir reserved words
-     * HOW: Simple string comparison
-     */
-    static function isElixirReservedKeyword(name: String): Bool {
-        var reserved = ["and", "or", "not", "in", "fn", "do", "end", 
-                       "catch", "rescue", "after", "else", "when"];
-        return reserved.indexOf(name) >= 0;
-    }
-    
+
     /**
      * Apply parameter renaming to function body
      * 

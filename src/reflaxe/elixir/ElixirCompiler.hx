@@ -1409,6 +1409,9 @@ class ElixirCompiler extends GenericCompiler<
         // Create a compilation context for this class
         var context = createCompilationContext();
 
+        // Set current class in context for same-module optimization
+        context.currentClass = classType;
+
         // Build fields from the funcFields parameter (which is already ClassFuncData array)
         var fields: Array<reflaxe.elixir.ast.ElixirAST> = [];
 
