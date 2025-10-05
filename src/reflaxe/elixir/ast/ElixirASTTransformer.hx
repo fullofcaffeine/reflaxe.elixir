@@ -11,6 +11,7 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.transformers.PatternMatchingTransforms;
 import reflaxe.elixir.ast.transformers.LoopVariableRestorer;
 import reflaxe.elixir.ast.transformers.GuardConditionFlattener;
+import reflaxe.elixir.ast.transformers.StructUpdateTransform;
 import reflaxe.elixir.ast.ASTUtils;
 using StringTools;
 
@@ -4606,44 +4607,64 @@ class ElixirASTTransformer {
                             // Check if structVar is "struct" (the conventional instance parameter)
                             switch(structVar.def) {
                                 case EVar("struct"):
-                                    // Transform to struct update: %{struct | field: struct.field ++ [item]}
-                                    #if debug_ast_transformer
-                                    trace('[XRay ImmutabilityTransform] Transforming struct.$fieldName.push(item) to struct update');
-                                    #end
-                                    makeAST(EStructUpdate(
-                                        structVar,
-                                        [{
-                                            key: fieldName,
-                                            value: makeAST(EBinary(
-                                                Concat,
-                                                target,  // struct.field
-                                                makeAST(EList([item]))
-                                            ))
-                                        }]
-                                    ));
+                                    // GUARD: Check if fieldName is an array infrastructure variable
+                                    if (StructUpdateTransform.isArrayVariable(fieldName)) {
+                                        #if debug_ast_transformer
+                                        trace('[XRay ImmutabilityTransform] Skipping array variable field: struct.$fieldName');
+                                        #end
+                                        // Regular array concatenation
+                                        makeAST(EBinary(Concat, target, makeAST(EList([item]))));
+                                    } else {
+                                        // Transform to struct update: %{struct | field: struct.field ++ [item]}
+                                        #if debug_ast_transformer
+                                        trace('[XRay ImmutabilityTransform] Transforming struct.$fieldName.push(item) to struct update');
+                                        #end
+                                        makeAST(EStructUpdate(
+                                            structVar,
+                                            [{
+                                                key: fieldName,
+                                                value: makeAST(EBinary(
+                                                    Concat,
+                                                    target,  // struct.field
+                                                    makeAST(EList([item]))
+                                                ))
+                                            }]
+                                        ));
+                                    }
                                 default:
                                     node;
                             }
                         case EVar(fieldName):
                             // This is field.push(item) - direct field access
                             // This happens in instance methods where fields are accessed directly
-                            // We need to transform this to a struct update
-                            #if debug_ast_transformer
-                            trace('[XRay ImmutabilityTransform] Transforming $fieldName.push(item) to struct update');
-                            #end
-                            // Create the struct variable (assuming "struct" is the instance parameter)
-                            var structVar = makeAST(EVar("struct"));
-                            makeAST(EStructUpdate(
-                                structVar,
-                                [{
-                                    key: fieldName,
-                                    value: makeAST(EBinary(
-                                        Concat,
-                                        makeAST(EField(structVar, fieldName)),  // struct.field
-                                        makeAST(EList([item]))
-                                    ))
-                                }]
-                            ));
+
+                            // GUARD: Check if this is an array infrastructure variable
+                            // Pattern: g, g2, _g, _g2, etc. - these are NOT struct fields
+                            if (StructUpdateTransform.isArrayVariable(fieldName)) {
+                                #if debug_ast_transformer
+                                trace('[XRay ImmutabilityTransform] Skipping array variable: $fieldName');
+                                #end
+                                // Regular array concatenation, not struct update
+                                makeAST(EBinary(Concat, target, makeAST(EList([item]))));
+                            } else {
+                                // We need to transform this to a struct update
+                                #if debug_ast_transformer
+                                trace('[XRay ImmutabilityTransform] Transforming $fieldName.push(item) to struct update');
+                                #end
+                                // Create the struct variable (assuming "struct" is the instance parameter)
+                                var structVar = makeAST(EVar("struct"));
+                                makeAST(EStructUpdate(
+                                    structVar,
+                                    [{
+                                        key: fieldName,
+                                        value: makeAST(EBinary(
+                                            Concat,
+                                            makeAST(EField(structVar, fieldName)),  // struct.field
+                                            makeAST(EList([item]))
+                                        ))
+                                    }]
+                                ));
+                            }
                         default:
                             // Regular array.push(item) becomes array ++ [item]
                             makeAST(EBinary(Concat, target, makeAST(EList([item]))));
