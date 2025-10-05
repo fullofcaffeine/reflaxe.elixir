@@ -1,5 +1,3 @@
-package;
-
 /**
  * Regression test for TEnumParameter extraction bug
  *
