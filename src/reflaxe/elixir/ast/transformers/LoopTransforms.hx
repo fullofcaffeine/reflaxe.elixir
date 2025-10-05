@@ -962,6 +962,7 @@ class LoopTransforms {
         var loopVar: String = null;
         var values: Array<ElixirAST> = [];
         var bodyExpr: ElixirAST = null;
+        var filterCondition: ElixirAST = null;  // For filtered comprehensions
 
         var i = 0;
         while (i < stmts.length - 1) {  // -1 to leave room for final empty list
