@@ -1027,76 +1027,120 @@ class LoopTransforms {
                                 var filterCondition: ElixirAST = null;
                                 var bodyExpr: ElixirAST = null;
 
-                                // Process each EIf to extract values and infer loop variable
+                                // Process each EIf to extract literal values
+                                // Pattern: if (0 % 2 == 0) g ++ [0], if (1 % 2 == 0) g ++ [1], ...
                                 for (i in 1...stmts.length - 1) {
                                     switch(stmts[i].def) {
                                         case EIf(cond, thenBranch, _):
-                                            // First EIf: extract filter condition and analyze for loop variable
+                                            // Extract filter condition template from first EIf
                                             if (filterCondition == null) {
                                                 filterCondition = cond;
-
-                                                // Extract loop variable from condition
-                                                // Pattern: variable % 2 == 0, variable > threshold, etc.
-                                                loopVar = extractVariableFromCondition(cond);
                                             }
 
-                                            // Extract value and body from then branch
-                                            // Pattern: [].push(expr) or [] ++ [expr]
+                                            // Extract literal value and body expression from then branch
+                                            #if debug_loop_transforms
+                                            trace('[XRay detectBlockComprehension]     Then branch type: ${Type.enumConstructor(thenBranch.def)}');
+                                            #end
+
                                             switch(thenBranch.def) {
+                                                // Pattern 1: [].push(expr)
                                                 case ECall({def: EList([])}, "push", [expr]):
-                                                    // Extract body expression (first occurrence)
+                                                    #if debug_loop_transforms
+                                                    trace('[XRay detectBlockComprehension]       Found push with expr type: ${Type.enumConstructor(expr.def)}');
+                                                    #end
+
                                                     if (bodyExpr == null) {
                                                         bodyExpr = expr;
-
-                                                        // If we haven't found loop variable yet, try the body
-                                                        if (loopVar == null) {
-                                                            loopVar = extractVariableFromExpr(expr);
-                                                        }
                                                     }
 
-                                                    // Collect the value being tested
-                                                    // Pattern: if (0 % 2 == 0) push(0), if (1 % 2 == 0) push(1)
-                                                    var iterValue = extractIterationValue(cond, loopVar);
-                                                    if (iterValue != null) {
-                                                        values.push(iterValue);
+                                                    var literalValue = extractLiteralFromExpr(expr);
+                                                    if (literalValue != null) {
+                                                        values.push(literalValue);
                                                     }
 
+                                                // Pattern 2: [] ++ [expr]
                                                 case EBinary(Concat, {def: EList([])}, {def: EList([expr])}):
+                                                    #if debug_loop_transforms
+                                                    trace('[XRay detectBlockComprehension]       Found concat with expr type: ${Type.enumConstructor(expr.def)}');
+                                                    #end
+
                                                     if (bodyExpr == null) {
                                                         bodyExpr = expr;
+                                                    }
 
-                                                        if (loopVar == null) {
-                                                            loopVar = extractVariableFromExpr(expr);
+                                                    var literalValue = extractLiteralFromExpr(expr);
+                                                    if (literalValue != null) {
+                                                        values.push(literalValue);
+                                                    }
+
+                                                // Pattern 3: Struct update %{struct | field: struct.field ++ [expr]}
+                                                case ECall(target, "update", args):
+                                                    #if debug_loop_transforms
+                                                    trace('[XRay detectBlockComprehension]       Found struct update with ${args.length} args');
+                                                    #end
+
+                                                    // The last argument should be a map with the concatenation
+                                                    if (args.length > 0) {
+                                                        var lastArg = args[args.length - 1];
+                                                        switch(lastArg.def) {
+                                                            case EMap(entries):
+                                                                // Find the entry with concatenation
+                                                                for (entry in entries) {
+                                                                    switch(entry.value.def) {
+                                                                        case EBinary(Concat, _, {def: EList([expr])}):
+                                                                            if (bodyExpr == null) {
+                                                                                bodyExpr = expr;
+                                                                            }
+                                                                            var literalValue = extractLiteralFromExpr(expr);
+                                                                            if (literalValue != null) {
+                                                                                values.push(literalValue);
+                                                                                #if debug_loop_transforms
+                                                                                trace('[XRay detectBlockComprehension]       Extracted literal from struct update');
+                                                                                #end
+                                                                            }
+                                                                        default:
+                                                                    }
+                                                                }
+                                                            default:
                                                         }
                                                     }
 
-                                                    var iterValue = extractIterationValue(cond, loopVar);
-                                                    if (iterValue != null) {
-                                                        values.push(iterValue);
-                                                    }
                                                 default:
+                                                    #if debug_loop_transforms
+                                                    trace('[XRay detectBlockComprehension]       Then branch didn\'t match expected patterns (${Type.enumConstructor(thenBranch.def)})');
+                                                    #end
                                             }
                                         default:
                                     }
                                 }
 
                                 #if debug_loop_transforms
-                                trace('[XRay detectBlockComprehension] Extracted:');
-                                trace('[XRay detectBlockComprehension]   Loop variable: $loopVar');
+                                trace('[XRay detectBlockComprehension] Extracted literal values:');
                                 trace('[XRay detectBlockComprehension]   Values count: ${values.length}');
+                                if (values.length > 0) {
+                                    trace('[XRay detectBlockComprehension]   First value: ${Type.enumConstructor(values[0].def)}');
+                                    trace('[XRay detectBlockComprehension]   Last value: ${Type.enumConstructor(values[values.length-1].def)}');
+                                }
                                 trace('[XRay detectBlockComprehension]   Filter condition: ${filterCondition != null ? Type.enumConstructor(filterCondition.def) : "null"}');
                                 trace('[XRay detectBlockComprehension]   Body expr: ${bodyExpr != null ? Type.enumConstructor(bodyExpr.def) : "null"}');
                                 #end
 
-                                // Validate we have all required components
-                                if (loopVar == null || values.length == 0 || filterCondition == null || bodyExpr == null) {
+                                // Check if we have a valid sequential range
+                                if (values.length == 0 || filterCondition == null || bodyExpr == null) {
                                     #if debug_loop_transforms
                                     trace('[XRay detectBlockComprehension] Incomplete extraction - missing components');
                                     #end
                                     return null;
                                 }
 
-                                // Build ComprehensionInfo
+                                // Infer loop variable name (use "i" as default, or extract from condition structure)
+                                loopVar = inferLoopVariableName(filterCondition, bodyExpr);
+
+                                #if debug_loop_transforms
+                                trace('[XRay detectBlockComprehension]   Inferred loop variable: $loopVar');
+                                #end
+
+                                // Build ComprehensionInfo with inferred loop variable
                                 return {
                                     resultVar: accumVar,
                                     loopVar: loopVar,
@@ -1272,6 +1316,39 @@ class LoopTransforms {
             case EMatch(_, value): value;
             default: null;
         };
+    }
+
+    /**
+     * Extract literal value from an expression (for unrolled comprehensions)
+     * Pattern: In unrolled loops, the body contains literal values: 0, 1, 2, ...
+     */
+    static function extractLiteralFromExpr(expr: ElixirAST): Null<ElixirAST> {
+        return switch(expr.def) {
+            case EInteger(_):
+                expr;  // Found literal integer
+            case EFloat(_):
+                expr;  // Found literal float
+            case EString(_):
+                expr;  // Found literal string
+            case EBoolean(_):
+                expr;  // Found literal boolean
+            case EAtom(_):
+                expr;  // Found atom
+            default:
+                null;  // Not a literal value
+        };
+    }
+
+    /**
+     * Infer loop variable name from filter condition and body expression
+     * Since the unrolled code has literals, we need to pick a sensible variable name
+     * Defaults to "i" but can be smarter based on context
+     */
+    static function inferLoopVariableName(filterCondition: ElixirAST, bodyExpr: ElixirAST): String {
+        // For now, use simple default
+        // TODO: Could analyze filter condition structure to pick better names
+        // e.g., if condition has "index" or "item" references, use those
+        return "i";
     }
 
     /**
