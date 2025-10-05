@@ -624,6 +624,197 @@ class LoopTransforms {
     }
     
     /**
+     * Detect array comprehension wrapped in Enum.reduce_while
+     *
+     * WHY: Haxe compiles [for (n in list) n * 2] into Enum.reduce_while with accumulator pattern
+     * WHAT: Detect and transform reduce_while that builds arrays into comprehensions
+     * HOW: Pattern match on Enum.reduce_while structure and extract comprehension components
+     *
+     * PATTERN:
+     * Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {init_value, []}, fn _, {loop_var, acc} ->
+     *   if condition do
+     *     loop_var = value
+     *     acc = acc ++ [expr]
+     *     {:cont, {loop_var, acc}}
+     *   else
+     *     {:halt, {loop_var, acc}}
+     *   end
+     * end)
+     *
+     * TRANSFORMS TO: for loop_var <- [values], do: expr
+     */
+    static function detectComprehensionInReduceWhile(stmt: ElixirAST): Null<ElixirAST> {
+        #if debug_loop_transforms
+        trace('[XRay LoopTransforms] detectComprehensionInReduceWhile: Checking statement');
+        #end
+
+        // Match: Enum.reduce_while(Stream.iterate(...), init, reducer_fn)
+        switch(stmt.def) {
+            case ERemoteCall({def: EVar("Enum")}, "reduce_while", args) if (args.length == 3):
+                #if debug_loop_transforms
+                trace('[XRay LoopTransforms]   Found Enum.reduce_while call');
+                #end
+
+                // Check if first arg is Stream.iterate (indicator of array building loop)
+                var isStreamIterate = switch(args[0].def) {
+                    case ERemoteCall({def: EVar("Stream")}, "iterate", _): true;
+                    default: false;
+                };
+
+                if (!isStreamIterate) {
+                    #if debug_loop_transforms
+                    trace('[XRay LoopTransforms]   Not Stream.iterate, skipping');
+                    #end
+                    return null;
+                }
+
+                #if debug_loop_transforms
+                trace('[XRay LoopTransforms]   ✓ Has Stream.iterate pattern');
+                #end
+
+                // Extract the reducer function (third argument)
+                var reducerFn = args[2];
+
+                // The reducer should be: fn _, {vars} -> if ... body ... end
+                var comprehensionInfo = extractComprehensionFromReducer(reducerFn);
+
+                if (comprehensionInfo == null) {
+                    #if debug_loop_transforms
+                    trace('[XRay LoopTransforms]   No comprehension pattern in reducer');
+                    #end
+                    return null;
+                }
+
+                #if debug_loop_transforms
+                trace('[XRay LoopTransforms]   ✓ Extracted comprehension info');
+                trace('[XRay LoopTransforms]   Result var: ${comprehensionInfo.resultVar}');
+                trace('[XRay LoopTransforms]   Loop var: ${comprehensionInfo.loopVar}');
+                trace('[XRay LoopTransforms]   Values count: ${comprehensionInfo.values.length}');
+                #end
+
+                // Build the comprehension
+                var listAST = makeAST(EList(comprehensionInfo.values));
+                var generator: EGenerator = {
+                    pattern: PVar(comprehensionInfo.loopVar),
+                    expr: listAST
+                };
+
+                var comprehension = makeAST(EFor(
+                    [generator],
+                    comprehensionInfo.filter != null ? [comprehensionInfo.filter] : [],
+                    comprehensionInfo.bodyExpr,
+                    null,
+                    false
+                ));
+
+                // Return assignment if there's a result variable
+                if (comprehensionInfo.resultVar != null) {
+                    return makeAST(EMatch(PVar(comprehensionInfo.resultVar), comprehension));
+                } else {
+                    return comprehension;
+                }
+
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Extract comprehension components from reducer function body
+     *
+     * Analyzes the if/else structure inside the reducer to extract:
+     * - Loop variable and its values
+     * - Body expression being accumulated
+     * - Optional filter condition
+     */
+    static function extractComprehensionFromReducer(reducerFn: ElixirAST): Null<{
+        resultVar: Null<String>,
+        loopVar: String,
+        values: Array<ElixirAST>,
+        bodyExpr: ElixirAST,
+        filter: Null<ElixirAST>
+    }> {
+        // Reducer should be: fn _, {vars} -> body end
+        switch(reducerFn.def) {
+            case EFn(clauses) if (clauses.length > 0):
+                var clause = clauses[0];
+
+                // Body should be an if expression with condition check
+                var ifExpr = clause.body;
+
+                switch(ifExpr.def) {
+                    case EIf(condition, thenBranch, elseBranch):
+                        #if debug_loop_transforms
+                        trace('[XRay LoopTransforms]   Found if expression in reducer');
+                        #end
+
+                        // Extract from the then branch (continuation case)
+                        // Should contain: loop_var = value; acc = acc ++ [expr]; {:cont, ...}
+                        var thenStatements = extractBlockStatements(thenBranch);
+
+                        if (thenStatements.length < 2) {
+                            return null;
+                        }
+
+                        // Look for accumulator pattern: acc = acc ++ [expr]
+                        var loopVar: String = null;
+                        var values: Array<ElixirAST> = [];
+                        var bodyExpr: ElixirAST = null;
+
+                        for (stmt in thenStatements) {
+                            switch(stmt.def) {
+                                // acc = acc ++ [expr]
+                                case EMatch(PVar(varName), {def: EBinary(Concat, {def: EVar(leftVar)}, {def: EList([expr])})}):
+                                    if (varName == leftVar) {
+                                        bodyExpr = expr;
+                                        #if debug_loop_transforms
+                                        trace('[XRay LoopTransforms]   Found accumulator pattern: $varName = $varName ++ [expr]');
+                                        #end
+                                    }
+
+                                // loop_var = value (collect values)
+                                case EMatch(PVar(varName), value):
+                                    if (loopVar == null) {
+                                        loopVar = varName;
+                                    }
+                                    if (varName == loopVar) {
+                                        values.push(value);
+                                    }
+
+                                default:
+                            }
+                        }
+
+                        if (loopVar != null && bodyExpr != null && values.length > 0) {
+                            return {
+                                resultVar: null,  // Will be set by caller if needed
+                                loopVar: loopVar,
+                                values: values,
+                                bodyExpr: bodyExpr,
+                                filter: null  // TODO: Extract filter from condition
+                            };
+                        }
+
+                    default:
+                }
+
+            default:
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract statements from a block or return single statement as array
+     */
+    static function extractBlockStatements(ast: ElixirAST): Array<ElixirAST> {
+        return switch(ast.def) {
+            case EBlock(stmts): stmts;
+            default: [ast];
+        };
+    }
+
+    /**
      * Detect array comprehension pattern (chained assignments with bare concatenations)
      *
      * WHY: Haxe unrolls [for (n in list) n * 2] into sequential statements
@@ -808,7 +999,18 @@ class LoopTransforms {
         var transformedStmts: Array<ElixirAST> = [];
         
         while (i < stmts.length) {
-            // PRIORITY 1: Try to detect array comprehension pattern first
+            // PRIORITY 0: Try to detect comprehension INSIDE reduce_while wrapper
+            // Pattern: Enum.reduce_while(Stream.iterate(...), {acc}, fn ... body with comprehension pattern)
+            var wrappedComprehension = detectComprehensionInReduceWhile(stmts[i]);
+
+            if (wrappedComprehension != null) {
+                trace('[XRay LoopTransforms] ✅ Found wrapped comprehension at position $i');
+                transformedStmts.push(wrappedComprehension);
+                i++;
+                continue;
+            }
+
+            // PRIORITY 1: Try to detect array comprehension pattern (bare statements)
             // Pattern: doubled = n = 1; [] ++ [expr]; n = 2; ...; []
             var comprehensionResult = detectComprehensionPattern(stmts, i);
 
