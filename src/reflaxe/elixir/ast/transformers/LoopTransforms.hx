@@ -964,6 +964,73 @@ class LoopTransforms {
         var bodyExpr: ElixirAST = null;
         var filterCondition: ElixirAST = null;  // For filtered comprehensions
 
+        #if debug_loop_transforms
+        trace('[XRay detectBlockComprehension] Analyzing ${stmts.length} statements');
+        for (idx in 0...Math.floor(Math.min(stmts.length, 3))) {
+            var desc = switch(stmts[idx].def) {
+                case EMatch(p, e): 'EMatch(${Type.enumConstructor(p)}, ${Type.enumConstructor(e.def)})';
+                case EIf(cond, t, e): 'EIf(...)';
+                default: Type.enumConstructor(stmts[idx].def);
+            };
+            trace('[XRay detectBlockComprehension]   Statement $idx: $desc');
+        }
+        #end
+
+        // Check for FILTERED comprehension pattern: g = [], if(...), if(...), ..., []
+        // First statement: result = []
+        if (stmts.length >= 3) {
+            var firstStmt = stmts[0];
+            #if debug_loop_transforms
+            trace('[XRay detectBlockComprehension] Checking first stmt: ${Type.enumConstructor(firstStmt.def)}');
+            #end
+
+            switch(firstStmt.def) {
+                case EMatch(PVar(accumVar), rhs):
+                    #if debug_loop_transforms
+                    trace('[XRay detectBlockComprehension]   EMatch found, RHS: ${Type.enumConstructor(rhs.def)}');
+                    #end
+
+                    // Check if RHS is empty list
+                    switch(rhs.def) {
+                        case EList(items) if (items.length == 0):
+                            #if debug_loop_transforms
+                            trace('[XRay detectBlockComprehension] Found accumulator init: $accumVar = []');
+                            #end
+
+                            // Check if remaining statements are EIf (filtered pattern)
+                            var allEIf = true;
+                            for (i in 1...stmts.length - 1) {  // Skip first and last
+                                if (!Type.enumEq(Type.enumConstructor(stmts[i].def), "EIf")) {
+                                    allEIf = false;
+                                    break;
+                                }
+                            }
+
+                            if (allEIf) {
+                                #if debug_loop_transforms
+                                trace('[XRay detectBlockComprehension] Detected FILTERED pattern - all middle statements are EIf');
+                                // Examine first EIf to understand structure
+                                var firstIf = stmts[1];
+                                switch(firstIf.def) {
+                                    case EIf(cond, thenBranch, elseBranch):
+                                        trace('[XRay detectBlockComprehension]   First EIf condition: ${Type.enumConstructor(cond.def)}');
+                                        trace('[XRay detectBlockComprehension]   Then branch: ${Type.enumConstructor(thenBranch.def)}');
+                                        if (elseBranch != null) {
+                                            trace('[XRay detectBlockComprehension]   Else branch: ${Type.enumConstructor(elseBranch.def)}');
+                                        }
+                                    default:
+                                }
+                                #end
+                                // TODO: Extract loop variable, values, filter condition, and body expression
+                                // This is the filtered comprehension pattern!
+                                return null;  // For now, return null until we implement extraction
+                            }
+                        default:
+                    }
+                default:
+            }
+        }
+
         var i = 0;
         while (i < stmts.length - 1) {  // -1 to leave room for final empty list
             var stmt = stmts[i];
