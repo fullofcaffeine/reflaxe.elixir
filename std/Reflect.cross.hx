@@ -240,7 +240,7 @@
  * @see https://api.haxe.org/Reflect.html - Official Haxe Reflect documentation
  * @see https://hexdocs.pm/elixir/Map.html - Elixir Map module documentation
  */
-@:coreApi
+//@:coreApi  // Commented out to allow Elixir-specific signatures for immutability
 class Reflect {
     /**
      * Get a field value from an object.
@@ -265,23 +265,24 @@ class Reflect {
     
     /**
      * Set a field value on an object.
-     * 
+     *
      * WHY: Dynamic field modification is needed for object construction and updates.
      * WHAT: Sets or updates a field value in an object (map).
      * HOW: The compiler will optimize this to Map.put.
-     * 
+     *
      * NOTE: In Elixir, this returns a new map (immutability).
      * The original object is not modified.
-     * 
+     *
      * @param obj The object (map) to set the field on
      * @param field The name of the field to set
      * @param value The value to set
      * @return The updated object (new map with the field set)
      */
-    public static function setField(o: Dynamic, field: String, value: Dynamic): Void {
+    @:hack  // Override core API signature for Elixir immutability
+    public static function setField(o: Dynamic, field: String, value: Dynamic): Dynamic {
         // Use native Elixir Map.put with atom conversion
-        // Note: In Elixir this returns a new map, but Haxe API expects Void
-        untyped __elixir__('Map.put({0}, String.to_atom({1}), {2})', o, field, value);
+        // Returns the new map (Elixir immutability)
+        return untyped __elixir__('Map.put({0}, String.to_atom({1}), {2})', o, field, value);
     }
     
     /**
@@ -316,21 +317,22 @@ class Reflect {
     
     /**
      * Delete a field from an object.
-     * 
+     *
      * WHY: Needed for removing optional fields or cleaning objects.
      * WHAT: Removes a field from an object (map).
      * HOW: The compiler will optimize this to Map.delete.
-     * 
+     *
      * NOTE: Returns a new map without the field (immutability).
-     * 
+     *
      * @param obj The object (map) to delete the field from
      * @param field The name of the field to delete
      * @return The updated object (new map without the field)
      */
-    public static function deleteField(o: Dynamic, field: String): Bool {
-        // In Elixir, we can't truly delete from immutable maps
-        // We return true if the field exists, false otherwise (matches Haxe behavior)
-        return hasField(o, field);
+    @:hack  // Override core API signature for Elixir immutability
+    public static function deleteField(o: Dynamic, field: String): Dynamic {
+        // Use native Elixir Map.delete
+        // Returns the new map without the field (Elixir immutability)
+        return untyped __elixir__('Map.delete({0}, String.to_existing_atom({1}))', o, field);
     }
     
     /**
