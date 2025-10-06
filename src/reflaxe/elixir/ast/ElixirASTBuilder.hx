@@ -631,13 +631,37 @@ class ElixirASTBuilder {
                 #end
 
                 if (currentContext.currentClauseContext != null) {
+                    #if sys
+                    var debugFile4 = sys.io.File.append("/tmp/enum_debug.log");
+                    debugFile4.writeString('[TVar CHECK] var=${v.name} id=${v.id}\n');
+                    debugFile4.writeString('[TVar CHECK]   init: ${init != null ? Type.enumConstructor(init.expr) : "null"}\n');
+                    debugFile4.writeString('[TVar CHECK]   localToName.exists(${v.id})?: ${currentContext.currentClauseContext.localToName.exists(v.id)}\n');
+                    debugFile4.writeString('[TVar CHECK]   localToName keys: [${[for (k in currentContext.currentClauseContext.localToName.keys()) k].join(", ")}]\n');
+                    debugFile4.close();
+                    #end
+
                     // Check localToName mapping (pattern variable bindings)
+                    // CRITICAL: Check by ID first (exact match)
                     if (currentContext.currentClauseContext.localToName.exists(v.id)) {
-                        #if debug_ast_builder
-                        trace('[TVar] ✅ SKIPPING: Variable ${v.name} (id=${v.id}) already bound by pattern');
-                        trace('[TVar]   Pattern binding: ${currentContext.currentClauseContext.localToName.get(v.id)}');
+                        #if sys
+                        var debugFile5 = sys.io.File.append("/tmp/enum_debug.log");
+                        debugFile5.writeString('[TVar] ✅ SKIPPING (by ID): Variable ${v.name} (id=${v.id}) already bound by pattern\n');
+                        debugFile5.close();
                         #end
                         // Return null to skip this TVar - the pattern already bound the variable
+                        return null;
+                    }
+
+                    // CRITICAL FIX: Also check by NAME for cases where Haxe creates different IDs
+                    // In empty case bodies, Haxe generates new TVars with different IDs but same names
+                    var patternVarNames = [for (name in currentContext.currentClauseContext.localToName) name];
+                    if (patternVarNames.contains(v.name)) {
+                        #if sys
+                        var debugFile6 = sys.io.File.append("/tmp/enum_debug.log");
+                        debugFile6.writeString('[TVar] ✅ SKIPPING (by NAME): Variable ${v.name} (id=${v.id}) matches pattern variable\n');
+                        debugFile6.close();
+                        #end
+                        // Return null to skip this TVar - the pattern already bound a variable with this name
                         return null;
                     }
                 }
@@ -1510,6 +1534,7 @@ class ElixirASTBuilder {
                                     trace('[TVar] Skipping TEnumParameter assignment - initValue is null');
                                     #end
                                     #end
+                                    return null;  // ✅ FIX: Immediate return prevents fallthrough to error code
                                 }
                             default:
                         }
@@ -2820,12 +2845,27 @@ class ElixirASTBuilder {
 
                 // TASK 4.5 FIX: Check if this parameter was already extracted by the pattern
                 // If the enum field name is in patternExtractedParams, the pattern already bound it
+
+                // DEBUG: Show what we're checking BEFORE the condition
+                #if sys
+                var debugFile = sys.io.File.append("/tmp/enum_debug.log");
+                debugFile.writeString('[TEnumParameter] *** PRE-CHECK DEBUG ***\n');
+                debugFile.writeString('[TEnumParameter]   ef.name: "${ef.name}"\n');
+                debugFile.writeString('[TEnumParameter]   Has currentClauseContext: ${currentContext.currentClauseContext != null}\n');
+                if (currentContext.currentClauseContext != null) {
+                    debugFile.writeString('[TEnumParameter]   patternExtractedParams: [${currentContext.currentClauseContext.patternExtractedParams.join(", ")}]\n');
+                    debugFile.writeString('[TEnumParameter]   Contains ef.name?: ${currentContext.currentClauseContext.patternExtractedParams.contains(ef.name)}\n');
+                }
+                debugFile.close();
+                #end
+
                 if (currentContext.currentClauseContext != null &&
                     currentContext.currentClauseContext.patternExtractedParams.contains(ef.name)) {
 
-                    #if debug_enum_extraction
-                    trace('[TEnumParameter] SKIPPING - Parameter "${ef.name}" already extracted by pattern');
-                    trace('[TEnumParameter]   Pattern extracted params: ${currentContext.currentClauseContext.patternExtractedParams.join(", ")}');
+                    #if sys
+                    var debugFile3 = sys.io.File.append("/tmp/enum_debug.log");
+                    debugFile3.writeString('[TEnumParameter] ✅ CONDITION MATCHED: Parameter "${ef.name}" already extracted by pattern\n');
+                    debugFile3.close();
                     #end
 
                     // The pattern already extracted this parameter
@@ -2833,9 +2873,19 @@ class ElixirASTBuilder {
                     if (currentContext.currentClauseContext.enumBindingPlan.exists(index)) {
                         var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
 
-                        #if debug_enum_extraction
-                        trace('[TEnumParameter]   Using pattern-bound variable: ${info.finalName}');
-                        #end
+                        trace('[TEnumParameter]   *** BINDING PLAN DATA ***');
+                        trace('[TEnumParameter]     finalName: "${info.finalName}"');
+                        trace('[TEnumParameter]     isUsed: ${info.isUsed}');
+                        trace('[TEnumParameter]     charAt(0): "${info.finalName.charAt(0)}"');
+                        trace('[TEnumParameter]     charAt(0) == "_": ${info.finalName.charAt(0) == "_"}');
+
+                        // CRITICAL FIX: If parameter is unused (has underscore prefix), return null to skip TVar
+                        // This prevents generating: x = _x (where _x is the unused pattern variable)
+                        // Instead we skip the assignment entirely since the pattern already has _x
+                        if (!info.isUsed || (info.finalName != null && info.finalName.charAt(0) == "_")) {
+                            trace('[TEnumParameter]   *** RETURNING NULL - Parameter is UNUSED ***');
+                            return null;
+                        }
 
                         // Return the pattern-bound variable directly
                         return EVar(info.finalName);
