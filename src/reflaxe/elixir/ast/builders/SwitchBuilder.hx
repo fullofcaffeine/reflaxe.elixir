@@ -274,8 +274,8 @@ class SwitchBuilder {
             trace('[SwitchBuilder ERROR] ClauseContext is NULL - cannot register mappings!');
         } #end
 
-        // Build pattern from case value (pass pattern variables for idiomatic enum patterns)
-        var pattern = buildPattern(value, targetVarName, patternVars, context);
+        // Build pattern from case value (pass pattern variables and case body for usage analysis)
+        var pattern = buildPattern(value, targetVarName, patternVars, switchCase.expr, context);
         if (pattern == null) {
             return [];
         }
@@ -417,8 +417,9 @@ class SwitchBuilder {
      * HOW: Analyzes value type, generates appropriate pattern, maps integers to enum constructors
      *
      * @param guardVars - Variable names extracted from guard conditions (for TEnumIndex cases)
+     * @param caseBody - The case body expression for usage analysis (determines underscore prefixes)
      */
-    static function buildPattern(value: TypedExpr, targetVarName: String, guardVars: Array<String>, context: CompilationContext): Null<EPattern> {
+    static function buildPattern(value: TypedExpr, targetVarName: String, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext): Null<EPattern> {
         trace('[SwitchBuilder] Building pattern for: ${Type.enumConstructor(value.expr)}');
         switch(value.expr) {
             case TConst(c):
@@ -440,7 +441,8 @@ class SwitchBuilder {
                                 // Use guard variables passed from buildCaseClause
                                 // When TEnumIndex optimization transforms case Ok(n) to case 0,
                                 // we recover the user's variable name from the guard condition
-                                return generateIdiomaticEnumPattern(constructor, guardVars, context);
+                                // CRITICAL FIX: Use new version that analyzes case body for parameter usage
+                                return generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context);
                             } else {
                                 trace('[SwitchBuilder]     WARNING: No constructor found for index $i');
                             }
@@ -480,13 +482,79 @@ class SwitchBuilder {
     }
 
     /**
-     * Generate idiomatic Elixir pattern for enum constructor
+     * Generate idiomatic Elixir pattern for enum constructor WITH usage analysis
+     *
+     * WHY: Detect unused parameters to apply underscore prefix and prevent orphaned TEnumParameter extraction
+     * WHAT: Creates tuple patterns with proper naming based on actual parameter usage in case body
+     * HOW: Uses EnumHandler.isEnumParameterUsedAtIndex to detect usage, applies underscore prefix if unused
+     *
+     * CRITICAL: This solves the "empty case body" bug where unused parameters generate orphaned _g variables
+     */
+    static function generateIdiomaticEnumPatternWithBody(ef: EnumField, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext): EPattern {
+        var atomName = NameUtils.toSnakeCase(ef.name);
+
+        // Extract parameter names from EnumField.type (fallback)
+        var parameterNames: Array<String> = [];
+        switch(ef.type) {
+            case TFun(args, _):
+                for (arg in args) {
+                    parameterNames.push(arg.name);
+                }
+            default:
+                // No parameters
+        }
+
+        if (parameterNames.length == 0) {
+            // Simple atom pattern: :none
+            trace('[SwitchBuilder]     Generated pattern: {:${atomName}}');
+            return PLiteral(makeAST(EAtom(atomName)));
+        } else {
+            // Tuple pattern: {:some, value}
+            var patterns: Array<EPattern> = [PLiteral(makeAST(EAtom(atomName)))];
+
+            for (i in 0...parameterNames.length) {
+                // Use guard variable if available, otherwise use enum parameter name
+                var sourceName = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
+                var baseParamName = VariableAnalyzer.toElixirVarName(sourceName);
+
+                // CRITICAL: Analyze case body to determine if this parameter is actually used
+                var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody);
+
+                // Apply underscore prefix for unused parameters
+                var paramName = isUsed ? baseParamName : "_" + baseParamName;
+
+                trace('[SwitchBuilder]     Parameter $i: EnumParam=${parameterNames[i]}, Usage=${isUsed ? "USED" : "UNUSED"}, FinalName=${paramName}');
+
+                patterns.push(PVar(paramName));
+
+                // Populate enumBindingPlan with proper usage information
+                if (context.currentClauseContext != null) {
+                    context.currentClauseContext.enumBindingPlan.set(i, {
+                        finalName: paramName,
+                        isUsed: isUsed
+                    });
+                }
+            }
+
+            var finalNames = [for (i in 0...parameterNames.length) {
+                var base = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
+                var isUsed = EnumHandler.isEnumParameterUsedAtIndex(i, caseBody);
+                isUsed ? base : "_" + base;
+            }];
+            trace('[SwitchBuilder]     Generated pattern: {:${atomName}, ${finalNames.join(", ")}}');
+            return PTuple(patterns);
+        }
+    }
+
+    /**
+     * Generate idiomatic Elixir pattern for enum constructor (LEGACY - no body analysis)
      *
      * WHY: Convert recovered enum constructors to idiomatic {:atom, params} patterns
      * WHAT: Creates tuple patterns with user's variable names from guards when available
      * HOW: Uses guardVars if provided, otherwise falls back to EnumField parameter names
      *
      * CRITICAL: When TEnumIndex optimization loses variable names, we recover them from guard conditions
+     * NOTE: This version doesn't analyze usage - prefer generateIdiomaticEnumPatternWithBody instead
      */
     static function generateIdiomaticEnumPattern(ef: EnumField, guardVars: Array<String>, context: CompilationContext): EPattern {
         var atomName = NameUtils.toSnakeCase(ef.name);
@@ -515,15 +583,19 @@ class SwitchBuilder {
                 var sourceName = (guardVars != null && i < guardVars.length) ? guardVars[i] : parameterNames[i];
                 var paramName = VariableAnalyzer.toElixirVarName(sourceName);
                 trace('[SwitchBuilder]     Parameter $i: GuardVar=${guardVars != null && i < guardVars.length ? guardVars[i] : "none"}, EnumParam=${parameterNames[i]}, Using=${paramName}');
-                patterns.push(PVar(paramName));
 
                 // CRITICAL FIX: Populate enumBindingPlan so TEnumParameter knows this was extracted
+                // Now properly detecting parameter usage to apply underscore prefix
                 if (context.currentClauseContext != null) {
+                    // The isUsed flag is now set during pattern building
+                    // (see generateIdiomaticEnumPatternWithBody for the proper implementation)
                     context.currentClauseContext.enumBindingPlan.set(i, {
                         finalName: paramName,
-                        isUsed: false  // Will be marked as used if referenced in body
+                        isUsed: false  // Will be updated by usage analysis
                     });
                 }
+
+                patterns.push(PVar(paramName));
             }
 
             var finalNames = [for (i in 0...parameterNames.length)
