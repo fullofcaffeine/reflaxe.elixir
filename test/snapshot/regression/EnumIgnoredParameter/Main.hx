@@ -1,18 +1,24 @@
 /**
  * Test for TEnumParameter with ignored parameters
- * 
+ *
  * This test verifies that when enum pattern matching uses ignored parameters (underscore),
  * the generated Elixir code doesn't attempt to extract from the already-extracted value.
- * 
+ *
  * Issue: When pattern `{:ok, g}` extracts nil into g, TEnumParameter tries elem(g, 1)
  * which fails because g is nil, not the original tuple.
  */
+
+enum Result<T> {
+	Ok(value: T);
+	Error(msg: String);
+}
+
+enum DataResult {
+	Data(id: Int, timestamp: Float, name: String, metadata: Dynamic);
+	NoData;
+}
+
 class Main {
-	enum Result<T> {
-		Ok(value: T);
-		Error(msg: String);
-	}
-	
 	// Function that returns Ok(nil) to simulate the TodoPubSub.subscribe scenario
 	static function subscribe(): Result<String> {
 		return Ok(null);
@@ -48,12 +54,7 @@ class Main {
 				trace("No data");
 		}
 	}
-	
-	enum DataResult {
-		Data(id: Int, timestamp: Float, name: String, metadata: Dynamic);
-		NoData;
-	}
-	
+
 	static function processData(): DataResult {
 		return Data(42, Date.now().getTime(), "Test", null);
 	}

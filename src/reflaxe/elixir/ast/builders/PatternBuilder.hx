@@ -387,29 +387,39 @@ class PatternBuilder {
     /**
      * Convert enum constructor with extracted parameters
      */
-    private static function convertEnumConstructorWithExtraction(e: TypedExpr, el: Array<TypedExpr>, 
+    private static function convertEnumConstructorWithExtraction(e: TypedExpr, el: Array<TypedExpr>,
                                                                 extractedParams: Array<String>,
                                                                 context: BuildContext): EPattern {
         // Enum constructor pattern with extracted parameter names
         var tag = extractEnumTag(e);
-        
+
         // For idiomatic enums, convert to snake_case
         if (hasIdiomaticMetadata(e)) {
             tag = tag.toSnakeCase();
         }
-        
+
         // Use extracted parameter names instead of wildcards or generic names
         var args = [];
         for (i in 0...el.length) {
             if (i < extractedParams.length && extractedParams[i] != null) {
                 // Use the user-specified variable name
                 args.push(PVar(extractedParams[i]));
+
+                // CRITICAL FIX: Populate enumBindingPlan so TEnumParameter knows this was extracted
+                // Cast to CompilationContext to access currentClauseContext property
+                var compilationCtx = cast(context, reflaxe.elixir.CompilationContext);
+                if (compilationCtx != null && compilationCtx.currentClauseContext != null) {
+                    compilationCtx.currentClauseContext.enumBindingPlan.set(i, {
+                        finalName: extractedParams[i],
+                        isUsed: false  // Will be marked as used if referenced in body
+                    });
+                }
             } else {
                 // Fall back to wildcard if no name provided
                 args.push(PWildcard);
             }
         }
-        
+
         // Create tuple pattern {:tag, param1, param2, ...}
         return PTuple([PLiteral(makeAST(EAtom(tag)))].concat(args));
     }

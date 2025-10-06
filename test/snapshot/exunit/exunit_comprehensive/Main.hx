@@ -30,9 +30,10 @@ class Main extends TestCase {
         // Initialize shared test resources
         setupAllCalled = true;
         trace("Setup all called - initializing test suite");
-        
+
         // Could initialize database connections, start processes, etc.
-        {:ok, %{shared_data: "test_data"}}
+        // Returns context map for tests
+        return {shared_data: "test_data"};
     }
     
     /**
@@ -44,9 +45,9 @@ class Main extends TestCase {
         setupCalled = true;
         testCounter++;
         trace("Setup called for test #" + testCounter);
-        
+
         // Return context updates
-        {:ok, %{test_number: testCounter}}
+        return {test_number: testCounter};
     }
     
     /**
@@ -125,12 +126,13 @@ class Main extends TestCase {
     @:test
     function testPatternMatching() {
         // Test with enum-like values
-        var result: Dynamic = {:ok, "success"};
-        
-        switch (result) {
-            case {:ok, value}:
-                Assert.equals("success", value, "Should match ok tuple");
-            case {:error, _}:
+        // Note: This would use actual Haxe enums in real code
+        var result: Dynamic = {type: "ok", value: "success"};
+
+        switch (result.type) {
+            case "ok":
+                Assert.equals("success", result.value, "Should match ok tuple");
+            case "error":
                 Assert.fail("Should not match error");
             default:
                 Assert.fail("Should match one of the patterns");
