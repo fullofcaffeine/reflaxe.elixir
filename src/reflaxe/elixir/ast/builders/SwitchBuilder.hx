@@ -516,6 +516,14 @@ class SwitchBuilder {
                 var paramName = VariableAnalyzer.toElixirVarName(sourceName);
                 trace('[SwitchBuilder]     Parameter $i: GuardVar=${guardVars != null && i < guardVars.length ? guardVars[i] : "none"}, EnumParam=${parameterNames[i]}, Using=${paramName}');
                 patterns.push(PVar(paramName));
+
+                // CRITICAL FIX: Populate enumBindingPlan so TEnumParameter knows this was extracted
+                if (context.currentClauseContext != null) {
+                    context.currentClauseContext.enumBindingPlan.set(i, {
+                        finalName: paramName,
+                        isUsed: false  // Will be marked as used if referenced in body
+                    });
+                }
             }
 
             var finalNames = [for (i in 0...parameterNames.length)
@@ -1142,6 +1150,14 @@ class SwitchBuilder {
                     trace('[SwitchBuilder]   Final varName: ${varName}');
 
                     patterns.push(PVar(varName));
+
+                    // CRITICAL FIX: Populate enumBindingPlan so TEnumParameter knows this was extracted
+                    if (context.currentClauseContext != null) {
+                        context.currentClauseContext.enumBindingPlan.set(i, {
+                            finalName: varName,
+                            isUsed: false  // Will be marked as used if referenced in body
+                        });
+                    }
                 default:
                     // Use underscore for non-variable patterns
                     trace('[SwitchBuilder] *** PATTERN VAR DEBUG (NOT TLocal!) ***');

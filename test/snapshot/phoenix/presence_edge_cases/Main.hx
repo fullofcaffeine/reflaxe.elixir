@@ -46,10 +46,10 @@ class ComplexPresence {
         // Complex parameter expressions should still work with self() injection
         return Presence.track(
             socket,
-            user.id + "_" + Date.now(),
+            user.id + "_" + Date.now().getTime(),
             {
                 name: user.firstName + " " + user.lastName,
-                timestamp: Math.floor(Date.now() / 1000),
+                timestamp: Math.floor(Date.now().getTime() / 1000),
                 computed: user.score > 100 ? "expert" : "novice"
             }
         );
@@ -68,7 +68,7 @@ class PresenceLive {
     public static function mount(params: Dynamic, session: Dynamic, socket: Dynamic): Dynamic {
         // LiveView mount should inject self() for Presence calls
         var userId = session.userId;
-        socket = Presence.track(socket, userId, {joined_at: Date.now()});
+        socket = Presence.track(socket, userId, {joined_at: Date.now().getTime()});
         return {ok: socket};
     }
     
